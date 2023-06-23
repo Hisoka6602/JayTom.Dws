@@ -9,7 +9,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace JayTom.Dws.Data.LocalData {
 
-    [Table("BarCodeInfo", Schema = "dbo")]
+    [Table("Data_BarCodeInfo", Schema = "dbo")]
     public class BarCodeInfoModel : BaseModel {
 
         /// <summary>

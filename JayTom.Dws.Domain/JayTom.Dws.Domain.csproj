@@ -6,4 +6,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\JayTom.Dws.Data\JayTom.Dws.Data.csproj" />
+  </ItemGroup>
+
 </Project>

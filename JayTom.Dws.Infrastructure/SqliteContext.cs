@@ -1,5 +1,6 @@
 ﻿using JayTom.Dws.Data.LocalLog;
 using JayTom.Dws.Data.LocalData;
+using JayTom.Dws.Data.LocalConf;
 using Microsoft.EntityFrameworkCore;
 
 namespace JayTom.Dws.Infrastructure {
@@ -46,6 +47,13 @@ namespace JayTom.Dws.Infrastructure {
                 });
                 modelBuilder.Entity<ConfigInfoModel>()
                     .HasIndex(b => b.ConfigName)
+                    .IsUnique();
+                //RequestParametersInfoModel
+                modelBuilder.Entity<RequestParametersInfoModel>().HasKey(c => new {
+                    c.Id
+                });
+                modelBuilder.Entity<RequestParametersInfoModel>()
+                    .HasIndex(b => b.InterfaceName)
                     .IsUnique();
             }
             //log

@@ -8,13 +8,13 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace JayTom.Dws.Data.LocalLog {
 
-    [Table("InstructionLogInfo", Schema = "dbo")]
+    [Table("Log_InstructionLogInfo", Schema = "dbo")]
     public class InstructionLogInfoModel : BaseModel {
 
         /// <summary>
         /// 时间戳Id
         /// </summary>
-        [Column("InstructionContent"), Required]
+        [Column("TimestampedGuid"), Required]
         public long TimestampedGuid { get; set; }
 
         /// <summary>
