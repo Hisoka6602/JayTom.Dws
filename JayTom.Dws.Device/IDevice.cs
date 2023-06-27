@@ -3,6 +3,11 @@
     public interface IDevice {
 
         /// <summary>
+        /// 设备编码
+        /// </summary>
+        string DeviceCode { get; }
+
+        /// <summary>
         /// 连接状态
         /// </summary>
         DeviceStatus Status { get; }
@@ -11,13 +16,13 @@
         /// 重连
         /// </summary>
         /// <returns></returns>
-        bool Reconnect();
+        Task<KeyValuePair<bool, string>> Reconnect();
 
         /// <summary>
         /// 连接
         /// </summary>
         /// <returns></returns>
-        bool Connect<T>(T connectParam);
+        Task<KeyValuePair<bool, string>> Connect<T>(T connectParam);
 
         /// <summary>
         /// 断开/释放
@@ -28,7 +33,7 @@
         /// 初始化
         /// </summary>
         /// <returns></returns>
-        bool Initialization();
+        Task<KeyValuePair<bool, string>> Initialization();
 
         /// <summary>
         /// 初始化完成

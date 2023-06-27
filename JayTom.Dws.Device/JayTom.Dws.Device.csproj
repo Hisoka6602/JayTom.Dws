@@ -1,27 +1,199 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net6.0-windows</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <PlatformTarget>x64</PlatformTarget>
+    <UseNETFrameworkCompat>true</UseNETFrameworkCompat>
+    <SupportedNETFrameworkVersions>4.0</SupportedNETFrameworkVersions>
+    <Platforms>x64</Platforms>
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="BarCode64.dll" />
+    <None Remove="blob64.dll" />
+    <None Remove="CLAllSerial_MD_VC120_v3_0.dll" />
+    <None Remove="CLProtocol_MD_VC120_v3_0.dll" />
+    <None Remove="CLSerCOM.dll" />
+    <None Remove="DataCode64.dll" />
+    <None Remove="encAlgVerify64.dll" />
+    <None Remove="GCBase_MD_VC120_v3_0.dll" />
+    <None Remove="GenApi_MD_VC120_v3_0.dll" />
+    <None Remove="GenCP_MD_VC120_v3_0.dll" />
+    <None Remove="GrayInstrument64.dll" />
+    <None Remove="HuaraytechLib\BarCode64.dll" />
+    <None Remove="HuaraytechLib\blob64.dll" />
+    <None Remove="ImageConvert.dll" />
+    <None Remove="libglog64.dll" />
+    <None Remove="LibWndFindermd.dll" />
+    <None Remove="log4cpp_MD_VC120_v3_0.dll" />
+    <None Remove="Log_MD_VC120_v3_0.dll" />
+    <None Remove="MathParser_MD_VC120_v3_0.dll" />
+    <None Remove="Matting64.dll" />
+    <None Remove="msvcp140.dll" />
     <None Remove="MVIDCodeReader.dll" />
     <None Remove="MVIDCodeReader.Net.dll" />
+    <None Remove="MVlog4cppmd.dll" />
+    <None Remove="MvpLoggermd.dll" />
+    <None Remove="MVSDKmd.dll" />
+    <None Remove="MvsFilters64.dll" />
+    <None Remove="MvsSupport64.dll" />
+    <None Remove="NetUtilitymd.dll" />
+    <None Remove="NodeMapData_MD_VC120_v3_0.dll" />
+    <None Remove="opencv_world300.dll" />
+    <None Remove="OpenNI2.dll" />
     <None Remove="RulerFilter.dll" />
+    <None Remove="SharpnessMeasure64.dll" />
+    <None Remove="SocketCommunication.dll" />
+    <None Remove="turbojpeg.dll" />
+    <None Remove="ucrtbase.dll" />
+    <None Remove="vcruntime140.dll" />
+    <None Remove="Volume3DSdkmd.dll" />
+    <None Remove="VRdll64.dll" />
+    <None Remove="XmlParser_MD_VC120_v3_0.dll" />
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="MVIDCodeReader.dll">
+    <ApplicationDefinition Include="HuaraytechLib\BarCode64.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </ApplicationDefinition>
+    <ApplicationDefinition Include="HuaraytechLib\blob64.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </ApplicationDefinition>
+    <Content Include="HuaraytechLib\blob64.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="MVIDCodeReader.Net.dll">
+    <Content Include="HuaraytechLib\CLAllSerial_MD_VC120_v3_0.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="RulerFilter.dll">
+    <Content Include="HuaraytechLib\CLProtocol_MD_VC120_v3_0.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="HuaraytechLib\CLSerCOM.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="HuaraytechLib\DataCode64.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="HuaraytechLib\encAlgVerify64.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="HuaraytechLib\GCBase_MD_VC120_v3_0.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="HuaraytechLib\GenApi_MD_VC120_v3_0.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="HuaraytechLib\GenCP_MD_VC120_v3_0.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="HuaraytechLib\GrayInstrument64.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="HuaraytechLib\ImageConvert.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="HuaraytechLib\libglog64.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="HuaraytechLib\LibWndFindermd.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="HuaraytechLib\log4cpp_MD_VC120_v3_0.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="HuaraytechLib\LogisticsBase64.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="HuaraytechLib\Log_MD_VC120_v3_0.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="HuaraytechLib\MathParser_MD_VC120_v3_0.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="HuaraytechLib\Matting64.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="HuaraytechLib\msvcp140.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="HuaraytechLib\MVlog4cppmd.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="HuaraytechLib\MvpLoggermd.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="HuaraytechLib\MVSDKmd.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="HuaraytechLib\MvsFilters64.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="HuaraytechLib\MvsSupport64.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="HuaraytechLib\NetUtilitymd.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="HuaraytechLib\NodeMapData_MD_VC120_v3_0.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="HuaraytechLib\opencv_world300.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="HuaraytechLib\OpenNI2.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="HuaraytechLib\SharpnessMeasure64.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="HuaraytechLib\SocketCommunication.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="HuaraytechLib\turbojpeg.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="HuaraytechLib\ucrtbase.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="HuaraytechLib\vcruntime140.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="HuaraytechLib\Volume3DSdkmd.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="HuaraytechLib\VRdll64.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="HuaraytechLib\XmlParser_MD_VC120_v3_0.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="System.Drawing.Common" Version="6.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Camera\IndustrialCamera\" />
+    <Folder Include="Camera\3DCamera\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="LogisticsBaseCSharp">
+      <HintPath>C:\Users\77051\Desktop\DWS_Demo_C#2\bin\Release\x64\LogisticsBaseCSharp.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="TurboJpegWrapper">
+      <HintPath>C:\Users\77051\Desktop\DWS_Demo_C#2\bin\Release\x64\TurboJpegWrapper.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+  </ItemGroup>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="xcopy /Y &quot;$(ProjectDir)\HuaraytechLib\*.*&quot; &quot;$(TargetDir)&quot;" />
+  </Target>
 
 </Project>

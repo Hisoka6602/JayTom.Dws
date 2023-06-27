@@ -1,0 +1,54 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net6.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWPF>true</UseWPF>
+    <PlatformTarget>x64</PlatformTarget>
+    <UseWPFCompatibilityMode>true</UseWPFCompatibilityMode>
+    <SupportedNETFrameworkVersions>4.0</SupportedNETFrameworkVersions>
+    <Platforms>x64</Platforms>
+
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="MathParser_MD_VC120_v3_0.dll" />
+    <None Remove="Matting64.dll" />
+    <None Remove="msvcp140.dll" />
+    <None Remove="MVlog4cppmd.dll" />
+    <None Remove="MvpLoggermd.dll" />
+    <None Remove="MVSDKmd.dll" />
+    <None Remove="MvsFilters64.dll" />
+    <None Remove="MvsSupport64.dll" />
+    <None Remove="NetUtilitymd.dll" />
+    <None Remove="NodeMapData_MD_VC120_v3_0.dll" />
+    <None Remove="opencv_world300.dll" />
+    <None Remove="OpenNI2.dll" />
+    <None Remove="SharpnessMeasure64.dll" />
+    <None Remove="SocketCommunication.dll" />
+    <None Remove="turbojpeg.dll" />
+    <None Remove="ucrtbase.dll" />
+    <None Remove="vcruntime140.dll" />
+    <None Remove="Volume3DSdkmd.dll" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\JayTom.Dws.Device\JayTom.Dws.Device.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="LogisticsBaseCSharp">
+      <HintPath>C:\Users\77051\Desktop\DWS_Demo_C#_Win64_V3.4.0.217968_20220907\lib\X64\LogisticsBaseCSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="TurboJpegWrapper">
+      <HintPath>C:\Users\77051\Desktop\DWS_Demo_C#_Win64_V3.4.0.217968_20220907\lib\X64\TurboJpegWrapper.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <PropertyGroup>
+    <PostBuildEvent>
+      <Exec Command="xcopy /Y /Q &quot;$(ProjectDir)..&lt;relative_path_to_HuaraytechLib&gt;\*.dll&quot; &quot;$(TargetDir)&quot;" />
+      <Exec Command="rd /S /Q &quot;$(ProjectDir)..&lt;relative_path_to_HuaraytechLib&gt;&quot;" />
+    </PostBuildEvent>
+  </PropertyGroup>
+</Project>
