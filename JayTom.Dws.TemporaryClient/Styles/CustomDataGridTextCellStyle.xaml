@@ -1,0 +1,18 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Style
+        x:Key="CustomDataGridTextCellStyle"
+        BasedOn="{StaticResource MaterialDesignDataGridCell}"
+        TargetType="DataGridCell">
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="FontSize" Value="15" />
+        <Setter Property="Width" Value="Auto" />
+        <Setter Property="Height" Value="Auto" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="FontFamily" Value="LoadFiraCode" />
+        <Setter Property="ToolTipService.ToolTip" Value="{Binding RelativeSource={RelativeSource Mode=Self}, Path=Content.Text}" />
+    </Style>
+</ResourceDictionary>
