@@ -7,6 +7,7 @@ using Newtonsoft.Json;
 using JayTom.Dws.Utils;
 using System.Threading;
 using System.Diagnostics;
+using Newtonsoft.Json.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
@@ -40,7 +41,7 @@ namespace JayTom.Dws.Interface.WeciMexicoDv {
         }
 
         public async Task<UploadResponse> UploadData([NotNull] string barcode, [NotNull] double weight, double length = default, double width = default, double height = default,
-            double volume = default, Bitmap? image = default, Bitmap? panoramaImage = default,
+            double volume = default, Image? image = default, Image? panoramaImage = default,
             CancellationToken token = default) {
             var resultContent = string.Empty;
             var exceptionMsg = string.Empty;
@@ -55,7 +56,7 @@ namespace JayTom.Dws.Interface.WeciMexicoDv {
                 date_tran = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss}",
                 time_tran = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss}",
                 machine_no = MachineNo,
-                imagebase64 = image?.ConvertBitmapToBase64() ?? string.Empty
+                imagebase64 = image?.ConvertImageToBase64() ?? string.Empty
             };
             var requestTime = DateTime.Now;
             var stopwatch = new Stopwatch();
@@ -76,6 +77,13 @@ namespace JayTom.Dws.Interface.WeciMexicoDv {
 
                     resultContent = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
                     resultContent = Regex.Unescape(resultContent);
+                    if (!string.IsNullOrWhiteSpace(resultContent)) {
+                        //判断
+                        var jObject = JObject.Parse(resultContent);
+                        if (jObject["status"]?.ToString()?.ToUpper()?.Equals("SUCCESS") == true) {
+                            isSuccess = true;
+                        }
+                    }
                     //判断是否成功条件
                 }
             }

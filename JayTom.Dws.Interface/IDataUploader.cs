@@ -25,7 +25,7 @@ namespace JayTom.Dws.Interface {
         /// <param name="token"></param>
         /// <returns></returns>
         Task<UploadResponse> UploadData([NotNull] string barcode, [NotNull] double weight, double length = default, double width = default, double height = default,
-            double volume = default, Bitmap? image = default, Bitmap? panoramaImage = default, CancellationToken token = default);
+            double volume = default, Image? image = default, Image? panoramaImage = default, CancellationToken token = default);
 
         /// <summary>
         /// 设置接口参数

@@ -1,4 +1,5 @@
-﻿using JayTom.Dws.Interface;
+﻿using System.Drawing;
+using JayTom.Dws.Interface;
 using Microsoft.Extensions.Hosting;
 using JayTom.Dws.Interface.WeciMexicoDv;
 using Microsoft.Extensions.DependencyInjection;
@@ -46,8 +47,9 @@ internal class Program {
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
+            var fromFile = Image.FromFile($"{AppDomain.CurrentDomain.BaseDirectory}12.jpg");
             var uploadResponse = await _dataUploader.UploadData("00452712", 36.8, 2.2, 4.5,
-                6.2, token: stoppingToken);
+                6.2, image: fromFile, token: stoppingToken);
 
             Console.WriteLine(uploadResponse);
         }
