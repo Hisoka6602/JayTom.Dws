@@ -8,9 +8,10 @@
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:mvvm="http://prismlibrary.com/"
+    Name="MainWin"
     Title="江腾Dws"
-    Width="900"
-    Height="700"
+    Width="1200"
+    Height="900"
     MinWidth="800"
     MinHeight="600"
     mvvm:ViewModelLocator.AutoWireViewModel="True"
@@ -21,9 +22,9 @@
     WindowStyle="None"
     mc:Ignorable="d">
     <b:Interaction.Triggers>
-        <b:EventTrigger EventName="Loaded" SourceName="MainWin">
+        <!--<b:EventTrigger EventName="Loaded" SourceName="MainWin">
             <b:InvokeCommandAction Command="{Binding LoadedCommand, IsAsync=False}" />
-        </b:EventTrigger>
+        </b:EventTrigger>-->
         <b:EventTrigger EventName="SizeChanged" SourceName="MainWin">
             <b:InvokeCommandAction Command="{Binding SizeChangedCommand, IsAsync=False}" CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}" />
         </b:EventTrigger>
@@ -47,7 +48,7 @@
         Identifier="MainDialog"
         Style="{StaticResource MaterialDesignEmbeddedDialogHost}">
         <materialDesign:Card
-            Margin="2"
+            Margin="0"
             materialDesign:ElevationAssist.Elevation="Dp2"
             materialDesign:ShadowAssist.Darken="True"
             materialDesign:ShadowAssist.ShadowEdges="Bottom,Right,Top,Left"
@@ -96,8 +97,7 @@
                             Command="{Binding MaxWinCommand}"
                             CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}"
                             Style="{StaticResource SystemButtonStyle}"
-                            ToolTip="{Binding MaxBtnToolTip, UpdateSourceTrigger=PropertyChanged}"
-                            Visibility="Collapsed">
+                            ToolTip="{Binding MaxBtnToolTip, UpdateSourceTrigger=PropertyChanged}">
                             <TextBlock
                                 x:Name="MaxBlock"
                                 Foreground="White"
@@ -118,15 +118,14 @@
                     </StackPanel>
                 </Border>
                 <!--  页面内容  -->
-                <TextBlock
-                    Grid.Row="1"
-                    VerticalAlignment="Center"
-                    FontSize="90"
-                    FontWeight="Bold"
-                    Foreground="White"
-                    TextAlignment="Center">
-                    View -1
-                </TextBlock>
+                <Grid Grid.Row="1">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="90" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <!--  显示实时长宽高  -->
+                    <!--  显示列表内容  -->
+                </Grid>
             </Grid>
         </materialDesign:Card>
     </materialDesign:DialogHost>

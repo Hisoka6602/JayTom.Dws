@@ -18,6 +18,7 @@ using JayTom.Dws.Device.Camera;
 using System.Windows.Navigation;
 using System.Collections.Generic;
 using System.Windows.Media.Imaging;
+using JayTom.Dws.Device.Camera._3DCamera;
 using JayTom.Dws.Device.Camera.SmartCamera;
 
 namespace WpfApp1 {
@@ -27,6 +28,7 @@ namespace WpfApp1 {
     /// </summary>
     public partial class MainWindow : Window {
         private HuaraytechSmartCamera? _smartCamera;
+        private Percipio3DCamera? percipio3DCamera;
 
         public MainWindow() {
             InitializeComponent();
@@ -45,7 +47,7 @@ namespace WpfApp1 {
         }
 
         private void OnLoaded(object sender, RoutedEventArgs e) {
-            _smartCamera ??= new HuaraytechSmartCamera();
+            /*_smartCamera ??= new HuaraytechSmartCamera();
             _smartCamera.Excepted += delegate (object? o, Exception exception) {
                 Application.Current.Dispatcher.Invoke(() => {
                     CodeInfoListView.Items.Add(exception?.Message);
@@ -71,25 +73,33 @@ namespace WpfApp1 {
                         System.Windows.Int32Rect.Empty,
                         BitmapSizeOptions.FromWidthAndHeight(args.Image.Width, args.Image.Height)
                     );
-                }*/
+                }#1#
+            };*/
+            percipio3DCamera = new Percipio3DCamera();
+            percipio3DCamera.Connected += delegate (object? o, IDevice device) {
+                Application.Current.Dispatcher.Invoke(() => { CodeInfoListView.Items.Add("设备已连接"); });
             };
-            /*var logisticsWrapper = new LogisticsWrapper();
-            var initialization = logisticsWrapper.Initialization(".\\Cfg\\LogisticsBase.cfg");
-            Console.WriteLine(initialization);*/
+            percipio3DCamera.Excepted += delegate (object? o, Exception exception) {
+                Application.Current.Dispatcher.Invoke(() => { CodeInfoListView.Items.Add(exception.Message); });
+            };
+            percipio3DCamera.DeviceWarning += delegate (object? o, string s) {
+                Application.Current.Dispatcher.Invoke(() => { CodeInfoListView.Items.Add($"警告:{s}"); });
+            };
         }
 
         private async void InitializationButton_OnClick(object sender, RoutedEventArgs e) {
-            var (_, value) = await _smartCamera?.Initialization()!;
+            //var (_, value) = await _smartCamera?.Initialization()!;
+            var (_, value) = await percipio3DCamera?.Initialization()!;
             Application.Current.Dispatcher.Invoke(() => { CodeInfoListView.Items.Add(value); });
         }
 
         private async void ConnectButton_OnClick(object sender, RoutedEventArgs e) {
-            var (key, value) = await _smartCamera?.Connect("aa")!;
+            var (key, value) = await percipio3DCamera?.Connect("aa")!;
             Application.Current.Dispatcher.Invoke(() => { CodeInfoListView.Items.Add(value); });
         }
 
         private void DisposeButton_OnClick(object sender, RoutedEventArgs e) {
-            _smartCamera?.Dispose();
+            percipio3DCamera?.Dispose();
         }
     }
 }

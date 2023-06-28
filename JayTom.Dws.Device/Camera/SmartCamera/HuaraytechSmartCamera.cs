@@ -197,16 +197,16 @@ namespace JayTom.Dws.Device.Camera.SmartCamera {
 
         public event EventHandler<Bitmap>? RealtimeImageEvent;
 
-        // 导入 SetDllDirectory 函数
+        /*// 导入 SetDllDirectory 函数
         [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         public static extern bool SetDllDirectory(string lpPathName);
 
         // 导入 LoadLibraryEx 函数
         [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-        public static extern IntPtr LoadLibraryEx(string lpFileName, IntPtr hFile, uint dwFlags);
+        public static extern IntPtr LoadLibraryEx(string lpFileName, IntPtr hFile, uint dwFlags);*/
 
         public HuaraytechSmartCamera() {
-            AppDomain.CurrentDomain.AssemblyResolve += (sender, args) => {
+            /*AppDomain.CurrentDomain.AssemblyResolve += (sender, args) => {
                 // 获取要加载的程序集名称
                 var assemblyName = new AssemblyName(args.Name).Name;
                 Debug.WriteLine(assemblyName);
@@ -221,8 +221,8 @@ namespace JayTom.Dws.Device.Camera.SmartCamera {
 
                 // 继续使用默认的加载逻辑
                 return null;
-            };
-            var dllDirectory = SetDllDirectory($"{Directory.GetCurrentDirectory()}\\HuaraytechLib");
+            };*/
+            /*var dllDirectory = SetDllDirectory($"{Directory.GetCurrentDirectory()}\\HuaraytechLib");
             if (dllDirectory) {
                 var files = Directory.GetFiles($"{Directory.GetCurrentDirectory()}\\HuaraytechLib");
                 foreach (var file in files) {
@@ -240,19 +240,7 @@ namespace JayTom.Dws.Device.Camera.SmartCamera {
                     IntPtr dllHandle = LoadLibraryEx(first, IntPtr.Zero, 0);
                     Console.WriteLine(dllHandle);
                 }
-            }
-
-            /*string dependenciesPath = Path.Combine(AppContext.BaseDirectory, "HuaraytechLib");
-            AppDomain.CurrentDomain.AssemblyResolve += (sender, eventArgs) => {
-                string assemblyName = new AssemblyName(eventArgs.Name).Name + ".dll";
-                string assemblyPath = Path.Combine(dependenciesPath, assemblyName);
-
-                if (File.Exists(assemblyPath)) {
-                    return Assembly.LoadFrom(assemblyPath);
-                }
-
-                return null;
-            };*/
+            }*/
         }
 
         public KeyValuePair<bool, string> SetFilterCondition<T>(T condition) {

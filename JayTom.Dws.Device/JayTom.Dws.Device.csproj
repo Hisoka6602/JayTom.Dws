@@ -8,6 +8,7 @@
     <UseNETFrameworkCompat>true</UseNETFrameworkCompat>
     <SupportedNETFrameworkVersions>4.0</SupportedNETFrameworkVersions>
     <Platforms>x64</Platforms>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
@@ -17,13 +18,14 @@
     <None Remove="CLProtocol_MD_VC120_v3_0.dll" />
     <None Remove="CLSerCOM.dll" />
     <None Remove="DataCode64.dll" />
+    <None Remove="DeviceLib\PercipioLib\PercipioAppCentermt.dll" />
     <None Remove="encAlgVerify64.dll" />
     <None Remove="GCBase_MD_VC120_v3_0.dll" />
     <None Remove="GenApi_MD_VC120_v3_0.dll" />
     <None Remove="GenCP_MD_VC120_v3_0.dll" />
     <None Remove="GrayInstrument64.dll" />
-    <None Remove="HuaraytechLib\BarCode64.dll" />
-    <None Remove="HuaraytechLib\blob64.dll" />
+    <None Remove="DeviceLib\HuaraytechLib\BarCode64.dll" />
+    <None Remove="DeviceLib\HuaraytechLib\blob64.dll" />
     <None Remove="ImageConvert.dll" />
     <None Remove="libglog64.dll" />
     <None Remove="LibWndFindermd.dll" />
@@ -55,120 +57,121 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ApplicationDefinition Include="HuaraytechLib\BarCode64.dll">
+    <ApplicationDefinition Include="DeviceLib\HuaraytechLib\BarCode64.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </ApplicationDefinition>
-    <ApplicationDefinition Include="HuaraytechLib\blob64.dll">
+    <ApplicationDefinition Include="DeviceLib\HuaraytechLib\blob64.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </ApplicationDefinition>
-    <Content Include="HuaraytechLib\blob64.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    <Content Include="DeviceLib\HuaraytechLib\blob64.dll">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>
-    <Content Include="HuaraytechLib\CLAllSerial_MD_VC120_v3_0.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    <Content Include="DeviceLib\HuaraytechLib\CLAllSerial_MD_VC120_v3_0.dll">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>
-    <Content Include="HuaraytechLib\CLProtocol_MD_VC120_v3_0.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    <Content Include="DeviceLib\HuaraytechLib\CLProtocol_MD_VC120_v3_0.dll">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>
-    <Content Include="HuaraytechLib\CLSerCOM.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    <Content Include="DeviceLib\HuaraytechLib\CLSerCOM.dll">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>
-    <Content Include="HuaraytechLib\DataCode64.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    <Content Include="DeviceLib\HuaraytechLib\DataCode64.dll">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>
-    <Content Include="HuaraytechLib\encAlgVerify64.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    <Content Include="DeviceLib\HuaraytechLib\encAlgVerify64.dll">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>
-    <Content Include="HuaraytechLib\GCBase_MD_VC120_v3_0.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    <Content Include="DeviceLib\HuaraytechLib\GCBase_MD_VC120_v3_0.dll">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>
-    <Content Include="HuaraytechLib\GenApi_MD_VC120_v3_0.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    <Content Include="DeviceLib\HuaraytechLib\GenApi_MD_VC120_v3_0.dll">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>
-    <Content Include="HuaraytechLib\GenCP_MD_VC120_v3_0.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    <Content Include="DeviceLib\HuaraytechLib\GenCP_MD_VC120_v3_0.dll">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>
-    <Content Include="HuaraytechLib\GrayInstrument64.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    <Content Include="DeviceLib\HuaraytechLib\GrayInstrument64.dll">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>
-    <Content Include="HuaraytechLib\ImageConvert.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    <Content Include="DeviceLib\HuaraytechLib\ImageConvert.dll">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>
-    <Content Include="HuaraytechLib\libglog64.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    <Content Include="DeviceLib\HuaraytechLib\libglog64.dll">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>
-    <Content Include="HuaraytechLib\LibWndFindermd.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    <Content Include="DeviceLib\HuaraytechLib\LibWndFindermd.dll">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>
-    <Content Include="HuaraytechLib\log4cpp_MD_VC120_v3_0.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    <Content Include="DeviceLib\HuaraytechLib\log4cpp_MD_VC120_v3_0.dll">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>
-    <Content Include="HuaraytechLib\LogisticsBase64.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    <Content Include="DeviceLib\HuaraytechLib\LogisticsBase64.dll">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>
-    <Content Include="HuaraytechLib\Log_MD_VC120_v3_0.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    <Content Include="DeviceLib\HuaraytechLib\Log_MD_VC120_v3_0.dll">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>
-    <Content Include="HuaraytechLib\MathParser_MD_VC120_v3_0.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    <Content Include="DeviceLib\HuaraytechLib\MathParser_MD_VC120_v3_0.dll">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>
-    <Content Include="HuaraytechLib\Matting64.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    <Content Include="DeviceLib\HuaraytechLib\Matting64.dll">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>
-    <Content Include="HuaraytechLib\msvcp140.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    <Content Include="DeviceLib\HuaraytechLib\msvcp140.dll">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>
-    <Content Include="HuaraytechLib\MVlog4cppmd.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    <Content Include="DeviceLib\HuaraytechLib\MVlog4cppmd.dll">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>
-    <Content Include="HuaraytechLib\MvpLoggermd.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    <Content Include="DeviceLib\HuaraytechLib\MvpLoggermd.dll">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>
-    <Content Include="HuaraytechLib\MVSDKmd.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    <Content Include="DeviceLib\HuaraytechLib\MVSDKmd.dll">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>
-    <Content Include="HuaraytechLib\MvsFilters64.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    <Content Include="DeviceLib\HuaraytechLib\MvsFilters64.dll">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>
-    <Content Include="HuaraytechLib\MvsSupport64.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    <Content Include="DeviceLib\HuaraytechLib\MvsSupport64.dll">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>
-    <Content Include="HuaraytechLib\NetUtilitymd.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    <Content Include="DeviceLib\HuaraytechLib\NetUtilitymd.dll">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>
-    <Content Include="HuaraytechLib\NodeMapData_MD_VC120_v3_0.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    <Content Include="DeviceLib\HuaraytechLib\NodeMapData_MD_VC120_v3_0.dll">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>
-    <Content Include="HuaraytechLib\opencv_world300.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    <Content Include="DeviceLib\HuaraytechLib\opencv_world300.dll">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>
-    <Content Include="HuaraytechLib\OpenNI2.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    <Content Include="DeviceLib\HuaraytechLib\OpenNI2.dll">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>
-    <Content Include="HuaraytechLib\SharpnessMeasure64.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    <Content Include="DeviceLib\HuaraytechLib\SharpnessMeasure64.dll">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>
-    <Content Include="HuaraytechLib\SocketCommunication.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    <Content Include="DeviceLib\HuaraytechLib\SocketCommunication.dll">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>
-    <Content Include="HuaraytechLib\turbojpeg.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    <Content Include="DeviceLib\HuaraytechLib\turbojpeg.dll">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>
-    <Content Include="HuaraytechLib\ucrtbase.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    <Content Include="DeviceLib\HuaraytechLib\ucrtbase.dll">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>
-    <Content Include="HuaraytechLib\vcruntime140.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    <Content Include="DeviceLib\HuaraytechLib\vcruntime140.dll">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>
-    <Content Include="HuaraytechLib\Volume3DSdkmd.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    <Content Include="DeviceLib\HuaraytechLib\Volume3DSdkmd.dll">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>
-    <Content Include="HuaraytechLib\VRdll64.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    <Content Include="DeviceLib\HuaraytechLib\VRdll64.dll">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>
-    <Content Include="HuaraytechLib\XmlParser_MD_VC120_v3_0.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    <Content Include="DeviceLib\HuaraytechLib\XmlParser_MD_VC120_v3_0.dll">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>
+    <Content Include="DeviceLib\PercipioLib\PercipioAppCentermt.dll" />
   </ItemGroup>
 
   <ItemGroup>
@@ -178,7 +181,6 @@
 
   <ItemGroup>
     <Folder Include="Camera\IndustrialCamera\" />
-    <Folder Include="Camera\3DCamera\" />
   </ItemGroup>
 
   <ItemGroup>
@@ -192,8 +194,8 @@
     </Reference>
   </ItemGroup>
 
-  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+  <!--<Target Name="PostBuild" AfterTargets="PostBuildEvent">
     <Exec Command="xcopy /Y &quot;$(ProjectDir)\HuaraytechLib\*.*&quot; &quot;$(TargetDir)&quot;" />
-  </Target>
+  </Target>-->
 
 </Project>

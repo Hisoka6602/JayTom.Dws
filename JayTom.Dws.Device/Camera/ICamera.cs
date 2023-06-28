@@ -93,7 +93,7 @@ namespace JayTom.Dws.Device.Camera {
         KeyValuePair<bool, string> SetConfiguration<T>(T configData);
     }
 
-    public class BarcodeHitEventArgs {
+    public class BarcodeHitEventArgs : EventArgs {
 
         /// <summary>
         /// 图片
