@@ -24,17 +24,17 @@ namespace JayTom.Dws.Interface.WeciMexicoDv {
         /// <summary>
         /// 机器码
         /// </summary>
-        public string MachineNo { get; set; } = "no123";
+        public string MachineNo { get; private set; } = "no123";
 
         /// <summary>
         /// Url
         /// </summary>
-        public string Url { get; set; } = "https://dwsinvenova.azurewebsites.net/api/v1/SendPackageInfo";
+        public string Url { get; private set; } = "https://dwsinvenova.azurewebsites.net/api/v1/SendPackageInfo";
 
         /// <summary>
         /// 超时
         /// </summary>
-        public int TimeOut { get; set; } = 10000;
+        public int TimeOut { get; private set; } = 10000;
 
         public WeciMexicoDvApi(IHttpClientFactory httpClientFactory) {
             _httpClientFactory = httpClientFactory;
@@ -87,6 +87,22 @@ namespace JayTom.Dws.Interface.WeciMexicoDv {
                     //判断是否成功条件
                 }
             }
+            catch (HttpRequestException e) {
+                isSuccess = false;
+                exceptionMsg = e.Message;
+            }
+            catch (AggregateException) {
+                isSuccess = false;
+                exceptionMsg = "接口访问异常!";
+            }
+            catch (JsonException) {
+                isSuccess = false;
+                exceptionMsg = "报文解析异常!";
+            }
+            catch (TaskCanceledException) {
+                isSuccess = false;
+                exceptionMsg = "接口访问返回超时!";
+            }
             catch (Exception e) {
                 isSuccess = false;
                 exceptionMsg = e.Message;
@@ -109,7 +125,33 @@ namespace JayTom.Dws.Interface.WeciMexicoDv {
         }
 
         public Task<KeyValuePair<bool, string>> SetParameters<T>(T parameters) {
-            throw new NotImplementedException();
+            if (parameters is WeciMexicoDvApiParam param) {
+                this.Url = param.Url;
+                this.MachineNo = param.MachineNo;
+                this.TimeOut = param.TimeOut;
+                return Task.FromResult(new KeyValuePair<bool, string>(true, "设置成功!"));
+            }
+            else {
+                return Task.FromResult(new KeyValuePair<bool, string>(true, "参数类型不匹配"));
+            }
         }
+    }
+
+    public class WeciMexicoDvApiParam {
+
+        /// <summary>
+        /// 机器码
+        /// </summary>
+        public string MachineNo { get; set; } = "no123";
+
+        /// <summary>
+        /// Url
+        /// </summary>
+        public string Url { get; set; } = "https://dwsinvenova.azurewebsites.net/api/v1/SendPackageInfo";
+
+        /// <summary>
+        /// 超时
+        /// </summary>
+        public int TimeOut { get; set; } = 10000;
     }
 }

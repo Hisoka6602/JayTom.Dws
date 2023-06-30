@@ -61,16 +61,16 @@ namespace JayTom.Dws.Data.LocalData {
         public DateTime ScanTime { get; set; }
 
         /// <summary>
-        /// 上传时间
-        /// </summary>
-        [Column("RequestTime")]
-        public DateTime RequestTime { get; set; }
-
-        /// <summary>
         /// 上传状态(1成功、2失败、0未上传)
         /// </summary>
         [Column("RequestStatus")]
         public int RequestStatus { get; set; }
+
+        /// <summary>
+        /// 上传时间
+        /// </summary>
+        [Column("RequestTime")]
+        public DateTime RequestTime { get; set; }
 
         /// <summary>
         /// 上传内容
@@ -79,16 +79,16 @@ namespace JayTom.Dws.Data.LocalData {
         public string RequestContent { get; set; } = string.Empty;
 
         /// <summary>
-        /// 接口响应内容
-        /// </summary>
-        [Column("ResponseContent")]
-        public string ResponseContent { get; set; } = string.Empty;
-
-        /// <summary>
         /// 接口响应时间
         /// </summary>
         [Column("ResponseTime")]
         public DateTime ResponseTime { get; set; }
+
+        /// <summary>
+        /// 接口响应内容
+        /// </summary>
+        [Column("ResponseContent")]
+        public string ResponseContent { get; set; } = string.Empty;
 
         /// <summary>
         /// 条码图片保存路径

@@ -42,11 +42,10 @@ namespace JayTom.Dws.Plugin.Speech {
 
         public async void PlaySuccess() {
             try {
-                await Task.Yield();
                 var assembly = Assembly.GetExecutingAssembly();
 
                 // 获取嵌入资源的流
-                await using var stream = assembly.GetManifestResourceStream("ShengJiu.Weigh.Plugin.Sound.success.wav");
+                await using var stream = assembly.GetManifestResourceStream("JayTom.Dws.Plugin.Sound.success.wav");
                 // 如果流为空，则嵌入资源不存在或无法读取该资源
                 if (stream == null) {
                     return;
@@ -62,11 +61,10 @@ namespace JayTom.Dws.Plugin.Speech {
 
         public async void PlayFail() {
             try {
-                await Task.Yield();
                 var assembly = Assembly.GetExecutingAssembly();
 
                 // 获取嵌入资源的流
-                await using var stream = assembly.GetManifestResourceStream("ShengJiu.Weigh.Plugin.Sound.fail.wav");
+                await using var stream = assembly.GetManifestResourceStream("JayTom.Dws.Plugin.Sound.fail.wav");
                 // 如果流为空，则嵌入资源不存在或无法读取该资源
                 if (stream == null) {
                     return;

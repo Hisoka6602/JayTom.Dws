@@ -8,12 +8,12 @@ namespace JayTom.Dws.Device.Camera._3DCamera.Percipio {
 
     public class PercipioAppInterfacesBase {
 
-        public delegate void TYAppDataCallBack(IntPtr head, IntPtr data, IntPtr userData);
+        public delegate void TYAppData_CallBack(IntPtr head, IntPtr data, IntPtr user_data);
 
-        public static TYAppDataCallBack? AppDataFunc;
+        public static TYAppData_CallBack AppDataFunc;
 
-        public delegate void TYAppEventCallBack(IntPtr head, IntPtr data, IntPtr userData);
+        public delegate void TYAppEvent_CallBack(IntPtr head, IntPtr data, IntPtr user_data);
 
-        public static TYAppEventCallBack? AppEventFunc;
+        public static TYAppEvent_CallBack AppEventFunc;
     }
 }

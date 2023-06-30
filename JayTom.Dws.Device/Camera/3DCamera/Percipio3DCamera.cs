@@ -3,9 +3,12 @@ using System.Linq;
 using System.Text;
 using System.Drawing;
 using System.Xml.Linq;
+using Newtonsoft.Json;
 using System.Reflection;
+using System.Runtime.Loader;
 using System.Threading.Tasks;
 using System.Reflection.Emit;
+using Microsoft.CodeAnalysis;
 using System.Collections.Generic;
 using System.Reflection.Metadata;
 using System.Runtime.InteropServices;
@@ -24,9 +27,9 @@ namespace JayTom.Dws.Device.Camera._3DCamera {
 
         public delegate int TYAppDeinitDelegate();
 
-        public delegate int TYAppSetDataCallbackDelegate(PercipioAppInterfacesBase.TYAppDataCallBack callback, IntPtr userData);
+        public delegate int TYAppSetDataCallbackDelegate(PercipioAppInterfacesBase.TYAppData_CallBack callback, IntPtr userData);
 
-        public delegate int TYAppSetEventCallbackDelegate(PercipioAppInterfacesBase.TYAppEventCallBack callback, IntPtr userData);
+        public delegate int TYAppSetEventCallbackDelegate(PercipioAppInterfacesBase.TYAppEvent_CallBack callback, IntPtr userData);
 
         public delegate int TYAppStartDelegate();
 
@@ -605,6 +608,19 @@ namespace JayTom.Dws.Device.Camera._3DCamera {
             //assemblyBuilder.Save(dynamicBaseName + ".dll");
             // finally return the dynamic type!
             return retval;
+        }
+
+        private Type? ReadDynamicType(Type originalType, string dynamicBaseName) {
+            string assemblyPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, dynamicBaseName + ".dll");
+            Assembly assembly = Assembly.LoadFrom(assemblyPath);
+
+            Type? dynamicType = assembly.GetType(dynamicBaseName + "Type");
+            /*if (dynamicType != null) {
+                // 使用动态类型进行操作
+                // ...
+            }*/
+
+            return dynamicType;
         }
 
         #endregion 本身源码方法(暂不整理)
