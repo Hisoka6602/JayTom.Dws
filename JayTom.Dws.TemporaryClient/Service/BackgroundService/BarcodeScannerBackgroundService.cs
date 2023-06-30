@@ -79,7 +79,7 @@ namespace JayTom.Dws.TemporaryClient.Service.BackgroundService {
                     var scanTime = DateTime.Now;
                     var barcode = strings[0];
                     var weight = Convert.ToSingle(strings[1]);
-                    var imagePath = $"{dwsImagePath}\\{barcode}\\.jpg";
+                    var imagePath = $"{dwsImagePath}\\{DateTime.Now: yyyy-MM-dd}\\{DateTime.Now: HH}\\{barcode}.jpg";
                     Image? image = null;
                     if (File.Exists(imagePath)) {
                         image = System.Drawing.Image.FromFile(imagePath);
