@@ -28,7 +28,7 @@ namespace WpfApp1 {
     /// </summary>
     public partial class MainWindow : Window {
         private HuaraytechSmartCamera? _smartCamera;
-        private Percipio3DCamera? percipio3DCamera;
+        private Percipio3DCamera2? percipio3DCamera;
 
         public MainWindow() {
             InitializeComponent();
@@ -75,7 +75,7 @@ namespace WpfApp1 {
                     );
                 }#1#
             };*/
-            percipio3DCamera = new Percipio3DCamera();
+            percipio3DCamera = new Percipio3DCamera2();
             percipio3DCamera.Connected += delegate (object? o, IDevice device) {
                 Application.Current.Dispatcher.Invoke(() => { CodeInfoListView.Items.Add("设备已连接"); });
             };

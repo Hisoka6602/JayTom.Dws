@@ -8,4 +8,16 @@
     <Platforms>AnyCPU;x86;x64</Platforms>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Folder Include="Views\" />
+    <Folder Include="ViewModels\" />
+    <Folder Include="Styles\" />
+    <Folder Include="Sound\" />
+    <Folder Include="Service\" />
+    <Folder Include="Models\" />
+    <Folder Include="Icons\" />
+    <Folder Include="Converters\" />
+    <Folder Include="PluginInterface\" />
+  </ItemGroup>
+
 </Project>
