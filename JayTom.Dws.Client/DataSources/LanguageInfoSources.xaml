@@ -1,0 +1,116 @@
+﻿<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:models="clr-namespace:JayTom.Dws.Client.Models">
+    <x:Array x:Key="LanguageInfoArray" Type="{x:Type models:LanguageInfoModel}">
+        <models:LanguageInfoModel DisplayName="中文">
+            <models:LanguageInfoModel.NationalFlag>
+                <BitmapImage
+                    DecodePixelHeight="25"
+                    DecodePixelWidth="25"
+                    UriSource="pack://application:,,,/Image/NationalFlag/Chinese national flag.png" />
+            </models:LanguageInfoModel.NationalFlag>
+        </models:LanguageInfoModel>
+        <models:LanguageInfoModel DisplayName="English">
+            <models:LanguageInfoModel.NationalFlag>
+                <BitmapImage
+                    DecodePixelHeight="25"
+                    DecodePixelWidth="25"
+                    UriSource="pack://application:,,,/Image/NationalFlag/English national flag.png" />
+            </models:LanguageInfoModel.NationalFlag>
+        </models:LanguageInfoModel>
+        <models:LanguageInfoModel DisplayName="日本語">
+            <models:LanguageInfoModel.NationalFlag>
+                <BitmapImage
+                    DecodePixelHeight="25"
+                    DecodePixelWidth="25"
+                    UriSource="pack://application:,,,/Image/NationalFlag/Japanese national flag.png" />
+            </models:LanguageInfoModel.NationalFlag>
+        </models:LanguageInfoModel>
+        <models:LanguageInfoModel DisplayName="ไทย">
+            <models:LanguageInfoModel.NationalFlag>
+                <BitmapImage
+                    DecodePixelHeight="25"
+                    DecodePixelWidth="25"
+                    UriSource="pack://application:,,,/Image/NationalFlag/Thai nationa flag.png" />
+            </models:LanguageInfoModel.NationalFlag>
+        </models:LanguageInfoModel>
+        <models:LanguageInfoModel DisplayName="Tiếng Việt">
+            <models:LanguageInfoModel.NationalFlag>
+                <BitmapImage
+                    DecodePixelHeight="25"
+                    DecodePixelWidth="25"
+                    UriSource="pack://application:,,,/Image/NationalFlag/Vietnamese national flag.png" />
+            </models:LanguageInfoModel.NationalFlag>
+        </models:LanguageInfoModel>
+        <models:LanguageInfoModel DisplayName="Español">
+            <models:LanguageInfoModel.NationalFlag>
+                <BitmapImage
+                    DecodePixelHeight="25"
+                    DecodePixelWidth="25"
+                    UriSource="pack://application:,,,/Image/NationalFlag/Spanish national flag.png" />
+            </models:LanguageInfoModel.NationalFlag>
+        </models:LanguageInfoModel>
+        <models:LanguageInfoModel DisplayName="Deutsch">
+            <models:LanguageInfoModel.NationalFlag>
+                <BitmapImage
+                    DecodePixelHeight="25"
+                    DecodePixelWidth="25"
+                    UriSource="pack://application:,,,/Image/NationalFlag/German national flag.png" />
+            </models:LanguageInfoModel.NationalFlag>
+        </models:LanguageInfoModel>
+        <models:LanguageInfoModel DisplayName="中文繁體">
+            <models:LanguageInfoModel.NationalFlag>
+                <BitmapImage
+                    DecodePixelHeight="25"
+                    DecodePixelWidth="25"
+                    UriSource="pack://application:,,,/Image/NationalFlag/Chinese national flag.png" />
+            </models:LanguageInfoModel.NationalFlag>
+        </models:LanguageInfoModel>
+        <models:LanguageInfoModel DisplayName="Русский">
+            <models:LanguageInfoModel.NationalFlag>
+                <BitmapImage
+                    DecodePixelHeight="25"
+                    DecodePixelWidth="25"
+                    UriSource="pack://application:,,,/Image/NationalFlag/Russian national flag.png" />
+            </models:LanguageInfoModel.NationalFlag>
+        </models:LanguageInfoModel>
+        <models:LanguageInfoModel DisplayName="Português">
+            <models:LanguageInfoModel.NationalFlag>
+                <BitmapImage
+                    DecodePixelHeight="25"
+                    DecodePixelWidth="25"
+                    UriSource="pack://application:,,,/Image/NationalFlag/Portuguese national flag.png" />
+            </models:LanguageInfoModel.NationalFlag>
+        </models:LanguageInfoModel>
+        <models:LanguageInfoModel DisplayName="العربية">
+            <models:LanguageInfoModel.NationalFlag>
+                <BitmapImage
+                    DecodePixelHeight="25"
+                    DecodePixelWidth="25"
+                    UriSource="pack://application:,,,/Image/NationalFlag/Arabic national flag.png" />
+            </models:LanguageInfoModel.NationalFlag>
+        </models:LanguageInfoModel>
+        <models:LanguageInfoModel DisplayName="한국어">
+            <models:LanguageInfoModel.NationalFlag>
+                <BitmapImage
+                    DecodePixelHeight="25"
+                    DecodePixelWidth="25"
+                    UriSource="pack://application:,,,/Image/NationalFlag/Korean national flag.png" />
+            </models:LanguageInfoModel.NationalFlag>
+        </models:LanguageInfoModel>
+    </x:Array>
+</ResourceDictionary>
+
+<!--<ComboBoxItem Foreground="#202020">中文</ComboBoxItem>
+                            <ComboBoxItem Foreground="#202020">English</ComboBoxItem>
+                            <ComboBoxItem Foreground="#202020">日本語</ComboBoxItem>
+                            <ComboBoxItem Foreground="#202020">ไทย</ComboBoxItem>
+                            <ComboBoxItem Foreground="#202020">Tiếng Việt</ComboBoxItem>
+                            <ComboBoxItem Foreground="#202020">Español</ComboBoxItem>
+                            <ComboBoxItem Foreground="#202020">Deutsch</ComboBoxItem>
+                            <ComboBoxItem Foreground="#202020">中文繁體</ComboBoxItem>
+                            <ComboBoxItem Foreground="#202020">Русский</ComboBoxItem>
+                            <ComboBoxItem Foreground="#202020">Português</ComboBoxItem>
+                            <ComboBoxItem Foreground="#202020">العربية</ComboBoxItem>
+                            <ComboBoxItem Foreground="#202020">한국어</ComboBoxItem>-->

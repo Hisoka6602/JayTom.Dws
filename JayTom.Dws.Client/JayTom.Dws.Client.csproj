@@ -9,15 +9,60 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Views\" />
-    <Folder Include="ViewModels\" />
-    <Folder Include="Styles\" />
+    <None Remove="Fonts\FiraCode-Bold.ttf" />
+    <None Remove="Fonts\iconfont.ttf" />
+    <None Remove="Fonts\更纱黑体 Mono SC Nerd.ttf" />
+    <None Remove="Image\Logo\logobw.png" />
+    <None Remove="Image\NationalFlag\Arabic national flag.png" />
+    <None Remove="Image\NationalFlag\Chinese national flag.png" />
+    <None Remove="Image\NationalFlag\English national flag.png" />
+    <None Remove="Image\NationalFlag\German national flag.png" />
+    <None Remove="Image\NationalFlag\Japanese national flag.png" />
+    <None Remove="Image\NationalFlag\Korean national flag.png" />
+    <None Remove="Image\NationalFlag\Portuguese national flag.png" />
+    <None Remove="Image\NationalFlag\Russian national flag.png" />
+    <None Remove="Image\NationalFlag\Spanish national flag.png" />
+    <None Remove="Image\NationalFlag\Thai nationa flag.png" />
+    <None Remove="Image\NationalFlag\Vietnamese national flag.png" />
+    <None Remove="Image\Logo\icon logo.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Image\Logo\logobw.png" />
+    <Resource Include="Image\NationalFlag\Arabic national flag.png" />
+    <Resource Include="Image\NationalFlag\Chinese national flag.png" />
+    <Resource Include="Image\NationalFlag\English national flag.png" />
+    <Resource Include="Image\NationalFlag\German national flag.png" />
+    <Resource Include="Image\NationalFlag\Japanese national flag.png" />
+    <Resource Include="Image\NationalFlag\Korean national flag.png" />
+    <Resource Include="Image\NationalFlag\Portuguese national flag.png" />
+    <Resource Include="Image\NationalFlag\Russian national flag.png" />
+    <Resource Include="Image\NationalFlag\Spanish national flag.png" />
+    <Resource Include="Image\NationalFlag\Thai nationa flag.png" />
+    <Resource Include="Image\NationalFlag\Vietnamese national flag.png" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Folder Include="Sound\" />
     <Folder Include="Service\" />
-    <Folder Include="Models\" />
     <Folder Include="Icons\" />
     <Folder Include="Converters\" />
     <Folder Include="PluginInterface\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="DryIoc.Microsoft.DependencyInjection.Extension" Version="1.0.0.2" />
+    <PackageReference Include="MaterialDesignThemes" Version="4.9.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="7.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="7.0.0" />
+    <PackageReference Include="Prism.DryIoc" Version="8.1.97" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Fonts\FiraCode-Bold.ttf" />
+    <Resource Include="Fonts\iconfont.ttf" />
+    <Resource Include="Fonts\更纱黑体 Mono SC Nerd.ttf" />
+    <Resource Include="Image\Logo\icon logo.png" />
   </ItemGroup>
 
 </Project>
