@@ -107,11 +107,6 @@ namespace JayTom.Dws.PluginInterface {
         Process,
 
         /// <summary>
-        /// 结果逻辑
-        /// </summary>
-        Result,
-
-        /// <summary>
         /// 初始化插件
         /// </summary>
         Initialize,

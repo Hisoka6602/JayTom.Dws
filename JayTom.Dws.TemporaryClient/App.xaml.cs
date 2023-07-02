@@ -117,7 +117,6 @@ namespace JayTom.Dws.TemporaryClient {
                     services.AddHostedService<BarcodeScannerBackgroundService>(); // 注册后台服务
                 })
                 .Build();
-
             _host.Start();
         }
 

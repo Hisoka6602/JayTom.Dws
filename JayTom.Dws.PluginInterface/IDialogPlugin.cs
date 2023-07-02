@@ -11,12 +11,7 @@ namespace JayTom.Dws.PluginInterface {
     /// <summary>
     /// 弹窗接口
     /// </summary>
-    public interface IDialogPlugin : IPlugin {
-
-        /// <summary>
-        /// 弹窗内容
-        /// </summary>
-        UserControl Content { get; }
+    public interface IDialogPlugin : IViewIPlugin {
 
         /// <summary>
         /// 弹窗前事件

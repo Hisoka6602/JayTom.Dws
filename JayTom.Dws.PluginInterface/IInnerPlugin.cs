@@ -10,12 +10,7 @@ namespace JayTom.Dws.PluginInterface {
     /// <summary>
     /// 内页接口
     /// </summary>
-    public interface IInnerPlugin : IPlugin {
-
-        /// <summary>
-        /// 页面内容
-        /// </summary>
-        UserControl Content { get; }
+    public interface IInnerPlugin : IViewIPlugin {
 
         /// <summary>
         /// 菜单图标

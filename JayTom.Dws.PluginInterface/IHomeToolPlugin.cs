@@ -3,25 +3,14 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows.Controls;
 using System.Collections.Generic;
 
 namespace JayTom.Dws.PluginInterface {
 
     /// <summary>
-    /// 工具接口
+    /// 主页单独工具接口
     /// </summary>
-    public interface IToolPlugin : IViewIPlugin {
-
-        /// <summary>
-        /// 准备处理事件
-        /// </summary>
-        event EventHandler<object> Preparing;
-
-        /// <summary>
-        /// 处理完成事件
-        /// </summary>
-        event EventHandler<object> Completed;
+    public interface IHomeToolPlugin : IViewIPlugin {
 
         /// <summary>
         /// 菜单图标
@@ -41,8 +30,7 @@ namespace JayTom.Dws.PluginInterface {
         /// <summary>
         /// 显示弹窗
         /// </summary>
-        /// <param name="message"></param>
         /// <param name="token"></param>
-        void ShowDialog(object message, CancellationToken token = default);
+        void ShowDialog(CancellationToken token = default);
     }
 }

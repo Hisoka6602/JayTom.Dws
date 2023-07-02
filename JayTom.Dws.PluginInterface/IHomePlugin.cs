@@ -6,12 +6,7 @@ namespace JayTom.Dws.PluginInterface {
     /// <summary>
     /// 主页接口
     /// </summary>
-    public interface IHomePlugin : IPlugin {
-
-        /// <summary>
-        /// 主页内容
-        /// </summary>
-        UserControl Content { get; }
+    public interface IHomePlugin : IViewIPlugin {
 
         /// <summary>
         /// 打开内页后事件
