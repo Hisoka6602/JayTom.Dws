@@ -1,4 +1,5 @@
 ﻿using System;
+using Prism.Mvvm;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -7,7 +8,7 @@ using System.Windows.Media.Imaging;
 
 namespace JayTom.Dws.Client.Models {
 
-    public class LanguageInfoModel {
+    public class LanguageInfoModel : BindableBase {
 
         /// <summary>
         /// 语言

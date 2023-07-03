@@ -12,6 +12,8 @@ using System.Windows.Interop;
 using JayTom.Dws.Client.Views;
 using System.Collections.Generic;
 using JayTom.Dws.Client.ViewModels;
+using JayTom.Dws.Client.Views.Pages;
+using JayTom.Dws.Client.ViewModels.Pages;
 
 namespace JayTom.Dws.Client {
 
@@ -38,6 +40,7 @@ namespace JayTom.Dws.Client {
             base.ConfigureViewModelLocator();
             //绑定页面
             ViewModelLocationProvider.Register<MainWindow, MainWindowViewModel>();
+            ViewModelLocationProvider.Register<SettingsPage, SettingsPageModel>();
         }
     }
 }

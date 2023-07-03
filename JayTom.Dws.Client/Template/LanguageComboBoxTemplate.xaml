@@ -23,6 +23,7 @@
             <TextBlock
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
+                FontWeight="Bold"
                 Foreground="White"
                 Text="{Binding DisplayName}" />
         </StackPanel>
