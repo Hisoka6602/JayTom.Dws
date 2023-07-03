@@ -14,7 +14,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 
 namespace JayTom.Dws.Client.ViewModels.Pages {
-
     public class SettingsPageModel : BindableBase {
         private readonly IRegionManager _regionManager;
 
@@ -85,6 +84,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                         item.IsSelected = false;
                     }
                     obj.IsSelected = true;
+                    //如果找到前一个按钮则设置，前一个按钮的右下圆角为10，
+                    //如果找到后一个按钮则设置后一个按钮的右上圆角为10，
+                    //把背景色设置成和大背景色一样的颜色
+
                     //_regionManager.Regions["ContentRegion"].RequestNavigate(obj.NavigationPage);
                 }
             });

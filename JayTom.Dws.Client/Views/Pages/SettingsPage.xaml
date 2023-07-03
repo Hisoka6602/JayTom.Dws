@@ -13,14 +13,14 @@
     FontFamily="{StaticResource CustomFontFamily}"
     mc:Ignorable="d">
 
-    <Grid Margin="10">
+    <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="180" />
             <ColumnDefinition Width="1" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
         <!--  菜单列表  -->
-        <Border Grid.Column="0" Padding="5">
+        <Border Grid.Column="0" Background="#2E2E2E">
             <!--
                 HorizontalAlignment="Left"
                 VerticalAlignment="Center"
@@ -55,15 +55,7 @@
                 </ListBox.ItemContainerStyle>
             </ListBox>
         </Border>
-        <!--  分割线  -->
-        <Border
-            Grid.Column="1"
-            Margin="0,40"
-            VerticalAlignment="Stretch"
-            BorderBrush="White"
-            BorderThickness="1"
-            Opacity="0.1" />
         <!--  区域内容  -->
-        <Border Grid.Column="2" Padding="5" />
+        <Border Grid.Column="1" Padding="5" />
     </Grid>
 </Page>

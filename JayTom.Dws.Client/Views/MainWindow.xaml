@@ -248,22 +248,28 @@
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
                         <!--  返回按钮  -->
-                        <Button
-                            Width="42"
-                            Height="42"
-                            Margin="20,0"
+                        <Border
+                            Grid.Row="0"
+                            Width="180"
                             HorizontalAlignment="Left"
-                            VerticalAlignment="Center"
-                            Command="{x:Static materialDesign:Transitioner.MoveFirstCommand}"
-                            Style="{StaticResource MaterialDesignIconButton}"
-                            WindowChrome.IsHitTestVisibleInChrome="True">
-                            <TextBlock
-                                FontFamily="{StaticResource IconFontFamily}"
-                                FontSize="40"
-                                FontWeight="Bold"
-                                Foreground="DarkGray"
-                                Text="&#xe636;" />
-                        </Button>
+                            Background="#2E2E2E">
+                            <Button
+                                Width="42"
+                                Height="42"
+                                Margin="20,0"
+                                HorizontalAlignment="Left"
+                                VerticalAlignment="Center"
+                                Command="{x:Static materialDesign:Transitioner.MoveFirstCommand}"
+                                Style="{StaticResource MaterialDesignIconButton}"
+                                WindowChrome.IsHitTestVisibleInChrome="True">
+                                <TextBlock
+                                    FontFamily="{StaticResource IconFontFamily}"
+                                    FontSize="40"
+                                    FontWeight="Bold"
+                                    Foreground="DarkGray"
+                                    Text="&#xe636;" />
+                            </Button>
+                        </Border>
                         <!--  页面内容  -->
                         <Frame
                             Grid.Row="1"
