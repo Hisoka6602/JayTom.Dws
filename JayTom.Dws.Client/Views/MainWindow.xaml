@@ -51,157 +51,218 @@
             materialDesign:ShadowAssist.ShadowEdges="Bottom,Right,Top,Left"
             Background="#202020"
             UniformCornerRadius="{Binding UniformCornerRadius, UpdateSourceTrigger=PropertyChanged}">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="70" />
-                    <RowDefinition Height="*" />
-                    <RowDefinition Height="70" />
-                </Grid.RowDefinitions>
-                <!--  标题栏、工具条  -->
-                <Border
-                    Grid.Row="0"
-                    Grid.Column="0"
-                    Background="Transparent"
-                    BorderBrush="Transparent"
-                    CornerRadius="5,5,0,0">
-                    <!--  系统按钮  -->
-                    <StackPanel
-                        Margin="10,0"
-                        HorizontalAlignment="Right"
-                        VerticalAlignment="Center"
-                        Orientation="Horizontal">
-                        <!--  软件名  -->
-                        <TextBlock
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            FontSize="18"
-                            FontWeight="Bold"
-                            Foreground="White"
-                            Text="JayTom.Dws" />
-                        <!--  工具  -->
-                        <!--  语言切换  -->
-                        <ComboBox
-                            MinWidth="50"
-                            Margin="15,0"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            materialDesign:ColorZoneAssist.Mode="Dark"
-                            BorderBrush="Transparent"
-                            BorderThickness="0"
-                            FontSize="18"
-                            IsTextSearchEnabled="True"
-                            ItemTemplate="{StaticResource LanguageComboBoxTemplate}"
-                            ItemsSource="{StaticResource LanguageInfoArray}"
-                            MaxDropDownHeight="800"
-                            SelectedIndex="0"
-                            Style="{StaticResource MaterialDesignOutlinedComboBox}"
-                            WindowChrome.IsHitTestVisibleInChrome="True">
-                            <ComboBox.ItemContainerStyle>
-                                <Style BasedOn="{StaticResource MaterialDesignComboBoxItemStyle}" TargetType="ComboBoxItem">
-                                    <Setter Property="Focusable" Value="False" />
-                                    <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-                                </Style>
-                            </ComboBox.ItemContainerStyle>
-                        </ComboBox>
-                        <!--  最小化  -->
-                        <Button
-                            Command="{Binding MinWinCommand}"
-                            CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}"
-                            Style="{StaticResource SystemButtonStyle}"
-                            ToolTip="Minimize">
-                            <TextBlock
-                                Foreground="White"
-                                Style="{StaticResource SystemTextBlockStyle}"
-                                Text="&#xe626;" />
-                        </Button>
-                        <!--  最大化  -->
-                        <Button
-                            x:Name="MaxButton"
-                            Command="{Binding MaxWinCommand}"
-                            CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}"
-                            Style="{StaticResource SystemButtonStyle}"
-                            ToolTip="{Binding MaxBtnToolTip, UpdateSourceTrigger=PropertyChanged}">
-                            <TextBlock
-                                x:Name="MaxBlock"
-                                Foreground="White"
-                                Style="{StaticResource SystemTextBlockStyle}"
-                                Text="{Binding MaxBtnIcon, UpdateSourceTrigger=PropertyChanged}" />
-                        </Button>
-                        <!--  关闭  -->
-                        <Button
-                            Command="{Binding CloseWinCommand}"
-                            CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}"
-                            Style="{StaticResource CustomCloseButtonStyle}"
-                            ToolTip="Close">
-                            <TextBlock
-                                Foreground="White"
-                                Style="{StaticResource SystemTextBlockStyle}"
-                                Text="&#xe601;" />
-                        </Button>
-                    </StackPanel>
-                </Border>
-                <!--  内容  -->
-                <Grid Grid.Row="1">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="*" />
-                        <RowDefinition Height="100" />
-                    </Grid.RowDefinitions>
-                    <!--  主页面 跨2列  -->
-                    <!--  大按钮  -->
-                    <Button
-                        Grid.Row="0"
-                        Width="300"
-                        Height="300"
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Center"
-                        materialDesign:ButtonProgressAssist.IndicatorForeground="White"
-                        materialDesign:ButtonProgressAssist.IsIndeterminate="True"
-                        materialDesign:ButtonProgressAssist.IsIndicatorVisible="True"
-                        materialDesign:ButtonProgressAssist.Value="-1"
-                        Background="Transparent"
-                        BorderBrush="Transparent"
-                        Cursor="Arrow">
-                        <Button.Style>
-                            <Style BasedOn="{StaticResource MaterialDesignFloatingActionButton}" TargetType="Button">
-                                <Setter Property="Visibility" Value="Visible" />
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsLoad}" Value="True">
-                                        <Setter Property="Visibility" Value="Hidden" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Button.Style>
+            <!--  切换-过渡动画  -->
+            <materialDesign:Transitioner
+                Margin="0"
+                Padding="0"
+                AutoApplyTransitionOrigins="True"
+                Focusable="False"
+                SelectedIndex="0">
+                <materialDesign:TransitionerSlide>
+                    <materialDesign:TransitionerSlide.ForwardWipe>
+                        <materialDesign:SlideWipe Direction="Right" Duration="0:0:0.5" />
 
+                    </materialDesign:TransitionerSlide.ForwardWipe>
+                    <materialDesign:TransitionerSlide.BackwardWipe>
+                        <materialDesign:SlideWipe Direction="Left" Duration="0:0:0.5" />
+
+                    </materialDesign:TransitionerSlide.BackwardWipe>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="70" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="70" />
+                        </Grid.RowDefinitions>
+                        <!--  标题栏、工具条  -->
                         <Border
-                            Width="296"
-                            Height="296"
-                            CornerRadius="148"
-                            Opacity="0.8">
-                            <Border.Background>
-                                <ImageBrush>
-                                    <ImageBrush.ImageSource>
-                                        <BitmapImage
-                                            DecodePixelHeight="148"
-                                            DecodePixelWidth="148"
-                                            UriSource="pack://application:,,,/Image/Logo/logobw.png" />
-                                    </ImageBrush.ImageSource>
-                                </ImageBrush>
-                            </Border.Background>
+                            Grid.Row="0"
+                            Grid.Column="0"
+                            Background="Transparent"
+                            BorderBrush="Transparent"
+                            CornerRadius="5,5,0,0">
+                            <!--  系统按钮  -->
+                            <StackPanel
+                                Margin="10,0"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center"
+                                Orientation="Horizontal">
+                                <!--  软件名  -->
+                                <TextBlock
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    FontSize="18"
+                                    FontWeight="Bold"
+                                    Foreground="White"
+                                    Text="JayTom.Dws" />
+                                <!--  工具  -->
+                                <!--  语言切换  -->
+                                <ComboBox
+                                    MinWidth="50"
+                                    Margin="15,0"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    materialDesign:ColorZoneAssist.Mode="Dark"
+                                    BorderBrush="Transparent"
+                                    BorderThickness="0"
+                                    FontSize="18"
+                                    IsTextSearchEnabled="True"
+                                    ItemTemplate="{StaticResource LanguageComboBoxTemplate}"
+                                    ItemsSource="{StaticResource LanguageInfoArray}"
+                                    MaxDropDownHeight="800"
+                                    SelectedIndex="0"
+                                    Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                                    WindowChrome.IsHitTestVisibleInChrome="True">
+                                    <ComboBox.ItemContainerStyle>
+                                        <Style BasedOn="{StaticResource MaterialDesignComboBoxItemStyle}" TargetType="ComboBoxItem">
+                                            <Setter Property="Focusable" Value="False" />
+                                            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                                        </Style>
+                                    </ComboBox.ItemContainerStyle>
+                                </ComboBox>
+                                <!--  最小化  -->
+                                <Button
+                                    Command="{Binding MinWinCommand}"
+                                    CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}"
+                                    Style="{StaticResource SystemButtonStyle}"
+                                    ToolTip="Minimize">
+                                    <TextBlock
+                                        Foreground="White"
+                                        Style="{StaticResource SystemTextBlockStyle}"
+                                        Text="&#xe626;" />
+                                </Button>
+                                <!--  最大化  -->
+                                <Button
+                                    x:Name="MaxButton"
+                                    Command="{Binding MaxWinCommand}"
+                                    CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}"
+                                    Style="{StaticResource SystemButtonStyle}"
+                                    ToolTip="{Binding MaxBtnToolTip, UpdateSourceTrigger=PropertyChanged}">
+                                    <TextBlock
+                                        x:Name="MaxBlock"
+                                        Foreground="White"
+                                        Style="{StaticResource SystemTextBlockStyle}"
+                                        Text="{Binding MaxBtnIcon, UpdateSourceTrigger=PropertyChanged}" />
+                                </Button>
+                                <!--  关闭  -->
+                                <Button
+                                    Command="{Binding CloseWinCommand}"
+                                    CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}"
+                                    Style="{StaticResource CustomCloseButtonStyle}"
+                                    ToolTip="Close">
+                                    <TextBlock
+                                        Foreground="White"
+                                        Style="{StaticResource SystemTextBlockStyle}"
+                                        Text="&#xe601;" />
+                                </Button>
+                            </StackPanel>
                         </Border>
-                    </Button>
-                    <!--  进度说明  -->
-                    <TextBlock
-                        Grid.Row="1"
-                        Margin="0,20"
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Center"
-                        FontSize="40"
-                        FontWeight="Light"
-                        Foreground="White"
-                        Text="Loading..." />
+                        <!--  内容  -->
+                        <Grid Grid.Row="1">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="100" />
+                            </Grid.RowDefinitions>
+                            <!--  主页面 跨2列  -->
+                            <!--  大按钮  -->
+                            <Button
+                                Grid.Row="0"
+                                Width="300"
+                                Height="300"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                materialDesign:ButtonProgressAssist.IndicatorForeground="White"
+                                materialDesign:ButtonProgressAssist.IsIndeterminate="True"
+                                materialDesign:ButtonProgressAssist.IsIndicatorVisible="True"
+                                materialDesign:ButtonProgressAssist.Value="-1"
+                                Background="Transparent"
+                                BorderBrush="Transparent"
+                                Command="{x:Static materialDesign:Transitioner.MoveNextCommand}"
+                                Cursor="Arrow">
+                                <Button.Style>
+                                    <Style BasedOn="{StaticResource MaterialDesignFloatingActionButton}" TargetType="Button">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsLoad}" Value="True">
+                                                <Setter Property="Visibility" Value="Hidden" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
 
-                </Grid>
-            </Grid>
+                                <Border
+                                    Width="296"
+                                    Height="296"
+                                    CornerRadius="148"
+                                    Opacity="0.8">
+                                    <Border.Background>
+                                        <ImageBrush>
+                                            <ImageBrush.ImageSource>
+                                                <BitmapImage
+                                                    DecodePixelHeight="148"
+                                                    DecodePixelWidth="148"
+                                                    UriSource="pack://application:,,,/Image/Logo/logobw.png" />
+                                            </ImageBrush.ImageSource>
+                                        </ImageBrush>
+                                    </Border.Background>
+                                </Border>
+                            </Button>
+                            <!--  进度说明  -->
+                            <TextBlock
+                                Grid.Row="1"
+                                Margin="0,20"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                FontSize="40"
+                                FontWeight="Light"
+                                Foreground="White"
+                                Text="Loading..." />
+                        </Grid>
+                    </Grid>
+                </materialDesign:TransitionerSlide>
+                <!--  内页  -->
+                <materialDesign:TransitionerSlide Margin="0">
+
+                    <!--<materialDesign:TransitionerSlide.OpeningEffects>
+                        <materialDesign:TransitionEffect Kind="SlideInFromTop" Duration="0:0:0.8" />
+                        ~1~<materialDesign:TransitionEffect
+                            Kind="SlideInFromBottom"
+                            OffsetTime="0:0:0.15"
+                            Duration="0:0:0.8" />@1@
+                    </materialDesign:TransitionerSlide.OpeningEffects>-->
+                    <!--<materialDesign:TransitionerSlide.BackwardWipe>
+                        <materialDesign:CircleWipe />
+                    </materialDesign:TransitionerSlide.BackwardWipe>
+                    <materialDesign:TransitionerSlide.ForwardWipe>
+                        <materialDesign:SlideWipe Direction="Right" />
+                    </materialDesign:TransitionerSlide.ForwardWipe>-->
+                    <materialDesign:TransitionerSlide.ForwardWipe>
+                        <materialDesign:SlideWipe Direction="Right" Duration="0:0:0.5" />
+                    </materialDesign:TransitionerSlide.ForwardWipe>
+                    <materialDesign:TransitionerSlide.BackwardWipe>
+                        <materialDesign:SlideWipe Direction="Left" Duration="0:0:0.5" />
+                    </materialDesign:TransitionerSlide.BackwardWipe>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="80" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <!--  返回按钮  -->
+                        <Button
+                            Width="70"
+                            Height="70"
+                            HorizontalAlignment="Left"
+                            Command="{x:Static materialDesign:Transitioner.MoveFirstCommand}"
+                            WindowChrome.IsHitTestVisibleInChrome="True" />
+                        <!--  页面内容  -->
+                        <Frame
+                            Grid.Row="1"
+                            Margin="0"
+                            Padding="0"
+                            Focusable="False"
+                            Source="Pages/SettingPage.xaml" />
+                    </Grid>
+                </materialDesign:TransitionerSlide>
+            </materialDesign:Transitioner>
         </materialDesign:Card>
     </materialDesign:DialogHost>
 </Window>

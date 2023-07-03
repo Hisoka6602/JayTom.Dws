@@ -6,7 +6,9 @@ using System.Linq;
 using Prism.DryIoc;
 using System.Windows;
 using System.Configuration;
+using System.Windows.Media;
 using System.Threading.Tasks;
+using System.Windows.Interop;
 using JayTom.Dws.Client.Views;
 using System.Collections.Generic;
 using JayTom.Dws.Client.ViewModels;
@@ -24,6 +26,12 @@ namespace JayTom.Dws.Client {
 
         protected override Window CreateShell() {
             return Container.Resolve<MainWindow>();
+        }
+
+        protected override void OnStartup(StartupEventArgs e) {
+            base.OnStartup(e);
+            // 启用硬件加速
+            RenderOptions.ProcessRenderMode = RenderMode.Default;
         }
 
         protected override void ConfigureViewModelLocator() {
