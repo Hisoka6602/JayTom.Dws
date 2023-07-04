@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using JayTom.Dws.Client.ViewModels;
 using JayTom.Dws.Client.Views.Pages;
 using JayTom.Dws.Client.ViewModels.Pages;
+using JayTom.Dws.Client.Views.Pages.Preferences;
 
 namespace JayTom.Dws.Client {
 
@@ -23,7 +24,11 @@ namespace JayTom.Dws.Client {
     public partial class App : PrismApplication {
 
         protected override void RegisterTypes(IContainerRegistry containerRegistry) {
-            //throw new NotImplementedException();
+            //跳转注册
+            {
+                containerRegistry.RegisterForNavigation<PluginMarketplacePage>();
+                containerRegistry.RegisterForNavigation<DataManagementPage>();
+            }
         }
 
         protected override Window CreateShell() {

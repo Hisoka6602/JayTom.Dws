@@ -22,12 +22,12 @@
     WindowStyle="None"
     mc:Ignorable="d">
     <b:Interaction.Triggers>
-        <!--<b:EventTrigger EventName="Loaded" SourceName="MainWin">
-            <b:InvokeCommandAction Command="{Binding LoadedCommand, IsAsync=False}" />
-        </b:EventTrigger>-->
-        <b:EventTrigger EventName="SizeChanged" SourceName="MainWin">
-            <b:InvokeCommandAction Command="{Binding SizeChangedCommand, IsAsync=False}" CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}" />
+        <b:EventTrigger EventName="Loaded" SourceName="MainWin">
+            <b:InvokeCommandAction Command="{Binding LoadedCommand, IsAsync=False}" CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}" />
         </b:EventTrigger>
+        <!--<b:EventTrigger EventName="SizeChanged" SourceName="MainWin">
+            <b:InvokeCommandAction Command="{Binding SizeChangedCommand, IsAsync=False}" CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}" />
+        </b:EventTrigger>-->
     </b:Interaction.Triggers>
     <WindowChrome.WindowChrome>
         <WindowChrome
@@ -158,33 +158,70 @@
                             </StackPanel>
                         </Border>
                         <!--  内容  -->
-                        <Grid Grid.Row="1">
+                        <Grid Grid.Row="0" Grid.RowSpan="2">
                             <Grid.RowDefinitions>
+                                <RowDefinition Height="70" />
                                 <RowDefinition Height="*" />
                                 <RowDefinition Height="100" />
                             </Grid.RowDefinitions>
-                            <!--  主页面 跨2列  -->
                             <!--  大按钮  -->
                             <Button
+                                Name="MenuButton"
                                 Grid.Row="0"
+                                Grid.RowSpan="2"
                                 Width="300"
                                 Height="300"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
+                                HorizontalAlignment="Left"
+                                VerticalAlignment="Top"
                                 materialDesign:ButtonProgressAssist.IndicatorForeground="White"
-                                materialDesign:ButtonProgressAssist.IsIndeterminate="True"
                                 materialDesign:ButtonProgressAssist.IsIndicatorVisible="True"
-                                materialDesign:ButtonProgressAssist.Value="-1"
                                 Background="Transparent"
                                 BorderBrush="Transparent"
                                 Command="{x:Static materialDesign:Transitioner.MoveNextCommand}"
-                                Cursor="Arrow">
+                                Cursor="Hand"
+                                WindowChrome.IsHitTestVisibleInChrome="True">
+                                <Button.RenderTransform>
+                                    <TransformGroup>
+                                        <TranslateTransform X="{Binding ButtonTranslateTransform.X, UpdateSourceTrigger=PropertyChanged}" Y="{Binding ButtonTranslateTransform.Y, UpdateSourceTrigger=PropertyChanged}" />
+                                        <ScaleTransform CenterX="0" CenterY="0" ScaleX="1" ScaleY="1" />
+                                    </TransformGroup>
+                                </Button.RenderTransform>
                                 <Button.Style>
+
                                     <Style BasedOn="{StaticResource MaterialDesignFloatingActionButton}" TargetType="Button">
                                         <Setter Property="Visibility" Value="Visible" />
+                                        <Setter Property="Opacity" Value="1" />
+                                        <Setter Property="materialDesign:ButtonProgressAssist.IsIndeterminate" Value="True" />
+                                        <Setter Property="materialDesign:ButtonProgressAssist.Value" Value="-1" />
+                                        <Setter Property="IsHitTestVisible" Value="False" />
                                         <Style.Triggers>
-                                            <DataTrigger Binding="{Binding IsLoad}" Value="True">
-                                                <Setter Property="Visibility" Value="Hidden" />
+                                            <DataTrigger Binding="{Binding IsLoaded}" Value="True">
+                                                <Setter Property="IsHitTestVisible" Value="True" />
+                                                <Setter Property="Opacity" Value="0.8" />
+                                                <Setter Property="materialDesign:ButtonProgressAssist.IsIndeterminate" Value="False" />
+                                                <Setter Property="materialDesign:ButtonProgressAssist.Value" Value="0" />
+                                                <DataTrigger.EnterActions>
+                                                    <BeginStoryboard>
+                                                        <Storyboard>
+                                                            <DoubleAnimation
+                                                                Storyboard.TargetProperty="(Button.RenderTransform).(TransformGroup.Children)[0].(TranslateTransform.X)"
+                                                                To="10"
+                                                                Duration="0:0:0.5" />
+                                                            <DoubleAnimation
+                                                                Storyboard.TargetProperty="(Button.RenderTransform).(TransformGroup.Children)[0].(TranslateTransform.Y)"
+                                                                To="10"
+                                                                Duration="0:0:0.5" />
+                                                            <DoubleAnimation
+                                                                Storyboard.TargetProperty="(Button.RenderTransform).(TransformGroup.Children)[1].(ScaleTransform.ScaleX)"
+                                                                To="0.2"
+                                                                Duration="0:0:0.5" />
+                                                            <DoubleAnimation
+                                                                Storyboard.TargetProperty="(Button.RenderTransform).(TransformGroup.Children)[1].(ScaleTransform.ScaleY)"
+                                                                To="0.2"
+                                                                Duration="0:0:0.5" />
+                                                        </Storyboard>
+                                                    </BeginStoryboard>
+                                                </DataTrigger.EnterActions>
                                             </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
@@ -207,16 +244,58 @@
                                     </Border.Background>
                                 </Border>
                             </Button>
+                            <!--  背景图标  -->
+                            <Border
+                                Grid.Row="0"
+                                Grid.RowSpan="3"
+                                Width="300"
+                                Height="300"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                CornerRadius="150">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsLoaded}" Value="True">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <Border.Background>
+                                    <ImageBrush Opacity="0.1">
+                                        <ImageBrush.ImageSource>
+                                            <BitmapImage
+                                                DecodePixelHeight="148"
+                                                DecodePixelWidth="148"
+                                                UriSource="pack://application:,,,/Image/Logo/logobw.png" />
+                                        </ImageBrush.ImageSource>
+                                    </ImageBrush>
+                                </Border.Background>
+                            </Border>
                             <!--  进度说明  -->
                             <TextBlock
-                                Grid.Row="1"
+                                Grid.Row="2"
                                 Margin="0,20"
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
                                 FontSize="40"
                                 FontWeight="Bold"
                                 Foreground="White"
-                                Text="Loading..." />
+                                Text="Loading...">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsLoaded}" Value="True">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                            <!--  主页面 跨2列  -->
                         </Grid>
                     </Grid>
                 </materialDesign:TransitionerSlide>
@@ -276,6 +355,7 @@
                             Margin="0"
                             Padding="0"
                             Focusable="False"
+                            NavigationUIVisibility="Hidden"
                             Source="Pages/SettingsPage.xaml" />
                     </Grid>
                 </materialDesign:TransitionerSlide>

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Windows;
 using System.Windows.Controls;
 
 namespace JayTom.Dws.PluginInterface {
@@ -41,7 +42,7 @@ namespace JayTom.Dws.PluginInterface {
         /// <summary>
         /// 加载插件
         /// </summary>
-        void Load();
+        void Load(Window window);
 
         /// <summary>
         /// 打开内页

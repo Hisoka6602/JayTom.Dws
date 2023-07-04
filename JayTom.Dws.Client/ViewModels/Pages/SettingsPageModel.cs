@@ -9,11 +9,15 @@ using System.Windows;
 using System.Windows.Media;
 using System.Windows.Input;
 using System.Threading.Tasks;
+using System.Windows.Controls;
 using JayTom.Dws.Client.Models;
+using System.Windows.Threading;
 using System.Collections.Generic;
+using System.Security.AccessControl;
 using System.Collections.ObjectModel;
 
 namespace JayTom.Dws.Client.ViewModels.Pages {
+
     public class SettingsPageModel : BindableBase {
         private readonly IRegionManager _regionManager;
 
@@ -34,7 +38,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     Title = "插件信息",
                     Description = "灵活下载/组合插件插件",
                     ClickCommand = ClickCommand,
-                    PageClassName = "aa"
+                    PageClassName = "PluginMarketplacePage"
                 },
                 new MenuItemInfoModel()
                 {
@@ -47,7 +51,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     Title = "数据管理",
                     Description = "数据信息管理",
                     ClickCommand = ClickCommand,
-                    PageClassName = "aa"
+                    PageClassName = "DataManagementPage"
                 },
                 new MenuItemInfoModel()
                 {
@@ -77,20 +81,53 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             get => new DelegateCommand<MenuItemInfoModel>(MenuClickDelegate);
         }
 
+        /// <summary>
+        /// 窗口加载完成
+        /// </summary>
+        public ICommand LoadedCommand {
+            get => new DelegateCommand<Frame>(LoadedDelegate);
+        }
+
+        private async void LoadedDelegate(Frame obj) {
+            await Application.Current.Dispatcher.InvokeAsync(() => {
+                if (!_regionManager.Regions.ContainsRegionWithName("ContentRegion")) {
+                    //创建区域(用于视觉树以外控件)
+                    RegionManager.SetRegionName(obj, "ContentRegion");
+                    RegionManager.SetRegionManager(obj, _regionManager);
+                    _regionManager.Regions["ContentRegion"].RequestNavigate("DataManagementPage");
+                }
+            });
+        }
+
         private async void MenuClickDelegate(MenuItemInfoModel obj) {
             await Application.Current.Dispatcher.InvokeAsync(() => {
                 if (!obj.PageClassName.Equals(string.Empty)) {
                     foreach (var item in MenuItems) {
                         item.IsSelected = false;
+                        item.RadiusRight = new CornerRadius(0, 0, 0, 0);
                     }
                     obj.IsSelected = true;
-                    //如果找到前一个按钮则设置，前一个按钮的右下圆角为10，
-                    //如果找到后一个按钮则设置后一个按钮的右上圆角为10，
-                    //把背景色设置成和大背景色一样的颜色
+                    MenuItemInfoModel? previousItem = null, nextItem = null;
+                    var of = MenuItems.IndexOf(obj);
+                    if (of - 1 >= 0) {
+                        //有前一个
+                        previousItem = MenuItems[of - 1];
+                    }
+                    if (of < MenuItems.Count - 1) {
+                        nextItem = MenuItems[of + 1];
+                    }
 
-                    //_regionManager.Regions["ContentRegion"].RequestNavigate(obj.NavigationPage);
+                    if (previousItem is not null) {
+                        previousItem.RadiusRight = new CornerRadius(0, 0, 10, 0);
+                    }
+
+                    if (nextItem is not null) {
+                        nextItem.RadiusRight = new CornerRadius(0, 10, 0, 0);
+                    }
+
+                    _regionManager?.Regions?["ContentRegion"]?.RequestNavigate(new Uri(obj.PageClassName, UriKind.Relative));
                 }
-            });
+            }, DispatcherPriority.Background);
         }
     }
 }

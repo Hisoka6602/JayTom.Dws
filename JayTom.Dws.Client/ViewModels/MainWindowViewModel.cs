@@ -7,10 +7,13 @@ using Prism.Commands;
 using System.Threading;
 using System.Globalization;
 using System.Windows.Input;
+using System.Threading.Tasks;
+using System.Windows.Controls;
 using System.Windows.Threading;
 using MaterialDesignThemes.Wpf;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using JayTom.Dws.PluginInterface.Utils;
 
 namespace JayTom.Dws.Client.ViewModels {
 
@@ -22,6 +25,9 @@ namespace JayTom.Dws.Client.ViewModels {
         private SnackbarMessageQueue _mainMessageQueue = new(TimeSpan.FromSeconds(2));
         private string _requestStatus = string.Empty;
         private string _displayBarcode = string.Empty;
+        private Point _buttonTranslateTransform = new(0, 0);
+        private Size _menuButtonSizeize = new(0, 0);
+        private bool _isLoaded;
 
         public MainWindowViewModel(IRegionManager regionManager) {
             _regionManager = regionManager;
@@ -46,6 +52,19 @@ namespace JayTom.Dws.Client.ViewModels {
         public string MaxBtnToolTip {
             get => _maxBtnToolTip;
             set => SetProperty(ref _maxBtnToolTip, value);
+        }
+
+        public Point ButtonTranslateTransform {
+            get => _buttonTranslateTransform;
+            set => SetProperty(ref _buttonTranslateTransform, value);
+        }
+
+        /// <summary>
+        /// 是否加载完成
+        /// </summary>
+        public bool IsLoaded {
+            get => _isLoaded;
+            set => SetProperty(ref _isLoaded, value);
         }
 
         /// <summary>
@@ -126,9 +145,59 @@ namespace JayTom.Dws.Client.ViewModels {
         }
 
         private async void LoadedDelegate(object obj) {
-            /*await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                _regionManager.Regions["ContentRegion"].RequestNavigate("HomeView");
-            });*/
+            if (obj is Window window) {
+                window.SizeChanged += SizeChangeDelegate;
+
+                var visualChild = Utils.GetVisualChild<Button>(window, b => b.Name.Equals("MenuButton"));
+                if (visualChild is not null) {
+                    //设置变化值
+                    _menuButtonSizeize = new Size(visualChild.ActualWidth, visualChild.ActualHeight);
+                    ButtonTranslateTransform =
+                        new Point((window.ActualWidth - _menuButtonSizeize.Width) / 2,
+                            (window.ActualHeight - _menuButtonSizeize.Height) / 2);
+                    visualChild.Visibility = Visibility.Visible;
+                }
+            }
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+                await Task.Delay(TimeSpan.FromSeconds(10));
+                IsLoaded = true;
+                //_regionManager.Regions["ContentRegion"].RequestNavigate("HomeView");
+            });
+        }
+
+        private void SizeChangeDelegate(object sender, SizeChangedEventArgs e) {
+            if (sender is Window window) {
+                window.MaxHeight = SystemParameters.MaximizedPrimaryScreenHeight;
+                window.MaxWidth = SystemParameters.MaximizedPrimaryScreenWidth;
+                if (window.WindowState == WindowState.Maximized ||
+                    (window.Height >= SystemParameters.MaximizedPrimaryScreenHeight &&
+                     window.Width >= SystemParameters.MaximizedPrimaryScreenWidth)) {
+                    //直角
+                    UniformCornerRadius = 0;
+                }
+                else {
+                    UniformCornerRadius = 5;
+                    //圆角
+                }
+                if (window.WindowState == WindowState.Maximized) {
+                    MaxBtnIcon = "\xe72c";
+                    MaxBtnToolTip = "Restore";
+                }
+                else {
+                    MaxBtnIcon = "\xe600";
+                    MaxBtnToolTip = "Maximize";
+                }
+
+                if (!IsLoaded) {
+                    var visualChild = Utils.GetVisualChild<Button>(window, b => b.Name.Equals("MenuButton"));
+                    if (visualChild is not null) {
+                        //设置变化值
+                        ButtonTranslateTransform =
+                            new Point((window.ActualWidth - _menuButtonSizeize.Width) / 2,
+                                (window.ActualHeight - _menuButtonSizeize.Height) / 2);
+                    }
+                }
+            }
         }
 
         private void MinWinDelegate(object obj) {

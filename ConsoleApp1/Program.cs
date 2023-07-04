@@ -49,15 +49,19 @@ internal class Program {
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
-            var fromFile = Image.FromFile($"{AppDomain.CurrentDomain.BaseDirectory}12.jpg");
+            /*var fromFile = Image.FromFile($"{AppDomain.CurrentDomain.BaseDirectory}12.jpg");
 
             var imageToBase64 = fromFile.ConvertImageToBase64();
             var image = imageToBase64.ConvertBase64ToImage();
             image.Save($"{AppDomain.CurrentDomain.BaseDirectory}13.jpg", ImageFormat.Jpeg);
 
-            return;
-            var uploadResponse = await _dataUploader.UploadData("00452712", 36.8, 2.2, 4.5,
-                6.2, image: fromFile, token: stoppingToken);
+            return;*/
+            var (key, value) = await _dataUploader.SetParameters(new WeciMexicoDvApiParam {
+                Url = "https://us-central1-ivoy-warehouse.cloudfunctions.net/weighing-machine",
+                TimeOut = 100000
+            });
+            var uploadResponse = await _dataUploader.UploadData("NM1303QT811B8CAYITRUCK0", 0.1, 2.2, 4.5,
+                0.1, token: stoppingToken);
 
             Console.WriteLine(uploadResponse);
         }

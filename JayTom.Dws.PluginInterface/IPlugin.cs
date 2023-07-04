@@ -34,6 +34,26 @@ namespace JayTom.Dws.PluginInterface {
         public string Description { get; }
 
         /// <summary>
+        /// 作者
+        /// </summary>
+        public string Author { get; }
+
+        /// <summary>
+        /// 简述
+        /// </summary>
+        public string Summary { get; }
+
+        /// <summary>
+        /// 发行日期
+        /// </summary>
+        public DateTime ReleaseDate { get; }
+
+        /// <summary>
+        /// 客户端依赖版本
+        /// </summary>
+        public Version ClientDependencyVersion { get; }
+
+        /// <summary>
         /// 类型
         /// </summary>
         public PluginType Type { get; }

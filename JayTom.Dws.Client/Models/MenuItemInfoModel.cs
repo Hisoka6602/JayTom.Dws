@@ -2,6 +2,7 @@
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
+using System.Windows;
 using System.Windows.Input;
 using System.Threading.Tasks;
 using System.Collections.Generic;
@@ -17,6 +18,7 @@ namespace JayTom.Dws.Client.Models {
         private string _description = string.Empty;
         private string _pageClassName = string.Empty;
         private bool _isSelected;
+        private CornerRadius _radiusRight;
 
         /// <summary>
         /// 字体图标
@@ -72,6 +74,14 @@ namespace JayTom.Dws.Client.Models {
         public ICommand? ClickCommand {
             get => _clickCommand;
             set => SetProperty(ref _clickCommand, value);
+        }
+
+        /// <summary>
+        /// 圆角角度
+        /// </summary>
+        public CornerRadius RadiusRight {
+            get => _radiusRight;
+            set => SetProperty(ref _radiusRight, value);
         }
     }
 }
