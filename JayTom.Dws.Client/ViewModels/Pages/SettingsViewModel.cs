@@ -18,12 +18,12 @@ using System.Collections.ObjectModel;
 
 namespace JayTom.Dws.Client.ViewModels.Pages {
 
-    public class SettingsPageModel : BindableBase {
+    public class SettingsViewModel : BindableBase {
         private readonly IRegionManager _regionManager;
 
         private ObservableCollection<MenuItemInfoModel> _menuItems;
 
-        public SettingsPageModel(IRegionManager regionManager) {
+        public SettingsViewModel(IRegionManager regionManager) {
             _regionManager = regionManager;
             _menuItems = new()
             {

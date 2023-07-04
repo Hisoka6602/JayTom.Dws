@@ -15,6 +15,7 @@ using JayTom.Dws.Client.ViewModels;
 using JayTom.Dws.Client.Views.Pages;
 using JayTom.Dws.Client.ViewModels.Pages;
 using JayTom.Dws.Client.Views.Pages.Preferences;
+using JayTom.Dws.Client.ViewModels.Pages.Preferences;
 
 namespace JayTom.Dws.Client {
 
@@ -45,7 +46,8 @@ namespace JayTom.Dws.Client {
             base.ConfigureViewModelLocator();
             //绑定页面
             ViewModelLocationProvider.Register<MainWindow, MainWindowViewModel>();
-            ViewModelLocationProvider.Register<SettingsPage, SettingsPageModel>();
+            ViewModelLocationProvider.Register<SettingsPage, SettingsViewModel>();
+            ViewModelLocationProvider.Register<PluginMarketplacePage, PluginMarketplaceViewModel>();
         }
     }
 }

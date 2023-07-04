@@ -74,7 +74,7 @@
                 Width="3"
                 HorizontalAlignment="Left"
                 VerticalAlignment="Stretch"
-                Background="ForestGreen"
+                Background="LawnGreen"
                 Visibility="Collapsed" />
         </Grid>
 

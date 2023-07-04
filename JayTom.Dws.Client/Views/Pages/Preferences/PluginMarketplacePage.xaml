@@ -14,8 +14,22 @@
     FontFamily="{StaticResource CustomFontFamily}"
     mc:Ignorable="d">
 
-    <Grid>
+    <Grid Margin="20">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="60*" />
+            <ColumnDefinition Width="2" />
+            <ColumnDefinition Width="40*" />
+        </Grid.ColumnDefinitions>
+        <Border
+            Name="SelectedFlag"
+            Grid.Column="1"
+            Width="1"
+            Margin="0,0,0,70"
+            HorizontalAlignment="Left"
+            VerticalAlignment="Stretch"
+            Background="LawnGreen" />
         <TextBlock
+            Grid.Column="0"
             HorizontalAlignment="Center"
             VerticalAlignment="Center"
             FontSize="30"
@@ -23,5 +37,40 @@
             Foreground="White">
             PluginMarketplacePage
         </TextBlock>
+        <!--  左边列表、搜索工具  -->
+        <StackPanel Grid.Column="0" Margin="15,0">
+            <!--  搜索工具  -->
+            <!--  列表  -->
+            <ListBox
+                MinHeight="100"
+                ItemTemplate="{StaticResource PluginTemplate}"
+                ItemsSource="{Binding PluginItems, UpdateSourceTrigger=PropertyChanged}">
+                <ListBox.ItemContainerStyle>
+                    <Style TargetType="ListBoxItem">
+                        <Setter Property="Height" Value="Auto" />
+                        <Setter Property="Margin" Value="0" />
+                        <Setter Property="Padding" Value="0" />
+                        <Setter Property="Focusable" Value="False" />
+                        <Setter Property="IsSelected" Value="False" />
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                        <Setter Property="Background" Value="Transparent" />
+                        <Setter Property="Foreground" Value="Transparent" />
+                        <Setter Property="SnapsToDevicePixels" Value="True" />
+                        <!--  去掉焦点框  -->
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="{x:Type ListBoxItem}">
+                                    <ContentPresenter
+                                        Content="{TemplateBinding Content}"
+                                        ContentStringFormat="{TemplateBinding ContentStringFormat}"
+                                        ContentTemplate="{TemplateBinding ContentTemplate}" />
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </ListBox.ItemContainerStyle>
+            </ListBox>
+        </StackPanel>
+        <!--  右边属性  -->
     </Grid>
 </Page>

@@ -232,4 +232,12 @@ namespace JayTom.Dws.PluginInterface {
         /// </summary>
         Show
     }
+
+    public enum PluginStatus {
+        NotInstalled, // 未安装
+        Installed, // 已安装
+        Upgradeable, // 可以升级
+        Invalid, // 已失效
+        BugFound // 发现Bug
+    }
 }

@@ -157,6 +157,7 @@
                 <ResourceDictionary Source="Template/LanguageComboBoxTemplate.xaml" />
                 <!--  菜单模板  -->
                 <ResourceDictionary Source="Template/MenuTemplate.xaml" />
+                <ResourceDictionary Source="Template/PluginTemplate.xaml" />
                 <!--  静态数据源  -->
                 <ResourceDictionary Source="/DataSources/LanguageInfoSources.xaml" />
             </ResourceDictionary.MergedDictionaries>
