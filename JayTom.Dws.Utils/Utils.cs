@@ -29,7 +29,7 @@ namespace JayTom.Dws.Utils {
 
         public static Image ConvertBase64ToImage(this string base64String) {
             try {
-                var imageBytes = Convert.FromBase64String(base64String);
+                var imageBytes = Convert.FromBase64String($"{base64String}");
 
                 using (MemoryStream memoryStream = new MemoryStream(imageBytes)) {
                     // 将字节数组转换为Image对象

@@ -9,7 +9,6 @@ using System.Collections.Generic;
 using JayTom.Dws.PluginInterface;
 
 namespace JayTom.Dws.Client.Models {
-
     public class PluginItemInfoModel : BindableBase {
         private ICommand? _clickCommand;
         private ImageSource? _icon;
@@ -22,6 +21,7 @@ namespace JayTom.Dws.Client.Models {
         private string _author = string.Empty;
         private bool _isSelected;
         private bool _isInstallable;
+        private Version _version = new();
 
         /// <summary>
         /// 插件图标
@@ -78,6 +78,13 @@ namespace JayTom.Dws.Client.Models {
         public Version ClientVersionDependency {
             get => _clientVersionDependency;
             set => SetProperty(ref _clientVersionDependency, value);
+        }
+        /// <summary>
+        /// 版本
+        /// </summary>
+        public Version Version {
+            get => _version;
+            set => SetProperty(ref _version, value);
         }
 
         /// <summary>

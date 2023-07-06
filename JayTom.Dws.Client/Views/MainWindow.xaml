@@ -213,11 +213,11 @@
                                                                 Duration="0:0:0.5" />
                                                             <DoubleAnimation
                                                                 Storyboard.TargetProperty="(Button.RenderTransform).(TransformGroup.Children)[1].(ScaleTransform.ScaleX)"
-                                                                To="0.2"
+                                                                To="0.16"
                                                                 Duration="0:0:0.5" />
                                                             <DoubleAnimation
                                                                 Storyboard.TargetProperty="(Button.RenderTransform).(TransformGroup.Children)[1].(ScaleTransform.ScaleY)"
-                                                                To="0.2"
+                                                                To="0.16"
                                                                 Duration="0:0:0.5" />
                                                         </Storyboard>
                                                     </BeginStoryboard>

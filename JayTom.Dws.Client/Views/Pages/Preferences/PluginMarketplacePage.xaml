@@ -5,7 +5,9 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="clr-namespace:JayTom.Dws.Client.Views.Pages.Preferences"
+    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:models="clr-namespace:JayTom.Dws.Client.Models"
     xmlns:mvvm="http://prismlibrary.com/"
     Title="PluginMarketplace"
     d:DesignHeight="450"
@@ -20,6 +22,10 @@
             <ColumnDefinition Width="2" />
             <ColumnDefinition Width="40*" />
         </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="60" />
+        </Grid.RowDefinitions>
         <Border
             Name="SelectedFlag"
             Grid.Column="1"
@@ -29,6 +35,7 @@
             VerticalAlignment="Stretch"
             Background="LawnGreen" />
         <TextBlock
+            Grid.Row="0"
             Grid.Column="0"
             HorizontalAlignment="Center"
             VerticalAlignment="Center"
@@ -38,8 +45,135 @@
             PluginMarketplacePage
         </TextBlock>
         <!--  左边列表、搜索工具  -->
-        <StackPanel Grid.Column="0" Margin="15,0">
+        <StackPanel
+            Grid.Row="0"
+            Grid.Column="0"
+            Margin="15,0">
             <!--  搜索工具  -->
+            <Border
+                Width="120"
+                MinWidth="800"
+                MinHeight="40"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Background="#2A808080"
+                CornerRadius="20">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="50" />
+                    </Grid.ColumnDefinitions>
+                    <!--  快捷搜索  -->
+                    <Border
+                        Grid.Column="0"
+                        Height="30"
+                        Margin="5,0"
+                        Padding="10,0"
+                        Background="DimGray"
+                        CornerRadius="15">
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontWeight="DemiBold"
+                            Foreground="White"
+                            Text="快捷搜索" />
+                    </Border>
+                    <!--  输入框  -->
+                    <Grid Grid.Column="1">
+                        <!--  正常输入框  -->
+                        <TextBox
+                            MaxHeight="38"
+                            Padding="0,0,20,0"
+                            VerticalContentAlignment="Center"
+                            materialDesign:HintAssist.Foreground="DimGray"
+                            materialDesign:HintAssist.Hint="请输入查找的插件名称"
+                            materialDesign:HintAssist.HintOpacity="0.4"
+                            AcceptsReturn="False"
+                            BorderThickness="0"
+                            FontSize="12"
+                            FontWeight="DemiBold"
+                            Foreground="White"
+                            TextAlignment="Justify"
+                            TextWrapping="NoWrap" />
+
+                    </Grid>
+                    <!--  搜索按钮  -->
+                    <Button
+                        Grid.Column="2"
+                        Height="40"
+                        Margin="5,0,0,0"
+                        Padding="0"
+                        materialDesign:ButtonAssist.CornerRadius="0,20,20,0"
+                        materialDesign:ShadowAssist.ShadowEdges="Right"
+                        Background="DodgerBlue"
+                        Style="{StaticResource ButtonFocusEnlargeStyle}"
+                        ToolTip="点击搜索">
+                        <TextBlock
+                            Margin="2"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontFamily="pack://application:,,,/Fonts/#IconFont"
+                            FontSize="20"
+                            FontWeight="UltraLight"
+                            Foreground="White"
+                            Text="&#xe60b;" />
+                    </Button>
+                </Grid>
+            </Border>
+            <!--  类型列表  -->
+            <ListBox
+                Margin="0,10"
+                ItemsSource="{Binding PluginTypeItems, UpdateSourceTrigger=PropertyChanged}"
+                ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                ScrollViewer.VerticalScrollBarVisibility="Disabled">
+                <ListBox.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal" />
+                    </ItemsPanelTemplate>
+                </ListBox.ItemsPanel>
+                <ListBox.ItemTemplate>
+                    <DataTemplate DataType="{x:Type models:PluginTypeItemInfoModel}">
+                        <Button
+                            Background="{DynamicResource MaterialDesignTextFieldBoxBackground}"
+                            Command="{Binding ClickCommand}"
+                            CommandParameter="{Binding}"
+                            Focusable="False"
+                            Style="{StaticResource MaterialDesignIconButton}"
+                            ToolTip="{Binding ToolTip}">
+                            <TextBlock
+                                FontFamily="{StaticResource IconFontFamily}"
+                                FontSize="20"
+                                Text="{Binding FontIcon}" />
+                        </Button>
+                    </DataTemplate>
+                    <!--  图标按钮  -->
+                </ListBox.ItemTemplate>
+                <ListBox.ItemContainerStyle>
+                    <Style TargetType="ListBoxItem">
+                        <Setter Property="Height" Value="Auto" />
+                        <Setter Property="Margin" Value="0" />
+                        <Setter Property="Padding" Value="0" />
+                        <Setter Property="Focusable" Value="False" />
+                        <Setter Property="IsSelected" Value="False" />
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                        <Setter Property="Background" Value="Transparent" />
+                        <Setter Property="Foreground" Value="Transparent" />
+                        <Setter Property="SnapsToDevicePixels" Value="True" />
+                        <!--  去掉焦点框  -->
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="{x:Type ListBoxItem}">
+                                    <ContentPresenter
+                                        Content="{TemplateBinding Content}"
+                                        ContentStringFormat="{TemplateBinding ContentStringFormat}"
+                                        ContentTemplate="{TemplateBinding ContentTemplate}" />
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </ListBox.ItemContainerStyle>
+            </ListBox>
             <!--  列表  -->
             <ListBox
                 MinHeight="100"
@@ -70,7 +204,153 @@
                     </Style>
                 </ListBox.ItemContainerStyle>
             </ListBox>
+
         </StackPanel>
+        <!--  翻页控件  -->
+        <Border
+            Grid.Row="1"
+            Grid.Column="0"
+            MinWidth="200"
+            MinHeight="40"
+            Margin="0,0,0,10"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            Background="#2A808080"
+            CornerRadius="20">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="40" />
+                    <ColumnDefinition Width="40" />
+                    <ColumnDefinition Width="*" MinWidth="50" />
+                    <ColumnDefinition Width="40" />
+                    <ColumnDefinition Width="40" />
+                </Grid.ColumnDefinitions>
+                <!--  首页  -->
+                <Button
+                    Grid.Column="0"
+                    Height="40"
+                    Margin="0"
+                    Padding="0"
+                    materialDesign:ButtonAssist.CornerRadius="20,0,0,20"
+                    materialDesign:ShadowAssist.ShadowEdges="Right"
+                    Background="#1A696969"
+                    Command="{Binding FirstPageCommand}"
+                    Style="{StaticResource ButtonFocusEnlargeStyle}"
+                    ToolTip="FirstPage">
+                    <TextBlock
+                        Margin="2"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        FontFamily="pack://application:,,,/Fonts/#IconFont"
+                        FontSize="20"
+                        FontWeight="UltraLight"
+                        Foreground="White"
+                        RenderTransformOrigin=".5,.5"
+                        Text="&#xe68c;">
+                        <TextBlock.RenderTransform>
+                            <RotateTransform Angle="180" />
+                        </TextBlock.RenderTransform>
+                    </TextBlock>
+                </Button>
+                <!--  上一页  -->
+                <Button
+                    Grid.Column="1"
+                    Height="40"
+                    Margin="0"
+                    Padding="0"
+                    materialDesign:ButtonAssist.CornerRadius="0"
+                    materialDesign:ShadowAssist.ShadowEdges="Right"
+                    Background="#1A696969"
+                    Command="{Binding PreviousPageCommand}"
+                    Style="{StaticResource ButtonFocusEnlargeStyle}"
+                    ToolTip="PreviousPage">
+                    <TextBlock
+                        Margin="2"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        FontFamily="pack://application:,,,/Fonts/#IconFont"
+                        FontSize="20"
+                        FontWeight="UltraLight"
+                        Foreground="White"
+                        RenderTransformOrigin=".5,.5"
+                        Text="&#xe7a5;" />
+                </Button>
+                <!--  页码  -->
+                <StackPanel
+                    Grid.Column="2"
+                    Margin="10,0"
+                    HorizontalAlignment="Stretch"
+                    Orientation="Horizontal">
+                    <TextBox
+                        MinWidth="20"
+                        VerticalAlignment="Center"
+                        materialDesign:HintAssist.Foreground="DimGray"
+                        materialDesign:HintAssist.HintOpacity="0.4"
+                        BorderThickness="0"
+                        FontSize="12"
+                        FontWeight="Bold"
+                        Foreground="White"
+                        Text="{Binding PageIndex, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                        <TextBox.InputBindings>
+                            <KeyBinding Key="Enter" Command="{Binding JumpPageCommand}" />
+                        </TextBox.InputBindings>
+                    </TextBox>
+                    <TextBlock
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        FontWeight="Bold"
+                        Foreground="White">
+                        <Run Text="/" /><Run Text="{Binding PageCount, UpdateSourceTrigger=PropertyChanged}" />
+                    </TextBlock>
+                </StackPanel>
+                <!--  下一页  -->
+                <Button
+                    Grid.Column="3"
+                    Height="40"
+                    Margin="0"
+                    Padding="0"
+                    materialDesign:ButtonAssist.CornerRadius="0"
+                    materialDesign:ShadowAssist.ShadowEdges="Right"
+                    Background="#1A696969"
+                    Command="{Binding NextPageCommand}"
+                    Style="{StaticResource ButtonFocusEnlargeStyle}"
+                    ToolTip="NextPage">
+                    <TextBlock
+                        Margin="2"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        FontFamily="pack://application:,,,/Fonts/#IconFont"
+                        FontSize="20"
+                        FontWeight="UltraLight"
+                        Foreground="White"
+                        RenderTransformOrigin=".5,.5"
+                        Text="&#xe798;" />
+                </Button>
+                <!--  尾页  -->
+                <Button
+                    Grid.Column="4"
+                    Height="40"
+                    Margin="0"
+                    Padding="0"
+                    materialDesign:ButtonAssist.CornerRadius="0,20,20,0"
+                    materialDesign:ShadowAssist.ShadowEdges="Right"
+                    Background="#1A696969"
+                    Command="{Binding LastPageCommand}"
+                    Style="{StaticResource ButtonFocusEnlargeStyle}"
+                    ToolTip="LastPage">
+                    <TextBlock
+                        Margin="2"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        FontFamily="pack://application:,,,/Fonts/#IconFont"
+                        FontSize="20"
+                        FontWeight="UltraLight"
+                        Foreground="White"
+                        RenderTransformOrigin=".5,.5"
+                        Text="&#xe68c;" />
+                </Button>
+            </Grid>
+        </Border>
         <!--  右边属性  -->
     </Grid>
 </Page>

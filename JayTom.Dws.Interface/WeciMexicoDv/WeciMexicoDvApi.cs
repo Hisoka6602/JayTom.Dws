@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Web;
 using System.Linq;
 using System.Text;
 using System.Drawing;
@@ -48,7 +49,7 @@ namespace JayTom.Dws.Interface.WeciMexicoDv {
             var isSuccess = false;
             UploadResponse response;
             var imageBase64 = image?.ConvertImageToBase64() ?? string.Empty;
-            var base64String = Convert.ToBase64String(Encoding.Default.GetBytes(imageBase64));
+
             var data = new {
                 bc_no = barcode,
                 size_width = width,
@@ -58,7 +59,7 @@ namespace JayTom.Dws.Interface.WeciMexicoDv {
                 date_tran = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss}",
                 time_tran = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss}",
                 machine_no = MachineNo,
-                imagebase64 = base64String
+                imagebase64 = imageBase64
             };
 
             var requestTime = DateTime.Now;

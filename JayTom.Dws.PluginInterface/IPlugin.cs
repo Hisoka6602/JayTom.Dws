@@ -2,7 +2,6 @@
 using System.Windows;
 
 namespace JayTom.Dws.PluginInterface {
-
     public interface IPlugin {
 
         //Guid
@@ -85,6 +84,11 @@ namespace JayTom.Dws.PluginInterface {
     }
 
     public enum PluginType {
+
+        /// <summary>
+        /// 拓展包
+        /// </summary>
+        ExtensionPackage,
 
         /// <summary>
         /// 主页
@@ -238,6 +242,6 @@ namespace JayTom.Dws.PluginInterface {
         Installed, // 已安装
         Upgradeable, // 可以升级
         Invalid, // 已失效
-        BugFound // 发现Bug
+        BugFound, // 发现Bug
     }
 }

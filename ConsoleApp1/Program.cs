@@ -3,6 +3,7 @@ using JayTom.Dws.Utils;
 using JayTom.Dws.Interface;
 using System.Drawing.Imaging;
 using Microsoft.Extensions.Hosting;
+using System.Security.Authentication;
 using JayTom.Dws.Interface.WeciMexicoDv;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -29,7 +30,8 @@ internal class Program {
                     UseDefaultCredentials = true,
                     MaxConnectionsPerServer = 1000,
                     ServerCertificateCustomValidationCallback = (m, c, ch, e) => true,
-                    UseProxy = false
+                    //UseProxy = false,
+                    //SslProtocols = SslProtocols.Tls13
                 };
 
                 return handler;
@@ -49,20 +51,25 @@ internal class Program {
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
-            /*var fromFile = Image.FromFile($"{AppDomain.CurrentDomain.BaseDirectory}12.jpg");
+            var fromFile = Image.FromFile($"{AppDomain.CurrentDomain.BaseDirectory}17.jpg");
 
             var imageToBase64 = fromFile.ConvertImageToBase64();
             var image = imageToBase64.ConvertBase64ToImage();
-            image.Save($"{AppDomain.CurrentDomain.BaseDirectory}13.jpg", ImageFormat.Jpeg);
+            //image.Save($"{AppDomain.CurrentDomain.BaseDirectory}13.jpg", ImageFormat.Jpeg);
 
-            return;*/
-            var (key, value) = await _dataUploader.SetParameters(new WeciMexicoDvApiParam {
-                Url = "https://us-central1-ivoy-warehouse.cloudfunctions.net/weighing-machine",
-                TimeOut = 100000
-            });
-            var uploadResponse = await _dataUploader.UploadData("NM1303QT811B8CAYITRUCK0", 0.1, 2.2, 4.5,
-                0.1, token: stoppingToken);
-
+            //return;
+            UploadResponse uploadResponse;
+            do {
+                var (key, value) = await _dataUploader.SetParameters(new WeciMexicoDvApiParam {
+                    Url = "https://us-central1-ivoy-warehouse.cloudfunctions.net/weighing-machine",
+                    TimeOut = 100000
+                });
+                uploadResponse = await _dataUploader.UploadData("SM1203RQQR9UYABEITRUCK0", 0.1, 2.2, 4.5,
+                   0.1, image: fromFile, token: stoppingToken);
+                //!string.IsNullOrEmpty(uploadResponse.ExceptionMsg)
+                await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
+            } while (!uploadResponse.IsSuccess);
+            await File.AppendAllTextAsync($"{AppDomain.CurrentDomain.BaseDirectory}image.txt", uploadResponse.RequestContent, stoppingToken);
             Console.WriteLine(uploadResponse);
         }
     }
