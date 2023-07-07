@@ -10,6 +10,7 @@ using System.Threading;
 using System.Diagnostics;
 using Newtonsoft.Json.Linq;
 using System.Threading.Tasks;
+using System.Drawing.Imaging;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Diagnostics.CodeAnalysis;
@@ -48,8 +49,11 @@ namespace JayTom.Dws.Interface.WeciMexicoDv {
             var exceptionMsg = string.Empty;
             var isSuccess = false;
             UploadResponse response;
+            image = image?.AddTextWatermark(
+                $"bc_no:{barcode}\nsize_width:{width}\nsize_long:{length}\nsize_heigth:{height}\nweigth_kg:{weight}\ndate_tran:{DateTime.Now:yyyy-MM-dd HH:mm:ss}",
+                Color.Red);
             var imageBase64 = image?.ConvertImageToBase64() ?? string.Empty;
-
+            //var base64String = Convert.ToBase64String(Encoding.Default.GetBytes(imageBase64));
             var data = new {
                 bc_no = barcode,
                 size_width = width,
@@ -61,7 +65,6 @@ namespace JayTom.Dws.Interface.WeciMexicoDv {
                 machine_no = MachineNo,
                 imagebase64 = imageBase64
             };
-
             var requestTime = DateTime.Now;
             var stopwatch = new Stopwatch();
             stopwatch.Start();

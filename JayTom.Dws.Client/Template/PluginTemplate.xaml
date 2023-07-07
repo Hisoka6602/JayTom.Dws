@@ -14,7 +14,9 @@
             Margin="0,5"
             HorizontalContentAlignment="Left"
             VerticalContentAlignment="Center"
-            materialDesign:ButtonAssist.CornerRadius="10">
+            materialDesign:ButtonAssist.CornerRadius="10"
+            Command="{Binding ClickCommand}"
+            CommandParameter="{Binding}">
             <Button.Style>
                 <Style BasedOn="{StaticResource MaterialDesignFlatAccentBgButton}" TargetType="Button">
 
@@ -52,7 +54,7 @@
                         </Border.Background>
                     </Border>
                     <!--  状态  -->
-                    <Border
+                    <!--<Border
                         Width="26"
                         Height="26"
                         Margin="0,0,10,0"
@@ -60,15 +62,24 @@
                         VerticalAlignment="Bottom"
                         Background="#2E2E2E"
                         CornerRadius="13">
-                        <TextBlock
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            FontFamily="pack://application:,,,/Fonts/#iconfont"
-                            FontSize="16"
-                            Foreground="{Binding Status, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource PluginStatusColorConverter}}"
-                            Text="{Binding Status, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource PluginStatusIconFontConverter}}" />
-                    </Border>
-
+                    </Border>-->
+                    <TextBlock
+                        Margin="0,0,12,0"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Bottom"
+                        FontFamily="pack://application:,,,/Fonts/#iconfont"
+                        FontSize="18"
+                        Foreground="{Binding Status, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource PluginStatusColorConverter}}"
+                        Text="{Binding Status, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource PluginStatusIconFontConverter}}">
+                        <TextBlock.Effect>
+                            <DropShadowEffect
+                                BlurRadius="3"
+                                Direction="0"
+                                Opacity="1"
+                                ShadowDepth="0"
+                                Color="White" />
+                        </TextBlock.Effect>
+                    </TextBlock>
                 </Grid>
                 <Border Grid.Column="1">
                     <StackPanel Orientation="Vertical">

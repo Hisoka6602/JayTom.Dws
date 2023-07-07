@@ -107,7 +107,7 @@ namespace JayTom.Dws.TemporaryClient.Service.BackgroundService {
                         ScanTime = scanTime,
                         RequestStatus = uploadResponse?.IsSuccess == true ? 1 : 2,
                         RequestTime = uploadResponse?.RequestTime ?? DateTime.Now,
-                        RequestContent = uploadResponse?.RequestContent ?? string.Empty,
+                        RequestContent = "The request content is too large and will not be saved.",
                         ResponseContent = (string.IsNullOrWhiteSpace(uploadResponse?.ResponseContent) ? $"Error:{uploadResponse?.ExceptionMsg}" : uploadResponse?.ResponseContent) ?? string.Empty,
                         ResponseTime = uploadResponse?.ResponseTime ?? DateTime.Now,
                     });

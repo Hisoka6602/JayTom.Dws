@@ -2,6 +2,8 @@
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
+using Prism.Commands;
+using System.Windows.Input;
 using System.Threading.Tasks;
 using JayTom.Dws.Client.Models;
 using System.Collections.Generic;
@@ -9,19 +11,11 @@ using JayTom.Dws.PluginInterface;
 using System.Collections.ObjectModel;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
+
     public class PluginMarketplaceViewModel : BindableBase {
         private ObservableCollection<PluginItemInfoModel> _pluginItems;
         private ObservableCollection<PluginTypeItemInfoModel> _pluginTypeItems;
-
-        public ObservableCollection<PluginItemInfoModel> PluginItems {
-            get => _pluginItems;
-            set => SetProperty(ref _pluginItems, value);
-        }
-
-        public ObservableCollection<PluginTypeItemInfoModel> PluginTypeItems {
-            get => _pluginTypeItems;
-            set => SetProperty(ref _pluginTypeItems, value);
-        }
+        private PluginItemInfoModel _selectPluginItem = new();
 
         public PluginMarketplaceViewModel() {
             _pluginTypeItems = new ObservableCollection<PluginTypeItemInfoModel>()
@@ -101,7 +95,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     Name = "IInnerPlugin",
                     Author = "Hisoka",
                     Version = new Version("1.0.0.0"),
-                    Description = "DWS（Data Warehouse System）是数据仓库系统的缩写，它是一种用于管理和组织大量数据的技术。DWS通过集成、清洗和转换多个异构数据源，将数据存储在一个中央存储库中，为用户提供方便的数据访问和分析功能。它采用了并行计算和高性能硬件架构，支持复杂查询、数据挖掘和报表生成等操作，帮助企业快速从海量数据中提取有价值的信息和洞察。DWS还具备数据安全性和数据质量控制的能力，可以提供决策支持和业务智能分析。"
+                    Description = "DWS（Data Warehouse System）是数据仓库系统的缩写，它是一种用于管理和组织大量数据的技术。DWS通过集成、清洗和转换多个异构数据源，将数据存储在一个中央存储库中，为用户提供方便的数据访问和分析功能。它采用了并行计算和高性能硬件架构，支持复杂查询、数据挖掘和报表生成等操作，帮助企业快速从海量数据中提取有价值的信息和洞察。DWS还具备数据安全性和数据质量控制的能力，可以提供决策支持和业务智能分析。",
+                    ClickCommand = ClickCommand
                 },
                 new()
                 {
@@ -110,7 +105,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     Name = "IInnerPlugin",
                     Author = "Hisoka",
                     Version = new Version("1.0.0.0"),
-                    Description = "DWS（Data Warehouse System）是数据仓库系统的缩写，它是一种用于管理和组织大量数据的技术。DWS通过集成、清洗和转换多个异构数据源，将数据存储在一个中央存储库中，为用户提供方便的数据访问和分析功能。它采用了并行计算和高性能硬件架构，支持复杂查询、数据挖掘和报表生成等操作，帮助企业快速从海量数据中提取有价值的信息和洞察。DWS还具备数据安全性和数据质量控制的能力，可以提供决策支持和业务智能分析。"
+                    Description = "DWS（Data Warehouse System）是数据仓库系统的缩写，它是一种用于管理和组织大量数据的技术。DWS通过集成、清洗和转换多个异构数据源，将数据存储在一个中央存储库中，为用户提供方便的数据访问和分析功能。它采用了并行计算和高性能硬件架构，支持复杂查询、数据挖掘和报表生成等操作，帮助企业快速从海量数据中提取有价值的信息和洞察。DWS还具备数据安全性和数据质量控制的能力，可以提供决策支持和业务智能分析。",
+                    ClickCommand = ClickCommand
                 },
                 new()
                 {
@@ -119,9 +115,33 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     Name = "IInnerPlugin",
                     Author = "Hisoka",
                     Version = new Version("1.0.0.0"),
-                    Description = "DWS（Data Warehouse System）是数据仓库系统的缩写，它是一种用于管理和组织大量数据的技术。DWS通过集成、清洗和转换多个异构数据源，将数据存储在一个中央存储库中，为用户提供方便的数据访问和分析功能。它采用了并行计算和高性能硬件架构，支持复杂查询、数据挖掘和报表生成等操作，帮助企业快速从海量数据中提取有价值的信息和洞察。DWS还具备数据安全性和数据质量控制的能力，可以提供决策支持和业务智能分析。"
+                    Description = "DWS（Data Warehouse System）是数据仓库系统的缩写，它是一种用于管理和组织大量数据的技术。DWS通过集成、清洗和转换多个异构数据源，将数据存储在一个中央存储库中，为用户提供方便的数据访问和分析功能。它采用了并行计算和高性能硬件架构，支持复杂查询、数据挖掘和报表生成等操作，帮助企业快速从海量数据中提取有价值的信息和洞察。DWS还具备数据安全性和数据质量控制的能力，可以提供决策支持和业务智能分析。",
+                    ClickCommand = ClickCommand
                 },
             };
+        }
+
+        public ObservableCollection<PluginItemInfoModel> PluginItems {
+            get => _pluginItems;
+            set => SetProperty(ref _pluginItems, value);
+        }
+
+        public ObservableCollection<PluginTypeItemInfoModel> PluginTypeItems {
+            get => _pluginTypeItems;
+            set => SetProperty(ref _pluginTypeItems, value);
+        }
+
+        public PluginItemInfoModel SelectPluginItem {
+            get => _selectPluginItem;
+            set => SetProperty(ref _selectPluginItem, value);
+        }
+
+        public ICommand ClickCommand {
+            get => new DelegateCommand<PluginItemInfoModel>(ClickDelegate);
+        }
+
+        private async void ClickDelegate(PluginItemInfoModel obj) {
+            this.SelectPluginItem = obj;
         }
     }
 }

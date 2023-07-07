@@ -53,8 +53,10 @@ internal class Program {
         protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
             var fromFile = Image.FromFile($"{AppDomain.CurrentDomain.BaseDirectory}17.jpg");
 
+            /*var watermark = fromFile.AddTextWatermark($"SF123456789\n0.33\ntime:20230707", Color.Blue);
+            watermark.Save($"{AppDomain.CurrentDomain.BaseDirectory}watermark.jpg", ImageFormat.Jpeg);
             var imageToBase64 = fromFile.ConvertImageToBase64();
-            var image = imageToBase64.ConvertBase64ToImage();
+            var image = imageToBase64.ConvertBase64ToImage();*/
             //image.Save($"{AppDomain.CurrentDomain.BaseDirectory}13.jpg", ImageFormat.Jpeg);
 
             //return;

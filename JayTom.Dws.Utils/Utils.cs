@@ -40,5 +40,18 @@ namespace JayTom.Dws.Utils {
                 return null;
             }
         }
+
+        public static Image AddTextWatermark(this Image image, string watermarkText, Color brushColor, int fontSize = 70, string familyName = "Arial") {
+            try {
+                using var graphics = Graphics.FromImage(image);
+                using var font = new Font(familyName, fontSize, FontStyle.Bold);
+                using var brush = new SolidBrush(brushColor);
+                graphics.DrawString(watermarkText, font, brush, new PointF(10, 10));
+            }
+            catch (Exception) {
+                return image;
+            }
+            return image;
+        }
     }
 }

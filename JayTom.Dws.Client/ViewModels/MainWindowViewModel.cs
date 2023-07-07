@@ -173,15 +173,15 @@ namespace JayTom.Dws.Client.ViewModels {
                         offsetY: 10);
 
                     cfg.LifetimeSupervisor = new TimeAndCountBasedLifetimeSupervisor(
-                        notificationLifetime: TimeSpan.FromSeconds(3),
+                        notificationLifetime: TimeSpan.FromSeconds(1),
                         maximumNotificationCount: MaximumNotificationCount.FromCount(5));
 
                     cfg.Dispatcher = Application.Current.Dispatcher;
                 });
-                while (true) {
-                    notifier.ShowSuccess("aaa");
+                /*while (true) {
+                    notifier.ShowError("aaa");
                     await Task.Delay(TimeSpan.FromSeconds(1));
-                }
+                }*/
 
                 //_regionManager.Regions["ContentRegion"].RequestNavigate("HomeView");
             });
