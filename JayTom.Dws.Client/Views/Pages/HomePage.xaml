@@ -14,7 +14,6 @@
     Focusable="False"
     mc:Ignorable="d">
     <Page.Resources>
-
         <converters:CameraListBoxWidthConverter x:Key="CameraListBoxWidthConverter" />
     </Page.Resources>
     <Grid>
@@ -32,13 +31,23 @@
             ItemTemplate="{StaticResource CameraTemplate}"
             ItemsSource="{Binding CameraItems, UpdateSourceTrigger=PropertyChanged}"
             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-            ScrollViewer.VerticalScrollBarVisibility="Disabled">
+            ScrollViewer.VerticalScrollBarVisibility="Disabled"
+            Style="{StaticResource CustomListBoxStyle}">
             <ListBox.Template>
                 <ControlTemplate TargetType="{x:Type ListBox}">
-                    <ScrollViewer
-                        Focusable="False"
-                        HorizontalScrollBarVisibility="Disabled"
-                        VerticalScrollBarVisibility="Auto">
+                    <ScrollViewer Focusable="False">
+                        <ScrollViewer.Style>
+                            <Style TargetType="ScrollViewer">
+                                <Style.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
+                                    </Trigger>
+                                    <Trigger Property="IsMouseOver" Value="False">
+                                        <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Hidden" />
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ScrollViewer.Style>
                         <WrapPanel
                             HorizontalAlignment="Center"
                             VerticalAlignment="Top"
@@ -49,30 +58,6 @@
                     </ScrollViewer>
                 </ControlTemplate>
             </ListBox.Template>
-            <ListBox.ItemContainerStyle>
-                <Style TargetType="ListBoxItem">
-                    <Setter Property="Height" Value="Auto" />
-                    <Setter Property="Margin" Value="0" />
-                    <Setter Property="Padding" Value="0" />
-                    <Setter Property="Focusable" Value="False" />
-                    <Setter Property="IsSelected" Value="False" />
-                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                    <Setter Property="Background" Value="Transparent" />
-                    <Setter Property="Foreground" Value="Transparent" />
-                    <Setter Property="SnapsToDevicePixels" Value="True" />
-                    <!--  去掉焦点框  -->
-                    <Setter Property="Template">
-                        <Setter.Value>
-                            <ControlTemplate TargetType="{x:Type ListBoxItem}">
-                                <ContentPresenter
-                                    Content="{TemplateBinding Content}"
-                                    ContentStringFormat="{TemplateBinding ContentStringFormat}"
-                                    ContentTemplate="{TemplateBinding ContentTemplate}" />
-                            </ControlTemplate>
-                        </Setter.Value>
-                    </Setter>
-                </Style>
-            </ListBox.ItemContainerStyle>
         </ListBox>
     </Grid>
 </Page>

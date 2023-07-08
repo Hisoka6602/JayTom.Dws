@@ -48,14 +48,16 @@
                         IsEnabled="False"
                         Text="&#xe60e;" />
                     <Image
+                        Name="PackImage"
                         Grid.Row="0"
                         Source=" pack://application:,,,/Image/14.jpg"
                         Stretch="Fill">
-                        <b:Interaction.Triggers>
-                            <b:EventTrigger>
-                                <interactivity:InvokeCommandAction Command="{Binding ImageClickCommand}" CommandParameter="{Binding}" />
-                            </b:EventTrigger>
-                        </b:Interaction.Triggers>
+                        <Image.InputBindings>
+                            <MouseBinding
+                                Command="{Binding ImageClickCommand}"
+                                CommandParameter="{Binding}"
+                                MouseAction="LeftClick" />
+                        </Image.InputBindings>
                     </Image>
                 </Grid>
 
@@ -105,6 +107,7 @@
                             Style="{StaticResource MaterialDesignIconButton}">
                             <Grid>
                                 <TextBlock
+                                    Name="StatusBlock"
                                     HorizontalAlignment="Center"
                                     VerticalAlignment="Center"
                                     FontFamily="pack://application:,,,/Fonts/#iconfont"
@@ -113,6 +116,7 @@
                                     Text="{Binding Status, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource CameraStatusReadyFontConverter}}"
                                     Visibility="Visible" />
                                 <ProgressBar
+                                    Name="StatusProgressBar"
                                     Width="25"
                                     Height="25"
                                     HorizontalAlignment="Center"
@@ -199,5 +203,24 @@
                 </Border>
             </Grid>
         </materialDesign:Card>
+        <DataTemplate.Triggers>
+            <DataTrigger Binding="{Binding IsSwitchingState}" Value="True">
+                <Setter TargetName="StatusBlock" Property="Visibility" Value="Hidden" />
+                <Setter TargetName="StatusProgressBar" Property="Visibility" Value="Visible" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding IsSwitchingState}" Value="False">
+                <Setter TargetName="StatusBlock" Property="Visibility" Value="Visible" />
+                <Setter TargetName="StatusProgressBar" Property="Visibility" Value="Hidden" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Status}" Value="Disconnected">
+                <Setter TargetName="PackImage" Property="Visibility" Value="Hidden" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Status}" Value="Failure">
+                <Setter TargetName="PackImage" Property="Visibility" Value="Hidden" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Status}" Value="Running">
+                <Setter TargetName="PackImage" Property="Visibility" Value="Visible" />
+            </DataTrigger>
+        </DataTemplate.Triggers>
     </DataTemplate>
 </ResourceDictionary>

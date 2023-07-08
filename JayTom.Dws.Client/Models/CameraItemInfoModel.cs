@@ -15,6 +15,13 @@ namespace JayTom.Dws.Client.Models {
         private CameraType _type;
         private CameraStatus _status = CameraStatus.Disconnected;
         private double _frameRate;
+        private int _cameraId;
+        private bool _isSwitchingState;
+
+        public int CameraId {
+            get => _cameraId;
+            set => SetProperty(ref _cameraId, value);
+        }
 
         /// <summary>
         /// 图片
@@ -57,9 +64,12 @@ namespace JayTom.Dws.Client.Models {
         }
 
         /// <summary>
-        /// 是否激活相机
+        /// 是否切换状态中
         /// </summary>
-        public bool IsCameraActive { get; set; }
+        public bool IsSwitchingState {
+            get => _isSwitchingState;
+            set => SetProperty(ref _isSwitchingState, value);
+        }
 
         /// <summary>
         /// 相机连接类型

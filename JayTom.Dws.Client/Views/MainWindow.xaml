@@ -71,7 +71,7 @@
                         <Grid.RowDefinitions>
                             <RowDefinition Height="70" />
                             <RowDefinition Height="*" />
-                            <RowDefinition Height="70" />
+                            <RowDefinition Height="30" />
                         </Grid.RowDefinitions>
                         <!--  标题栏、工具条  -->
                         <Border
