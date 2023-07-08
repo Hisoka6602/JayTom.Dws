@@ -18,7 +18,7 @@ namespace JayTom.Dws.Client.Converters {
                 PluginStatus.Upgradeable => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#64B1FF")),
                 PluginStatus.Invalid => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFE5A3")),
                 PluginStatus.BugFound => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#F55B65")),
-                _ => Colors.Transparent,
+                _ => new SolidColorBrush(Colors.Transparent),
             };
         }
 
@@ -28,7 +28,7 @@ namespace JayTom.Dws.Client.Converters {
                 PluginStatus.Upgradeable => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#64B1FF")),
                 PluginStatus.Invalid => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFE5A3")),
                 PluginStatus.BugFound => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#F55B65")),
-                _ => Colors.Transparent,
+                _ => new SolidColorBrush(Colors.Transparent),
             };
         }
     }

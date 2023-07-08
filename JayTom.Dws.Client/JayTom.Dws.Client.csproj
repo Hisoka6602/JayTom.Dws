@@ -13,6 +13,7 @@
     <None Remove="Fonts\iconfont.ttf" />
     <None Remove="Fonts\sarasa-mono-sc-nerd-light.ttf" />
     <None Remove="Fonts\更纱黑体 Mono SC Nerd.ttf" />
+    <None Remove="Image\14.jpg" />
     <None Remove="Image\Logo\logobw.png" />
     <None Remove="Image\NationalFlag\Arabic national flag.png" />
     <None Remove="Image\NationalFlag\Chinese national flag.png" />
@@ -31,6 +32,7 @@
 
   <ItemGroup>
     <Resource Include="Fonts\sarasa-mono-sc-nerd-light.ttf" />
+    <Resource Include="Image\14.jpg" />
     <Resource Include="Image\Logo\logobw.png" />
     <Resource Include="Image\NationalFlag\Arabic national flag.png" />
     <Resource Include="Image\NationalFlag\Chinese national flag.png" />

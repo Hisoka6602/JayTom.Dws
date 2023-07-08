@@ -1,0 +1,203 @@
+﻿<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
+    xmlns:converters="clr-namespace:JayTom.Dws.Client.Converters"
+    xmlns:interactivity="http://prismlibrary.com/"
+    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+    xmlns:models="clr-namespace:JayTom.Dws.Client.Models">
+
+    <converters:CameraStatusColorConverter x:Key="CameraStatusColorConverter" />
+    <converters:CameraTypeFontConverter x:Key="CameraTypeFontConverter" />
+    <converters:CameraTypeToolTipConverter x:Key="CameraTypeToolTipConverter" />
+    <converters:CameraStatusReadyFontConverter x:Key="CameraStatusReadyFontConverter" />
+    <converters:CameraConnectionTypeFontConverter x:Key="CameraConnectionTypeFontConverter" />
+    <converters:CameraConnectionTypeToolTipConverter x:Key="CameraConnectionTypeToolTipConverter" />
+    <!--  CameraConnectionTypeToolTipConverter  -->
+    <DataTemplate x:Key="CameraTemplate" DataType="{x:Type models:CameraItemInfoModel}">
+        <materialDesign:Card
+            materialDesign:ElevationAssist.Elevation="Dp6"
+            Background="Transparent"
+            UniformCornerRadius="15">
+            <Grid
+                Width="260"
+                Height="300"
+                Margin="10"
+                Background="#2E2E2E"
+                ClipToBounds="True">
+                <Grid.Clip>
+                    <RectangleGeometry
+                        RadiusX="15"
+                        RadiusY="15"
+                        Rect="0,0,260,300" />
+                </Grid.Clip>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="70" />
+                </Grid.RowDefinitions>
+                <!--  图片  -->
+                <Grid Name="CameraImage" Grid.Row="0">
+                    <!--  默认底图  -->
+                    <TextBlock
+                        Grid.Row="0"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        FontFamily="pack://application:,,,/Fonts/#iconfont"
+                        FontSize="150"
+                        Foreground="DimGray"
+                        IsEnabled="False"
+                        Text="&#xe60e;" />
+                    <Image
+                        Grid.Row="0"
+                        Source=" pack://application:,,,/Image/14.jpg"
+                        Stretch="Fill">
+                        <b:Interaction.Triggers>
+                            <b:EventTrigger>
+                                <interactivity:InvokeCommandAction Command="{Binding ImageClickCommand}" CommandParameter="{Binding}" />
+                            </b:EventTrigger>
+                        </b:Interaction.Triggers>
+                    </Image>
+                </Grid>
+
+                <!--  状态线  -->
+                <Grid
+                    Grid.Row="0"
+                    Grid.RowSpan="2"
+                    Margin="0,-7,0,0"
+                    VerticalAlignment="Top"
+                    RenderTransformOrigin=".5,.5">
+                    <Grid.RenderTransform>
+                        <TranslateTransform Y="{Binding ElementName=CameraImage, Path=ActualHeight}" />
+                    </Grid.RenderTransform>
+                    <Border
+                        Height="3"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Center"
+                        Background="{Binding Status, Converter={StaticResource CameraStatusColorConverter}}" />
+                    <Ellipse
+                        Grid.Row="0"
+                        Width="15"
+                        Height="15"
+                        Margin="30,0,0,0"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        Fill="{Binding Status, Converter={StaticResource CameraStatusColorConverter}}" />
+                </Grid>
+
+                <!--  其他内容  -->
+                <Border Name="MessageBorder" Grid.Row="1">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="18" />
+                        </Grid.RowDefinitions>
+
+                        <!--  相机操作  -->
+                        <Button
+                            Grid.Row="0"
+                            Margin="10,2"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Background="{DynamicResource MaterialDesignTextFieldBoxBackground}"
+                            Command="{Binding StatusClickCommand}"
+                            CommandParameter="{Binding}"
+                            Focusable="False"
+                            Style="{StaticResource MaterialDesignIconButton}">
+                            <Grid>
+                                <TextBlock
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    FontFamily="pack://application:,,,/Fonts/#iconfont"
+                                    FontSize="20"
+                                    Foreground="FloralWhite"
+                                    Text="{Binding Status, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource CameraStatusReadyFontConverter}}"
+                                    Visibility="Visible" />
+                                <ProgressBar
+                                    Width="25"
+                                    Height="25"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    IsIndeterminate="True"
+                                    Style="{StaticResource MaterialDesignCircularProgressBar}"
+                                    Visibility="Hidden"
+                                    Value="0" />
+                            </Grid>
+                        </Button>
+                        <!--  帧率  -->
+                        <StackPanel
+                            Grid.Row="0"
+                            MaxWidth="100"
+                            Margin="0,0,20,0"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Orientation="Horizontal">
+                            <TextBlock
+                                Margin="2,0"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                FontFamily="pack://application:,,,/Fonts/#iconfont"
+                                FontSize="20"
+                                Foreground="Orange"
+                                Text="&#xe647;" />
+                            <TextBlock
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                                FontSize="13"
+                                FontWeight="Black"
+                                Foreground="DimGray"
+                                IsEnabled="False"
+                                TextAlignment="Center">
+                                <Run Text="帧率:" />
+                                <Run Text="{Binding FrameRate, StringFormat={}{0:F1}}" />
+                            </TextBlock>
+                        </StackPanel>
+                        <StackPanel
+                            Grid.Row="0"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center"
+                            Orientation="Horizontal">
+                            <!--  相机类型  -->
+                            <TextBlock
+                                Margin="10,2"
+                                VerticalAlignment="Center"
+                                FontFamily="pack://application:,,,/Fonts/#iconfont"
+                                FontSize="25"
+                                Foreground="DimGray"
+                                Text="{Binding Type, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource CameraTypeFontConverter}}"
+                                ToolTip="{Binding Type, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource CameraTypeToolTipConverter}}" />
+                            <!--  分割线  -->
+                            <Rectangle
+                                Width="1"
+                                Height="18"
+                                VerticalAlignment="Stretch"
+                                Fill="DimGray"
+                                IsEnabled="False" />
+                            <!--  连接方式  -->
+                            <TextBlock
+                                Margin="10,2"
+                                VerticalAlignment="Center"
+                                FontFamily="pack://application:,,,/Fonts/#iconfont"
+                                FontSize="20"
+                                Foreground="DimGray"
+                                Text="{Binding ConnectionType, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource CameraConnectionTypeFontConverter}}"
+                                ToolTip="{Binding ConnectionType, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource CameraConnectionTypeToolTipConverter}}" />
+                        </StackPanel>
+                        <!--  相机名称  -->
+                        <TextBlock
+                            Grid.Row="1"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Bottom"
+                            FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                            FontSize="16"
+                            FontWeight="Bold"
+                            Foreground="DimGray"
+                            IsEnabled="False"
+                            Text="{Binding CameraName, UpdateSourceTrigger=PropertyChanged}"
+                            TextAlignment="Center" />
+                    </Grid>
+                </Border>
+            </Grid>
+        </materialDesign:Card>
+    </DataTemplate>
+</ResourceDictionary>

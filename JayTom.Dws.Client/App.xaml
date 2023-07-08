@@ -159,7 +159,10 @@
                 <ResourceDictionary Source="Template/LanguageComboBoxTemplate.xaml" />
                 <!--  菜单模板  -->
                 <ResourceDictionary Source="Template/MenuTemplate.xaml" />
+                <!--  插件模板  -->
                 <ResourceDictionary Source="Template/PluginTemplate.xaml" />
+                <!--  摄像头模板  -->
+                <ResourceDictionary Source="Template/CameraTemplate.xaml" />
                 <!--  静态数据源  -->
                 <ResourceDictionary Source="/DataSources/LanguageInfoSources.xaml" />
             </ResourceDictionary.MergedDictionaries>

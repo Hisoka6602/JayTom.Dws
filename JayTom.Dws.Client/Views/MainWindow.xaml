@@ -296,6 +296,12 @@
                                 </TextBlock.Style>
                             </TextBlock>
                             <!--  主页面 跨2列  -->
+                            <Frame
+                                Grid.Row="1"
+                                Grid.RowSpan="2"
+                                Focusable="False"
+                                NavigationUIVisibility="Hidden"
+                                Source="Pages/HomePage.xaml" />
                         </Grid>
                     </Grid>
                 </materialDesign:TransitionerSlide>
