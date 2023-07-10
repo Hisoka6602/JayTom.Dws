@@ -18,8 +18,10 @@
     </Page.Resources>
     <Grid>
         <!--  摄像头列表  -->
+        <!--  Width="{Binding Items.Count, RelativeSource={RelativeSource Self}, Converter={StaticResource CameraListBoxWidthConverter}, UpdateSourceTrigger=PropertyChanged}"  -->
         <ListBox
-            Width="{Binding Items.Count, RelativeSource={RelativeSource Self}, Converter={StaticResource CameraListBoxWidthConverter}, UpdateSourceTrigger=PropertyChanged}"
+            Name="CameraListBox"
+            Width="900"
             MinWidth="600"
             MaxWidth="900"
             Margin="0,10"

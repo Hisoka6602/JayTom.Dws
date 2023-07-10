@@ -13,23 +13,36 @@
     <converters:CameraStatusReadyFontConverter x:Key="CameraStatusReadyFontConverter" />
     <converters:CameraConnectionTypeFontConverter x:Key="CameraConnectionTypeFontConverter" />
     <converters:CameraConnectionTypeToolTipConverter x:Key="CameraConnectionTypeToolTipConverter" />
-    <!--  CameraConnectionTypeToolTipConverter  -->
+    <converters:RectConverter x:Key="RectConverter" />
+    <converters:CameraGridWidthConverter x:Key="CameraGridWidthConverter" />
+    <converters:CameraGridHeightConverter x:Key="CameraGridHeightConverter" />
+    <!--  CameraGridHeightConverter  -->
     <DataTemplate x:Key="CameraTemplate" DataType="{x:Type models:CameraItemInfoModel}">
         <materialDesign:Card
             materialDesign:ElevationAssist.Elevation="Dp6"
             Background="Transparent"
             UniformCornerRadius="15">
             <Grid
-                Width="260"
-                Height="300"
+                Name="CameraGrid"
+                Width="{Binding Items.Count, RelativeSource={RelativeSource AncestorType={x:Type ListBox}, Mode=FindAncestor}, Converter={StaticResource CameraGridWidthConverter}}"
+                Height="{Binding Items.Count, RelativeSource={RelativeSource AncestorType={x:Type ListBox}, Mode=FindAncestor}, Converter={StaticResource CameraGridHeightConverter}}"
                 Margin="10"
-                Background="#2E2E2E"
-                ClipToBounds="True">
+                Background="#2E2E2E">
                 <Grid.Clip>
-                    <RectangleGeometry
-                        RadiusX="15"
-                        RadiusY="15"
-                        Rect="0,0,260,300" />
+                    <RectangleGeometry RadiusX="15" RadiusY="15">
+                        <RectangleGeometry.Rect>
+                            <MultiBinding Converter="{StaticResource RectConverter}">
+                                <Binding
+                                    ElementName="CameraGrid"
+                                    Path="ActualWidth"
+                                    UpdateSourceTrigger="PropertyChanged" />
+                                <Binding
+                                    ElementName="CameraGrid"
+                                    Path="ActualHeight"
+                                    UpdateSourceTrigger="PropertyChanged" />
+                            </MultiBinding>
+                        </RectangleGeometry.Rect>
+                    </RectangleGeometry>
                 </Grid.Clip>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*" />

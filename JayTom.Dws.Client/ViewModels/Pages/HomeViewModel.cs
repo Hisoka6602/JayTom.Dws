@@ -42,6 +42,15 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                 },
                 new CameraItemInfoModel()
                 {
+                    CameraName = "海康工业相机.2",
+                    Status = CameraStatus.Running,
+                    Type = CameraType.PanoramicCamera,
+                    ConnectionType = ConnectionType.Ethernet,
+                    ImageClickCommand = ImageClickCommand,
+                    StatusClickCommand = StatusClickCommand,
+                },
+                /*new CameraItemInfoModel()
+                {
                     CameraName = "海康工业相机.3",
                     Status = CameraStatus.Failure,
                     Type = CameraType.SmartCamera,
@@ -112,7 +121,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     ConnectionType = ConnectionType.Bluetooth,
                     ImageClickCommand = ImageClickCommand,
                     StatusClickCommand = StatusClickCommand,
-                },
+                },*/
             };
         }
 

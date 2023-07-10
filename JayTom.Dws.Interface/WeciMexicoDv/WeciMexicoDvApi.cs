@@ -51,8 +51,9 @@ namespace JayTom.Dws.Interface.WeciMexicoDv {
             UploadResponse response;
             image = image?.AddTextWatermark(
                 $"bc_no:{barcode}\nsize_width:{width}\nsize_long:{length}\nsize_heigth:{height}\nweigth_kg:{weight}\ndate_tran:{DateTime.Now:yyyy-MM-dd HH:mm:ss}",
-                Color.Red);
+                Color.Red, 30);
             var imageBase64 = image?.ConvertImageToBase64() ?? string.Empty;
+            //image?.Save($"{AppDomain.CurrentDomain.BaseDirectory}watermark.jpg", ImageFormat.Jpeg);
             //var base64String = Convert.ToBase64String(Encoding.Default.GetBytes(imageBase64));
             var data = new {
                 bc_no = barcode,
