@@ -60,6 +60,16 @@ namespace JayTom.Dws.Device.Camera {
         event EventHandler<string> DeviceWarning;
 
         /// <summary>
+        /// 物品超出边缘
+        /// </summary>
+        public event EventHandler<ItemOutOfBoundsEventArgs>? ItemOutOfBounds;
+
+        /// <summary>
+        /// 画面变动未检测到物品
+        /// </summary>
+        public event EventHandler<EventArgs>? ItemNotDetected;
+
+        /// <summary>
         /// 暂停
         /// </summary>
         /// <returns></returns>
@@ -121,5 +131,16 @@ namespace JayTom.Dws.Device.Camera {
         /// 获取或设置物体区域的坐标数组。
         /// </summary>
         public Point[]? AreaCoords { get; set; }
+    }
+
+    public class ItemOutOfBoundsEventArgs : EventArgs {
+        public OutOfBoundsDirection Direction { get; set; } // 超出边缘的方位
+    }
+
+    public enum OutOfBoundsDirection {
+        Up,
+        Down,
+        Left,
+        Right
     }
 }

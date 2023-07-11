@@ -38,6 +38,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\JayTom.Dws.Data\JayTom.Dws.Data.csproj" />
+    <ProjectReference Include="..\JayTom.Dws.Device\JayTom.Dws.Device.csproj" />
     <ProjectReference Include="..\JayTom.Dws.Domain\JayTom.Dws.Domain.csproj" />
     <ProjectReference Include="..\JayTom.Dws.Infrastructure\JayTom.Dws.Infrastructure.csproj" />
     <ProjectReference Include="..\JayTom.Dws.Interface\JayTom.Dws.Interface.csproj" />
@@ -48,5 +49,10 @@
     <Resource Include="Fonts\iconfont.ttf" />
     <Resource Include="Fonts\更纱黑体 Mono SC Nerd.ttf" />
   </ItemGroup>
-
+  <Target Name="CopyDeviceLib" AfterTargets="AfterBuild">
+    <ItemGroup>
+      <DeviceLibFiles Include="$(SolutionDir)JayTom.Dws.Device\DeviceLib\*\*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(DeviceLibFiles)" DestinationFolder="$(TargetDir)" />
+  </Target>
 </Project>

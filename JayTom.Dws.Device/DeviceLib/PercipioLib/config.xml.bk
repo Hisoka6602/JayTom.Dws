@@ -1,0 +1,236 @@
+<config>
+  <SysLogFileSize type="int32" id="0x10000107">1000000</SysLogFileSize>
+  <AutoStart type="bool" id="0x10000109">0</AutoStart>
+  <AutoStartDelay type="int32" id="0x1000010a">40000</AutoStartDelay>
+  <AutoStartPeriod type="int32" id="0x1000010b">5000</AutoStartPeriod>
+  <SysLogLevel type="int32" id="0x1000010c">2</SysLogLevel>
+  <SysLogToFile type="bool" id="0x1000010d">0</SysLogToFile>
+  <SysLogFileCount type="int32" id="0x1000010e">5</SysLogFileCount>
+  <SysAbortWhenDevOffline type="bool" id="0x1000010f">0</SysAbortWhenDevOffline>
+  <SysProtocolConfigs type="string" id="0x10000113"></SysProtocolConfigs>
+  <SysShowDebugImage type="bool" id="0x10000114">0</SysShowDebugImage>
+  <SysExternalDataProcessorConfigs type="string" id="0x1000011c"></SysExternalDataProcessorConfigs>
+  <DevEnableDepth type="bool" id="0x20010103">1</DevEnableDepth>
+  <DevEnableColor type="bool" id="0x20010104">1</DevEnableColor>
+  <DevEnableLeftIr type="bool" id="0x20010106">0</DevEnableLeftIr>
+  <DevEnableRightIr type="bool" id="0x20010107">0</DevEnableRightIr>
+  <DevEnableTriggerMode type="bool" id="0x20010108">0</DevEnableTriggerMode>
+  <DevFramePerTrigger type="int32" id="0x20010109">1</DevFramePerTrigger>
+  <DevLaserPower type="int32" id="0x2001010a">100</DevLaserPower>
+  <DevRgbdReigster type="bool" id="0x2001010b">1</DevRgbdReigster>
+  <DevProjUnitMm type="float" id="0x2001010e">2</DevProjUnitMm>
+  <DevProjSize type="int32" id="0x2001010f">2000 2000</DevProjSize>
+  <DevRgbUndistort type="bool" id="0x20010110">0</DevRgbUndistort>
+  <DevColorImageMode type="int32" id="0x20010114">640 480</DevColorImageMode>
+  <DevDepthImageMode type="int32" id="0x20010115">640 480</DevDepthImageMode>
+  <DevFixDepth type="bool" id="0x20010119">0</DevFixDepth>
+  <DevLeftIrGain type="int32" id="0x20010132">-1</DevLeftIrGain>
+  <DevRightIrGain type="int32" id="0x20010133">-1</DevRightIrGain>
+  <DevLeftRGain type="int32" id="0x20010134">-1</DevLeftRGain>
+  <DevLeftGGain type="int32" id="0x20010135">-1</DevLeftGGain>
+  <DevLeftBGain type="int32" id="0x20010136">-1</DevLeftBGain>
+  <DevLeftIrExpo type="int32" id="0x2001013a">600</DevLeftIrExpo>
+  <DevRightIrExpo type="int32" id="0x2001013b">600</DevRightIrExpo>
+  <DevLeftRgbExpo type="int32" id="0x2001013c">-1</DevLeftRgbExpo>
+  <DevRightRgbExpo type="int32" id="0x2001013d">-1</DevRightRgbExpo>
+  <DevLeftRgbScaleCoef type="float" id="0x20010142">1</DevLeftRgbScaleCoef>
+  <DevLeftIrUndistort type="bool" id="0x20010144">0</DevLeftIrUndistort>
+  <DevLaserAutoCtrl type="bool" id="0x20010145">1</DevLaserAutoCtrl>
+  <DevForceDeviceSN type="string" id="0x20010146"></DevForceDeviceSN>
+  <DevForceDeviceIP type="string" id="0x20010147"></DevForceDeviceIP>
+  <DevSoftAutoGain type="bool" id="0x20010149">0</DevSoftAutoGain>
+  <EnableUsbInterface type="bool" id="0x2001014a">1</EnableUsbInterface>
+  <EnableNetInterface type="bool" id="0x2001014b">1</EnableNetInterface>
+  <DevRgbIspAE type="bool" id="0x2001014c">0</DevRgbIspAE>
+  <DevNFramesFusion type="int32" id="0x2001014e">1</DevNFramesFusion>
+  <DevFusionSigmaS type="float" id="0x2001014f">10</DevFusionSigmaS>
+  <DevFusionSigmaR type="float" id="0x20010150">20</DevFusionSigmaR>
+  <DevFusionWin type="int32" id="0x20010151">10</DevFusionWin>
+  <DevFusionSigmaRate type="float" id="0x20010152">0.1</DevFusionSigmaRate>
+  <DevTriggerDelayUs type="int32" id="0x20010153">0</DevTriggerDelayUs>
+  <DevTriggerMode1MFps type="int32" id="0x20010155">0</DevTriggerMode1MFps>
+  <DevLeftIrAutoExpo type="bool" id="0x20010156">1</DevLeftIrAutoExpo>
+  <DevRightIrAutoExpo type="bool" id="0x20010157">1</DevRightIrAutoExpo>
+  <DevLeftRgbAutoExpo type="bool" id="0x20010158">1</DevLeftRgbAutoExpo>
+  <DevRightRgbAutoExpo type="bool" id="0x20010159">1</DevRightRgbAutoExpo>
+  <DevLeftRgbAWB type="bool" id="0x2001015a">0</DevLeftRgbAWB>
+  <DevRightRgbAWB type="bool" id="0x2001015b">1</DevRightRgbAWB>
+  <DevImgTranslation type="float" id="0x2001015c">0 0</DevImgTranslation>
+  <DevEleBlurKernalSize type="int32" id="0x20010160">5</DevEleBlurKernalSize>
+  <DevStreamAsyncMode type="int32" id="0x20010162">0</DevStreamAsyncMode>
+  <DevOrgDepthResolution type="int32" id="0x20010163">0 0</DevOrgDepthResolution>
+  <DevOrgColorResolution type="int32" id="0x20010164">0 0</DevOrgColorResolution>
+  <DevIrlResolution type="int32" id="0x20010165">0 0</DevIrlResolution>
+  <DevOrgIrlResolution type="int32" id="0x20010166">0 0</DevOrgIrlResolution>
+  <DevTofDepthQuality type="int32" id="0x20010167">4</DevTofDepthQuality>
+  <DevLeftIrAnalogGain type="int32" id="0x20010168">-1</DevLeftIrAnalogGain>
+  <DevRightIrAnalogGain type="int32" id="0x20010169">-1</DevRightIrAnalogGain>
+  <DevRGBAnalogGain type="int32" id="0x2001016a">-1</DevRGBAnalogGain>
+  <DevRGBSoftGain type="bool" id="0x2001016b">0</DevRGBSoftGain>
+  <DevTofChannel type="int32" id="0x2001016c">0</DevTofChannel>
+  <DevNumMultiViewFrameFusion type="int32" id="0x20010178">-1</DevNumMultiViewFrameFusion>
+  <AlgcFusionPose type="float" id="0x20010179">0 0 0 0 0 0</AlgcFusionPose>
+  <DevImgTranslationZ type="float" id="0x2001017a">0</DevImgTranslationZ>
+  <DevEnableMultiviewFrameFusion type="bool" id="0x2001017b">0</DevEnableMultiviewFrameFusion>
+  <DevAsyncTriggerMode type="bool" id="0x2001017d">0</DevAsyncTriggerMode>
+  <DevGenP3DForFHP3D type="bool" id="0x2001017e">1</DevGenP3DForFHP3D>
+  <DevTofNoiseFilterThresh type="int32" id="0x20010180">0</DevTofNoiseFilterThresh>
+  <DevTofModulationThresh type="int32" id="0x20010181">640</DevTofModulationThresh>
+  <DevTofHdrRatio type="int32" id="0x20010182">1</DevTofHdrRatio>
+  <DevTofJitterThresh type="int32" id="0x20010183">1</DevTofJitterThresh>
+  <DevLeftIrHdr type="bool" id="0x20010184">0</DevLeftIrHdr>
+  <DevRightIrHdr type="bool" id="0x20010185">0</DevRightIrHdr>
+  <DevHdrParam type="int32" id="0x20010186">2 2</DevHdrParam>
+  <DevAecRoi type="int32" id="0x20010187">0 0 640 480</DevAecRoi>
+  <DevPcdc type="bool" id="0x20010200">0</DevPcdc>
+  <DevPcdcMinDisp type="int32" id="0x20010201">1</DevPcdcMinDisp>
+  <DevPcdcNumDisp type="int32" id="0x20010202">128</DevPcdcNumDisp>
+  <DevPcdcWinSize type="int32" id="0x20010203">11</DevPcdcWinSize>
+  <DevPcdcP1 type="int32" id="0x20010204">5</DevPcdcP1>
+  <DevPcdcP2 type="int32" id="0x20010205">100</DevPcdcP2>
+  <DevPcdcDisp12MaxDiff type="int32" id="0x20010206">5</DevPcdcDisp12MaxDiff>
+  <DevPcdcPreFilterCap type="int32" id="0x20010207">30</DevPcdcPreFilterCap>
+  <DevPcdcUniqRatio type="int32" id="0x20010208">10</DevPcdcUniqRatio>
+  <DevPcdcSpeckleWin type="int32" id="0x20010209">0</DevPcdcSpeckleWin>
+  <DevPcdcSpeckleRange type="int32" id="0x2001020a">0</DevPcdcSpeckleRange>
+  <DevPcdcFullDp type="bool" id="0x2001020b">0</DevPcdcFullDp>
+  <DevProjRotDeg type="float" id="0x2001020c">0</DevProjRotDeg>
+  <DevCmosSyncEnable type="bool" id="0x2001020f">1</DevCmosSyncEnable>
+  <AlgcEnhanceFilter type="bool" id="0x30000101">1</AlgcEnhanceFilter>
+  <AlgcSpeckleFilter type="bool" id="0x30000102">1</AlgcSpeckleFilter>
+  <AlgcMinValidDepth type="int32" id="0x30000105">-1</AlgcMinValidDepth>
+  <AlgcMaxValidDepth type="int32" id="0x30000106">-1</AlgcMaxValidDepth>
+  <AlgcSavePointCloud type="bool" id="0x30000107">0</AlgcSavePointCloud>
+  <AlgcSoftColorAwb type="bool" id="0x30000108">0</AlgcSoftColorAwb>
+  <AlgcMaxCountOfRecord type="int32" id="0x30000109">-1</AlgcMaxCountOfRecord>
+  <AlgcMedianBlurKerSize type="int32" id="0x3000010a">0</AlgcMedianBlurKerSize>
+  <AlgcMaxCapacityOfPackRecord type="int32" id="0x3000010b">-1</AlgcMaxCapacityOfPackRecord>
+  <AlgcMaxSavedaysOfPackRecord type="int32" id="0x3000010c">-1</AlgcMaxSavedaysOfPackRecord>
+  <AlgcFolderOfPackRecord type="string" id="0x3000010d"></AlgcFolderOfPackRecord>
+  <AlgcEnhanceFilterSigmaS type="float" id="0x30001010">10</AlgcEnhanceFilterSigmaS>
+  <AlgcEnhanceFilterSigmaR type="float" id="0x30001011">20</AlgcEnhanceFilterSigmaR>
+  <AlgcEnhanceFilterWin type="int32" id="0x30001012">10</AlgcEnhanceFilterWin>
+  <AlgcEnhanceFilterSigmaRate type="float" id="0x30001013">0.1</AlgcEnhanceFilterSigmaRate>
+  <AlgcSpeckleFilterDiff type="int32" id="0x30001020">12</AlgcSpeckleFilterDiff>
+  <AlgcSpeckleFilterArea type="int32" id="0x30001021">300</AlgcSpeckleFilterArea>
+  <AlgcRecordDepth type="bool" id="0x30001030">0</AlgcRecordDepth>
+  <AlgcRecordColor type="bool" id="0x30001031">0</AlgcRecordColor>
+  <AlgcRecordIrLeft type="bool" id="0x30001032">0</AlgcRecordIrLeft>
+  <AlgcRecordIrRight type="bool" id="0x30001033">0</AlgcRecordIrRight>
+  <DepthRenderFormat type="int32" id="0x30010101">3</DepthRenderFormat>
+  <DepthRenderDymanicRange type="bool" id="0x30010102">1</DepthRenderDymanicRange>
+  <DepthRenderAbsRange type="int32" id="0x30010103">400 2000</DepthRenderAbsRange>
+  <ColorRenderFormat type="int32" id="0x30020101">3</ColorRenderFormat>
+  <ColorRenderSendMerged type="bool" id="0x30020102">1</ColorRenderSendMerged>
+  <ColorRenderSendEach type="bool" id="0x30020103">0</ColorRenderSendEach>
+  <DepthRenderSendMerged type="bool" id="0x30020104">1</DepthRenderSendMerged>
+  <DepthRenderSendEach type="bool" id="0x30020105">0</DepthRenderSendEach>
+  <PmMinArea type="int32" id="0x30040101">200</PmMinArea>
+  <BgImgCount type="int32" id="0x30040102">3</BgImgCount>
+  <BgDepthRoi type="int32" id="0x30040103">412 55 112 46</BgDepthRoi>
+  <PmLeastHeight type="int32" id="0x30040105">7</PmLeastHeight>
+  <PmPixCutForPlane type="int32" id="0x30040106">10</PmPixCutForPlane>
+  <PmOptBox type="bool" id="0x30040107">1</PmOptBox>
+  <PmBoxCutUpDown type="int32" id="0x30040108">10 10</PmBoxCutUpDown>
+  <PmMaxPlaneSd type="float" id="0x30040109">15</PmMaxPlaneSd>
+  <PmEdgeCutCoef type="float" id="0x3004010a">0.8</PmEdgeCutCoef>
+  <PmMaxShrinkCoef type="float" id="0x3004010b">0.8</PmMaxShrinkCoef>
+  <PmSafeRect type="int32" id="0x3004010c">115 86 379 302</PmSafeRect>
+  <PmMaskBlack type="bool" id="0x3004010d">0</PmMaskBlack>
+  <PmBoxFix type="float" id="0x3004010e">0 0 0</PmBoxFix>
+  <PmIrregFix type="float" id="0x3004010f">0 0 0</PmIrregFix>
+  <PmEnableMoveFix type="bool" id="0x30040111">0</PmEnableMoveFix>
+  <PmMoveFix type="float" id="0x30040112">0 0</PmMoveFix>
+  <PmEnableSpeedFix type="bool" id="0x30040113">0</PmEnableSpeedFix>
+  <PmSpeed type="float" id="0x30040114">0 0</PmSpeed>
+  <PmRotateFix type="float" id="0x30040115">0</PmRotateFix>
+  <PmBasePlaneOffset type="float" id="0x30040116">0</PmBasePlaneOffset>
+  <PmOnlySafeRectOnDepth type="bool" id="0x30040117">0</PmOnlySafeRectOnDepth>
+  <PmMeasureTotal type="bool" id="0x30040118">0</PmMeasureTotal>
+  <PmRedoUnblankIrreg type="bool" id="0x3004011a">0</PmRedoUnblankIrreg>
+  <PmNeverBox type="bool" id="0x3004011b">0</PmNeverBox>
+  <PmBoxCutCoef type="float" id="0x3004011c">10 1</PmBoxCutCoef>
+  <PmBoxCutMethod type="int32" id="0x3004011d">0</PmBoxCutMethod>
+  <PmThinForce type="bool" id="0x3004011e">0</PmThinForce>
+  <PmThinEdgeSensitive type="int32" id="0x3004011f">30</PmThinEdgeSensitive>
+  <PmThinHeightThresh type="int32" id="0x30040120">30</PmThinHeightThresh>
+  <PmThinAuto type="bool" id="0x30040121">1</PmThinAuto>
+  <PmGroundAsBg type="bool" id="0x30040122">1</PmGroundAsBg>
+  <PmAlwaysBox type="bool" id="0x30040123">0</PmAlwaysBox>
+  <PmIntegeralReal type="bool" id="0x30040124">0</PmIntegeralReal>
+  <PmIrregIntegeralCoef type="float" id="0x30040125">1</PmIrregIntegeralCoef>
+  <PmBoxFix1000 type="float" id="0x30040126">0 0 0</PmBoxFix1000>
+  <PmIrregFix1000 type="float" id="0x30040127">0 0 0</PmIrregFix1000>
+  <PmUseRectBounding type="bool" id="0x30040128">0</PmUseRectBounding>
+  <PmMultiObj type="bool" id="0x30040129">0</PmMultiObj>
+  <PmOnlyInsideSafeRect type="bool" id="0x3004012a">0</PmOnlyInsideSafeRect>
+  <PmFrontSpeckleSize type="int32" id="0x3004012b">0</PmFrontSpeckleSize>
+  <PmFrontSpeckleDiff type="int32" id="0x3004012c">0</PmFrontSpeckleDiff>
+  <PmCalcHeadOrig type="bool" id="0x3004012d">0</PmCalcHeadOrig>
+  <PmHeadDivCoef type="int32" id="0x3004012e">3</PmHeadDivCoef>
+  <PmHeadReduceCoefW type="float" id="0x3004012f">0.8</PmHeadReduceCoefW>
+  <PmHeadReduceCoefH type="float" id="0x30040130">0.8</PmHeadReduceCoefH>
+  <PmShrinkIrregular type="bool" id="0x30040131">0</PmShrinkIrregular>
+  <PmUseBgColor type="bool" id="0x30040132">1</PmUseBgColor>
+  <PmBgColorDiff type="int32" id="0x30040133">80</PmBgColorDiff>
+  <PmDebugBgColor type="bool" id="0x30040134">0</PmDebugBgColor>
+  <PmNonThinMinArea type="float" id="0x30040135">0</PmNonThinMinArea>
+  <PmPrefilterOutOfSafeRect type="bool" id="0x30040136">1</PmPrefilterOutOfSafeRect>
+  <PmSortDirection type="int32" id="0x3004013e">0</PmSortDirection>
+  <PmGenSafeRect type="bool" id="0x3004013f">0</PmGenSafeRect>
+  <PmGenSafeRectCoef type="float" id="0x30040140">1</PmGenSafeRectCoef>
+  <PmSafeRectLeftIndent type="int32" id="0x30040141">0</PmSafeRectLeftIndent>
+  <PmSafeRectRightIndent type="int32" id="0x30040142">0</PmSafeRectRightIndent>
+  <PmSafeRectTopIndent type="int32" id="0x30040143">0</PmSafeRectTopIndent>
+  <PmSafeRectBottomIndent type="int32" id="0x30040144">0</PmSafeRectBottomIndent>
+  <PmErodeToSeparate type="bool" id="0x30040145">0</PmErodeToSeparate>
+  <PmErodeToSeparateLenMm type="float" id="0x30040146">0</PmErodeToSeparateLenMm>
+  <PmGradientToSeparate type="bool" id="0x30040147">0</PmGradientToSeparate>
+  <PmGradientToSeparateThresh type="float" id="0x30040148">50</PmGradientToSeparateThresh>
+  <PmRemoveSmallArea type="bool" id="0x30040149">0</PmRemoveSmallArea>
+  <PmRemoveSmallAreaSize type="float" id="0x3004014a">500</PmRemoveSmallAreaSize>
+  <PmRemoveFullyContained type="bool" id="0x3004014b">0</PmRemoveFullyContained>
+  <PmStrategyOfPick type="int32" id="0x3004014c">0</PmStrategyOfPick>
+  <PmRemoveSmallSafeRectInside type="bool" id="0x3004014d">0</PmRemoveSmallSafeRectInside>
+  <PmRemoveSmallSafeRectInsideCoef type="float" id="0x3004014e">0.2</PmRemoveSmallSafeRectInsideCoef>
+  <PmValidAreaCheck type="bool" id="0x3004014f">0</PmValidAreaCheck>
+  <PmValidInSafeRect type="float" id="0x30040150">0.5</PmValidInSafeRect>
+  <PmThinObjType type="int32" id="0x30040151">2</PmThinObjType>
+  <PmRemoveColorOf0Height type="bool" id="0x30040152">0</PmRemoveColorOf0Height>
+  <PmCutOutOfProjectedSafeRect type="bool" id="0x30040153">0</PmCutOutOfProjectedSafeRect>
+  <PmConvertCoord type="bool" id="0x30040154">0</PmConvertCoord>
+  <PmMaskBlankToHighest type="bool" id="0x30040155">0</PmMaskBlankToHighest>
+  <PmResultMedianN type="int32" id="0x30040156">1</PmResultMedianN>
+  <PmDrawIrregHeightCoef type="float" id="0x30040157">1</PmDrawIrregHeightCoef>
+  <PmRemoveGradThresh type="float" id="0x30040158">100</PmRemoveGradThresh>
+  <PmSideEffectBias type="float" id="0x30040159">50</PmSideEffectBias>
+  <PmSideEffectCoef type="float" id="0x3004015a">0.03</PmSideEffectCoef>
+  <PmRecordAiImages type="bool" id="0x3004020a">0</PmRecordAiImages>
+  <PmColorCoefThreshold type="float" id="0x3004020b">0.65</PmColorCoefThreshold>
+  <PmDeepLeaning type="bool" id="0x3004020c">0</PmDeepLeaning>
+  <PmOutputObjInfoImage type="bool" id="0x3004020d">1</PmOutputObjInfoImage>
+  <PmDlTradIntersectAreaRatio type="float" id="0x3004020e">0.85</PmDlTradIntersectAreaRatio>
+  <BgImgEnableDepth type="bool" id="0x30040300">1</BgImgEnableDepth>
+  <BgImgEnableColor type="bool" id="0x30040301">1</BgImgEnableColor>
+  <BgRoiZoomCoef type="float" id="0x30040303">0.5</BgRoiZoomCoef>
+  <BgImgEnableIrl type="bool" id="0x30040304">0</BgImgEnableIrl>
+  <BgResetStatus type="int32" id="0x30040305">2</BgResetStatus>
+  <BgDynamicUpdateBg type="bool" id="0x30040306">0</BgDynamicUpdateBg>
+  <BgDynamicUpdateDepthThresh type="int32" id="0x30040307">5</BgDynamicUpdateDepthThresh>
+  <BgDynamicUpdateColorThresh type="int32" id="0x30040308">5</BgDynamicUpdateColorThresh>
+  <BgDynamicUpdateWeight type="float" id="0x30040309">0.01</BgDynamicUpdateWeight>
+  <BgCheckValid type="bool" id="0x3004030b">0</BgCheckValid>
+  <BgInvalidRatio type="float" id="0x3004030c">0.1</BgInvalidRatio>
+  <BgDepthDiffThresh type="int32" id="0x3004030d">10</BgDepthDiffThresh>
+  <DepthMeasureRect type="int32" id="0x300c0101">0 0 0 0</DepthMeasureRect>
+  <P3dFormat type="int32" id="0x30130101">1</P3dFormat>
+  <P3dInvalidValue type="int32" id="0x30130102">-4194304</P3dInvalidValue>
+  <P3dMergePoints type="bool" id="0x30130103">0</P3dMergePoints>
+  <P3dMergeFileCount type="int32" id="0x30130104">5</P3dMergeFileCount>
+  <P3dSaveMergedPoints type="bool" id="0x30130105">0</P3dSaveMergedPoints>
+  <DepthRenderEnable type="bool" id="0x40010101">1</DepthRenderEnable>
+  <ColorRenderEnable type="bool" id="0x40010102">1</ColorRenderEnable>
+  <DepthMeasureEnable type="bool" id="0x4001010c">0</DepthMeasureEnable>
+  <P3dEnable type="bool" id="0x40010113">0</P3dEnable>
+  <LeftIrEnable type="bool" id="0x40010114">0</LeftIrEnable>
+</config>

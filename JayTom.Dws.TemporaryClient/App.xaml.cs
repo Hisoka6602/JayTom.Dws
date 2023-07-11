@@ -16,6 +16,7 @@ using System.Threading.Tasks;
 using JayTom.Dws.Plugin.Excel;
 using System.Windows.Threading;
 using JayTom.Dws.Plugin.Speech;
+using JayTom.Dws.Device.Camera;
 using JayTom.Dws.Infrastructure;
 using System.Collections.Generic;
 using Microsoft.Extensions.Hosting;
@@ -24,6 +25,7 @@ using JayTom.Dws.TemporaryClient.Views;
 using JayTom.Dws.Interface.WeciMexicoDv;
 using JayTom.Dws.TemporaryClient.Service;
 using Microsoft.Extensions.Configuration;
+using JayTom.Dws.Device.Camera._3DCamera;
 using JayTom.Dws.TemporaryClient.ViewModels;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Repository.LocalData;
@@ -114,6 +116,8 @@ namespace JayTom.Dws.TemporaryClient {
                     services.AddSingleton<IDataUploader, WeciMexicoDvApi>();
                     services.AddSingleton<ITcpCommunication, TcpCommunication>();
                     services.AddSingleton(container.Resolve<IBarcodeScannerService>());
+                    //体积相机
+                    services.AddScoped<I3DCamera, Percipio3DCamera>();
                     services.AddHostedService<BarcodeScannerBackgroundService>(); // 注册后台服务
                 })
                 .Build();

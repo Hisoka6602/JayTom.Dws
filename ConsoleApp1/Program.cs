@@ -51,7 +51,7 @@ internal class Program {
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
-            var fromFile = Image.FromFile($"{AppDomain.CurrentDomain.BaseDirectory}2.png");
+            var fromFile = Image.FromFile($"{AppDomain.CurrentDomain.BaseDirectory}17.jpg");
 
             /*var watermark = fromFile.AddTextWatermark($"SF123456789\n0.33\ntime:20230707", Color.Blue);
             watermark.Save($"{AppDomain.CurrentDomain.BaseDirectory}watermark.jpg", ImageFormat.Jpeg);
@@ -66,7 +66,7 @@ internal class Program {
                     Url = "https://us-central1-ivoy-warehouse.cloudfunctions.net/weighing-machine",
                     TimeOut = 100000
                 });
-                uploadResponse = await _dataUploader.UploadData("SM1203QBQ1MTP3YYITRUCK0", 0.1, 2.2, 4.5,
+                uploadResponse = await _dataUploader.UploadData("SM12034AYMBX1T4YITRUCK0", 0.1, 2.2, 4.5,
                    0.1, image: fromFile, token: stoppingToken);
                 //!string.IsNullOrEmpty(uploadResponse.ExceptionMsg)
                 await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);

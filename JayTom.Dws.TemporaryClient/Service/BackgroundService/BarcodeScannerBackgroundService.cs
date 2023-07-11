@@ -3,11 +3,14 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Drawing;
+using Newtonsoft.Json;
 using System.Threading;
+using System.Diagnostics;
 using JayTom.Dws.Interface;
 using JayTom.Dws.Plugin.Tcp;
 using System.Threading.Tasks;
 using System.Windows.Controls;
+using JayTom.Dws.Device.Camera;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using Image = System.Drawing.Image;
@@ -24,17 +27,24 @@ namespace JayTom.Dws.TemporaryClient.Service.BackgroundService {
         private readonly IConfiguration _configuration;
         private readonly ILogger<BarcodeScannerBackgroundService> _logger;
         private readonly IDataUploader _dataUploader;
+        private readonly I3DCamera _camera;
+        private double Length { get; set; }
+
+        private double Width { get; set; }
+
+        private double Height { get; set; }
 
         public BarcodeScannerBackgroundService(IBarcodeScannerService barcodeScannerService,
             ITcpCommunication tcpCommunication,
             IConfiguration configuration,
             ILogger<BarcodeScannerBackgroundService> logger,
-            IDataUploader dataUploader) {
+            IDataUploader dataUploader, I3DCamera camera) {
             _barcodeScannerService = barcodeScannerService;
             _tcpCommunication = tcpCommunication;
             _configuration = configuration;
             _logger = logger;
             _dataUploader = dataUploader;
+            _camera = camera;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
@@ -55,7 +65,23 @@ namespace JayTom.Dws.TemporaryClient.Service.BackgroundService {
                 TimeOut = Convert.ToInt32(_configuration?["ApiSettings:TimeOut"]),
                 Url = _configuration?["ApiSettings:Url"] ?? string.Empty,
             };
+            //体积相机连接
 
+            var (b, s) = await _camera.Initialization();
+            if (b) {
+                await _camera.Connect(string.Empty);
+            }
+            _camera.VolumeCapturedEvent += delegate (object? sender, VolumeCapturedEventArgs args) {
+                Debug.WriteLine(JsonConvert.SerializeObject(args));
+                Length = args.Length;
+                Width = args.Width;
+                Height = args.Height;
+            };
+            _camera.ItemNotDetected += delegate (object? sender, EventArgs args) {
+                Length =
+                Width =
+                Height = 0;
+            };
             //读取模拟体积
             var volumeSimulations = _configuration?.GetSection("VolumeSimulationArray").Get<List<VolumeSimulation>>();
             //Api配置
@@ -84,12 +110,13 @@ namespace JayTom.Dws.TemporaryClient.Service.BackgroundService {
                     if (File.Exists(imagePath)) {
                         image = System.Drawing.Image.FromFile(imagePath);
                     }
+                    //获取体积
 
                     var volumeSimulation = volumeSimulations?[new Random().Next(volumeSimulations.Count)];
                     var uploadResponse = await _dataUploader.UploadData(barcode, weight,
-                        volumeSimulation?.Length ?? 0,
-                        volumeSimulation?.Width ?? 0,
-                        volumeSimulation?.Height ?? 0,
+                        Length,
+                        Width,
+                        Height,
                         image: image, token: stoppingToken);
                     //得到条码和重量
                     //获取图片路径

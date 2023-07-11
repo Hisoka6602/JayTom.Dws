@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Drawing;
 using System.Threading.Tasks;
+using System.Drawing.Drawing2D;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
@@ -34,6 +35,17 @@ namespace WpfApp2 {
             }
 
             return null;
+        }
+
+        public static GraphicsPath GetRoundedRectangle(RectangleF rect, int cornerRadius) {
+            var roundedRect = new GraphicsPath();
+            roundedRect.AddArc(rect.X, rect.Y, cornerRadius, cornerRadius, 180, 90);
+            roundedRect.AddArc(rect.Right - cornerRadius, rect.Y, cornerRadius, cornerRadius, 270, 90);
+            roundedRect.AddArc(rect.Right - cornerRadius, rect.Bottom - cornerRadius, cornerRadius, cornerRadius, 0, 90);
+            roundedRect.AddArc(rect.X, rect.Bottom - cornerRadius, cornerRadius, cornerRadius, 90, 90);
+            roundedRect.CloseFigure();
+
+            return roundedRect;
         }
     }
 }

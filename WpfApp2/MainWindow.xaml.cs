@@ -30,7 +30,9 @@ namespace WpfApp2 {
         }
 
         private void MainWindow_OnLoaded(object sender, RoutedEventArgs e) {
-            var loader = new TyPmLoader();
+            var loader = new TyPmLoader() {
+                IsShowBorder = true
+            };
             //实时图像回调
             loader.RealTimeImageEvent += async delegate (object? o, Image image) {
                 await Application.Current.Dispatcher.InvokeAsync(() => {
@@ -45,8 +47,19 @@ namespace WpfApp2 {
             };
             //体积数据回调
             loader.VolumeDataCaptureEvent += delegate (object? o, Dimensions dimensions) {
-                Console.WriteLine(dimensions);
                 Debug.WriteLine(JsonConvert.SerializeObject(dimensions));
+            };
+            loader.Captured3DImage += delegate (object? o, byte[] bytes) {
+                Debug.WriteLine("捕抓到3D图");
+            };
+            loader.ExceptionLogged += delegate (object? o, Exception exception) {
+                Debug.WriteLine(exception.Message);
+            };
+            loader.ItemNotDetected += delegate (object? o, EventArgs args) {
+                Debug.WriteLine("未检测到物品");
+            };
+            loader.ItemOutOfBounds += delegate (object? o, ItemOutOfBoundsEventArgs args) {
+                Debug.WriteLine($"物品超出检测边缘:{args.Direction}");
             };
             //初始化
             loader.InitializeApp();

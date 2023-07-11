@@ -1,11 +1,6 @@
-﻿using System;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Collections.Generic;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 
-namespace WpfApp2 {
+namespace JayTom.Dws.Device.Camera._3DCamera.Percipio {
 
     public class PercipioCommonTypes {
 

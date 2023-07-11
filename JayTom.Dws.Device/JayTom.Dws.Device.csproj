@@ -197,6 +197,24 @@
     </Reference>
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="DeviceLib\PercipioLib\apps\PercipioBgBuilder.dll">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
+    <None Update="DeviceLib\PercipioLib\apps\PercipioCamSetting.dll">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
+    <None Update="DeviceLib\PercipioLib\apps\PercipioPackageMeasure.dll">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
+    <None Update="DeviceLib\PercipioLib\apps\PercipioPackageMeasure.dll2">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
+    <None Update="DeviceLib\PercipioLib\apps\PercipioSetupHelper.dll">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
   <!--<Target Name="PostBuild" AfterTargets="PostBuildEvent">
     <Exec Command="xcopy /Y &quot;$(ProjectDir)\HuaraytechLib\*.*&quot; &quot;$(TargetDir)&quot;" />
   </Target>-->

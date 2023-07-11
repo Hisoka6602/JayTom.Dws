@@ -1,0 +1,9 @@
+<config>
+  <!--apptool name="ServerConnectionConfig" displayName="协议配置"/-->
+  <app name="SetupHelper" displayName="协助安装"/>
+  <app name="CamSetting" displayName="相机设置"/>
+  <!--app name="MultiCamCalib" displayName="多相机标定"/-->
+  <!--app name="MultiCamMerge" displayName="多相机调整"/-->
+  <app name="BgBuilder" displayName="背景重建"/>
+  <app name="PackageMeasure" displayName="体积测量" isDefault="1"/>
+</config>

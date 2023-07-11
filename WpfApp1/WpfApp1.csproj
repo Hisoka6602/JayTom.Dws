@@ -46,11 +46,14 @@
       <HintPath>C:\Users\77051\Desktop\DWS_Demo_C#_Win64_V3.4.0.217968_20220907\lib\X64\TurboJpegWrapper.dll</HintPath>
     </Reference>
   </ItemGroup>
-  <PropertyGroup />
+  <PropertyGroup>
+    <ImplicitUsings>disable</ImplicitUsings>
+  </PropertyGroup>
   <Target Name="CopyDeviceLib" AfterTargets="AfterBuild">
     <ItemGroup>
       <DeviceLibFiles Include="$(SolutionDir)JayTom.Dws.Device\DeviceLib\*\*" />
     </ItemGroup>
     <Copy SourceFiles="@(DeviceLibFiles)" DestinationFolder="$(TargetDir)" />
   </Target>
+
 </Project>

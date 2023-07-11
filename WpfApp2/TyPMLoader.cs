@@ -1,21 +1,33 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Drawing;
+using System.Xml.Linq;
 using System.Threading;
 using WpfApp2.PercipioApp;
+using System.Windows.Markup;
+using System.Windows.Shapes;
 using System.Threading.Tasks;
+using System.Drawing.Drawing2D;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using static WpfApp2.PercipioCommonTypes;
+using Rectangle = System.Drawing.Rectangle;
 using static WpfApp2.PercipioApp.PercipioAppCenter;
 
 namespace WpfApp2 {
 
     public class TyPmLoader {
+        private IntPtr _ptr = IntPtr.Zero;
         private AllData _gdata;
         private static object _pmLock = new();
         private static readonly byte PersonStandingPositionMask = 0x00;
+
+        /// <summary>
+        /// 是否显示边框
+        /// </summary>
+        public bool IsShowBorder { get; set; }
 
         /// <summary>
         /// 实时图片
@@ -23,7 +35,7 @@ namespace WpfApp2 {
         public event EventHandler<Image>? RealTimeImageEvent;
 
         /// <summary>
-        /// 实时RGB图片
+        /// 实时RGB图片(实景图)
         /// </summary>
         public event EventHandler<Image>? RealTimeRgbImageEvent;
 
@@ -35,12 +47,19 @@ namespace WpfApp2 {
         /// <summary>
         /// 未检测到物品体积(画面变动)
         /// </summary>
-        private event EventHandler<EventArgs>? ItemNotDetected;
+        public event EventHandler<EventArgs>? ItemNotDetected;
 
         /// <summary>
         /// 物品超出边缘
         /// </summary>
-        private event EventHandler<ItemOutOfBoundsEventArgs>? ItemOutOfBounds;
+        public event EventHandler<ItemOutOfBoundsEventArgs>? ItemOutOfBounds;
+
+        /// <summary>
+        /// 捕抓到3D图
+        /// </summary>
+        public event EventHandler<byte[]>? Captured3DImage;
+
+        public event EventHandler<Exception>? ExceptionLogged;
 
         /// <summary>
         /// 初始化
@@ -53,6 +72,9 @@ namespace WpfApp2 {
             if (status == 0) {
                 Connect();
             }
+            else {
+                OnExceptionLogged(new Exception($"初始化错误:{status}"));
+            }
         }
 
         public void Connect() {
@@ -62,8 +84,8 @@ namespace WpfApp2 {
                 newColor = false
             };
 
-            var ptr = Marshal.AllocHGlobal(Marshal.SizeOf(_gdata));
-            Marshal.StructureToPtr(_gdata, ptr, false);
+            _ptr = Marshal.AllocHGlobal(Marshal.SizeOf(_gdata));
+            Marshal.StructureToPtr(_gdata, _ptr, false);
 
             PercipioAppInterfacesBase.AppDataFunc = delegate (IntPtr head, IntPtr data, IntPtr userData) {
                 var ret = Marshal.PtrToStructure(head, typeof(BlockHeader));
@@ -71,20 +93,33 @@ namespace WpfApp2 {
                     case (short)I_DATA_TYPE_LIST.I_DATA_SETUPPER_IMAGE: CsharpCallLocalSetupperCallback(head, 0, userData); break;//3
                     case (short)I_DATA_TYPE_LIST.I_DATA_DEPTH_IMAGE: CsharpCallLocalDepthCallback(head, data, userData); break;//1
                     case (short)I_DATA_TYPE_LIST.I_DATA_COLOR_IMAGE: CsharpCallLocalColorCallback(head, data, userData); break;//2
-                    case (short)I_DATA_TYPE_LIST.I_DATA_PACKAGE_MEASURE: CsharpCallLocalPMCallback(head, data, userData); break;//4
-                    //case (short)I_DATA_TYPE_LIST.I_DATA_P3D: CsharpCall_localP3D_Callback(head, data, userData); break;//19
+                    case (short)I_DATA_TYPE_LIST.I_DATA_PACKAGE_MEASURE: CsharpCallLocalPmCallback(head, data, userData); break;//4
+                    case (short)I_DATA_TYPE_LIST.I_DATA_P3D: CsharpCallLocalP3DCallback(head, data, userData); break;//19
                     default: break;
                 }
                 return;
 
                 Console.WriteLine(data);
             };
-            TYAppSetDataCallback(PercipioAppInterfacesBase.AppDataFunc, ptr);
+            TYAppSetDataCallback(PercipioAppInterfacesBase.AppDataFunc, _ptr);
 
             PercipioAppInterfacesBase.AppEventFunc = delegate (IntPtr head, IntPtr data, IntPtr userData) {
-                Console.WriteLine(data);
+                try {
+                    var ret = Marshal.PtrToStructure(head, typeof(PercipioCommonTypes.XData));
+                    var xdata = (PercipioCommonTypes.XData)ret!;
+                    if (0 != xdata.error_id) {
+                        var msgString = Marshal.PtrToStringAnsi(data);
+                        OnExceptionLogged(new Exception($"####MSG:{xdata.error_id} {msgString}"));
+                    }
+                    else {
+                        OnItemNotDetected(EventArgs.Empty);
+                    }
+                }
+                catch (Exception e) {
+                    OnExceptionLogged(e);
+                }
             };
-            TYAppSetEventCallback(PercipioAppInterfacesBase.AppEventFunc, ptr);
+            TYAppSetEventCallback(PercipioAppInterfacesBase.AppEventFunc, _ptr);
 
             _gdata.running = true;
 
@@ -98,7 +133,7 @@ namespace WpfApp2 {
 
             status = TYAppWriteProperty((int)I_PROPERTY_LIST.I_PROPERTY_string_APP_NAME, initappname, appName.Length + 1);
             if (0 != status) {
-                Console.WriteLine($"TYAppWriteProperty I_PROPERTY_string_APP_NAME error : {status}");
+                OnExceptionLogged(new Exception($"TYAppWriteProperty I_PROPERTY_string_APP_NAME error : {status}"));
                 return;
             }
 
@@ -106,7 +141,7 @@ namespace WpfApp2 {
 
             status = TYAppWriteCmd((int)I_APPCENTER_CMD_LIST.I_CMD_APP_INIT);
             if (0 != status) {
-                Console.WriteLine($"TYAppWriteCmd I_CMD_APP_INIT error : {status}");
+                OnExceptionLogged(new Exception($"TYAppWriteCmd I_CMD_APP_INIT error : {status}"));
                 return;
             }
 
@@ -118,7 +153,7 @@ namespace WpfApp2 {
 
                 status = TYAppWriteProperty((int)I_PROPERTY_LIST.I_PROPERTY_bool_GRAB_DEPTH, op, Marshal.SizeOf(b));
                 if (0 != status) {
-                    Console.WriteLine($"TYAppWriteProperty I_PROPERTY_bool_GRAB_DEPTH error : {status}");
+                    OnExceptionLogged(new Exception($"TYAppWriteProperty I_PROPERTY_bool_GRAB_DEPTH error : {status}"));
                     return;
                 }
             }
@@ -129,7 +164,7 @@ namespace WpfApp2 {
 
                 status = TYAppWriteProperty((int)I_PROPERTY_LIST.I_PROPERTY_bool_GRAB_COLOR, op, Marshal.SizeOf(b));
                 if (0 != status) {
-                    Console.WriteLine($"TYAppWriteProperty I_PROPERTY_bool_GRAB_COLOR error : {status}");
+                    OnExceptionLogged(new Exception($"TYAppWriteProperty I_PROPERTY_bool_GRAB_COLOR error : {status}"));
                     return;
                 }
             }
@@ -143,7 +178,7 @@ namespace WpfApp2 {
 
                 status = TYAppWriteProperty((int)I_PROPERTY_LIST.I_PROPERTY_int_COLOR_FORMAT, op, Marshal.SizeOf(n));
                 if (0 != status) {
-                    Console.WriteLine($"TYAppWriteProperty error : {status}");
+                    OnExceptionLogged(new Exception($"TYAppWriteProperty error : {status}"));
                     return;
                 }
             }
@@ -154,7 +189,7 @@ namespace WpfApp2 {
 
                 status = TYAppWriteProperty((int)I_PROPERTY_LIST.I_PROPERTY_int_DEPTH_FORMAT, op, Marshal.SizeOf(n));
                 if (0 != status) {
-                    Console.WriteLine($"TYAppWriteProperty error : {status}");
+                    OnExceptionLogged(new Exception($"TYAppWriteProperty error : {status}"));
                     return;
                 }
             }
@@ -179,7 +214,7 @@ namespace WpfApp2 {
 
                 status = TYAppReadProperty((int)I_PROPERTY_LIST.I_PROPERTY_int4_DEPTH_ROI, op, Marshal.SizeOf(getBgRect), pFilled);
                 if (0 != status) {
-                    Console.WriteLine($"TYAppReadProperty error : {status}");
+                    OnExceptionLogged(new Exception($"TYAppReadProperty error : {status}"));
                     return;
                 }
             }
@@ -203,40 +238,30 @@ namespace WpfApp2 {
                 }
                 status = TYAppReadProperty((Int32)I_PROPERTY_LIST.I_PROPERTY_int4_SAFE_RECT, op, Marshal.SizeOf(getSafeRect), pFilled);
                 if (0 != status) {
-                    Console.WriteLine($"TYAppReadProperty error : {status}");
+                    OnExceptionLogged(new Exception($"TYAppReadProperty error : {status}"));
                     return;
                 }
             }
 
             status = TYAppStart();
             if (0 != status) {
-                Console.WriteLine($"TYAppStart error : {status}");
-                return;
+                OnExceptionLogged(new Exception($"TYAppStart error : {status}"));
             }
-
-            Thread.Sleep(200);
-
-            /*while (gdata.running) {
-                Thread.Sleep(100);
-            }
-
-            status = TYAppStop();
-            if (0 != status) {
-                Logs.WriteLogs("WARNING", String.Format("TYAppStop error : {0}", status));
-                return;
-            }
-
-            Marshal.FreeHGlobal(ptr); //free the memory
-
-            gdata.running = false;
-
-            Logs.WriteLogs("WARNING", "pm thread exit ...");
-            mPmEvent.Set();
-
-            UpdateStatusEvent("体积模块已停止..");*/
         }
 
-        public void CsharpCallLocalSetupperCallback(IntPtr result, int blockSize, IntPtr userData) {
+        public void Dispose() {
+            var status = TYAppStop();
+            if (0 != status) {
+                OnExceptionLogged(new Exception($"TYAppStop error : {status}"));
+                return;
+            }
+
+            Marshal.FreeHGlobal(_ptr); //free the memory
+
+            _gdata.running = false;
+        }
+
+        private void CsharpCallLocalSetupperCallback(IntPtr result, int blockSize, IntPtr userData) {
             var ret = Marshal.PtrToStructure(result, typeof(ImageHeader));
             var img = (ImageHeader)ret!;
 
@@ -252,10 +277,33 @@ namespace WpfApp2 {
 
             result = IntPtr.Add(result, Marshal.SizeOf(img));
             Marshal.Copy(result, _gdata.depth_data, 0, img.size);
-            OnRealTimeImageEvent(Utils.ByteToImage(_gdata.depth_data));
+            var byteToImage = Utils.ByteToImage(_gdata.depth_data);
+            if (IsShowBorder && byteToImage is not null && _gdata.bounding?.Length >= 4) {
+                //画边框
+                using (var graphics = Graphics.FromImage(byteToImage)) {
+                    // 绘制矩形
+                    using (var pen = new Pen(Color.Yellow, 3) {
+                        DashStyle = DashStyle.Solid,
+                        DashPattern = new float[] { 1f, 2f }
+                    }) {
+                        var tmpPixelPointsRgb = new PointF[4];
+                        for (var i = 0; i < 4; i++) {
+                            tmpPixelPointsRgb[i].X = _gdata.bounding[i].x;
+                            tmpPixelPointsRgb[i].Y = _gdata.bounding[i].y;
+                        }
+                        var myPath = new GraphicsPath();
+                        myPath.AddPolygon(tmpPixelPointsRgb);
+                        graphics.DrawPath(pen, myPath);
+                    }
+                }
+                OnRealTimeImageEvent(byteToImage);
+            }
+            else {
+                OnRealTimeImageEvent(byteToImage);
+            }
         }
 
-        public void CsharpCallLocalDepthCallback(IntPtr head, IntPtr body, IntPtr userData) {
+        private void CsharpCallLocalDepthCallback(IntPtr head, IntPtr body, IntPtr userData) {
             var ret = Marshal.PtrToStructure(head, typeof(ImageHeader));
             var img = (ImageHeader)ret!;
             if (img.blk.dataType != (short)I_DATA_TYPE_LIST.I_DATA_DEPTH_IMAGE) return;
@@ -273,11 +321,34 @@ namespace WpfApp2 {
 
             //result = IntPtr.Add(result, Marshal.SizeOf(img));
             Marshal.Copy(body, _gdata.depth_data, 0, img.size);
+            var byteToImage = Utils.ByteToImage(_gdata.depth_data);
 
-            OnRealTimeImageEvent(Utils.ByteToImage(_gdata.depth_data));
+            if (IsShowBorder && byteToImage is not null && _gdata.bounding?.Length >= 4) {
+                //画边框
+                using (var graphics = Graphics.FromImage(byteToImage)) {
+                    // 绘制矩形
+                    using (var pen = new Pen(Color.Yellow, 3) {
+                        DashStyle = DashStyle.Solid,
+                        DashPattern = new float[] { 1f, 2f }
+                    }) {
+                        var tmpPixelPointsRgb = new PointF[4];
+                        for (var i = 0; i < 4; i++) {
+                            tmpPixelPointsRgb[i].X = _gdata.bounding[i].x;
+                            tmpPixelPointsRgb[i].Y = _gdata.bounding[i].y;
+                        }
+                        var myPath = new GraphicsPath();
+                        myPath.AddPolygon(tmpPixelPointsRgb);
+                        graphics.DrawPath(pen, myPath);
+                    }
+                }
+                OnRealTimeImageEvent(byteToImage);
+            }
+            else {
+                OnRealTimeImageEvent(byteToImage);
+            }
         }
 
-        public void CsharpCallLocalColorCallback(IntPtr head, IntPtr body, IntPtr userData) {
+        private void CsharpCallLocalColorCallback(IntPtr head, IntPtr body, IntPtr userData) {
             var ret = Marshal.PtrToStructure(head, typeof(ImageHeader));
             var img = (ImageHeader)ret!;
             if (img.blk.dataType != (short)I_DATA_TYPE_LIST.I_DATA_COLOR_IMAGE) return;
@@ -295,28 +366,44 @@ namespace WpfApp2 {
             var size = Marshal.SizeOf(img);
             //result = IntPtr.Add(result, Marshal.SizeOf(img));
             Marshal.Copy(body, _gdata.color_data, 0, img.size);
-            OnRealTimeRgbImageEvent(Utils.ByteToImage(_gdata.color_data));
+            var byteToImage = Utils.ByteToImage(_gdata.color_data);
+            if (IsShowBorder && byteToImage is not null && _gdata.boundingRGB?.Length >= 4) {
+                //画边框
+                using (var graphics = Graphics.FromImage(byteToImage)) {
+                    using (var pen = new Pen(Color.Yellow, 3)) {
+                        var pointFs = new PointF[4];
+                        for (var i = 0; i < 4; i++) {
+                            pointFs[i].X = _gdata.boundingRGB[i].x;
+                            pointFs[i].Y = _gdata.boundingRGB[i].y;
+                        }
+
+                        var graphicsPath = new GraphicsPath();
+                        graphicsPath.AddPolygon(pointFs);
+                        graphics.DrawPath(pen, graphicsPath);
+                    }
+                }
+                OnRealTimeRgbImageEvent(byteToImage);
+            }
+            else {
+                OnRealTimeRgbImageEvent(byteToImage);
+            }
         }
 
-        public void CsharpCallLocalPMCallback(IntPtr head, IntPtr body, IntPtr user_data)//BlockHeader*
+        private void CsharpCallLocalPmCallback(IntPtr head, IntPtr body, IntPtr userData)//BlockHeader*
         {
             var ret = Marshal.PtrToStructure(head, typeof(PackageData));
             var pmData = (PackageData)ret!;
             if (pmData.blk.dataType != (short)I_DATA_TYPE_LIST.I_DATA_PACKAGE_MEASURE) {
-                //提示:Logs.WriteLogs("WARNING", "localPM_Callback data type err!");
                 return;
             }
 
             if (pmData.count <= 0) {
-                //提示:UpdateStatusEvent("无物品..");
-                //提示:Logs.WriteLogs("WARNING", "not found any package!");
                 _gdata.boxSize.sizeX = 0;
                 _gdata.boxSize.sizeY = 0;
                 _gdata.boxSize.sizeZ = 0;
                 _gdata.type = 0;
                 _gdata.bounding ??= new PmPoint[4];
                 _gdata.boundingRGB ??= new PmPoint[4];
-
                 _gdata.newData = false;
                 OnItemNotDetected(null);
                 return;
@@ -396,6 +483,23 @@ namespace WpfApp2 {
                 ConvertDimensions(_gdata);
         }
 
+        private void CsharpCallLocalP3DCallback(IntPtr result, IntPtr blockSize, IntPtr userData) {
+            var ret = Marshal.PtrToStructure(result, typeof(ImageHeader));
+            var img = (ImageHeader)ret!;
+            if (img.blk.dataType == (short)I_DATA_TYPE_LIST.I_DATA_P3D) {
+                if (img.format == (char)I_IMG_FORMAT_LIST.I_IMG_FORMAT_RAW && img.pixelType == (char)I_IMG_PIXEL_TYPE_LIST.I_IMG_PIXEL_TYPE_F32C3) {
+                    _gdata.p3d_width = img.width;
+                    _gdata.p3d_height = img.height;
+                    if (_gdata.p3d_data.Length != img.blk.bodySize)
+                        Array.Resize(ref _gdata.p3d_data, img.blk.bodySize);
+
+                    result = IntPtr.Add(result, Marshal.SizeOf(img));
+                    Marshal.Copy(result, _gdata.p3d_data, 0, img.blk.bodySize);
+                    OnCaptured3DImage(_gdata.p3d_data);
+                }
+            }
+        }
+
         private void ConvertDimensions(AllData pmResults) {
             lock (_pmLock) {
                 var pmAllData = new AllData();
@@ -464,6 +568,9 @@ namespace WpfApp2 {
         }
 
         protected virtual async void OnItemNotDetected(EventArgs? e) {
+            lock (_pmLock) {
+                _gdata = new AllData();
+            }
             await Task.Yield();
             if (e is not null) {
                 ItemNotDetected?.Invoke(this, e);
@@ -471,9 +578,26 @@ namespace WpfApp2 {
         }
 
         protected virtual async void OnItemOutOfBounds(ItemOutOfBoundsEventArgs? e) {
+            lock (_pmLock) {
+                _gdata = new AllData();
+            }
             await Task.Yield();
             if (e is not null) {
                 ItemOutOfBounds?.Invoke(this, e);
+            }
+        }
+
+        protected virtual async void OnCaptured3DImage(byte[]? e) {
+            await Task.Yield();
+            if (e is not null) {
+                Captured3DImage?.Invoke(this, e);
+            }
+        }
+
+        protected virtual async void OnExceptionLogged(Exception? e) {
+            await Task.Yield();
+            if (e is not null) {
+                ExceptionLogged?.Invoke(this, e);
             }
         }
     }

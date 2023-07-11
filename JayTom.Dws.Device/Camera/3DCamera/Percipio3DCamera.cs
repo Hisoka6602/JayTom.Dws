@@ -2,270 +2,153 @@
 using System.Linq;
 using System.Text;
 using System.Drawing;
-using System.Xml.Linq;
-using Newtonsoft.Json;
-using System.Reflection;
-using System.Runtime.Loader;
 using System.Threading.Tasks;
-using System.Reflection.Emit;
-using Microsoft.CodeAnalysis;
+using System.Drawing.Drawing2D;
 using System.Collections.Generic;
-using System.Reflection.Metadata;
 using System.Runtime.InteropServices;
+using Microsoft.VisualBasic.CompilerServices;
 using JayTom.Dws.Device.Camera._3DCamera.Percipio;
-using static JayTom.Dws.Device.Camera._3DCamera.Percipio3DCamera;
-using static JayTom.Dws.Device.Camera._3DCamera.Percipio.PercipioAppUtils;
+using static JayTom.Dws.Device.Camera._3DCamera.Percipio.PercipioAppCenter;
 
 namespace JayTom.Dws.Device.Camera._3DCamera {
 
     public class Percipio3DCamera : I3DCamera {
-
-        #region API Delegate
-
-        // notice the same function parameters and return types here and in the original API class
-        public delegate int TYAppInitDelegate(int argc, IntPtr[] argv);
-
-        public delegate int TYAppDeinitDelegate();
-
-        public delegate int TYAppSetDataCallbackDelegate(PercipioAppInterfacesBase.TYAppData_CallBack callback, IntPtr userData);
-
-        public delegate int TYAppSetEventCallbackDelegate(PercipioAppInterfacesBase.TYAppEvent_CallBack callback, IntPtr userData);
-
-        public delegate int TYAppStartDelegate();
-
-        public delegate int TYAppStopDelegate();
-
-        public delegate int TYAppCalcOnceDelegate();
-
-        public delegate int TYAppReadPropertyDelegate(int propId, IntPtr buff, int buflen, IntPtr pfilled);
-
-        public delegate int TYAppWritePropertyDelegate(int propId, IntPtr buff, int buflen);
-
-        public delegate int TYAppWriteCmdDelegate(int cmdId);
-
-        public delegate void TYAppLastErrorDelegate(IntPtr pStatus, IntPtr pMsg, int size);
-
-        #endregion API Delegate
-
-        #region Delegated API Methods
-
-        public TYAppInitDelegate? TYAppInit;
-        public TYAppDeinitDelegate? TYAppDeinit;
-        public TYAppSetDataCallbackDelegate? TYAppSetDataCallback;
-        public TYAppSetEventCallbackDelegate? TYAppSetEventCallback;
-        public TYAppStartDelegate? TYAppStart;
-        public TYAppStopDelegate? TYAppStop;
-        public TYAppCalcOnceDelegate? TYAppCalcOnce;
-        public TYAppReadPropertyDelegate? TYAppReadProperty;
-        public TYAppWritePropertyDelegate? TYAppWriteProperty;
-        public TYAppWriteCmdDelegate? TYAppWriteCmd;
-        public TYAppLastErrorDelegate? TYAppLastError;
-
-        #endregion Delegated API Methods
-
-        public Percipio3DCamera() {
-            _dynamicType = CreateDynamicType(typeof(PercipioAppCenter), "PercipioAppCenter");
-
-            if (_dynamicType == null) {
-                OnExcepted(new Exception($"_dynamicType无法创建"));
-            }
-            TYAppInit = Delegate.CreateDelegate(
-                typeof(TYAppInitDelegate),
-                _dynamicType.GetMethod("TYAppInit")) as TYAppInitDelegate;
-
-            TYAppDeinit = Delegate.CreateDelegate(
-                typeof(TYAppDeinitDelegate),
-                _dynamicType.GetMethod("TYAppDeinit")) as TYAppDeinitDelegate;
-
-            TYAppSetDataCallback = Delegate.CreateDelegate(
-                typeof(TYAppSetDataCallbackDelegate),
-                _dynamicType.GetMethod("TYAppSetDataCallback")) as TYAppSetDataCallbackDelegate;
-
-            TYAppSetEventCallback = Delegate.CreateDelegate(
-                typeof(TYAppSetEventCallbackDelegate),
-                _dynamicType.GetMethod("TYAppSetEventCallback")) as TYAppSetEventCallbackDelegate;
-
-            TYAppStart = Delegate.CreateDelegate(
-                typeof(TYAppStartDelegate),
-                _dynamicType.GetMethod("TYAppStart")) as TYAppStartDelegate;
-
-            TYAppStop = Delegate.CreateDelegate(
-                typeof(TYAppStopDelegate),
-                _dynamicType.GetMethod("TYAppStop")) as TYAppStopDelegate;
-
-            TYAppCalcOnce = Delegate.CreateDelegate(
-                typeof(TYAppCalcOnceDelegate),
-                _dynamicType.GetMethod("TYAppCalcOnce")) as TYAppCalcOnceDelegate;
-
-            TYAppReadProperty = Delegate.CreateDelegate(
-                typeof(TYAppReadPropertyDelegate),
-                _dynamicType.GetMethod("TYAppReadProperty")) as TYAppReadPropertyDelegate;
-
-            TYAppWriteProperty = Delegate.CreateDelegate(
-                typeof(TYAppWritePropertyDelegate),
-                _dynamicType.GetMethod("TYAppWriteProperty")) as TYAppWritePropertyDelegate;
-
-            TYAppWriteCmd = Delegate.CreateDelegate(
-                typeof(TYAppWriteCmdDelegate),
-                _dynamicType.GetMethod("TYAppWriteCmd")) as TYAppWriteCmdDelegate;
-        }
-
+        private IntPtr _ptr = IntPtr.Zero;
+        private PercipioCommonTypes.AllData _gdata;
+        private static object _pmLock = new();
+        private static readonly byte PersonStandingPositionMask = 0x00;
         public string DeviceCode { get; private set; } = string.Empty;
         public DeviceStatus Status { get; private set; } = DeviceStatus.Uninitialized;
-
-        #region 自有变量
-
-        private IntPtr ptr = IntPtr.Zero;
-        private CvRect _bgRoi = new();
-        private CvRect _safeRoi = new();
-        private AllData _gdata;
-        private bool _virtualWorkmode = false;
-        private CvAnchor _currentCvAnchor = new();
-        private Point _selectPoint = new(); //选中的搜索点
-        private int _maxRecordCount = 10000;
-        private AutoResetEvent _mPmEvent = new AutoResetEvent(false);
-        private Type? _dynamicType;
-
-        /// <summary>
-        /// 人员站位
-        /// </summary>
-        private byte _personStandingPositionMask = 0x15;
-
-        #endregion 自有变量
 
         public Task<KeyValuePair<bool, string>> Reconnect() {
             throw new NotImplementedException();
         }
 
         public async Task<KeyValuePair<bool, string>> Connect<T>(T connectParam) {
-            //写在这里
+            //暂时不设置参数
             await Task.Yield();
-            _gdata = new AllData {
+            _gdata = new PercipioCommonTypes.AllData {
                 newData = false,
                 newDepth = false,
                 newColor = false
             };
-            ptr = Marshal.AllocHGlobal(Marshal.SizeOf(_gdata));
-            Marshal.StructureToPtr(_gdata, ptr, false);
+
+            _ptr = Marshal.AllocHGlobal(Marshal.SizeOf(_gdata));
+            Marshal.StructureToPtr(_gdata, _ptr, false);
 
             PercipioAppInterfacesBase.AppDataFunc = delegate (IntPtr head, IntPtr data, IntPtr userData) {
-                //数据事件
+                var ret = Marshal.PtrToStructure(head, typeof(PercipioCommonTypes.BlockHeader));
+                switch (((PercipioCommonTypes.BlockHeader)ret!).dataType) {
+                    case (short)PercipioCommonTypes.I_DATA_TYPE_LIST.I_DATA_SETUPPER_IMAGE: CsharpCallLocalSetupperCallback(head, 0, userData); break;//3
+                    case (short)PercipioCommonTypes.I_DATA_TYPE_LIST.I_DATA_DEPTH_IMAGE: CsharpCallLocalDepthCallback(head, data, userData); break;//1
+                    case (short)PercipioCommonTypes.I_DATA_TYPE_LIST.I_DATA_COLOR_IMAGE: CsharpCallLocalColorCallback(head, data, userData); break;//2
+                    case (short)PercipioCommonTypes.I_DATA_TYPE_LIST.I_DATA_PACKAGE_MEASURE: CsharpCallLocalPmCallback(head, data, userData); break;//4
+                    case (short)PercipioCommonTypes.I_DATA_TYPE_LIST.I_DATA_P3D: CsharpCallLocalP3DCallback(head, data, userData); break;//19
+                    default: break;
+                }
             };
-            TYAppSetDataCallback(PercipioAppInterfacesBase.AppDataFunc, ptr);
+            TYAppSetDataCallback(PercipioAppInterfacesBase.AppDataFunc, _ptr);
 
             PercipioAppInterfacesBase.AppEventFunc = delegate (IntPtr head, IntPtr data, IntPtr userData) {
-                //不知道是什么触发回调
+                try {
+                    var ret = Marshal.PtrToStructure(head, typeof(PercipioCommonTypes.XData));
+                    var xdata = (PercipioCommonTypes.XData)ret!;
+                    if (0 != xdata.error_id) {
+                        var msgString = Marshal.PtrToStringAnsi(data);
+                        OnExceptionLogged(new Exception($"####MSG:{xdata.error_id} {msgString}"));
+                    }
+                    else {
+                        OnItemNotDetected(EventArgs.Empty);
+                    }
+                }
+                catch (Exception e) {
+                    OnExceptionLogged(e);
+                }
             };
-            TYAppSetEventCallback(PercipioAppInterfacesBase.AppEventFunc, ptr);
+            TYAppSetEventCallback(PercipioAppInterfacesBase.AppEventFunc, _ptr);
 
             _gdata.running = true;
 
-            var filled = 0;
-            var status = 0;
-            /*string depthCameraType = ConfigurationManager.AppSettings["DepthCameraType"].Trim();
-            var app_name = depthCameraType.ToUpper().Equals("TOF") ? "PackageMeasureTof" : "PackageMeasure";*/
+            int filled;
+            int status;
+
+            /*String depthCameraType = ConfigurationManager.AppSettings["DepthCameraType"].Trim();
+            String app_name = depthCameraType.ToUpper().Equals("TOF") ? "PackageMeasureTof" : "PackageMeasure";*/
             const string appName = "PackageMeasure";
             var initappname = Marshal.StringToHGlobalAnsi(appName);
-            if (TYAppWriteProperty is not null) {
-                status = TYAppWriteProperty((int)I_PROPERTY_LIST.I_PROPERTY_string_APP_NAME, initappname, appName.Length + 1);
-                if (0 != status) {
-                    OnDeviceWarning($"TYAppWriteProperty I_PROPERTY_string_APP_NAME error :{status}");
-                }
-            }
-            else {
-                return new KeyValuePair<bool, string>(false,
-                    $"TYAppWriteProperty is null");
+
+            status = TYAppWriteProperty((int)PercipioCommonTypes.I_PROPERTY_LIST.I_PROPERTY_string_APP_NAME, initappname, appName.Length + 1);
+            if (0 != status) {
+                OnExceptionLogged(new Exception($"TYAppWriteProperty I_PROPERTY_string_APP_NAME error : {status}"));
+                return new KeyValuePair<bool, string>(false, $"TYAppWriteProperty I_PROPERTY_string_APP_NAME error : {status}");
             }
 
             Marshal.FreeHGlobal(initappname);
-            if (TYAppWriteCmd is not null) {
-                status = TYAppWriteCmd((Int32)I_APPCENTER_CMD_LIST.I_CMD_APP_INIT);
-                if (0 != status) {
-                    OnDeviceWarning($"TYAppWriteCmd I_CMD_APP_INIT error :{status}");
-                }
+
+            status = TYAppWriteCmd((int)PercipioCommonTypes.I_APPCENTER_CMD_LIST.I_CMD_APP_INIT);
+            if (0 != status) {
+                OnExceptionLogged(new Exception($"TYAppWriteCmd I_CMD_APP_INIT error : {status}"));
+                return new KeyValuePair<bool, string>(false, $"TYAppWriteCmd I_CMD_APP_INIT error : {status}");
             }
-            else {
-                return new KeyValuePair<bool, string>(false,
-                    $"TYAppWriteCmd is null");
-            }
+
             var b = true;
             unsafe {
                 var p = &b;
 
                 var op = Environment.Is64BitProcess ? new IntPtr((long)p) : new IntPtr((int)p);
 
-                status = TYAppWriteProperty((int)I_PROPERTY_LIST.I_PROPERTY_bool_GRAB_DEPTH, op, Marshal.SizeOf(b));
+                status = TYAppWriteProperty((int)PercipioCommonTypes.I_PROPERTY_LIST.I_PROPERTY_bool_GRAB_DEPTH, op, Marshal.SizeOf(b));
                 if (0 != status) {
-                    OnDeviceWarning($"TYAppWriteProperty I_PROPERTY_bool_GRAB_DEPTH error : {status}");
+                    OnExceptionLogged(new Exception($"TYAppWriteProperty I_PROPERTY_bool_GRAB_DEPTH error : {status}"));
+
+                    return new KeyValuePair<bool, string>(false, $"TYAppWriteProperty I_PROPERTY_bool_GRAB_DEPTH error : {status}");
                 }
             }
             unsafe {
                 var p = &b;
 
                 var op = Environment.Is64BitProcess ? new IntPtr((long)p) : new IntPtr((int)p);
-                status = TYAppWriteProperty((int)I_PROPERTY_LIST.I_PROPERTY_bool_GRAB_COLOR, op, Marshal.SizeOf(b));
+
+                status = TYAppWriteProperty((int)PercipioCommonTypes.I_PROPERTY_LIST.I_PROPERTY_bool_GRAB_COLOR, op, Marshal.SizeOf(b));
                 if (0 != status) {
-                    OnDeviceWarning($"TYAppWriteProperty I_PROPERTY_bool_GRAB_COLOR error : {status}");
+                    OnExceptionLogged(new Exception($"TYAppWriteProperty I_PROPERTY_bool_GRAB_COLOR error : {status}"));
+                    return new KeyValuePair<bool, string>(false, $"TYAppWriteProperty I_PROPERTY_bool_GRAB_COLOR error : {status}");
                 }
             }
-            var n = (int)I_IMG_FORMAT_LIST.I_IMG_FORMAT_JPG;
+
+            //set depth image output format
+            var n = (int)PercipioCommonTypes.I_IMG_FORMAT_LIST.I_IMG_FORMAT_JPG;
             unsafe {
                 var p = &n;
 
                 var op = Environment.Is64BitProcess ? new IntPtr((long)p) : new IntPtr((int)p);
 
-                status = TYAppWriteProperty((int)I_PROPERTY_LIST.I_PROPERTY_int_COLOR_FORMAT, op, Marshal.SizeOf(n));
+                status = TYAppWriteProperty((int)PercipioCommonTypes.I_PROPERTY_LIST.I_PROPERTY_int_COLOR_FORMAT, op, Marshal.SizeOf(n));
                 if (0 != status) {
-                    OnDeviceWarning($"TYAppWriteProperty error : {status}");
+                    OnExceptionLogged(new Exception($"TYAppWriteProperty error : {status}"));
+                    return new KeyValuePair<bool, string>(false, $"TYAppWriteProperty error : {status}");
                 }
             }
             unsafe {
                 var p = &n;
 
-                var op = Environment.Is64BitProcess ? new IntPtr((Int64)p) : new IntPtr((Int32)p);
+                var op = Environment.Is64BitProcess ? new IntPtr((long)p) : new IntPtr((int)p);
 
-                status = TYAppWriteProperty((int)I_PROPERTY_LIST.I_PROPERTY_int_DEPTH_FORMAT, op, Marshal.SizeOf(n));
+                status = TYAppWriteProperty((int)PercipioCommonTypes.I_PROPERTY_LIST.I_PROPERTY_int_DEPTH_FORMAT, op, Marshal.SizeOf(n));
                 if (0 != status) {
-                    OnDeviceWarning($"TYAppWriteProperty error : {status}");
-                }
-            }
-            var getBgRect = new CvRect();
-            unsafe {
-                var p = &getBgRect;
-                filled = 0;
-                var ppp = &filled;
-                var op = IntPtr.Zero;
-                var pFilled = IntPtr.Zero;
-
-                if (Environment.Is64BitProcess) {
-                    op = new IntPtr((long)p);
-                    pFilled = new IntPtr((long)ppp);
-                }
-                else {
-                    op = new IntPtr((int)p);
-                    pFilled = new IntPtr((int)ppp);
-                }
-
-                if (TYAppReadProperty is not null) {
-                    status = TYAppReadProperty((int)I_PROPERTY_LIST.I_PROPERTY_int4_DEPTH_ROI, op, Marshal.SizeOf(getBgRect), pFilled);
-                    if (0 != status) {
-                        OnDeviceWarning($"TYAppReadProperty error : {status}");
-                    }
-                }
-                else {
-                    return new KeyValuePair<bool, string>(false,
-                        $"TYAppReadProperty is null");
+                    OnExceptionLogged(new Exception($"TYAppWriteProperty error : {status}"));
+                    return new KeyValuePair<bool, string>(false, $"TYAppWriteProperty error : {status}");
                 }
             }
 
             //get
-            var getSafeRect = new CvRect();
+            var getBgRect = new PercipioCommonTypes.CvRect();
             unsafe {
-                var p = &getSafeRect;
+                var p = &getBgRect;
                 filled = 0;
-                int* ppp = &filled;
-                var op = IntPtr.Zero;
-                var pFilled = IntPtr.Zero;
+                var ppp = &filled;
+                IntPtr op;
+                IntPtr pFilled;
 
                 if (Environment.Is64BitProcess) {
                     op = new IntPtr((long)p);
@@ -275,104 +158,375 @@ namespace JayTom.Dws.Device.Camera._3DCamera {
                     op = new IntPtr((int)p);
                     pFilled = new IntPtr((int)ppp);
                 }
-                status = TYAppReadProperty((int)I_PROPERTY_LIST.I_PROPERTY_int4_SAFE_RECT, op, Marshal.SizeOf(getSafeRect), pFilled);
+
+                status = TYAppReadProperty((int)PercipioCommonTypes.I_PROPERTY_LIST.I_PROPERTY_int4_DEPTH_ROI, op, Marshal.SizeOf(getBgRect), pFilled);
                 if (0 != status) {
-                    OnDeviceWarning($"TYAppReadProperty error : {status}");
+                    OnExceptionLogged(new Exception($"TYAppReadProperty error : {status}"));
+                    return new KeyValuePair<bool, string>(false, $"TYAppWriteProperty error : {status}");
                 }
             }
 
-            if (TYAppStart is not null) {
-                status = TYAppStart();
+            //get
+            var getSafeRect = new PercipioCommonTypes.CvRect();
+            unsafe {
+                var p = &getSafeRect;
+                filled = 0;
+                var ppp = &filled;
+                IntPtr op;
+                IntPtr pFilled;
+
+                if (Environment.Is64BitProcess) {
+                    op = new IntPtr((Int64)p);
+                    pFilled = new IntPtr((Int64)ppp);
+                }
+                else {
+                    op = new IntPtr((Int32)p);
+                    pFilled = new IntPtr((Int32)ppp);
+                }
+                status = TYAppReadProperty((Int32)PercipioCommonTypes.I_PROPERTY_LIST.I_PROPERTY_int4_SAFE_RECT, op, Marshal.SizeOf(getSafeRect), pFilled);
                 if (0 != status) {
-                    OnDeviceWarning($"TYAppStart error : {status}");
-                    return new KeyValuePair<bool, string>(false, $"TYAppStart error : {status}");
+                    OnExceptionLogged(new Exception($"TYAppReadProperty error : {status}"));
+                    return new KeyValuePair<bool, string>(false, $"TYAppWriteProperty error : {status}");
                 }
             }
-            else {
-                return new KeyValuePair<bool, string>(false, $"TYAppStart is null");
+
+            status = TYAppStart();
+            if (0 != status) {
+                OnExceptionLogged(new Exception($"TYAppStart error : {status}"));
             }
 
+            Status = DeviceStatus.Connected;
             OnConnected(this);
-            return new KeyValuePair<bool, string>(true, $"LoadPMSuccess");
+            return new KeyValuePair<bool, string>(true, "相机连接成功");
         }
 
         public void Dispose() {
-            int status;
-            if (TYAppStop is not null) {
-                status = TYAppStop();
-                if (0 != status) {
-                    OnDeviceWarning($"TYAppStop error : {status}");
-                    return;
-                }
+            var status = TYAppStop();
+            if (0 != status) {
+                OnExceptionLogged(new Exception($"TYAppStop error : {status}"));
+                return;
+            }
 
-                Marshal.FreeHGlobal(ptr); //free the memory
-            }
-            else {
-                OnExcepted(new Exception($"TYAppStop is null"));
-            }
+            Marshal.FreeHGlobal(_ptr); //free the memory
+
             _gdata.running = false;
-            _mPmEvent.Set();
         }
 
         public async Task<KeyValuePair<bool, string>> Initialization() {
             await Task.Yield();
-            _gdata = new AllData {
-                running = false
-            };
-            var status = 0;
+            var argv = new IntPtr[1];
+            argv[0] = PercipioAppUtils.StringToByteArray(".");
+            var status = TYAppInit(1, argv);
 
-            if (_virtualWorkmode == true) {
-                var argv = new IntPtr[1];
-                argv[0] = StringToByteArray(".");
-                //argv[1] = StringToByteArray("-logL");
-                //argv[2] = StringToByteArray("2");
-                //argv[3] = StringToByteArray("-log2file");
-                argv[1] = StringToByteArray("-deviceType");
-                argv[2] = StringToByteArray("Virtual");
-                if (TYAppInit is not null) {
-                    status = TYAppInit(3, argv);
-                    //return new KeyValuePair<bool, string>(false, "init virtual device mode");
-                }
+            if (status == 0) {
+                OnInitialized(this);
+                return new KeyValuePair<bool, string>(true, "初始化完成");
             }
             else {
-                var argv = new IntPtr[1];
-                argv[0] = StringToByteArray(".");
-                //argv[1] = StringToByteArray("-logL");
-                //argv[2] = StringToByteArray("2");
-                //argv[3] = StringToByteArray("-log2file");
-                //argv[4] = StringToByteArray("-deviceType");
-                //argv[5] = StringToByteArray("Virtual");
-                if (TYAppInit is not null) {
-                    status = TYAppInit(1, argv);
-                    //return new KeyValuePair<bool, string>(false, "init real device mode");
+                OnExceptionLogged(new Exception($"初始化错误:{status}"));
+                return new KeyValuePair<bool, string>(false, $"错误状态码:{status}");
+            }
+        }
+
+        private void CsharpCallLocalSetupperCallback(IntPtr result, int blockSize, IntPtr userData) {
+            var ret = Marshal.PtrToStructure(result, typeof(PercipioCommonTypes.ImageHeader));
+            var img = (PercipioCommonTypes.ImageHeader)ret!;
+
+            if (img.blk.dataType != (short)PercipioCommonTypes.I_DATA_TYPE_LIST.I_DATA_SETUPPER_IMAGE) return;
+            if ((img.format != (char)PercipioCommonTypes.I_IMG_FORMAT_LIST.I_IMG_FORMAT_RAW) &&
+                (img.format != (char)PercipioCommonTypes.I_IMG_FORMAT_LIST.I_IMG_FORMAT_JPG)) return;
+            _gdata.depth_width = img.width;
+            _gdata.depth_height = img.height;
+            if (_gdata.depth_data == null)
+                _gdata.depth_data = new byte[img.size];
+            else if (_gdata.depth_data.Length != img.size)
+                Array.Resize(ref _gdata.depth_data, img.size);
+
+            result = IntPtr.Add(result, Marshal.SizeOf(img));
+            Marshal.Copy(result, _gdata.depth_data, 0, img.size);
+            var byteToImage = PercipioAppUtils.ByteToImage(_gdata.depth_data);
+            if (byteToImage is not null) {
+                if (IsShowDetectionBorder && _gdata.bounding?.Length >= 4) {
+                    //画边框
+                    using (var graphics = Graphics.FromImage(byteToImage)) {
+                        // 绘制矩形
+                        using (var pen = new Pen(DetectionBorderColor, DetectionBorderSize) {
+                            DashStyle = DashStyle.Solid,
+                            DashPattern = new float[] { 1f, 2f }
+                        }) {
+                            var tmpPixelPointsRgb = new PointF[4];
+                            for (var i = 0; i < 4; i++) {
+                                tmpPixelPointsRgb[i].X = _gdata.bounding[i].x;
+                                tmpPixelPointsRgb[i].Y = _gdata.bounding[i].y;
+                            }
+                            var myPath = new GraphicsPath();
+                            myPath.AddPolygon(tmpPixelPointsRgb);
+                            graphics.DrawPath(pen, myPath);
+                        }
+                    }
+                    OnLiveMappingEvent((Bitmap)byteToImage);
                 }
                 else {
-                    return new KeyValuePair<bool, string>(false, "TYAppInit is null");
+                    OnLiveMappingEvent((Bitmap)byteToImage);
                 }
             }
+        }
 
-            if (0 != status) {
-                return new KeyValuePair<bool, string>(false, $"TYAppInit error : {status}");
-            }
-            ReadRoiRect((int)I_PROPERTY_LIST.I_PROPERTY_int4_DEPTH_ROI, ref _bgRoi);
-            ReadRoiRect((int)I_PROPERTY_LIST.I_PROPERTY_int4_SAFE_RECT, ref _safeRoi);
+        private void CsharpCallLocalDepthCallback(IntPtr head, IntPtr body, IntPtr userData) {
+            var ret = Marshal.PtrToStructure(head, typeof(PercipioCommonTypes.ImageHeader));
+            var img = (PercipioCommonTypes.ImageHeader)ret!;
+            if (img.blk.dataType != (short)PercipioCommonTypes.I_DATA_TYPE_LIST.I_DATA_DEPTH_IMAGE) return;
+            if (img.format != (char)PercipioCommonTypes.I_IMG_FORMAT_LIST.I_IMG_FORMAT_RAW &&
+                img.format != (char)PercipioCommonTypes.I_IMG_FORMAT_LIST.I_IMG_FORMAT_JPG) return;
+            //ret = Marshal.PtrToStructure(user_data, typeof(AllData));
+            //var data = (AllData)ret;
 
-            var cvAnchor = new CvAnchor();
-            if (ReadCvAnchor((int)I_PROPERTY_LIST.I_PROPERTY_int2_BGG_ANCHOR, ref cvAnchor)) {
-                _currentCvAnchor.xAnchor = cvAnchor.xAnchor;
-                _currentCvAnchor.yAnchor = cvAnchor.yAnchor;
-                if (_currentCvAnchor is { xAnchor: > 0, yAnchor: > 0 }) {
-                    _selectPoint.X = _currentCvAnchor.xAnchor;
-                    _selectPoint.Y = _currentCvAnchor.yAnchor;
+            _gdata.depth_width = img.width;
+            _gdata.depth_height = img.height;
+            if (_gdata.depth_data == null)
+                _gdata.depth_data = new byte[img.size];
+            else if (_gdata.depth_data.Length != img.size)
+                Array.Resize(ref _gdata.depth_data, img.size);
+
+            //result = IntPtr.Add(result, Marshal.SizeOf(img));
+            Marshal.Copy(body, _gdata.depth_data, 0, img.size);
+            var byteToImage = PercipioAppUtils.ByteToImage(_gdata.depth_data);
+
+            if (byteToImage is not null) {
+                if (IsShowDetectionBorder && _gdata.bounding?.Length >= 4) {
+                    //画边框
+                    using (var graphics = Graphics.FromImage(byteToImage)) {
+                        // 绘制矩形
+                        using (var pen = new Pen(DetectionBorderColor, DetectionBorderSize) {
+                            DashStyle = DashStyle.Solid,
+                            DashPattern = new float[] { 1f, 2f }
+                        }) {
+                            var tmpPixelPointsRgb = new PointF[4];
+                            for (var i = 0; i < 4; i++) {
+                                tmpPixelPointsRgb[i].X = _gdata.bounding[i].x;
+                                tmpPixelPointsRgb[i].Y = _gdata.bounding[i].y;
+                            }
+                            var myPath = new GraphicsPath();
+                            myPath.AddPolygon(tmpPixelPointsRgb);
+                            graphics.DrawPath(pen, myPath);
+                        }
+                    }
+                    OnLiveMappingEvent((Bitmap)byteToImage);
+                }
+                else {
+                    OnLiveMappingEvent((Bitmap)byteToImage);
                 }
             }
+        }
 
-            //originalImage = pictureBox1.Image;
-            if (ReadInt32Property((Int32)I_PROPERTY_LIST.I_PROPERTY_int_MAXRECORD_COUNT, ref _maxRecordCount)) {
-                //Logs.WriteLogs("INFO", String.Format("read max record count = {0}", _maxRecordCount));
+        private void CsharpCallLocalColorCallback(IntPtr head, IntPtr body, IntPtr userData) {
+            var ret = Marshal.PtrToStructure(head, typeof(PercipioCommonTypes.ImageHeader));
+            var img = (PercipioCommonTypes.ImageHeader)ret!;
+            if (img.blk.dataType != (short)PercipioCommonTypes.I_DATA_TYPE_LIST.I_DATA_COLOR_IMAGE) return;
+            if (img.format != (char)PercipioCommonTypes.I_IMG_FORMAT_LIST.I_IMG_FORMAT_JPG) return;
+            ret = Marshal.PtrToStructure(userData, typeof(PercipioCommonTypes.AllData));
+            //var data = (AllData)ret;
+
+            _gdata.color_width = img.width;
+            _gdata.color_height = img.height;
+            if (_gdata.color_data == null)
+                _gdata.color_data = new byte[img.size];
+            else if (_gdata.color_data.Length != img.size)
+                Array.Resize(ref _gdata.color_data, img.size);
+
+            var size = Marshal.SizeOf(img);
+            //result = IntPtr.Add(result, Marshal.SizeOf(img));
+            Marshal.Copy(body, _gdata.color_data, 0, img.size);
+            var byteToImage = PercipioAppUtils.ByteToImage(_gdata.color_data);
+            if (byteToImage is not null) {
+                if (IsShowDetectionBorder && _gdata.boundingRGB?.Length >= 4) {
+                    //画边框
+                    using (var graphics = Graphics.FromImage(byteToImage)) {
+                        using (var pen = new Pen(DetectionBorderColor, DetectionBorderSize)) {
+                            var pointFs = new PointF[4];
+                            for (var i = 0; i < 4; i++) {
+                                pointFs[i].X = _gdata.boundingRGB[i].x;
+                                pointFs[i].Y = _gdata.boundingRGB[i].y;
+                            }
+
+                            var graphicsPath = new GraphicsPath();
+                            graphicsPath.AddPolygon(pointFs);
+                            graphics.DrawPath(pen, graphicsPath);
+                        }
+                    }
+
+                    OnRealtimeImageEvent((Bitmap)byteToImage);
+                }
+                else {
+                    OnRealtimeImageEvent((Bitmap)byteToImage);
+                }
+            }
+        }
+
+        private void CsharpCallLocalPmCallback(IntPtr head, IntPtr body, IntPtr userData)//BlockHeader*
+        {
+            var ret = Marshal.PtrToStructure(head, typeof(PercipioCommonTypes.PackageData));
+            var pmData = (PercipioCommonTypes.PackageData)ret!;
+            if (pmData.blk.dataType != (short)PercipioCommonTypes.I_DATA_TYPE_LIST.I_DATA_PACKAGE_MEASURE) {
+                return;
             }
 
-            return new KeyValuePair<bool, string>(true, string.Empty);
+            if (pmData.count <= 0) {
+                _gdata.boxSize.sizeX = 0;
+                _gdata.boxSize.sizeY = 0;
+                _gdata.boxSize.sizeZ = 0;
+                _gdata.type = 0;
+                _gdata.bounding ??= new PercipioCommonTypes.PmPoint[4];
+                _gdata.boundingRGB ??= new PercipioCommonTypes.PmPoint[4];
+                _gdata.newData = false;
+                OnItemNotDetected(null);
+                return;
+            }
+
+            var obj = Marshal.PtrToStructure(body, typeof(PercipioCommonTypes.SinglePackageInfo));
+            var package = (PercipioCommonTypes.SinglePackageInfo)obj!;
+            int objsize = Marshal.SizeOf(package);
+
+            if (((PersonStandingPositionMask & 0x01) != 0x00 && package.distanceLeft < 0) ||
+                ((PersonStandingPositionMask & 0x02) != 0x00 && package.distanceTop < 0) ||
+                ((PersonStandingPositionMask & 0x04) != 0x00 && package.distanceRight < 0) ||
+                ((PersonStandingPositionMask & 0x08) != 0x00 && package.distanceBottom < 0)) {
+                OutOfBoundsDirection direction = OutOfBoundsDirection.Left;
+                if ((PersonStandingPositionMask & 0x01) != 0x00 && (package.distanceLeft < 0))
+                    direction = OutOfBoundsDirection.Left;
+                else if ((PersonStandingPositionMask & 0x02) != 0x00 && (package.distanceTop < 0))
+                    direction = OutOfBoundsDirection.Up;
+                else if ((PersonStandingPositionMask & 0x04) != 0x00 && (package.distanceRight < 0))
+                    direction = OutOfBoundsDirection.Right;
+                else if ((PersonStandingPositionMask & 0x08) != 0x00 && (package.distanceBottom < 0))
+                    direction = OutOfBoundsDirection.Down;
+                OnItemOutOfBounds(new ItemOutOfBoundsEventArgs() {
+                    Direction = direction
+                });
+
+                _gdata.boxSize.sizeX = 0;
+                _gdata.boxSize.sizeY = 0;
+                _gdata.boxSize.sizeZ = 0;
+
+                _gdata.bounding ??= new PercipioCommonTypes.PmPoint[4];
+                _gdata.boundingRGB ??= new PercipioCommonTypes.PmPoint[4];
+
+                _gdata.newData = false;
+
+                TYAppCalcOnce();
+
+                return;
+            }
+
+            _gdata.boxSize.sizeX = (int)package.sizeX;
+            _gdata.boxSize.sizeY = (int)package.sizeY;
+            _gdata.boxSize.sizeZ = (int)package.sizeZ;
+
+            _gdata.type = (int)package.type;
+            _gdata.bounding ??= new PercipioCommonTypes.PmPoint[4];
+            _gdata.boundingRGB ??= new PercipioCommonTypes.PmPoint[4];
+
+            _gdata.bounding[0].x = (int)package.pixelPoints[0];
+            _gdata.bounding[0].y = (int)package.pixelPoints[1];
+
+            _gdata.bounding[1].x = (int)package.pixelPoints[2];
+            _gdata.bounding[1].y = (int)package.pixelPoints[3];
+
+            _gdata.bounding[2].x = (int)package.pixelPoints[4];
+            _gdata.bounding[2].y = (int)package.pixelPoints[5];
+
+            _gdata.bounding[3].x = (int)package.pixelPoints[6];
+            _gdata.bounding[3].y = (int)package.pixelPoints[7];
+
+            _gdata.boundingRGB[0].x = (int)package.pixelPointsRGB[0];
+            _gdata.boundingRGB[0].y = (int)package.pixelPointsRGB[1];
+
+            _gdata.boundingRGB[1].x = (int)package.pixelPointsRGB[2];
+            _gdata.boundingRGB[1].y = (int)package.pixelPointsRGB[3];
+
+            _gdata.boundingRGB[2].x = (int)package.pixelPointsRGB[4];
+            _gdata.boundingRGB[2].y = (int)package.pixelPointsRGB[5];
+
+            _gdata.boundingRGB[3].x = (int)package.pixelPointsRGB[6];
+            _gdata.boundingRGB[3].y = (int)package.pixelPointsRGB[7];
+            _gdata.newData = true;
+
+            if (_gdata.boxSize is { sizeX: 0, sizeY: 0, sizeZ: 0 })
+                OnItemNotDetected(null);
+            else
+                ConvertDimensions(_gdata);
+        }
+
+        private void CsharpCallLocalP3DCallback(IntPtr result, IntPtr blockSize, IntPtr userData) {
+            var ret = Marshal.PtrToStructure(result, typeof(PercipioCommonTypes.ImageHeader));
+            var img = (PercipioCommonTypes.ImageHeader)ret!;
+            if (img.blk.dataType == (short)PercipioCommonTypes.I_DATA_TYPE_LIST.I_DATA_P3D) {
+                if (img.format == (char)PercipioCommonTypes.I_IMG_FORMAT_LIST.I_IMG_FORMAT_RAW && img.pixelType == (char)PercipioCommonTypes.I_IMG_PIXEL_TYPE_LIST.I_IMG_PIXEL_TYPE_F32C3) {
+                    _gdata.p3d_width = img.width;
+                    _gdata.p3d_height = img.height;
+                    if (_gdata.p3d_data.Length != img.blk.bodySize)
+                        Array.Resize(ref _gdata.p3d_data, img.blk.bodySize);
+
+                    result = IntPtr.Add(result, Marshal.SizeOf(img));
+                    Marshal.Copy(result, _gdata.p3d_data, 0, img.blk.bodySize);
+                    //OnCaptured3DImage(_gdata.p3d_data);
+                    //暂时不需要3D图
+                }
+            }
+        }
+
+        private void ConvertDimensions(PercipioCommonTypes.AllData pmResults) {
+            lock (_pmLock) {
+                var pmAllData = new PercipioCommonTypes.AllData();
+                pmAllData.boxSize.sizeX = pmResults.boxSize.sizeX;
+                pmAllData.boxSize.sizeY = pmResults.boxSize.sizeY;
+                pmAllData.boxSize.sizeZ = pmResults.boxSize.sizeZ;
+                var volumeCapturedEventArgs = new VolumeCapturedEventArgs() {
+                    //暂时不返回图像
+                    Length = pmAllData.boxSize.sizeX,
+                    Width = pmAllData.boxSize.sizeY,
+                    Height = pmAllData.boxSize.sizeZ,
+                    AreaCoords = new Point[4]
+                };
+
+                if (pmResults.boundingRGB is not null && pmResults.bounding is not null) {
+                    pmAllData.boundingRGB = new PercipioCommonTypes.PmPoint[pmResults.boundingRGB.Length];
+                    for (var i = 0; i < pmResults.boundingRGB.Length; i++) {
+                        pmAllData.boundingRGB[i].x = pmResults.boundingRGB[i].x;
+                        pmAllData.boundingRGB[i].y = pmResults.boundingRGB[i].y;
+                    }
+
+                    pmAllData.bounding = new PercipioCommonTypes.PmPoint[pmResults.bounding.Length];
+                    for (var i = 0; i < pmResults.bounding.Length; i++) {
+                        pmAllData.bounding[i].x = pmResults.bounding[i].x;
+                        pmAllData.bounding[i].y = pmResults.bounding[i].y;
+                        volumeCapturedEventArgs.AreaCoords[i].X = pmResults.bounding[i].x;
+                        volumeCapturedEventArgs.AreaCoords[i].Y = pmResults.bounding[i].y;
+                    }
+
+                    pmAllData.newColor = pmResults.newColor;
+                    pmAllData.newDepth = pmResults.newDepth;
+                    pmAllData.newData = pmResults.newData;
+                }
+
+                /*switch (pmResults.type) {
+                    case (int)PACKAGE_TYPE_LIST.I_PACKAGE_TYPE_NONE:
+                        packgeType = "NONE";
+                        break;
+
+                    case (int)PACKAGE_TYPE_LIST.I_PACKAGE_TYPE_BOX:
+                        packgeType = "Box";
+                        break;
+
+                    case (int)PACKAGE_TYPE_LIST.I_PACKAGE_TYPE_BAG:
+                        packgeType = "Bag";
+                        break;
+
+                    default:
+                        break;
+                }*/
+                OnVolumeCapturedEvent(volumeCapturedEventArgs);
+            }
         }
 
         public event EventHandler<IDevice>? Initialized;
@@ -388,9 +542,9 @@ namespace JayTom.Dws.Device.Camera._3DCamera {
         public string CameraName { get; private set; } = string.Empty;
         public string CameraId { get; private set; } = string.Empty;
         public float Framerate { get; private set; }
-        public int DetectionBorderSize { get; set; }
-        public Color DetectionBorderColor { get; set; }
-        public bool IsShowDetectionBorder { get; set; }
+        public int DetectionBorderSize { get; set; } = 3;
+        public Color DetectionBorderColor { get; set; } = Color.Yellow;
+        public bool IsShowDetectionBorder { get; set; } = true;
         public bool IsUseImageWatermark { get; set; }
 
         public event EventHandler<Bitmap>? RealtimeImageEvent;
@@ -400,6 +554,10 @@ namespace JayTom.Dws.Device.Camera._3DCamera {
         public event EventHandler<Bitmap>? LiveMappingEvent;
 
         public event EventHandler<string>? DeviceWarning;
+
+        public event EventHandler<ItemOutOfBoundsEventArgs>? ItemOutOfBounds;
+
+        public event EventHandler<EventArgs>? ItemNotDetected;
 
         public KeyValuePair<bool, string> Pause() {
             throw new NotImplementedException();
@@ -413,216 +571,63 @@ namespace JayTom.Dws.Device.Camera._3DCamera {
             throw new NotImplementedException();
         }
 
-        private async void OnDeviceWarning(string e) {
+        protected virtual async void OnExceptionLogged(Exception e) {
             await Task.Yield();
-            DeviceWarning?.Invoke(this, e);
+            OnDisconnected(this);
+            Excepted?.Invoke(this, e);
         }
 
-        private async void OnConnected(IDevice e) {
+        protected virtual async void OnInitialized(IDevice e) {
+            await Task.Yield();
+            Initialized?.Invoke(this, e);
+        }
+
+        protected virtual async void OnConnected(IDevice e) {
             await Task.Yield();
             Connected?.Invoke(this, e);
         }
 
-        private async void OnExcepted(Exception e) {
+        protected virtual async void OnDisconnected(IDevice e) {
             await Task.Yield();
-            Excepted?.Invoke(this, e);
+            Disconnected?.Invoke(this, e);
         }
 
-        #region 本身源码方法(暂不整理)
-
-        public bool ReadRoiRect(int propertyId, ref CvRect rect) {
-            if (!_gdata.running)
-                return false;
-
-            var tmpRect = new CvRect();
-            unsafe {
-                var p = &tmpRect;
-                var filled = 0;
-                var ppp = &filled;
-                IntPtr op;
-                IntPtr pFilled;
-
-                if (Environment.Is64BitProcess) {
-                    op = new IntPtr((long)p);
-                    pFilled = new IntPtr((long)ppp);
-                }
-                else {
-                    op = new IntPtr((int)p);
-                    pFilled = new IntPtr((int)ppp);
-                }
-
-                if (TYAppReadProperty is not null) {
-                    var status = TYAppReadProperty((Int32)propertyId, op, Marshal.SizeOf(tmpRect), pFilled);
-                    if (0 != status) {
-                        OnDeviceWarning($"TYAppReadProperty {propertyId} error : {status}");
-                        return false;
-                    }
-
-                    rect = tmpRect;
-                }
-                else {
-                    return false;
-                }
+        protected virtual async void OnRealtimeImageEvent(Bitmap? e) {
+            await Task.Yield();
+            if (e is not null) {
+                RealtimeImageEvent?.Invoke(this, e);
             }
-            return true;
         }
 
-        public bool ReadCvAnchor(int propertyID, ref CvAnchor cvAnchor) {
-            var tmpCvAnchor = new CvAnchor();
-            unsafe {
-                var p = &tmpCvAnchor;
-                var filled = 0;
-                var ppp = &filled;
-                IntPtr op;
-                IntPtr pFilled;
+        protected virtual async void OnLiveMappingEvent(Bitmap e) {
+            await Task.Yield();
+            LiveMappingEvent?.Invoke(this, e);
+        }
 
-                if (Environment.Is64BitProcess) {
-                    op = new IntPtr((long)p);
-                    pFilled = new IntPtr((long)ppp);
-                }
-                else {
-                    op = new IntPtr((int)p);
-                    pFilled = new IntPtr((int)ppp);
-                }
+        protected virtual async void OnVolumeCapturedEvent(VolumeCapturedEventArgs e) {
+            await Task.Yield();
+            VolumeCapturedEvent?.Invoke(this, e);
+        }
 
-                if (TYAppReadProperty is not null) {
-                    var status = TYAppReadProperty((int)propertyID, op, Marshal.SizeOf(tmpCvAnchor), pFilled);
-                    if (0 != status) {
-                        OnDeviceWarning($"TYAppReadProperty {propertyID} error : {status}");
-                        return false;
-                    }
-
-                    cvAnchor = tmpCvAnchor;
-                }
-                else {
-                    return false;
-                }
+        protected virtual async void OnItemOutOfBounds(ItemOutOfBoundsEventArgs e) {
+            lock (_pmLock) {
+                _gdata = new PercipioCommonTypes.AllData();
             }
-            return true;
+            await Task.Yield();
+            ItemOutOfBounds?.Invoke(this, e);
         }
 
-        public bool ReadInt32Property(int propertyId, ref int value) {
-            if (!_gdata.running)
-                return false;
+        protected virtual async void OnDeviceWarning(string e) {
+            await Task.Yield();
+            DeviceWarning?.Invoke(this, e);
+        }
 
-            var tmpValue = 0x00;
-            unsafe {
-                var p = &tmpValue;
-                var filled = 0;
-                var ppp = &filled;
-                IntPtr op;
-                IntPtr pFilled;
-
-                if (Environment.Is64BitProcess) {
-                    op = new IntPtr((long)p);
-                    pFilled = new IntPtr((long)ppp);
-                }
-                else {
-                    op = new IntPtr((int)p);
-                    pFilled = new IntPtr((int)ppp);
-                }
-
-                if (TYAppReadProperty is not null) {
-                    var status = TYAppReadProperty((Int32)propertyId, op, Marshal.SizeOf(tmpValue), pFilled);
-                    if (0 != status) {
-                        OnDeviceWarning($"TYAppReadProperty {propertyId} error : {status}");
-                        return false;
-                    }
-
-                    value = tmpValue;
-                }
-                else {
-                    return false;
-                }
+        protected virtual async void OnItemNotDetected(EventArgs e) {
+            lock (_pmLock) {
+                _gdata = new PercipioCommonTypes.AllData();
             }
-            return true;
+            await Task.Yield();
+            ItemNotDetected?.Invoke(this, e);
         }
-
-        private Type? CreateDynamicType(Type originalType, string dynamicBaseName) {
-            // Create dynamic assembly
-            var assemblyName = new AssemblyName {
-                Name = dynamicBaseName + "Assembly" // nothing fancy, "...Asembly", could be anything
-            };
-
-            // The AssemblyBuilderAccess.RunAndSave attribute allows me to save this assmebly later on so I can inspect it.
-            // In the release version it will be sufficient to use AssemblyBuilderAccess.Run, as there is no need to save it.
-            var assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.Run);
-
-            // Add module to assembly
-            ModuleBuilder moduleBuilder;
-
-            // I'm using an overloaded constructor here that creates a persistent module
-            // which can be saved to the disk
-            moduleBuilder = assemblyBuilder.DefineDynamicModule(dynamicBaseName + "Module");
-
-            // Add class to module
-            var typeBuilder = moduleBuilder.DefineType(dynamicBaseName + "Type", TypeAttributes.Class);
-
-            // retrieve all the methods that are public and static in the originalType
-            var methodInfos = originalType.GetMethods(BindingFlags.Public | BindingFlags.Static);
-
-            // loop through those methods
-            for (var i = 0; i < methodInfos.GetLength(0); i++) {
-                // mi holds the info for an api method
-                var mi = methodInfos[i];
-
-                // get all method parameters so we can save thier types
-                var methodParameters = mi.GetParameters();
-                var parameterCount = methodParameters.GetLength(0);
-
-                // stores for parameter types and attributes
-                var parameterTypes = new Type[parameterCount];
-                var parameterAttributes = new ParameterAttributes[parameterCount];
-
-                // save method parameter types and attributes
-                for (var j = 0; j < parameterCount; j++) {
-                    parameterTypes[j] = methodParameters[j].ParameterType;
-                    parameterAttributes[j] = methodParameters[j].Attributes;
-                }
-
-                //create a MethodBuilder for a PInvoke method
-                var methodBuilder = typeBuilder.DefinePInvokeMethod(
-                    mi.Name, // use same name as original
-                    "PercipioAppCentermt.dll", // here we change the dynamic path of the dll's
-                    mi.Attributes,
-                    mi.CallingConvention, // default calling convention
-                    mi.ReturnType, // original method return type
-                    parameterTypes, // the method parameter types we collected
-                    CallingConvention.StdCall, // StdCall interop calling convention (possible problem)
-                    CharSet.Auto);
-
-                // we have to additionally define the parameter Attributes
-                // set them the same as the original parameter attributes
-                for (var j = 0; j < parameterCount; j++)
-                    methodBuilder.DefineParameter(j + 1, parameterAttributes[j], methodParameters[j].Name);
-
-                // We set the implementation flags the same as the original method
-                methodBuilder.SetImplementationFlags(mi.GetMethodImplementationFlags());
-            }
-
-            // create the defined type
-            var retval = typeBuilder.CreateType();
-
-            // save the dll in the bin directory, not necessary but informative
-            // (ex. you can use Lutz Roeder's .NET Reflector to open it)
-            //assemblyBuilder.Save(dynamicBaseName + ".dll");
-            // finally return the dynamic type!
-            return retval;
-        }
-
-        private Type? ReadDynamicType(Type originalType, string dynamicBaseName) {
-            string assemblyPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, dynamicBaseName + ".dll");
-            Assembly assembly = Assembly.LoadFrom(assemblyPath);
-
-            Type? dynamicType = assembly.GetType(dynamicBaseName + "Type");
-            /*if (dynamicType != null) {
-                // 使用动态类型进行操作
-                // ...
-            }*/
-
-            return dynamicType;
-        }
-
-        #endregion 本身源码方法(暂不整理)
     }
 }
