@@ -8,9 +8,11 @@ using System.Threading;
 using JayTom.Dws.Plugin;
 using System.Windows.Input;
 using System.Globalization;
+using Prism.Services.Dialogs;
 using MaterialDesignThemes.Wpf;
 using System.Windows.Threading;
 using JayTom.Dws.Plugin.Speech;
+using JayTom.Dws.Device.Camera;
 using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -30,6 +32,8 @@ namespace JayTom.Dws.TemporaryClient.ViewModels {
         private readonly IExcel _excel;
         private readonly IBarCodeRepository _barCodeRepository;
         private readonly ISpeech _speech;
+        private readonly I3DCamera _camera;
+        private readonly IDialogService _dialogService;
         private double _uniformCornerRadius = 10;
         private string _maxBtnIcon = "\xe600";
         private string _maxBtnToolTip = "Maximize";
@@ -48,11 +52,14 @@ namespace JayTom.Dws.TemporaryClient.ViewModels {
 
         public MainWindowViewModel(IRegionManager regionManager,
             IExcel excel, IBarCodeRepository barCodeRepository,
-            IBarcodeScannerService barcodeScannerService, ISpeech speech) {
+            IBarcodeScannerService barcodeScannerService, ISpeech speech
+            , I3DCamera camera, IDialogService dialogService) {
             _regionManager = regionManager;
             _excel = excel;
             _barCodeRepository = barCodeRepository;
             _speech = speech;
+            _camera = camera;
+            _dialogService = dialogService;
             barcodeScannerService.ScanCompleted += async delegate (object? sender, ScanCompletedEventArgs args) {
                 switch (args.RequestStatus) {
                     //播报声音
@@ -96,6 +103,9 @@ namespace JayTom.Dws.TemporaryClient.ViewModels {
                         _ => string.Empty
                     };
                 });
+            };
+            _camera.Excepted += delegate (object? sender, Exception exception) {
+                MainMessageQueue.Enqueue($"Camera loading error[{exception.Message}]");
             };
         }
 
@@ -411,6 +421,14 @@ namespace JayTom.Dws.TemporaryClient.ViewModels {
             else {
                 PageIndex = 1;
             }
+        }
+
+        public ICommand CameraViewCommand {
+            get => new DelegateCommand<object>(CameraViewDelegate);
+        }
+
+        private void CameraViewDelegate(object obj) {
+            _dialogService.ShowDialog("CameraView");
         }
 
         /// <summary>

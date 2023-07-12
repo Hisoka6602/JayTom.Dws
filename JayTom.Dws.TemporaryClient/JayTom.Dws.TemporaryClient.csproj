@@ -32,8 +32,6 @@
     <Folder Include="Converters\" />
     <Folder Include="Icons\" />
     <Folder Include="Sound\" />
-    <Folder Include="ViewModels\Pages\" />
-    <Folder Include="Views\Pages\" />
   </ItemGroup>
 
   <ItemGroup>

@@ -88,7 +88,8 @@ namespace JayTom.Dws.Interface.WeciMexicoDv {
                     if (!string.IsNullOrWhiteSpace(resultContent)) {
                         //判断
                         var jObject = JObject.Parse(resultContent);
-                        if (jObject["status"]?.ToString()?.ToUpper()?.Equals("SUCCESS") == true) {
+                        if (jObject["code"]?.ToString()?.ToUpper()?.Equals("0") == true &&
+                            jObject["message"]?.ToString()?.ToUpper()?.Equals("OK") == true) {
                             isSuccess = true;
                         }
                     }

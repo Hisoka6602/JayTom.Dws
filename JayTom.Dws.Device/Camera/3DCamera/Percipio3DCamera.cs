@@ -194,10 +194,13 @@ namespace JayTom.Dws.Device.Camera._3DCamera {
             if (0 != status) {
                 OnExceptionLogged(new Exception($"TYAppStart error : {status}"));
             }
+            else {
+                Status = DeviceStatus.Connected;
+                OnConnected(this);
+                return new KeyValuePair<bool, string>(true, "相机连接成功");
+            }
 
-            Status = DeviceStatus.Connected;
-            OnConnected(this);
-            return new KeyValuePair<bool, string>(true, "相机连接成功");
+            return new KeyValuePair<bool, string>(true, "相机连接失败!");
         }
 
         public void Dispose() {
@@ -486,7 +489,8 @@ namespace JayTom.Dws.Device.Camera._3DCamera {
                     Length = pmAllData.boxSize.sizeX,
                     Width = pmAllData.boxSize.sizeY,
                     Height = pmAllData.boxSize.sizeZ,
-                    AreaCoords = new Point[4]
+                    AreaCoords = new Point[4],
+                    Timestamp = DateTime.Now
                 };
 
                 if (pmResults.boundingRGB is not null && pmResults.bounding is not null) {

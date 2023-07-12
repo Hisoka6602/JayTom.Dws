@@ -29,9 +29,11 @@ using JayTom.Dws.Device.Camera._3DCamera;
 using JayTom.Dws.TemporaryClient.ViewModels;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Repository.LocalData;
+using JayTom.Dws.TemporaryClient.Views.Pages;
 using JayTom.Dws.TemporaryClient.Views.Dialog;
 using JayTom.Dws.TemporaryClient.Views.Editors;
 using Microsoft.Extensions.DependencyInjection;
+using JayTom.Dws.TemporaryClient.ViewModels.Pages;
 using JayTom.Dws.TemporaryClient.ViewModels.Dialog;
 using JayTom.Dws.TemporaryClient.ViewModels.Editors;
 using DryIoc.Microsoft.DependencyInjection.Extension;
@@ -48,6 +50,8 @@ namespace JayTom.Dws.TemporaryClient {
         private IHost? _host;
 
         protected override void RegisterTypes(IContainerRegistry containerRegistry) {
+            //注册窗口
+            containerRegistry.RegisterDialog<CameraView>();
             //其他注册
             containerRegistry.GetContainer().RegisterServices(services => {
                 services.AddPooledDbContextFactory<SqliteContext>(options => options.UseSqlite(
@@ -65,6 +69,8 @@ namespace JayTom.Dws.TemporaryClient {
                 //插件注册
                 services.AddScoped<ISpeech, Speech>();
                 services.AddScoped<IExcel, NpoiExport>();
+                //相机
+                services.AddScoped<I3DCamera, Percipio3DCamera>();
             });
         }
 
@@ -79,6 +85,7 @@ namespace JayTom.Dws.TemporaryClient {
             ViewModelLocationProvider.Register<DataTimeEditor, DataTimeEditorViewModel>();
             ViewModelLocationProvider.Register<ExportDialog, ExportDialogViewModel>();
             ViewModelLocationProvider.Register<LoadingDialog, LoadingDialogViewModel>();
+            ViewModelLocationProvider.Register<CameraView, CameraViewModel>();
         }
 
         protected override void OnStartup(StartupEventArgs e) {
@@ -107,7 +114,7 @@ namespace JayTom.Dws.TemporaryClient {
                             UseDefaultCredentials = true,
                             MaxConnectionsPerServer = 1000,
                             ServerCertificateCustomValidationCallback = (m, c, ch, e) => true,
-                            UseProxy = false
+                            //UseProxy = false
                         };
 
                         return handler;
@@ -117,7 +124,7 @@ namespace JayTom.Dws.TemporaryClient {
                     services.AddSingleton<ITcpCommunication, TcpCommunication>();
                     services.AddSingleton(container.Resolve<IBarcodeScannerService>());
                     //体积相机
-                    services.AddScoped<I3DCamera, Percipio3DCamera>();
+                    services.AddSingleton(container.Resolve<I3DCamera>());
                     services.AddHostedService<BarcodeScannerBackgroundService>(); // 注册后台服务
                 })
                 .Build();

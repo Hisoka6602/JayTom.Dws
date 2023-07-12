@@ -80,6 +80,17 @@
                             FontWeight="Bold"
                             Foreground="White"
                             Text="JayTom.Dws" />
+                        <!--  相机  -->
+                        <Button
+                            Command="{Binding CameraViewCommand}"
+                            Style="{StaticResource SystemButtonStyle}"
+                            ToolTip="Minimize">
+                            <TextBlock
+                                FontSize="25"
+                                Foreground="White"
+                                Style="{StaticResource SystemTextBlockStyle}"
+                                Text="&#xe653;" />
+                        </Button>
                         <!--  最小化  -->
                         <Button
                             Command="{Binding MinWinCommand}"
