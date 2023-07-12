@@ -274,7 +274,7 @@ namespace JayTom.Dws.TemporaryClient.ViewModels {
                     model.Message = "Retrieving data...";
                     DialogHost.Show(exportDialog, model.Identifier);
 
-                    await _excel.Export(saveFileDialog.FileName,
+                    var export = await _excel.Export(saveFileDialog.FileName,
                         $"BarCodeItems",
                         "BarCodeItems", BarCodeItems?.ToList() ?? new List<BarCodeItemModel>(),
                         new List<string>(), async p => {
@@ -290,6 +290,13 @@ namespace JayTom.Dws.TemporaryClient.ViewModels {
                         }, e => {
                             MainMessageQueue?.Enqueue(e.Message);
                         });
+                    if (!export) {
+                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                            if (DialogHost.IsDialogOpen(model.Identifier)) {
+                                DialogHost.Close(model.Identifier);
+                            }
+                        });
+                    }
                     //查询当前条件所有内容
                     //弹导出框
                     /*var (key, value) = await _appDataService.GetBarCodeItems(StartTime, EndTime, BarCode);
