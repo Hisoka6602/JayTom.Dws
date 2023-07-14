@@ -1,7 +1,9 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Drawing;
+using System.Reflection;
 using System.Threading.Tasks;
 using System.Drawing.Drawing2D;
 using System.Collections.Generic;
@@ -19,6 +21,12 @@ namespace JayTom.Dws.Device.Camera._3DCamera {
         private static readonly byte PersonStandingPositionMask = 0x00;
         public string DeviceCode { get; private set; } = string.Empty;
         public DeviceStatus Status { get; private set; } = DeviceStatus.Uninitialized;
+
+        [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        private static extern bool SetDllDirectory(string path);
+
+        [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        private static extern IntPtr LoadLibrary(string dllToLoad);
 
         public Task<KeyValuePair<bool, string>> Reconnect() {
             throw new NotImplementedException();

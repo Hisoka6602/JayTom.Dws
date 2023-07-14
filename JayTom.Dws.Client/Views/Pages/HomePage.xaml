@@ -5,6 +5,7 @@
     xmlns:converters="clr-namespace:JayTom.Dws.Client.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="clr-namespace:JayTom.Dws.Client.Views.Pages"
+    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:mvvm="http://prismlibrary.com/"
     Title="HomePage"
@@ -15,51 +16,205 @@
     mc:Ignorable="d">
     <Page.Resources>
         <converters:CameraListBoxWidthConverter x:Key="CameraListBoxWidthConverter" />
+        <converters:EllipseCenterConverter x:Key="EllipseCenterConverter" />
     </Page.Resources>
     <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="50*" />
+            <ColumnDefinition Width="50*" />
+        </Grid.ColumnDefinitions>
         <!--  摄像头列表  -->
         <!--  Width="{Binding Items.Count, RelativeSource={RelativeSource Self}, Converter={StaticResource CameraListBoxWidthConverter}, UpdateSourceTrigger=PropertyChanged}"  -->
-        <ListBox
-            Name="CameraListBox"
-            Width="900"
-            MinWidth="600"
-            MaxWidth="900"
-            Margin="0,10"
-            HorizontalAlignment="Left"
-            VerticalAlignment="Center"
-            HorizontalContentAlignment="Center"
-            VerticalContentAlignment="Center"
+        <materialDesign:Card
+            Grid.Column="0"
+            Margin="5"
+            materialDesign:ElevationAssist.Elevation="Dp6"
+            Background="Transparent"
+            UniformCornerRadius="10">
+            <Grid>
+                <Grid.Clip>
+                    <GeometryGroup FillRule="EvenOdd">
+                        <RectangleGeometry RadiusX="10" RadiusY="10">
+                            <RectangleGeometry.Rect>
+                                <MultiBinding Converter="{StaticResource RectConverter}">
+                                    <Binding
+                                        Path="ActualWidth"
+                                        RelativeSource="{RelativeSource AncestorType={x:Type materialDesign:Card}}"
+                                        UpdateSourceTrigger="PropertyChanged" />
+                                    <Binding
+                                        Path="ActualHeight"
+                                        RelativeSource="{RelativeSource AncestorType={x:Type materialDesign:Card}}"
+                                        UpdateSourceTrigger="PropertyChanged" />
+                                </MultiBinding>
+                            </RectangleGeometry.Rect>
+                        </RectangleGeometry>
+                        <EllipseGeometry>
+                            <EllipseGeometry.Center>
+                                <MultiBinding Converter="{StaticResource EllipseCenterConverter}" ConverterParameter="right">
+                                    <Binding
+                                        Path="ActualWidth"
+                                        RelativeSource="{RelativeSource AncestorType={x:Type materialDesign:Card}}"
+                                        UpdateSourceTrigger="PropertyChanged" />
+                                    <Binding
+                                        Path="ActualHeight"
+                                        RelativeSource="{RelativeSource AncestorType={x:Type materialDesign:Card}}"
+                                        UpdateSourceTrigger="PropertyChanged" />
+                                </MultiBinding>
+                            </EllipseGeometry.Center>
+                            <EllipseGeometry.RadiusX>90</EllipseGeometry.RadiusX>
+                            <EllipseGeometry.RadiusY>90</EllipseGeometry.RadiusY>
+                        </EllipseGeometry>
+                    </GeometryGroup>
+                </Grid.Clip>
+                <ListBox
+                    Name="CameraListBox"
+                    Width="900"
+                    MinWidth="600"
+                    MaxWidth="900"
+                    Margin="0,10"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Center"
+                    HorizontalContentAlignment="Center"
+                    VerticalContentAlignment="Center"
+                    Focusable="False"
+                    ItemTemplate="{StaticResource CameraTemplate}"
+                    ItemsSource="{Binding CameraItems, UpdateSourceTrigger=PropertyChanged}"
+                    ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                    ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                    Style="{StaticResource CustomListBoxStyle}">
+                    <ListBox.Template>
+                        <ControlTemplate TargetType="{x:Type ListBox}">
+                            <ScrollViewer Focusable="False">
+                                <ScrollViewer.Style>
+                                    <Style TargetType="ScrollViewer">
+                                        <Style.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
+                                            </Trigger>
+                                            <Trigger Property="IsMouseOver" Value="False">
+                                                <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Hidden" />
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ScrollViewer.Style>
+                                <WrapPanel
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Top"
+                                    Focusable="False"
+                                    IsItemsHost="True"
+                                    Orientation="Horizontal"
+                                    ScrollViewer.CanContentScroll="True" />
+                            </ScrollViewer>
+                        </ControlTemplate>
+                    </ListBox.Template>
+                </ListBox>
+            </Grid>
+        </materialDesign:Card>
+
+        <!--  数据列表、状态、实时  -->
+
+        <Grid Grid.Column="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="160" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <!--  实时条码体积  -->
+            <materialDesign:Card
+                Grid.Row="0"
+                Margin="5,2"
+                materialDesign:ElevationAssist.Elevation="Dp6"
+                Background="#BF2E2E2E"
+                BorderThickness="2"
+                UniformCornerRadius="10" />
+            <!--  数据列表，统计  -->
+            <materialDesign:Card
+                Grid.Row="1"
+                Margin="5"
+                materialDesign:ElevationAssist.Elevation="Dp6"
+                Background="Transparent"
+                UniformCornerRadius="10">
+                <Grid>
+                    <Path materialDesign:ElevationAssist.Elevation="Dp6" Fill="#BF2E2E2E">
+                        <Path.Data>
+                            <CombinedGeometry GeometryCombineMode="Exclude">
+                                <CombinedGeometry.Geometry1>
+                                    <RectangleGeometry RadiusX="10" RadiusY="10">
+                                        <RectangleGeometry.Rect>
+                                            <MultiBinding Converter="{StaticResource RectConverter}">
+                                                <Binding
+                                                    Path="ActualWidth"
+                                                    RelativeSource="{RelativeSource AncestorType={x:Type materialDesign:Card}}"
+                                                    UpdateSourceTrigger="PropertyChanged" />
+                                                <Binding
+                                                    Path="ActualHeight"
+                                                    RelativeSource="{RelativeSource AncestorType={x:Type materialDesign:Card}}"
+                                                    UpdateSourceTrigger="PropertyChanged" />
+                                            </MultiBinding>
+                                        </RectangleGeometry.Rect>
+                                    </RectangleGeometry>
+                                </CombinedGeometry.Geometry1>
+                                <CombinedGeometry.Geometry2>
+                                    <EllipseGeometry>
+                                        <EllipseGeometry.Center>
+                                            <MultiBinding Converter="{StaticResource EllipseCenterConverter}" ConverterParameter="left">
+                                                <Binding
+                                                    Path="ActualWidth"
+                                                    RelativeSource="{RelativeSource AncestorType={x:Type materialDesign:Card}}"
+                                                    UpdateSourceTrigger="PropertyChanged" />
+                                                <Binding
+                                                    Path="ActualHeight"
+                                                    RelativeSource="{RelativeSource AncestorType={x:Type materialDesign:Card}}"
+                                                    UpdateSourceTrigger="PropertyChanged" />
+                                            </MultiBinding>
+                                        </EllipseGeometry.Center>
+                                        <EllipseGeometry.RadiusX>90</EllipseGeometry.RadiusX>
+                                        <EllipseGeometry.RadiusY>90</EllipseGeometry.RadiusY>
+                                    </EllipseGeometry>
+                                </CombinedGeometry.Geometry2>
+                            </CombinedGeometry>
+                        </Path.Data>
+                    </Path>
+                </Grid>
+            </materialDesign:Card>
+        </Grid>
+        <!--  开始\停止按钮  -->
+        <Button
+            Grid.Column="0"
+            Grid.ColumnSpan="2"
+            Width="150"
+            Height="150"
+            Margin="10,0,0,-20"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Bottom"
+            materialDesign:ElevationAssist.Elevation="Dp6"
+            materialDesign:RippleAssist.ClipToBounds="True"
+            Background="#2E2E2E"
+            BorderBrush="#2E2E2E"
+            BorderThickness="0"
             Focusable="False"
-            ItemTemplate="{StaticResource CameraTemplate}"
-            ItemsSource="{Binding CameraItems, UpdateSourceTrigger=PropertyChanged}"
-            ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-            ScrollViewer.VerticalScrollBarVisibility="Disabled"
-            Style="{StaticResource CustomListBoxStyle}">
-            <ListBox.Template>
-                <ControlTemplate TargetType="{x:Type ListBox}">
-                    <ScrollViewer Focusable="False">
-                        <ScrollViewer.Style>
-                            <Style TargetType="ScrollViewer">
-                                <Style.Triggers>
-                                    <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
-                                    </Trigger>
-                                    <Trigger Property="IsMouseOver" Value="False">
-                                        <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Hidden" />
-                                    </Trigger>
-                                </Style.Triggers>
-                            </Style>
-                        </ScrollViewer.Style>
-                        <WrapPanel
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Top"
-                            Focusable="False"
-                            IsItemsHost="True"
-                            Orientation="Horizontal"
-                            ScrollViewer.CanContentScroll="True" />
-                    </ScrollViewer>
-                </ControlTemplate>
-            </ListBox.Template>
-        </ListBox>
+            Style="{StaticResource MaterialDesignFloatingActionLightButton}">
+            <StackPanel
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Orientation="Vertical">
+                <TextBlock
+                    Margin="10"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    FontFamily="{StaticResource IconFontFamily}"
+                    FontSize="40"
+                    FontWeight="Bold"
+                    Foreground="White"
+                    Text="&#xe693;" />
+                <Separator />
+                <TextBlock
+                    Margin="10"
+                    FontFamily="{StaticResource CustomFontFamily}"
+                    FontSize="18"
+                    FontWeight="Bold"
+                    Foreground="White"
+                    Text="Stop" />
+            </StackPanel>
+        </Button>
     </Grid>
 </Page>

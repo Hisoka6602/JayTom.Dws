@@ -96,14 +96,21 @@ namespace JayTom.Dws.TemporaryClient {
             AppDomain.CurrentDomain.UnhandledException += delegate (object sender, UnhandledExceptionEventArgs args) {
                 //异常触发
             };
+            //Utils.Utils.SetPath($"{AppDomain.CurrentDomain.BaseDirectory}Percipio");
+            //Utils.Utils.SetPath($"{AppDomain.CurrentDomain.BaseDirectory}Percipio\\apps");
+
             base.OnStartup(e);
             /*//指定配置文件
             new ConfigurationBuilder()
                 .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
                 .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
                 .Build();*/
+            //添加环境变量
+            //var (key, value) = Utils.Utils.AddSystemEnvironmentVariable($"{AppDomain.CurrentDomain.BaseDirectory}Percipio");
+            //Console.WriteLine(value);
 
             // 创建主机并注册后台服务
+
             var container = Container.GetContainer();
             _host = Host.CreateDefaultBuilder()
                 .ConfigureServices((hostContext, services) => {
@@ -113,7 +120,7 @@ namespace JayTom.Dws.TemporaryClient {
                         var handler = new HttpClientHandler() {
                             UseDefaultCredentials = true,
                             MaxConnectionsPerServer = 1000,
-                            ServerCertificateCustomValidationCallback = (m, c, ch, e) => true,
+                            ServerCertificateCustomValidationCallback = (m, c, ch, _) => true,
                             //UseProxy = false
                         };
 

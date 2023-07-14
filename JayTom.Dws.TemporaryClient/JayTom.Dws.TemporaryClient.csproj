@@ -47,6 +47,12 @@
     <Resource Include="Fonts\iconfont.ttf" />
     <Resource Include="Fonts\更纱黑体 Mono SC Nerd.ttf" />
   </ItemGroup>
+
+  <ItemGroup>
+    <None Update="App.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
   <Target Name="CopyDeviceLib" AfterTargets="AfterBuild">
     <ItemGroup>
       <DeviceLibFiles Include="$(SolutionDir)JayTom.Dws.Device\DeviceLib\*\*" />
