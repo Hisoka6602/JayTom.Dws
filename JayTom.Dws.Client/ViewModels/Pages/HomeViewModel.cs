@@ -66,7 +66,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     ConnectionType = ConnectionType.Tcp,
                     ImageClickCommand = ImageClickCommand,
                     StatusClickCommand = StatusClickCommand,
-                },
+                }*//*,
                 new CameraItemInfoModel()
                 {
                     CameraName = "大华3D相机.2",
