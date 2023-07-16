@@ -49,6 +49,7 @@ namespace JayTom.Dws.Client {
             ViewModelLocationProvider.Register<SettingsPage, SettingsViewModel>();
             ViewModelLocationProvider.Register<PluginMarketplacePage, PluginMarketplaceViewModel>();
             ViewModelLocationProvider.Register<HomePage, HomeViewModel>();
+            ViewModelLocationProvider.Register<StatusBarPage, StatusBarViewModel>();
         }
     }
 }

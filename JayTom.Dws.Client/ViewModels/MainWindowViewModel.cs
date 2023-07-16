@@ -95,10 +95,6 @@ namespace JayTom.Dws.Client.ViewModels {
             get => new DelegateCommand<object>(CloseWinDelegate);
         }
 
-        public ICommand SizeChangedCommand {
-            get => new DelegateCommand<object>(SizeChangeDelegate);
-        }
-
         /// <summary>
         /// 页面切换
         /// </summary>
@@ -107,31 +103,6 @@ namespace JayTom.Dws.Client.ViewModels {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
                 _regionManager.Regions["ContentRegion"].RequestNavigate(obj.ToString());
             });
-        }
-
-        private void SizeChangeDelegate(object obj) {
-            if (obj is Window window) {
-                window.MaxHeight = SystemParameters.MaximizedPrimaryScreenHeight;
-                window.MaxWidth = SystemParameters.MaximizedPrimaryScreenWidth;
-                if (window.WindowState == WindowState.Maximized ||
-                    (window.Height >= SystemParameters.MaximizedPrimaryScreenHeight &&
-                     window.Width >= SystemParameters.MaximizedPrimaryScreenWidth)) {
-                    //直角
-                    UniformCornerRadius = 0;
-                }
-                else {
-                    UniformCornerRadius = 5;
-                    //圆角
-                }
-                if (window.WindowState == WindowState.Maximized) {
-                    MaxBtnIcon = "\xe72c";
-                    MaxBtnToolTip = "Restore";
-                }
-                else {
-                    MaxBtnIcon = "\xe600";
-                    MaxBtnToolTip = "Maximize";
-                }
-            }
         }
 
         private void CloseWinDelegate(object obj) {
@@ -189,10 +160,10 @@ namespace JayTom.Dws.Client.ViewModels {
 
         private void SizeChangeDelegate(object sender, SizeChangedEventArgs e) {
             if (sender is Window window) {
-                window.MaxHeight = SystemParameters.MaximizedPrimaryScreenHeight;
+                window.MaxHeight = SystemParameters.MaximizedPrimaryScreenHeight - 5;
                 window.MaxWidth = SystemParameters.MaximizedPrimaryScreenWidth;
                 if (window.WindowState == WindowState.Maximized ||
-                    (window.Height >= SystemParameters.MaximizedPrimaryScreenHeight &&
+                    (window.Height >= SystemParameters.MaximizedPrimaryScreenHeight - 5 &&
                      window.Width >= SystemParameters.MaximizedPrimaryScreenWidth)) {
                     //直角
                     UniformCornerRadius = 0;

@@ -166,6 +166,8 @@
                 <ResourceDictionary Source="Template/CameraTemplate.xaml" />
                 <!--  静态数据源  -->
                 <ResourceDictionary Source="/DataSources/LanguageInfoSources.xaml" />
+                <!--  异常信息模板  -->
+                <ResourceDictionary Source="Template/ExceptionItemTemplate.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </prism:PrismApplication.Resources>

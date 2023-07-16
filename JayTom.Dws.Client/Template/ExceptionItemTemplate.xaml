@@ -1,0 +1,30 @@
+﻿<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:sys="clr-namespace:System;assembly=System.Runtime">
+    <DataTemplate x:Key="ExceptionItemTemplate" DataType="{x:Type sys:String}">
+        <StackPanel Margin="5" Orientation="Horizontal">
+            <!--  图标  -->
+            <TextBlock
+                Margin="5,0"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                FontFamily="pack://application:,,,/Fonts/#iconfont"
+                FontSize="20"
+                Foreground="Red"
+                Text="&#xe677;" />
+            <!--  信息  -->
+            <TextBlock
+                MaxWidth="200"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                FontSize="12"
+                FontWeight="Bold"
+                Foreground="White"
+                Text="{Binding}"
+                TextWrapping="Wrap" />
+        </StackPanel>
+    </DataTemplate>
+
+</ResourceDictionary>
