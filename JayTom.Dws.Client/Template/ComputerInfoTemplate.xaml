@@ -1,0 +1,260 @@
+﻿<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:converters="clr-namespace:JayTom.Dws.Client.Converters"
+    xmlns:models="clr-namespace:JayTom.Dws.Client.Models"
+    xmlns:viewModels="clr-namespace:JayTom.Dws.Client.ViewModels">
+    <DataTemplate x:Key="ComputerInfoDataTemplate" DataType="{x:Type models:ComputerInfoModel}" />
+    <converters:CpuTemperatureColorConverter x:Key="CpuTemperatureColorConverter" />
+    <converters:CpuUsageColorConverter x:Key="CpuUsageColorConverter" />
+    <ControlTemplate x:Key="ComputerInfoTemplate" TargetType="Button">
+        <ControlTemplate.Resources>
+            <FontFamily x:Key="CustomFontFamily">
+                pack://application:,,,/Fonts/#更纱黑体 Mono SC Nerd
+            </FontFamily>
+            <FontFamily x:Key="IconFontFamily">
+                pack://application:,,,/Fonts/#iconfont
+            </FontFamily>
+        </ControlTemplate.Resources>
+        <Grid ClipToBounds="True">
+            <ContentPresenter />
+            <Popup
+                x:Name="ItemPopup"
+                Placement="Bottom"
+                PopupAnimation="Scroll"
+                StaysOpen="False">
+                <Grid
+                    Width="500"
+                    Height="300"
+                    Background="#303030"
+                    ClipToBounds="True">
+                    <Grid.DataContext>
+                        <viewModels:StatusBarViewModel />
+                    </Grid.DataContext>
+                    <!--<Grid.RowDefinitions>
+                        <RowDefinition Height="40" />
+                        <RowDefinition Height="40" />
+                        <RowDefinition Height="40" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="50*" />
+                        <ColumnDefinition Width="50*" />
+                    </Grid.ColumnDefinitions>-->
+
+
+                    <!--  Cpu  -->
+                    <StackPanel Margin="5" Orientation="Vertical">
+                        <StackPanel Orientation="Horizontal">
+                            <!--  图标  -->
+                            <TextBlock
+                                Margin="10,2"
+                                HorizontalAlignment="Left"
+                                VerticalAlignment="Center"
+                                FontFamily="{StaticResource IconFontFamily}"
+                                FontSize="25"
+                                Foreground="DimGray"
+                                Text="&#xe84d;" />
+                            <!--  Cpu名称  -->
+                            <TextBlock
+                                MaxWidth="450"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                FontFamily="{StaticResource CustomFontFamily}"
+                                FontSize="16"
+                                FontWeight="Bold"
+                                Foreground="DimGray"
+                                IsEnabled="False"
+                                Text="{Binding ComputerInfo.CpuInfo.Name}"
+                                TextAlignment="Center"
+                                TextTrimming="WordEllipsis" />
+                        </StackPanel>
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="40" />
+                                <RowDefinition Height="40" />
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="50*" />
+                                <ColumnDefinition Width="50*" />
+                            </Grid.ColumnDefinitions>
+                            <!--  Cpu占用比率  -->
+                            <Grid
+                                Grid.Row="0"
+                                Grid.Column="0"
+                                Margin="5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="60" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="20" />
+                                </Grid.ColumnDefinitions>
+                                <!--  图标  -->
+                                <TextBlock
+                                    Grid.Column="0"
+                                    Margin="10,2"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    FontFamily="{StaticResource IconFontFamily}"
+                                    FontSize="25"
+                                    Foreground="DimGray"
+                                    Text="&#xe668;" />
+                                <!--  信息  -->
+                                <TextBlock
+                                    Grid.Column="1"
+                                    MaxWidth="140"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    FontFamily="{StaticResource CustomFontFamily}"
+                                    FontSize="16"
+                                    FontWeight="Bold"
+                                    Foreground="DimGray"
+                                    IsEnabled="False"
+                                    TextAlignment="Center"
+                                    TextTrimming="WordEllipsis">
+                                    <Run Text="Cpu使用率:" /><Run Text="{Binding ComputerInfo.CpuInfo.UsagePercentage, StringFormat={}{0:F1}}" /><Run Text="%" />
+                                </TextBlock>
+                                <!--  标记  -->
+                                <TextBlock
+                                    Grid.Column="2"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Center"
+                                    FontFamily="{StaticResource IconFontFamily}"
+                                    FontSize="30"
+                                    Foreground="{Binding ComputerInfo.CpuInfo.UsagePercentage, Converter={StaticResource CpuUsageColorConverter}}"
+                                    Text="&#xe7a6;" />
+                            </Grid>
+                            <!--  Cpu速度  -->
+                            <Grid
+                                Grid.Row="0"
+                                Grid.Column="1"
+                                Margin="5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="60" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="20" />
+                                </Grid.ColumnDefinitions>
+                                <!--  图标  -->
+                                <TextBlock
+                                    Grid.Column="0"
+                                    Margin="10,2"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    FontFamily="{StaticResource IconFontFamily}"
+                                    FontSize="25"
+                                    Foreground="DimGray"
+                                    Text="&#xe7e3;" />
+                                <!--  信息  -->
+                                <TextBlock
+                                    Grid.Column="1"
+                                    MaxWidth="140"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    FontFamily="{StaticResource CustomFontFamily}"
+                                    FontSize="16"
+                                    FontWeight="Bold"
+                                    Foreground="DimGray"
+                                    IsEnabled="False"
+                                    TextAlignment="Center"
+                                    TextTrimming="WordEllipsis">
+                                    <Run Text="Cpu速度:" /><Run Text="{Binding ComputerInfo.CpuInfo.ClockSpeed, StringFormat={}{0:F2}}" /><Run FontSize="13" Text=" GHz" />
+                                </TextBlock>
+                            </Grid>
+                            <!--  Cpu温度  -->
+                            <Grid
+                                Grid.Row="1"
+                                Grid.Column="0"
+                                Margin="5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="60" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="20" />
+                                </Grid.ColumnDefinitions>
+                                <!--  图标  -->
+                                <TextBlock
+                                    Grid.Column="0"
+                                    Margin="10,2"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    FontFamily="{StaticResource IconFontFamily}"
+                                    FontSize="25"
+                                    Foreground="DimGray"
+                                    Text="&#xe660;" />
+                                <!--  信息  -->
+                                <TextBlock
+                                    Grid.Column="1"
+                                    MaxWidth="140"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    FontFamily="{StaticResource CustomFontFamily}"
+                                    FontSize="16"
+                                    FontWeight="Bold"
+                                    Foreground="DimGray"
+                                    IsEnabled="False"
+                                    TextAlignment="Center"
+                                    TextTrimming="WordEllipsis">
+                                    <Run Text="Cpu温度:" /><Run Text="{Binding ComputerInfo.CpuInfo.CpuTemperature, StringFormat={}{0:F1}}" /><Run Text="°" />
+                                </TextBlock>
+                                <!--  标记  -->
+                                <TextBlock
+                                    Grid.Column="2"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Center"
+                                    FontFamily="{StaticResource IconFontFamily}"
+                                    FontSize="30"
+                                    Foreground="{Binding ComputerInfo.CpuInfo.CpuTemperature, Converter={StaticResource CpuTemperatureColorConverter}}"
+                                    Text="&#xe7a6;" />
+                            </Grid>
+                            <!--  Cpu风扇  -->
+                            <Grid
+                                Grid.Row="1"
+                                Grid.Column="1"
+                                Margin="5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="60" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="20" />
+                                </Grid.ColumnDefinitions>
+                                <!--  图标  -->
+                                <TextBlock
+                                    Grid.Column="0"
+                                    Margin="10,2"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    FontFamily="{StaticResource IconFontFamily}"
+                                    FontSize="25"
+                                    Foreground="DimGray"
+                                    Text="&#xe649;" />
+                                <!--  信息  -->
+                                <TextBlock
+                                    Grid.Column="1"
+                                    MaxWidth="170"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    FontFamily="{StaticResource CustomFontFamily}"
+                                    FontSize="16"
+                                    FontWeight="Bold"
+                                    Foreground="DimGray"
+                                    IsEnabled="False"
+                                    TextAlignment="Justify"
+                                    TextTrimming="WordEllipsis">
+                                    <Run Text="Cpu风扇转速:" /><Run Text="{Binding ComputerInfo.CpuInfo.FanSpeed, StringFormat={}{0:F2}}" /><Run FontSize="13" Text=" RPM" />
+                                </TextBlock>
+                            </Grid>
+                        </Grid>
+                    </StackPanel>
+                    <!--  内存  -->
+                    <!--  GPU  -->
+                    <!--  磁盘信息  -->
+                </Grid>
+            </Popup>
+        </Grid>
+        <ControlTemplate.Triggers>
+            <Trigger Property="IsPressed" Value="True">
+                <Setter TargetName="ItemPopup" Property="IsOpen" Value="True" />
+            </Trigger>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="ItemPopup" Property="IsOpen" Value="True" />
+            </Trigger>
+        </ControlTemplate.Triggers>
+    </ControlTemplate>
+</ResourceDictionary>

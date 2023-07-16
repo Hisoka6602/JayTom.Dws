@@ -168,6 +168,14 @@
                 <ResourceDictionary Source="/DataSources/LanguageInfoSources.xaml" />
                 <!--  异常信息模板  -->
                 <ResourceDictionary Source="Template/ExceptionItemTemplate.xaml" />
+                <!--  状态栏相机模板  -->
+                <ResourceDictionary Source="Template/CameraStatusBarTemplate.xaml" />
+                <!--  状态栏串口模板  -->
+                <ResourceDictionary Source="Template/SerialPortTemplate.xaml" />
+                <!--  硬盘列表模板  -->
+                <ResourceDictionary Source="Template/HardDiskTemplate.xaml" />
+                <!--  电脑信息模板  -->
+                <ResourceDictionary Source="Template/ComputerInfoTemplate.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </prism:PrismApplication.Resources>

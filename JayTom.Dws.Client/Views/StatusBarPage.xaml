@@ -17,6 +17,11 @@
     <Page.Resources>
         <converters:ListBackgroundVisibleConverter x:Key="ListBackgroundVisibleConverter" />
         <converters:ExceptionFlagColorConverter x:Key="ExceptionFlagColorConverter" />
+        <converters:NullStatusFlagColorConverter x:Key="NullStatusFlagColorConverter" />
+        <converters:CameraStatusSummaryColorConverter x:Key="CameraStatusSummaryColorConverter" />
+        <converters:SerialPortStatusSummaryColorConverter x:Key="SerialPortStatusSummaryColorConverter" />
+        <converters:MemoryRemainingColorConverter x:Key="MemoryRemainingColorConverter" />
+        <converters:MemoryUsedPercentageColorConverter x:Key="MemoryUsedPercentageColorConverter" />
     </Page.Resources>
     <Grid
         Margin="10,5"
@@ -179,9 +184,71 @@
                         VerticalAlignment="Center"
                         FontFamily="{StaticResource IconFontFamily}"
                         FontSize="30"
-                        Foreground="#31C731"
+                        Foreground="{Binding CameraItems, Converter={StaticResource CameraStatusSummaryColorConverter}}"
                         Text="&#xe7a6;" />
                 </StackPanel>
+                <Button.Template>
+                    <ControlTemplate TargetType="Button">
+                        <Grid ClipToBounds="True">
+                            <ContentPresenter />
+                            <Popup
+                                x:Name="ExceptionPopup"
+                                Placement="Top"
+                                PopupAnimation="Scroll"
+                                StaysOpen="False">
+                                <!--  在这里定义 Popup 的内容  -->
+                                <Grid
+                                    Width="250"
+                                    Height="300"
+                                    Background="#303030"
+                                    ClipToBounds="True">
+
+                                    <!--  相机信息列表  -->
+                                    <ListBox
+                                        Grid.Row="0"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        Foreground="White"
+                                        ItemTemplate="{StaticResource CameraStatusBarTemplate}"
+                                        ItemsSource="{Binding CameraItems, UpdateSourceTrigger=PropertyChanged}"
+                                        Style="{StaticResource CustomListBoxStyle}" />
+                                    <!--  空数据底图  -->
+                                    <Border
+                                        Grid.Row="0"
+                                        Background="#303030"
+                                        Visibility="Hidden">
+                                        <StackPanel
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            Orientation="Vertical">
+                                            <TextBlock
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"
+                                                FontFamily="{StaticResource IconFontFamily}"
+                                                FontSize="50"
+                                                Text="&#xe63d;" />
+                                            <TextBlock
+                                                Margin="0,10"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"
+                                                FontFamily="{StaticResource CustomFontFamily}"
+                                                FontSize="16"
+                                                Text="没有数据" />
+                                        </StackPanel>
+                                    </Border>
+                                </Grid>
+                            </Popup>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="ExceptionPopup" Property="IsOpen" Value="True" />
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ExceptionPopup" Property="IsOpen" Value="True" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Button.Template>
             </Button>
             <!--  串口信息  -->
             <Button
@@ -214,9 +281,71 @@
                         VerticalAlignment="Center"
                         FontFamily="{StaticResource IconFontFamily}"
                         FontSize="30"
-                        Foreground="#31C731"
+                        Foreground="{Binding SerialPortItems, Converter={StaticResource SerialPortStatusSummaryColorConverter}}"
                         Text="&#xe7a6;" />
                 </StackPanel>
+                <Button.Template>
+                    <ControlTemplate TargetType="Button">
+                        <Grid ClipToBounds="True">
+                            <ContentPresenter />
+                            <Popup
+                                x:Name="ExceptionPopup"
+                                Placement="Top"
+                                PopupAnimation="Scroll"
+                                StaysOpen="False">
+                                <!--  在这里定义 Popup 的内容  -->
+                                <Grid
+                                    Width="250"
+                                    Height="300"
+                                    Background="#303030"
+                                    ClipToBounds="True">
+
+                                    <!--  相机信息列表  -->
+                                    <ListBox
+                                        Grid.Row="0"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        Foreground="White"
+                                        ItemTemplate="{StaticResource SerialPortTemplate}"
+                                        ItemsSource="{Binding SerialPortItems, UpdateSourceTrigger=PropertyChanged}"
+                                        Style="{StaticResource CustomListBoxStyle}" />
+                                    <!--  空数据底图  -->
+                                    <Border
+                                        Grid.Row="0"
+                                        Background="#303030"
+                                        Visibility="Hidden">
+                                        <StackPanel
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            Orientation="Vertical">
+                                            <TextBlock
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"
+                                                FontFamily="{StaticResource IconFontFamily}"
+                                                FontSize="50"
+                                                Text="&#xe63d;" />
+                                            <TextBlock
+                                                Margin="0,10"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"
+                                                FontFamily="{StaticResource CustomFontFamily}"
+                                                FontSize="16"
+                                                Text="没有数据" />
+                                        </StackPanel>
+                                    </Border>
+                                </Grid>
+                            </Popup>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="ExceptionPopup" Property="IsOpen" Value="True" />
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ExceptionPopup" Property="IsOpen" Value="True" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Button.Template>
             </Button>
             <!--  电脑信息  -->
             <Button
@@ -224,8 +353,10 @@
                 Padding="0"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
+                DataContext="{Binding}"
                 Focusable="False"
-                Style="{StaticResource MaterialDesignFlatButton}">
+                Style="{StaticResource MaterialDesignFlatButton}"
+                Template="{StaticResource ComputerInfoTemplate}">
                 <StackPanel Orientation="Horizontal">
 
                     <TextBlock
@@ -253,7 +384,7 @@
                         Text="&#xe7a6;" />
                 </StackPanel>
             </Button>
-            <!--  输出插件  -->
+            <!--  Cpu  -->
             <Button
                 Margin="2,0"
                 Padding="0"
@@ -269,7 +400,7 @@
                         FontFamily="{StaticResource IconFontFamily}"
                         FontSize="20"
                         Foreground="DimGray"
-                        Text="&#xe641;" />
+                        Text="&#xe84d;" />
                     <TextBlock
                         Margin="5,0"
                         HorizontalAlignment="Center"
@@ -277,18 +408,19 @@
                         FontFamily="{StaticResource CustomFontFamily}"
                         FontSize="14"
                         FontWeight="Bold"
-                        Foreground="DimGray"
-                        Text="输出插件" />
+                        Foreground="DimGray">
+                        <Run Text="Cpu:" /><Run Text="{Binding ComputerInfo.CpuInfo.UsagePercentage, StringFormat={}{0:F1}}" /><Run Text="%" />
+                    </TextBlock>
                     <TextBlock
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
                         FontFamily="{StaticResource IconFontFamily}"
                         FontSize="30"
-                        Foreground="#31C731"
+                        Foreground="{Binding ComputerInfo.CpuInfo.UsagePercentage, Converter={StaticResource CpuUsageColorConverter}}"
                         Text="&#xe7a6;" />
                 </StackPanel>
             </Button>
-            <!--  过滤插件  -->
+            <!--  内存  -->
             <Button
                 Margin="2,0"
                 Padding="0"
@@ -305,7 +437,7 @@
                         FontSize="20"
                         FontWeight="Bold"
                         Foreground="DimGray"
-                        Text="&#xe672;" />
+                        Text="&#xe60f;" />
                     <TextBlock
                         Margin="5,0"
                         HorizontalAlignment="Center"
@@ -313,18 +445,19 @@
                         FontFamily="{StaticResource CustomFontFamily}"
                         FontSize="14"
                         FontWeight="Bold"
-                        Foreground="DimGray"
-                        Text="过滤插件" />
+                        Foreground="DimGray">
+                        <Run Text="内存:" /><Run Text="{Binding ComputerInfo.MemoryInfo.UsedPercentage, StringFormat={}{0:F1}}" /><Run Text="%" />
+                    </TextBlock>
                     <TextBlock
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
                         FontFamily="{StaticResource IconFontFamily}"
                         FontSize="30"
-                        Foreground="#31C731"
+                        Foreground="{Binding ComputerInfo.MemoryInfo.UsedPercentage, Converter={StaticResource MemoryUsedPercentageColorConverter}}"
                         Text="&#xe7a6;" />
                 </StackPanel>
             </Button>
-            <!--  Api插件  -->
+            <!--  硬盘  -->
             <Button
                 Margin="2,0"
                 Padding="0"
@@ -341,7 +474,7 @@
                         FontSize="20"
                         FontWeight="Bold"
                         Foreground="DimGray"
-                        Text="&#xe664;" />
+                        Text="&#xe615;" />
                     <TextBlock
                         Margin="5,0"
                         HorizontalAlignment="Center"
@@ -350,7 +483,7 @@
                         FontSize="14"
                         FontWeight="Bold"
                         Foreground="DimGray"
-                        Text="Api接口" />
+                        Text="硬盘:90%" />
                     <TextBlock
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
@@ -358,42 +491,7 @@
                         FontSize="30"
                         Foreground="#31C731"
                         Text="&#xe7a6;" />
-                </StackPanel>
-            </Button>
-            <!--  运行逻辑模块  -->
-            <Button
-                Margin="2,0"
-                Padding="0"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center"
-                Focusable="False"
-                Style="{StaticResource MaterialDesignFlatButton}">
-                <StackPanel Orientation="Horizontal">
-
-                    <TextBlock
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Center"
-                        FontFamily="{StaticResource IconFontFamily}"
-                        FontSize="20"
-                        FontWeight="Bold"
-                        Foreground="DimGray"
-                        Text="&#xe63e;" />
-                    <TextBlock
-                        Margin="5,0"
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Center"
-                        FontFamily="{StaticResource CustomFontFamily}"
-                        FontSize="14"
-                        FontWeight="Bold"
-                        Foreground="DimGray"
-                        Text="运行逻辑" />
-                    <TextBlock
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Center"
-                        FontFamily="{StaticResource IconFontFamily}"
-                        FontSize="30"
-                        Foreground="#31C731"
-                        Text="&#xe7a6;" />
+                    <!--  硬盘列表  -->
                 </StackPanel>
             </Button>
         </StackPanel>
