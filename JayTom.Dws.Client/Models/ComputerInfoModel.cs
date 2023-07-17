@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 
 namespace JayTom.Dws.Client.Models {
+
     public class ComputerInfoModel : BindableBase {
         private List<HardDiskInfoModel>? _hardDiskList = new();
         private MemoryInfoModel _memoryInfo = new();
@@ -331,7 +332,6 @@ namespace JayTom.Dws.Client.Models {
         private string? _manufacturer;
         private string? _model;
         private float _memorySizeGb;
-        private float _clockSpeed;
         private float _usagePercentage;
         private float _usedMemoryGb;
         private float _usedMemoryPercentage;
@@ -366,14 +366,6 @@ namespace JayTom.Dws.Client.Models {
         public float MemorySizeGb {
             get => _memorySizeGb;
             set => SetProperty(ref _memorySizeGb, value);
-        }
-
-        /// <summary>
-        /// GPU 时钟速度
-        /// </summary>
-        public float ClockSpeed {
-            get => _clockSpeed;
-            set => SetProperty(ref _clockSpeed, value);
         }
 
         /// <summary>

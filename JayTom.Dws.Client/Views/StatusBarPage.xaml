@@ -21,7 +21,7 @@
         <converters:CameraStatusSummaryColorConverter x:Key="CameraStatusSummaryColorConverter" />
         <converters:SerialPortStatusSummaryColorConverter x:Key="SerialPortStatusSummaryColorConverter" />
         <converters:MemoryRemainingColorConverter x:Key="MemoryRemainingColorConverter" />
-        <converters:MemoryUsedPercentageColorConverter x:Key="MemoryUsedPercentageColorConverter" />
+        <converters:ComputerColorConverter x:Key="ComputerColorConverter" />
     </Page.Resources>
     <Grid
         Margin="10,5"
@@ -374,13 +374,13 @@
                         FontSize="14"
                         FontWeight="Bold"
                         Foreground="DimGray"
-                        Text="电脑" />
+                        Text="监控" />
                     <TextBlock
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
                         FontFamily="{StaticResource IconFontFamily}"
                         FontSize="30"
-                        Foreground="#31C731"
+                        Foreground="{Binding ComputerInfo, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource ComputerColorConverter}}"
                         Text="&#xe7a6;" />
                 </StackPanel>
             </Button>

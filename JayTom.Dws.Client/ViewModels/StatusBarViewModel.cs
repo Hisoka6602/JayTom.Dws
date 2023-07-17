@@ -1,12 +1,16 @@
-﻿using Prism.Mvvm;
+﻿using System;
+using Prism.Mvvm;
 using Prism.Commands;
 using System.Windows.Input;
 using JayTom.Dws.Client.Models;
+using JayTom.Dws.Client.Service;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 
 namespace JayTom.Dws.Client.ViewModels {
+
     public class StatusBarViewModel : BindableBase {
+        private readonly IComputerInfoReporter _computerInfoReporter;
 
         private ObservableCollection<string> _exceptionItems = new()
         {
@@ -76,6 +80,10 @@ namespace JayTom.Dws.Client.ViewModels {
                 CpuTemperature = 76,
                 Name = "Intel(R) Core(TM) i7-1065G7 CPU @ 1.30GHz"
             },
+            GpuInfo = new GpuInfoModel() {
+                Name = "Intel(R) Iris(R) Plus Graphics",
+                UsagePercentage = 11,
+            },
             HardDiskList = new List<HardDiskInfoModel>()
             {
                 new()
@@ -90,6 +98,19 @@ namespace JayTom.Dws.Client.ViewModels {
                 },
             }
         };
+
+        public StatusBarViewModel() {
+        }
+
+        public StatusBarViewModel(IComputerInfoReporter computerInfoReporter) {
+            _computerInfoReporter = computerInfoReporter;
+            _computerInfoReporter.ComputerInfoReceived += async delegate (object? sender, ComputerInfoModel model) {
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                    //加载到界面内容
+                    ComputerInfo = model;
+                });
+            };
+        }
 
         public ObservableCollection<string> ExceptionItems {
             get => _exceptionItems;
