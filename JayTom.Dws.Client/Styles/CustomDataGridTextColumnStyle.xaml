@@ -4,7 +4,7 @@
         BasedOn="{StaticResource MaterialDesignDataGridColumnHeader}"
         TargetType="DataGridColumnHeader">
         <Setter Property="BorderThickness" Value="0,0,0,1" />
-        <Setter Property="BorderBrush" Value="White" />
+        <Setter Property="BorderBrush" Value="#80696969" />
         <Setter Property="Foreground" Value="White" />
         <Setter Property="FontSize" Value="15" />
         <Setter Property="FontWeight" Value="Bold" />

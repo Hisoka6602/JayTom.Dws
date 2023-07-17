@@ -3,6 +3,7 @@ using JayTom.Dws.Utils;
 using JayTom.Dws.Interface;
 using System.Drawing.Imaging;
 using Microsoft.Extensions.Hosting;
+using System.Net.NetworkInformation;
 using System.Security.Authentication;
 using JayTom.Dws.Interface.WeciMexicoDv;
 using Microsoft.Extensions.DependencyInjection;
@@ -51,6 +52,16 @@ internal class Program {
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
+            NetworkInterface[] interfaces = NetworkInterface.GetAllNetworkInterfaces();
+
+            foreach (NetworkInterface networkInterface in interfaces) {
+                Console.WriteLine($"Interface Name: {networkInterface.Name}");
+                Console.WriteLine($"Speed: {networkInterface.Speed} bytes per second");
+                Console.WriteLine();
+            }
+
+            return;
+
             var fromFile = Image.FromFile($"{AppDomain.CurrentDomain.BaseDirectory}17.jpg");
 
             /*var watermark = fromFile.AddTextWatermark($"SF123456789\n0.33\ntime:20230707", Color.Blue);

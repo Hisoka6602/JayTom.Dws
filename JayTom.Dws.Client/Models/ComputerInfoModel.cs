@@ -18,7 +18,9 @@ namespace JayTom.Dws.Client.Models {
         private string? _computerName;
         private bool _isUnexpectedShutdown;
         private string? _unexpectedShutdownReason;
-        private NetworkInfoModel _networkInfo;
+        private NetworkInfoModel _networkInfo = new();
+        private string _systemInfoString = string.Empty;
+        private List<LocalNetworkConnectionInfoModel> _localNetworkConnectionInfos = new();
 
         /// <summary>
         /// 磁盘列表
@@ -58,6 +60,14 @@ namespace JayTom.Dws.Client.Models {
         public NetworkInfoModel NetworkInfo {
             get => _networkInfo;
             set => SetProperty(ref _networkInfo, value);
+        }
+
+        /// <summary>
+        /// 本地连接信息类
+        /// </summary>
+        public List<LocalNetworkConnectionInfoModel> LocalNetworkConnectionInfos {
+            get => _localNetworkConnectionInfos;
+            set => SetProperty(ref _localNetworkConnectionInfos, value);
         }
 
         /// <summary>
@@ -106,6 +116,14 @@ namespace JayTom.Dws.Client.Models {
         public string? UnexpectedShutdownReason {
             get => _unexpectedShutdownReason;
             set => SetProperty(ref _unexpectedShutdownReason, value);
+        }
+
+        /// <summary>
+        /// 系统信息
+        /// </summary>
+        public string SystemInfoString {
+            get => _systemInfoString;
+            set => SetProperty(ref _systemInfoString, value);
         }
     }
 
@@ -442,5 +460,47 @@ namespace JayTom.Dws.Client.Models {
         public float DownloadSpeed { get; set; }
 
         // 其他网络相关字段
+    }
+
+    /// <summary>
+    /// 本地连接信息类
+    /// </summary>
+    public class LocalNetworkConnectionInfoModel : BindableBase {
+        private string _connectionName = string.Empty;
+        private double _uploadSpeed;
+        private double _downloadSpeed;
+        private long _speed;
+
+        /// <summary>
+        /// 连接名称
+        /// </summary>
+        public string ConnectionName {
+            get => _connectionName;
+            set => SetProperty(ref _connectionName, value);
+        }
+
+        /// <summary>
+        /// 上传速率
+        /// </summary>
+        public double UploadSpeed {
+            get => _uploadSpeed;
+            set => SetProperty(ref _uploadSpeed, value);
+        }
+
+        /// <summary>
+        /// 下载速率
+        /// </summary>
+        public double DownloadSpeed {
+            get => _downloadSpeed;
+            set => SetProperty(ref _downloadSpeed, value);
+        }
+
+        /// <summary>
+        /// 速度
+        /// </summary>
+        public long Speed {
+            get => _speed;
+            set => SetProperty(ref _speed, value);
+        }
     }
 }

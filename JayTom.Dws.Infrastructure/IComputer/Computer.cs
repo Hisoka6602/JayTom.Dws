@@ -7,11 +7,32 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using LibreHardwareMonitor.Hardware;
 using System.Net.NetworkInformation;
+using System.Runtime.InteropServices;
 using System.Diagnostics.Eventing.Reader;
 
 namespace JayTom.Dws.Infrastructure.IComputer {
 
     public class Computer : IComputer {
+        private static LibreHardwareMonitor.Hardware.Computer? _computer = null;
+
+        public Computer() {
+            if (_computer is null) {
+                _computer = new LibreHardwareMonitor.Hardware.Computer {
+                    IsMotherboardEnabled = true,
+                    IsCpuEnabled = true,
+                    IsStorageEnabled = true,
+                    IsBatteryEnabled = true,
+                    IsControllerEnabled = true,
+                    IsNetworkEnabled = true,
+                    IsPsuEnabled = true,
+                    IsGpuEnabled = true,
+                    IsMemoryEnabled = true,
+                };
+                _computer.Open();
+            }
+
+            _computer.Reset();
+        }
 
         public List<DiskInfo> GetDiskInfo() {
             var diskInfoList = new List<DiskInfo>();
@@ -25,7 +46,7 @@ namespace JayTom.Dws.Infrastructure.IComputer {
                         var availableSpaceIndex = (int)Math.Floor(Math.Log(availableSpace, 1024));
                         var usedSpaceIndex = (int)Math.Floor(Math.Log(usedSpace, 1024));
                         return new DiskInfo {
-                            Name = drive.Name?.Replace(":", string.Empty)?.Replace("\\", string.Empty),
+                            Name = drive.Name?.Replace(":", string.Empty)?.Replace("\\", string.Empty) ?? string.Empty,
                             AvailableDiskSpace = drive.AvailableFreeSpace,
                             AvailableDiskSpaceFormat = $"{availableSpace / Math.Pow(1024, availableSpaceIndex):0.##} {sizes[availableSpaceIndex]}",
                             AvailableDiskSpacePercentage = (float)drive.AvailableFreeSpace / drive.TotalSize * 100,
@@ -77,40 +98,40 @@ namespace JayTom.Dws.Infrastructure.IComputer {
         }
 
         public int GetFanSpeed() {
-            var computer = new LibreHardwareMonitor.Hardware.Computer {
-                IsMotherboardEnabled = true,
-                IsCpuEnabled = true,
-                IsStorageEnabled = true,
-                IsBatteryEnabled = true,
-                IsControllerEnabled = true,
-                IsNetworkEnabled = true,
-                IsPsuEnabled = true,
-                IsGpuEnabled = true,
-                IsMemoryEnabled = true
-            };
-
             try {
-                computer.Open();
-
-                var fanSensor = computer.Hardware
+                var fanSensor = _computer?.Hardware
                     .FirstOrDefault(h => h.HardwareType == HardwareType.GpuIntel)?
                     .Sensors
                     .FirstOrDefault(s => s.SensorType == SensorType.Fan && s.Value.HasValue);
 
                 return (int)(fanSensor?.Value ?? 0);
             }
-            finally {
-                computer.Close();
+            catch (Exception e) {
+                return 0;
             }
         }
 
+        public Task<int> GetFanSpeedAsync() {
+            return Task.Run(() => {
+                try {
+                    var fanSensor = _computer?.Hardware
+                        ?.FirstOrDefault(h => h.HardwareType == HardwareType.GpuIntel)
+                        ?.Sensors
+                        ?.FirstOrDefault(s => s.SensorType == SensorType.Fan && s.Value.HasValue);
+
+                    return (int)(fanSensor?.Value ?? 0);
+                }
+                catch (Exception e) {
+                    Console.WriteLine(e);
+                }
+
+                return 0;
+            });
+        }
+
         public CpuInfo GetCpuInfo() {
-            var computer = new LibreHardwareMonitor.Hardware.Computer { IsCpuEnabled = true };
-
             try {
-                computer.Open();
-
-                var hardware = computer.Hardware?.FirstOrDefault(f => f.HardwareType == HardwareType.Cpu);
+                var hardware = _computer?.Hardware?.FirstOrDefault(f => f.HardwareType == HardwareType.Cpu);
                 if (hardware is not null) {
                     hardware.Update();
                     return new CpuInfo() {
@@ -122,37 +143,32 @@ namespace JayTom.Dws.Infrastructure.IComputer {
                              .GetValueOrDefault() ?? 0,
                         CpuName = $"{hardware.Name}",
                         CpuCoreInfos = hardware.Sensors?.Where(w => w.Name.StartsWith("CPU Core ") && w.SensorType == SensorType.Clock).GroupBy(g => g.Name)
-                             .Select(s => new CpuCoreInfo {
-                                 CpuCoreName = hardware.Sensors.FirstOrDefault(f => f.Name.Equals(s.Key))?.Name,
-                                 CpuCoreSpeed = hardware.Sensors.FirstOrDefault(f =>
-                                     f.Name.Equals(s.Key) && f.SensorType == SensorType.Clock)?.Value ?? 0,
-                                 CpuTemperature = hardware.Sensors.FirstOrDefault(f =>
-                                     f.Name.Equals(s.Key) && f.SensorType == SensorType.Temperature)?.Value ?? 0,
-                                 CpuUsedPercent = hardware.Sensors.FirstOrDefault(f =>
-                                     f.Name.Contains(s.Key) && f.SensorType == SensorType.Load)?.Value ?? 0,
-                                 Voltage = hardware.Sensors.FirstOrDefault(f =>
-                                     f.Name.Equals(s.Key) && f.SensorType == SensorType.Voltage)?.Value ?? 0,
-                             })?.ToList()
+                            .Select(s => new CpuCoreInfo {
+                                CpuCoreName = hardware.Sensors.FirstOrDefault(f => f.Name.Equals(s.Key))?.Name ?? string.Empty,
+                                CpuCoreSpeed = hardware.Sensors.FirstOrDefault(f =>
+                                    f.Name.Equals(s.Key) && f.SensorType == SensorType.Clock)?.Value ?? 0,
+                                CpuTemperature = hardware.Sensors.FirstOrDefault(f =>
+                                    f.Name.Equals(s.Key) && f.SensorType == SensorType.Temperature)?.Value ?? 0,
+                                CpuUsedPercent = hardware.Sensors.FirstOrDefault(f =>
+                                    f.Name.Contains(s.Key) && f.SensorType == SensorType.Load)?.Value ?? 0,
+                                Voltage = hardware.Sensors.FirstOrDefault(f =>
+                                    f.Name.Equals(s.Key) && f.SensorType == SensorType.Voltage)?.Value ?? 0,
+                            })?.ToList() ?? new List<CpuCoreInfo>()
                     };
                 }
             }
             catch (Exception e) {
                 // ignored
-            }
-            finally {
-                computer.Close();
             }
 
             return new CpuInfo();
         }
 
         public async Task<CpuInfo> GetCpuInfoAsync() {
-            var computer = new LibreHardwareMonitor.Hardware.Computer { IsCpuEnabled = true };
-
             try {
                 await Task.Delay(0);
-                computer.Open();
-                var hardware = computer.Hardware?.FirstOrDefault(f => f.HardwareType == HardwareType.Cpu);
+
+                var hardware = _computer?.Hardware?.FirstOrDefault(f => f.HardwareType == HardwareType.Cpu);
                 if (hardware is not null) {
                     hardware.Update();
                     return new CpuInfo() {
@@ -165,7 +181,7 @@ namespace JayTom.Dws.Infrastructure.IComputer {
                         CpuName = $"{hardware.Name}",
                         CpuCoreInfos = hardware.Sensors?.Where(w => w.Name.StartsWith("CPU Core ") && w.SensorType == SensorType.Clock).GroupBy(g => g.Name)
                              .Select(s => new CpuCoreInfo {
-                                 CpuCoreName = hardware.Sensors.FirstOrDefault(f => f.Name.Equals(s.Key))?.Name,
+                                 CpuCoreName = hardware.Sensors.FirstOrDefault(f => f.Name.Equals(s.Key))?.Name ?? string.Empty,
                                  CpuCoreSpeed = hardware.Sensors.FirstOrDefault(f =>
                                      f.Name.Equals(s.Key) && f.SensorType == SensorType.Clock)?.Value ?? 0,
                                  CpuTemperature = hardware.Sensors.FirstOrDefault(f =>
@@ -174,16 +190,13 @@ namespace JayTom.Dws.Infrastructure.IComputer {
                                      f.Name.Contains(s.Key) && f.SensorType == SensorType.Load)?.Value ?? 0,
                                  Voltage = hardware.Sensors.FirstOrDefault(f =>
                                      f.Name.Equals(s.Key) && f.SensorType == SensorType.Voltage)?.Value ?? 0,
-                             })?.ToList()
+                             })?.ToList() ?? new List<CpuCoreInfo>()
                     };
                 }
             }
             catch (Exception e) {
                 Console.WriteLine(e);
                 // ignored
-            }
-            finally {
-                computer.Close();
             }
 
             return new CpuInfo();
@@ -233,8 +246,8 @@ namespace JayTom.Dws.Infrastructure.IComputer {
                     var downloadSpeed = (statsAtEnd.BytesReceived - statsAtStart.BytesReceived);
                     var uploadSpeed = (statsAtEnd.BytesSent - statsAtStart.BytesSent);
                     string[] sizes = { "B/s", "KB/s", "MB/s", "GB/s", "TB/s" };
-                    var uploadSpeedIndex = (int)Math.Floor(Math.Log(uploadSpeed, 1024));
-                    var downloadSpeedIndex = (int)Math.Floor(Math.Log(downloadSpeed, 1024));
+                    var downloadSpeedIndex = Math.Clamp((int)Math.Floor(Math.Log(downloadSpeed, 1024)), 0, sizes.Length - 1);
+                    var uploadSpeedIndex = Math.Clamp((int)Math.Floor(Math.Log(uploadSpeed, 1024)), 0, sizes.Length - 1);
                     return new NetworkInfo {
                         NetworkDownloadSpeed = downloadSpeed,
                         NetworkUploadSpeed = uploadSpeed,
@@ -243,8 +256,9 @@ namespace JayTom.Dws.Infrastructure.IComputer {
                     };
                 }
             }
-            catch (Exception) {
+            catch (Exception e) {
                 // ignored
+                Console.WriteLine(e);
             }
 
             return new NetworkInfo();
@@ -317,25 +331,26 @@ namespace JayTom.Dws.Infrastructure.IComputer {
                     };
                 }
             }
-            catch {
+            catch (Exception e) {
+                Console.WriteLine(e);
                 // Do nothing and return default MemoryInfo object
             }
 
             return new MemoryInfo();
         }
 
-        public TimeSpan GetWindowsUptime() {
-            var counter = new PerformanceCounter("System", "System Up Time");
-            return TimeSpan.FromSeconds(counter.NextValue());
-        }
-
         public DateTime? GetLastShutdownTime() {
-            var query = new EventLogQuery("System", PathType.LogName, "*[System/EventID=1074]");
+            try {
+                var query = new EventLogQuery("System", PathType.LogName, "*[System/EventID=1074 or System/EventID=12]");
 
-            using var reader = new EventLogReader(query);
-            var record = reader.ReadEvent();
+                using var reader = new EventLogReader(query);
+                var record = reader.ReadEvent();
 
-            return record?.TimeCreated;
+                return record?.TimeCreated;
+            }
+            catch (Exception e) {
+                return null;
+            }
         }
 
         public bool GetLastShutdownUnexpected() {
@@ -366,7 +381,6 @@ namespace JayTom.Dws.Infrastructure.IComputer {
 
             foreach (var o in gpuList) {
                 var gpu = (ManagementObject)o;
-                Debug.WriteLine(gpu.Properties);
                 var gpuInfo = new GpuInfo {
                     Name = gpu?["Name"] as string ?? string.Empty,
                     //Utilization = (int)(gpu?["AdapterDACType"] ?? 0),
@@ -377,6 +391,138 @@ namespace JayTom.Dws.Infrastructure.IComputer {
             }
 
             return gpuInfoList;
+        }
+
+        public Task<List<GpuInfo>?> GetGpuInformationAsync() {
+            return Task.Run(() => {
+                try {
+                    var gpuHardwareList = _computer?.Hardware
+                        ?.Where(h => h.HardwareType is HardwareType.GpuIntel or HardwareType.GpuAmd)
+                        .ToList();
+
+                    if (gpuHardwareList is { Count: > 0 }) {
+                        foreach (var gpu in gpuHardwareList) {
+                            gpu.Update();
+                        }
+
+                        var gpuInfoList = new List<GpuInfo>();
+
+                        foreach (var gpu in gpuHardwareList) {
+                            var utilizationSensor = gpu.Sensors
+                                ?.FirstOrDefault(s => s.SensorType == SensorType.Load && s.Name == "D3D 3D");
+                            var memorySensor = gpu.Sensors
+                                ?.FirstOrDefault(s => s.SensorType == SensorType.Data && s.Name == "GPU Memory");
+                            var spaceSensor = gpu.Sensors
+                                ?.FirstOrDefault(s => s.SensorType == SensorType.Data && s.Name == "GPU Memory Free");
+
+                            var gpuInfo = new GpuInfo {
+                                Utilization = (int)(utilizationSensor?.Value ?? 0),
+                                TotalMemory = (long)(memorySensor?.Max ?? 0),
+                                FreeMemory = (long)(spaceSensor?.Value ?? 0)
+                            };
+
+                            gpuInfoList.Add(gpuInfo);
+                        }
+
+                        return gpuInfoList;
+                    }
+                }
+                catch (Exception e) {
+                    Console.WriteLine(e);
+                }
+
+                return null;
+            });
+        }
+
+        public SystemInfo GetSystemInfo() {
+            var systemInfo = new SystemInfo();
+
+            try {
+                // 构造 WMI 查询语句
+                const string query = "SELECT * FROM Win32_OperatingSystem";
+
+                // 创建 ManagementObjectSearcher 对象
+                using var searcher = new ManagementObjectSearcher(query);
+                // 获取查询结果集合
+                var result = searcher.Get();
+
+                // 遍历结果集合并读取系统信息
+                foreach (var o in result) {
+                    var obj = (ManagementObject)o;
+                    systemInfo.DeviceName = obj?["CSName"]?.ToString() ?? string.Empty;          // 设备名称
+                    systemInfo.ProductId = obj?["SerialNumber"]?.ToString() ?? string.Empty;     // 产品ID
+                    systemInfo.SystemType = obj?["OSArchitecture"]?.ToString() ?? string.Empty;  // 系统类型
+                    systemInfo.WindowsVersion = obj?["Version"]?.ToString() ?? string.Empty;     // Windows 版本
+                    systemInfo.InstallDate = FormatDateTime(obj?["InstallDate"]?.ToString()); // 安装日期
+                    systemInfo.OsVersion = obj?["Caption"]?.ToString() ?? string.Empty;           // 操作系统版本
+                    // 获取设备ID
+                    systemInfo.DeviceId = GetComputerSystemUuid();
+                }
+            }
+            catch (Exception e) {
+                Console.WriteLine(e);
+            }
+
+            return systemInfo;
+        }
+
+        public async Task<List<LocalNetworkConnectionInfo>?> GetLocalNetworkConnectionInfosAsync() {
+            var connectionInfos = new List<LocalNetworkConnectionInfo>();
+
+            await Task.Run(() => {
+                try {
+                    var interfaces = NetworkInterface.GetAllNetworkInterfaces();
+                    if (_computer?.Hardware != null) {
+                        foreach (var hardwareItem in _computer.Hardware) {
+                            hardwareItem.Update();
+                            if (hardwareItem.HardwareType == HardwareType.Network) {
+                                foreach (var sensor in hardwareItem.Sensors) {
+                                    if (sensor.SensorType == SensorType.Throughput && sensor.Name == "Upload Speed") {
+                                        double uploadSpeed = sensor.Value.GetValueOrDefault();
+                                        var connectionInfo = new LocalNetworkConnectionInfo {
+                                            ConnectionName = hardwareItem.Name,
+                                            UploadSpeed = uploadSpeed / 1024,
+                                            Speed = interfaces?.FirstOrDefault(f => f.Name.Equals(hardwareItem.Name))?.Speed ?? 0
+                                        };
+                                        connectionInfos.Add(connectionInfo);
+                                    }
+                                    else if (sensor is { SensorType: SensorType.Throughput, Name: "Download Speed" }) {
+                                        double downloadSpeed = sensor.Value.GetValueOrDefault();
+                                        var connectionInfo =
+                                            connectionInfos.FirstOrDefault(c => c.ConnectionName == hardwareItem.Name);
+                                        if (connectionInfo != null) {
+                                            connectionInfo.DownloadSpeed = downloadSpeed / 1024;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                catch (Exception e) {
+                    Console.WriteLine(e);
+                }
+            });
+
+            return connectionInfos;
+        }
+
+        private string? GetComputerSystemUuid() {
+            using var searcher = new ManagementObjectSearcher("SELECT UUID FROM Win32_ComputerSystemProduct");
+            foreach (var o in searcher.Get()) {
+                var obj = (ManagementObject)o;
+                return obj["UUID"]?.ToString();
+            }
+
+            return "";
+        }
+
+        private DateTime? FormatDateTime(string? dateTimeString) {
+            if (dateTimeString is { Length: >= 14 }) {
+                return DateTime.ParseExact(dateTimeString[..14], "yyyyMMddHHmmss", null);
+            }
+            return null;
         }
     }
 }

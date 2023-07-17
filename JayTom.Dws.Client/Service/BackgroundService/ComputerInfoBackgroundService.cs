@@ -25,25 +25,29 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
             var counter = new PerformanceCounter("System", "System Up Time");
+            var systemInfo = _computer.GetSystemInfo();
+            var systemInfoString = $"{systemInfo.OsVersion}-{systemInfo.SystemType}";
+
             while (!stoppingToken.IsCancellationRequested) {
-                /*await Task.Yield();
-                await Task.Delay(TimeSpan.FromHours(1), stoppingToken);
-                return;*/
-                //获取Cpu信息
-                var cpuInfoAsync = await _computer.GetCpuInfoAsync();
-                //获取风扇信息
-                var fanSpeed = _computer.GetFanSpeed();
-                //获取内存信息
-                var memoryInfoAsync = await _computer.GetMemoryInfoAsync();
-                //获取显卡信息
-                var gpuInfos = _computer.GetGpuInformation();
-                //获取网络信息
-                var networkInfo = await _computer.GetNetworkInfoAsync();
-                //获取硬盘信息
-                var diskInfoAsync = await _computer.GetDiskInfoAsync();
-                var lastShutdownTime = _computer.GetLastShutdownTime();
-                var lastShutdownUnexpected = _computer.GetLastShutdownUnexpected();
-                //提交到事件
+                await Task.Yield();
+                // 并行获取各项信息
+                var cpuInfoTask = _computer.GetCpuInfoAsync();
+                var fanSpeedTask = _computer.GetFanSpeedAsync();
+                var memoryInfoTask = _computer.GetMemoryInfoAsync();
+                var gpuInfosTask = _computer.GetGpuInformationAsync();
+                var networkInfoTask = _computer.GetNetworkInfoAsync();
+                var diskInfoTask = _computer.GetDiskInfoAsync();
+                var localNetworkConnectionInfosAsync = _computer.GetLocalNetworkConnectionInfosAsync();
+                await Task.WhenAll(cpuInfoTask, fanSpeedTask, localNetworkConnectionInfosAsync, memoryInfoTask, gpuInfosTask, networkInfoTask, diskInfoTask);
+                // 提取各项信息
+                var cpuInfoAsync = cpuInfoTask.Result;
+                var fanSpeed = fanSpeedTask.Result;
+                var memoryInfoAsync = memoryInfoTask.Result;
+                var gpuInfos = gpuInfosTask.Result;
+                var networkInfo = networkInfoTask.Result;
+                var diskInfoAsync = diskInfoTask.Result;
+                var localNetworkConnectionInfos = localNetworkConnectionInfosAsync.Result;
+                // 提交到事件
                 _computerInfoReporter.OnComputerInfoReceived(new ComputerInfoModel() {
                     CpuInfo = new CpuInfoModel() {
                         ClockSpeed = cpuInfoAsync.CpuBusSpeed,
@@ -60,10 +64,10 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         TotalSizeBytes = memoryInfoAsync.UsedMemory + memoryInfoAsync.AvailableMemory
                     },
                     GpuInfo = new GpuInfoModel() {
-                        UsagePercentage = gpuInfos[0]?.Utilization ?? 0,
-                        MemorySizeGb = (float)(gpuInfos[0]?.TotalMemory ?? 0) / 1024 / 1024 / 1024,
-                        UsedMemoryGb = (float)((gpuInfos[0]?.TotalMemory ?? 0) - (gpuInfos[0]?.FreeMemory ?? 0)) / 1024 / 1024 / 1024,
-                        UsedMemoryPercentage = gpuInfos[0]?.Utilization ?? 0,
+                        UsagePercentage = gpuInfos?[0]?.Utilization ?? 0,
+                        MemorySizeGb = (float)(gpuInfos?[0]?.TotalMemory ?? 0) / 1024 / 1024 / 1024,
+                        UsedMemoryGb = (float)((gpuInfos?[0]?.TotalMemory ?? 0) - (gpuInfos?[0]?.FreeMemory ?? 0)) / 1024 / 1024 / 1024,
+                        UsedMemoryPercentage = gpuInfos?[0]?.Utilization ?? 0,
                     },
                     NetworkInfo = new NetworkInfoModel() {
                         DownloadSpeed = networkInfo.NetworkDownloadSpeed,
@@ -77,8 +81,17 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         UsedSpaceBytes = s.UsedDiskSpace,
                         UsedSpacePercentage = (float)s.UsedDiskSpacePercentage,
                     })?.ToList(),
-                    UpTime = TimeSpan.FromSeconds(counter.NextValue())
+                    LocalNetworkConnectionInfos = localNetworkConnectionInfos?.Select(s =>
+                        new LocalNetworkConnectionInfoModel() {
+                            ConnectionName = s.ConnectionName,
+                            DownloadSpeed = s.DownloadSpeed,
+                            UploadSpeed = s.UploadSpeed,
+                            Speed = s.Speed / 1024,
+                        })?.ToList() ?? new List<LocalNetworkConnectionInfoModel>(),
+                    UpTime = TimeSpan.FromSeconds(counter.NextValue()),
+                    SystemInfoString = systemInfoString
                 });
+
                 await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken);
             }
         }

@@ -420,6 +420,43 @@
                         Text="&#xe7a6;" />
                 </StackPanel>
             </Button>
+            <!--  温度  -->
+            <Button
+                Margin="2,0"
+                Padding="0"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Focusable="False"
+                Style="{StaticResource MaterialDesignFlatButton}">
+                <StackPanel Orientation="Horizontal">
+
+                    <TextBlock
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        FontFamily="{StaticResource IconFontFamily}"
+                        FontSize="20"
+                        FontWeight="Bold"
+                        Foreground="DimGray"
+                        Text="&#xe660;" />
+                    <TextBlock
+                        Margin="5,0"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        FontFamily="{StaticResource CustomFontFamily}"
+                        FontSize="14"
+                        FontWeight="Bold"
+                        Foreground="DimGray">
+                        <Run Text="温度:" /><Run Text="{Binding ComputerInfo.CpuInfo.CpuTemperature, StringFormat={}{0:F1}}" /><Run Text="°" />
+                    </TextBlock>
+                    <TextBlock
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        FontFamily="{StaticResource IconFontFamily}"
+                        FontSize="30"
+                        Foreground="{Binding ComputerInfo.CpuInfo.CpuTemperature, Converter={StaticResource CpuTemperatureColorConverter}}"
+                        Text="&#xe7a6;" />
+                </StackPanel>
+            </Button>
             <!--  内存  -->
             <Button
                 Margin="2,0"
@@ -455,43 +492,6 @@
                         FontSize="30"
                         Foreground="{Binding ComputerInfo.MemoryInfo.UsedPercentage, Converter={StaticResource MemoryUsedPercentageColorConverter}}"
                         Text="&#xe7a6;" />
-                </StackPanel>
-            </Button>
-            <!--  硬盘  -->
-            <Button
-                Margin="2,0"
-                Padding="0"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center"
-                Focusable="False"
-                Style="{StaticResource MaterialDesignFlatButton}">
-                <StackPanel Orientation="Horizontal">
-
-                    <TextBlock
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Center"
-                        FontFamily="{StaticResource IconFontFamily}"
-                        FontSize="20"
-                        FontWeight="Bold"
-                        Foreground="DimGray"
-                        Text="&#xe615;" />
-                    <TextBlock
-                        Margin="5,0"
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Center"
-                        FontFamily="{StaticResource CustomFontFamily}"
-                        FontSize="14"
-                        FontWeight="Bold"
-                        Foreground="DimGray"
-                        Text="硬盘:90%" />
-                    <TextBlock
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Center"
-                        FontFamily="{StaticResource IconFontFamily}"
-                        FontSize="30"
-                        Foreground="#31C731"
-                        Text="&#xe7a6;" />
-                    <!--  硬盘列表  -->
                 </StackPanel>
             </Button>
         </StackPanel>

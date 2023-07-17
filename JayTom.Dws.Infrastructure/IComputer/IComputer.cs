@@ -23,6 +23,12 @@ namespace JayTom.Dws.Infrastructure.IComputer {
         public int GetFanSpeed();
 
         /// <summary>
+        /// 获取风扇转速
+        /// </summary>
+        /// <returns></returns>
+        public Task<int> GetFanSpeedAsync();
+
+        /// <summary>
         /// 获取Cpu信息
         /// </summary>
         /// <returns></returns>
@@ -81,6 +87,24 @@ namespace JayTom.Dws.Infrastructure.IComputer {
         /// </summary>
         /// <returns></returns>
         public List<GpuInfo> GetGpuInformation();
+
+        /// <summary>
+        /// 获取显卡信息
+        /// </summary>
+        /// <returns></returns>
+        public Task<List<GpuInfo>?> GetGpuInformationAsync();
+
+        /// <summary>
+        /// 获取系统信息
+        /// </summary>
+        /// <returns></returns>
+        public SystemInfo GetSystemInfo();
+
+        /// <summary>
+        /// 获取网络信息组
+        /// </summary>
+        /// <returns></returns>
+        public Task<List<LocalNetworkConnectionInfo>?> GetLocalNetworkConnectionInfosAsync();
     }
 
     public class CpuInfo {
@@ -222,7 +246,7 @@ namespace JayTom.Dws.Infrastructure.IComputer {
         /// <summary>
         /// 磁盘名称/盘符
         /// </summary>
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
 
         /// <summary>
         /// 剩余磁盘容量(格式化)
@@ -279,5 +303,72 @@ namespace JayTom.Dws.Infrastructure.IComputer {
         /// 剩余内存
         /// </summary>
         public long FreeMemory { get; set; }
+    }
+
+    /// <summary>
+    /// 系统信息类
+    /// </summary>
+    public class SystemInfo {
+
+        /// <summary>
+        /// 设备名称
+        /// </summary>
+        public string DeviceName { get; set; } = string.Empty;     // 设备名称
+
+        /// <summary>
+        /// 设备Id
+        /// </summary>
+        public string? DeviceId { get; set; } = string.Empty;       // 设备ID
+
+        /// <summary>
+        /// 产品Id
+        /// </summary>
+        public string ProductId { get; set; } = string.Empty;      // 产品ID
+
+        /// <summary>
+        /// 系统类型
+        /// </summary>
+        public string SystemType { get; set; } = string.Empty;    // 系统类型
+
+        /// <summary>
+        /// Windows 版本
+        /// </summary>
+        public string WindowsVersion { get; set; } = string.Empty; // Windows 版本
+
+        /// <summary>
+        /// 安装日期
+        /// </summary>
+        public DateTime? InstallDate { get; set; }    // 安装日期
+
+        /// <summary>
+        /// 操作系统版本
+        /// </summary>
+        public string OsVersion { get; set; } = string.Empty;    // 操作系统版本
+    }
+
+    /// <summary>
+    /// 本地连接信息类
+    /// </summary>
+    public class LocalNetworkConnectionInfo {
+
+        /// <summary>
+        /// 连接名称
+        /// </summary>
+        public string ConnectionName { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 上传速率
+        /// </summary>
+        public double UploadSpeed { get; set; }
+
+        /// <summary>
+        /// 下载速率
+        /// </summary>
+        public double DownloadSpeed { get; set; }
+
+        /// <summary>
+        /// 速度
+        /// </summary>
+        public long Speed { get; set; }
     }
 }

@@ -139,19 +139,22 @@
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
                         FontFamily="{StaticResource CustomFontFamily}"
-                        FontSize="50"
+                        FontSize="40"
                         FontWeight="Bold"
                         Foreground="White"
                         Text="SF123456789"
                         TextAlignment="Center" />
-                    <Border
+
+                    <Rectangle
                         Grid.Column="1"
                         Width="1"
                         Height="100"
                         HorizontalAlignment="Left"
                         VerticalAlignment="Center"
-                        BorderBrush="DimGray"
-                        BorderThickness="1,0,0,0" />
+                        Opacity="0.3"
+                        Stroke="DimGray"
+                        StrokeDashArray="8"
+                        StrokeThickness="1" />
                     <!--  重量、 长、宽、高、体积  -->
                     <Border
                         Grid.Column="1"
@@ -164,7 +167,11 @@
                                 VerticalAlignment="Center"
                                 Orientation="Horizontal">
                                 <!--  重量  -->
-                                <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
+                                <StackPanel
+                                    Margin="0,0,28,0"
+                                    HorizontalAlignment="Left"
+                                    VerticalAlignment="Center"
+                                    Orientation="Horizontal">
 
                                     <TextBlock
                                         HorizontalAlignment="Center"
@@ -226,7 +233,7 @@
                                 </StackPanel>
                             </StackPanel>
                             <StackPanel
-                                Margin="0,50,0,0"
+                                Margin="0,30,0,0"
                                 HorizontalAlignment="Right"
                                 VerticalAlignment="Bottom"
                                 Orientation="Horizontal">
