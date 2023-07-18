@@ -12,19 +12,12 @@ namespace JayTom.Dws.Client.Converters {
         private readonly string[] _sizes = { "KB", "MB", "GB", "TB" };
 
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
+            var conversionRate = parameter is "1000" ? 1000 : 1024;
             if (value is long bytes) {
                 if (bytes == 0)
                     return _sizes[0];
 
-                var sizeIndex = (int)Math.Floor(Math.Log(bytes, 1024));
-                sizeIndex = sizeIndex < 0 ? 0 : sizeIndex;
-                return _sizes[sizeIndex];
-            }
-            else if (value is double dBytes) {
-                if (dBytes == 0)
-                    return _sizes[0];
-
-                var sizeIndex = (int)Math.Floor(Math.Log(dBytes, 1024));
+                var sizeIndex = (int)Math.Floor(Math.Log(bytes, conversionRate));
                 sizeIndex = sizeIndex < 0 ? 0 : sizeIndex;
                 return _sizes[sizeIndex];
             }
@@ -32,18 +25,12 @@ namespace JayTom.Dws.Client.Converters {
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
+            var conversionRate = parameter is "1000" ? 1000 : 1024;
             if (value is long bytes) {
                 if (bytes == 0)
                     return _sizes[0];
 
-                var sizeIndex = (int)Math.Floor(Math.Log(bytes, 1024));
-                return _sizes[sizeIndex];
-            }
-            else if (value is double dBytes) {
-                if (dBytes == 0)
-                    return _sizes[0];
-
-                var sizeIndex = (int)Math.Floor(Math.Log(dBytes, 1024));
+                var sizeIndex = (int)Math.Floor(Math.Log(bytes, conversionRate));
                 return _sizes[sizeIndex];
             }
             return string.Empty;

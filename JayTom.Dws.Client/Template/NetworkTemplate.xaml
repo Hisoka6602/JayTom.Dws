@@ -124,7 +124,7 @@
                     IsEnabled="False"
                     TextAlignment="Left"
                     TextTrimming="WordEllipsis">
-                    <Run Text="速度:" /><Run Text="{Binding Speed, StringFormat={}{0:F2}, Converter={StaticResource ByteSizeConverter}}" /> <Run FontSize="13" Text="{Binding UploadSpeed, Converter={StaticResource ByteSizeUnitConverter}}" />
+                    <Run Text="速度:" /><Run Text="{Binding Speed, StringFormat={}{0:F2}, Converter={StaticResource ByteSizeConverter}, ConverterParameter=1000}" /> <Run FontSize="13" Text="{Binding Speed, Converter={StaticResource ByteSizeUnitConverter}, ConverterParameter=1000}" />
                 </TextBlock>
             </StackPanel>
         </Grid>

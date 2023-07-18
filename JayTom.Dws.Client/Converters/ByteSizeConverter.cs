@@ -12,49 +12,25 @@ namespace JayTom.Dws.Client.Converters {
 
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
             if (value is long bytes) {
+                var conversionRate = parameter is "1000" ? 1000 : 1024;
                 if (bytes == 0)
                     return 0;
 
-                var sizeIndex = (int)Math.Floor(Math.Log(bytes, 1024));
-                return bytes / Math.Pow(1024, sizeIndex);
+                var sizeIndex = (int)Math.Floor(Math.Log(bytes, conversionRate));
+                return bytes / Math.Pow(conversionRate, sizeIndex);
             }
-            else if (value is double dBytes) {
-                if (dBytes == 0)
-                    return 0;
-
-                var sizeIndex = (int)Math.Floor(Math.Log(dBytes, 1024));
-                if (sizeIndex > 0) {
-                    return dBytes / Math.Pow(1024, sizeIndex);
-                }
-                else {
-                    return dBytes;
-                }
-            }
-
             return 0;
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
             if (value is long bytes) {
+                var conversionRate = parameter is "1000" ? 1000 : 1024;
                 if (bytes == 0)
                     return 0;
 
-                var sizeIndex = (int)Math.Floor(Math.Log(bytes, 1024));
-                return bytes / Math.Pow(1024, sizeIndex);
+                var sizeIndex = (int)Math.Floor(Math.Log(bytes, conversionRate));
+                return bytes / Math.Pow(conversionRate, sizeIndex);
             }
-            else if (value is double dBytes) {
-                if (dBytes == 0)
-                    return 0;
-
-                var sizeIndex = (int)Math.Floor(Math.Log(dBytes, 1024));
-                if (sizeIndex > 0) {
-                    return dBytes / Math.Pow(1024, sizeIndex);
-                }
-                else {
-                    return dBytes;
-                }
-            }
-
             return 0;
         }
     }

@@ -20,8 +20,10 @@ using JayTom.Dws.Client.ViewModels;
 using Microsoft.Extensions.Hosting;
 using JayTom.Dws.Client.Views.Pages;
 using Microsoft.EntityFrameworkCore;
+using JayTom.Dws.Client.Views.Dialog;
 using JayTom.Dws.Client.ViewModels.Pages;
 using JayTom.Dws.Infrastructure.IComputer;
+using JayTom.Dws.Client.ViewModels.Dialog;
 using Microsoft.Extensions.DependencyInjection;
 using JayTom.Dws.Client.Views.Pages.Preferences;
 using JayTom.Dws.Client.Service.BackgroundService;
@@ -37,6 +39,8 @@ namespace JayTom.Dws.Client {
         private IHost? _host;
 
         protected override void RegisterTypes(IContainerRegistry containerRegistry) {
+            //注册窗口
+            containerRegistry.RegisterDialog<ApiAccessDialog>();
             //跳转注册
             {
                 containerRegistry.RegisterForNavigation<PluginMarketplacePage>();
@@ -129,6 +133,7 @@ namespace JayTom.Dws.Client {
             ViewModelLocationProvider.Register<PluginMarketplacePage, PluginMarketplaceViewModel>();
             ViewModelLocationProvider.Register<HomePage, HomeViewModel>();
             ViewModelLocationProvider.Register<StatusBarPage, StatusBarViewModel>();
+            ViewModelLocationProvider.Register<ApiAccessDialog, ApiAccessViewModel>();
         }
     }
 }

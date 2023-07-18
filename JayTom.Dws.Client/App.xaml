@@ -178,6 +178,8 @@
                 <ResourceDictionary Source="Template/NetworkTemplate.xaml" />
                 <!--  电脑信息模板  -->
                 <ResourceDictionary Source="Template/ComputerInfoTemplate.xaml" />
+                <!--  上传状态模板  -->
+                <ResourceDictionary Source="Template/UploadStatusTemplate.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </prism:PrismApplication.Resources>

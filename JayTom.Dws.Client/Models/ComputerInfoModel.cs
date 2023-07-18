@@ -467,8 +467,8 @@ namespace JayTom.Dws.Client.Models {
     /// </summary>
     public class LocalNetworkConnectionInfoModel : BindableBase {
         private string _connectionName = string.Empty;
-        private double _uploadSpeed;
-        private double _downloadSpeed;
+        private long _uploadSpeed;
+        private long _downloadSpeed;
         private long _speed;
 
         /// <summary>
@@ -482,7 +482,7 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 上传速率
         /// </summary>
-        public double UploadSpeed {
+        public long UploadSpeed {
             get => _uploadSpeed;
             set => SetProperty(ref _uploadSpeed, value);
         }
@@ -490,7 +490,7 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 下载速率
         /// </summary>
-        public double DownloadSpeed {
+        public long DownloadSpeed {
             get => _downloadSpeed;
             set => SetProperty(ref _downloadSpeed, value);
         }

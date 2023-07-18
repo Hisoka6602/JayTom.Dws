@@ -359,12 +359,12 @@ namespace JayTom.Dws.Infrastructure.IComputer {
         /// <summary>
         /// 上传速率
         /// </summary>
-        public double UploadSpeed { get; set; }
+        public long UploadSpeed { get; set; }
 
         /// <summary>
         /// 下载速率
         /// </summary>
-        public double DownloadSpeed { get; set; }
+        public long DownloadSpeed { get; set; }
 
         /// <summary>
         /// 速度

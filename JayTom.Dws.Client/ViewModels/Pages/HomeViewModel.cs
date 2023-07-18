@@ -5,21 +5,29 @@ using System.Text;
 using Prism.Commands;
 using System.Windows.Input;
 using System.Threading.Tasks;
+using Prism.Services.Dialogs;
 using JayTom.Dws.Client.Models;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 
 namespace JayTom.Dws.Client.ViewModels.Pages {
-
     public class HomeViewModel : BindableBase {
+        private readonly IDialogService _dialogService;
         private ObservableCollection<CameraItemInfoModel> _cameraItems = new();
+        private ObservableCollection<BarCodeItemModel> _barCodeItems = new();
 
         public ObservableCollection<CameraItemInfoModel> CameraItems {
             get => _cameraItems;
             set => SetProperty(ref _cameraItems, value);
         }
 
-        public HomeViewModel() {
+        public ObservableCollection<BarCodeItemModel> BarCodeItems {
+            get => _barCodeItems;
+            set => SetProperty(ref _barCodeItems, value);
+        }
+
+        public HomeViewModel(IDialogService dialogService) {
+            _dialogService = dialogService;
             CameraItems = new()
             {
                 new CameraItemInfoModel()
@@ -123,6 +131,281 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     StatusClickCommand = StatusClickCommand,
                 },*/
             };
+            BarCodeItems = new()
+            {
+                new BarCodeItemModel()
+                {
+                    Barcode = "621055654309412",
+                    BarcodeImagePath = "D:\\远程工具",
+                    Height = (float)1.6,
+                    Length = (float)1.8,
+                    Num = 1,
+                    RequestTime = DateTime.Now,
+                    RequestContent = "上传内容",
+                    RequestStatus = "成功",
+                    ResponseContent = "接口响应内容",
+                    ResponseTime = DateTime.Now,
+                    ScanTime = DateTime.Now,
+                    Width = (float)1.3,
+                    Weight = (float)8.6,
+                },
+                new BarCodeItemModel()
+                {
+                    Barcode = "621055654309412",
+                    BarcodeImagePath = "D:\\远程工具",
+                    Height = (float)1.6,
+                    Length = (float)1.8,
+                    Num = 1,
+                    RequestTime = DateTime.Now,
+                    RequestContent = "上传内容",
+                    RequestStatus = "成功",
+                    ResponseContent = "接口响应内容",
+                    ResponseTime = DateTime.Now,
+                    ScanTime = DateTime.Now,
+                    Width = (float)1.3,
+                    Weight = (float)8.6,
+                },
+                new BarCodeItemModel()
+                {
+                    Barcode = "621055654309412",
+                    BarcodeImagePath = "D:\\远程工具",
+                    Height = (float)1.6,
+                    Length = (float)1.8,
+                    Num = 1,
+                    RequestTime = DateTime.Now,
+                    RequestContent = "上传内容",
+                    RequestStatus = "成功",
+                    ResponseContent = "接口响应内容",
+                    ResponseTime = DateTime.Now,
+                    ScanTime = DateTime.Now,
+                    Width = (float)1.3,
+                    Weight = (float)8.6,
+                },
+                new BarCodeItemModel()
+                {
+                    Barcode = "621055654309412",
+                    BarcodeImagePath = "D:\\远程工具",
+                    Height = (float)1.6,
+                    Length = (float)1.8,
+                    Num = 1,
+                    RequestTime = DateTime.Now,
+                    RequestContent = "上传内容",
+                    RequestStatus = "成功",
+                    ResponseContent = "接口响应内容",
+                    ResponseTime = DateTime.Now,
+                    ScanTime = DateTime.Now,
+                    Width = (float)1.3,
+                    Weight = (float)8.6,
+                },
+                new BarCodeItemModel()
+                {
+                    Barcode = "621055654309412",
+                    BarcodeImagePath = "D:\\远程工具",
+                    Height = (float)1.6,
+                    Length = (float)1.8,
+                    Num = 1,
+                    RequestTime = DateTime.Now,
+                    RequestContent = "上传内容",
+                    RequestStatus = "成功",
+                    ResponseContent = "接口响应内容",
+                    ResponseTime = DateTime.Now,
+                    ScanTime = DateTime.Now,
+                    Width = (float)1.3,
+                    Weight = (float)8.6,
+                },
+                new BarCodeItemModel()
+                {
+                    Barcode = "621055654309412",
+                    BarcodeImagePath = "D:\\远程工具",
+                    Height = (float)1.6,
+                    Length = (float)1.8,
+                    Num = 1,
+                    RequestTime = DateTime.Now,
+                    RequestContent = "上传内容",
+                    RequestStatus = "成功",
+                    ResponseContent = "接口响应内容",
+                    ResponseTime = DateTime.Now,
+                    ScanTime = DateTime.Now,
+                    Width = (float)1.3,
+                    Weight = (float)8.6,
+                },
+                new BarCodeItemModel()
+                {
+                    Barcode = "621055654309412",
+                    BarcodeImagePath = "D:\\远程工具",
+                    Height = (float)1.6,
+                    Length = (float)1.8,
+                    Num = 1,
+                    RequestTime = DateTime.Now,
+                    RequestContent = "上传内容",
+                    RequestStatus = "成功",
+                    ResponseContent = "接口响应内容",
+                    ResponseTime = DateTime.Now,
+                    ScanTime = DateTime.Now,
+                    Width = (float)1.3,
+                    Weight = (float)8.6,
+                },
+                new BarCodeItemModel()
+                {
+                    Barcode = "621055654309412",
+                    BarcodeImagePath = "D:\\远程工具",
+                    Height = (float)1.6,
+                    Length = (float)1.8,
+                    Num = 1,
+                    RequestTime = DateTime.Now,
+                    RequestContent = "上传内容",
+                    RequestStatus = "成功",
+                    ResponseContent = "接口响应内容",
+                    ResponseTime = DateTime.Now,
+                    ScanTime = DateTime.Now,
+                    Width = (float)1.3,
+                    Weight = (float)8.6,
+                },
+                new BarCodeItemModel()
+                {
+                    Barcode = "621055654309412",
+                    BarcodeImagePath = "D:\\远程工具",
+                    Height = (float)1.6,
+                    Length = (float)1.8,
+                    Num = 1,
+                    RequestTime = DateTime.Now,
+                    RequestContent = "上传内容",
+                    RequestStatus = "成功",
+                    ResponseContent = "接口响应内容",
+                    ResponseTime = DateTime.Now,
+                    ScanTime = DateTime.Now,
+                    Width = (float)1.3,
+                    Weight = (float)8.6,
+                },
+                new BarCodeItemModel()
+                {
+                    Barcode = "621055654309412",
+                    BarcodeImagePath = "D:\\远程工具",
+                    Height = (float)1.6,
+                    Length = (float)1.8,
+                    Num = 1,
+                    RequestTime = DateTime.Now,
+                    RequestContent = "上传内容",
+                    RequestStatus = "成功",
+                    ResponseContent = "接口响应内容",
+                    ResponseTime = DateTime.Now,
+                    ScanTime = DateTime.Now,
+                    Width = (float)1.3,
+                    Weight = (float)8.6,
+                },
+                new BarCodeItemModel()
+                {
+                    Barcode = "621055654309412",
+                    BarcodeImagePath = "D:\\远程工具",
+                    Height = (float)1.6,
+                    Length = (float)1.8,
+                    Num = 1,
+                    RequestTime = DateTime.Now,
+                    RequestContent = "上传内容",
+                    RequestStatus = "成功",
+                    ResponseContent = "接口响应内容",
+                    ResponseTime = DateTime.Now,
+                    ScanTime = DateTime.Now,
+                    Width = (float)1.3,
+                    Weight = (float)8.6,
+                },
+                new BarCodeItemModel()
+                {
+                    Barcode = "621055654309412",
+                    BarcodeImagePath = "D:\\远程工具",
+                    Height = (float)1.6,
+                    Length = (float)1.8,
+                    Num = 1,
+                    RequestTime = DateTime.Now,
+                    RequestContent = "上传内容",
+                    RequestStatus = "成功",
+                    ResponseContent = "接口响应内容",
+                    ResponseTime = DateTime.Now,
+                    ScanTime = DateTime.Now,
+                    Width = (float)1.3,
+                    Weight = (float)8.6,
+                },
+                new BarCodeItemModel()
+                {
+                    Barcode = "621055654309412",
+                    BarcodeImagePath = "D:\\远程工具",
+                    Height = (float)1.6,
+                    Length = (float)1.8,
+                    Num = 1,
+                    RequestTime = DateTime.Now,
+                    RequestContent = "上传内容",
+                    RequestStatus = "成功",
+                    ResponseContent = "接口响应内容",
+                    ResponseTime = DateTime.Now,
+                    ScanTime = DateTime.Now,
+                    Width = (float)1.3,
+                    Weight = (float)8.6,
+                },
+                new BarCodeItemModel()
+                {
+                    Barcode = "621055654309412",
+                    BarcodeImagePath = "D:\\远程工具",
+                    Height = (float)1.6,
+                    Length = (float)1.8,
+                    Num = 1,
+                    RequestTime = DateTime.Now,
+                    RequestContent = "上传内容",
+                    RequestStatus = "成功",
+                    ResponseContent = "接口响应内容",
+                    ResponseTime = DateTime.Now,
+                    ScanTime = DateTime.Now,
+                    Width = (float)1.3,
+                    Weight = (float)8.6,
+                },
+                new BarCodeItemModel()
+                {
+                    Barcode = "621055654309412",
+                    BarcodeImagePath = "D:\\远程工具",
+                    Height = (float)1.6,
+                    Length = (float)1.8,
+                    Num = 1,
+                    RequestTime = DateTime.Now,
+                    RequestContent = "上传内容",
+                    RequestStatus = "成功",
+                    ResponseContent = "接口响应内容",
+                    ResponseTime = DateTime.Now,
+                    ScanTime = DateTime.Now,
+                    Width = (float)1.3,
+                    Weight = (float)8.6,
+                },
+                new BarCodeItemModel()
+                {
+                    Barcode = "621055654309412",
+                    BarcodeImagePath = "D:\\远程工具",
+                    Height = (float)1.6,
+                    Length = (float)1.8,
+                    Num = 1,
+                    RequestTime = DateTime.Now,
+                    RequestContent = "上传内容",
+                    RequestStatus = "成功",
+                    ResponseContent = "接口响应内容",
+                    ResponseTime = DateTime.Now,
+                    ScanTime = DateTime.Now,
+                    Width = (float)1.3,
+                    Weight = (float)8.6,
+                },
+                new BarCodeItemModel()
+                {
+                    Barcode = "621055654309412",
+                    BarcodeImagePath = "D:\\远程工具",
+                    Height = (float)1.6,
+                    Length = (float)1.8,
+                    Num = 1,
+                    RequestTime = DateTime.Now,
+                    RequestContent = "上传内容",
+                    RequestStatus = "成功",
+                    ResponseContent = "接口响应内容",
+                    ResponseTime = DateTime.Now,
+                    ScanTime = DateTime.Now,
+                    Width = (float)1.3,
+                    Weight = (float)8.6,
+                },
+            };
         }
 
         /// <summary>
@@ -130,6 +413,15 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         /// </summary>
         public ICommand ImageClickCommand {
             get => new DelegateCommand<CameraItemInfoModel>(ImageClickDelegate);
+        }
+
+        public ICommand UploadStatusCommand {
+            get => new DelegateCommand<BarCodeItemModel>(UploadStatusDelegate);
+        }
+
+        private void UploadStatusDelegate(BarCodeItemModel obj) {
+            //判断状态是否已上传再获进行弹窗
+            _dialogService.ShowDialog("ApiAccessDialog", new DialogParameters { { "BarCodeItem", obj } }, null);
         }
 
         private void ImageClickDelegate(CameraItemInfoModel obj) {

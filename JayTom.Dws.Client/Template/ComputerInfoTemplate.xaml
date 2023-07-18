@@ -28,7 +28,7 @@
                 PopupAnimation="Scroll"
                 StaysOpen="False">
                 <Grid
-                    Width="500"
+                    Width="550"
                     Height="750"
                     Background="#303030"
                     ClipToBounds="True">
@@ -649,7 +649,7 @@
                         </StackPanel>
                         <!--  网口信息列表  -->
                         <ListBox
-                            MaxWidth="480"
+                            MaxWidth="530"
                             Background="Transparent"
                             BorderThickness="0"
                             Foreground="White"

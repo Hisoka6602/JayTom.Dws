@@ -467,10 +467,10 @@ namespace JayTom.Dws.Infrastructure.IComputer {
             return systemInfo;
         }
 
-        public async Task<List<LocalNetworkConnectionInfo>?> GetLocalNetworkConnectionInfosAsync() {
+        public async Task<List<LocalNetworkConnectionInfo>?> GetLocalNetworkConnectionInfosAsync1() {
             var connectionInfos = new List<LocalNetworkConnectionInfo>();
-
-            await Task.Run(() => {
+            return connectionInfos;
+            /*await Task.Run(() => {
                 try {
                     var interfaces = NetworkInterface.GetAllNetworkInterfaces();
                     if (_computer?.Hardware != null) {
@@ -505,6 +505,33 @@ namespace JayTom.Dws.Infrastructure.IComputer {
                 }
             });
 
+            return connectionInfos;*/
+        }
+
+        public async Task<List<LocalNetworkConnectionInfo>?> GetLocalNetworkConnectionInfosAsync() {
+            var connectionInfos = new List<LocalNetworkConnectionInfo>();
+            await Task.Run(async () => {
+                var statsAtStarts = new List<IPv4InterfaceStatistics>();
+                var interfaces = NetworkInterface.GetAllNetworkInterfaces()
+                    .Where(w =>
+                        w.NetworkInterfaceType != NetworkInterfaceType.Loopback)?.ToList();
+                if (interfaces?.Any() == true) {
+                    statsAtStarts.AddRange(interfaces.Select(t => t.GetIPv4Statistics()));
+
+                    await Task.Delay(1000);
+                    for (var i = 0; i < interfaces.Count; i++) {
+                        var statsAtEnd = interfaces[i].GetIPv4Statistics();
+                        var downloadSpeed = (statsAtEnd.BytesReceived - statsAtStarts[i].BytesReceived);
+                        var uploadSpeed = (statsAtEnd.BytesSent - statsAtStarts[i].BytesSent);
+                        connectionInfos.Add(new LocalNetworkConnectionInfo() {
+                            ConnectionName = interfaces[i].Name,
+                            DownloadSpeed = downloadSpeed / 1024,
+                            UploadSpeed = uploadSpeed / 1024,
+                            Speed = interfaces[i].Speed,
+                        });
+                    }
+                }
+            });
             return connectionInfos;
         }
 
