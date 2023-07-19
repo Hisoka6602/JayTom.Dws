@@ -71,7 +71,7 @@
                                 HorizontalAlignment="Left"
                                 VerticalAlignment="Center"
                                 FontFamily="{StaticResource IconFontFamily}"
-                                FontSize="25"
+                                FontSize="23"
                                 Foreground="DimGray"
                                 Text="&#xe84d;" />
                             <!--  Cpu名称  -->
@@ -80,7 +80,7 @@
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
                                 FontFamily="{StaticResource CustomFontFamily}"
-                                FontSize="16"
+                                FontSize="14"
                                 FontWeight="Bold"
                                 Foreground="DimGray"
                                 IsEnabled="False"
@@ -88,7 +88,7 @@
                                 TextAlignment="Center"
                                 TextTrimming="WordEllipsis" />
                         </StackPanel>
-                        <Grid Margin="0,5">
+                        <Grid Margin="12,5,0,0">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="40" />
                                 <RowDefinition Height="40" />
@@ -101,9 +101,9 @@
                             <Grid
                                 Grid.Row="0"
                                 Grid.Column="0"
-                                Margin="5">
+                                Margin="14,0,0,0">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="60" />
+                                    <ColumnDefinition Width="45" />
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="20" />
                                 </Grid.ColumnDefinitions>
@@ -114,7 +114,7 @@
                                     HorizontalAlignment="Center"
                                     VerticalAlignment="Center"
                                     FontFamily="{StaticResource IconFontFamily}"
-                                    FontSize="25"
+                                    FontSize="23"
                                     Foreground="DimGray"
                                     Text="&#xe668;" />
                                 <!--  信息  -->
@@ -124,7 +124,7 @@
                                     HorizontalAlignment="Left"
                                     VerticalAlignment="Center"
                                     FontFamily="{StaticResource CustomFontFamily}"
-                                    FontSize="16"
+                                    FontSize="12"
                                     FontWeight="Bold"
                                     Foreground="DimGray"
                                     IsEnabled="False"
@@ -146,9 +146,9 @@
                             <Grid
                                 Grid.Row="0"
                                 Grid.Column="1"
-                                Margin="5">
+                                Margin="14,0,0,0">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="60" />
+                                    <ColumnDefinition Width="45" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
                                 <!--  图标  -->
@@ -158,7 +158,7 @@
                                     HorizontalAlignment="Center"
                                     VerticalAlignment="Center"
                                     FontFamily="{StaticResource IconFontFamily}"
-                                    FontSize="25"
+                                    FontSize="23"
                                     Foreground="DimGray"
                                     Text="&#xe7e3;" />
                                 <!--  信息  -->
@@ -168,7 +168,7 @@
                                     HorizontalAlignment="Left"
                                     VerticalAlignment="Center"
                                     FontFamily="{StaticResource CustomFontFamily}"
-                                    FontSize="16"
+                                    FontSize="12"
                                     FontWeight="Bold"
                                     Foreground="DimGray"
                                     IsEnabled="False"
@@ -181,9 +181,9 @@
                             <Grid
                                 Grid.Row="1"
                                 Grid.Column="0"
-                                Margin="5">
+                                Margin="14,0,0,0">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="60" />
+                                    <ColumnDefinition Width="45" />
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="20" />
                                 </Grid.ColumnDefinitions>
@@ -194,7 +194,7 @@
                                     HorizontalAlignment="Center"
                                     VerticalAlignment="Center"
                                     FontFamily="{StaticResource IconFontFamily}"
-                                    FontSize="25"
+                                    FontSize="23"
                                     Foreground="DimGray"
                                     Text="&#xe660;" />
                                 <!--  信息  -->
@@ -204,7 +204,7 @@
                                     HorizontalAlignment="Left"
                                     VerticalAlignment="Center"
                                     FontFamily="{StaticResource CustomFontFamily}"
-                                    FontSize="16"
+                                    FontSize="12"
                                     FontWeight="Bold"
                                     Foreground="DimGray"
                                     IsEnabled="False"
@@ -226,9 +226,9 @@
                             <Grid
                                 Grid.Row="1"
                                 Grid.Column="1"
-                                Margin="5">
+                                Margin="14,0,0,0">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="60" />
+                                    <ColumnDefinition Width="45" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
                                 <!--  图标  -->
@@ -238,7 +238,7 @@
                                     HorizontalAlignment="Center"
                                     VerticalAlignment="Center"
                                     FontFamily="{StaticResource IconFontFamily}"
-                                    FontSize="25"
+                                    FontSize="23"
                                     Foreground="DimGray"
                                     Text="&#xe649;" />
                                 <!--  信息  -->
@@ -248,7 +248,7 @@
                                     HorizontalAlignment="Left"
                                     VerticalAlignment="Center"
                                     FontFamily="{StaticResource CustomFontFamily}"
-                                    FontSize="16"
+                                    FontSize="12"
                                     FontWeight="Bold"
                                     Foreground="DimGray"
                                     IsEnabled="False"
@@ -273,11 +273,11 @@
                         <StackPanel Orientation="Horizontal">
                             <!--  图标  -->
                             <TextBlock
-                                Margin="10,2"
+                                Margin="10,2,5,0"
                                 HorizontalAlignment="Left"
                                 VerticalAlignment="Center"
                                 FontFamily="{StaticResource IconFontFamily}"
-                                FontSize="25"
+                                FontSize="23"
                                 Foreground="DimGray"
                                 Text="&#xe60f;" />
                             <!--  内存名称  -->
@@ -286,7 +286,7 @@
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
                                 FontFamily="{StaticResource CustomFontFamily}"
-                                FontSize="16"
+                                FontSize="14"
                                 FontWeight="Bold"
                                 Foreground="DimGray"
                                 IsEnabled="False"
@@ -294,7 +294,7 @@
                                 TextAlignment="Center"
                                 TextTrimming="WordEllipsis" />
                         </StackPanel>
-                        <Grid>
+                        <Grid Margin="12,5,0,0">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="40" />
                                 <RowDefinition Height="40" />
@@ -307,9 +307,9 @@
                             <Grid
                                 Grid.Row="0"
                                 Grid.Column="0"
-                                Margin="5">
+                                Margin="14,0,0,0">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="60" />
+                                    <ColumnDefinition Width="45" />
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="20" />
                                 </Grid.ColumnDefinitions>
@@ -320,7 +320,7 @@
                                     HorizontalAlignment="Center"
                                     VerticalAlignment="Center"
                                     FontFamily="{StaticResource IconFontFamily}"
-                                    FontSize="25"
+                                    FontSize="23"
                                     Foreground="DimGray"
                                     Text="&#xe668;" />
                                 <!--  信息  -->
@@ -330,7 +330,7 @@
                                     HorizontalAlignment="Left"
                                     VerticalAlignment="Center"
                                     FontFamily="{StaticResource CustomFontFamily}"
-                                    FontSize="16"
+                                    FontSize="12"
                                     FontWeight="Bold"
                                     Foreground="DimGray"
                                     IsEnabled="False"
@@ -352,9 +352,9 @@
                             <Grid
                                 Grid.Row="0"
                                 Grid.Column="1"
-                                Margin="5">
+                                Margin="14,0,0,0">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="60" />
+                                    <ColumnDefinition Width="45" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
                                 <!--  图标  -->
@@ -364,7 +364,7 @@
                                     HorizontalAlignment="Center"
                                     VerticalAlignment="Center"
                                     FontFamily="{StaticResource IconFontFamily}"
-                                    FontSize="25"
+                                    FontSize="23"
                                     Foreground="DimGray"
                                     Text="&#xe64c;" />
                                 <!--  信息  -->
@@ -374,7 +374,7 @@
                                     HorizontalAlignment="Left"
                                     VerticalAlignment="Center"
                                     FontFamily="{StaticResource CustomFontFamily}"
-                                    FontSize="16"
+                                    FontSize="12"
                                     FontWeight="Bold"
                                     Foreground="DimGray"
                                     IsEnabled="False"
@@ -387,9 +387,9 @@
                             <Grid
                                 Grid.Row="1"
                                 Grid.Column="0"
-                                Margin="5">
+                                Margin="14,0,0,0">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="60" />
+                                    <ColumnDefinition Width="45" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
                                 <!--  图标  -->
@@ -399,7 +399,7 @@
                                     HorizontalAlignment="Center"
                                     VerticalAlignment="Center"
                                     FontFamily="{StaticResource IconFontFamily}"
-                                    FontSize="25"
+                                    FontSize="23"
                                     Foreground="DimGray"
                                     Text="&#xe6c1;" />
                                 <!--  信息  -->
@@ -409,7 +409,7 @@
                                     HorizontalAlignment="Left"
                                     VerticalAlignment="Center"
                                     FontFamily="{StaticResource CustomFontFamily}"
-                                    FontSize="16"
+                                    FontSize="12"
                                     FontWeight="Bold"
                                     Foreground="DimGray"
                                     IsEnabled="False"
@@ -422,7 +422,7 @@
                             <Grid
                                 Grid.Row="1"
                                 Grid.Column="1"
-                                Margin="5"
+                                Margin="14,0,0,0"
                                 Visibility="Hidden">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="60" />
@@ -435,7 +435,7 @@
                                     HorizontalAlignment="Center"
                                     VerticalAlignment="Center"
                                     FontFamily="{StaticResource IconFontFamily}"
-                                    FontSize="25"
+                                    FontSize="23"
                                     Foreground="DimGray"
                                     Text="&#xe64b;" />
                                 <!--  信息  -->
@@ -470,7 +470,7 @@
                         <StackPanel Orientation="Horizontal">
                             <!--  图标  -->
                             <TextBlock
-                                Margin="10,2"
+                                Margin="10,2,5,0"
                                 HorizontalAlignment="Left"
                                 VerticalAlignment="Center"
                                 FontFamily="{StaticResource IconFontFamily}"
@@ -483,7 +483,7 @@
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
                                 FontFamily="{StaticResource CustomFontFamily}"
-                                FontSize="16"
+                                FontSize="14"
                                 FontWeight="Bold"
                                 Foreground="DimGray"
                                 IsEnabled="False"
@@ -491,7 +491,7 @@
                                 TextAlignment="Center"
                                 TextTrimming="WordEllipsis" />
                         </StackPanel>
-                        <Grid>
+                        <Grid Margin="12,5,0,0">
 
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="50*" />
@@ -500,18 +500,18 @@
                             <!--  Gpu使用率  -->
                             <Grid Grid.Column="0" Margin="5">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="60" />
+                                    <ColumnDefinition Width="45" />
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="20" />
                                 </Grid.ColumnDefinitions>
                                 <!--  图标  -->
                                 <TextBlock
                                     Grid.Column="0"
-                                    Margin="10,2"
+                                    Margin="10,2,0,0"
                                     HorizontalAlignment="Center"
                                     VerticalAlignment="Center"
                                     FontFamily="{StaticResource IconFontFamily}"
-                                    FontSize="25"
+                                    FontSize="23"
                                     Foreground="DimGray"
                                     Text="&#xe668;" />
                                 <!--  信息  -->
@@ -521,7 +521,7 @@
                                     HorizontalAlignment="Left"
                                     VerticalAlignment="Center"
                                     FontFamily="{StaticResource CustomFontFamily}"
-                                    FontSize="16"
+                                    FontSize="12"
                                     FontWeight="Bold"
                                     Foreground="DimGray"
                                     IsEnabled="False"
@@ -555,11 +555,11 @@
                         <StackPanel Orientation="Horizontal">
                             <!--  图标  -->
                             <TextBlock
-                                Margin="10,2"
+                                Margin="10,2,5,0"
                                 HorizontalAlignment="Left"
                                 VerticalAlignment="Center"
                                 FontFamily="{StaticResource IconFontFamily}"
-                                FontSize="25"
+                                FontSize="23"
                                 Foreground="DimGray"
                                 Text="&#xe615;" />
                             <!--  Cpu名称  -->
@@ -568,7 +568,7 @@
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
                                 FontFamily="{StaticResource CustomFontFamily}"
-                                FontSize="16"
+                                FontSize="14"
                                 FontWeight="Bold"
                                 Foreground="DimGray"
                                 IsEnabled="False"
@@ -578,7 +578,7 @@
                         </StackPanel>
                         <!--  磁盘信息列表  -->
                         <ListBox
-                            MaxWidth="450"
+                            MaxWidth="540"
                             Background="Transparent"
                             BorderThickness="0"
                             Foreground="White"
@@ -587,7 +587,7 @@
                             Style="{StaticResource CustomListBoxStyle}">
                             <ListBox.Template>
                                 <ControlTemplate TargetType="{x:Type ListBox}">
-                                    <ScrollViewer Focusable="False">
+                                    <ScrollViewer HorizontalAlignment="Left" Focusable="False">
                                         <ScrollViewer.Style>
                                             <Style TargetType="ScrollViewer">
                                                 <Style.Triggers>
@@ -626,11 +626,11 @@
                         <StackPanel Orientation="Horizontal">
                             <!--  图标  -->
                             <TextBlock
-                                Margin="10,2"
+                                Margin="10,2,5,0"
                                 HorizontalAlignment="Left"
                                 VerticalAlignment="Center"
                                 FontFamily="{StaticResource IconFontFamily}"
-                                FontSize="25"
+                                FontSize="23"
                                 Foreground="DimGray"
                                 Text="&#xe6e8;" />
                             <!--  网络名称  -->
@@ -639,7 +639,7 @@
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
                                 FontFamily="{StaticResource CustomFontFamily}"
-                                FontSize="16"
+                                FontSize="14"
                                 FontWeight="Bold"
                                 Foreground="DimGray"
                                 IsEnabled="False"

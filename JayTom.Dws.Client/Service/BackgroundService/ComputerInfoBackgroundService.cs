@@ -64,10 +64,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             TotalSizeBytes = memoryInfoAsync.UsedMemory + memoryInfoAsync.AvailableMemory
                         },
                         GpuInfo = new GpuInfoModel() {
+                            Name = gpuInfos?[0]?.Name,
                             UsagePercentage = gpuInfos?[0]?.Utilization ?? 0,
-                            MemorySizeGb = (float)(gpuInfos?[0]?.TotalMemory ?? 0) / 1024 / 1024 / 1024,
-                            UsedMemoryGb = (float)((gpuInfos?[0]?.TotalMemory ?? 0) - (gpuInfos?[0]?.FreeMemory ?? 0)) / 1024 / 1024 / 1024,
-                            UsedMemoryPercentage = gpuInfos?[0]?.Utilization ?? 0,
+                            /*MemorySizeGb = (float)(gpuInfos?[1]?.TotalMemory ?? 0) / 1024 / 1024 / 1024,
+                            UsedMemoryGb = (float)((gpuInfos?[1]?.TotalMemory ?? 0) - (gpuInfos?[0]?.FreeMemory ?? 0)) / 1024 / 1024 / 1024,
+                            UsedMemoryPercentage = gpuInfos?[1]?.Utilization ?? 0,*/
                         },
                         NetworkInfo = new NetworkInfoModel() {
                             DownloadSpeed = networkInfo.NetworkDownloadSpeed,
@@ -87,6 +88,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 DownloadSpeed = s.DownloadSpeed,
                                 UploadSpeed = s.UploadSpeed,
                                 Speed = s.Speed / 1000,
+                                IsConnection = s.IsConnection
                             })?.ToList() ?? new List<LocalNetworkConnectionInfoModel>(),
                         UpTime = TimeSpan.FromSeconds(counter.NextValue()),
                         SystemInfoString = systemInfoString

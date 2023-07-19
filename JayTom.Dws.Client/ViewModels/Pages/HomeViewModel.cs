@@ -147,7 +147,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     ResponseTime = DateTime.Now,
                     ScanTime = DateTime.Now,
                     Width = (float)1.3,
-                    Weight = (float)8.6,
+                    Weight = (float)868.662,
                 },
                 new BarCodeItemModel()
                 {

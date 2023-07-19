@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Linq;
 using System.Text;
+using Newtonsoft.Json;
 using System.Management;
 using System.Diagnostics;
+using Microsoft.VisualBasic;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using LibreHardwareMonitor.Hardware;
@@ -30,8 +32,9 @@ namespace JayTom.Dws.Infrastructure.IComputer {
                 };
                 _computer.Open();
             }
-
-            _computer.Reset();
+            else {
+                _computer.Reset();
+            }
         }
 
         public List<DiskInfo> GetDiskInfo() {
@@ -99,10 +102,14 @@ namespace JayTom.Dws.Infrastructure.IComputer {
 
         public int GetFanSpeed() {
             try {
-                var fanSensor = _computer?.Hardware
-                    .FirstOrDefault(h => h.HardwareType == HardwareType.GpuIntel)?
-                    .Sensors
-                    .FirstOrDefault(s => s.SensorType == SensorType.Fan && s.Value.HasValue);
+                var orDefault = _computer?.Hardware?.FirstOrDefault(f => f.HardwareType == HardwareType.Motherboard);
+                orDefault?.Update();
+                orDefault?.SubHardware?.FirstOrDefault(f => f.HardwareType == HardwareType.SuperIO)?.Update();
+                var fanSensor = orDefault
+                    ?.Sensors
+                    ?.FirstOrDefault(s => s.SensorType == SensorType.Fan && s.Value.HasValue) ??
+                                orDefault?.SubHardware?.FirstOrDefault(f => f.HardwareType == HardwareType.SuperIO)
+                    ?.Sensors?.FirstOrDefault(f => f.SensorType == SensorType.Fan && f.Value.HasValue);
 
                 return (int)(fanSensor?.Value ?? 0);
             }
@@ -114,11 +121,92 @@ namespace JayTom.Dws.Infrastructure.IComputer {
         public Task<int> GetFanSpeedAsync() {
             return Task.Run(() => {
                 try {
-                    var fanSensor = _computer?.Hardware
-                        ?.FirstOrDefault(h => h.HardwareType == HardwareType.GpuIntel)
+                    var orDefault = _computer?.Hardware?.FirstOrDefault(f => f.HardwareType == HardwareType.Motherboard);
+                    orDefault?.Update();
+                    orDefault?.SubHardware?.FirstOrDefault(f => f.HardwareType == HardwareType.SuperIO)?.Update();
+                    var fanSensor = orDefault
                         ?.Sensors
-                        ?.FirstOrDefault(s => s.SensorType == SensorType.Fan && s.Value.HasValue);
+                        ?.FirstOrDefault(s => s.SensorType == SensorType.Fan && s.Value.HasValue) ?? orDefault?.SubHardware?.FirstOrDefault(f => f.HardwareType == HardwareType.SuperIO)
+                        ?.Sensors?.FirstOrDefault(f => f.SensorType == SensorType.Fan && f.Value.HasValue);
 
+                    /*if (_computer?.Hardware is not null) {
+                        foreach (var hardware in _computer.Hardware) {
+                            File.AppendAllLines($"{AppDomain.CurrentDomain.BaseDirectory}a.txt",
+                                new[] { $"Hardware: {hardware.Name}--HardwareType:{hardware.HardwareType}" });
+
+                            foreach (var subhardware in hardware.SubHardware) {
+                                File.AppendAllLines($"{AppDomain.CurrentDomain.BaseDirectory}a.txt",
+                                    new[] { $"\tSubhardware: {subhardware.Name}--HardwareType:{subhardware.HardwareType}" });
+
+                                foreach (var sensor in subhardware.Sensors) {
+                                    File.AppendAllLines($"{AppDomain.CurrentDomain.BaseDirectory}a.txt",
+                                        new[] { $"\t\tSensor: {sensor.Name}, value: {sensor.Value}--SensorType:{sensor.SensorType}" });
+                                }
+                            }
+
+                            foreach (var sensor in hardware.Sensors) {
+                                File.AppendAllLines($"{AppDomain.CurrentDomain.BaseDirectory}a.txt",
+                                    new[] { $"\tSensor: {sensor.Name}, value: {sensor.Value}--SensorType:{sensor.SensorType}" });
+                            }
+                        }
+
+                        /*foreach (var hardware in _computer.Hardware) {
+                            var hardwareName = hardware.Name;
+                            var hardwareType = hardware.HardwareType;
+                            foreach (var hardware1 in hardware.SubHardware) {
+                                var hardware1Name = hardware1.Name;
+                                var hardware1HardwareType = hardware1.HardwareType;
+                                File.AppendAllLines($"{AppDomain.CurrentDomain.BaseDirectory}a.txt",
+                                    new[]
+                                    {
+                                        $"---------SubHardware----------",
+                                        $"hardware1Name:{hardware1Name}",
+                                        $"hardware1HardwareType:{hardware1HardwareType}",
+                                        $"hardware1.SubHardware.Length:{hardware1}",
+                                    });
+                                foreach (var hardware1Sensor in hardware1.Sensors) {
+                                    var sensorName = hardware1Sensor.Name;
+                                    var sensorType = hardware1Sensor.SensorType;
+                                    var sensorValue = hardware1Sensor.Value;
+                                    hardware1Sensor.Control.
+                                    File.AppendAllLines($"{AppDomain.CurrentDomain.BaseDirectory}a.txt",
+                                        new[]
+                                        {
+                                            $"sensorName:{sensorName}",
+                                            $"sensorType:{sensorType}",
+                                            $"sensorValue:{sensorValue}",
+                                        });
+                                }
+
+                                File.AppendAllLines($"{AppDomain.CurrentDomain.BaseDirectory}a.txt",
+                                    new[]
+                                    {
+                                        $"--------------------------------",
+                                    });
+                            }
+
+                            foreach (var hardwareSensor in hardware.Sensors) {
+                                var sensorName = hardwareSensor.Name;
+                                var sensorType = hardwareSensor.SensorType;
+                                var sensorValue = hardwareSensor.Value;
+
+                                File.AppendAllLines($"{AppDomain.CurrentDomain.BaseDirectory}a.txt",
+                                    new[]
+                                    {
+                                        $"hardwareName:{hardwareName}",
+                                        $"hardwareType:{hardwareType}",
+                                        $"sensorName:{sensorName}",
+                                        $"sensorType:{sensorType}",
+                                        $"sensorValue:{sensorValue}",
+                                    });
+                            }
+                        }#1#
+                    }
+                    File.AppendAllLines($"{AppDomain.CurrentDomain.BaseDirectory}a.txt",
+                        new[]
+                        {
+                            $"-----------------------------"
+                        });*/
                     return (int)(fanSensor?.Value ?? 0);
                 }
                 catch (Exception e) {
@@ -405,26 +493,7 @@ namespace JayTom.Dws.Infrastructure.IComputer {
                             gpu.Update();
                         }
 
-                        var gpuInfoList = new List<GpuInfo>();
-
-                        foreach (var gpu in gpuHardwareList) {
-                            var utilizationSensor = gpu.Sensors
-                                ?.FirstOrDefault(s => s.SensorType == SensorType.Load && s.Name == "D3D 3D");
-                            var memorySensor = gpu.Sensors
-                                ?.FirstOrDefault(s => s.SensorType == SensorType.Data && s.Name == "GPU Memory");
-                            var spaceSensor = gpu.Sensors
-                                ?.FirstOrDefault(s => s.SensorType == SensorType.Data && s.Name == "GPU Memory Free");
-
-                            var gpuInfo = new GpuInfo {
-                                Utilization = (int)(utilizationSensor?.Value ?? 0),
-                                TotalMemory = (long)(memorySensor?.Max ?? 0),
-                                FreeMemory = (long)(spaceSensor?.Value ?? 0)
-                            };
-
-                            gpuInfoList.Add(gpuInfo);
-                        }
-
-                        return gpuInfoList;
+                        return (from gpu in gpuHardwareList let utilizationSensor = gpu.Sensors?.FirstOrDefault(s => s.SensorType == SensorType.Load && s.Name == "D3D 3D") let memorySensor = gpu.Sensors?.FirstOrDefault(s => s.SensorType == SensorType.Data && s.Name == "GPU Memory") let spaceSensor = gpu.Sensors?.FirstOrDefault(s => s.SensorType == SensorType.Data && s.Name == "GPU Memory Free") let gpuName = gpu.Name select new GpuInfo { Name = gpuName, Utilization = (int)(utilizationSensor?.Value ?? 0), TotalMemory = (long)(memorySensor?.Max ?? 0), FreeMemory = (long)(spaceSensor?.Value ?? 0) }).ToList();
                     }
                 }
                 catch (Exception e) {
@@ -524,6 +593,7 @@ namespace JayTom.Dws.Infrastructure.IComputer {
                         var downloadSpeed = (statsAtEnd.BytesReceived - statsAtStarts[i].BytesReceived);
                         var uploadSpeed = (statsAtEnd.BytesSent - statsAtStarts[i].BytesSent);
                         connectionInfos.Add(new LocalNetworkConnectionInfo() {
+                            IsConnection = interfaces[i].OperationalStatus == OperationalStatus.Up,
                             ConnectionName = interfaces[i].Name,
                             DownloadSpeed = downloadSpeed / 1024,
                             UploadSpeed = uploadSpeed / 1024,

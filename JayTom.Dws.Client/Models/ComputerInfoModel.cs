@@ -470,6 +470,12 @@ namespace JayTom.Dws.Client.Models {
         private long _uploadSpeed;
         private long _downloadSpeed;
         private long _speed;
+        private bool _isConnection;
+
+        public bool IsConnection {
+            get => _isConnection;
+            set => SetProperty(ref _isConnection, value);
+        }
 
         /// <summary>
         /// 连接名称

@@ -14,12 +14,12 @@
                 pack://application:,,,/Fonts/#iconfont
             </FontFamily>
         </DataTemplate.Resources>
-        <Grid Margin="0,5">
+        <Grid Margin="26,5,0,5">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="60" />
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="30" />
+                <ColumnDefinition Width="120" MaxWidth="130" />
+                <ColumnDefinition Width="90" MaxWidth="130" />
+                <ColumnDefinition Width="90" MaxWidth="130" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
             <!--  图标  -->
@@ -39,7 +39,7 @@
                 HorizontalAlignment="Left"
                 VerticalAlignment="Center"
                 FontFamily="{StaticResource CustomFontFamily}"
-                FontSize="16"
+                FontSize="12"
                 FontWeight="Bold"
                 Foreground="DimGray"
                 IsEnabled="False"
@@ -56,7 +56,7 @@
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"
                     FontFamily="{StaticResource IconFontFamily}"
-                    FontSize="18"
+                    FontSize="16"
                     Foreground="RoyalBlue"
                     Text="&#xe651;" />
                 <!--  信息  -->
@@ -65,13 +65,13 @@
                     HorizontalAlignment="Left"
                     VerticalAlignment="Center"
                     FontFamily="{StaticResource CustomFontFamily}"
-                    FontSize="16"
+                    FontSize="12"
                     FontWeight="Bold"
                     Foreground="DimGray"
                     IsEnabled="False"
                     TextAlignment="Left"
                     TextTrimming="WordEllipsis">
-                    <Run Text="{Binding UploadSpeed, StringFormat={}{0:F2}, Converter={StaticResource ByteSizeConverter}}" /> <Run FontSize="13" Text="{Binding UploadSpeed, Converter={StaticResource ByteSizeUnitConverter}}" />
+                    <Run Text="{Binding UploadSpeed, StringFormat={}{0:F2}, Converter={StaticResource ByteSizeConverter}}" /> <Run FontSize="10" Text="{Binding UploadSpeed, Converter={StaticResource ByteSizeUnitConverter}}" />
                 </TextBlock>
             </StackPanel>
             <!--  下载  -->
@@ -79,11 +79,11 @@
 
                 <!--  图标  -->
                 <TextBlock
-                    Margin="2,0"
+                    Margin="0,0,0,0"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"
                     FontFamily="{StaticResource IconFontFamily}"
-                    FontSize="18"
+                    FontSize="16"
                     Foreground="OrangeRed"
                     Text="&#xe650;" />
                 <!--  信息  -->
@@ -92,39 +92,79 @@
                     HorizontalAlignment="Left"
                     VerticalAlignment="Center"
                     FontFamily="{StaticResource CustomFontFamily}"
-                    FontSize="16"
+                    FontSize="12"
                     FontWeight="Bold"
                     Foreground="DimGray"
                     IsEnabled="False"
                     TextAlignment="Left"
                     TextTrimming="WordEllipsis">
-                    <Run Text="{Binding DownloadSpeed, StringFormat={}{0:F2}, Converter={StaticResource ByteSizeConverter}}" /> <Run FontSize="13" Text="{Binding UploadSpeed, Converter={StaticResource ByteSizeUnitConverter}}" />
+                    <Run Text="{Binding DownloadSpeed, StringFormat={}{0:F2}, Converter={StaticResource ByteSizeConverter}}" /> <Run FontSize="10" Text="{Binding UploadSpeed, Converter={StaticResource ByteSizeUnitConverter}}" />
                 </TextBlock>
             </StackPanel>
             <!--  速度  -->
             <StackPanel Grid.Column="4" Orientation="Horizontal">
                 <!--  图标  -->
                 <TextBlock
-                    Margin="10,2"
+                    Margin="0,2,0,0"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"
                     FontFamily="{StaticResource IconFontFamily}"
                     FontSize="20"
                     Foreground="DimGray"
-                    Text="&#xe7e3;" />
+                    Text="&#xe6ed;" />
                 <!--  信息  -->
                 <TextBlock
                     MaxWidth="180"
                     HorizontalAlignment="Left"
                     VerticalAlignment="Center"
                     FontFamily="{StaticResource CustomFontFamily}"
-                    FontSize="16"
+                    FontSize="12"
                     FontWeight="Bold"
                     Foreground="DimGray"
                     IsEnabled="False"
                     TextAlignment="Left"
                     TextTrimming="WordEllipsis">
-                    <Run Text="速度:" /><Run Text="{Binding Speed, StringFormat={}{0:F2}, Converter={StaticResource ByteSizeConverter}, ConverterParameter=1000}" /> <Run FontSize="13" Text="{Binding Speed, Converter={StaticResource ByteSizeUnitConverter}, ConverterParameter=1000}" />
+                    <Run Text="速度:" /><Run Text="{Binding Speed, StringFormat={}{0:F2}, Converter={StaticResource ByteSizeConverter}, ConverterParameter=1000}" /> <Run FontSize="10" Text="{Binding Speed, Converter={StaticResource ByteSizeUnitConverter}, ConverterParameter=1000}" />
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Visibility" Value="Visible" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsConnection}" Value="True">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding IsConnection}" Value="False">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+                <!--  未连接  -->
+                <TextBlock
+                    MaxWidth="180"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Center"
+                    FontFamily="{StaticResource CustomFontFamily}"
+                    FontSize="12"
+                    FontWeight="Bold"
+                    Foreground="DimGray"
+                    IsEnabled="False"
+                    Text="未连接"
+                    TextAlignment="Left"
+                    TextTrimming="WordEllipsis">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Visibility" Value="Visible" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsConnection}" Value="True">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding IsConnection}" Value="False">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
                 </TextBlock>
             </StackPanel>
         </Grid>

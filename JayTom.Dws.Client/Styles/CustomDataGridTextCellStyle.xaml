@@ -6,7 +6,7 @@
         BasedOn="{StaticResource MaterialDesignDataGridCell}"
         TargetType="DataGridCell">
         <Setter Property="BorderThickness" Value="0" />
-        <Setter Property="FontSize" Value="15" />
+        <Setter Property="FontSize" Value="12" />
         <Setter Property="Width" Value="Auto" />
         <Setter Property="Height" Value="Auto" />
         <Setter Property="HorizontalAlignment" Value="Center" />

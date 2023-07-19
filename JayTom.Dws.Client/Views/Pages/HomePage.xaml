@@ -161,9 +161,14 @@
                         Margin="20,10"
                         HorizontalAlignment="Right"
                         VerticalAlignment="Stretch">
-                        <StackPanel VerticalAlignment="Center" Orientation="Vertical">
+                        <Grid Margin="0,20">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="50*" />
+                                <RowDefinition Height="50*" />
+                            </Grid.RowDefinitions>
                             <StackPanel
-                                HorizontalAlignment="Right"
+                                Grid.Row="0"
+                                HorizontalAlignment="Stretch"
                                 VerticalAlignment="Center"
                                 Orientation="Horizontal">
                                 <!--  重量  -->
@@ -177,7 +182,7 @@
                                         HorizontalAlignment="Center"
                                         VerticalAlignment="Center"
                                         FontFamily="{StaticResource IconFontFamily}"
-                                        FontSize="35"
+                                        FontSize="30"
                                         FontWeight="Bold"
                                         Foreground="DimGray"
                                         Text="&#xe658;"
@@ -196,15 +201,17 @@
                                         HorizontalAlignment="Center"
                                         VerticalAlignment="Center"
                                         FontFamily="{StaticResource CustomFontFamily}"
-                                        FontSize="40"
+                                        FontSize="20"
                                         FontWeight="Bold"
                                         Foreground="White"
-                                        Text="20.6"
-                                        TextAlignment="Center" />
+                                        TextAlignment="Center">
+                                        <Run Text="868.662" /><Run FontSize="12" Text="kg" />
+                                    </TextBlock>
                                 </StackPanel>
                                 <!--  体积  -->
                                 <StackPanel
-                                    Margin="20,0"
+                                    Margin="35,0,5,0"
+                                    HorizontalAlignment="Right"
                                     VerticalAlignment="Center"
                                     Orientation="Horizontal">
 
@@ -228,11 +235,15 @@
                                         <Run
                                             FontWeight="Bold"
                                             Foreground="White"
-                                            Text="561.61" />
+                                            Text="561.61" /><Run
+                                            FontSize="13"
+                                            Foreground="White"
+                                            Text="mm²" />
                                     </TextBlock>
                                 </StackPanel>
                             </StackPanel>
                             <StackPanel
+                                Grid.Row="1"
                                 Margin="0,30,0,0"
                                 HorizontalAlignment="Right"
                                 VerticalAlignment="Bottom"
@@ -250,7 +261,8 @@
                                         FontSize="20"
                                         FontWeight="Bold"
                                         Foreground="DimGray"
-                                        Text="&#xe724;" />
+                                        Text="&#xe724;"
+                                        Visibility="Hidden" />
                                     <TextBlock
                                         Margin="5,0"
                                         HorizontalAlignment="Center"
@@ -263,7 +275,10 @@
                                         <Run
                                             FontWeight="Bold"
                                             Foreground="White"
-                                            Text="561.61" />
+                                            Text="561.61" /><Run
+                                            FontSize="13"
+                                            Foreground="White"
+                                            Text="mm" />
                                     </TextBlock>
                                 </StackPanel>
                                 <!--  宽  -->
@@ -279,7 +294,8 @@
                                         FontSize="20"
                                         FontWeight="Bold"
                                         Foreground="DimGray"
-                                        Text="&#xe721;" />
+                                        Text="&#xe721;"
+                                        Visibility="Hidden" />
                                     <TextBlock
                                         Margin="5,0"
                                         HorizontalAlignment="Center"
@@ -292,7 +308,10 @@
                                         <Run
                                             FontWeight="Bold"
                                             Foreground="White"
-                                            Text="561.61" />
+                                            Text="561.61" /><Run
+                                            FontSize="13"
+                                            Foreground="White"
+                                            Text="mm" />
                                     </TextBlock>
                                 </StackPanel>
                                 <!--  高  -->
@@ -308,7 +327,8 @@
                                         FontSize="20"
                                         FontWeight="Bold"
                                         Foreground="DimGray"
-                                        Text="&#xe899;" />
+                                        Text="&#xe899;"
+                                        Visibility="Hidden" />
                                     <TextBlock
                                         Margin="5,0"
                                         HorizontalAlignment="Center"
@@ -321,11 +341,14 @@
                                         <Run
                                             FontWeight="Bold"
                                             Foreground="White"
-                                            Text="561.61" />
+                                            Text="561.61" /><Run
+                                            FontSize="13"
+                                            Foreground="White"
+                                            Text="mm" />
                                     </TextBlock>
                                 </StackPanel>
                             </StackPanel>
-                        </StackPanel>
+                        </Grid>
                     </Border>
                 </Grid>
             </materialDesign:Card>
@@ -423,15 +446,11 @@
                                 <!--  条码  -->
                                 <DataGridTextColumn
                                     Width="Auto"
-                                    MinWidth="40"
+                                    MinWidth="200"
                                     Binding="{Binding Barcode, UpdateSourceTrigger=PropertyChanged}"
                                     IsReadOnly="True">
                                     <DataGridTextColumn.Header>
                                         <StackPanel Orientation="Horizontal">
-                                            <TextBlock
-                                                FontWeight="Light"
-                                                Style="{StaticResource DataGridTextColumnIconStyle}"
-                                                Text="&#xe6c8;" />
                                             <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="条码" />
                                         </StackPanel>
                                     </DataGridTextColumn.Header>
@@ -483,13 +502,13 @@
                                     Binding="{Binding Volume, UpdateSourceTrigger=PropertyChanged}"
                                     EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
                                     <DataGridTextColumn.Header>
-                                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="体积(m²)" />
+                                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="体积(mm²)" />
                                     </DataGridTextColumn.Header>
                                 </DataGridTextColumn>
                                 <!--  扫描时间  -->
                                 <DataGridTextColumn
                                     Width="Auto"
-                                    MinWidth="40"
+                                    MinWidth="150"
                                     Binding="{Binding ScanTime, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:yyyy-MM-dd HH:mm:ss}}"
                                     EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
                                     <DataGridTextColumn.Header>

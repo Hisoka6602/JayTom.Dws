@@ -352,6 +352,11 @@ namespace JayTom.Dws.Infrastructure.IComputer {
     public class LocalNetworkConnectionInfo {
 
         /// <summary>
+        /// 是否已连接
+        /// </summary>
+        public bool IsConnection { get; set; }
+
+        /// <summary>
         /// 连接名称
         /// </summary>
         public string ConnectionName { get; set; } = string.Empty;
