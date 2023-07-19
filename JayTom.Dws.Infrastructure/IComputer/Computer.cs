@@ -126,8 +126,8 @@ namespace JayTom.Dws.Infrastructure.IComputer {
                     orDefault?.SubHardware?.FirstOrDefault(f => f.HardwareType == HardwareType.SuperIO)?.Update();
                     var fanSensor = orDefault
                         ?.Sensors
-                        ?.FirstOrDefault(s => s.SensorType == SensorType.Fan && s.Value.HasValue) ?? orDefault?.SubHardware?.FirstOrDefault(f => f.HardwareType == HardwareType.SuperIO)
-                        ?.Sensors?.FirstOrDefault(f => f.SensorType == SensorType.Fan && f.Value.HasValue);
+                        ?.FirstOrDefault(s => s.SensorType == SensorType.Fan && s.Value is > 0) ?? orDefault?.SubHardware?.FirstOrDefault(f => f.HardwareType == HardwareType.SuperIO)
+                        ?.Sensors?.FirstOrDefault(f => f.SensorType == SensorType.Fan && f.Value is > 0);
 
                     /*if (_computer?.Hardware is not null) {
                         foreach (var hardware in _computer.Hardware) {

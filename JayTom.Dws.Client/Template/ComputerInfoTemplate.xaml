@@ -29,7 +29,8 @@
                 StaysOpen="False">
                 <Grid
                     Width="550"
-                    Height="750"
+                    Height="Auto"
+                    MaxHeight="800"
                     Background="#303030"
                     ClipToBounds="True">
 
@@ -601,8 +602,10 @@
                                             </Style>
                                         </ScrollViewer.Style>
                                         <WrapPanel
+                                            MaxWidth="540"
+                                            MaxHeight="200"
                                             HorizontalAlignment="Center"
-                                            VerticalAlignment="Top"
+                                            VerticalAlignment="Center"
                                             Focusable="False"
                                             IsItemsHost="True"
                                             Orientation="Horizontal"
@@ -650,6 +653,7 @@
                         <!--  网口信息列表  -->
                         <ListBox
                             MaxWidth="530"
+                            MaxHeight="200"
                             Background="Transparent"
                             BorderThickness="0"
                             Foreground="White"
