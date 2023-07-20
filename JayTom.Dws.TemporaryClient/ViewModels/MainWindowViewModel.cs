@@ -63,11 +63,11 @@ namespace JayTom.Dws.TemporaryClient.ViewModels {
             barcodeScannerService.ScanCompleted += async delegate (object? sender, ScanCompletedEventArgs args) {
                 switch (args.RequestStatus) {
                     //播报声音
-                    case 1:
+                    case UploadStatus.Succeeded:
                         _speech.PlaySuccess();
                         break;
 
-                    case 2:
+                    case UploadStatus.Failed:
                         _speech.PlayFail();
                         break;
                 }
@@ -97,9 +97,9 @@ namespace JayTom.Dws.TemporaryClient.ViewModels {
 
                     DisplayBarcode = args.Barcode;
                     RequestStatus = args.RequestStatus switch {
-                        0 => "NotUploaded",
-                        1 => "Success",
-                        2 => "Failure",
+                        UploadStatus.NotUploaded => "NotUploaded",
+                        UploadStatus.Succeeded => "Success",
+                        UploadStatus.Failed => "Failure",
                         _ => string.Empty
                     };
                 });
@@ -531,9 +531,9 @@ namespace JayTom.Dws.TemporaryClient.ViewModels {
                                 Height = s.Height,
                                 ScanTime = s.ScanTime,
                                 RequestStatus = s.RequestStatus switch {
-                                    0 => "NotUploaded",
-                                    1 => "Success",
-                                    2 => "Failure",
+                                    UploadStatus.NotUploaded => "NotUploaded",
+                                    UploadStatus.Succeeded => "Success",
+                                    UploadStatus.Failed => "Failure",
                                     _ => string.Empty
                                 },
                                 RequestTime = s.RequestTime,

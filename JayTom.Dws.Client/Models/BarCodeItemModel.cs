@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.ComponentModel;
 using System.Threading.Tasks;
+using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
 using JayTom.Dws.Plugin.Excel.Attributes;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -73,7 +74,7 @@ namespace JayTom.Dws.Client.Models {
         /// 上传状态(1成功、2失败、0未上传)
         /// </summary>
         [DisplayName("RequestStatus"), ExcelInfo(Width = 4000)]
-        public string RequestStatus { get; set; } = "NotUploaded";
+        public UploadStatus RequestStatus { get; set; } = UploadStatus.NotUploaded;
 
         /// <summary>
         /// 上传时间

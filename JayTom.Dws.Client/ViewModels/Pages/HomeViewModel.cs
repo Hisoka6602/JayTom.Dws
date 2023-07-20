@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Prism.Services.Dialogs;
 using System.Windows.Controls;
 using JayTom.Dws.Client.Models;
+using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using JayTom.Dws.PluginInterface.Utils;
@@ -148,7 +149,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     Num = 1,
                     RequestTime = DateTime.Now,
                     RequestContent = "上传内容",
-                    RequestStatus = "成功",
+                    RequestStatus = UploadStatus.Succeeded,
                     ResponseContent = "接口响应内容",
                     ResponseTime = DateTime.Now,
                     ScanTime = DateTime.Now,
@@ -164,7 +165,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     Num = 1,
                     RequestTime = DateTime.Now,
                     RequestContent = "上传内容",
-                    RequestStatus = "成功",
+                    RequestStatus = UploadStatus.Succeeded,
                     ResponseContent = "接口响应内容",
                     ResponseTime = DateTime.Now,
                     ScanTime = DateTime.Now,
@@ -437,7 +438,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
 
         private void UploadStatusDelegate(BarCodeItemModel obj) {
             //判断状态是否已上传再获进行弹窗
-            _dialogService.ShowDialog("ApiAccessDialog", new DialogParameters { { "BarCodeItem", obj } }, null);
+            if (obj.RequestStatus != UploadStatus.NotUploaded) {
+                _dialogService.ShowDialog("ApiAccessDialog", new DialogParameters { { "BarCodeItem", obj } }, null);
+            }
         }
 
         private void ImageClickDelegate(CameraItemInfoModel obj) {
@@ -482,15 +485,15 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         /// 添加一行
         /// </summary>
         private async void AddNewRow(BarCodeItemModel item) {
-            await Application.Current.Dispatcher.InvokeAsync(() => {
-                if (_dataGrid is not null) {
+            await Task.Run(async () => {
+                await Application.Current.Dispatcher.InvokeAsync(() => {
                     // 将新项添加到DataGrid的数据源中
                     //_dataGrid.Items.Add(item);
                     BarCodeItems.Insert(0, item);
                     item.IsInserting = true;
                     //BarCodeItems.Remove(item);
                     // 获取新行的DataGridRow
-                }
+                });
             });
         }
     }

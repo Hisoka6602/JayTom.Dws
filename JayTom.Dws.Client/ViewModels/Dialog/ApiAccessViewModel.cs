@@ -7,12 +7,13 @@ using System.Windows.Input;
 using System.Threading.Tasks;
 using Prism.Services.Dialogs;
 using JayTom.Dws.Client.Models;
+using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
 
 namespace JayTom.Dws.Client.ViewModels.Dialog {
 
     public class ApiAccessViewModel : BindableBase, IDialogAware {
-        private string _requestStatus = "NotUploaded";
+        private UploadStatus _requestStatus = UploadStatus.NotUploaded;
         private DateTime? _requestTime;
         private string _requestContent = string.Empty;
         private DateTime? _responseTime;
@@ -22,7 +23,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog {
         /// <summary>
         /// 上传状态
         /// </summary>
-        public string RequestStatus {
+        public UploadStatus RequestStatus {
             get => _requestStatus;
             set => SetProperty(ref _requestStatus, value);
         }
@@ -81,7 +82,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog {
 
         public void OnDialogClosed() {
             Barcode = string.Empty;
-            RequestStatus = string.Empty;
+            RequestStatus = UploadStatus.NotUploaded;
             RequestTime = null;
             RequestContent = string.Empty;
             ResponseTime = null;

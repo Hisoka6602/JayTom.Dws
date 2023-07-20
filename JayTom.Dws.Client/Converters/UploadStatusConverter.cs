@@ -7,6 +7,7 @@ using System.Windows.Data;
 using System.Globalization;
 using System.Windows.Media;
 using System.Threading.Tasks;
+using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
 
 namespace JayTom.Dws.Client.Converters {
@@ -14,20 +15,27 @@ namespace JayTom.Dws.Client.Converters {
     public class UploadStatusConverter : IValueConverter {
 
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
-            if (value is string status) {
+            if (value is UploadStatus status) {
                 if (parameter?.ToString()?.Equals("Background") == true) {
                     return status switch {
-                        "成功" => new SolidColorBrush(Colors.DarkGreen),
-                        "失败" => new SolidColorBrush(Colors.DarkRed),
+                        UploadStatus.Succeeded => new SolidColorBrush(Colors.DarkGreen),
+                        UploadStatus.Failed => new SolidColorBrush(Colors.DarkRed),
                         _ => new SolidColorBrush(Colors.RoyalBlue)
                     };
                 }
 
                 if (parameter?.ToString()?.Equals("FontText") == true) {
                     return status switch {
-                        "成功" => "\xe8bd",
-                        "失败" => "\xe677",
+                        UploadStatus.Succeeded => "\xe8bd",
+                        UploadStatus.Failed => "\xe677",
                         _ => "\xe653"
+                    };
+                }
+                if (parameter?.ToString()?.Equals("Text") == true) {
+                    return status switch {
+                        UploadStatus.Succeeded => "成功",
+                        UploadStatus.Failed => "失败",
+                        _ => "未上传"
                     };
                 }
             }

@@ -23,7 +23,10 @@
             Focusable="False"
             Foreground="Transparent"
             Style="{StaticResource MaterialDesignFlatButton}">
-            <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+            <Grid
+                MinWidth="100"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="30" />
                     <ColumnDefinition Width="*" />
@@ -50,7 +53,7 @@
                     IsEnabled="False"
                     TextAlignment="Justify"
                     TextTrimming="WordEllipsis">
-                    <Run Text="{Binding RequestStatus}" />
+                    <Run Text="{Binding RequestStatus, Converter={StaticResource UploadStatusConverter}, ConverterParameter=Text}" />
                 </TextBlock>
             </Grid>
 

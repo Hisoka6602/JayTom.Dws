@@ -12,6 +12,7 @@ using JayTom.Dws.Plugin.Tcp;
 using System.Threading.Tasks;
 using System.Windows.Controls;
 using JayTom.Dws.Device.Camera;
+using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
 using NetTopologySuite.Algorithm;
 using Microsoft.Extensions.Logging;
@@ -152,7 +153,7 @@ namespace JayTom.Dws.TemporaryClient.Service.BackgroundService {
                         Width = (float)(uploadWidth ?? 0),
                         Height = (float)(uploadHeight ?? 0),
                         ScanTime = scanTime,
-                        RequestStatus = uploadResponse?.IsSuccess == true ? 1 : 2,
+                        RequestStatus = uploadResponse?.IsSuccess == true ? UploadStatus.Succeeded : UploadStatus.Failed,
                         RequestTime = uploadResponse?.RequestTime ?? DateTime.Now,
                         RequestContent = "The request content is too large and will not be saved.",
                         ResponseContent = (string.IsNullOrWhiteSpace(uploadResponse?.ResponseContent) ? $"Error:{uploadResponse?.ExceptionMsg}" : uploadResponse?.ResponseContent) ?? string.Empty,

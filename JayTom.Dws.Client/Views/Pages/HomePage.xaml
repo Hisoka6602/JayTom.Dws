@@ -443,7 +443,6 @@
                                         </Setter.Value>
                                     </Setter>
                                     <Setter Property="Opacity" Value="1" />
-
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding IsInserting}" Value="True">
                                             <DataTrigger.EnterActions>

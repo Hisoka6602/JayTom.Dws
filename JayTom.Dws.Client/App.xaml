@@ -6,6 +6,7 @@
     xmlns:prism="http://prismlibrary.com/">
     <prism:PrismApplication.Resources>
         <ResourceDictionary>
+
             <SolidColorBrush x:Key="ScrollBarForeground" Color="#b2b2b2" />
             <Style x:Key="ScrollThumbs" TargetType="{x:Type Thumb}">
                 <Setter Property="Template">

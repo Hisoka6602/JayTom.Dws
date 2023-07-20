@@ -133,7 +133,7 @@
                         IsEnabled="False"
                         TextAlignment="Justify"
                         TextTrimming="WordEllipsis">
-                        <Run Text="{Binding RequestStatus, UpdateSourceTrigger=PropertyChanged}" />
+                        <Run Text="{Binding RequestStatus, Converter={StaticResource UploadStatusConverter}, ConverterParameter=Text, UpdateSourceTrigger=PropertyChanged}" />
                     </TextBlock>
                 </StackPanel>
                 <!--  提交时间  -->
@@ -250,9 +250,7 @@
                         TextWrapping="Wrap"
                         VerticalScrollBarVisibility="Auto" />
                 </StackPanel>
-
             </Grid>
-
         </Grid>
     </materialDesign:Card>
 </UserControl>

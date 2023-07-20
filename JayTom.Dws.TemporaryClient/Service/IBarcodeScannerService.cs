@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
 
 namespace JayTom.Dws.TemporaryClient.Service {
@@ -22,7 +23,7 @@ namespace JayTom.Dws.TemporaryClient.Service {
         public float Width { get; set; }
         public float Height { get; set; }
         public DateTime ScanTime { get; set; }
-        public int RequestStatus { get; set; }
+        public UploadStatus RequestStatus { get; set; }
         public DateTime RequestTime { get; set; }
         public string RequestContent { get; set; } = string.Empty;
         public DateTime ResponseTime { get; set; }

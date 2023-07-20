@@ -64,7 +64,7 @@ namespace JayTom.Dws.Data.LocalData {
         /// 上传状态(1成功、2失败、0未上传)
         /// </summary>
         [Column("RequestStatus")]
-        public int RequestStatus { get; set; }
+        public UploadStatus RequestStatus { get; set; }
 
         /// <summary>
         /// 上传时间
@@ -125,5 +125,23 @@ namespace JayTom.Dws.Data.LocalData {
         /// </summary>
         [Column("Other")]
         public string? Other { get; set; }
+    }
+
+    public enum UploadStatus {
+
+        /// <summary>
+        /// 上传成功
+        /// </summary>
+        Succeeded,
+
+        /// <summary>
+        /// 上传失败
+        /// </summary>
+        Failed,
+
+        /// <summary>
+        /// 未上传
+        /// </summary>
+        NotUploaded
     }
 }
