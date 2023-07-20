@@ -13,7 +13,6 @@ using System.Runtime.InteropServices;
 using System.Diagnostics.Eventing.Reader;
 
 namespace JayTom.Dws.Infrastructure.IComputer {
-
     public class Computer : IComputer {
         private static LibreHardwareMonitor.Hardware.Computer? _computer = null;
 
@@ -75,7 +74,7 @@ namespace JayTom.Dws.Infrastructure.IComputer {
                 await Task.Delay(0);
 
                 diskInfoList = DriveInfo.GetDrives()
-                    .Where(drive => drive.IsReady && drive.DriveType == DriveType.Fixed)
+                    .Where(drive => drive is { IsReady: true, DriveType: DriveType.Fixed })
                     .Select(drive => {
                         var availableSpace = drive.AvailableFreeSpace;
                         var usedSpace = drive.TotalSize - drive.AvailableFreeSpace;

@@ -1,4 +1,8 @@
-﻿using System.Windows;
+﻿using System;
+using System.Windows;
+using System.Diagnostics;
+using System.Windows.Interop;
+using System.Runtime.InteropServices;
 
 namespace JayTom.Dws.Client.Views {
 

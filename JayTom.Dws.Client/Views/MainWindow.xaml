@@ -17,7 +17,7 @@
     mvvm:ViewModelLocator.AutoWireViewModel="True"
     Background="Transparent"
     FontFamily="{StaticResource CustomFontFamily}"
-    ResizeMode="NoResize"
+    ResizeMode="CanMinimize"
     WindowStartupLocation="CenterScreen"
     WindowStyle="None"
     mc:Ignorable="d">
@@ -38,6 +38,15 @@
             ResizeBorderThickness="5"
             UseAeroCaptionButtons="True" />
     </WindowChrome.WindowChrome>
+    <!--  任务栏  -->
+    <!--<Window.TaskbarItemInfo>
+        <TaskbarItemInfo x:Name="taskBarItem">
+            <TaskbarItemInfo.ThumbButtonInfos>
+                <ThumbButtonInfo Description="Play" ImageSource="pack://application:,,,/Image/Logo/logobw.png" />
+                <ThumbButtonInfo Description="Pause" ImageSource="pack://application:,,,/Image/Logo/icon logo.png" />
+            </TaskbarItemInfo.ThumbButtonInfos>
+        </TaskbarItemInfo>
+    </Window.TaskbarItemInfo>-->
     <materialDesign:DialogHost
         Background="Transparent"
         DialogBackground="Transparent"

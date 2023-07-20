@@ -9,8 +9,11 @@ using JayTom.Dws.Plugin.Excel.Attributes;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace JayTom.Dws.Client.Models {
+
     public class BarCodeItemModel : BindableBase {
         private float _volume;
+        private bool _isInserting;
+        private bool _isRemoving;
 
         [DisplayName("No."), ExcelInfo(Width = 3000)]
         public int Num { get; set; }
@@ -100,5 +103,21 @@ namespace JayTom.Dws.Client.Models {
         /// 条码图片保存路径
         /// </summary>
         public string? BarcodeImagePath { get; set; }
+
+        /// <summary>
+        /// 是否插入
+        /// </summary>
+        public bool IsInserting {
+            get => _isInserting;
+            set => SetProperty(ref _isInserting, value);
+        }
+
+        /// <summary>
+        /// 是否移除
+        /// </summary>
+        public bool IsRemoving {
+            get => _isRemoving;
+            set => SetProperty(ref _isRemoving, value);
+        }
     }
 }

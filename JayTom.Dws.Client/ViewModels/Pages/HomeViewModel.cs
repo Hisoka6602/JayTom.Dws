@@ -2,19 +2,25 @@
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
+using Prism.Regions;
 using Prism.Commands;
+using System.Windows;
 using System.Windows.Input;
 using System.Threading.Tasks;
 using Prism.Services.Dialogs;
+using System.Windows.Controls;
 using JayTom.Dws.Client.Models;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using JayTom.Dws.PluginInterface.Utils;
 
 namespace JayTom.Dws.Client.ViewModels.Pages {
+
     public class HomeViewModel : BindableBase {
         private readonly IDialogService _dialogService;
         private ObservableCollection<CameraItemInfoModel> _cameraItems = new();
         private ObservableCollection<BarCodeItemModel> _barCodeItems = new();
+        private DataGrid? _dataGrid = null;
 
         public ObservableCollection<CameraItemInfoModel> CameraItems {
             get => _cameraItems;
@@ -165,7 +171,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     Width = (float)1.3,
                     Weight = (float)8.6,
                 },
-                new BarCodeItemModel()
+                /*new BarCodeItemModel()
                 {
                     Barcode = "621055654309412",
                     BarcodeImagePath = "D:\\远程工具",
@@ -404,7 +410,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     ScanTime = DateTime.Now,
                     Width = (float)1.3,
                     Weight = (float)8.6,
-                },
+                },*/
             };
         }
 
@@ -419,6 +425,16 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             get => new DelegateCommand<BarCodeItemModel>(UploadStatusDelegate);
         }
 
+        public ICommand LoadedCommand {
+            get => new DelegateCommand<Page>(LoadedDelegate);
+        }
+
+        private async void LoadedDelegate(Page obj) {
+            await Application.Current.Dispatcher.InvokeAsync(() => {
+                _dataGrid = Utils.GetVisualChild<DataGrid>(obj, b => b.Name.Equals("BarCodeDataGrid"));
+            });
+        }
+
         private void UploadStatusDelegate(BarCodeItemModel obj) {
             //判断状态是否已上传再获进行弹窗
             _dialogService.ShowDialog("ApiAccessDialog", new DialogParameters { { "BarCodeItem", obj } }, null);
@@ -427,6 +443,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         private void ImageClickDelegate(CameraItemInfoModel obj) {
             //放大图片(用另一个图像框显示、并重新绑定接收图像来源、过渡动画)
             Console.WriteLine(obj);
+            AddNewRow(new BarCodeItemModel() {
+                Barcode = "332112121"
+            });
         }
 
         /// <summary>
@@ -457,6 +476,22 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             }
 
             Console.WriteLine(obj);
+        }
+
+        /// <summary>
+        /// 添加一行
+        /// </summary>
+        private async void AddNewRow(BarCodeItemModel item) {
+            await Application.Current.Dispatcher.InvokeAsync(() => {
+                if (_dataGrid is not null) {
+                    // 将新项添加到DataGrid的数据源中
+                    //_dataGrid.Items.Add(item);
+                    BarCodeItems.Insert(0, item);
+                    item.IsInserting = true;
+                    //BarCodeItems.Remove(item);
+                    // 获取新行的DataGridRow
+                }
+            });
         }
     }
 }
