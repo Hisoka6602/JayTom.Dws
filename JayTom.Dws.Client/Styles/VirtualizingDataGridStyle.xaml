@@ -1,0 +1,38 @@
+﻿<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
+    <Style
+        x:Key="VirtualizingDataGridStyle"
+        BasedOn="{StaticResource MaterialDesignDataGrid}"
+        TargetType="DataGrid">
+
+        <Setter Property="materialDesign:DataGridAssist.CellPadding" Value="4 2 2 2" />
+        <Setter Property="materialDesign:DataGridAssist.ColumnHeaderPadding" Value="4 2 2 2" />
+        <Setter Property="AlternatingRowBackground" Value="#101E90FF" />
+        <Setter Property="AutoGenerateColumns" Value="False" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="CanUserAddRows" Value="False" />
+        <Setter Property="CanUserResizeColumns" Value="True" />
+        <Setter Property="CanUserSortColumns" Value="False" />
+        <Setter Property="EnableColumnVirtualization" Value="True" />
+        <Setter Property="EnableRowVirtualization" Value="True" />
+        <Setter Property="FontFamily" Value="{StaticResource CustomFontFamily}" />
+        <Setter Property="Foreground" Value="White" />
+        <Setter Property="FrozenColumnCount" Value="2" />
+        <Setter Property="GridLinesVisibility" Value="None" />
+        <Setter Property="HorizontalScrollBarVisibility" Value="Auto" />
+        <Setter Property="IsSelected" Value="False" />
+        <Setter Property="RowBackground" Value="#061E90FF" />
+        <Setter Property="ScrollViewer.CanContentScroll" Value="True" />
+        <Setter Property="ScrollViewer.IsDeferredScrollingEnabled" Value="True" />
+        <Setter Property="VirtualizingPanel.CacheLength" Value="5,5" />
+        <Setter Property="VirtualizingPanel.CacheLengthUnit" Value="Item" />
+        <Setter Property="VirtualizingPanel.IsVirtualizingWhenGrouping" Value="True" />
+        <Setter Property="VirtualizingPanel.ScrollUnit" Value="Pixel" />
+        <Setter Property="VirtualizingPanel.VirtualizationMode" Value="Recycling" />
+        <Setter Property="VirtualizingStackPanel.IsVirtualizing" Value="True" />
+        <Setter Property="VirtualizingPanel.IsContainerVirtualizable" Value="True" />
+        <Setter Property="SelectionUnit" Value="Cell" />
+    </Style>
+</ResourceDictionary>

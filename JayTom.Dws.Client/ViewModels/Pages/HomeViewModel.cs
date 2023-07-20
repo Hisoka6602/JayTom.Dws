@@ -11,6 +11,7 @@ using Prism.Services.Dialogs;
 using System.Windows.Controls;
 using JayTom.Dws.Client.Models;
 using JayTom.Dws.Data.LocalData;
+using JayTom.Dws.Client.Service;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using JayTom.Dws.PluginInterface.Utils;
@@ -19,6 +20,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
 
     public class HomeViewModel : BindableBase {
         private readonly IDialogService _dialogService;
+        private readonly IComputerInfoReporter _computerInfoReporter;
         private ObservableCollection<CameraItemInfoModel> _cameraItems = new();
         private ObservableCollection<BarCodeItemModel> _barCodeItems = new();
         private DataGrid? _dataGrid = null;
@@ -33,8 +35,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             set => SetProperty(ref _barCodeItems, value);
         }
 
-        public HomeViewModel(IDialogService dialogService) {
+        public HomeViewModel(IDialogService dialogService, IComputerInfoReporter computerInfoReporter) {
             _dialogService = dialogService;
+            _computerInfoReporter = computerInfoReporter;
             CameraItems = new()
             {
                 new CameraItemInfoModel()
@@ -413,6 +416,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     Weight = (float)8.6,
                 },*/
             };
+            _computerInfoReporter.ComputerInfoReceived += delegate (object? sender, ComputerInfoModel model) {
+                AddNewRow(new BarCodeItemModel() {
+                    Barcode = new Random().Next(100000000, 999999999).ToString()
+                });
+            };
         }
 
         /// <summary>
@@ -443,11 +451,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             }
         }
 
-        private void ImageClickDelegate(CameraItemInfoModel obj) {
+        private async void ImageClickDelegate(CameraItemInfoModel obj) {
             //放大图片(用另一个图像框显示、并重新绑定接收图像来源、过渡动画)
-            Console.WriteLine(obj);
-            AddNewRow(new BarCodeItemModel() {
-                Barcode = "332112121"
+            await Application.Current.Dispatcher.InvokeAsync(() => {
+                AddNewRow(new BarCodeItemModel() {
+                    Barcode = new Random().Next(100000000, 999999999).ToString()
+                });
             });
         }
 
@@ -485,15 +494,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         /// 添加一行
         /// </summary>
         private async void AddNewRow(BarCodeItemModel item) {
-            await Task.Run(async () => {
-                await Application.Current.Dispatcher.InvokeAsync(() => {
-                    // 将新项添加到DataGrid的数据源中
-                    //_dataGrid.Items.Add(item);
-                    BarCodeItems.Insert(0, item);
-                    item.IsInserting = true;
-                    //BarCodeItems.Remove(item);
-                    // 获取新行的DataGridRow
-                });
+            await Application.Current.Dispatcher.InvokeAsync(() => {
+                //BarCodeItems.Add(item);
+                BarCodeItems.Insert(0, item);
+                item.IsInserting = true;
             });
         }
     }

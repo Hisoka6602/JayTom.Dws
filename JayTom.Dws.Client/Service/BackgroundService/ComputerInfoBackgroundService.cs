@@ -27,7 +27,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             var counter = new PerformanceCounter("System", "System Up Time");
             var systemInfo = _computer.GetSystemInfo();
             var systemInfoString = $"{systemInfo.OsVersion}-{systemInfo.SystemType}";
-
             while (!stoppingToken.IsCancellationRequested) {
                 await Task.Run(async () => {
                     // 并行获取各项信息

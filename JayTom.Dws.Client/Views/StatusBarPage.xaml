@@ -71,10 +71,10 @@
                         <Grid ClipToBounds="True">
                             <ContentPresenter />
                             <Popup
-                                x:Name="ExceptionPopup"
+                                IsOpen="{TemplateBinding IsMouseOver}"
                                 Placement="Top"
-                                PopupAnimation="Scroll"
-                                StaysOpen="False">
+                                StaysOpen="False"
+                                Style="{StaticResource LazyUpdatePopupStyle}">
                                 <!--  在这里定义 Popup 的内容  -->
                                 <Grid
                                     Width="250"
@@ -93,7 +93,7 @@
                                         BorderThickness="0"
                                         Foreground="White"
                                         ItemTemplate="{StaticResource ExceptionItemTemplate}"
-                                        ItemsSource="{Binding ExceptionItems, UpdateSourceTrigger=PropertyChanged}"
+                                        ItemsSource="{Binding ExceptionItems, UpdateSourceTrigger=PropertyChanged, IsAsync=True}"
                                         Style="{StaticResource CustomListBoxStyle}" />
                                     <!--  清除按钮  -->
                                     <Button
@@ -142,14 +142,6 @@
                                 </Grid>
                             </Popup>
                         </Grid>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="ExceptionPopup" Property="IsOpen" Value="True" />
-                            </Trigger>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="ExceptionPopup" Property="IsOpen" Value="True" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Button.Template>
             </Button>
@@ -192,10 +184,10 @@
                         <Grid ClipToBounds="True">
                             <ContentPresenter />
                             <Popup
-                                x:Name="ExceptionPopup"
+                                IsOpen="{TemplateBinding IsMouseOver}"
                                 Placement="Top"
-                                PopupAnimation="Scroll"
-                                StaysOpen="False">
+                                StaysOpen="False"
+                                Style="{StaticResource LazyUpdatePopupStyle}">
                                 <!--  在这里定义 Popup 的内容  -->
                                 <Grid
                                     Width="250"
@@ -210,7 +202,7 @@
                                         BorderThickness="0"
                                         Foreground="White"
                                         ItemTemplate="{StaticResource CameraStatusBarTemplate}"
-                                        ItemsSource="{Binding CameraItems, UpdateSourceTrigger=PropertyChanged}"
+                                        ItemsSource="{Binding CameraItems, UpdateSourceTrigger=PropertyChanged, IsAsync=True}"
                                         Style="{StaticResource CustomListBoxStyle}" />
                                     <!--  空数据底图  -->
                                     <Border
@@ -239,14 +231,6 @@
                                 </Grid>
                             </Popup>
                         </Grid>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="ExceptionPopup" Property="IsOpen" Value="True" />
-                            </Trigger>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="ExceptionPopup" Property="IsOpen" Value="True" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Button.Template>
             </Button>
@@ -289,10 +273,10 @@
                         <Grid ClipToBounds="True">
                             <ContentPresenter />
                             <Popup
-                                x:Name="ExceptionPopup"
+                                IsOpen="{TemplateBinding IsMouseOver}"
                                 Placement="Top"
-                                PopupAnimation="Scroll"
-                                StaysOpen="False">
+                                StaysOpen="False"
+                                Style="{StaticResource LazyUpdatePopupStyle}">
                                 <!--  在这里定义 Popup 的内容  -->
                                 <Grid
                                     Width="250"
@@ -307,7 +291,7 @@
                                         BorderThickness="0"
                                         Foreground="White"
                                         ItemTemplate="{StaticResource SerialPortTemplate}"
-                                        ItemsSource="{Binding SerialPortItems, UpdateSourceTrigger=PropertyChanged}"
+                                        ItemsSource="{Binding SerialPortItems, UpdateSourceTrigger=PropertyChanged, IsAsync=True}"
                                         Style="{StaticResource CustomListBoxStyle}" />
                                     <!--  空数据底图  -->
                                     <Border
@@ -336,14 +320,6 @@
                                 </Grid>
                             </Popup>
                         </Grid>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="ExceptionPopup" Property="IsOpen" Value="True" />
-                            </Trigger>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="ExceptionPopup" Property="IsOpen" Value="True" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Button.Template>
             </Button>
@@ -390,6 +366,7 @@
                 Padding="0"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
+                Cursor=""
                 Focusable="False"
                 Style="{StaticResource MaterialDesignFlatButton}">
                 <StackPanel Orientation="Horizontal">

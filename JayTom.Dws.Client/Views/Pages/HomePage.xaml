@@ -406,184 +406,275 @@
                         <RowDefinition Height="130" />
                     </Grid.RowDefinitions>
                     <!--  数据列表  -->
-                    <Border Grid.Row="0">
-                        <DataGrid
-                            Name="BarCodeDataGrid"
-                            Margin="20,10,20,0"
-                            Padding="10,0"
-                            materialDesign:DataGridAssist.CellPadding="4 2 2 2"
-                            materialDesign:DataGridAssist.ColumnHeaderPadding="4 2 2 2"
-                            AlternatingRowBackground="#101E90FF"
-                            AutoGenerateColumns="False"
-                            Background="Transparent"
-                            CanUserAddRows="False"
-                            CanUserResizeColumns="True"
-                            CanUserSortColumns="False"
-                            CellStyle="{StaticResource CustomDataGridTextCellStyle}"
-                            ColumnHeaderStyle="{StaticResource CustomDataGridTextColumnStyle}"
-                            EnableColumnVirtualization="True"
-                            EnableRowVirtualization="True"
-                            FontFamily="{StaticResource CustomFontFamily}"
-                            Foreground="White"
-                            FrozenColumnCount="2"
-                            GridLinesVisibility="None"
-                            HorizontalScrollBarVisibility="Auto"
-                            IsSelected="False"
-                            ItemsSource="{Binding BarCodeItems, UpdateSourceTrigger=PropertyChanged}"
-                            RowBackground="#061E90FF"
-                            ScrollViewer.CanContentScroll="False"
-                            VirtualizingStackPanel.IsVirtualizing="True"
-                            VirtualizingStackPanel.VirtualizationMode="Recycling">
-                            <DataGrid.RowStyle>
-                                <Style BasedOn="{StaticResource MaterialDesignDataGridRow}" TargetType="DataGridRow">
-                                    <Setter Property="Height" Value="30" />
-                                    <Setter Property="RenderTransform">
-                                        <Setter.Value>
-                                            <TranslateTransform X="0" />
-                                        </Setter.Value>
-                                    </Setter>
-                                    <Setter Property="Opacity" Value="1" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsInserting}" Value="True">
-                                            <DataTrigger.EnterActions>
-                                                <BeginStoryboard>
-                                                    <Storyboard>
-                                                        <DoubleAnimation
-                                                            Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
-                                                            From="-300"
-                                                            To="0"
-                                                            Duration="0:0:0.5" />
-                                                        <DoubleAnimation
-                                                            Storyboard.TargetProperty="(UIElement.Opacity)"
-                                                            From="0"
-                                                            To="1"
-                                                            Duration="0:0:0.8" />
-                                                    </Storyboard>
-                                                </BeginStoryboard>
-                                            </DataTrigger.EnterActions>
-                                        </DataTrigger>
+                    <ListView
+                        Grid.Row="0"
+                        Width="860"
+                        Height="480"
+                        Margin="20,10,20,0"
+                        Padding="10,0"
+                        Focusable="False"
+                        ItemsSource="{Binding BarCodeItems, UpdateSourceTrigger=PropertyChanged, IsAsync=True}"
+                        ScrollViewer.IsDeferredScrollingEnabled="True"
+                        ScrollViewer.PanningMode="VerticalOnly"
+                        SelectionMode="Extended">
+                        <ListView.View>
+                            <GridView ColumnHeaderContainerStyle="{StaticResource ModernGridViewColumnHeaderStyle}">
+                                <!--  这里定义每列的标题和绑定的数据  -->
+                                <GridViewColumn Width="45" Header="No.">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Style="{StaticResource CustomGridViewTextBlockCellStyle}" Text="{Binding Num}" />
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                                <GridViewColumn Width="150" Header="条码">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock
+                                                Width="150"
+                                                MinWidth="150"
+                                                Style="{StaticResource CustomGridViewTextBlockCellStyle}"
+                                                Text="{Binding Barcode}" />
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                                <GridViewColumn Width="60" Header="重量">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock
+                                                Width="60"
+                                                MinWidth="60"
+                                                Style="{StaticResource CustomGridViewTextBlockCellStyle}"
+                                                Text="{Binding Weight}" />
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                                <GridViewColumn Width="60" Header="长(mm)">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock
+                                                Width="60"
+                                                MinWidth="60"
+                                                Style="{StaticResource CustomGridViewTextBlockCellStyle}"
+                                                Text="{Binding Length}" />
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
 
-                                        <DataTrigger Binding="{Binding IsRemoving}" Value="True">
-                                            <DataTrigger.EnterActions>
-                                                <BeginStoryboard>
-                                                    <Storyboard>
-                                                        <DoubleAnimation
-                                                            Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
-                                                            From="0"
-                                                            To="100"
-                                                            Duration="0:0:0.5" />
-                                                        <DoubleAnimation
-                                                            Storyboard.TargetProperty="(UIElement.Opacity)"
-                                                            From="1"
-                                                            To="0"
-                                                            Duration="0:0:0.5" />
-                                                    </Storyboard>
-                                                </BeginStoryboard>
-                                            </DataTrigger.EnterActions>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </DataGrid.RowStyle>
-                            <DataGrid.Columns>
-                                <!--  序号  -->
-                                <DataGridTextColumn
-                                    Width="Auto"
-                                    MinWidth="45"
-                                    Binding="{Binding Num, UpdateSourceTrigger=PropertyChanged}"
-                                    IsReadOnly="True">
-                                    <DataGridTextColumn.Header>
-                                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="No." />
-                                    </DataGridTextColumn.Header>
-                                </DataGridTextColumn>
-                                <!--  条码  -->
-                                <DataGridTextColumn
-                                    Width="Auto"
-                                    MinWidth="160"
-                                    Binding="{Binding Barcode, UpdateSourceTrigger=PropertyChanged}"
-                                    IsReadOnly="True">
-                                    <DataGridTextColumn.Header>
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="条码" />
-                                        </StackPanel>
-                                    </DataGridTextColumn.Header>
-                                    <DataGridTextColumn.ElementStyle>
-                                        <Style TargetType="{x:Type TextBlock}">
-                                            <Setter Property="ToolTipService.ToolTip" Value="{Binding Barcode}" />
-                                        </Style>
-                                    </DataGridTextColumn.ElementStyle>
-                                </DataGridTextColumn>
-                                <!--  重量  -->
-                                <DataGridTextColumn
-                                    Width="Auto"
-                                    MinWidth="40"
-                                    Binding="{Binding Weight, UpdateSourceTrigger=PropertyChanged}"
-                                    EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
-                                    <DataGridTextColumn.Header>
-                                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="重量" />
-                                    </DataGridTextColumn.Header>
-                                </DataGridTextColumn>
-                                <!--  长  -->
-                                <DataGridTextColumn
-                                    Width="Auto"
-                                    MinWidth="40"
-                                    Binding="{Binding Length, UpdateSourceTrigger=PropertyChanged}"
-                                    EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
-                                    <DataGridTextColumn.Header>
-                                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="长(mm)" />
-                                    </DataGridTextColumn.Header>
-                                </DataGridTextColumn>
-                                <!--  宽  -->
-                                <DataGridTextColumn
-                                    Width="Auto"
-                                    MinWidth="40"
-                                    Binding="{Binding Width, UpdateSourceTrigger=PropertyChanged}"
-                                    EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
-                                    <DataGridTextColumn.Header>
-                                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="宽(mm)" />
-                                    </DataGridTextColumn.Header>
-                                </DataGridTextColumn>
-                                <!--  高  -->
-                                <DataGridTextColumn
-                                    Width="Auto"
-                                    MinWidth="40"
-                                    Binding="{Binding Height, UpdateSourceTrigger=PropertyChanged}"
-                                    EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
-                                    <DataGridTextColumn.Header>
-                                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="高(mm)" />
-                                    </DataGridTextColumn.Header>
-                                </DataGridTextColumn>
-                                <!--  体积  -->
-                                <DataGridTextColumn
-                                    Width="Auto"
-                                    MinWidth="40"
-                                    Binding="{Binding Volume, UpdateSourceTrigger=PropertyChanged}"
-                                    EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
-                                    <DataGridTextColumn.Header>
-                                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="体积(mm²)" />
-                                    </DataGridTextColumn.Header>
-                                </DataGridTextColumn>
-                                <!--  扫描时间  -->
-                                <DataGridTextColumn
-                                    Width="Auto"
-                                    MinWidth="120"
-                                    Binding="{Binding ScanTime, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:yyyy-MM-dd HH:mm:ss}}"
-                                    EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
-                                    <DataGridTextColumn.Header>
-                                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="扫描时间" />
-                                    </DataGridTextColumn.Header>
-                                </DataGridTextColumn>
-                                <!--  上传状态  -->
-                                <DataGridTemplateColumn
-                                    Width="Auto"
-                                    MinWidth="40"
-                                    CellTemplate="{StaticResource UploadStatusTemplate}">
-                                    <DataGridTemplateColumn.Header>
-                                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="上传状态" />
-                                    </DataGridTemplateColumn.Header>
-                                </DataGridTemplateColumn>
-                            </DataGrid.Columns>
-                        </DataGrid>
-                    </Border>
+                                <GridViewColumn Width="60" Header="宽(mm)">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock
+                                                Width="60"
+                                                MinWidth="60"
+                                                Style="{StaticResource CustomGridViewTextBlockCellStyle}"
+                                                Text="{Binding Width}" />
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                                <GridViewColumn Width="60" Header="高(mm)">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock
+                                                Width="60"
+                                                MinWidth="60"
+                                                Style="{StaticResource CustomGridViewTextBlockCellStyle}"
+                                                Text="{Binding Height}" />
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                                <GridViewColumn Width="90" Header="体积(mm²)">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock
+                                                Width="90"
+                                                MinWidth="90"
+                                                Style="{StaticResource CustomGridViewTextBlockCellStyle}"
+                                                Text="{Binding Volume}" />
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                                <GridViewColumn Width="Auto" Header="扫描时间">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock
+                                                Width="130"
+                                                MinWidth="130"
+                                                Style="{StaticResource CustomGridViewTextBlockCellStyle}"
+                                                Text="{Binding ScanTime, StringFormat={}{0:yyyy-MM-dd HH:mm:ss}}" />
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                                <GridViewColumn
+                                    Width="100"
+                                    DisplayMemberBinding="{Binding Weight}"
+                                    Header="上传状态" />
+                                <!--  ... 可以添加更多列  -->
+                            </GridView>
+                        </ListView.View>
+                    </ListView>
+                    <!--<DataGrid
+                        Name="BarCodeDataGrid"
+                        Grid.Row="0"
+                        Width="860"
+                        Height="480"
+                        Margin="20,10,20,0"
+                        Padding="10,0"
+                        CellStyle="{StaticResource CustomDataGridTextCellStyle}"
+                        ColumnHeaderStyle="{StaticResource CustomDataGridTextColumnStyle}"
+                        ItemsSource="{Binding BarCodeItems, UpdateSourceTrigger=PropertyChanged, IsAsync=True}"
+                        ScrollViewer.IsDeferredScrollingEnabled="True"
+                        ScrollViewer.PanningMode="VerticalOnly"
+                        Style="{StaticResource VirtualizingDataGridStyle}">
+                        <DataGrid.RowStyle>
+                            <Style BasedOn="{StaticResource MaterialDesignDataGridRow}" TargetType="DataGridRow">
+                                <Setter Property="Height" Value="30" />
+                                <Setter Property="RenderTransform">
+                                    <Setter.Value>
+                                        <TranslateTransform X="0" />
+                                    </Setter.Value>
+                                </Setter>
+                                <Setter Property="Opacity" Value="1" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsInserting}" Value="True">
+                                        <DataTrigger.EnterActions>
+                                            <BeginStoryboard>
+                                                <Storyboard>
+                                                    <DoubleAnimation
+                                                        Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
+                                                        From="-300"
+                                                        To="0"
+                                                        Duration="0:0:0.5" />
+                                                    <DoubleAnimation
+                                                        Storyboard.TargetProperty="(UIElement.Opacity)"
+                                                        From="0"
+                                                        To="1"
+                                                        Duration="0:0:0.8" />
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </DataTrigger.EnterActions>
+                                    </DataTrigger>
+
+                                    <DataTrigger Binding="{Binding IsRemoving}" Value="True">
+                                        <DataTrigger.EnterActions>
+                                            <BeginStoryboard>
+                                                <Storyboard>
+                                                    <DoubleAnimation
+                                                        Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
+                                                        From="0"
+                                                        To="100"
+                                                        Duration="0:0:0.5" />
+                                                    <DoubleAnimation
+                                                        Storyboard.TargetProperty="(UIElement.Opacity)"
+                                                        From="1"
+                                                        To="0"
+                                                        Duration="0:0:0.5" />
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </DataTrigger.EnterActions>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </DataGrid.RowStyle>
+                        <DataGrid.Columns>
+                            ~1~  序号  @1@
+                            <DataGridTextColumn
+                                Width="Auto"
+                                MinWidth="45"
+                                Binding="{Binding Num}"
+                                IsReadOnly="True">
+                                <DataGridTextColumn.Header>
+                                    <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="No." />
+                                </DataGridTextColumn.Header>
+                            </DataGridTextColumn>
+                            ~1~  条码  @1@
+                            <DataGridTextColumn
+                                Width="Auto"
+                                MinWidth="160"
+                                Binding="{Binding Barcode}"
+                                IsReadOnly="True">
+                                <DataGridTextColumn.Header>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="条码" />
+                                    </StackPanel>
+                                </DataGridTextColumn.Header>
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="{x:Type TextBlock}">
+                                        <Setter Property="ToolTipService.ToolTip" Value="{Binding Barcode}" />
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            ~1~  重量  @1@
+                            <DataGridTextColumn
+                                Width="Auto"
+                                MinWidth="40"
+                                Binding="{Binding Weight, UpdateSourceTrigger=PropertyChanged}"
+                                EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
+                                <DataGridTextColumn.Header>
+                                    <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="重量" />
+                                </DataGridTextColumn.Header>
+                            </DataGridTextColumn>
+                            ~1~  长  @1@
+                            <DataGridTextColumn
+                                Width="Auto"
+                                MinWidth="40"
+                                Binding="{Binding Length}"
+                                EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
+                                <DataGridTextColumn.Header>
+                                    <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="长(mm)" />
+                                </DataGridTextColumn.Header>
+                            </DataGridTextColumn>
+                            ~1~  宽  @1@
+                            <DataGridTextColumn
+                                Width="Auto"
+                                MinWidth="40"
+                                Binding="{Binding Width}"
+                                EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
+                                <DataGridTextColumn.Header>
+                                    <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="宽(mm)" />
+                                </DataGridTextColumn.Header>
+                            </DataGridTextColumn>
+                            ~1~  高  @1@
+                            <DataGridTextColumn
+                                Width="Auto"
+                                MinWidth="40"
+                                Binding="{Binding Height}"
+                                EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
+                                <DataGridTextColumn.Header>
+                                    <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="高(mm)" />
+                                </DataGridTextColumn.Header>
+                            </DataGridTextColumn>
+                            ~1~  体积  @1@
+                            <DataGridTextColumn
+                                Width="Auto"
+                                MinWidth="40"
+                                Binding="{Binding Volume, UpdateSourceTrigger=PropertyChanged}"
+                                EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
+                                <DataGridTextColumn.Header>
+                                    <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="体积(mm²)" />
+                                </DataGridTextColumn.Header>
+                            </DataGridTextColumn>
+                            ~1~  扫描时间  @1@
+                            <DataGridTextColumn
+                                Width="Auto"
+                                MinWidth="120"
+                                Binding="{Binding ScanTime, StringFormat={}{0:yyyy-MM-dd HH:mm:ss}}"
+                                EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
+                                <DataGridTextColumn.Header>
+                                    <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="扫描时间" />
+                                </DataGridTextColumn.Header>
+                            </DataGridTextColumn>
+                            ~1~  上传状态  @1@
+                            <DataGridTemplateColumn
+                                Width="Auto"
+                                MinWidth="40"
+                                CellTemplate="{StaticResource UploadStatusTemplate}">
+                                <DataGridTemplateColumn.Header>
+                                    <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="上传状态" />
+                                </DataGridTemplateColumn.Header>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>-->
                     <!--  统计  -->
                     <Border Grid.Row="1">
                         <StackPanel Orientation="Horizontal">

@@ -24,6 +24,7 @@
             Foreground="Transparent"
             Style="{StaticResource MaterialDesignFlatButton}">
             <Grid
+                Width="100"
                 MinWidth="100"
                 HorizontalAlignment="Left"
                 VerticalAlignment="Center">

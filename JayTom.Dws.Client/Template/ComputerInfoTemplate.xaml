@@ -23,10 +23,10 @@
         <Grid ClipToBounds="True">
             <ContentPresenter />
             <Popup
-                x:Name="ItemPopup"
-                Placement="Bottom"
-                PopupAnimation="Scroll"
-                StaysOpen="False">
+                IsOpen="{TemplateBinding IsMouseOver}"
+                Placement="Top"
+                StaysOpen="False"
+                Style="{StaticResource LazyUpdatePopupStyle}">
                 <Grid
                     Width="550"
                     Height="Auto"
@@ -57,7 +57,7 @@
                         FontWeight="Bold"
                         Foreground="DimGray"
                         IsEnabled="False"
-                        Text="{Binding ComputerInfo.SystemInfoString, UpdateSourceTrigger=PropertyChanged}"
+                        Text="{Binding ComputerInfo.SystemInfoString, UpdateSourceTrigger=PropertyChanged, IsAsync=True}"
                         TextAlignment="Center" />
 
                     <!--  Cpu  -->
@@ -85,7 +85,7 @@
                                 FontWeight="Bold"
                                 Foreground="DimGray"
                                 IsEnabled="False"
-                                Text="{Binding ComputerInfo.CpuInfo.Name}"
+                                Text="{Binding ComputerInfo.CpuInfo.Name, IsAsync=True}"
                                 TextAlignment="Center"
                                 TextTrimming="WordEllipsis" />
                         </StackPanel>
@@ -131,7 +131,7 @@
                                     IsEnabled="False"
                                     TextAlignment="Center"
                                     TextTrimming="WordEllipsis">
-                                    <Run Text="Cpu使用率:" /><Run Text="{Binding ComputerInfo.CpuInfo.UsagePercentage, StringFormat={}{0:F1}, UpdateSourceTrigger=PropertyChanged}" /><Run Text="%" />
+                                    <Run Text="Cpu使用率:" /><Run Text="{Binding ComputerInfo.CpuInfo.UsagePercentage, StringFormat={}{0:F1}, UpdateSourceTrigger=PropertyChanged, IsAsync=True}" /><Run Text="%" />
                                 </TextBlock>
                                 <!--  标记  -->
                                 <TextBlock
@@ -175,7 +175,7 @@
                                     IsEnabled="False"
                                     TextAlignment="Left"
                                     TextTrimming="WordEllipsis">
-                                    <Run Text="Cpu速度:" /><Run Text="{Binding ComputerInfo.CpuInfo.ClockSpeed, StringFormat={}{0:F2}}" /><Run FontSize="13" Text=" GHz" />
+                                    <Run Text="Cpu速度:" /><Run Text="{Binding ComputerInfo.CpuInfo.ClockSpeed, StringFormat={}{0:F2}, IsAsync=True}" /><Run FontSize="13" Text=" GHz" />
                                 </TextBlock>
                             </Grid>
                             <!--  Cpu温度  -->
@@ -211,7 +211,7 @@
                                     IsEnabled="False"
                                     TextAlignment="Center"
                                     TextTrimming="WordEllipsis">
-                                    <Run Text="Cpu温度:" /><Run Text="{Binding ComputerInfo.CpuInfo.CpuTemperature, StringFormat={}{0:F1}}" /><Run Text="°" />
+                                    <Run Text="Cpu温度:" /><Run Text="{Binding ComputerInfo.CpuInfo.CpuTemperature, StringFormat={}{0:F1}, IsAsync=True}" /><Run Text="°" />
                                 </TextBlock>
                                 <!--  标记  -->
                                 <TextBlock
@@ -255,7 +255,7 @@
                                     IsEnabled="False"
                                     TextAlignment="Justify"
                                     TextTrimming="WordEllipsis">
-                                    <Run Text="Cpu风扇转速:" /><Run Text="{Binding ComputerInfo.CpuInfo.FanSpeed, StringFormat={}{0:F2}}" /><Run FontSize="13" Text=" RPM" />
+                                    <Run Text="Cpu风扇转速:" /><Run Text="{Binding ComputerInfo.CpuInfo.FanSpeed, StringFormat={}{0:F2}, IsAsync=True}" /><Run FontSize="13" Text=" RPM" />
                                 </TextBlock>
                             </Grid>
                         </Grid>
@@ -337,7 +337,7 @@
                                     IsEnabled="False"
                                     TextAlignment="Center"
                                     TextTrimming="WordEllipsis">
-                                    <Run Text="内存使用率:" /><Run Text="{Binding ComputerInfo.MemoryInfo.UsedPercentage, StringFormat={}{0:F1}}" /><Run Text="%" />
+                                    <Run Text="内存使用率:" /><Run Text="{Binding ComputerInfo.MemoryInfo.UsedPercentage, StringFormat={}{0:F1}, IsAsync=True}" /><Run Text="%" />
                                 </TextBlock>
                                 <!--  标记  -->
                                 <TextBlock
@@ -381,7 +381,7 @@
                                     IsEnabled="False"
                                     TextAlignment="Left"
                                     TextTrimming="WordEllipsis">
-                                    <Run Text="总内存:" /><Run Text="{Binding ComputerInfo.MemoryInfo.TotalSizeBytes, StringFormat={}{0:F2}, Converter={StaticResource ByteSizeConverter}}" /> <Run FontSize="13" Text="{Binding ComputerInfo.MemoryInfo.TotalSizeBytes, Converter={StaticResource ByteSizeUnitConverter}}" />
+                                    <Run Text="总内存:" /><Run Text="{Binding ComputerInfo.MemoryInfo.TotalSizeBytes, StringFormat={}{0:F2}, Converter={StaticResource ByteSizeConverter}, IsAsync=True}" /> <Run FontSize="13" Text="{Binding ComputerInfo.MemoryInfo.TotalSizeBytes, Converter={StaticResource ByteSizeUnitConverter}, IsAsync=True}" />
                                 </TextBlock>
                             </Grid>
                             <!--  可用内存大小  -->
@@ -416,7 +416,7 @@
                                     IsEnabled="False"
                                     TextAlignment="Center"
                                     TextTrimming="WordEllipsis">
-                                    <Run Text="可用内存:" /><Run Text="{Binding ComputerInfo.MemoryInfo.AvailableSizeBytes, Converter={StaticResource ByteSizeConverter}, StringFormat={}{0:F1}}" /> <Run FontSize="13" Text="{Binding ComputerInfo.MemoryInfo.AvailableSizeBytes, Converter={StaticResource ByteSizeUnitConverter}}" />
+                                    <Run Text="可用内存:" /><Run Text="{Binding ComputerInfo.MemoryInfo.AvailableSizeBytes, Converter={StaticResource ByteSizeConverter}, StringFormat={}{0:F1}, IsAsync=True}" /> <Run FontSize="13" Text="{Binding ComputerInfo.MemoryInfo.AvailableSizeBytes, Converter={StaticResource ByteSizeUnitConverter}, IsAsync=True}" />
                                 </TextBlock>
                             </Grid>
                             <!--  内存类型  -->
@@ -452,7 +452,7 @@
                                     IsEnabled="False"
                                     TextAlignment="Justify"
                                     TextTrimming="WordEllipsis">
-                                    <Run Text="内存类型:" /><Run Text="{Binding ComputerInfo.MemoryInfo.MemoryType}" />
+                                    <Run Text="内存类型:" /><Run Text="{Binding ComputerInfo.MemoryInfo.MemoryType, IsAsync=True}" />
                                 </TextBlock>
                             </Grid>
                         </Grid>
@@ -488,7 +488,7 @@
                                 FontWeight="Bold"
                                 Foreground="DimGray"
                                 IsEnabled="False"
-                                Text="{Binding ComputerInfo.GpuInfo.Name, UpdateSourceTrigger=PropertyChanged}"
+                                Text="{Binding ComputerInfo.GpuInfo.Name, UpdateSourceTrigger=PropertyChanged, IsAsync=True}"
                                 TextAlignment="Center"
                                 TextTrimming="WordEllipsis" />
                         </StackPanel>
@@ -528,7 +528,7 @@
                                     IsEnabled="False"
                                     TextAlignment="Center"
                                     TextTrimming="WordEllipsis">
-                                    <Run Text="Gpu使用率:" /><Run Text="{Binding ComputerInfo.GpuInfo.UsagePercentage, StringFormat={}{0:F1}}" /><Run Text="%" />
+                                    <Run Text="Gpu使用率:" /><Run Text="{Binding ComputerInfo.GpuInfo.UsagePercentage, StringFormat={}{0:F1}, IsAsync=True}" /><Run Text="%" />
                                 </TextBlock>
                                 <!--  标记  -->
                                 <TextBlock
@@ -664,13 +664,5 @@
                 </Grid>
             </Popup>
         </Grid>
-        <ControlTemplate.Triggers>
-            <Trigger Property="IsPressed" Value="True">
-                <Setter TargetName="ItemPopup" Property="IsOpen" Value="True" />
-            </Trigger>
-            <Trigger Property="IsMouseOver" Value="True">
-                <Setter TargetName="ItemPopup" Property="IsOpen" Value="True" />
-            </Trigger>
-        </ControlTemplate.Triggers>
     </ControlTemplate>
 </ResourceDictionary>

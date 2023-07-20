@@ -154,8 +154,16 @@
                 <ResourceDictionary Source="Styles/DataGridTextColumnTitleStyle.xaml" />
                 <!--  列表只读样式  -->
                 <ResourceDictionary Source="Styles/DataGridReadOnlyTextBlockStyle.xaml" />
+                <!--  GridView头样式  -->
+                <ResourceDictionary Source="Styles/ModernGridViewColumnHeaderStyle.xaml" />
+                <!--  GridView单元格样式  -->
+                <ResourceDictionary Source="Styles/CustomGridViewTextBlockCellStyle.xaml" />
+
                 <!--  自定义进度条样式  -->
                 <ResourceDictionary Source="Styles/CustomProgressBarStyle.xaml" />
+                <!--  下拉框按需更新样式  -->
+                <ResourceDictionary Source="Styles/LazyUpdatePopupStyle.xaml" />
+
                 <!--  模板  -->
                 <!--  语言选择模板  -->
                 <ResourceDictionary Source="Template/LanguageComboBoxTemplate.xaml" />
@@ -181,6 +189,8 @@
                 <ResourceDictionary Source="Template/ComputerInfoTemplate.xaml" />
                 <!--  上传状态模板  -->
                 <ResourceDictionary Source="Template/UploadStatusTemplate.xaml" />
+                <!--  列表模板  -->
+                <ResourceDictionary Source="/Styles/VirtualizingDataGridStyle.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </prism:PrismApplication.Resources>
