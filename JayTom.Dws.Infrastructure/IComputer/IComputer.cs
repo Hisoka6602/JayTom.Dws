@@ -375,5 +375,43 @@ namespace JayTom.Dws.Infrastructure.IComputer {
         /// 速度
         /// </summary>
         public long Speed { get; set; }
+
+        /// <summary>
+        /// 网络类型
+        /// </summary>
+        public NetworkType Type { get; set; }
+    }
+
+    public enum NetworkType {
+
+        /// <summary>
+        /// 以太网
+        /// </summary>
+        Ethernet,
+
+        /// <summary>
+        /// 蓝牙
+        /// </summary>
+        Bluetooth,
+
+        /// <summary>
+        /// Wifi
+        /// </summary>
+        Wifi,
+
+        /// <summary>
+        /// 隧道
+        /// </summary>
+        Tunnel,
+
+        /// <summary>
+        /// 移动连接
+        /// </summary>
+        Wman,
+
+        /// <summary>
+        /// 未知
+        /// </summary>
+        Unknown
     }
 }

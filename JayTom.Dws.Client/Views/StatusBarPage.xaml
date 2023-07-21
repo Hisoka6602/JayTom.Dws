@@ -412,7 +412,6 @@
                         VerticalAlignment="Center"
                         FontFamily="{StaticResource IconFontFamily}"
                         FontSize="20"
-                        FontWeight="Bold"
                         Foreground="DimGray"
                         Text="&#xe660;" />
                     <TextBlock
@@ -449,7 +448,6 @@
                         VerticalAlignment="Center"
                         FontFamily="{StaticResource IconFontFamily}"
                         FontSize="20"
-                        FontWeight="Bold"
                         Foreground="DimGray"
                         Text="&#xe60f;" />
                     <TextBlock

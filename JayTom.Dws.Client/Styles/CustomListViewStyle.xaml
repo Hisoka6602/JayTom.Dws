@@ -1,0 +1,67 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Style
+        x:Key="CustomListViewItemStyle"
+        BasedOn="{StaticResource MaterialDesignGridViewItem}"
+        TargetType="ListViewItem">
+        <Setter Property="Height" Value="Auto" />
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="IsSelected" Value="False" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="White" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <!--  去掉焦点框  -->
+        <Setter Property="FocusVisualStyle">
+            <Setter.Value>
+                <Style TargetType="Control">
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="Control">
+                                <Rectangle Visibility="Collapsed" />
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <Trigger Property="IsSelected" Value="True">
+                <Setter Property="Background" Value="Transparent" />
+            </Trigger>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="BorderBrush" Value="Transparent" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+    <Style
+        x:Key="CustomListViewStyle"
+        BasedOn="{StaticResource MaterialDesignListView}"
+        TargetType="ListView">
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="ItemContainerStyle" Value="{StaticResource CustomListViewItemStyle}" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="FontFamily" Value="{StaticResource CustomFontFamily}" />
+        <Setter Property="Foreground" Value="White" />
+        <Setter Property="IsSelected" Value="False" />
+        <Setter Property="ScrollViewer.CanContentScroll" Value="True" />
+        <Setter Property="ScrollViewer.IsDeferredScrollingEnabled" Value="True" />
+        <Setter Property="VirtualizingPanel.CacheLength" Value="5,5" />
+        <Setter Property="VirtualizingPanel.CacheLengthUnit" Value="Item" />
+        <Setter Property="VirtualizingPanel.IsVirtualizingWhenGrouping" Value="True" />
+        <Setter Property="VirtualizingPanel.ScrollUnit" Value="Pixel" />
+        <Setter Property="VirtualizingPanel.VirtualizationMode" Value="Recycling" />
+        <Setter Property="VirtualizingStackPanel.IsVirtualizing" Value="True" />
+        <Setter Property="VirtualizingPanel.IsContainerVirtualizable" Value="True" />
+        <!--<Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
+            </Trigger>
+            <Trigger Property="IsMouseOver" Value="False">
+                <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Hidden" />
+            </Trigger>
+        </Style.Triggers>-->
+    </Style>
+</ResourceDictionary>

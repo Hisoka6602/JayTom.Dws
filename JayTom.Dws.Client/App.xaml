@@ -158,6 +158,10 @@
                 <ResourceDictionary Source="Styles/ModernGridViewColumnHeaderStyle.xaml" />
                 <!--  GridView单元格样式  -->
                 <ResourceDictionary Source="Styles/CustomGridViewTextBlockCellStyle.xaml" />
+                <!--  GridView自定义样式  -->
+                <ResourceDictionary Source="Styles/CustomListViewStyle.xaml" />
+                <!--  主页统计计数样式  -->
+                <ResourceDictionary Source="Styles/ItemCountBlockStyle.xaml" />
 
                 <!--  自定义进度条样式  -->
                 <ResourceDictionary Source="Styles/CustomProgressBarStyle.xaml" />

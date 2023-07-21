@@ -23,6 +23,20 @@
     <Page.Resources>
         <converters:CameraListBoxWidthConverter x:Key="CameraListBoxWidthConverter" />
         <converters:EllipseCenterConverter x:Key="EllipseCenterConverter" />
+        <Storyboard x:Key="ItemCountStoryboard">
+            <DoubleAnimation
+                AutoReverse="True"
+                Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                From="1"
+                To="1.5"
+                Duration="0:0:0.3" />
+            <DoubleAnimation
+                AutoReverse="True"
+                Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                From="1"
+                To="1.5"
+                Duration="0:0:0.3" />
+        </Storyboard>
     </Page.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
@@ -414,9 +428,41 @@
                         Padding="10,0"
                         Focusable="False"
                         ItemsSource="{Binding BarCodeItems, UpdateSourceTrigger=PropertyChanged, IsAsync=True}"
+                        RenderTransformOrigin=".5,.5"
                         ScrollViewer.IsDeferredScrollingEnabled="True"
                         ScrollViewer.PanningMode="VerticalOnly"
-                        SelectionMode="Extended">
+                        SelectionMode="Extended"
+                        Style="{StaticResource CustomListViewStyle}">
+                        <ListView.ItemContainerStyle>
+                            <Style BasedOn="{StaticResource CustomListViewItemStyle}" TargetType="ListViewItem">
+                                <Setter Property="RenderTransform">
+                                    <Setter.Value>
+                                        <TranslateTransform X="0" />
+                                    </Setter.Value>
+                                </Setter>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsInserting}" Value="True">
+                                        <DataTrigger.EnterActions>
+                                            <BeginStoryboard>
+                                                <Storyboard>
+                                                    <DoubleAnimation
+                                                        Storyboard.TargetProperty="Opacity"
+                                                        From="0"
+                                                        To="1"
+                                                        Duration="0:0:0.5" />
+                                                    <DoubleAnimation
+                                                        Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
+                                                        From="-600"
+                                                        To="0"
+                                                        Duration="0:0:0.5" />
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </DataTrigger.EnterActions>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ListView.ItemContainerStyle>
+
                         <ListView.View>
                             <GridView ColumnHeaderContainerStyle="{StaticResource ModernGridViewColumnHeaderStyle}">
                                 <!--  这里定义每列的标题和绑定的数据  -->
@@ -438,7 +484,7 @@
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
-                                <GridViewColumn Width="60" Header="重量">
+                                <GridViewColumn Width="60" Header="重量(kg)">
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBlock
@@ -505,10 +551,60 @@
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
-                                <GridViewColumn
-                                    Width="100"
-                                    DisplayMemberBinding="{Binding Weight}"
-                                    Header="上传状态" />
+                                <GridViewColumn Width="Auto" Header="上传状态">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button
+                                                Height="20"
+                                                Padding="0"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"
+                                                Command="{Binding ElementName=HomePageView, Path=DataContext.UploadStatusCommand}"
+                                                CommandParameter="{Binding}"
+                                                Focusable="False"
+                                                Foreground="Transparent"
+                                                Style="{StaticResource MaterialDesignFlatButton}">
+                                                <Grid
+                                                    Width="100"
+                                                    MinWidth="40"
+                                                    Margin="0"
+                                                    HorizontalAlignment="Center"
+                                                    VerticalAlignment="Center">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="30" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <!--  图标  -->
+                                                    <TextBlock
+                                                        Grid.Column="0"
+                                                        HorizontalAlignment="Center"
+                                                        VerticalAlignment="Center"
+                                                        FontFamily="{StaticResource IconFontFamily}"
+                                                        FontSize="18"
+                                                        Foreground="{Binding RequestStatus, Converter={StaticResource UploadStatusConverter}, ConverterParameter=Background}"
+                                                        Text="{Binding RequestStatus, Converter={StaticResource UploadStatusConverter}, ConverterParameter=FontText}" />
+                                                    <!--  文字  -->
+                                                    <TextBlock
+                                                        Grid.Column="1"
+                                                        Margin="10,0"
+                                                        HorizontalAlignment="Center"
+                                                        VerticalAlignment="Center"
+                                                        FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                                                        FontSize="13"
+                                                        FontWeight="Light"
+                                                        Foreground="White"
+                                                        IsEnabled="False"
+                                                        TextAlignment="Justify"
+                                                        TextTrimming="WordEllipsis">
+                                                        <Run Text="{Binding RequestStatus, Converter={StaticResource UploadStatusConverter}, ConverterParameter=Text}" />
+                                                    </TextBlock>
+                                                </Grid>
+
+                                                <!--  点击后弹出对应的信息框  -->
+                                            </Button>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
                                 <!--  ... 可以添加更多列  -->
                             </GridView>
                         </ListView.View>
@@ -714,15 +810,17 @@
                                             Text="扫描数量"
                                             TextAlignment="Center" />
                                     </StackPanel>
-                                    <TextBlock
-                                        HorizontalAlignment="Center"
-                                        VerticalAlignment="Center"
-                                        FontFamily="{StaticResource CustomFontFamily}"
-                                        FontSize="30"
-                                        FontWeight="Bold"
-                                        Foreground="White"
-                                        Text="1000000"
-                                        TextAlignment="Center" />
+                                    <TextBlock Text="{Binding TotalDataCount, UpdateSourceTrigger=PropertyChanged, NotifyOnTargetUpdated=True}">
+                                        <TextBlock.Style>
+                                            <Style BasedOn="{StaticResource ItemCountBlockStyle}" TargetType="TextBlock">
+                                                <Style.Triggers>
+                                                    <EventTrigger RoutedEvent="Binding.TargetUpdated">
+                                                        <BeginStoryboard Storyboard="{StaticResource ItemCountStoryboard}" />
+                                                    </EventTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
                                 </StackPanel>
                             </Button>
                             <!--  上传  -->
@@ -771,15 +869,17 @@
                                             Text="上传数量"
                                             TextAlignment="Center" />
                                     </StackPanel>
-                                    <TextBlock
-                                        HorizontalAlignment="Center"
-                                        VerticalAlignment="Center"
-                                        FontFamily="{StaticResource CustomFontFamily}"
-                                        FontSize="30"
-                                        FontWeight="Bold"
-                                        Foreground="White"
-                                        Text="1000000"
-                                        TextAlignment="Center" />
+                                    <TextBlock Text="{Binding UploadedDataCount, UpdateSourceTrigger=PropertyChanged, NotifyOnTargetUpdated=True}">
+                                        <TextBlock.Style>
+                                            <Style BasedOn="{StaticResource ItemCountBlockStyle}" TargetType="TextBlock">
+                                                <Style.Triggers>
+                                                    <EventTrigger RoutedEvent="Binding.TargetUpdated">
+                                                        <BeginStoryboard Storyboard="{StaticResource ItemCountStoryboard}" />
+                                                    </EventTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
                                 </StackPanel>
                             </Button>
                             <!--  异常  -->
@@ -828,15 +928,17 @@
                                             Text="异常数量"
                                             TextAlignment="Center" />
                                     </StackPanel>
-                                    <TextBlock
-                                        HorizontalAlignment="Center"
-                                        VerticalAlignment="Center"
-                                        FontFamily="{StaticResource CustomFontFamily}"
-                                        FontSize="30"
-                                        FontWeight="Bold"
-                                        Foreground="White"
-                                        Text="10000"
-                                        TextAlignment="Center" />
+                                    <TextBlock Text="{Binding AbnormalDataCount, UpdateSourceTrigger=PropertyChanged, NotifyOnTargetUpdated=True}">
+                                        <TextBlock.Style>
+                                            <Style BasedOn="{StaticResource ItemCountBlockStyle}" TargetType="TextBlock">
+                                                <Style.Triggers>
+                                                    <EventTrigger RoutedEvent="Binding.TargetUpdated">
+                                                        <BeginStoryboard Storyboard="{StaticResource ItemCountStoryboard}" />
+                                                    </EventTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
                                 </StackPanel>
                             </Button>
                         </StackPanel>

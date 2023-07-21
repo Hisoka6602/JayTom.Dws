@@ -5,6 +5,7 @@
     xmlns:models="clr-namespace:JayTom.Dws.Client.Models">
     <converters:ByteSizeConverter x:Key="ByteSizeConverter" />
     <converters:ByteSizeUnitConverter x:Key="ByteSizeUnitConverter" />
+    <converters:NetworkTypeFontConverter x:Key="NetworkTypeFontConverter" />
     <DataTemplate x:Key="NetworkTemplate" DataType="{x:Type models:LocalNetworkConnectionInfoModel}">
         <DataTemplate.Resources>
             <FontFamily x:Key="CustomFontFamily">
@@ -30,7 +31,7 @@
                 FontFamily="{StaticResource IconFontFamily}"
                 FontSize="25"
                 Foreground="DimGray"
-                Text="&#xe631;" />
+                Text="{Binding Type, Converter={StaticResource NetworkTypeFontConverter}}" />
             <!--  名称  -->
             <TextBlock
                 Grid.Column="1"

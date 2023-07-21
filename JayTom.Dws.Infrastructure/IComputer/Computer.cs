@@ -13,6 +13,7 @@ using System.Runtime.InteropServices;
 using System.Diagnostics.Eventing.Reader;
 
 namespace JayTom.Dws.Infrastructure.IComputer {
+
     public class Computer : IComputer {
         private static LibreHardwareMonitor.Hardware.Computer? _computer = null;
 
@@ -597,6 +598,26 @@ namespace JayTom.Dws.Infrastructure.IComputer {
                             DownloadSpeed = downloadSpeed / 1024,
                             UploadSpeed = uploadSpeed / 1024,
                             Speed = interfaces[i].Speed,
+                            Type = interfaces[i].NetworkInterfaceType switch {
+                                NetworkInterfaceType.Wireless80211 => NetworkType.Wifi,
+                                var ethernetTypes when new[]
+                                {
+                                    NetworkInterfaceType.Ethernet,
+                                    NetworkInterfaceType.Ethernet3Megabit,
+                                    NetworkInterfaceType.FastEthernetT,
+                                    NetworkInterfaceType.FastEthernetFx,
+                                    NetworkInterfaceType.GigabitEthernet
+                                }.Contains(ethernetTypes) => NetworkType.Ethernet,
+                                NetworkInterfaceType.Tunnel => NetworkType.Tunnel,
+                                var wmanTypes when new[]
+                                {
+                                    NetworkInterfaceType.Wman,
+                                    NetworkInterfaceType.Wwanpp,
+                                    NetworkInterfaceType.Wwanpp2
+                                }.Contains(wmanTypes) => NetworkType.Wman,
+
+                                _ => NetworkType.Unknown
+                            }
                         });
                     }
                 }

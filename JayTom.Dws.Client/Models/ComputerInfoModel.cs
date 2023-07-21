@@ -471,6 +471,7 @@ namespace JayTom.Dws.Client.Models {
         private long _downloadSpeed;
         private long _speed;
         private bool _isConnection;
+        private NetworkType _type = NetworkType.Unknown;
 
         public bool IsConnection {
             get => _isConnection;
@@ -508,5 +509,46 @@ namespace JayTom.Dws.Client.Models {
             get => _speed;
             set => SetProperty(ref _speed, value);
         }
+
+        /// <summary>
+        /// 网络类型
+        /// </summary>
+        public NetworkType Type {
+            get => _type;
+            set => SetProperty(ref _type, value);
+        }
+    }
+
+    public enum NetworkType {
+
+        /// <summary>
+        /// 以太网
+        /// </summary>
+        Ethernet,
+
+        /// <summary>
+        /// 蓝牙
+        /// </summary>
+        Bluetooth,
+
+        /// <summary>
+        /// Wifi
+        /// </summary>
+        Wifi,
+
+        /// <summary>
+        /// 隧道
+        /// </summary>
+        Tunnel,
+
+        /// <summary>
+        /// 移动连接
+        /// </summary>
+        Wman,
+
+        /// <summary>
+        /// 未知
+        /// </summary>
+        Unknown
     }
 }

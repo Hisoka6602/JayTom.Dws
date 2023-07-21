@@ -1,0 +1,26 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <FontFamily x:Key="CustomFontFamily">
+        pack://application:,,,/Fonts/#更纱黑体 Mono SC Nerd
+    </FontFamily>
+    <FontFamily x:Key="IconFontFamily">
+        pack://application:,,,/Fonts/#iconfont
+    </FontFamily>
+    <Style
+        x:Key="ItemCountBlockStyle"
+        BasedOn="{StaticResource MaterialDesignTextBlock}"
+        TargetType="TextBlock">
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="FontFamily" Value="{StaticResource CustomFontFamily}" />
+        <Setter Property="FontSize" Value="30" />
+        <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="Foreground" Value="White" />
+        <Setter Property="TextAlignment" Value="Center" />
+        <Setter Property="RenderTransformOrigin" Value="0.5,0.5" />
+        <Setter Property="RenderTransform">
+            <Setter.Value>
+                <ScaleTransform CenterX="0.5" CenterY="0.5" ScaleX="1" ScaleY="1" />
+            </Setter.Value>
+        </Setter>
+    </Style>
+</ResourceDictionary>

@@ -8,6 +8,7 @@ using JayTom.Dws.Client.Models;
 using System.Collections.Generic;
 using Microsoft.Extensions.Configuration;
 using JayTom.Dws.Infrastructure.IComputer;
+using NetworkType = JayTom.Dws.Client.Models.NetworkType;
 
 namespace JayTom.Dws.Client.Service.BackgroundService {
 
@@ -87,7 +88,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 DownloadSpeed = s.DownloadSpeed,
                                 UploadSpeed = s.UploadSpeed,
                                 Speed = s.Speed / 1000,
-                                IsConnection = s.IsConnection
+                                IsConnection = s.IsConnection,
+                                Type = (NetworkType)s.Type
                             })?.ToList() ?? new List<LocalNetworkConnectionInfoModel>(),
                         UpTime = TimeSpan.FromSeconds(counter.NextValue()),
                         SystemInfoString = systemInfoString

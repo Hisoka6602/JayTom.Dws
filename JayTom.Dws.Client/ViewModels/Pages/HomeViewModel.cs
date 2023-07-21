@@ -24,6 +24,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         private ObservableCollection<CameraItemInfoModel> _cameraItems = new();
         private ObservableCollection<BarCodeItemModel> _barCodeItems = new();
         private DataGrid? _dataGrid = null;
+        private int _totalDataCount;
+        private int _uploadedDataCount;
+        private int _abnormalDataCount;
 
         public ObservableCollection<CameraItemInfoModel> CameraItems {
             get => _cameraItems;
@@ -33,6 +36,30 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         public ObservableCollection<BarCodeItemModel> BarCodeItems {
             get => _barCodeItems;
             set => SetProperty(ref _barCodeItems, value);
+        }
+
+        /// <summary>
+        /// 总数
+        /// </summary>
+        public int TotalDataCount {
+            get => _totalDataCount;
+            set => SetProperty(ref _totalDataCount, value);
+        }
+
+        /// <summary>
+        /// 上传数量
+        /// </summary>
+        public int UploadedDataCount {
+            get => _uploadedDataCount;
+            set => SetProperty(ref _uploadedDataCount, value);
+        }
+
+        /// <summary>
+        /// 异常数量
+        /// </summary>
+        public int AbnormalDataCount {
+            get => _abnormalDataCount;
+            set => SetProperty(ref _abnormalDataCount, value);
         }
 
         public HomeViewModel(IDialogService dialogService, IComputerInfoReporter computerInfoReporter) {
@@ -418,6 +445,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             };
             _computerInfoReporter.ComputerInfoReceived += delegate (object? sender, ComputerInfoModel model) {
                 AddNewRow(new BarCodeItemModel() {
+                    Num = BarCodeItems.Count + 1,
                     Barcode = new Random().Next(100000000, 999999999).ToString()
                 });
             };
@@ -495,9 +523,16 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         /// </summary>
         private async void AddNewRow(BarCodeItemModel item) {
             await Application.Current.Dispatcher.InvokeAsync(() => {
-                //BarCodeItems.Add(item);
                 BarCodeItems.Insert(0, item);
                 item.IsInserting = true;
+                TotalDataCount += 1;
+                if (item.RequestStatus == UploadStatus.Succeeded) {
+                    UploadedDataCount += 1;
+                }
+
+                if (item.RequestStatus == UploadStatus.Failed) {
+                    AbnormalDataCount += 1;
+                }
             });
         }
     }
