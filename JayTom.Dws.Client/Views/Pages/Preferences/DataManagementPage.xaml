@@ -5,6 +5,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="clr-namespace:JayTom.Dws.Client.Views.Pages.Preferences"
+    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:mvvm="http://prismlibrary.com/"
     Title="DataManagementPage"
@@ -13,15 +14,201 @@
     mvvm:ViewModelLocator.AutoWireViewModel="True"
     FontFamily="{StaticResource CustomFontFamily}"
     mc:Ignorable="d">
+    <!--  外层-loading  -->
+    <materialDesign:DialogHost
+        Background="Transparent"
+        DialogBackground="Transparent"
+        DialogMargin="5"
+        FocusVisualStyle="{x:Null}"
+        Focusable="False"
+        Identifier="DataManagementDialog"
+        Style="{StaticResource MaterialDesignEmbeddedDialogHost}">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="40" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="70" />
+            </Grid.RowDefinitions>
+            <!--  工具栏  -->
+            <Border Grid.Row="0">
+                <!--  开始时间  -->
+                <!--  结束时间  -->
+                <!--  时间戳Guid  -->
+                <!--  条码  -->
+                <!--  重量范围  -->
+                <!--  上传状态  -->
+                <!--  搜索按钮  -->
+                <!--  清理按钮  -->
+            </Border>
+            <!--  列表  -->
+            <DataGrid Grid.Row="1" Style="{StaticResource VirtualizingDataGridStyle}" />
 
-    <Grid>
-        <TextBlock
-            HorizontalAlignment="Center"
-            VerticalAlignment="Center"
-            FontSize="30"
-            FontWeight="Bold"
-            Foreground="White">
-            DataManagementPage
-        </TextBlock>
-    </Grid>
+            <!--  翻页控件  -->
+            <Border
+                Grid.Row="2"
+                MinWidth="200"
+                MinHeight="40"
+                Margin="0,0,0,10"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Background="#2A808080"
+                CornerRadius="20">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="40" />
+                        <ColumnDefinition Width="40" />
+                        <ColumnDefinition Width="*" MinWidth="50" />
+                        <ColumnDefinition Width="40" />
+                        <ColumnDefinition Width="40" />
+                    </Grid.ColumnDefinitions>
+                    <!--  首页  -->
+                    <Button
+                        Grid.Column="0"
+                        Height="40"
+                        Margin="0"
+                        Padding="0"
+                        materialDesign:ButtonAssist.CornerRadius="20,0,0,20"
+                        materialDesign:ShadowAssist.ShadowEdges="Right"
+                        Background="#1A696969"
+                        Command="{Binding FirstPageCommand}"
+                        Style="{StaticResource ButtonFocusEnlargeStyle}"
+                        ToolTip="FirstPage">
+                        <TextBlock
+                            Margin="2"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontFamily="pack://application:,,,/Fonts/#IconFont"
+                            FontSize="20"
+                            FontWeight="UltraLight"
+                            Foreground="White"
+                            RenderTransformOrigin=".5,.5"
+                            Text="&#xe68c;">
+                            <TextBlock.RenderTransform>
+                                <RotateTransform Angle="180" />
+                            </TextBlock.RenderTransform>
+                        </TextBlock>
+                    </Button>
+                    <!--  上一页  -->
+                    <Button
+                        Grid.Column="1"
+                        Height="40"
+                        Margin="0"
+                        Padding="0"
+                        materialDesign:ButtonAssist.CornerRadius="0"
+                        materialDesign:ShadowAssist.ShadowEdges="Right"
+                        Background="#1A696969"
+                        Command="{Binding PreviousPageCommand}"
+                        Style="{StaticResource ButtonFocusEnlargeStyle}"
+                        ToolTip="PreviousPage">
+                        <TextBlock
+                            Margin="2"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontFamily="pack://application:,,,/Fonts/#IconFont"
+                            FontSize="20"
+                            FontWeight="UltraLight"
+                            Foreground="White"
+                            RenderTransformOrigin=".5,.5"
+                            Text="&#xe7a5;" />
+                    </Button>
+                    <!--  页码  -->
+                    <StackPanel
+                        Grid.Column="2"
+                        Margin="10,0"
+                        HorizontalAlignment="Stretch"
+                        Orientation="Horizontal">
+                        <TextBox
+                            MinWidth="20"
+                            VerticalAlignment="Center"
+                            materialDesign:HintAssist.Foreground="DimGray"
+                            materialDesign:HintAssist.HintOpacity="0.4"
+                            BorderThickness="0"
+                            FontSize="12"
+                            FontWeight="Bold"
+                            Foreground="White"
+                            Text="{Binding PageIndex, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                            <TextBox.InputBindings>
+                                <KeyBinding Key="Enter" Command="{Binding JumpPageCommand}" />
+                            </TextBox.InputBindings>
+                        </TextBox>
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontWeight="Bold"
+                            Foreground="White">
+                            <Run Text="/" /><Run Text="{Binding PageCount, UpdateSourceTrigger=PropertyChanged}" />
+                        </TextBlock>
+                    </StackPanel>
+                    <!--  下一页  -->
+                    <Button
+                        Grid.Column="3"
+                        Height="40"
+                        Margin="0"
+                        Padding="0"
+                        materialDesign:ButtonAssist.CornerRadius="0"
+                        materialDesign:ShadowAssist.ShadowEdges="Right"
+                        Background="#1A696969"
+                        Command="{Binding NextPageCommand}"
+                        Style="{StaticResource ButtonFocusEnlargeStyle}"
+                        ToolTip="NextPage">
+                        <TextBlock
+                            Margin="2"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontFamily="pack://application:,,,/Fonts/#IconFont"
+                            FontSize="20"
+                            FontWeight="UltraLight"
+                            Foreground="White"
+                            RenderTransformOrigin=".5,.5"
+                            Text="&#xe798;" />
+                    </Button>
+                    <!--  尾页  -->
+                    <Button
+                        Grid.Column="4"
+                        Height="40"
+                        Margin="0"
+                        Padding="0"
+                        materialDesign:ButtonAssist.CornerRadius="0,20,20,0"
+                        materialDesign:ShadowAssist.ShadowEdges="Right"
+                        Background="#1A696969"
+                        Command="{Binding LastPageCommand}"
+                        Style="{StaticResource ButtonFocusEnlargeStyle}"
+                        ToolTip="LastPage">
+                        <TextBlock
+                            Margin="2"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontFamily="pack://application:,,,/Fonts/#IconFont"
+                            FontSize="20"
+                            FontWeight="UltraLight"
+                            Foreground="White"
+                            RenderTransformOrigin=".5,.5"
+                            Text="&#xe68c;" />
+                    </Button>
+                </Grid>
+            </Border>
+            <!--  提示框  -->
+            <materialDesign:Snackbar
+                Grid.Row="1"
+                Grid.RowSpan="2"
+                Width="Auto"
+                Height="Auto"
+                VerticalAlignment="Bottom"
+                Background="BlueViolet"
+                FontFamily="LoadFiraCode"
+                FontWeight="Bold"
+                MessageQueue="{Binding MainMessageQueue}" />
+            <!--  翻页工具  -->
+            <TextBlock
+                Grid.Row="1"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                FontSize="30"
+                FontWeight="Bold"
+                Foreground="White">
+                DataManagementPage
+            </TextBlock>
+        </Grid>
+    </materialDesign:DialogHost>
+
 </Page>

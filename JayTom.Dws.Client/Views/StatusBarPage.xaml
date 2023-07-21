@@ -361,14 +361,12 @@
                 </StackPanel>
             </Button>
             <!--  Cpu  -->
-            <Button
+            <Border
                 Margin="2,0"
                 Padding="0"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
-                Cursor=""
-                Focusable="False"
-                Style="{StaticResource MaterialDesignFlatButton}">
+                Focusable="False">
                 <StackPanel Orientation="Horizontal">
 
                     <TextBlock
@@ -396,15 +394,14 @@
                         Foreground="{Binding ComputerInfo.CpuInfo.UsagePercentage, Converter={StaticResource CpuUsageColorConverter}}"
                         Text="&#xe7a6;" />
                 </StackPanel>
-            </Button>
+            </Border>
             <!--  温度  -->
-            <Button
+            <Border
                 Margin="2,0"
                 Padding="0"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
-                Focusable="False"
-                Style="{StaticResource MaterialDesignFlatButton}">
+                Focusable="False">
                 <StackPanel Orientation="Horizontal">
 
                     <TextBlock
@@ -432,15 +429,14 @@
                         Foreground="{Binding ComputerInfo.CpuInfo.CpuTemperature, Converter={StaticResource CpuTemperatureColorConverter}}"
                         Text="&#xe7a6;" />
                 </StackPanel>
-            </Button>
+            </Border>
             <!--  内存  -->
-            <Button
+            <Border
                 Margin="2,0"
                 Padding="0"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
-                Focusable="False"
-                Style="{StaticResource MaterialDesignFlatButton}">
+                Focusable="False">
                 <StackPanel Orientation="Horizontal">
 
                     <TextBlock
@@ -468,7 +464,7 @@
                         Foreground="{Binding ComputerInfo.MemoryInfo.UsedPercentage, Converter={StaticResource MemoryUsedPercentageColorConverter}}"
                         Text="&#xe7a6;" />
                 </StackPanel>
-            </Button>
+            </Border>
         </StackPanel>
         <!--  运行时间  -->
         <StackPanel
