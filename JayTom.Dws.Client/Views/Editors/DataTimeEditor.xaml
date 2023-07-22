@@ -1,0 +1,86 @@
+﻿<UserControl
+    x:Class="JayTom.Dws.Client.Views.Editors.DataTimeEditor"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:mvvm="http://prismlibrary.com/"
+    d:DesignHeight="450"
+    d:DesignWidth="648"
+    mvvm:ViewModelLocator.AutoWireViewModel="True"
+    FontFamily="{StaticResource CustomFontFamily}"
+    mc:Ignorable="d">
+    <!--  CornerRadius="20"  -->
+    <Border Background="WhiteSmoke">
+        <Grid Margin="-1">
+            <!--<Grid.Clip>
+                <RectangleGeometry
+                    RadiusX="20"
+                    RadiusY="20"
+                    Rect="0,0,648,700" />
+            </Grid.Clip>-->
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <StackPanel Grid.Row="0" Orientation="Horizontal">
+                <!--  Language="zh-cn"  -->
+                <Calendar
+                    MinWidth="249"
+                    Margin="-1,-4,-1,0"
+                    materialDesign:CalendarAssist.SelectionForegroundColor="BlueViolet"
+                    Focusable="False"
+                    SelectedDate="{Binding SelectedDate, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                    SelectionMode="SingleDate">
+                    <!--
+                        Foreground="DodgerBlue"
+                        materialDesign:CalendarAssist.HeaderBackground="DodgerBlue"
+                        materialDesign:CalendarAssist.SelectionColor="DodgerBlue"
+
+                        materialDesign:CalendarAssist.SelectionForegroundColor="DodgerBlue"
+                    -->
+                </Calendar>
+                <materialDesign:Clock
+                    Margin="-1,-4,-1,0"
+                    Background="{x:Null}"
+                    DisplayAutomation="CycleWithSeconds"
+                    FocusVisualStyle="{x:Null}"
+                    Focusable="False"
+                    Is24Hours="True"
+                    Time="{Binding SelectedTime, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                    <!--  没有颜色可设置,只能设置主题  -->
+                </materialDesign:Clock>
+            </StackPanel>
+
+            <StackPanel
+                Grid.Row="1"
+                Margin="8"
+                HorizontalAlignment="Right"
+                Background="{x:Null}"
+                Orientation="Horizontal">
+                <Button
+                    Command="{Binding TodayCommand}"
+                    CommandParameter="2"
+                    Foreground="DimGray"
+                    Style="{DynamicResource MaterialDesignFlatButton}">
+                    Today
+                </Button>
+                <Button
+                    Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}"
+                    CommandParameter="0"
+                    Foreground="DimGray"
+                    Style="{DynamicResource MaterialDesignFlatButton}">
+                    Cancel
+                </Button>
+                <Button
+                    Command="{Binding OkCommand}"
+                    CommandParameter="1"
+                    Foreground="DimGray"
+                    Style="{DynamicResource MaterialDesignFlatButton}">
+                    Ok
+                </Button>
+            </StackPanel>
+        </Grid>
+    </Border>
+</UserControl>

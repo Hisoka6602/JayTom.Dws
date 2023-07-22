@@ -21,9 +21,11 @@ using Microsoft.Extensions.Hosting;
 using JayTom.Dws.Client.Views.Pages;
 using Microsoft.EntityFrameworkCore;
 using JayTom.Dws.Client.Views.Dialog;
+using JayTom.Dws.Client.Views.Editors;
 using JayTom.Dws.Client.ViewModels.Pages;
 using JayTom.Dws.Infrastructure.IComputer;
 using JayTom.Dws.Client.ViewModels.Dialog;
+using JayTom.Dws.Client.ViewModels.Editors;
 using Microsoft.Extensions.DependencyInjection;
 using JayTom.Dws.Client.Views.Pages.Preferences;
 using JayTom.Dws.Client.Service.BackgroundService;
@@ -128,12 +130,16 @@ namespace JayTom.Dws.Client {
         protected override void ConfigureViewModelLocator() {
             base.ConfigureViewModelLocator();
             //绑定页面
+            ViewModelLocationProvider.Register<LoadingDialog, LoadingDialogViewModel>();
+            ViewModelLocationProvider.Register<DataTimeEditor, DataTimeEditorViewModel>();
             ViewModelLocationProvider.Register<MainWindow, MainWindowViewModel>();
             ViewModelLocationProvider.Register<SettingsPage, SettingsViewModel>();
             ViewModelLocationProvider.Register<PluginMarketplacePage, PluginMarketplaceViewModel>();
             ViewModelLocationProvider.Register<HomePage, HomeViewModel>();
             ViewModelLocationProvider.Register<StatusBarPage, StatusBarViewModel>();
             ViewModelLocationProvider.Register<ApiAccessDialog, ApiAccessViewModel>();
+            ViewModelLocationProvider.Register<DataManagementPage, DataManagementViewModel>();
+            //DataManagementViewModel
         }
     }
 }

@@ -188,7 +188,7 @@
 
   <ItemGroup>
     <Reference Include="GWCamera">
-      <HintPath>C:\Users\77051\Desktop\BarcodeSdk_ZKWZ(1)\BarcodeSdk_ZKWZ\C#\Samples\BarcodeSdk_Program\BarcodeSdk_Program\bin\Debug\GWCamera.dll</HintPath>
+      <HintPath>C:\Users\77051\Desktop\BarcodeSdk_ZKWZ(1)\BarcodeSdk_ZKWZ\C#\lib\GWCamera.dll</HintPath>
     </Reference>
     <Reference Include="LogisticsBaseCSharp">
       <HintPath>C:\Users\77051\Desktop\DWS_Demo_C#2\bin\Release\x64\LogisticsBaseCSharp.dll</HintPath>

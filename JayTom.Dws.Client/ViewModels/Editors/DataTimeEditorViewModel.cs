@@ -4,7 +4,7 @@ using Prism.Commands;
 using System.Windows.Input;
 using MaterialDesignThemes.Wpf;
 
-namespace JayTom.Dws.TemporaryClient.ViewModels.Editors {
+namespace JayTom.Dws.Client.ViewModels.Editors {
     public class DataTimeEditorViewModel : BindableBase {
         private DateTime? _selectedDate = DateTime.Now;
         private DateTime? _selectedTime = DateTime.Now;

@@ -26,7 +26,6 @@ using JayTom.Dws.TemporaryClient.ViewModels.Editors;
 using JayTom.Dws.Infrastructure.Repository.LocalData;
 
 namespace JayTom.Dws.TemporaryClient.ViewModels {
-
     public class MainWindowViewModel : BindableBase {
         private readonly IRegionManager _regionManager;
         private readonly IExcel _excel;
