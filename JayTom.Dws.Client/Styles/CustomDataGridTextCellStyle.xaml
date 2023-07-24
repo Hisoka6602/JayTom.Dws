@@ -14,11 +14,13 @@
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="Focusable" Value="False" />
-        <!--<Style.Triggers>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="IsSelected" Value="False" />
+        <Style.Triggers>
             <Trigger Property="IsSelected" Value="True">
                 <Setter Property="Background" Value="{StaticResource SelectedBackgroundBrush}" />
                 <Setter Property="Foreground" Value="{StaticResource SelectedForegroundBrush}" />
             </Trigger>
-        </Style.Triggers>-->
+        </Style.Triggers>
     </Style>
 </ResourceDictionary>

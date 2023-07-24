@@ -6,5 +6,6 @@
         <Setter Property="FontSize" Value="13" />
         <Setter Property="FontWeight" Value="Bold" />
         <Setter Property="Foreground" Value="White" />
+        <Setter Property="TextAlignment" Value="Center" />
     </Style>
 </ResourceDictionary>

@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
+using Newtonsoft.Json.Linq;
 using System.Windows.Shapes;
 using System.Threading.Tasks;
 using System.Windows.Interop;
@@ -71,22 +72,24 @@ namespace WpfApp1 {
                 }#1#
             };*/
             _camera = new WayzimSmartCamera();
-            _camera.Connected += delegate (object? o, IDevice device) {
-                Application.Current.Dispatcher.Invoke(() => { CodeInfoListView.Items.Add("设备已连接"); });
+            _camera.Connected += async delegate (object? o, IDevice device) {
+                await Application.Current.Dispatcher.InvokeAsync(() => { CodeInfoListView.Items.Add("设备已连接"); });
             };
-            _camera.Excepted += delegate (object? o, Exception exception) {
-                Application.Current.Dispatcher.Invoke(() => { CodeInfoListView.Items.Add(exception.Message); });
+            _camera.Excepted += async delegate (object? o, Exception exception) {
+                await Application.Current.Dispatcher.InvokeAsync(() => { CodeInfoListView.Items.Add(exception.Message); });
             };
-            _camera.BarcodeHitEvent += delegate (object? o, BarcodeHitEventArgs args) {
-                Application.Current.Dispatcher.Invoke(() => { CodeInfoListView.Items.Add($"扫到条码:{args.Barcode}"); });
-                if (args?.Image is not null) {
-                    CameraImage.Source = Imaging.CreateBitmapSourceFromHBitmap(
-                        args.Image.GetHbitmap(),
-                        IntPtr.Zero,
-                        System.Windows.Int32Rect.Empty,
-                        BitmapSizeOptions.FromWidthAndHeight(args.Image.Width, args.Image.Height)
-                    );
-                }
+            _camera.BarcodeHitEvent += async delegate (object? o, BarcodeHitEventArgs args) {
+                await Application.Current.Dispatcher.InvokeAsync(() => {
+                    CodeInfoListView.Items.Add($"扫到条码:{args.Barcode},相机:{args.CameraId}");
+                    if (args?.Image is not null) {
+                        CameraImage.Source = Imaging.CreateBitmapSourceFromHBitmap(
+                            args.Image.GetHbitmap(),
+                            IntPtr.Zero,
+                            System.Windows.Int32Rect.Empty,
+                            BitmapSizeOptions.FromWidthAndHeight(args.Image.Width, args.Image.Height)
+                        );
+                    }
+                });
             };
             /*_camera.DeviceWarning += delegate (object? o, string s) {
                 Application.Current.Dispatcher.Invoke(() => { CodeInfoListView.Items.Add($"警告:{s}"); });
@@ -96,7 +99,7 @@ namespace WpfApp1 {
         private async void InitializationButton_OnClick(object sender, RoutedEventArgs e) {
             //var (_, value) = await _smartCamera?.Initialization()!;
             var (_, value) = await _camera?.Initialization()!;
-            Application.Current.Dispatcher.Invoke(() => { CodeInfoListView.Items.Add(value); });
+            Application.Current.Dispatcher.Invoke(() => { CodeInfoListView.Items.Add(value == string.Empty ? "初始化成功" : value); });
         }
 
         private async void ConnectButton_OnClick(object sender, RoutedEventArgs e) {
@@ -106,6 +109,7 @@ namespace WpfApp1 {
 
         private void DisposeButton_OnClick(object sender, RoutedEventArgs e) {
             _camera?.Dispose();
+            Application.Current.Dispatcher.Invoke(() => { CodeInfoListView.Items.Add("断开"); });
         }
     }
 }

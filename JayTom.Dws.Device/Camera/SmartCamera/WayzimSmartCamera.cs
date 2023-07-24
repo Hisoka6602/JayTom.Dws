@@ -90,10 +90,19 @@ namespace JayTom.Dws.Device.Camera.SmartCamera {
         private void InstanceOnGetGwReadCodeResultModelEvent(GW_ReadCodeResultModel obj) {
             if (obj.Barcode?.Any() == true) {
                 for (var i = 0; i < obj.Barcode.Length; i++) {
+                    Bitmap? bitmap = null;
+
+                    var cameraName = obj.CameraNames[i];
+                    var imageData = obj.ImageList?.Where(w => w.CameraName.Equals(cameraName) && w.ImageData.Length > 0)
+                        ?.FirstOrDefault()?.ImageData;
+                    if (imageData != null) {
+                        bitmap = (Bitmap?)Image.FromStream(new MemoryStream(imageData));
+                    }
                     OnBarcodeHitEvent(new BarcodeHitEventArgs() {
-                        Barcode = obj.Barcode[i],
+                        Barcode = obj.Barcode[i] ?? string.Empty,
                         ScanTime = DateTime.Now,
-                        Image = (Bitmap?)Image.FromStream(new MemoryStream(obj.ImageList[i].ImageData))
+                        Image = bitmap,
+                        CameraId = $"{cameraName ?? string.Empty}"
                     });
                 }
             }

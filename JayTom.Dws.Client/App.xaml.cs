@@ -86,45 +86,46 @@ namespace JayTom.Dws.Client {
                 //异常触发
             };
             base.OnStartup(e);
-            // 启用硬件加速
-            RenderOptions.ProcessRenderMode = RenderMode.Default;
 
             // 创建主机并注册后台服务
+            Task.Run(() => {
+                // 启用硬件加速
+                RenderOptions.ProcessRenderMode = RenderMode.Default;
+                var container = Container.GetContainer();
+                _host = Host.CreateDefaultBuilder()
+                    .ConfigureServices((hostContext, services) => {
+                        services.AddHttpClient("INSURANCE", httpClient => {
+                            // httpClient.Timeout = TimeSpan.FromSeconds(10);
+                        }).ConfigurePrimaryHttpMessageHandler(() => {
+                            var handler = new HttpClientHandler() {
+                                UseDefaultCredentials = true,
+                                MaxConnectionsPerServer = 1000,
+                                ServerCertificateCustomValidationCallback = (m, c, ch, _) => true,
+                                //UseProxy = false
+                            };
 
-            var container = Container.GetContainer();
-            _host = Host.CreateDefaultBuilder()
-                .ConfigureServices((hostContext, services) => {
-                    services.AddHttpClient("INSURANCE", httpClient => {
-                        // httpClient.Timeout = TimeSpan.FromSeconds(10);
-                    }).ConfigurePrimaryHttpMessageHandler(() => {
-                        var handler = new HttpClientHandler() {
-                            UseDefaultCredentials = true,
-                            MaxConnectionsPerServer = 1000,
-                            ServerCertificateCustomValidationCallback = (m, c, ch, _) => true,
-                            //UseProxy = false
-                        };
+                            return handler;
+                        });
 
-                        return handler;
-                    });
-
-                    /*services.AddSingleton<IDataUploader, WeciMexicoDvApi>();
-                    services.AddSingleton<ITcpCommunication, TcpCommunication>();
-                    services.AddSingleton(container.Resolve<IBarcodeScannerService>());*/
-                    //电脑
-                    services.AddSingleton(container.Resolve<IComputer>());
-                    services.AddSingleton(container.Resolve<IComputerInfoReporter>());
-                    services.AddHostedService<ComputerInfoBackgroundService>(); // 注册后台服务
-                })
-                .Build();
-            _host.Start();
+                        /*services.AddSingleton<IDataUploader, WeciMexicoDvApi>();
+                        services.AddSingleton<ITcpCommunication, TcpCommunication>();
+                        services.AddSingleton(container.Resolve<IBarcodeScannerService>());*/
+                        //电脑
+                        services.AddSingleton(container.Resolve<IComputer>());
+                        services.AddSingleton(container.Resolve<IComputerInfoReporter>());
+                        services.AddHostedService<ComputerInfoBackgroundService>(); // 注册后台服务
+                    })
+                    .Build();
+                _host.Start();
+            });
         }
 
         protected override async void OnExit(ExitEventArgs e) {
-            base.OnExit(e);
             if (_host is not null) {
                 await _host.StopAsync();
                 _host.Dispose();
             }
+            base.OnExit(e);
         }
 
         protected override void ConfigureViewModelLocator() {

@@ -9,7 +9,9 @@
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:mvvm="http://prismlibrary.com/"
+    Name="DataManagementPageView"
     Title="DataManagementPage"
+    MaxWidth="1640"
     d:DesignHeight="450"
     d:DesignWidth="800"
     mvvm:ViewModelLocator.AutoWireViewModel="True"
@@ -330,7 +332,7 @@
                             Background="#1A696969"
                             Command="{Binding FirstPageCommand}"
                             Style="{StaticResource ButtonFocusEnlargeStyle}"
-                            ToolTip="FirstPage">
+                            ToolTip="清空条件">
                             <TextBlock
                                 Margin="2"
                                 HorizontalAlignment="Center"
@@ -355,15 +357,16 @@
                             Opacity="0.3" />
                         <!--  搜索按钮  -->
                         <Button
-                            Width="50"
+                            Width="40"
                             Height="40"
                             Margin="0"
                             Padding="0"
-                            materialDesign:ButtonAssist.CornerRadius="0,20,20,0"
+                            materialDesign:ButtonAssist.CornerRadius="0"
                             materialDesign:ShadowAssist.ShadowEdges="Right"
                             Background="#1A696969"
-                            Command="{Binding LastPageCommand}"
-                            Style="{StaticResource ButtonFocusEnlargeStyle}">
+                            Command="{Binding NextPageCommand}"
+                            Style="{StaticResource ButtonFocusEnlargeStyle}"
+                            ToolTip="查找">
                             <TextBlock
                                 Margin="2"
                                 HorizontalAlignment="Center"
@@ -375,12 +378,336 @@
                                 RenderTransformOrigin=".5,.5"
                                 Text="&#xe60b;" />
                         </Button>
+                        <!--  分割线  -->
+                        <Border
+                            Width="1"
+                            Height="25"
+                            VerticalAlignment="Stretch"
+                            Background="DarkGray"
+                            Opacity="0.3" />
+                        <!--  导出按钮  -->
+                        <Button
+                            Width="50"
+                            Height="40"
+                            Margin="0"
+                            Padding="0"
+                            materialDesign:ButtonAssist.CornerRadius="0,20,20,0"
+                            materialDesign:ShadowAssist.ShadowEdges="Right"
+                            Background="#1A696969"
+                            Command="{Binding LastPageCommand}"
+                            Style="{StaticResource ButtonFocusEnlargeStyle}"
+                            ToolTip="导出">
+                            <TextBlock
+                                Margin="2"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                FontFamily="pack://application:,,,/Fonts/#IconFont"
+                                FontSize="20"
+                                FontWeight="UltraLight"
+                                Foreground="White"
+                                RenderTransformOrigin=".5,.5"
+                                Text="&#xe77f;" />
+                        </Button>
                     </StackPanel>
                 </StackPanel>
             </Border>
             <!--  列表  -->
-            <DataGrid Grid.Row="1" Style="{StaticResource VirtualizingDataGridStyle}" />
+            <DataGrid
+                Grid.Row="1"
+                Margin="20,10,20,0"
+                Padding="10,0"
+                AlternatingRowBackground="#101E90FF"
+                ColumnHeaderStyle="{StaticResource CustomDataGridTextColumnStyle}"
+                ItemsSource="{Binding BarCodeItems, UpdateSourceTrigger=PropertyChanged}"
+                RowBackground="#061E90FF"
+                Style="{StaticResource VirtualizingDataGridStyle}">
+                <DataGrid.RowStyle>
+                    <Style BasedOn="{StaticResource MaterialDesignDataGridRow}" TargetType="DataGridRow">
+                        <Setter Property="Height" Value="30" />
+                    </Style>
+                </DataGrid.RowStyle>
+                <DataGrid.Columns>
+                    <DataGridTextColumn
+                        Width="Auto"
+                        MinWidth="45"
+                        Binding="{Binding Num, UpdateSourceTrigger=PropertyChanged}"
+                        CellStyle="{StaticResource CustomDataGridTextCellStyle}"
+                        IsReadOnly="True">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="No." />
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn
+                        Width="Auto"
+                        MinWidth="40"
+                        Binding="{Binding TimestampedGuid, UpdateSourceTrigger=PropertyChanged}"
+                        CellStyle="{StaticResource CustomDataGridTextCellStyle}"
+                        IsReadOnly="True">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="时间戳Guid" />
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
 
+                    <DataGridTextColumn
+                        Width="Auto"
+                        MinWidth="40"
+                        Binding="{Binding Barcode, UpdateSourceTrigger=PropertyChanged}"
+                        CellStyle="{StaticResource CustomDataGridTextCellStyle}"
+                        IsReadOnly="True">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="条码" />
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn
+                        Width="Auto"
+                        MinWidth="40"
+                        Binding="{Binding Weight, UpdateSourceTrigger=PropertyChanged}"
+                        CellStyle="{StaticResource CustomDataGridTextCellStyle}"
+                        EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="重量" />
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn
+                        Width="Auto"
+                        MinWidth="40"
+                        Binding="{Binding Length, UpdateSourceTrigger=PropertyChanged}"
+                        CellStyle="{StaticResource CustomDataGridTextCellStyle}"
+                        EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="长度" />
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn
+                        Width="Auto"
+                        MinWidth="40"
+                        Binding="{Binding Width, UpdateSourceTrigger=PropertyChanged}"
+                        CellStyle="{StaticResource CustomDataGridTextCellStyle}"
+                        EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="宽度" />
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn
+                        Width="Auto"
+                        MinWidth="40"
+                        Binding="{Binding Height, UpdateSourceTrigger=PropertyChanged}"
+                        CellStyle="{StaticResource CustomDataGridTextCellStyle}"
+                        EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="高度" />
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn
+                        Width="Auto"
+                        MinWidth="40"
+                        Binding="{Binding Volume, UpdateSourceTrigger=PropertyChanged}"
+                        CellStyle="{StaticResource CustomDataGridTextCellStyle}"
+                        EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="体积" />
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn
+                        Width="Auto"
+                        MinWidth="40"
+                        Binding="{Binding ScanTime, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:yyyy-MM-dd HH:mm:ss}}"
+                        CellStyle="{StaticResource CustomDataGridTextCellStyle}"
+                        EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="扫码时间" />
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTemplateColumn
+                        Width="Auto"
+                        MinWidth="40"
+                        CellStyle="{StaticResource CustomDataGridTextCellStyle}">
+                        <DataGridTemplateColumn.Header>
+                            <TextBlock
+                                HorizontalAlignment="Stretch"
+                                Style="{StaticResource DataGridTextColumnTitleStyle}"
+                                Text="上传状态" />
+                        </DataGridTemplateColumn.Header>
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button
+                                    Margin="0,0"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Command="{Binding ElementName=DataManagementPageView, Path=DataContext.UploadStatusCommand}"
+                                    CommandParameter="{Binding}"
+                                    Focusable="False"
+                                    Foreground="Transparent"
+                                    Style="{StaticResource MaterialDesignFlatButton}">
+                                    <Grid
+                                        Width="60"
+                                        MinWidth="60"
+                                        HorizontalAlignment="Left"
+                                        VerticalAlignment="Center">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="20" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <!--  图标  -->
+                                        <TextBlock
+                                            Grid.Column="0"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            FontFamily="{StaticResource IconFontFamily}"
+                                            FontSize="16"
+                                            Foreground="{Binding RequestStatus, Converter={StaticResource UploadStatusConverter}, ConverterParameter=Background}"
+                                            Text="{Binding RequestStatus, Converter={StaticResource UploadStatusConverter}, ConverterParameter=FontText}" />
+                                        <!--  文字  -->
+                                        <TextBlock
+                                            Grid.Column="1"
+                                            Margin="5,0"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                                            FontSize="13"
+                                            FontWeight="Light"
+                                            Foreground="White"
+                                            IsEnabled="False"
+                                            TextAlignment="Justify"
+                                            TextTrimming="WordEllipsis">
+                                            <Run Text="{Binding RequestStatus, Converter={StaticResource UploadStatusConverter}, ConverterParameter=Text}" />
+                                        </TextBlock>
+                                    </Grid>
+
+                                    <!--  点击后弹出对应的信息框  -->
+                                </Button>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTextColumn
+                        Width="Auto"
+                        MinWidth="40"
+                        Binding="{Binding RequestTime, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:yyyy-MM-dd HH:mm:ss}}"
+                        CellStyle="{StaticResource CustomDataGridTextCellStyle}"
+                        EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="上传时间" />
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn
+                        Width="Auto"
+                        MinWidth="40"
+                        MaxWidth="600"
+                        Binding="{Binding RequestContent, UpdateSourceTrigger=PropertyChanged}"
+                        CellStyle="{StaticResource CustomDataGridTextCellStyle}"
+                        EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="上传内容" />
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn
+                        Width="Auto"
+                        MinWidth="40"
+                        Binding="{Binding ResponseTime, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:yyyy-MM-dd HH:mm:ss}}"
+                        CellStyle="{StaticResource CustomDataGridTextCellStyle}"
+                        EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="响应时间" />
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn
+                        Width="Auto"
+                        MinWidth="40"
+                        MaxWidth="600"
+                        Binding="{Binding ResponseContent, UpdateSourceTrigger=PropertyChanged}"
+                        CellStyle="{StaticResource CustomDataGridTextCellStyle}"
+                        EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="响应内容" />
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn
+                        Width="Auto"
+                        MinWidth="40"
+                        MaxWidth="600"
+                        Binding="{Binding BarcodeImagePath, UpdateSourceTrigger=PropertyChanged}"
+                        CellStyle="{StaticResource CustomDataGridTextCellStyle}"
+                        EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="图片" />
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTemplateColumn
+                        Width="Auto"
+                        MinWidth="40"
+                        MaxWidth="600"
+                        CellStyle="{StaticResource CustomDataGridTextCellStyle}">
+                        <DataGridTemplateColumn.Header>
+                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="全景图片" />
+                        </DataGridTemplateColumn.Header>
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="30" />
+                                        <ColumnDefinition Width="30" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <!--  定位按钮  -->
+                                    <Button
+                                        Grid.Column="1"
+                                        Width="25"
+                                        Height="25"
+                                        materialDesign:ButtonAssist.CornerRadius="2"
+                                        Background="Transparent"
+                                        Focusable="False"
+                                        Style="{StaticResource MaterialDesignIconButton}"
+                                        ToolTip="定位文件位置">
+                                        <TextBlock
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            FontFamily="{StaticResource IconFontFamily}"
+                                            FontSize="18"
+                                            Foreground="White"
+                                            Text="&#xe65d;" />
+                                    </Button>
+                                    <!--  查看按钮  -->
+                                    <Button
+                                        Grid.Column="0"
+                                        Width="25"
+                                        Height="25"
+                                        materialDesign:ButtonAssist.CornerRadius="2"
+                                        Background="Transparent"
+                                        Focusable="False"
+                                        Style="{StaticResource MaterialDesignIconButton}"
+                                        ToolTip="查看图片">
+                                        <TextBlock
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            FontFamily="{StaticResource IconFontFamily}"
+                                            FontSize="18"
+                                            Foreground="White"
+                                            Text="&#xe66b;" />
+                                    </Button>
+                                    <!--  路径  -->
+                                    <TextBox
+                                        Grid.Column="2"
+                                        Margin="5,0"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                                        FontSize="13"
+                                        FontWeight="Light"
+                                        Foreground="White"
+                                        IsEnabled="True"
+                                        IsReadOnly="True"
+                                        SelectionOpacity="0.6"
+                                        Text="{Binding PanoramaImagePath}"
+                                        TextAlignment="Justify"
+                                        TextWrapping="Wrap" />
+                                </Grid>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+            </DataGrid>
             <!--  翻页控件  -->
             <Border
                 Grid.Row="2"
@@ -543,7 +870,8 @@
                 VerticalAlignment="Center"
                 FontSize="30"
                 FontWeight="Bold"
-                Foreground="White">
+                Foreground="White"
+                Visibility="Visible">
                 DataManagementPage
             </TextBlock>
         </Grid>

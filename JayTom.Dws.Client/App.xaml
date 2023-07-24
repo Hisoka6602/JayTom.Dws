@@ -193,7 +193,7 @@
                 <ResourceDictionary Source="Template/ComputerInfoTemplate.xaml" />
                 <!--  上传状态模板  -->
                 <ResourceDictionary Source="Template/UploadStatusTemplate.xaml" />
-                <!--  列表模板  -->
+                <!--  列表样式  -->
                 <ResourceDictionary Source="/Styles/VirtualizingDataGridStyle.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>

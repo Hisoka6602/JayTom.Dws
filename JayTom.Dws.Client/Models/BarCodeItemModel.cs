@@ -156,10 +156,41 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 条码图片保存路径
         /// </summary>
+        [DisplayName("条码图片保存路径"), ExcelInfo(Width = 8000)]
         public string? BarcodeImagePath {
             get => _barcodeImagePath;
             set => SetProperty(ref _barcodeImagePath, value);
         }
+
+        /// <summary>
+        /// 全景图片保存路径
+        /// </summary>
+        [DisplayName("PanoramaImagePath"), ExcelInfo(Width = 8000)]
+        public string? PanoramaImagePath { get; set; }
+
+        /// <summary>
+        /// 下位机指令内容
+        /// </summary>
+        [DisplayName("InstructionContent"), ExcelInfo(Width = 8000)]
+        public string? InstructionContent { get; set; }
+
+        /// <summary>
+        /// 指令发送时间
+        /// </summary>
+        [DisplayName("InstructionSentTime"), ExcelInfo(Width = 4000)]
+        public DateTime? InstructionSentTime { get; set; }
+
+        /// <summary>
+        /// 指令发送目标地址
+        /// </summary>
+        [DisplayName("InstructionSentTime"), ExcelInfo(Width = 4000)]
+        public string? DestinationAddress { get; set; }
+
+        /// <summary>
+        /// 其他项
+        /// </summary>
+        [DisplayName("Other"), ExcelInfo(Width = 4000)]
+        public string? Other { get; set; }
 
         /// <summary>
         /// 是否插入

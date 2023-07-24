@@ -7,13 +7,16 @@ using System.Windows.Input;
 using System.Threading.Tasks;
 using MaterialDesignThemes.Wpf;
 using System.Windows.Threading;
+using JayTom.Dws.Client.Models;
+using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
+using NetTopologySuite.Algorithm;
+using System.Collections.ObjectModel;
 using System.Text.RegularExpressions;
 using JayTom.Dws.Client.Views.Editors;
 using JayTom.Dws.Client.ViewModels.Editors;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
-
     public class DataManagementViewModel : BindableBase {
         private DateTime _startTime;
         private DateTime _endTime;
@@ -24,6 +27,48 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         private string _barCode = string.Empty;
         private float _minWeight;
         private float _maxWeight;
+
+        private ObservableCollection<BarCodeItemModel> _barCodeItems = new()
+        {
+            new BarCodeItemModel()
+            {
+                Num = 1,
+                TimestampedGuid=13800138000,
+                Barcode = "SF12345678",
+                Weight=(float)1.1,
+                Volume=(float)2.2,
+                Length=(float)3.3,
+                Width=(float)4.4,
+                Height=(float)5.5,
+                ScanTime=DateTime.Now,
+                RequestStatus= UploadStatus.Succeeded,
+                RequestTime=DateTime.Now,
+                RequestContent="上传内容",
+                ResponseTime=DateTime.Now,
+                ResponseContent="响应内容",
+                BarcodeImagePath=@"C:\Users\77051\Desktop\15.jpg",
+                PanoramaImagePath=@"C:\Users\77051\Desktop\16.jpg",
+            },
+            new BarCodeItemModel()
+            {
+                Num = 1,
+                TimestampedGuid=13800138000,
+                Barcode = "43333856561",
+                Weight=(float)1.1,
+                Volume=(float)2.2,
+                Length=(float)3.3,
+                Width=(float)4.4,
+                Height=(float)5.5,
+                ScanTime=DateTime.Now,
+                RequestStatus= UploadStatus.Succeeded,
+                RequestTime=DateTime.Now,
+                RequestContent="上传内容",
+                ResponseTime=DateTime.Now,
+                ResponseContent="响应内容",
+                BarcodeImagePath=@"C:\Users\77051\Desktop\15.jpg",
+                PanoramaImagePath=@"C:\Users\77051\Desktop\16.jpg",
+            },
+        };
 
         /// <summary>
         /// 提示内容
@@ -166,6 +211,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
 
         #endregion 翻页执行方法
 
+        public ObservableCollection<BarCodeItemModel> BarCodeItems {
+            get => _barCodeItems;
+            set => SetProperty(ref _barCodeItems, value);
+        }
+
         public ICommand OpenDateTimeDialogCommand {
             get => new DelegateCommand<object>(OpenDateTimeDialogDelegate);
         }
@@ -202,6 +252,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     }
                 }
             }, DispatcherPriority.Background);
+        }
+        public ICommand UploadStatusCommand {
+            get => new DelegateCommand<BarCodeItemModel>(UploadStatusDelegate);
+        }
+
+        private void UploadStatusDelegate(BarCodeItemModel obj) {
+
+
         }
     }
 }
