@@ -22,13 +22,15 @@ namespace JayTom.Dws.Client.Models {
         private float _length;
         private float _width;
         private float _height;
-        private DateTime _scanTime;
+        private DateTime _scanTime = DateTime.MinValue;
         private UploadStatus _requestStatus = UploadStatus.NotUploaded;
         private DateTime _requestTime;
         private string _requestContent = string.Empty;
         private DateTime _responseTime;
         private string _responseContent = string.Empty;
-        private string? _barcodeImagePath;
+        private string? _barcodeImagePath = string.Empty;
+        private bool _isPanoramaImageExists;
+        private bool _isBarcodeImageExists;
 
         [DisplayName("No."), ExcelInfo(Width = 3000)]
         public int Num {
@@ -156,7 +158,7 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 条码图片保存路径
         /// </summary>
-        [DisplayName("条码图片保存路径"), ExcelInfo(Width = 8000)]
+        [DisplayName("BarcodeImagePath"), ExcelInfo(Width = 8000)]
         public string? BarcodeImagePath {
             get => _barcodeImagePath;
             set => SetProperty(ref _barcodeImagePath, value);
@@ -183,7 +185,7 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 指令发送目标地址
         /// </summary>
-        [DisplayName("InstructionSentTime"), ExcelInfo(Width = 4000)]
+        [DisplayName("DestinationAddress"), ExcelInfo(Width = 4000)]
         public string? DestinationAddress { get; set; }
 
         /// <summary>
@@ -206,6 +208,22 @@ namespace JayTom.Dws.Client.Models {
         public bool IsRemoving {
             get => _isRemoving;
             set => SetProperty(ref _isRemoving, value);
+        }
+
+        /// <summary>
+        /// 全景图片是否存在
+        /// </summary>
+        public bool IsPanoramaImageExists {
+            get => _isPanoramaImageExists;
+            set => SetProperty(ref _isPanoramaImageExists, value);
+        }
+
+        /// <summary>
+        /// 条码图片是否存在
+        /// </summary>
+        public bool IsBarcodeImageExists {
+            get => _isBarcodeImageExists;
+            set => SetProperty(ref _isBarcodeImageExists, value);
         }
     }
 }

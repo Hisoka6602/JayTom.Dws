@@ -16,8 +16,8 @@
     <materialDesign:Card
         MinWidth="100"
         MinHeight="100"
-        MaxWidth="100"
-        MaxHeight="100"
+        MaxWidth="150"
+        MaxHeight="150"
         Margin="2"
         Padding="5"
         materialDesign:ElevationAssist.Elevation="Dp1"
@@ -44,7 +44,7 @@
                 Value="0" />
             <!--  文字  -->
             <TextBlock
-                Margin="10"
+                Margin="10,10,0,10"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Bottom"
                 FontSize="15"

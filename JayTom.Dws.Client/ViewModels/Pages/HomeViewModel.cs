@@ -5,6 +5,7 @@ using System.Text;
 using Prism.Regions;
 using Prism.Commands;
 using System.Windows;
+using System.Threading;
 using System.Windows.Input;
 using System.Threading.Tasks;
 using Prism.Services.Dialogs;
@@ -15,12 +16,14 @@ using JayTom.Dws.Client.Service;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using JayTom.Dws.PluginInterface.Utils;
+using JayTom.Dws.Domain.Repository.LocalData;
 
 namespace JayTom.Dws.Client.ViewModels.Pages {
 
     public class HomeViewModel : BindableBase {
         private readonly IDialogService _dialogService;
         private readonly IComputerInfoReporter _computerInfoReporter;
+        private readonly IBarCodeRepository _barCodeRepository;
         private ObservableCollection<CameraItemInfoModel> _cameraItems = new();
         private ObservableCollection<BarCodeItemModel> _barCodeItems = new();
         private DataGrid? _dataGrid = null;
@@ -62,9 +65,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             set => SetProperty(ref _abnormalDataCount, value);
         }
 
-        public HomeViewModel(IDialogService dialogService, IComputerInfoReporter computerInfoReporter) {
+        public HomeViewModel(IDialogService dialogService,
+            IComputerInfoReporter computerInfoReporter, IBarCodeRepository barCodeRepository) {
             _dialogService = dialogService;
             _computerInfoReporter = computerInfoReporter;
+            _barCodeRepository = barCodeRepository;
             CameraItems = new()
             {
                 new CameraItemInfoModel()
@@ -446,7 +451,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             _computerInfoReporter.ComputerInfoReceived += delegate (object? sender, ComputerInfoModel model) {
                 AddNewRow(new BarCodeItemModel() {
                     Num = BarCodeItems.Count + 1,
-                    Barcode = new Random().Next(100000000, 999999999).ToString()
+                    Barcode = new Random().Next(100000000, 999999999).ToString(),
+                    ScanTime = DateTime.Now
                 });
             };
         }
@@ -523,6 +529,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         /// </summary>
         private async void AddNewRow(BarCodeItemModel item) {
             await Application.Current.Dispatcher.InvokeAsync(() => {
+                _barCodeRepository.InsertAsync(new BarCodeInfoModel() {
+                    Barcode = item.Barcode,
+                    Weight = item.Weight,
+                    ScanTime = item.ScanTime,
+                });
                 BarCodeItems.Insert(0, item);
                 item.IsInserting = true;
                 TotalDataCount += 1;

@@ -58,13 +58,13 @@ namespace JayTom.Dws.Data.LocalData {
         /// 扫码时间
         /// </summary>
         [Column("ScanTime")]
-        public DateTime ScanTime { get; set; }
+        public DateTime ScanTime { get; set; } = DateTime.MinValue;
 
         /// <summary>
         /// 上传状态(1成功、2失败、0未上传)
         /// </summary>
         [Column("RequestStatus")]
-        public UploadStatus RequestStatus { get; set; }
+        public UploadStatus RequestStatus { get; set; } = UploadStatus.NotUploaded;
 
         /// <summary>
         /// 上传时间

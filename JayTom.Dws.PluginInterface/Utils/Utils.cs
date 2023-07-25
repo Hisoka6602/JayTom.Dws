@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Windows;
@@ -28,6 +29,30 @@ namespace JayTom.Dws.PluginInterface.Utils {
             }
 
             return null;
+        }
+
+        public static T? GetParentContainer<T>(DependencyObject obj, Func<T, bool> predicate) where T : Visual {
+            var parent = VisualTreeHelper.GetParent(obj);
+
+            while (parent != null) {
+                if (parent is T typedParent) {
+                    if (predicate(typedParent)) {
+                        return typedParent;
+                    }
+                }
+
+                parent = VisualTreeHelper.GetParent(parent);
+            }
+
+            return null;
+        }
+
+        public static async Task<bool> IsFileExistsAsync(this string filePath) {
+            return await Task.Run(() => !string.IsNullOrWhiteSpace(filePath) && File.Exists(filePath));
+        }
+
+        public static bool IsFileExists(this string filePath) {
+            return !string.IsNullOrWhiteSpace(filePath) && File.Exists(filePath);
         }
     }
 }
