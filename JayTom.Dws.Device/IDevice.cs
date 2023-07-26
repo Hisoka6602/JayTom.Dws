@@ -13,6 +13,11 @@
         DeviceStatus Status { get; }
 
         /// <summary>
+        /// 设备类型
+        /// </summary>
+        DeviceType Type { get; }
+
+        /// <summary>
         /// 重连
         /// </summary>
         /// <returns></returns>
@@ -77,5 +82,68 @@
         /// 已断开
         /// </summary>
         Disconnected,
+    }
+
+    public enum DeviceType {
+
+        /// <summary>
+        /// 相机
+        /// </summary>
+        Camera,
+
+        /// <summary>
+        /// 串口
+        /// </summary>
+        SerialPort,
+
+        /// <summary>
+        /// 磅秤
+        /// </summary>
+        Scale,
+
+        /// <summary>
+        /// 电脑
+        /// </summary>
+        Computer,
+
+        /// <summary>
+        /// 下位机
+        /// </summary>
+        Controller,
+
+        /// <summary>
+        /// 传感器
+        /// </summary>
+        Sensor,
+
+        /// <summary>
+        /// 信号灯
+        /// </summary>
+        SignalLight,
+
+        /// <summary>
+        /// 喇叭
+        /// </summary>
+        Speaker,
+
+        /// <summary>
+        /// 蜂鸣器
+        /// </summary>
+        Buzzer,
+
+        /// <summary>
+        /// 流水线
+        /// </summary>
+        Conveyor,
+
+        /// <summary>
+        /// 转向机
+        /// </summary>
+        Steering,
+
+        /// <summary>
+        /// 电机
+        /// </summary>
+        Motor
     }
 }

@@ -9,7 +9,7 @@
     <!--<PlatformTarget>x64</PlatformTarget>-->
     <UseWPFCompatibilityMode>true</UseWPFCompatibilityMode>
     <SupportedNETFrameworkVersions>4.0</SupportedNETFrameworkVersions>
-    <!--<Platforms>x64</Platforms>-->
+    <Platforms>AnyCPU;x86;x64</Platforms>
 
   </PropertyGroup>
 

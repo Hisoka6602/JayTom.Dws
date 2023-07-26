@@ -452,7 +452,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                 AddNewRow(new BarCodeItemModel() {
                     Num = BarCodeItems.Count + 1,
                     Barcode = new Random().Next(100000000, 999999999).ToString(),
-                    ScanTime = DateTime.Now
+                    ScanTime = DateTime.Now,
+                    BarcodeImagePath = @"C:\Users\77051\Desktop\16.jpg",
+                    IsBarcodeImageExists = true,
+                    PanoramaImagePath = @"C:\Users\77051\Desktop\16.jpg",
+                    IsPanoramaImageExists = true
                 });
             };
         }
@@ -533,6 +537,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     Barcode = item.Barcode,
                     Weight = item.Weight,
                     ScanTime = item.ScanTime,
+                    PanoramaImagePath = item.PanoramaImagePath,
+                    BarcodeImagePath = item.BarcodeImagePath,
                 });
                 BarCodeItems.Insert(0, item);
                 item.IsInserting = true;

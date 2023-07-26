@@ -2,22 +2,7 @@
 
 namespace JayTom.Dws.Device.Camera {
 
-    public interface I3DCamera : IDevice {
-
-        /// <summary>
-        /// 相机名称
-        /// </summary>
-        string CameraName { get; }
-
-        /// <summary>
-        /// 相机Id
-        /// </summary>
-        string CameraId { get; }
-
-        /// <summary>
-        /// 相机帧率
-        /// </summary>
-        float Framerate { get; }
+    public interface I3DCamera : ICamera {
 
         /// <summary>
         /// 边框大小
@@ -33,16 +18,6 @@ namespace JayTom.Dws.Device.Camera {
         /// 是否显示边框
         /// </summary>
         bool IsShowDetectionBorder { get; set; }
-
-        /// <summary>
-        /// 是否添加图片水印
-        /// </summary>
-        bool IsUseImageWatermark { get; set; }
-
-        /// <summary>
-        /// 实时图片
-        /// </summary>
-        event EventHandler<Bitmap> RealtimeImageEvent;
 
         /// <summary>
         /// 捕捉到体积事件
@@ -68,26 +43,6 @@ namespace JayTom.Dws.Device.Camera {
         /// 画面变动未检测到物品
         /// </summary>
         public event EventHandler<EventArgs>? ItemNotDetected;
-
-        /// <summary>
-        /// 暂停
-        /// </summary>
-        /// <returns></returns>
-        KeyValuePair<bool, string> Pause();
-
-        /// <summary>
-        /// 恢复
-        /// </summary>
-        /// <returns></returns>
-        KeyValuePair<bool, string> Resume();
-
-        /// <summary>
-        /// 设置配置
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="configData"></param>
-        /// <returns></returns>
-        KeyValuePair<bool, string> SetConfiguration<T>(T configData);
     }
 
     public class VolumeCapturedEventArgs : EventArgs {

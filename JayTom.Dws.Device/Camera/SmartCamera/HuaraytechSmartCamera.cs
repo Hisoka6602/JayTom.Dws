@@ -1,20 +1,18 @@
-﻿using System;
-using System.Linq;
-using System.Text;
-using System.Drawing;
+﻿using System.Drawing;
 using Newtonsoft.Json;
-using System.Reflection;
-using System.Diagnostics;
+using TurboJpegWrapper;
 using LogisticsBaseCSharp;
-using System.Threading.Tasks;
-using System.Collections.Generic;
+using System.Drawing.Imaging;
+using System.Drawing.Drawing2D;
 using System.Runtime.InteropServices;
+using static LogisticsBaseCSharp.LogisticsAPIStruct;
 
 namespace JayTom.Dws.Device.Camera.SmartCamera {
 
     public class HuaraytechSmartCamera : ICamera {
         public string DeviceCode { get; private set; } = string.Empty;
         public DeviceStatus Status { get; private set; } = DeviceStatus.Uninitialized;
+        public DeviceType Type => DeviceType.Camera;
 
         private LogisticsWrapper? _dwsManager;
 
@@ -46,9 +44,23 @@ namespace JayTom.Dws.Device.Camera.SmartCamera {
                         if (args?.CodeList?.Any() == true &&
                             args?.AreaList?.Any() == true &&
                             args?.AreaList?.Count == args?.CodeList?.Count) {
+                            var image = ToBitmap(args?.OriginalImage);
+                            if (image != null) {
+                                if (IsShowBarcodeBorder && args?.AreaList?.Count > 0) {
+                                    //画边框
+                                    if (args?.AreaList?.Any() == true) {
+                                        image = ConvertToNonIndexedPixelFormat(image);
+                                        using var graphics = Graphics.FromImage(image);
+                                        using var pen = new Pen(BarcodeBorderColor, BarcodeBorderSize);
+                                        foreach (var point in args.AreaList) {
+                                            graphics.DrawPolygon(pen, point);
+                                        }
+                                    }
+                                }
+                            }
                             for (var i = 0; i < args!.CodeList!.Count; i++) {
-                                OnBarcodeHitEvent(new BarcodeHitEventArgs() {
-                                    //Image = args.OriginalImage,
+                                OnBarcodeHitEvent(new BarcodeHitEventArgs {
+                                    Image = image,
                                     Barcode = args.CodeList[i],
                                     AreaCoords = args.AreaList?[i],
                                     CameraId = args.CameraID,
@@ -65,7 +77,7 @@ namespace JayTom.Dws.Device.Camera.SmartCamera {
                     catch (Exception e) {
                         OnExcepted(e);
                         File.AppendAllLinesAsync($"{Directory.GetCurrentDirectory()}\\异常日志.txt",
-                            new[] { e.ToString() });
+                            new[] { JsonConvert.SerializeObject(e) });
                     }
                 };
                 //注册包裹结束后所有相机的扫码信息
@@ -132,29 +144,29 @@ namespace JayTom.Dws.Device.Camera.SmartCamera {
                 //开启DWS底层的相机断线上报功能
                 var disconnectCb = _dwsManager.AttachCameraDisconnectCB();
                 if (!disconnectCb) {
-                    OnExcepted(new Exception($"开启DWS底层的相机断线上报功能失败!"));
+                    OnExcepted(new Exception("开启DWS底层的相机断线上报功能失败!"));
                 }
                 //开启注册所有相机的读码信息的回调函数
                 var cameraCodeinfoCb = _dwsManager.AttachAllCameraCodeinfoCB();
                 if (!cameraCodeinfoCb) {
-                    OnExcepted(new Exception($"开启注册所有相机的读码信息的回调失败!"));
+                    OnExcepted(new Exception("开启注册所有相机的读码信息的回调失败!"));
                 }
                 //开启注册全景相机及条码抠图拼接图信息的回调函数
                 var combineInfoCb = _dwsManager.AttachIpcCombineInfoCB();
                 if (!combineInfoCb) {
-                    OnExcepted(new Exception($"开启注册全景相机及条码抠图拼接图信息的回调失败!"));
+                    OnExcepted(new Exception("开启注册全景相机及条码抠图拼接图信息的回调失败!"));
                 }
 
                 //开启注册相机实时图片信息的回调函数
                 var imageCb = _dwsManager.AttachRealImageCB();
 
                 if (!imageCb) {
-                    OnExcepted(new Exception($"开启注册相机实时图片信息的回调失败!"));
+                    OnExcepted(new Exception("开启注册相机实时图片信息的回调失败!"));
                 }
 
                 //注册相机断线回调的方法.当DWS设备中的相机断线的时候,就会把相关相机的信息回调给CameraDisconnectCallBack方法
                 _dwsManager.CameraDisconnectEventHandler += delegate (object? sender, CameraStatusArgs args) {
-                    OnExcepted(new Exception($"{this.CameraId}已断开!"));
+                    OnExcepted(new Exception($"[CameraId:{CameraId},CameraUserID:{args.CameraUserID},CameraKey:{args.CameraKey}]已断开!"));
                     Status = DeviceStatus.Disconnected;
                     //OnDisconnected(this);
                 };
@@ -187,11 +199,16 @@ namespace JayTom.Dws.Device.Camera.SmartCamera {
         public string CameraId { get; private set; } = string.Empty;
 
         public float Framerate { get; private set; } = 0;
-        public int BarcodeBorderSize { get; set; }
+        public int BarcodeBorderSize { get; set; } = 15;
 
-        public Color BarcodeBorderColor { get; set; }
-        public bool IsShowBarcodeBorder { get; set; }
+        public Color BarcodeBorderColor { get; set; } = Color.LawnGreen;
+        public bool IsShowBarcodeBorder { get; set; } = true;
         public bool IsUseImageWatermark { get; set; }
+
+        public string Brand => "华睿";
+        public CameraStatus CameraStatus { get; } = CameraStatus.Disconnected;
+        public CameraType CameraType { get; } = CameraType.SmartCamera;
+        public ConnectionType ConnectionType { get; } = ConnectionType.Ethernet;
 
         public event EventHandler<BarcodeHitEventArgs>? BarcodeHitEvent;
 
@@ -204,44 +221,6 @@ namespace JayTom.Dws.Device.Camera.SmartCamera {
         // 导入 LoadLibraryEx 函数
         [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         public static extern IntPtr LoadLibraryEx(string lpFileName, IntPtr hFile, uint dwFlags);*/
-
-        public HuaraytechSmartCamera() {
-            /*AppDomain.CurrentDomain.AssemblyResolve += (sender, args) => {
-                // 获取要加载的程序集名称
-                var assemblyName = new AssemblyName(args.Name).Name;
-                Debug.WriteLine(assemblyName);
-                // 检查是否正在加载 LogisticsBaseCSharp.dll
-                if (assemblyName is "LogisticsBaseCSharp" or "LogisticsBase64.dll") {
-                    // 从指定文件夹中加载所需的 DLL 文件
-                    string dllPath = Path.Combine($"{Directory.GetCurrentDirectory()}\\HuaraytechLib", assemblyName + ".dll");
-                    if (File.Exists(dllPath)) {
-                        return Assembly.LoadFrom(dllPath);
-                    }
-                }
-
-                // 继续使用默认的加载逻辑
-                return null;
-            };*/
-            /*var dllDirectory = SetDllDirectory($"{Directory.GetCurrentDirectory()}\\HuaraytechLib");
-            if (dllDirectory) {
-                var files = Directory.GetFiles($"{Directory.GetCurrentDirectory()}\\HuaraytechLib");
-                foreach (var file in files) {
-                    IntPtr dllHandle = LoadLibraryEx(file, IntPtr.Zero, 0);
-                    if (dllHandle == IntPtr.Zero) {
-                        int errorCode = Marshal.GetLastWin32Error();
-                        Console.WriteLine($"无法加载 DLL 文件。错误码: {errorCode}");
-                        Debug.WriteLine(file);
-                        continue;
-                    }
-                }
-
-                var first = files.First(f => f.Contains("LogisticsBase64.dll"));
-                if (!string.IsNullOrWhiteSpace(first)) {
-                    IntPtr dllHandle = LoadLibraryEx(first, IntPtr.Zero, 0);
-                    Console.WriteLine(dllHandle);
-                }
-            }*/
-        }
 
         public KeyValuePair<bool, string> SetFilterCondition<T>(T condition) {
             throw new NotImplementedException();
@@ -343,6 +322,84 @@ namespace JayTom.Dws.Device.Camera.SmartCamera {
         protected virtual async void OnDisconnected(IDevice e) {
             await Task.Yield();
             Disconnected?.Invoke(this, e);
+        }
+
+        private Bitmap? ToBitmap(VslbImage? image) {
+            if (image?.ImageData is null || image?.ImageData == IntPtr.Zero) {
+                return null;
+            }
+
+            var vslbImage = image.Value;
+            var type = (EImageType)vslbImage.type;
+            try {
+                switch (type) {
+                    case EImageType.eImageTypeNormal:
+                    case EImageType.eImageTypeBGR: {
+                            var channels = (type == EImageType.eImageTypeBGR ? 3 : 1);
+                            var fmt = (channels == 3 ? PixelFormat.Format24bppRgb : PixelFormat.Format8bppIndexed);
+                            var returnBmp = new Bitmap(vslbImage.width, vslbImage.height, fmt);
+                            if (channels == 1) {
+                                var palette = returnBmp.Palette;
+                                for (var ii = 0; ii < 256; ii++)
+                                    palette.Entries[ii] = Color.FromArgb(ii, ii, ii);
+                                returnBmp.Palette = palette;
+                            }
+
+                            var bmpData = returnBmp.LockBits(new Rectangle(0, 0, vslbImage.width, vslbImage.height), ImageLockMode.ReadWrite, fmt);
+                            if (vslbImage.width % 4 != 0) {
+                                for (int i = 0; i < vslbImage.height; ++i) {
+                                    LogisticsAPI.CopyMemory(bmpData.Scan0 + bmpData.Stride * i, vslbImage.ImageData + vslbImage.width * channels * i, vslbImage.width * channels);
+                                }
+                            }
+                            else {
+                                LogisticsAPI.CopyMemory(bmpData.Scan0, vslbImage.ImageData, vslbImage.dataSize);
+                            }
+                            returnBmp.UnlockBits(bmpData);
+                            return returnBmp;
+                        }
+                    case EImageType.eImageTypeJpeg: {
+                            using var tjDecompress = new TJDecompressor();
+                            var imgType = EImageType.eImageTypeNormal;
+                            var retImg = tjDecompress.Decompress(vslbImage.ImageData, (ulong)vslbImage.dataSize, TJFlags.NONE);
+
+                            imgType = retImg.PixelFormat switch {
+                                TJPixelFormats.TJPF_GRAY => EImageType.eImageTypeNormal,
+                                TJPixelFormats.TJPF_BGR => EImageType.eImageTypeBGR,
+                                _ => imgType
+                            };
+
+                            var tempPtr = Marshal.AllocHGlobal(retImg.Data.Length);
+
+                            Marshal.Copy(retImg.Data, 0, tempPtr, retImg.Data.Length);
+                            var rawImg = vslbImage.Clone();
+                            rawImg.ImageData = tempPtr;
+                            rawImg.dataSize = retImg.Data.Length;
+                            rawImg.type = (int)imgType;
+                            rawImg.width = retImg.Width;
+                            rawImg.height = retImg.Height;
+
+                            return ToBitmap(rawImg);
+                        }
+                }
+            }
+            catch (Exception e) {
+                OnExcepted(e);
+            }
+
+            return null;
+        }
+
+        public static Bitmap ConvertToNonIndexedPixelFormat(Bitmap image) {
+            if (image.PixelFormat.HasFlag(PixelFormat.Indexed)) {
+                // 创建一个新的32位ARGB格式的图像，将索引像素转换为非索引像素
+                var newImage = new Bitmap(image.Width, image.Height, PixelFormat.Format32bppArgb);
+                using (var graphics = Graphics.FromImage(newImage)) {
+                    graphics.DrawImage(image, 0, 0);
+                }
+                image.Dispose();
+                return newImage;
+            }
+            return image;
         }
     }
 }

@@ -15,6 +15,7 @@ using System.Windows.Interop;
 using JayTom.Dws.Client.Views;
 using JayTom.Dws.Plugin.Excel;
 using System.Windows.Threading;
+using JayTom.Dws.Device.Camera;
 using JayTom.Dws.Infrastructure;
 using JayTom.Dws.Client.Service;
 using System.Collections.Generic;
@@ -24,10 +25,12 @@ using JayTom.Dws.Client.Views.Pages;
 using Microsoft.EntityFrameworkCore;
 using JayTom.Dws.Client.Views.Dialog;
 using JayTom.Dws.Client.Views.Editors;
+using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Client.ViewModels.Pages;
 using JayTom.Dws.Infrastructure.IComputer;
 using JayTom.Dws.Client.ViewModels.Dialog;
 using JayTom.Dws.Client.ViewModels.Editors;
+using JayTom.Dws.Device.Camera.SmartCamera;
 using JayTom.Dws.Domain.Repository.LocalData;
 using Microsoft.Extensions.DependencyInjection;
 using JayTom.Dws.Client.Views.Pages.Preferences;
@@ -79,6 +82,9 @@ namespace JayTom.Dws.Client {
                 services.AddScoped<IComputer, Computer>();
                 //电脑信息上报
                 services.AddScoped<IComputerInfoReporter, ComputerInfoReporter>();
+                //设备注册
+                services.AddScoped<ICamera, HuaraytechSmartCamera>();
+                services.AddScoped<IDeviceService, DeviceService>();
             });
         }
 
@@ -94,7 +100,6 @@ namespace JayTom.Dws.Client {
                 //异常触发
             };
             base.OnStartup(e);
-
             // 创建主机并注册后台服务
             Task.Run(() => {
                 // 启用硬件加速

@@ -48,6 +48,26 @@ namespace JayTom.Dws.Device.Camera {
         bool IsUseImageWatermark { get; set; }
 
         /// <summary>
+        /// 相机品牌
+        /// </summary>
+        string Brand { get; }
+
+        /// <summary>
+        /// 相机状态
+        /// </summary>
+        public CameraStatus CameraStatus { get; }
+
+        /// <summary>
+        /// 相机类型
+        /// </summary>
+        public CameraType CameraType { get; }
+
+        /// <summary>
+        /// 连接类型
+        /// </summary>
+        public ConnectionType ConnectionType { get; }
+
+        /// <summary>
         /// 扫到条码
         /// </summary>
         event EventHandler<BarcodeHitEventArgs> BarcodeHitEvent;
@@ -149,6 +169,16 @@ namespace JayTom.Dws.Device.Camera {
         /// 区域坐标
         /// </summary>
         public Point[]? AreaCoords { get; set; }
+
+        /// <summary>
+        /// 相机类型
+        /// </summary>
+        public CameraType CameraType { get; set; }
+
+        /// <summary>
+        /// 连接类型
+        /// </summary>
+        public ConnectionType ConnectionType { get; set; }
     }
 
     [Flags]
@@ -159,5 +189,79 @@ namespace JayTom.Dws.Device.Camera {
         QrCode = 4,
         DataMatrix = 8,
         // 其他条码类型...
+    }
+
+    public enum CameraStatus {
+
+        /// <summary>
+        /// 运行中
+        /// </summary>
+        Running,
+
+        /// <summary>
+        /// 未连接
+        /// </summary>
+        Disconnected,
+
+        /// <summary>
+        /// 故障
+        /// </summary>
+        Failure,
+
+        /// <summary>
+        /// 暂停中
+        /// </summary>
+        Paused
+    }
+
+    public enum CameraType {
+
+        /// <summary>
+        /// 工业相机
+        /// </summary>
+        IndustrialCamera,
+
+        /// <summary>
+        /// 全景相机
+        /// </summary>
+        PanoramicCamera,
+
+        /// <summary>
+        /// 3D相机
+        /// </summary>
+        ThreeDCamera,
+
+        /// <summary>
+        /// 智能相机
+        /// </summary>
+        SmartCamera
+    }
+
+    public enum ConnectionType {
+
+        /// <summary>
+        /// USB连接
+        /// </summary>
+        Usb,
+
+        /// <summary>
+        /// 网口连接
+        /// </summary>
+        Ethernet,
+
+        /// <summary>
+        /// 串口连接
+        /// </summary>
+        SerialPort,
+
+        /// <summary>
+        /// 蓝牙连接
+        /// </summary>
+        Bluetooth,
+
+        /// <summary>
+        /// Tcp连接
+        /// </summary>
+        Tcp
     }
 }

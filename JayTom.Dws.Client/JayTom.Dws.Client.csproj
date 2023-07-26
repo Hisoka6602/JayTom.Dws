@@ -57,15 +57,14 @@
 
   <ItemGroup>
     <PackageReference Include="DryIoc.Microsoft.DependencyInjection.Extension" Version="1.0.0.2" />
-    <PackageReference Include="MaterialDesignThemes" Version="4.9.0" />
+    <PackageReference Include="MaterialDesignThemes" Version="4.8.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="7.0.0" />
     <PackageReference Include="Prism.DryIoc" Version="8.1.97" />
-    <PackageReference Include="ToastNotifications.Messages.Net5" Version="3.0.1" />
-    <PackageReference Include="ToastNotifications.Net5" Version="3.0.0" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\JayTom.Dws.Device\JayTom.Dws.Device.csproj" />
     <ProjectReference Include="..\JayTom.Dws.Infrastructure\JayTom.Dws.Infrastructure.csproj" />
     <ProjectReference Include="..\JayTom.Dws.PluginInterface\JayTom.Dws.PluginInterface.csproj" />
     <ProjectReference Include="..\JayTom.Dws.Plugin\JayTom.Dws.Plugin.csproj" />

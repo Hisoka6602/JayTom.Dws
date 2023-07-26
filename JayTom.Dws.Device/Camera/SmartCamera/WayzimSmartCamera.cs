@@ -12,6 +12,7 @@ namespace JayTom.Dws.Device.Camera.SmartCamera {
     public class WayzimSmartCamera : ICamera {
         public string DeviceCode { get; } = string.Empty;
         public DeviceStatus Status { get; } = DeviceStatus.Uninitialized;
+        public DeviceType Type => DeviceType.Camera;
 
         public Task<KeyValuePair<bool, string>> Reconnect() {
             //暂不写重连事件
@@ -131,6 +132,10 @@ namespace JayTom.Dws.Device.Camera.SmartCamera {
         public string CameraName { get; } = string.Empty;
         public string CameraId { get; } = string.Empty;
         public float Framerate { get; } = 0;
+        public string Brand => "中科微至";
+        public CameraStatus CameraStatus { get; } = CameraStatus.Disconnected;
+        public CameraType CameraType { get; } = CameraType.SmartCamera;
+        public ConnectionType ConnectionType { get; } = ConnectionType.Ethernet;
         public int BarcodeBorderSize { get; set; }
         public Color BarcodeBorderColor { get; set; }
         public bool IsShowBarcodeBorder { get; set; }

@@ -21,6 +21,5 @@ namespace JayTom.Dws.Client.Service {
         void OnComputerInfoReceived(ComputerInfoModel e);
 
         //设置风扇转速
-        //
     }
 }

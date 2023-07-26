@@ -65,16 +65,18 @@
         </Grid>
 
         <!--  区域内容  -->
-        <ScrollViewer
+        <!--<ScrollViewer
             Grid.Column="1"
             Focusable="False"
             HorizontalScrollBarVisibility="Auto"
             VerticalScrollBarVisibility="Auto">
-            <Frame
-                Name="RegionFrame"
-                mvvm:RegionManager.RegionName="ContentRegion"
-                Focusable="False"
-                NavigationUIVisibility="Hidden" />
-        </ScrollViewer>
+
+        </ScrollViewer>-->
+        <Frame
+            Name="RegionFrame"
+            Grid.Column="1"
+            mvvm:RegionManager.RegionName="ContentRegion"
+            Focusable="False"
+            NavigationUIVisibility="Hidden" />
     </Grid>
 </Page>

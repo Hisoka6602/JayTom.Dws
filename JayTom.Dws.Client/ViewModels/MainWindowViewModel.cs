@@ -5,7 +5,6 @@ using Prism.Regions;
 using System.Windows;
 using Prism.Commands;
 using System.Threading;
-using ToastNotifications;
 using System.Globalization;
 using System.Windows.Input;
 using System.Threading.Tasks;
@@ -13,9 +12,6 @@ using System.Windows.Controls;
 using System.Windows.Threading;
 using MaterialDesignThemes.Wpf;
 using System.Collections.Generic;
-using ToastNotifications.Lifetime;
-using ToastNotifications.Position;
-using ToastNotifications.Messages;
 using System.Collections.ObjectModel;
 using JayTom.Dws.PluginInterface.Utils;
 
@@ -133,38 +129,21 @@ namespace JayTom.Dws.Client.ViewModels {
                     visualChild.Visibility = Visibility.Visible;
                 }
             }
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
                 //await Task.Delay(TimeSpan.FromSeconds(10));
                 IsLoaded = true;
-                var notifier = new Notifier(cfg => {
-                    cfg.PositionProvider = new WindowPositionProvider(
-                        parentWindow: Application.Current.MainWindow,
-                        corner: Corner.BottomRight,
-                        offsetX: 10,
-                        offsetY: 10);
-
-                    cfg.LifetimeSupervisor = new TimeAndCountBasedLifetimeSupervisor(
-                        notificationLifetime: TimeSpan.FromSeconds(1),
-                        maximumNotificationCount: MaximumNotificationCount.FromCount(5));
-
-                    cfg.Dispatcher = Application.Current.Dispatcher;
-                });
-                /*while (true) {
-                    notifier.ShowError("aaa");
-                    await Task.Delay(TimeSpan.FromSeconds(1));
-                }*/
-
-                //_regionManager.Regions["ContentRegion"].RequestNavigate("HomeView");
             });
         }
 
         private void SizeChangeDelegate(object sender, SizeChangedEventArgs e) {
             if (sender is Window window) {
-                window.MaxHeight = SystemParameters.MaximizedPrimaryScreenHeight - 5;
-                window.MaxWidth = SystemParameters.MaximizedPrimaryScreenWidth;
+                window.MaxHeight = SystemParameters.WorkArea.Width;
+                window.MaxHeight = SystemParameters.WorkArea.Height;
+                /*window.MaxHeight = SystemParameters.MaximizedPrimaryScreenHeight - 5;
+                window.MaxWidth = SystemParameters.MaximizedPrimaryScreenWidth;*/
                 if (window.WindowState == WindowState.Maximized ||
-                    (window.Height >= SystemParameters.MaximizedPrimaryScreenHeight - 5 &&
-                     window.Width >= SystemParameters.MaximizedPrimaryScreenWidth)) {
+                    (window.Height >= SystemParameters.WorkArea.Height &&
+                     window.Width >= SystemParameters.WorkArea.Width)) {
                     //直角
                     UniformCornerRadius = 0;
                 }

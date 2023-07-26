@@ -19,6 +19,7 @@ using JayTom.Dws.Device.Camera;
 using System.Windows.Navigation;
 using System.Collections.Generic;
 using System.Windows.Media.Imaging;
+using System.Windows.Media.Media3D;
 using JayTom.Dws.Device.Camera._3DCamera;
 using JayTom.Dws.Device.Camera.SmartCamera;
 
@@ -71,7 +72,8 @@ namespace WpfApp1 {
                     );
                 }#1#
             };*/
-            _camera = new WayzimSmartCamera();
+            //_camera = new WayzimSmartCamera();
+            _camera = new HuaraytechSmartCamera();
             _camera.Connected += async delegate (object? o, IDevice device) {
                 await Application.Current.Dispatcher.InvokeAsync(() => { CodeInfoListView.Items.Add("设备已连接"); });
             };

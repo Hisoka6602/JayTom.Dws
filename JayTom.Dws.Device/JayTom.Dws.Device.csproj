@@ -8,7 +8,7 @@
     <!--<PlatformTarget>x64</PlatformTarget>-->
     <UseNETFrameworkCompat>true</UseNETFrameworkCompat>
     <SupportedNETFrameworkVersions>4.0</SupportedNETFrameworkVersions>
-    <!--<Platforms>x64</Platforms>-->
+    <Platforms>AnyCPU;x86;x64</Platforms>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 

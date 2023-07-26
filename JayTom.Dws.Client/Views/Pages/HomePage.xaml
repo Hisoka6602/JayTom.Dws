@@ -529,7 +529,7 @@
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
-                                <GridViewColumn Width="90" Header="体积(mm²)">
+                                <GridViewColumn Width="90" Header="体积(mm³)">
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBlock

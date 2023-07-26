@@ -21,6 +21,7 @@ namespace JayTom.Dws.Device.Camera._3DCamera {
         private static readonly byte PersonStandingPositionMask = 0x00;
         public string DeviceCode { get; private set; } = string.Empty;
         public DeviceStatus Status { get; private set; } = DeviceStatus.Uninitialized;
+        public DeviceType Type => DeviceType.Camera;
 
         [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
         private static extern bool SetDllDirectory(string path);
@@ -554,6 +555,16 @@ namespace JayTom.Dws.Device.Camera._3DCamera {
         public string CameraName { get; private set; } = string.Empty;
         public string CameraId { get; private set; } = string.Empty;
         public float Framerate { get; private set; }
+        public int BarcodeBorderSize { get; set; }
+        public Color BarcodeBorderColor { get; set; }
+        public bool IsShowBarcodeBorder { get; set; }
+        public string Brand => "图漾";
+        public CameraStatus CameraStatus { get; } = CameraStatus.Disconnected;
+        public CameraType CameraType { get; } = CameraType.ThreeDCamera;
+        public ConnectionType ConnectionType { get; } = ConnectionType.Usb;
+
+        public event EventHandler<BarcodeHitEventArgs>? BarcodeHitEvent;
+
         public int DetectionBorderSize { get; set; } = 3;
         public Color DetectionBorderColor { get; set; } = Color.Yellow;
         public bool IsShowDetectionBorder { get; set; } = true;
@@ -570,6 +581,14 @@ namespace JayTom.Dws.Device.Camera._3DCamera {
         public event EventHandler<ItemOutOfBoundsEventArgs>? ItemOutOfBounds;
 
         public event EventHandler<EventArgs>? ItemNotDetected;
+
+        public KeyValuePair<bool, string> SetFilterCondition<T>(T condition) {
+            throw new NotImplementedException();
+        }
+
+        public KeyValuePair<bool, string> SetBarcodeType(BarcodeType type) {
+            throw new NotImplementedException();
+        }
 
         public KeyValuePair<bool, string> Pause() {
             throw new NotImplementedException();

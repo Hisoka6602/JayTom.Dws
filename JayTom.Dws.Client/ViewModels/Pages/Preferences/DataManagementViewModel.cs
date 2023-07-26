@@ -518,7 +518,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// </summary>
         /// <param name="pageIndex"></param>
         private void LoadData(int pageIndex) {
-            const int pageSize = 1000;
+            const int pageSize = 500;
             System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
                 var loadingDialog = new LoadingDialog();
                 if (loadingDialog.DataContext is LoadingDialogViewModel model) {
