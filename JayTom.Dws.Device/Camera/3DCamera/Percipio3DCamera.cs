@@ -266,7 +266,7 @@ namespace JayTom.Dws.Device.Camera._3DCamera {
                             DashStyle = DashStyle.Solid,
                             DashPattern = new float[] { 1f, 2f }
                         }) {
-                            var tmpPixelPointsRgb = new PointF[4];
+                            var tmpPixelPointsRgb = new System.Drawing.PointF[4];
                             for (var i = 0; i < 4; i++) {
                                 tmpPixelPointsRgb[i].X = _gdata.bounding[i].x;
                                 tmpPixelPointsRgb[i].Y = _gdata.bounding[i].y;
@@ -313,7 +313,7 @@ namespace JayTom.Dws.Device.Camera._3DCamera {
                             DashStyle = DashStyle.Solid,
                             DashPattern = new float[] { 1f, 2f }
                         }) {
-                            var tmpPixelPointsRgb = new PointF[4];
+                            var tmpPixelPointsRgb = new System.Drawing.PointF[4];
                             for (var i = 0; i < 4; i++) {
                                 tmpPixelPointsRgb[i].X = _gdata.bounding[i].x;
                                 tmpPixelPointsRgb[i].Y = _gdata.bounding[i].y;
@@ -355,7 +355,7 @@ namespace JayTom.Dws.Device.Camera._3DCamera {
                     //画边框
                     using (var graphics = Graphics.FromImage(byteToImage)) {
                         using (var pen = new Pen(DetectionBorderColor, DetectionBorderSize)) {
-                            var pointFs = new PointF[4];
+                            var pointFs = new System.Drawing.PointF[4];
                             for (var i = 0; i < 4; i++) {
                                 pointFs[i].X = _gdata.boundingRGB[i].x;
                                 pointFs[i].Y = _gdata.boundingRGB[i].y;
@@ -498,7 +498,7 @@ namespace JayTom.Dws.Device.Camera._3DCamera {
                     Length = pmAllData.boxSize.sizeX,
                     Width = pmAllData.boxSize.sizeY,
                     Height = pmAllData.boxSize.sizeZ,
-                    AreaCoords = new Point[4],
+                    AreaCoords = new System.Drawing.Point[4],
                     Timestamp = DateTime.Now
                 };
 
@@ -556,7 +556,7 @@ namespace JayTom.Dws.Device.Camera._3DCamera {
         public string CameraId { get; private set; } = string.Empty;
         public float Framerate { get; private set; }
         public int BarcodeBorderSize { get; set; }
-        public Color BarcodeBorderColor { get; set; }
+        public System.Drawing.Color BarcodeBorderColor { get; set; }
         public bool IsShowBarcodeBorder { get; set; }
         public string Brand => "图漾";
         public CameraStatus CameraStatus { get; } = CameraStatus.Disconnected;
@@ -565,8 +565,10 @@ namespace JayTom.Dws.Device.Camera._3DCamera {
 
         public event EventHandler<BarcodeHitEventArgs>? BarcodeHitEvent;
 
+        public event EventHandler<BarcodeHitEventArgs>? NotBarcodeHitEvent;
+
         public int DetectionBorderSize { get; set; } = 3;
-        public Color DetectionBorderColor { get; set; } = Color.Yellow;
+        public System.Drawing.Color DetectionBorderColor { get; set; } = System.Drawing.Color.Yellow;
         public bool IsShowDetectionBorder { get; set; } = true;
         public bool IsUseImageWatermark { get; set; }
 

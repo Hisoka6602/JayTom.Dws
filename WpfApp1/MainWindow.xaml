@@ -16,6 +16,7 @@
             <RowDefinition Height="150" />
         </Grid.RowDefinitions>
         <!--  图像  -->
+
         <Image Name="CameraImage" Grid.Row="0" />
         <!--  初始化按钮、连接按钮、停止按钮  -->
         <StackPanel Grid.Row="1" Orientation="Horizontal">

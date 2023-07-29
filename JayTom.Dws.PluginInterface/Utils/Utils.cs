@@ -3,9 +3,12 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Windows;
+using System.Drawing;
 using System.Windows.Media;
 using System.Threading.Tasks;
+using System.Drawing.Imaging;
 using System.Collections.Generic;
+using System.Windows.Media.Imaging;
 
 namespace JayTom.Dws.PluginInterface.Utils {
 
@@ -53,6 +56,16 @@ namespace JayTom.Dws.PluginInterface.Utils {
 
         public static bool IsFileExists(this string filePath) {
             return !string.IsNullOrWhiteSpace(filePath) && File.Exists(filePath);
+        }
+
+        public static BitmapSource ConvertBitmapToBitmapSource(this Image bitmap) {
+            BitmapSource bitmapSource;
+            using var memory = new System.IO.MemoryStream();
+            bitmap.Save(memory, ImageFormat.Bmp);
+            memory.Position = 0;
+            var bitmapDecoder = BitmapDecoder.Create(memory, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.OnLoad);
+            bitmapSource = bitmapDecoder.Frames[0];
+            return bitmapSource;
         }
     }
 }

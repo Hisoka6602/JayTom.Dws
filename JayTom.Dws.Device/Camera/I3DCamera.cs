@@ -12,7 +12,7 @@ namespace JayTom.Dws.Device.Camera {
         /// <summary>
         /// 边框颜色
         /// </summary>
-        Color DetectionBorderColor { get; set; }
+        System.Drawing.Color DetectionBorderColor { get; set; }
 
         /// <summary>
         /// 是否显示边框
@@ -85,7 +85,7 @@ namespace JayTom.Dws.Device.Camera {
         /// <summary>
         /// 获取或设置物体区域的坐标数组。
         /// </summary>
-        public Point[]? AreaCoords { get; set; }
+        public System.Drawing.Point[]? AreaCoords { get; set; }
     }
 
     public class ItemOutOfBoundsEventArgs : EventArgs {

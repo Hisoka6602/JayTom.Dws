@@ -35,7 +35,7 @@ namespace JayTom.Dws.Device.Camera {
         /// <summary>
         /// 边框颜色
         /// </summary>
-        Color BarcodeBorderColor { get; set; }
+        System.Drawing.Color BarcodeBorderColor { get; set; }
 
         /// <summary>
         /// 是否显示边框
@@ -71,6 +71,11 @@ namespace JayTom.Dws.Device.Camera {
         /// 扫到条码
         /// </summary>
         event EventHandler<BarcodeHitEventArgs> BarcodeHitEvent;
+
+        /// <summary>
+        /// 包裹触发但未识别到条码
+        /// </summary>
+        event EventHandler<BarcodeHitEventArgs> NotBarcodeHitEvent;
 
         /// <summary>
         /// 实时图片
@@ -141,6 +146,11 @@ namespace JayTom.Dws.Device.Camera {
         public string CameraId { get; set; } = string.Empty;
 
         /// <summary>
+        /// 相机名称
+        /// </summary>
+        public string CameraName { get; set; } = string.Empty;
+
+        /// <summary>
         /// 长
         /// </summary>
         public float Length { get; set; }
@@ -166,9 +176,14 @@ namespace JayTom.Dws.Device.Camera {
         public long Timestamp { get; set; }
 
         /// <summary>
+        /// 帧率
+        /// </summary>
+        public double FrameRate { get; set; }
+
+        /// <summary>
         /// 区域坐标
         /// </summary>
-        public Point[]? AreaCoords { get; set; }
+        public System.Drawing.Point[]? AreaCoords { get; set; }
 
         /// <summary>
         /// 相机类型

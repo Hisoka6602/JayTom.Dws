@@ -23,10 +23,10 @@ namespace JayTom.Dws.Device.Camera._3DCamera.Percipio {
             return p;
         }
 
-        public static Image? ByteToImage(byte[] myByte) {
+        public static System.Drawing.Image? ByteToImage(byte[] myByte) {
             try {
                 var ms = new MemoryStream(myByte);
-                var image = Image.FromStream(ms);
+                var image = System.Drawing.Image.FromStream(ms);
                 return image;
             }
             catch (Exception e) {
@@ -36,7 +36,7 @@ namespace JayTom.Dws.Device.Camera._3DCamera.Percipio {
             return null;
         }
 
-        public static GraphicsPath GetRoundedRectangle(RectangleF rect, int cornerRadius) {
+        public static GraphicsPath GetRoundedRectangle(System.Drawing.RectangleF rect, int cornerRadius) {
             var roundedRect = new GraphicsPath();
             roundedRect.AddArc(rect.X, rect.Y, cornerRadius, cornerRadius, 180, 90);
             roundedRect.AddArc(rect.Right - cornerRadius, rect.Y, cornerRadius, cornerRadius, 270, 90);

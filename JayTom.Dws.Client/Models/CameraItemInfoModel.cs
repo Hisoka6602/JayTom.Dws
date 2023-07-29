@@ -17,6 +17,7 @@ namespace JayTom.Dws.Client.Models {
         private double _frameRate;
         private int _cameraId;
         private bool _isSwitchingState;
+        private long _imageTimestamp;
 
         public int CameraId {
             get => _cameraId;
@@ -29,6 +30,14 @@ namespace JayTom.Dws.Client.Models {
         public ImageSource? Image {
             get => _image;
             set => SetProperty(ref _image, value);
+        }
+
+        /// <summary>
+        /// 图片时间戳
+        /// </summary>
+        public long ImageTimestamp {
+            get => _imageTimestamp;
+            set => SetProperty(ref _imageTimestamp, value);
         }
 
         /// <summary>

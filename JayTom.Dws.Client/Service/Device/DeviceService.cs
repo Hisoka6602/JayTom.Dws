@@ -10,6 +10,8 @@ namespace JayTom.Dws.Client.Service.Device {
     public class DeviceService : IDeviceService {
         private readonly ICamera _camera;
 
+        public bool RunningStatus { get; private set; } = false;
+
         public event EventHandler<List<ICamera>>? CameraInitialized;
 
         public event EventHandler<List<ICamera>>? CameraDisconnected;
@@ -17,6 +19,8 @@ namespace JayTom.Dws.Client.Service.Device {
         public event EventHandler<List<ICamera>>? CameraFault;
 
         public event EventHandler<BarcodeHitEventArgs>? BarcodeScanned;
+
+        public event EventHandler<BarcodeHitEventArgs>? NotBarcodeHitEvent;
 
         public event EventHandler<VolumeCapturedEventArgs>? VolumeCaptured;
 
@@ -35,9 +39,20 @@ namespace JayTom.Dws.Client.Service.Device {
             _camera.BarcodeHitEvent += delegate (object? sender, BarcodeHitEventArgs args) {
                 OnBarcodeScanned(args);
             };
+            _camera.NotBarcodeHitEvent += delegate (object? sender, BarcodeHitEventArgs args) {
+                OnNotBarcodeHitEvent(args);
+            };
             _camera.Disconnected += delegate (object? sender, IDevice device) {
+                OnDeviceException(new DeviceExceptionEventArgs() {
+                    Device = device,
+                    ExceptionMessage = new Exception("设备断开!")
+                });
             };
             _camera.Excepted += delegate (object? sender, Exception exception) {
+                OnDeviceException(new DeviceExceptionEventArgs() {
+                    Device = _camera,
+                    ExceptionMessage = exception
+                });
             };
             _camera.Initialized += delegate (object? sender, IDevice device) {
             };
@@ -58,7 +73,14 @@ namespace JayTom.Dws.Client.Service.Device {
                     {
                         _camera
                     });
+                    RunningStatus = true;
                     return new KeyValuePair<bool, string>(true, "设备初始化完成");
+                }
+                else {
+                    OnDeviceException(new DeviceExceptionEventArgs() {
+                        Device = _camera,
+                        ExceptionMessage = new Exception(s)
+                    });
                 }
             }
             else {
@@ -67,13 +89,14 @@ namespace JayTom.Dws.Client.Service.Device {
                     ExceptionMessage = new Exception(value)
                 });
             }
-            return new KeyValuePair<bool, string>(true, "设备初始化失败");
+            return new KeyValuePair<bool, string>(false, "设备初始化失败");
         }
 
         public async Task<KeyValuePair<bool, string>> Stop() {
             await Task.Yield();
             //各项停止和释放资源
             _camera?.Dispose();
+            RunningStatus = false;
             return new KeyValuePair<bool, string>(true, "设备已释放");
         }
 
@@ -95,6 +118,11 @@ namespace JayTom.Dws.Client.Service.Device {
         protected virtual async void OnBarcodeScanned(BarcodeHitEventArgs e) {
             await Task.Yield();
             BarcodeScanned?.Invoke(this, e);
+        }
+
+        protected virtual async void OnNotBarcodeHitEvent(BarcodeHitEventArgs e) {
+            await Task.Yield();
+            NotBarcodeHitEvent?.Invoke(this, e);
         }
     }
 }

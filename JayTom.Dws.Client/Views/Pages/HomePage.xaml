@@ -23,6 +23,7 @@
     <Page.Resources>
         <converters:CameraListBoxWidthConverter x:Key="CameraListBoxWidthConverter" />
         <converters:EllipseCenterConverter x:Key="EllipseCenterConverter" />
+        <converters:RunningStatusConverter x:Key="RunningStatusConverter" />
         <Storyboard x:Key="ItemCountStoryboard">
             <DoubleAnimation
                 AutoReverse="True"
@@ -162,7 +163,7 @@
                         FontSize="40"
                         FontWeight="Bold"
                         Foreground="White"
-                        Text="SF123456789"
+                        Text="{Binding BarCode, UpdateSourceTrigger=PropertyChanged}"
                         TextAlignment="Center" />
 
                     <Rectangle
@@ -225,7 +226,7 @@
                                         FontWeight="Bold"
                                         Foreground="White"
                                         TextAlignment="Center">
-                                        <Run Text="868.662" /><Run FontSize="12" Text="kg" />
+                                        <Run Text="{Binding Weight, UpdateSourceTrigger=PropertyChanged}" /><Run FontSize="12" Text="kg" />
                                     </TextBlock>
                                 </StackPanel>
                                 <!--  体积  -->
@@ -255,10 +256,10 @@
                                         <Run
                                             FontWeight="Bold"
                                             Foreground="White"
-                                            Text="561.61" /><Run
+                                            Text="{Binding Volume, UpdateSourceTrigger=PropertyChanged}" /><Run
                                             FontSize="13"
                                             Foreground="White"
-                                            Text="mm²" />
+                                            Text="mm³" />
                                     </TextBlock>
                                 </StackPanel>
                             </StackPanel>
@@ -295,7 +296,7 @@
                                         <Run
                                             FontWeight="Bold"
                                             Foreground="White"
-                                            Text="561.61" /><Run
+                                            Text="{Binding Length, UpdateSourceTrigger=PropertyChanged}" /><Run
                                             FontSize="13"
                                             Foreground="White"
                                             Text="mm" />
@@ -328,7 +329,7 @@
                                         <Run
                                             FontWeight="Bold"
                                             Foreground="White"
-                                            Text="561.61" /><Run
+                                            Text="{Binding Width, UpdateSourceTrigger=PropertyChanged}" /><Run
                                             FontSize="13"
                                             Foreground="White"
                                             Text="mm" />
@@ -361,7 +362,7 @@
                                         <Run
                                             FontWeight="Bold"
                                             Foreground="White"
-                                            Text="561.61" /><Run
+                                            Text="{Binding Height, UpdateSourceTrigger=PropertyChanged}" /><Run
                                             FontSize="13"
                                             Foreground="White"
                                             Text="mm" />
@@ -960,6 +961,7 @@
             Background="#2E2E2E"
             BorderBrush="#2E2E2E"
             BorderThickness="0"
+            Command="{Binding StartCommand}"
             Focusable="False"
             Style="{StaticResource MaterialDesignFloatingActionLightButton}">
             <StackPanel
@@ -974,7 +976,7 @@
                     FontSize="40"
                     FontWeight="Bold"
                     Foreground="White"
-                    Text="&#xe693;" />
+                    Text="{Binding RunningStatus, Converter={StaticResource RunningStatusConverter}, ConverterParameter=FontText}" />
                 <Separator />
                 <TextBlock
                     Margin="10"
@@ -982,8 +984,19 @@
                     FontSize="18"
                     FontWeight="Bold"
                     Foreground="White"
-                    Text="Stop" />
+                    Text="{Binding RunningStatus, Converter={StaticResource RunningStatusConverter}, ConverterParameter=Text}" />
             </StackPanel>
         </Button>
+        <!--  提示框  -->
+        <materialDesign:Snackbar
+            Grid.Column="0"
+            Grid.ColumnSpan="2"
+            Width="Auto"
+            Height="Auto"
+            VerticalAlignment="Bottom"
+            Background="BlueViolet"
+            FontFamily="{StaticResource CustomFontFamily}"
+            FontWeight="Bold"
+            MessageQueue="{Binding HomeMessageQueue}" />
     </Grid>
 </Page>

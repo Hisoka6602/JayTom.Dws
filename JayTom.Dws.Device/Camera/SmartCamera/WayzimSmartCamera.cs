@@ -90,20 +90,31 @@ namespace JayTom.Dws.Device.Camera.SmartCamera {
         /// <exception cref="NotImplementedException"></exception>
         private void InstanceOnGetGwReadCodeResultModelEvent(GW_ReadCodeResultModel obj) {
             if (obj.Barcode?.Any() == true) {
+                if (obj.Barcode?.Any(a => a.Equals("noread")) == true) {
+                    OnNotBarcodeHitEvent(new BarcodeHitEventArgs() {
+                        Barcode = "noread",
+                        ScanTime = DateTime.Now,
+                        CameraName = CameraName
+                    });
+                    return;
+                }
+                Bitmap? bitmap = null;
+                var timeMilliseconds = new DateTimeOffset(obj.TriggerTime).ToUnixTimeMilliseconds();
+                bitmap = (Bitmap?)System.Drawing.Image.FromStream(new MemoryStream(obj.SelectedImage.ImageData));
                 for (var i = 0; i < obj.Barcode.Length; i++) {
-                    Bitmap? bitmap = null;
-
                     var cameraName = obj.CameraNames[i];
-                    var imageData = obj.ImageList?.Where(w => w.CameraName.Equals(cameraName) && w.ImageData.Length > 0)
+                    /*var imageData = obj.ImageList?.Where(w => w.CameraName.Equals(cameraName) && w.ImageData.Length > 0)
                         ?.FirstOrDefault()?.ImageData;
                     if (imageData != null) {
-                        bitmap = (Bitmap?)Image.FromStream(new MemoryStream(imageData));
-                    }
+                        bitmap = (Bitmap?)System.Drawing.Image.FromStream(new MemoryStream(imageData));
+                    }*/
                     OnBarcodeHitEvent(new BarcodeHitEventArgs() {
                         Barcode = obj.Barcode[i] ?? string.Empty,
                         ScanTime = DateTime.Now,
                         Image = bitmap,
-                        CameraId = $"{cameraName ?? string.Empty}"
+                        CameraId = $"{cameraName ?? string.Empty}",
+                        Timestamp = timeMilliseconds,
+                        CameraName = CameraName
                     });
                 }
             }
@@ -129,7 +140,7 @@ namespace JayTom.Dws.Device.Camera.SmartCamera {
 
         public event EventHandler<Exception>? Excepted;
 
-        public string CameraName { get; } = string.Empty;
+        public string CameraName { get; } = "中科微至智能相机";
         public string CameraId { get; } = string.Empty;
         public float Framerate { get; } = 0;
         public string Brand => "中科微至";
@@ -137,11 +148,13 @@ namespace JayTom.Dws.Device.Camera.SmartCamera {
         public CameraType CameraType { get; } = CameraType.SmartCamera;
         public ConnectionType ConnectionType { get; } = ConnectionType.Ethernet;
         public int BarcodeBorderSize { get; set; }
-        public Color BarcodeBorderColor { get; set; }
+        public System.Drawing.Color BarcodeBorderColor { get; set; }
         public bool IsShowBarcodeBorder { get; set; }
         public bool IsUseImageWatermark { get; set; }
 
         public event EventHandler<BarcodeHitEventArgs>? BarcodeHitEvent;
+
+        public event EventHandler<BarcodeHitEventArgs>? NotBarcodeHitEvent;
 
         public event EventHandler<Bitmap>? RealtimeImageEvent;
 
@@ -180,6 +193,11 @@ namespace JayTom.Dws.Device.Camera.SmartCamera {
         protected virtual async void OnBarcodeHitEvent(BarcodeHitEventArgs e) {
             await Task.Yield();
             BarcodeHitEvent?.Invoke(this, e);
+        }
+
+        protected virtual async void OnNotBarcodeHitEvent(BarcodeHitEventArgs e) {
+            await Task.Yield();
+            NotBarcodeHitEvent?.Invoke(this, e);
         }
     }
 }

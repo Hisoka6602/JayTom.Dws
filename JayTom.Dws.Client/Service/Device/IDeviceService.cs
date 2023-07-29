@@ -10,6 +10,11 @@ namespace JayTom.Dws.Client.Service.Device {
     public interface IDeviceService {
 
         /// <summary>
+        /// 设备运行状态
+        /// </summary>
+        public bool RunningStatus { get; }
+
+        /// <summary>
         /// 当相机初始化完成时触发的事件，返回初始化的相机列表
         /// </summary>
         event EventHandler<List<ICamera>> CameraInitialized;
@@ -28,6 +33,11 @@ namespace JayTom.Dws.Client.Service.Device {
         /// 当相机扫到条码时触发的事件
         /// </summary>
         event EventHandler<BarcodeHitEventArgs> BarcodeScanned;
+
+        /// <summary>
+        /// 包裹触发但未识别到条码
+        /// </summary>
+        event EventHandler<BarcodeHitEventArgs> NotBarcodeHitEvent;
 
         /// <summary>
         /// 当相机捕获到体积信息时触发的事件

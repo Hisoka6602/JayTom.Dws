@@ -1,20 +1,29 @@
 ﻿using System.Drawing;
+using System.Buffers;
 using Newtonsoft.Json;
 using TurboJpegWrapper;
+using System.Collections;
 using LogisticsBaseCSharp;
 using System.Drawing.Imaging;
+using JayTom.Dws.Device.Light;
 using System.Drawing.Drawing2D;
 using System.Runtime.InteropServices;
 using static LogisticsBaseCSharp.LogisticsAPIStruct;
+using JayTom.Dws.Device.Camera.SmartCamera.Huaraytech;
 
 namespace JayTom.Dws.Device.Camera.SmartCamera {
 
     public class HuaraytechSmartCamera : ICamera {
+        private static SemaphoreSlim _semaphoreSlim = new(1, 1);
         public string DeviceCode { get; private set; } = string.Empty;
         public DeviceStatus Status { get; private set; } = DeviceStatus.Uninitialized;
         public DeviceType Type => DeviceType.Camera;
 
         private LogisticsWrapper? _dwsManager;
+        private const int PoolSize = 5;
+
+        private static readonly ThreadLocal<MemoryStream[]> StreamPool = new(() => new MemoryStream[PoolSize]);
+        private static readonly ThreadLocal<BinaryWriter[]> WriterPool = new(() => new BinaryWriter[PoolSize]);
 
         public Task<KeyValuePair<bool, string>> Reconnect() {
             throw new NotImplementedException();
@@ -32,54 +41,8 @@ namespace JayTom.Dws.Device.Camera.SmartCamera {
             var status = _dwsManager.Start();
             if (status == (int)EAppRunStatus.EAppStatusInitOk) {
                 //注册包裹信息回调的方法.当DWS设备扫描到包裹信息,就会回调给PackageInfoCallBack方法
-                _dwsManager.CodeHandle += delegate (object? sender, LogisticsCodeEventArgs args) {
-                    try {
-                        var volumeInfo = new VolumeInfo {
-                            Length = args?.VolumeInfo.length ?? 0,
-                            Width = args?.VolumeInfo.width ?? 0,
-                            Height = args?.VolumeInfo.height ?? 0,
-                            Volume = args?.VolumeInfo.volume ?? 0,
-                        };
-                        var scanTime = DateTime.Now;
-                        if (args?.CodeList?.Any() == true &&
-                            args?.AreaList?.Any() == true &&
-                            args?.AreaList?.Count == args?.CodeList?.Count) {
-                            var image = ToBitmap(args?.OriginalImage);
-                            if (image != null) {
-                                if (IsShowBarcodeBorder && args?.AreaList?.Count > 0) {
-                                    //画边框
-                                    if (args?.AreaList?.Any() == true) {
-                                        image = ConvertToNonIndexedPixelFormat(image);
-                                        using var graphics = Graphics.FromImage(image);
-                                        using var pen = new Pen(BarcodeBorderColor, BarcodeBorderSize);
-                                        foreach (var point in args.AreaList) {
-                                            graphics.DrawPolygon(pen, point);
-                                        }
-                                    }
-                                }
-                            }
-                            for (var i = 0; i < args!.CodeList!.Count; i++) {
-                                OnBarcodeHitEvent(new BarcodeHitEventArgs {
-                                    Image = image,
-                                    Barcode = args.CodeList[i],
-                                    AreaCoords = args.AreaList?[i],
-                                    CameraId = args.CameraID,
-                                    ScanTime = scanTime,
-                                    Timestamp = args.CodeTimeStamp,
-                                    Length = (float)volumeInfo.Length,
-                                    Width = (float)volumeInfo.Width,
-                                    Height = (float)volumeInfo.Height,
-                                    Volume = (float)volumeInfo.Volume,
-                                });
-                            }
-                        }
-                    }
-                    catch (Exception e) {
-                        OnExcepted(e);
-                        File.AppendAllLinesAsync($"{Directory.GetCurrentDirectory()}\\异常日志.txt",
-                            new[] { JsonConvert.SerializeObject(e) });
-                    }
-                };
+
+                _dwsManager.CodeHandle += DwsManagerOnCodeHandle;
                 //注册包裹结束后所有相机的扫码信息
                 /*_dwsManager.AllCameraCodeInfoEventHandler += delegate (object? sender, AllCameraCodeInfoArgs args) {
                 };*/
@@ -101,9 +64,106 @@ namespace JayTom.Dws.Device.Camera.SmartCamera {
                 };*/
                 Status = DeviceStatus.Connected;
                 OnConnected(this);
-                return new KeyValuePair<bool, string>(false, "相机连接成功");
+                return new KeyValuePair<bool, string>(true, "相机连接成功");
             }
             return new KeyValuePair<bool, string>(false, status.ToString());
+        }
+
+        /// <summary>
+        /// 相机回调
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="args"></param>
+        private async void DwsManagerOnCodeHandle(object? sender, LogisticsCodeEventArgs args) {
+            try {
+                await _semaphoreSlim.WaitAsync();
+                var volumeInfo = new VolumeInfo {
+                    Length = args.VolumeInfo.length,
+                    Width = args.VolumeInfo.width,
+                    Height = args.VolumeInfo.height,
+                    Volume = args.VolumeInfo.volume,
+                };
+                var info = new BaseCodeData {
+                    OutputResult = args.OutputResult,
+                    CameraID = args.CameraID,
+                    CodeList = args.CodeList,
+                    AreaList = args.AreaList,
+                    Weight = args.Weight,
+                    VolumeInfo = volumeInfo,
+                    OriImage = args.OriginalImage,
+                    WayImage = args.WaybillImage,
+                    CodeTimeStamp = args.CodeTimeStamp,
+                    CodesInfo = args.CodesInfo,
+                    BagTimeInfo = new TimeInfo {
+                        TimeCallback = args.Bag_TimeInfo.timeCallback,
+                        TimeCodeParse = args.Bag_TimeInfo.timeCodeParse,
+                        TimeCollect = args.Bag_TimeInfo.timeCollect,
+                        TimeDown = args.Bag_TimeInfo.timeDown,
+                        TimeFrameGet = args.Bag_TimeInfo.timeFrameGet,
+                        TimeFrameSend = args.Bag_TimeInfo.timeFrameSend,
+                        TimeUp = args.Bag_TimeInfo.timeUp,
+                        TimVol = args.Bag_TimeInfo.timVol,
+                        TimWeight = args.Bag_TimeInfo.timWeight
+                    },
+                    WeightInfo = new WeightData {
+                        Flag = args.WeightData.flag,
+                        OrigData = args.WeightData.origData,
+                        Weight = args.WeightData.weight,
+                        WeightTimeStamp = args.WeightData.weightTimeStamp
+                    },
+                };
+
+                var scanTime = DateTime.Now;
+                if (args?.CodeList?.Any() == true &&
+                    args?.AreaList?.Any() == true &&
+                    args?.AreaList?.Count == args?.CodeList?.Count) {
+                    if (args?.CodeList?.Any(a => a.Equals("noread")) == true) {
+                        OnNotBarcodeHitEvent(new BarcodeHitEventArgs() {
+                            Barcode = "noread",
+                            ScanTime = scanTime,
+                            CameraName = CameraName
+                        });
+                        return;
+                    }
+                    var image = ToBitmap(info.OriImage);
+                    if (image != null) {
+                        if (IsShowBarcodeBorder && args?.AreaList?.Count > 0) {
+                            //画边框
+                            if (args?.AreaList?.Any() == true) {
+                                image = ConvertToNonIndexedPixelFormat(image);
+                                using var graphics = Graphics.FromImage(image);
+                                using var pen = new Pen(BarcodeBorderColor, BarcodeBorderSize);
+                                foreach (var point in args.AreaList) {
+                                    graphics.DrawPolygon(pen, point);
+                                }
+                            }
+                        }
+                    }
+                    for (var i = 0; i < args!.CodeList!.Count; i++) {
+                        OnBarcodeHitEvent(new BarcodeHitEventArgs {
+                            Image = image,
+                            Barcode = args.CodeList[i],
+                            AreaCoords = args.AreaList?[i],
+                            CameraId = args.CameraID,
+                            ScanTime = scanTime,
+                            Timestamp = args.CodeTimeStamp,
+                            Length = (float)volumeInfo.Length,
+                            Width = (float)volumeInfo.Width,
+                            Height = (float)volumeInfo.Height,
+                            Volume = (float)volumeInfo.Volume,
+                            CameraName = CameraName
+                        });
+                    }
+                }
+            }
+            catch (Exception e) {
+                OnExcepted(e);
+                await File.AppendAllLinesAsync($"{Directory.GetCurrentDirectory()}\\异常日志.txt",
+                    new[] { JsonConvert.SerializeObject(e) });
+            }
+            finally {
+                _semaphoreSlim.Release();
+            }
         }
 
         public async void Dispose() {
@@ -127,8 +187,11 @@ namespace JayTom.Dws.Device.Camera.SmartCamera {
 
         public async Task<KeyValuePair<bool, string>> Initialization() {
             await Task.Yield();
-            if (_dwsManager is not null) {
-                return new KeyValuePair<bool, string>(false, "已初始化过!");
+            if (Status == DeviceStatus.Connected) {
+                return new KeyValuePair<bool, string>(false, "相机已连接,不需要再初始化!");
+            }
+            else if (Status != DeviceStatus.Uninitialized) {
+                return new KeyValuePair<bool, string>(false, "已初始化过");
             }
             //写初始化事件
             _dwsManager ??= new LogisticsWrapper();
@@ -166,8 +229,11 @@ namespace JayTom.Dws.Device.Camera.SmartCamera {
 
                 //注册相机断线回调的方法.当DWS设备中的相机断线的时候,就会把相关相机的信息回调给CameraDisconnectCallBack方法
                 _dwsManager.CameraDisconnectEventHandler += delegate (object? sender, CameraStatusArgs args) {
-                    OnExcepted(new Exception($"[CameraId:{CameraId},CameraUserID:{args.CameraUserID},CameraKey:{args.CameraKey}]已断开!"));
-                    Status = DeviceStatus.Disconnected;
+                    if (!args.IsOnline) {
+                        OnExcepted(new Exception($"[CameraId:{CameraId},CameraUserID:{args.CameraUserID},CameraKey:{args.CameraKey}]已断开!"));
+                        Status = DeviceStatus.Disconnected;
+                    }
+
                     //OnDisconnected(this);
                 };
                 //获取相机所有状态
@@ -195,13 +261,13 @@ namespace JayTom.Dws.Device.Camera.SmartCamera {
 
         public event EventHandler<Exception>? Excepted;
 
-        public string CameraName { get; private set; } = string.Empty;
+        public string CameraName { get; private set; } = "大华智能相机";
         public string CameraId { get; private set; } = string.Empty;
 
         public float Framerate { get; private set; } = 0;
         public int BarcodeBorderSize { get; set; } = 15;
 
-        public Color BarcodeBorderColor { get; set; } = Color.LawnGreen;
+        public System.Drawing.Color BarcodeBorderColor { get; set; } = System.Drawing.Color.LawnGreen;
         public bool IsShowBarcodeBorder { get; set; } = true;
         public bool IsUseImageWatermark { get; set; }
 
@@ -211,6 +277,8 @@ namespace JayTom.Dws.Device.Camera.SmartCamera {
         public ConnectionType ConnectionType { get; } = ConnectionType.Ethernet;
 
         public event EventHandler<BarcodeHitEventArgs>? BarcodeHitEvent;
+
+        public event EventHandler<BarcodeHitEventArgs>? NotBarcodeHitEvent;
 
         public event EventHandler<Bitmap>? RealtimeImageEvent;
 
@@ -240,16 +308,6 @@ namespace JayTom.Dws.Device.Camera.SmartCamera {
 
         public KeyValuePair<bool, string> SetConfiguration<T>(T configData) {
             throw new NotImplementedException();
-        }
-
-        public struct VolumeInfo {
-            public double Length { get; set; }
-
-            public double Width { get; set; }
-
-            public double Height { get; set; }
-
-            public double Volume { get; set; }
         }
 
         public enum EAppRunStatus {
@@ -328,7 +386,6 @@ namespace JayTom.Dws.Device.Camera.SmartCamera {
             if (image?.ImageData is null || image?.ImageData == IntPtr.Zero) {
                 return null;
             }
-
             var vslbImage = image.Value;
             var type = (EImageType)vslbImage.type;
             try {
@@ -341,26 +398,188 @@ namespace JayTom.Dws.Device.Camera.SmartCamera {
                             if (channels == 1) {
                                 var palette = returnBmp.Palette;
                                 for (var ii = 0; ii < 256; ii++)
+                                    palette.Entries[ii] = System.Drawing.Color.FromArgb(ii, ii, ii);
+                                returnBmp.Palette = palette;
+                            }
+
+                            var bmpData = returnBmp.LockBits(new System.Drawing.Rectangle(0, 0, vslbImage.width, vslbImage.height),
+                                ImageLockMode.ReadWrite, fmt);
+                            unsafe {
+                                byte* src = (byte*)vslbImage.ImageData;
+                                byte* dst = (byte*)bmpData.Scan0;
+                                int stride = bmpData.Stride;
+
+                                for (int y = 0; y < vslbImage.height; y++) {
+                                    for (int x = 0; x < vslbImage.width * channels; x++) {
+                                        dst[y * stride + x] = src[y * vslbImage.width * channels + x];
+                                    }
+                                }
+                            }
+
+                            returnBmp.UnlockBits(bmpData);
+                            //Marshal.FreeHGlobal(vslbImage.ImageData);
+                            return returnBmp;
+                        }
+                    case EImageType.eImageTypeJpeg: {
+                            unsafe {
+                                using var tjDecompress = new TJDecompressor();
+                                var imgType = EImageType.eImageTypeNormal;
+                                var retImg = tjDecompress.Decompress(vslbImage.ImageData, (ulong)vslbImage.dataSize, TJFlags.NONE);
+
+                                imgType = retImg.PixelFormat switch {
+                                    TJPixelFormats.TJPF_GRAY => EImageType.eImageTypeNormal,
+                                    TJPixelFormats.TJPF_BGR => EImageType.eImageTypeBGR,
+                                    _ => imgType
+                                };
+
+                                // 使用Span和Memory避免不必要的内存分配和拷贝
+                                var dataSpan = new Span<byte>(retImg.Data);
+
+                                var tempMemory = new Memory<byte>(dataSpan.ToArray());
+
+                                var rawImg = vslbImage.Clone();
+                                rawImg.ImageData = (IntPtr)tempMemory.Pin().Pointer;
+                                //rawImg.ImageData = vslbImage.ImageData;
+                                rawImg.dataSize = retImg.Data.Length;
+                                rawImg.type = (int)imgType;
+                                rawImg.img_idx = vslbImage.img_idx;
+                                rawImg.width = retImg.Width;
+                                rawImg.height = retImg.Height;
+                                return ToBitmap(rawImg);
+                            }
+                        }
+                }
+            }
+            catch (Exception e) {
+                OnExcepted(e);
+            }
+
+            return null;
+        }
+
+        private unsafe Bitmap? ToBitmap(RawImage imageInfo) {
+            if (imageInfo.ImageData == IntPtr.Zero || imageInfo.DataSize <= 0 || imageInfo.Height <= 0 || imageInfo.Width <= 0) {
+                return null;
+            }
+
+            var type = (LogisticsAPIStruct.EImageType)imageInfo.Type;
+            try {
+                switch (type) {
+                    case LogisticsAPIStruct.EImageType.eImageTypeNormal:
+                    case LogisticsAPIStruct.EImageType.eImageTypeBGR: {
+                            var channels = (type == LogisticsAPIStruct.EImageType.eImageTypeBGR ? 3 : 1);
+                            var fmt = (channels == 3 ? PixelFormat.Format24bppRgb : PixelFormat.Format8bppIndexed);
+                            var returnBmp = new Bitmap(imageInfo.Width, imageInfo.Height, fmt);
+
+                            if (channels == 1) {
+                                var palette = returnBmp.Palette;
+                                for (var ii = 0; ii < 256; ii++)
                                     palette.Entries[ii] = Color.FromArgb(ii, ii, ii);
                                 returnBmp.Palette = palette;
                             }
 
-                            var bmpData = returnBmp.LockBits(new Rectangle(0, 0, vslbImage.width, vslbImage.height), ImageLockMode.ReadWrite, fmt);
-                            if (vslbImage.width % 4 != 0) {
-                                for (int i = 0; i < vslbImage.height; ++i) {
-                                    LogisticsAPI.CopyMemory(bmpData.Scan0 + bmpData.Stride * i, vslbImage.ImageData + vslbImage.width * channels * i, vslbImage.width * channels);
-                                }
+                            var bmpData = returnBmp.LockBits(new Rectangle(0, 0, imageInfo.Width, imageInfo.Height), ImageLockMode.ReadWrite, fmt);
+
+                            // 使用指针操作进行像素复制
+                            var src = (byte*)imageInfo.ImageData;
+                            var dst = (byte*)bmpData.Scan0;
+                            var srcStride = imageInfo.Width * channels;
+                            var dstStride = bmpData.Stride;
+
+                            for (var y = 0; y < imageInfo.Height; ++y) {
+                                Buffer.MemoryCopy(src, dst, dstStride, srcStride);
+                                src += srcStride;
+                                dst += dstStride;
                             }
-                            else {
-                                LogisticsAPI.CopyMemory(bmpData.Scan0, vslbImage.ImageData, vslbImage.dataSize);
-                            }
+
                             returnBmp.UnlockBits(bmpData);
                             return returnBmp;
+                        }
+                    case LogisticsAPIStruct.EImageType.eImageTypeJpeg: {
+                            using (var tjDecompress = new TJDecompressor()) {
+                                var imgType = LogisticsAPIStruct.EImageType.eImageTypeNormal;
+                                var retImg = tjDecompress.Decompress(imageInfo.ImageData, (ulong)imageInfo.DataSize, TJFlags.NONE);
+
+                                if (retImg.PixelFormat == TJPixelFormats.TJPF_GRAY) {
+                                    imgType = LogisticsAPIStruct.EImageType.eImageTypeNormal;
+                                }
+                                else if (retImg.PixelFormat == TJPixelFormats.TJPF_BGR) {
+                                    imgType = LogisticsAPIStruct.EImageType.eImageTypeBGR;
+                                }
+                                var tempPtr = Marshal.AllocHGlobal(retImg.Data.Length);
+
+                                Marshal.Copy(retImg.Data, 0, tempPtr, retImg.Data.Length);
+                                var rawImg = new RawImage(retImg.Width, retImg.Height, (int)imgType, retImg.Data.Length, tempPtr, imageInfo.ImageIndex);
+                                return ToBitmap(rawImg);
+                            }
+                        }
+                    default:
+                        break;
+                }
+            }
+            catch (Exception ex) {
+                // exception
+            }
+
+            return null;
+        }
+
+        public async Task<Bitmap?> ToBitmap1(VslbImage? image, List<Point[]>? areaList) {
+            if (image?.ImageData == IntPtr.Zero || image?.ImageData == null) {
+                return null;
+            }
+
+            var vslbImage = image.Value;
+            var type = (EImageType)vslbImage.type;
+
+            try {
+                switch (type) {
+                    case EImageType.eImageTypeNormal:
+                    case EImageType.eImageTypeBGR: {
+                            try {
+                                await _semaphoreSlim.WaitAsync();
+                                var channels = (type == EImageType.eImageTypeBGR ? 3 : 1);
+                                var fmt = (channels == 3 ? PixelFormat.Format24bppRgb : PixelFormat.Format8bppIndexed);
+
+                                var returnBmp = new Bitmap(vslbImage.width, vslbImage.height, fmt);
+
+                                if (channels == 1) {
+                                    var palette = returnBmp.Palette;
+                                    for (var ii = 0; ii < 256; ii++)
+                                        palette.Entries[ii] = System.Drawing.Color.FromArgb(ii, ii, ii);
+                                    returnBmp.Palette = palette;
+                                }
+
+                                var bmpData = returnBmp.LockBits(new Rectangle(0, 0, vslbImage.width, vslbImage.height),
+                                    ImageLockMode.ReadWrite, fmt);
+                                if (channels == 1) {
+                                    var imgData = new byte[vslbImage.width * vslbImage.height];
+                                    Marshal.Copy(vslbImage.ImageData, imgData, 0, vslbImage.width * vslbImage.height);
+                                    var bmpPtr = bmpData.Scan0;
+
+                                    for (var y = 0; y < vslbImage.height; y++) {
+                                        for (var x = 0; x < vslbImage.width; x++) {
+                                            var pixelValue = imgData[y * vslbImage.width + x];
+                                            Marshal.WriteByte(bmpPtr, y * bmpData.Stride + x, pixelValue);
+                                        }
+                                    }
+                                }
+                                else {
+                                    Marshal.Copy(vslbImage.ImageData, new byte[vslbImage.dataSize], 0, vslbImage.dataSize);
+                                }
+
+                                returnBmp.UnlockBits(bmpData);
+                                return returnBmp;
+                            }
+                            finally {
+                                _semaphoreSlim.Release();
+                            }
                         }
                     case EImageType.eImageTypeJpeg: {
                             using var tjDecompress = new TJDecompressor();
                             var imgType = EImageType.eImageTypeNormal;
-                            var retImg = tjDecompress.Decompress(vslbImage.ImageData, (ulong)vslbImage.dataSize, TJFlags.NONE);
+                            var retImg = tjDecompress.Decompress(vslbImage.ImageData, (ulong)vslbImage.dataSize,
+                                TJFlags.NONE);
 
                             imgType = retImg.PixelFormat switch {
                                 TJPixelFormats.TJPF_GRAY => EImageType.eImageTypeNormal,
@@ -368,17 +587,19 @@ namespace JayTom.Dws.Device.Camera.SmartCamera {
                                 _ => imgType
                             };
 
-                            var tempPtr = Marshal.AllocHGlobal(retImg.Data.Length);
+                            // Allocate memory in the unmanaged heap and copy the data to that memory location
+                            var dataPtr = Marshal.AllocHGlobal(retImg.Data.Length);
+                            Marshal.Copy(retImg.Data, 0, dataPtr, retImg.Data.Length);
 
-                            Marshal.Copy(retImg.Data, 0, tempPtr, retImg.Data.Length);
-                            var rawImg = vslbImage.Clone();
-                            rawImg.ImageData = tempPtr;
-                            rawImg.dataSize = retImg.Data.Length;
-                            rawImg.type = (int)imgType;
-                            rawImg.width = retImg.Width;
-                            rawImg.height = retImg.Height;
-
-                            return ToBitmap(rawImg);
+                            // Make the recursive call after processing the current image
+                            var decompressedBitmap = new VslbImage {
+                                ImageData = dataPtr,
+                                dataSize = retImg.Data.Length,
+                                type = (int)imgType,
+                                width = retImg.Width,
+                                height = retImg.Height
+                            };
+                            return await ToBitmap1(decompressedBitmap, areaList);
                         }
                 }
             }
@@ -400,6 +621,306 @@ namespace JayTom.Dws.Device.Camera.SmartCamera {
                 return newImage;
             }
             return image;
+        }
+
+        public async Task<Bitmap?> ToBitmap3(VslbImage? image, List<Point[]>? areaList) {
+            if (image?.ImageData == IntPtr.Zero || image?.ImageData == null) {
+                return null;
+            }
+
+            var vslbImage = image.Value;
+            var type = (EImageType)vslbImage.type;
+
+            try {
+                switch (type) {
+                    case EImageType.eImageTypeNormal:
+                    case EImageType.eImageTypeBGR: {
+                            try {
+                                await _semaphoreSlim.WaitAsync();
+                                var channels = (type == EImageType.eImageTypeBGR ? 3 : 1);
+                                var fmt = (channels == 3 ? PixelFormat.Format24bppRgb : PixelFormat.Format8bppIndexed);
+
+                                var returnBmp = new Bitmap(vslbImage.width, vslbImage.height, fmt);
+
+                                if (channels == 1) {
+                                    var palette = returnBmp.Palette;
+                                    for (var ii = 0; ii < 256; ii++)
+                                        palette.Entries[ii] = System.Drawing.Color.FromArgb(ii, ii, ii);
+                                    returnBmp.Palette = palette;
+                                }
+
+                                using (var memoryOwner = MemoryPool<byte>.Shared.Rent(vslbImage.width * vslbImage.height)) {
+                                    var imgData = memoryOwner.Memory.Slice(0, vslbImage.width * vslbImage.height).ToArray();
+                                    Marshal.Copy(vslbImage.ImageData, imgData, 0, vslbImage.width * vslbImage.height);
+                                    var bmpData = returnBmp.LockBits(new Rectangle(0, 0, vslbImage.width, vslbImage.height),
+                                        ImageLockMode.ReadWrite, fmt);
+                                    var bmpPtr = bmpData.Scan0;
+
+                                    for (var y = 0; y < vslbImage.height; y++) {
+                                        for (var x = 0; x < vslbImage.width; x++) {
+                                            var pixelValue = imgData[y * vslbImage.width + x];
+                                            Marshal.WriteByte(bmpPtr, y * bmpData.Stride + x, pixelValue);
+                                        }
+                                    }
+
+                                    returnBmp.UnlockBits(bmpData);
+                                }
+
+                                return returnBmp;
+                            }
+                            finally {
+                                _semaphoreSlim.Release();
+                            }
+                        }
+                    case EImageType.eImageTypeJpeg: {
+                            using var tjDecompress = new TJDecompressor();
+                            var imgType = EImageType.eImageTypeNormal;
+                            var retImg = tjDecompress.Decompress(vslbImage.ImageData, (ulong)vslbImage.dataSize,
+                                TJFlags.NONE);
+
+                            imgType = retImg.PixelFormat switch {
+                                TJPixelFormats.TJPF_GRAY => EImageType.eImageTypeNormal,
+                                TJPixelFormats.TJPF_BGR => EImageType.eImageTypeBGR,
+                                _ => imgType
+                            };
+
+                            // Allocate memory in the unmanaged heap and copy the data to that memory location
+                            var dataPtr = Marshal.AllocHGlobal(retImg.Data.Length);
+                            Marshal.Copy(retImg.Data, 0, dataPtr, retImg.Data.Length);
+
+                            // Make the recursive call after processing the current image
+                            var decompressedBitmap = new VslbImage {
+                                ImageData = dataPtr,
+                                dataSize = retImg.Data.Length,
+                                type = (int)imgType,
+                                width = retImg.Width,
+                                height = retImg.Height
+                            };
+                            return await ToBitmap3(decompressedBitmap, areaList);
+                        }
+                }
+            }
+            catch (Exception e) {
+                OnExcepted(e);
+            }
+
+            return null;
+        }
+
+        public Bitmap ToBitmap5(VslbImage imageInfo) {
+            if (imageInfo.ImageData == IntPtr.Zero || imageInfo.dataSize <= 0 || imageInfo.height <= 0 || imageInfo.width <= 0) {
+                return null;
+            }
+
+            var type = (LogisticsAPIStruct.EImageType)imageInfo.type;
+            try {
+                switch (type) {
+                    case LogisticsAPIStruct.EImageType.eImageTypeNormal:
+                    case LogisticsAPIStruct.EImageType.eImageTypeBGR: {
+                            int channels = (type == LogisticsAPIStruct.EImageType.eImageTypeBGR ? 3 : 1);
+                            PixelFormat fmt = (channels == 3 ? PixelFormat.Format24bppRgb : PixelFormat.Format8bppIndexed);
+
+                            using (MemoryStream stream = new MemoryStream()) {
+                                // 写入图像数据到内存流中
+                                using (BinaryWriter writer = new BinaryWriter(stream)) {
+                                    byte[] data = new byte[imageInfo.dataSize];
+                                    Marshal.Copy(imageInfo.ImageData, data, 0, imageInfo.dataSize);
+                                    writer.Write(data, 0, imageInfo.dataSize);
+                                    writer.Flush();
+                                    // 不需要显式调用 writer.Close() 或 writer.Dispose()
+                                }
+                                stream.Position = 0;
+                                // 创建位图对象
+                                Bitmap returnBmp = new Bitmap(imageInfo.width, imageInfo.height, fmt);
+                                if (channels == 1) {
+                                    var palette = returnBmp.Palette;
+                                    for (var ii = 0; ii < 256; ii++)
+                                        palette.Entries[ii] = Color.FromArgb(ii, ii, ii);
+                                    returnBmp.Palette = palette;
+                                }
+
+                                // 从内存流中读取图像数据并解码为位图
+                                returnBmp = new Bitmap(stream);
+                                // 释放非托管内存
+                                Marshal.FreeHGlobal(imageInfo.ImageData);
+                                return returnBmp;
+                            }
+                        }
+                    case LogisticsAPIStruct.EImageType.eImageTypeJpeg: {
+                            using (var tjDecompress = new TJDecompressor()) {
+                                var imgType = LogisticsAPIStruct.EImageType.eImageTypeNormal;
+                                var retImg = tjDecompress.Decompress(imageInfo.ImageData, (ulong)imageInfo.dataSize, TJFlags.NONE);
+
+                                if (retImg.PixelFormat == TJPixelFormats.TJPF_GRAY) {
+                                    imgType = LogisticsAPIStruct.EImageType.eImageTypeNormal;
+                                }
+                                else if (retImg.PixelFormat == TJPixelFormats.TJPF_BGR) {
+                                    imgType = LogisticsAPIStruct.EImageType.eImageTypeBGR;
+                                }
+
+                                // 创建内存流并将解压后的图像数据写入到内存流中
+                                using (MemoryStream stream = new MemoryStream(retImg.Data)) {
+                                    var buffer = new byte[stream.Length];
+                                    stream.Read(buffer, 0, buffer.Length);
+
+                                    IntPtr imageDataPtr = Marshal.AllocHGlobal(buffer.Length);
+                                    Marshal.Copy(buffer, 0, imageDataPtr, buffer.Length);
+                                    var rawImg = new VslbImage {
+                                        ImageData = imageDataPtr,
+                                        dataSize = (int)stream.Length,
+                                        type = (int)imgType,
+                                        width = retImg.Width,
+                                        height = retImg.Height
+                                    };
+                                    return ToBitmap(rawImg);
+                                }
+                            }
+                        }
+                    default:
+                        break;
+                }
+            }
+            catch (Exception ex) {
+                // 异常处理
+            }
+
+            return null;
+        }
+
+        public Bitmap ToBitmap2(VslbImage imageInfo) {
+            if (imageInfo.ImageData == IntPtr.Zero || imageInfo.dataSize <= 0 || imageInfo.height <= 0 || imageInfo.width <= 0) {
+                return null;
+            }
+
+            var type = (LogisticsAPIStruct.EImageType)imageInfo.type;
+
+            try {
+                switch (type) {
+                    case LogisticsAPIStruct.EImageType.eImageTypeNormal:
+                    case LogisticsAPIStruct.EImageType.eImageTypeBGR: {
+                            int channels = (type == LogisticsAPIStruct.EImageType.eImageTypeBGR ? 3 : 1);
+                            PixelFormat fmt = (channels == 3 ? PixelFormat.Format24bppRgb : PixelFormat.Format8bppIndexed);
+
+                            var streamPool = StreamPool.Value;
+                            var writerPool = WriterPool.Value;
+
+                            MemoryStream stream = null;
+                            BinaryWriter writer = null;
+
+                            for (int i = 0; i < PoolSize; i++) {
+                                if (streamPool[i] == null) {
+                                    stream = new MemoryStream();
+                                    writer = new BinaryWriter(stream);
+                                    streamPool[i] = stream;
+                                    writerPool[i] = writer;
+                                    break;
+                                }
+                                else if (!streamPool[i].TryGetBuffer(out _)) {
+                                    stream = streamPool[i];
+                                    writer = writerPool[i];
+                                    stream.SetLength(0);
+                                    stream.Position = 0;
+                                    break;
+                                }
+                            }
+
+                            if (stream == null || writer == null) {
+                                // 如果对象池已满，使用普通的内存操作
+                                stream = new MemoryStream();
+                                writer = new BinaryWriter(stream);
+                            }
+
+                            byte[] data = new byte[imageInfo.dataSize];
+                            Marshal.Copy(imageInfo.ImageData, data, 0, imageInfo.dataSize);
+                            writer.Write(data, 0, imageInfo.dataSize);
+                            writer.Flush();
+
+                            stream.Position = 0;
+                            Bitmap returnBmp = new Bitmap(imageInfo.width, imageInfo.height, fmt);
+
+                            if (channels == 1) {
+                                var palette = returnBmp.Palette;
+                                for (var ii = 0; ii < 256; ii++)
+                                    palette.Entries[ii] = Color.FromArgb(ii, ii, ii);
+                                returnBmp.Palette = palette;
+                            }
+
+                            returnBmp = new Bitmap(stream);
+
+                            Marshal.FreeHGlobal(imageInfo.ImageData);
+                            return returnBmp;
+                        }
+                    case LogisticsAPIStruct.EImageType.eImageTypeJpeg: {
+                            using (var tjDecompress = new TJDecompressor()) {
+                                var imgType = LogisticsAPIStruct.EImageType.eImageTypeNormal;
+                                var retImg = tjDecompress.Decompress(imageInfo.ImageData, (ulong)imageInfo.dataSize, TJFlags.NONE);
+
+                                if (retImg.PixelFormat == TJPixelFormats.TJPF_GRAY) {
+                                    imgType = LogisticsAPIStruct.EImageType.eImageTypeNormal;
+                                }
+                                else if (retImg.PixelFormat == TJPixelFormats.TJPF_BGR) {
+                                    imgType = LogisticsAPIStruct.EImageType.eImageTypeBGR;
+                                }
+
+                                var streamPool = StreamPool.Value;
+                                var writerPool = WriterPool.Value;
+
+                                MemoryStream stream = null;
+                                BinaryWriter writer = null;
+
+                                for (int i = 0; i < PoolSize; i++) {
+                                    if (streamPool[i] == null) {
+                                        stream = new MemoryStream(retImg.Data);
+                                        writer = new BinaryWriter(stream);
+                                        streamPool[i] = stream;
+                                        writerPool[i] = writer;
+                                        break;
+                                    }
+                                    else if (!streamPool[i].TryGetBuffer(out _)) {
+                                        stream = streamPool[i];
+                                        writer = writerPool[i];
+                                        stream.SetLength(retImg.Data.Length);
+                                        stream.Position = 0;
+                                        stream.Write(retImg.Data, 0, retImg.Data.Length);
+                                        stream.Position = 0;
+                                        break;
+                                    }
+                                }
+
+                                if (stream == null || writer == null) {
+                                    // 如果对象池已满，使用普通的内存操作
+                                    stream = new MemoryStream(retImg.Data);
+                                    writer = new BinaryWriter(stream);
+                                }
+
+                                IntPtr imageDataPtr = Marshal.AllocHGlobal(retImg.Data.Length);
+                                Marshal.Copy(retImg.Data, 0, imageDataPtr, retImg.Data.Length);
+
+                                var rawImg = new VslbImage {
+                                    ImageData = imageDataPtr,
+                                    dataSize = retImg.Data.Length,
+                                    type = (int)imgType,
+                                    width = retImg.Width,
+                                    height = retImg.Height
+                                };
+
+                                return ToBitmap(rawImg);
+                            }
+                        }
+                    default:
+                        break;
+                }
+            }
+            catch (Exception ex) {
+                // 异常处理
+            }
+
+            return null;
+        }
+
+        protected virtual async void OnNotBarcodeHitEvent(BarcodeHitEventArgs e) {
+            await Task.Yield();
+            NotBarcodeHitEvent?.Invoke(this, e);
         }
     }
 }

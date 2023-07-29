@@ -3,6 +3,7 @@ using System.IO;
 using System.Data;
 using System.Linq;
 using System.Windows;
+using System.Threading;
 using System.Reflection;
 using System.Diagnostics;
 using System.Configuration;
@@ -27,7 +28,7 @@ namespace WpfApp1 {
                 File.AppendAllLines($"{Directory.GetCurrentDirectory()}\\异常日志.txt",
                     new[] { args.ExceptionObject.ToString() });
             };
-
+            ThreadPool.SetMinThreads(300, 300);
             base.OnStartup(e);
         }
     }
