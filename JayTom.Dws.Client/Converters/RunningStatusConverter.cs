@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 
 namespace JayTom.Dws.Client.Converters {
-
     public class RunningStatusConverter : IValueConverter {
 
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
@@ -16,7 +15,7 @@ namespace JayTom.Dws.Client.Converters {
                     return "\xe693";
                 }
                 else if (parameter.Equals("Text")) {
-                    return "Stop";
+                    return "停止";// "Stop"
                 }
             }
             else {
@@ -24,7 +23,7 @@ namespace JayTom.Dws.Client.Converters {
                     return "\xea82";
                 }
                 else if (parameter.Equals("Text")) {
-                    return "Start";
+                    return "启动";//Start
                 }
             }
 

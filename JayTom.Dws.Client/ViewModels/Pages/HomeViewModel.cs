@@ -47,7 +47,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         private float _length;
         private float _width;
         private float _height;
+        private bool _isSwitchingState;
         private static SemaphoreSlim _runningSemaphoreSlim = new(1, 1);
+        private static SemaphoreSlim _imageSemaphoreSlim = new(1, 1);
 
         public SnackbarMessageQueue HomeMessageQueue {
             get => _homeMessageQueue;
@@ -94,6 +96,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         public bool RunningStatus {
             get => _runningStatus;
             set => SetProperty(ref _runningStatus, value);
+        }
+
+        /// <summary>
+        /// 开关按钮切换状态
+        /// </summary>
+        public bool IsSwitchingState {
+            get => _isSwitchingState;
+            set => SetProperty(ref _isSwitchingState, value);
         }
 
         #region 条码信息
@@ -244,41 +254,20 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     CameraItems.AddRange(infoModels);
                 });
             };
-            _deviceService.BarcodeScanned += async delegate (object? sender, BarcodeHitEventArgs args) {
-                //更新图片
-                await Application.Current.Dispatcher.InvokeAsync(() => {
-                    var model = CameraItems.FirstOrDefault(f => f.CameraName.Equals(args.CameraName));
-                    if (model is not null) {
-                        //图片转换
-                        if (args?.Image is not null) {
-                            if (args.Timestamp != model.ImageTimestamp) {
-                                model.Image = null;
-                                model.ImageTimestamp = args.Timestamp;
-                                var thumbnailWidth = (int)(args.Image.Width * 0.3);
-                                var thumbnailHeight = (int)(args.Image.Height * 0.3);
-                                using var thumbnail = args.Image.GetThumbnailImage(thumbnailWidth, thumbnailHeight,
-                                    null, IntPtr.Zero);
-                                // 将缩略图转换为BitmapSource
-                                model.Image = ((Bitmap)thumbnail).ConvertBitmapToBitmapSource();
-                                BarCode = args.Barcode;
-                                AddNewRow(new BarCodeItemModel() {
-                                    Barcode = BarCode,
-                                    ScanTime = args.ScanTime,
-                                });
-                            }
-                        }
-                        model.FrameRate = args?.FrameRate ?? 0;
-                    }
-                    //更新右边信息
-                });
-            };
+            _deviceService.BarcodeScanned += DeviceServiceOnBarcodeScanned;
+
             _deviceService.NotBarcodeHitEvent += async delegate (object? sender, BarcodeHitEventArgs args) {
                 await Application.Current.Dispatcher.InvokeAsync(() => {
                     var model = CameraItems.FirstOrDefault(f => f.CameraName.Equals(args.CameraName));
                     if (model is not null) {
                         model.Image = null;
-                        HomeMessageQueue.Enqueue("未识别到条码!");
+                        //更新右边信息
+                        BarCode = "未识别到条码";
                     }
+                });
+                AddNewRow(new BarCodeItemModel() {
+                    Barcode = args.Barcode!,
+                    ScanTime = args.ScanTime!,
                 });
             };
             _deviceService.CameraDisconnected += delegate (object? sender, List<ICamera> list) {
@@ -291,6 +280,39 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
 
                 //弹出提示框
             };
+        }
+
+        private async void DeviceServiceOnBarcodeScanned(object? sender, BarcodeHitEventArgs args) {
+            //更新图片
+            await _imageSemaphoreSlim.WaitAsync();
+            var model = CameraItems.FirstOrDefault(f => f.CameraName.Equals(args.CameraName));
+            if (model is not null) {
+                //图片转换
+                if (args?.Image is not null) {
+                    if (args.Timestamp != model.ImageTimestamp) {
+                        model.Image = null;
+                        await Task.Delay(100);
+                        model.ImageTimestamp = args.Timestamp;
+                        var thumbnailWidth = (int)(args.Image.Width * 0.3);
+                        var thumbnailHeight = (int)(args.Image.Height * 0.3);
+                        using var thumbnail = args.Image.GetThumbnailImage(thumbnailWidth, thumbnailHeight,
+                            null, IntPtr.Zero);
+                        // 将缩略图转换为BitmapSource
+                        await Application.Current.Dispatcher.InvokeAsync(() => {
+                            //更新图片
+                            model.Image = ((Bitmap)thumbnail).ConvertBitmapToBitmapSource();
+                            model.FrameRate = args?.FrameRate ?? 0;
+                            //更新右边信息
+                            BarCode = args?.Barcode ?? "未识别到条码";
+                        });
+                    }
+                }
+            }
+            AddNewRow(new BarCodeItemModel() {
+                Barcode = args.Barcode!,
+                ScanTime = args.ScanTime!,
+            });
+            _imageSemaphoreSlim.Release();
         }
 
         /// <summary>
@@ -339,6 +361,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
 
         private async void StatusClickDelegate(CameraItemInfoModel obj) {
             //先加载进度条
+
             if (!obj.IsSwitchingState) {
                 try {
                     obj.IsSwitchingState = true;
@@ -350,14 +373,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                         _ => obj.Status
                     };
                 }
-                catch (Exception e) {
-                }
                 finally {
                     obj.IsSwitchingState = false;
                 }
             }
-
-            Console.WriteLine(obj);
         }
 
         /// <summary>
@@ -369,22 +388,30 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
 
         private async void StartDelegate(CameraItemInfoModel obj) {
             await Task.Run(async () => {
-                await _runningSemaphoreSlim.WaitAsync();
-                if (!RunningStatus) {
-                    //启动
-                    var (key, value) = await _deviceService.Start();
-                    //提示
-                }
-                else {
-                    //停止
-                    var (key, value) = await _deviceService.Stop();
-                    //提示
-                }
+                if (!IsSwitchingState) {
+                    try {
+                        await _runningSemaphoreSlim.WaitAsync();
+                        IsSwitchingState = true;
+                        if (!RunningStatus) {
+                            //启动
+                            var (key, value) = await _deviceService.Start();
+                            //提示
+                        }
+                        else {
+                            //停止
+                            var (key, value) = await _deviceService.Stop();
+                            //提示
+                        }
 
-                await Application.Current.Dispatcher.InvokeAsync(() => {
-                    RunningStatus = _deviceService.RunningStatus;
-                });
-                _runningSemaphoreSlim.Release();
+                        await Application.Current.Dispatcher.InvokeAsync(() => {
+                            RunningStatus = _deviceService.RunningStatus;
+                        });
+                    }
+                    finally {
+                        _runningSemaphoreSlim.Release();
+                        IsSwitchingState = false;
+                    }
+                }
             });
         }
 
@@ -400,6 +427,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     PanoramaImagePath = item.PanoramaImagePath,
                     BarcodeImagePath = item.BarcodeImagePath,
                 });
+                item.Num = BarCodeItems.Count + 1;
                 BarCodeItems.Insert(0, item);
                 item.IsInserting = true;
                 TotalDataCount += 1;

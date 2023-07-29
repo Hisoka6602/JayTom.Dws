@@ -2,6 +2,7 @@
 using JayTom.Dws.Data.LocalData;
 using JayTom.Dws.Data.LocalConf;
 using Microsoft.EntityFrameworkCore;
+using JayTom.Dws.Data.LocalConf.CameraConfig;
 
 namespace JayTom.Dws.Infrastructure {
 
@@ -54,6 +55,28 @@ namespace JayTom.Dws.Infrastructure {
                 });
                 modelBuilder.Entity<RequestParametersInfoModel>()
                     .HasIndex(b => b.InterfaceName)
+                    .IsUnique();
+                //BarcodeScannerCamera
+                modelBuilder.Entity<BarcodeScannerCameraConfigInfoModel>().HasKey(c => new {
+                    c.Id
+                });
+                modelBuilder.Entity<BarcodeScannerCameraConfigInfoModel>()
+                    .HasIndex(b => b.SerialNumber)
+                    .IsUnique();
+                //PanoramaCamera
+                modelBuilder.Entity<PanoramaCameraConfigInfoModel>().HasKey(c => new {
+                    c.Id
+                });
+
+                modelBuilder.Entity<PanoramaCameraConfigInfoModel>()
+                    .HasIndex(b => b.SerialNumber)
+                    .IsUnique();
+                //VolumeCamera
+                modelBuilder.Entity<VolumeCameraConfigInfoModel>().HasKey(c => new {
+                    c.Id
+                });
+                modelBuilder.Entity<VolumeCameraConfigInfoModel>()
+                    .HasIndex(b => b.SerialNumber)
                     .IsUnique();
             }
             //log

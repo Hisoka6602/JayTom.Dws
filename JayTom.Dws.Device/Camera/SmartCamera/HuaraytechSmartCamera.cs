@@ -75,94 +75,97 @@ namespace JayTom.Dws.Device.Camera.SmartCamera {
         /// <param name="sender"></param>
         /// <param name="args"></param>
         private async void DwsManagerOnCodeHandle(object? sender, LogisticsCodeEventArgs args) {
-            try {
-                await _semaphoreSlim.WaitAsync();
-                var volumeInfo = new VolumeInfo {
-                    Length = args.VolumeInfo.length,
-                    Width = args.VolumeInfo.width,
-                    Height = args.VolumeInfo.height,
-                    Volume = args.VolumeInfo.volume,
-                };
-                var info = new BaseCodeData {
-                    OutputResult = args.OutputResult,
-                    CameraID = args.CameraID,
-                    CodeList = args.CodeList,
-                    AreaList = args.AreaList,
-                    Weight = args.Weight,
-                    VolumeInfo = volumeInfo,
-                    OriImage = args.OriginalImage,
-                    WayImage = args.WaybillImage,
-                    CodeTimeStamp = args.CodeTimeStamp,
-                    CodesInfo = args.CodesInfo,
-                    BagTimeInfo = new TimeInfo {
-                        TimeCallback = args.Bag_TimeInfo.timeCallback,
-                        TimeCodeParse = args.Bag_TimeInfo.timeCodeParse,
-                        TimeCollect = args.Bag_TimeInfo.timeCollect,
-                        TimeDown = args.Bag_TimeInfo.timeDown,
-                        TimeFrameGet = args.Bag_TimeInfo.timeFrameGet,
-                        TimeFrameSend = args.Bag_TimeInfo.timeFrameSend,
-                        TimeUp = args.Bag_TimeInfo.timeUp,
-                        TimVol = args.Bag_TimeInfo.timVol,
-                        TimWeight = args.Bag_TimeInfo.timWeight
-                    },
-                    WeightInfo = new WeightData {
-                        Flag = args.WeightData.flag,
-                        OrigData = args.WeightData.origData,
-                        Weight = args.WeightData.weight,
-                        WeightTimeStamp = args.WeightData.weightTimeStamp
-                    },
-                };
+            if (args.OutputResult != 0) {
+                try {
+                    await _semaphoreSlim.WaitAsync();
+                    var volumeInfo = new VolumeInfo {
+                        Length = args.VolumeInfo.length,
+                        Width = args.VolumeInfo.width,
+                        Height = args.VolumeInfo.height,
+                        Volume = args.VolumeInfo.volume,
+                    };
+                    var info = new BaseCodeData {
+                        OutputResult = args.OutputResult,
+                        CameraID = args.CameraID,
+                        CodeList = args.CodeList,
+                        AreaList = args.AreaList,
+                        Weight = args.Weight,
+                        VolumeInfo = volumeInfo,
+                        OriImage = args.OriginalImage,
+                        WayImage = args.WaybillImage,
+                        CodeTimeStamp = args.CodeTimeStamp,
+                        CodesInfo = args.CodesInfo,
+                        BagTimeInfo = new TimeInfo {
+                            TimeCallback = args.Bag_TimeInfo.timeCallback,
+                            TimeCodeParse = args.Bag_TimeInfo.timeCodeParse,
+                            TimeCollect = args.Bag_TimeInfo.timeCollect,
+                            TimeDown = args.Bag_TimeInfo.timeDown,
+                            TimeFrameGet = args.Bag_TimeInfo.timeFrameGet,
+                            TimeFrameSend = args.Bag_TimeInfo.timeFrameSend,
+                            TimeUp = args.Bag_TimeInfo.timeUp,
+                            TimVol = args.Bag_TimeInfo.timVol,
+                            TimWeight = args.Bag_TimeInfo.timWeight
+                        },
+                        WeightInfo = new WeightData {
+                            Flag = args.WeightData.flag,
+                            OrigData = args.WeightData.origData,
+                            Weight = args.WeightData.weight,
+                            WeightTimeStamp = args.WeightData.weightTimeStamp
+                        },
+                    };
 
-                var scanTime = DateTime.Now;
-                if (args?.CodeList?.Any() == true &&
-                    args?.AreaList?.Any() == true &&
-                    args?.AreaList?.Count == args?.CodeList?.Count) {
-                    if (args?.CodeList?.Any(a => a.Equals("noread")) == true) {
-                        OnNotBarcodeHitEvent(new BarcodeHitEventArgs() {
-                            Barcode = "noread",
-                            ScanTime = scanTime,
-                            CameraName = CameraName
-                        });
-                        return;
-                    }
-                    var image = ToBitmap(info.OriImage);
-                    if (image != null) {
-                        if (IsShowBarcodeBorder && args?.AreaList?.Count > 0) {
-                            //画边框
-                            if (args?.AreaList?.Any() == true) {
-                                image = ConvertToNonIndexedPixelFormat(image);
-                                using var graphics = Graphics.FromImage(image);
-                                using var pen = new Pen(BarcodeBorderColor, BarcodeBorderSize);
-                                foreach (var point in args.AreaList) {
-                                    graphics.DrawPolygon(pen, point);
+                    var scanTime = DateTime.Now;
+                    if (info?.CodeList?.Any() == true &&
+                        info?.AreaList?.Any() == true &&
+                        info?.AreaList?.Count == info?.CodeList?.Count) {
+                        if (args?.CodeList?.Any(a => a.Equals("noread")) == true) {
+                            OnNotBarcodeHitEvent(new BarcodeHitEventArgs() {
+                                Barcode = "noread",
+                                ScanTime = scanTime,
+                                CameraName = CameraName
+                            });
+                            return;
+                        }
+                        var image = ToBitmap(info?.OriImage);
+                        if (image != null) {
+                            if (IsShowBarcodeBorder && args?.AreaList?.Count > 0) {
+                                //画边框
+                                if (info?.AreaList?.Any() == true) {
+                                    image = ConvertToNonIndexedPixelFormat(image);
+                                    using var graphics = Graphics.FromImage(image);
+                                    using var pen = new Pen(BarcodeBorderColor, BarcodeBorderSize);
+                                    foreach (var point in info.AreaList) {
+                                        graphics.DrawPolygon(pen, point);
+                                    }
                                 }
                             }
                         }
-                    }
-                    for (var i = 0; i < args!.CodeList!.Count; i++) {
-                        OnBarcodeHitEvent(new BarcodeHitEventArgs {
-                            Image = image,
-                            Barcode = args.CodeList[i],
-                            AreaCoords = args.AreaList?[i],
-                            CameraId = args.CameraID,
-                            ScanTime = scanTime,
-                            Timestamp = args.CodeTimeStamp,
-                            Length = (float)volumeInfo.Length,
-                            Width = (float)volumeInfo.Width,
-                            Height = (float)volumeInfo.Height,
-                            Volume = (float)volumeInfo.Volume,
-                            CameraName = CameraName
-                        });
+                        for (var i = 0; i < info!.CodeList!.Count; i++) {
+                            OnBarcodeHitEvent(new BarcodeHitEventArgs {
+                                Image = image,
+                                Barcode = info.CodeList[i],
+                                AreaCoords = info.AreaList?[i],
+                                CameraId = info.CameraID,
+                                ScanTime = scanTime,
+                                Timestamp = info.CodeTimeStamp,
+                                Length = (float)volumeInfo.Length,
+                                Width = (float)volumeInfo.Width,
+                                Height = (float)volumeInfo.Height,
+                                Volume = (float)volumeInfo.Volume,
+                                CameraName = CameraName,
+                                AllBarcodes = string.Join(",", info?.CodeList ?? new List<string>())
+                            });
+                        }
                     }
                 }
-            }
-            catch (Exception e) {
-                OnExcepted(e);
-                await File.AppendAllLinesAsync($"{Directory.GetCurrentDirectory()}\\异常日志.txt",
-                    new[] { JsonConvert.SerializeObject(e) });
-            }
-            finally {
-                _semaphoreSlim.Release();
+                catch (Exception e) {
+                    OnExcepted(e);
+                    await File.AppendAllLinesAsync($"{Directory.GetCurrentDirectory()}\\异常日志.txt",
+                        new[] { JsonConvert.SerializeObject(e) });
+                }
+                finally {
+                    _semaphoreSlim.Release();
+                }
             }
         }
 
@@ -180,6 +183,10 @@ namespace JayTom.Dws.Device.Camera.SmartCamera {
 
                 //卸载相机实时图片信息结果处理逻辑回调函数
                 _dwsManager?.DetachRealImageCB();
+                if (_dwsManager is not null) {
+                    _dwsManager.CodeHandle -= DwsManagerOnCodeHandle;
+                }
+                _dwsManager?.StopApp();
                 Status = DeviceStatus.Uninitialized;
                 OnDisconnected(this);
             }

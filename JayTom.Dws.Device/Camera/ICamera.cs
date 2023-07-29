@@ -126,6 +126,11 @@ namespace JayTom.Dws.Device.Camera {
         public Bitmap? Image { get; set; }
 
         /// <summary>
+        /// 本次光电触发的全部条码
+        /// </summary>
+        public string AllBarcodes { get; set; }
+
+        /// <summary>
         /// 条码
         /// </summary>
         public string Barcode { get; set; } = string.Empty;
@@ -234,22 +239,22 @@ namespace JayTom.Dws.Device.Camera {
         /// <summary>
         /// 工业相机
         /// </summary>
-        IndustrialCamera,
+        IndustrialCamera = 0,
 
         /// <summary>
         /// 全景相机
         /// </summary>
-        PanoramicCamera,
+        PanoramicCamera = 1,
 
         /// <summary>
         /// 3D相机
         /// </summary>
-        ThreeDCamera,
+        ThreeDCamera = 2,
 
         /// <summary>
         /// 智能相机
         /// </summary>
-        SmartCamera
+        SmartCamera = 3
     }
 
     public enum ConnectionType {
@@ -257,26 +262,26 @@ namespace JayTom.Dws.Device.Camera {
         /// <summary>
         /// USB连接
         /// </summary>
-        Usb,
+        Usb = 0,
 
         /// <summary>
         /// 网口连接
         /// </summary>
-        Ethernet,
+        Ethernet = 1,
 
         /// <summary>
         /// 串口连接
         /// </summary>
-        SerialPort,
+        SerialPort = 2,
 
         /// <summary>
         /// 蓝牙连接
         /// </summary>
-        Bluetooth,
+        Bluetooth = 3,
 
         /// <summary>
         /// Tcp连接
         /// </summary>
-        Tcp
+        Tcp = 4
     }
 }

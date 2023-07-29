@@ -27,16 +27,19 @@ using JayTom.Dws.Client.Views.Dialog;
 using JayTom.Dws.Client.Views.Editors;
 using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Client.ViewModels.Pages;
+using JayTom.Dws.Device.Camera._3DCamera;
 using JayTom.Dws.Infrastructure.IComputer;
 using JayTom.Dws.Client.ViewModels.Dialog;
 using JayTom.Dws.Client.ViewModels.Editors;
 using JayTom.Dws.Device.Camera.SmartCamera;
 using JayTom.Dws.Domain.Repository.LocalData;
+using JayTom.Dws.Domain.Repository.LocalConf;
 using Microsoft.Extensions.DependencyInjection;
 using JayTom.Dws.Client.Views.Pages.Preferences;
 using JayTom.Dws.Client.Service.BackgroundService;
 using JayTom.Dws.Client.ViewModels.Pages.Preferences;
 using DryIoc.Microsoft.DependencyInjection.Extension;
+using JayTom.Dws.Infrastructure.Repository.LocalConf;
 using JayTom.Dws.Infrastructure.Repository.LocalData;
 
 namespace JayTom.Dws.Client {
@@ -65,8 +68,10 @@ namespace JayTom.Dws.Client {
                     }).UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking), 300);
                 //配置内存缓存
                 services.AddMemoryCache();
-
-                services.AddScoped<IBarCodeRepository, BarCodeRepository>();
+                //本地数据表注册
+                services.AddScoped<IBarcodeScannerCameraConfigRepository, BarcodeScannerCameraConfigRepository>();
+                services.AddScoped<IPanoramaCameraConfigRepository, PanoramaCameraConfigRepository>();
+                services.AddScoped<IVolumeCameraConfigRepository, VolumeCameraConfigRepository>();
                 /*services.AddScoped<IConfigRepository, ConfigRepository>();
 
                 //服务注册
@@ -84,6 +89,7 @@ namespace JayTom.Dws.Client {
                 services.AddScoped<IComputerInfoReporter, ComputerInfoReporter>();
                 //设备注册
                 services.AddScoped<ICamera, HuaraytechSmartCamera>();
+
                 services.AddScoped<IDeviceService, DeviceService>();
             });
         }
