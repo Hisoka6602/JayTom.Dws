@@ -171,6 +171,8 @@
                 <ResourceDictionary Source="Template/LanguageComboBoxTemplate.xaml" />
                 <!--  菜单模板  -->
                 <ResourceDictionary Source="Template/MenuTemplate.xaml" />
+                <!--  相机菜单模板  -->
+                <ResourceDictionary Source="Template/CameraMenuTemplate.xaml" />
                 <!--  插件模板  -->
                 <ResourceDictionary Source="Template/PluginTemplate.xaml" />
                 <!--  摄像头模板  -->
@@ -191,6 +193,8 @@
                 <ResourceDictionary Source="Template/ComputerInfoTemplate.xaml" />
                 <!--  上传状态模板  -->
                 <ResourceDictionary Source="Template/UploadStatusTemplate.xaml" />
+                <!--  相机选择模板  -->
+                <ResourceDictionary Source="Template/CameraFinderTemplate.xaml" />
                 <!--  列表样式  -->
                 <ResourceDictionary Source="/Styles/VirtualizingDataGridStyle.xaml" />
             </ResourceDictionary.MergedDictionaries>

@@ -1,0 +1,270 @@
+﻿<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:cameras="clr-namespace:JayTom.Dws.Client.Models.Cameras"
+    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
+    <DataTemplate x:Key="CameraFinderTemplate" DataType="{x:Type cameras:CameraFinderItemInfoModel}">
+        <materialDesign:Card
+            Grid.Row="1"
+            Margin="15,5"
+            materialDesign:ElevationAssist.Elevation="Dp2"
+            Background="#2E2E2E"
+            UniformCornerRadius="25">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <!--  相机名称  -->
+                <StackPanel
+                    Grid.Column="0"
+                    MinHeight="50"
+                    Margin="8,0"
+                    Orientation="Horizontal">
+                    <!--  图标  -->
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontFamily="{StaticResource IconFontFamily}"
+                        FontSize="20"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="&#xe686;" />
+                    <!--  说明  -->
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                        FontSize="14"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="相机名称:" />
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                        FontSize="14"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="{Binding Name}" />
+                </StackPanel>
+                <!--  相机序列号  -->
+                <StackPanel
+                    Grid.Column="1"
+                    MinHeight="50"
+                    Margin="8,0"
+                    Orientation="Horizontal">
+                    <!--  图标  -->
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontFamily="{StaticResource IconFontFamily}"
+                        FontSize="20"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="&#xe686;" />
+                    <!--  说明  -->
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                        FontSize="14"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="相机序列号:" />
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                        FontSize="14"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="{Binding SerialNumber}" />
+                </StackPanel>
+                <!--  相机型号  -->
+                <StackPanel
+                    Grid.Column="2"
+                    MinHeight="50"
+                    Margin="8,0"
+                    Orientation="Horizontal">
+                    <!--  图标  -->
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontFamily="{StaticResource IconFontFamily}"
+                        FontSize="20"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="&#xe686;" />
+                    <!--  说明  -->
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                        FontSize="14"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="相机型号:" />
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                        FontSize="14"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="{Binding Model}" />
+                </StackPanel>
+                <!--  相机 IP 地址  -->
+                <StackPanel
+                    Grid.Column="3"
+                    MinHeight="50"
+                    Margin="8,0"
+                    Orientation="Horizontal">
+                    <!--  图标  -->
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontFamily="{StaticResource IconFontFamily}"
+                        FontSize="20"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="&#xe686;" />
+                    <!--  说明  -->
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                        FontSize="14"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="IP 地址:" />
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                        FontSize="14"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="{Binding IpAddress}" />
+                </StackPanel>
+                <!--  相机类型  -->
+                <StackPanel
+                    Grid.Column="4"
+                    MinHeight="50"
+                    Margin="8,0"
+                    Orientation="Horizontal">
+                    <!--  图标  -->
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontFamily="{StaticResource IconFontFamily}"
+                        FontSize="20"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="&#xe686;" />
+                    <!--  说明  -->
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                        FontSize="14"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="相机类型:" />
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                        FontSize="14"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="{Binding CameraType}" />
+                </StackPanel>
+                <!--  绑定  -->
+                <StackPanel
+                    Grid.Column="5"
+                    Margin="10,0,0,0"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center"
+                    Orientation="Horizontal">
+
+
+
+                    <!--  绑定到全景相机  -->
+                    <Button
+                        Width="90"
+                        Height="45"
+                        Margin="0"
+                        Padding="0"
+                        materialDesign:ButtonAssist.CornerRadius="0"
+                        materialDesign:ShadowAssist.ShadowEdges="Right"
+                        Background="BlueViolet"
+                        Command="{Binding NextPageCommand}"
+                        Style="{StaticResource ButtonFocusEnlargeStyle}"
+                        ToolTip="NextPage">
+                        <TextBlock
+                            Margin="2"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontFamily="{StaticResource CustomFontFamily}"
+                            FontSize="12"
+                            FontWeight="Bold"
+                            Foreground="White"
+                            RenderTransformOrigin=".5,.5"
+                            Text="绑定全景相机" />
+                    </Button>
+                    <!--  绑定到扫码相机  -->
+                    <Button
+                        Width="90"
+                        Height="45"
+                        Margin="0"
+                        Padding="0"
+                        materialDesign:ButtonAssist.CornerRadius="0"
+                        materialDesign:ShadowAssist.ShadowEdges="Right"
+                        Background="RoyalBlue"
+                        Command="{Binding NextPageCommand}"
+                        Style="{StaticResource ButtonFocusEnlargeStyle}"
+                        ToolTip="NextPage">
+                        <TextBlock
+                            Margin="2"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontFamily="{StaticResource CustomFontFamily}"
+                            FontSize="12"
+                            FontWeight="Bold"
+                            Foreground="White"
+                            RenderTransformOrigin=".5,.5"
+                            Text="绑定扫码相机" />
+                    </Button>
+                    <!--  绑定到体积相机  -->
+                    <Button
+                        Width="90"
+                        Height="45"
+                        Margin="0"
+                        Padding="0"
+                        materialDesign:ButtonAssist.CornerRadius="0,20,20,0"
+                        materialDesign:ShadowAssist.ShadowEdges="Right"
+                        Background="DodgerBlue"
+                        Command="{Binding LastPageCommand}"
+                        Style="{StaticResource ButtonFocusEnlargeStyle}"
+                        ToolTip="LastPage">
+                        <TextBlock
+                            Margin="2"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontFamily="{StaticResource CustomFontFamily}"
+                            FontSize="12"
+                            FontWeight="Bold"
+                            Foreground="White"
+                            RenderTransformOrigin=".5,.5"
+                            Text="绑定体积相机" />
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </materialDesign:Card>
+    </DataTemplate>
+</ResourceDictionary>

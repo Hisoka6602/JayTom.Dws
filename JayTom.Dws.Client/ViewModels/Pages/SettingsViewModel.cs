@@ -17,7 +17,6 @@ using System.Security.AccessControl;
 using System.Collections.ObjectModel;
 
 namespace JayTom.Dws.Client.ViewModels.Pages {
-
     public class SettingsViewModel : BindableBase {
         private readonly IRegionManager _regionManager;
 
@@ -33,7 +32,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     {
                         IconFont = "pack://application:,,,/Fonts/#iconfont",
                         IconCode = "\xe69d",
-                        IconSize = 22,
+                        IconSize = 25,
                     },
                     Title = "插件信息",
                     Description = "灵活下载/组合插件插件",
@@ -58,8 +57,22 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     IconFont = new IconInfoModel()
                     {
                         IconFont = "pack://application:,,,/Fonts/#iconfont",
+                        IconCode = "\xe63a",
+                        IconSize = 25
+                    },
+                    Title = "相机配置",
+                    Description = "相机管理配置",
+                    ClickCommand = ClickCommand,
+                    PageClassName = "CameraConfigurationPage"
+                },
+                //&#xe63a;
+                new MenuItemInfoModel()
+                {
+                    IconFont = new IconInfoModel()
+                    {
+                        IconFont = "pack://application:,,,/Fonts/#iconfont",
                         IconCode = "\xe664",
-                        IconSize = 22
+                        IconSize = 25
                     },
                     Title = "Api接口",
                     Description = "Api上传接口设置",

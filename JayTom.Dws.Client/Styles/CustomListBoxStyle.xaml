@@ -23,7 +23,10 @@
         </Setter>
     </Style>
 
-    <Style x:Key="CustomListBoxStyle" TargetType="ListBox">
+    <Style
+        x:Key="CustomListBoxStyle"
+        BasedOn="{StaticResource MaterialDesignCardsListBox}"
+        TargetType="ListBox">
 
         <Setter Property="ItemContainerStyle" Value="{StaticResource CustomListBoxItemStyle}" />
         <Style.Triggers>

@@ -41,6 +41,8 @@ using JayTom.Dws.Client.ViewModels.Pages.Preferences;
 using DryIoc.Microsoft.DependencyInjection.Extension;
 using JayTom.Dws.Infrastructure.Repository.LocalConf;
 using JayTom.Dws.Infrastructure.Repository.LocalData;
+using JayTom.Dws.Client.Views.Pages.Preferences.CameraConfiguration;
+using JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration;
 
 namespace JayTom.Dws.Client {
 
@@ -57,6 +59,12 @@ namespace JayTom.Dws.Client {
             {
                 containerRegistry.RegisterForNavigation<PluginMarketplacePage>();
                 containerRegistry.RegisterForNavigation<DataManagementPage>();
+                containerRegistry.RegisterForNavigation<CameraConfigurationPage>();
+                //相机
+                containerRegistry.RegisterForNavigation<BarcodeScannerCameraConfigPage>();
+                containerRegistry.RegisterForNavigation<CameraFinderPage>();
+                containerRegistry.RegisterForNavigation<PanoramaCameraConfigPage>();
+                containerRegistry.RegisterForNavigation<VolumeCameraConfigPage>();
             }
             //其他注册
             containerRegistry.GetContainer().RegisterServices(services => {
@@ -72,6 +80,7 @@ namespace JayTom.Dws.Client {
                 services.AddScoped<IBarcodeScannerCameraConfigRepository, BarcodeScannerCameraConfigRepository>();
                 services.AddScoped<IPanoramaCameraConfigRepository, PanoramaCameraConfigRepository>();
                 services.AddScoped<IVolumeCameraConfigRepository, VolumeCameraConfigRepository>();
+                services.AddScoped<IBarCodeRepository, BarCodeRepository>();
                 /*services.AddScoped<IConfigRepository, ConfigRepository>();
 
                 //服务注册
@@ -160,6 +169,11 @@ namespace JayTom.Dws.Client {
             ViewModelLocationProvider.Register<StatusBarPage, StatusBarViewModel>();
             ViewModelLocationProvider.Register<ApiAccessDialog, ApiAccessViewModel>();
             ViewModelLocationProvider.Register<DataManagementPage, DataManagementViewModel>();
+            ViewModelLocationProvider.Register<CameraConfigurationPage, CameraConfigurationViewModel>();
+            ViewModelLocationProvider.Register<BarcodeScannerCameraConfigPage, BarcodeScannerCameraConfigViewModel>();
+            ViewModelLocationProvider.Register<PanoramaCameraConfigPage, PanoramaCameraConfigViewModel>();
+            ViewModelLocationProvider.Register<VolumeCameraConfigPage, VolumeCameraConfigViewModel>();
+            ViewModelLocationProvider.Register<CameraFinderPage, CameraFinderViewModel>();
         }
     }
 }
