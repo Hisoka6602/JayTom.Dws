@@ -2,17 +2,25 @@
     x:Class="JayTom.Dws.Client.Views.Pages.Preferences.CameraConfiguration.VolumeCameraConfigPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
     xmlns:local="clr-namespace:JayTom.Dws.Client.Views.Pages.Preferences.CameraConfiguration"
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:mvvm="http://prismlibrary.com/"
+    Name="VolumeCameraConfigView"
     Title="VolumeCameraConfigPage"
     d:DesignHeight="450"
     d:DesignWidth="800"
     mvvm:ViewModelLocator.AutoWireViewModel="True"
+    FontFamily="{StaticResource CustomFontFamily}"
     mc:Ignorable="d">
-
+    <b:Interaction.Triggers>
+        <b:EventTrigger EventName="Loaded" SourceName="VolumeCameraConfigView">
+            <b:InvokeCommandAction Command="{Binding LoadedCommand, IsAsync=False}" CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Page}}}" />
+        </b:EventTrigger>
+    </b:Interaction.Triggers>
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -81,7 +89,7 @@
                             FontWeight="Bold"
                             Foreground="White"
                             ItemsSource="{Binding VolumeMeasurementModeItems, UpdateSourceTrigger=PropertyChanged}"
-                            SelectedItem="{Binding SelectedUploadStatus, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                            SelectedItem="{Binding VolumeMeasurementMode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                             SelectedValuePath="VolumeMeasurementMode" />
                     </Border>
                 </StackPanel>
@@ -124,7 +132,7 @@
                             FontSize="15"
                             FontWeight="Bold"
                             Foreground="White"
-                            Text="{Binding TimestampedGuid, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                            Text="{Binding MinSyncTime, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                     </Border>
                 </StackPanel>
                 <!--  最大同步时间  -->
@@ -166,7 +174,7 @@
                             FontSize="15"
                             FontWeight="Bold"
                             Foreground="White"
-                            Text="{Binding TimestampedGuid, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                            Text="{Binding MaxSyncTime, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                     </Border>
                 </StackPanel>
             </StackPanel>
@@ -221,7 +229,7 @@
                             FontWeight="Bold"
                             Foreground="White"
                             ItemsSource="{Binding TriggerModeDisplayItems, UpdateSourceTrigger=PropertyChanged}"
-                            SelectedItem="{Binding SelectedUploadStatus, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                            SelectedItem="{Binding TriggerMode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                             SelectedValuePath="TriggerMode" />
                     </Border>
                 </StackPanel>
@@ -264,7 +272,7 @@
                             FontSize="15"
                             FontWeight="Bold"
                             Foreground="White"
-                            Text="{Binding TimestampedGuid, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                            Text="{Binding MinLength, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                     </Border>
                 </StackPanel>
                 <!--  最大同步时间  -->
@@ -306,7 +314,7 @@
                             FontSize="15"
                             FontWeight="Bold"
                             Foreground="White"
-                            Text="{Binding TimestampedGuid, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                            Text="{Binding MaxLength, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                     </Border>
                 </StackPanel>
             </StackPanel>
@@ -318,7 +326,8 @@
                 MinHeight="30"
                 Margin="15,0"
                 materialDesign:ButtonAssist.CornerRadius="5"
-                BorderThickness="0">
+                BorderThickness="0"
+                Command="{Binding ApplyAllChangesCommand}">
                 <Button.Style>
                     <Style BasedOn="{StaticResource MaterialDesignFlatAccentBgButton}" TargetType="Button">
 
@@ -362,6 +371,7 @@
         </Grid>
         <!--  列表  -->
         <DataGrid
+            Name="CameraDataGrid"
             Grid.Row="1"
             Margin="20,10,20,0"
             Padding="10,0"
@@ -522,6 +532,7 @@
                         <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="触发模式" />
                     </materialDesign:DataGridComboBoxColumn.Header>
                     <materialDesign:DataGridComboBoxColumn.EditingElementStyle>
+
                         <Style BasedOn="{StaticResource MaterialDesignOutlinedComboBox}" TargetType="ComboBox">
                             <Setter Property="materialDesign:ColorZoneAssist.Mode" Value="Dark" />
                             <Setter Property="Foreground" Value="White" />
@@ -530,7 +541,7 @@
                 </materialDesign:DataGridComboBoxColumn>
                 <!--  操作  -->
                 <DataGridTemplateColumn
-                    Width="90"
+                    Width="190"
                     MinWidth="40"
                     MaxWidth="600"
                     CellStyle="{StaticResource CustomDataGridTextCellStyle}">
@@ -540,45 +551,80 @@
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <!--  定位按钮  -->
-                            <Button
-                                Width="80"
-                                Height="30"
-                                MinWidth="60"
-                                materialDesign:ButtonAssist.CornerRadius="5"
-                                Background="DimGray"
-                                Command="{Binding ElementName=DataManagementPageView, Path=DataContext.OpenPanoramicImageFolderCommand}"
-                                CommandParameter="{Binding}"
-                                Focusable="False"
-                                Foreground="Red"
-                                Style="{StaticResource MaterialDesignFlatLightButton}">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock
-                                        HorizontalAlignment="Center"
-                                        VerticalAlignment="Center"
-                                        FontFamily="{StaticResource IconFontFamily}"
-                                        FontSize="10"
-                                        Foreground="White"
-                                        Text="&#xe601;" />
-                                    <TextBlock
-                                        Margin="5,0"
-                                        HorizontalAlignment="Center"
-                                        VerticalAlignment="Center"
-                                        Background="Transparent"
-                                        FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
-                                        FontSize="13"
-                                        FontWeight="Light"
-                                        Foreground="White"
-                                        IsEnabled="True"
-                                        Text="删除"
-                                        TextAlignment="Justify" />
-                                </StackPanel>
-                            </Button>
+                            <StackPanel Orientation="Horizontal">
+                                <Button
+                                    Width="80"
+                                    Height="30"
+                                    MinWidth="60"
+                                    materialDesign:ButtonAssist.CornerRadius="5"
+                                    Background="RoyalBlue"
+                                    Command="{Binding ElementName=VolumeCameraConfigView, Path=DataContext.ApplyChangesCommand}"
+                                    CommandParameter="{Binding}"
+                                    Focusable="False"
+                                    Foreground="RoyalBlue"
+                                    Style="{StaticResource MaterialDesignFlatLightButton}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            FontFamily="{StaticResource IconFontFamily}"
+                                            FontSize="15"
+                                            Foreground="White"
+                                            Text="&#xe66e;" />
+                                        <TextBlock
+                                            Margin="5,0"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            Background="Transparent"
+                                            FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                                            FontSize="13"
+                                            FontWeight="Light"
+                                            Foreground="White"
+                                            IsEnabled="True"
+                                            Text="保存"
+                                            TextAlignment="Justify" />
+                                    </StackPanel>
+                                </Button>
+                                <Button
+                                    Width="80"
+                                    Height="30"
+                                    MinWidth="60"
+                                    Margin="5,0"
+                                    materialDesign:ButtonAssist.CornerRadius="5"
+                                    Background="DarkRed"
+                                    Command="{Binding ElementName=VolumeCameraConfigView, Path=DataContext.UnbindCameraCommand}"
+                                    CommandParameter="{Binding}"
+                                    Focusable="False"
+                                    Foreground="Red"
+                                    Style="{StaticResource MaterialDesignFlatLightButton}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            FontFamily="{StaticResource IconFontFamily}"
+                                            FontSize="10"
+                                            Foreground="White"
+                                            Text="&#xe601;" />
+                                        <TextBlock
+                                            Margin="5,0"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            Background="Transparent"
+                                            FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                                            FontSize="13"
+                                            FontWeight="Light"
+                                            Foreground="White"
+                                            IsEnabled="True"
+                                            Text="解绑"
+                                            TextAlignment="Justify" />
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
             </DataGrid.Columns>
         </DataGrid>
-
         <!--<ListBox
             Name="CameraListBox"
             Grid.Row="1"
@@ -619,5 +665,15 @@
                 </ControlTemplate>
             </ListBox.Template>
         </ListBox>-->
+        <!--  提示框  -->
+        <materialDesign:Snackbar
+            Grid.Row="1"
+            Width="Auto"
+            Height="Auto"
+            VerticalAlignment="Bottom"
+            Background="BlueViolet"
+            FontFamily="LoadFiraCode"
+            FontWeight="Bold"
+            MessageQueue="{Binding VolumeCameraMessageQueue}" />
     </Grid>
 </Page>

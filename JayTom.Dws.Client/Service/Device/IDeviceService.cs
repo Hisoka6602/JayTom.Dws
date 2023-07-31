@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Drawing;
+using System.Threading;
 using JayTom.Dws.Device;
 using System.Threading.Tasks;
 using JayTom.Dws.Device.Camera;
 using System.Collections.Generic;
+using JayTom.Dws.Client.Models.Cameras;
 
 namespace JayTom.Dws.Client.Service.Device {
 
@@ -49,6 +51,57 @@ namespace JayTom.Dws.Client.Service.Device {
         /// </summary>
         event EventHandler<RealTimeImageEventArgs> RealTimeImage;
 
+        /// <summary>
+        /// 相机枚举事件
+        /// </summary>
+        event EventHandler<List<CameraFinderItemInfoModel>> CameraEnumerationRefreshed;
+
+        /// <summary>
+        /// 相机枚举刷新
+        /// </summary>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        Task<KeyValuePair<bool, string>> OnCameraEnumerationRefreshed(CancellationToken token = default);
+
+        /// <summary>
+        /// 相机绑定事件
+        /// </summary>
+        event EventHandler<CameraFinderItemInfoModel> CameraBound;
+
+        /// <summary>
+        /// 相机绑定
+        /// </summary>
+        /// <param name="camera"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        Task<KeyValuePair<bool, string>> OnCameraBound(CameraFinderItemInfoModel camera, CancellationToken token = default);
+
+        /// <summary>
+        /// 相机解绑事件
+        /// </summary>
+        event EventHandler<CameraFinderItemInfoModel> CameraUnbound;
+
+        /// <summary>
+        /// 相机解绑
+        /// </summary>
+        /// <param name="camera"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        Task<KeyValuePair<bool, string>> OnCameraUnbound(CameraFinderItemInfoModel camera, CancellationToken token = default);
+
+        /// <summary>
+        /// 相机修改参数事件
+        /// </summary>
+        event EventHandler<List<CameraParametersModifiedEventArgs>> CameraParametersModified;
+
+        /// <summary>
+        /// 相机修改参数
+        /// </summary>
+        /// <param name="camera"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        Task<KeyValuePair<bool, string>> OnCameraParametersModified(List<CameraParametersModifiedEventArgs> camera, CancellationToken token = default);
+
         /*/// <summary>
         /// 当磅秤连接时触发的事件
         /// </summary>
@@ -82,12 +135,12 @@ namespace JayTom.Dws.Client.Service.Device {
         /// <summary>
         /// 启动设备服务
         /// </summary>
-        Task<KeyValuePair<bool, string>> Start();
+        Task<KeyValuePair<bool, string>> Start(CancellationToken token = default);
 
         /// <summary>
         /// 停止设备服务
         /// </summary>
-        Task<KeyValuePair<bool, string>> Stop();
+        Task<KeyValuePair<bool, string>> Stop(CancellationToken token = default);
     }
 
     public class DeviceExceptionEventArgs {
@@ -119,5 +172,18 @@ namespace JayTom.Dws.Client.Service.Device {
         /// 实时帧率
         /// </summary>
         public float RealTimeFrameRate { get; set; }
+    }
+
+    public class CameraParametersModifiedEventArgs : EventArgs {
+
+        /// <summary>
+        /// 已绑定类型
+        /// </summary>
+        public BoundCameraType Type { get; set; }
+
+        /// <summary>
+        /// 参数
+        /// </summary>
+        public object? Parameters { get; set; }
     }
 }

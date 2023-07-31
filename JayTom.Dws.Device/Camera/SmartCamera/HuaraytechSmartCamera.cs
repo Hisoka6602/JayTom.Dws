@@ -245,6 +245,7 @@ namespace JayTom.Dws.Device.Camera.SmartCamera {
                 };
                 //获取相机所有状态
                 var camerasStatus = _dwsManager.GetCamerasStatus()?.ToList();
+
                 if (camerasStatus?.Any() == true) {
                     OnExcepted(new Exception(JsonConvert.SerializeObject(camerasStatus)));
                 }
@@ -268,6 +269,10 @@ namespace JayTom.Dws.Device.Camera.SmartCamera {
 
         public event EventHandler<Exception>? Excepted;
 
+        public string SerialNumber { get; set; } = string.Empty;
+        public string Model { get; set; } = string.Empty;
+        public string Version { get; set; } = string.Empty;
+        public string IpAddress { get; set; } = string.Empty;
         public string CameraName { get; private set; } = "大华智能相机";
         public string CameraId { get; private set; } = string.Empty;
 
@@ -296,6 +301,21 @@ namespace JayTom.Dws.Device.Camera.SmartCamera {
         // 导入 LoadLibraryEx 函数
         [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         public static extern IntPtr LoadLibraryEx(string lpFileName, IntPtr hFile, uint dwFlags);*/
+
+        public async Task<List<ICamera>> RetrieveCamera(CancellationToken token = default) {
+            await Task.Yield();
+
+            var infos = _dwsManager?.GetWorkCameraInfo()?.ToList();
+            var list = infos?.Select(s => new HuaraytechSmartCamera {
+                SerialNumber = s.camDevSerialNumber,
+                CameraName = s.camDevID,
+                Model = s.camDevModelName,
+                Version = s.camDevVendor,
+
+                //Framerate = _dwsManager?.GetFrameRate()
+            })?.ToList();
+            return new List<ICamera>(list ?? new List<HuaraytechSmartCamera>());
+        }
 
         public KeyValuePair<bool, string> SetFilterCondition<T>(T condition) {
             throw new NotImplementedException();

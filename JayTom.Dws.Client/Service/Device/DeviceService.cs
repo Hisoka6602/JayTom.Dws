@@ -1,9 +1,14 @@
 ﻿using System;
+using System.Linq;
 using System.Drawing;
+using System.Threading;
 using JayTom.Dws.Device;
 using System.Threading.Tasks;
 using JayTom.Dws.Device.Camera;
 using System.Collections.Generic;
+using JayTom.Dws.Client.Models.Cameras;
+using CameraType = JayTom.Dws.Client.Models.CameraType;
+using ConnectionType = JayTom.Dws.Client.Models.ConnectionType;
 
 namespace JayTom.Dws.Client.Service.Device {
 
@@ -25,6 +30,75 @@ namespace JayTom.Dws.Client.Service.Device {
         public event EventHandler<VolumeCapturedEventArgs>? VolumeCaptured;
 
         public event EventHandler<RealTimeImageEventArgs>? RealTimeImage;
+
+        public event EventHandler<List<CameraFinderItemInfoModel>>? CameraEnumerationRefreshed;
+
+        public async Task<KeyValuePair<bool, string>> OnCameraEnumerationRefreshed(CancellationToken token = default) {
+            //枚举SDK相机
+            if (_camera.Status == DeviceStatus.Uninitialized) {
+                return new KeyValuePair<bool, string>(false, "设备未初始化!");
+            }
+            try {
+                var list = await _camera.RetrieveCamera(token);
+                var itemInfoModels = list.Select(s => new CameraFinderItemInfoModel {
+                    SerialNumber = s.SerialNumber,
+                    Model = s.Model,
+                    Name = s.CameraName,
+                    IpAddress = s.IpAddress,
+                    ConnectionType = (ConnectionType)s.ConnectionType,
+                    CameraType = (CameraType)s.CameraType,
+                    Version = s.Version
+                })?.ToList();
+                CameraEnumerationRefreshed?.Invoke(null, itemInfoModels ?? new List<CameraFinderItemInfoModel>());
+                return new KeyValuePair<bool, string>(false, "相机检索成功");
+            }
+            catch (Exception e) {
+                return new KeyValuePair<bool, string>(false, e.Message);
+            }
+        }
+
+        public event EventHandler<CameraFinderItemInfoModel>? CameraBound;
+
+        public async Task<KeyValuePair<bool, string>> OnCameraBound(CameraFinderItemInfoModel camera, CancellationToken token = default) {
+            //如果运行中则不能解绑或者绑定
+            await Task.Yield();
+            /*if (RunningStatus) {
+                return new KeyValuePair<bool, string>(false, $"设备运行中则不能解绑或者绑定!");
+            }
+            else {
+                CameraBound?.Invoke(null, camera);
+                return new KeyValuePair<bool, string>(true, string.Empty);
+            }*/
+            return new KeyValuePair<bool, string>(true, string.Empty);
+        }
+
+        public event EventHandler<CameraFinderItemInfoModel>? CameraUnbound;
+
+        public async Task<KeyValuePair<bool, string>> OnCameraUnbound(CameraFinderItemInfoModel camera, CancellationToken token = default) {
+            await Task.Yield();
+            /*if (RunningStatus) {
+                return new KeyValuePair<bool, string>(false, $"设备运行中则不能解绑或者绑定!");
+            }
+            else {
+                CameraUnbound?.Invoke(null, camera);
+                return new KeyValuePair<bool, string>(true, string.Empty);
+            }*/
+            return new KeyValuePair<bool, string>(true, string.Empty);
+        }
+
+        public event EventHandler<List<CameraParametersModifiedEventArgs>>? CameraParametersModified;
+
+        public async Task<KeyValuePair<bool, string>> OnCameraParametersModified(List<CameraParametersModifiedEventArgs> camera, CancellationToken token = default) {
+            await Task.Yield();
+            /*if (RunningStatus) {
+                return new KeyValuePair<bool, string>(false, $"设备运行中则不能解绑或者绑定!");
+            }
+            else {
+                CameraParametersModified?.Invoke(null, camera);
+                return new KeyValuePair<bool, string>(true, string.Empty);
+            }*/
+            return new KeyValuePair<bool, string>(true, string.Empty);
+        }
 
         public event EventHandler<DeviceExceptionEventArgs>? DeviceException;
 
@@ -60,7 +134,7 @@ namespace JayTom.Dws.Client.Service.Device {
             };
         }
 
-        public async Task<KeyValuePair<bool, string>> Start() {
+        public async Task<KeyValuePair<bool, string>> Start(CancellationToken token = default) {
             await Task.Yield();
             //相机初始化
             //其他各项初始化
@@ -92,7 +166,7 @@ namespace JayTom.Dws.Client.Service.Device {
             return new KeyValuePair<bool, string>(false, "设备初始化失败");
         }
 
-        public async Task<KeyValuePair<bool, string>> Stop() {
+        public async Task<KeyValuePair<bool, string>> Stop(CancellationToken token = default) {
             await Task.Yield();
             //各项停止和释放资源
             _camera?.Dispose();

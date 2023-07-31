@@ -4,6 +4,8 @@ using System.Text;
 using System.Drawing;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace JayTom.Dws.Device.Camera {
 
@@ -11,46 +13,67 @@ namespace JayTom.Dws.Device.Camera {
     /// 相机
     /// </summary>
     public interface ICamera : IDevice {
+        /// <summary>
+        /// 相机序列号
+        /// </summary>
+
+        public string SerialNumber { get; set; }
+
+        /// <summary>
+        /// 相机型号
+        /// </summary>
+        public string Model { get; set; }
+
+        /// <summary>
+        /// 相机固件版本
+        /// </summary>
+        public string Version { get; set; }
+
+        /// <summary>
+        /// 相机 IP 地址
+        /// </summary>
+
+        public string IpAddress { get; set; }
 
         /// <summary>
         /// 相机名称
         /// </summary>
-        string CameraName { get; }
+        public string CameraName { get; }
 
         /// <summary>
         /// 相机Id
         /// </summary>
-        string CameraId { get; }
+        public string CameraId { get; }
 
         /// <summary>
         /// 相机帧率
         /// </summary>
-        float Framerate { get; }
+        public float Framerate { get; }
 
         /// <summary>
         /// 条码边框大小
         /// </summary>
-        int BarcodeBorderSize { get; set; }
+        public int BarcodeBorderSize { get; set; }
 
         /// <summary>
         /// 边框颜色
         /// </summary>
-        System.Drawing.Color BarcodeBorderColor { get; set; }
+        public System.Drawing.Color BarcodeBorderColor { get; set; }
 
         /// <summary>
         /// 是否显示边框
         /// </summary>
-        bool IsShowBarcodeBorder { get; set; }
+        public bool IsShowBarcodeBorder { get; set; }
 
         /// <summary>
         /// 是否添加图片水印
         /// </summary>
-        bool IsUseImageWatermark { get; set; }
+        public bool IsUseImageWatermark { get; set; }
 
         /// <summary>
         /// 相机品牌
         /// </summary>
-        string Brand { get; }
+        public string Brand { get; }
 
         /// <summary>
         /// 相机状态
@@ -81,6 +104,8 @@ namespace JayTom.Dws.Device.Camera {
         /// 实时图片
         /// </summary>
         event EventHandler<Bitmap> RealtimeImageEvent;
+
+        Task<List<ICamera>> RetrieveCamera(CancellationToken token = default);
 
         /// <summary>
         /// 设置过滤条件

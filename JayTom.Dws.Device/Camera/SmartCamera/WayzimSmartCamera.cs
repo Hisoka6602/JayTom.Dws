@@ -140,6 +140,10 @@ namespace JayTom.Dws.Device.Camera.SmartCamera {
 
         public event EventHandler<Exception>? Excepted;
 
+        public string SerialNumber { get; set; }
+        public string Model { get; set; }
+        public string Version { get; set; }
+        public string IpAddress { get; set; }
         public string CameraName { get; } = "中科微至智能相机";
         public string CameraId { get; } = string.Empty;
         public float Framerate { get; } = 0;
@@ -157,6 +161,10 @@ namespace JayTom.Dws.Device.Camera.SmartCamera {
         public event EventHandler<BarcodeHitEventArgs>? NotBarcodeHitEvent;
 
         public event EventHandler<Bitmap>? RealtimeImageEvent;
+
+        public Task<List<ICamera>> RetrieveCamera(CancellationToken token = default) {
+            throw new NotImplementedException();
+        }
 
         public KeyValuePair<bool, string> SetFilterCondition<T>(T condition) {
             throw new NotImplementedException();
