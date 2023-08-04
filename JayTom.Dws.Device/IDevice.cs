@@ -82,6 +82,11 @@
         /// 已断开
         /// </summary>
         Disconnected,
+
+        /// <summary>
+        /// 已初始化
+        /// </summary>
+        Initialized
     }
 
     public enum DeviceType {

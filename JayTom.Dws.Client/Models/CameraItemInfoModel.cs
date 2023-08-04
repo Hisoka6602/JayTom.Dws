@@ -15,11 +15,11 @@ namespace JayTom.Dws.Client.Models {
         private CameraType _type;
         private CameraStatus _status = CameraStatus.Disconnected;
         private double _frameRate;
-        private int _cameraId;
+        private string _cameraId = string.Empty;
         private bool _isSwitchingState;
         private long _imageTimestamp;
 
-        public int CameraId {
+        public string CameraId {
             get => _cameraId;
             set => SetProperty(ref _cameraId, value);
         }

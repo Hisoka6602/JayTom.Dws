@@ -23,7 +23,7 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" MaxWidth="280" />
-                    <ColumnDefinition Width="Auto" MaxWidth="200" />
+                    <ColumnDefinition Width="Auto" MaxWidth="240" />
                     <ColumnDefinition Width="Auto" MaxWidth="230" />
                     <ColumnDefinition Width="Auto" MaxWidth="240" />
                     <ColumnDefinition Width="260" MinWidth="260" />

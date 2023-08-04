@@ -250,12 +250,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                         CameraName = s.CameraName,
                         Type = (CameraType)s.CameraType,
                         Status = CameraStatus.Running,
+                        CameraId = s.CameraId,
                     })?.ToList();
                     CameraItems.AddRange(infoModels);
                 });
             };
             _deviceService.BarcodeScanned += DeviceServiceOnBarcodeScanned;
-
+            _deviceService.RealTimeImage += DeviceServiceOnRealTimeImage;
+            _deviceService.PanoramaCaptured += DeviceServiceOnPanoramaCaptured;
             _deviceService.NotBarcodeHitEvent += async delegate (object? sender, BarcodeHitEventArgs args) {
                 await Application.Current.Dispatcher.InvokeAsync(() => {
                     var model = CameraItems.FirstOrDefault(f => f.CameraName.Equals(args.CameraName));
@@ -282,16 +284,49 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             };
         }
 
-        private async void DeviceServiceOnBarcodeScanned(object? sender, BarcodeHitEventArgs args) {
-            //更新图片
+        private async void DeviceServiceOnPanoramaCaptured(object? sender, PanoramaCaptureEventArgs args) {
+            //全景相机
             await _imageSemaphoreSlim.WaitAsync();
-            var model = CameraItems.FirstOrDefault(f => f.CameraName.Equals(args.CameraName));
+            var model = CameraItems.FirstOrDefault(f => f.CameraId.Equals(args.CameraId) &&
+                                                        f.Type is CameraType.PanoramicCamera);
+            HomeMessageQueue.Enqueue($"id:{args.CameraId}-列表:{string.Join(",", CameraItems.Select(s => $"{s.CameraId}"))}");
             if (model is not null) {
                 //图片转换
                 if (args?.Image is not null) {
                     if (args.Timestamp != model.ImageTimestamp) {
                         model.Image = null;
-                        await Task.Delay(100);
+                        await Task.Delay(50);
+                        model.ImageTimestamp = args.Timestamp;
+                        var thumbnailWidth = (int)(args.Image.Width * 0.3);
+                        var thumbnailHeight = (int)(args.Image.Height * 0.3);
+                        using var thumbnail = args.Image.GetThumbnailImage(thumbnailWidth, thumbnailHeight,
+                            null, IntPtr.Zero);
+                        // 将缩略图转换为BitmapSource
+                        await Application.Current.Dispatcher.InvokeAsync(() => {
+                            //更新图片
+                            model.Image = ((Bitmap)thumbnail).ConvertBitmapToBitmapSource();
+                        });
+                    }
+                }
+            }
+            _imageSemaphoreSlim.Release();
+        }
+
+        private async void DeviceServiceOnRealTimeImage(object? sender, RealTimeImageEventArgs args) {
+            //实时画面
+        }
+
+        private async void DeviceServiceOnBarcodeScanned(object? sender, BarcodeHitEventArgs args) {
+            //更新图片
+            await _imageSemaphoreSlim.WaitAsync();
+            var model = CameraItems.FirstOrDefault(f => f.CameraId.Equals(args.CameraId) &&
+                                                        f.Type is CameraType.IndustrialCamera or CameraType.SmartCamera);
+            if (model is not null) {
+                //图片转换
+                if (args?.Image is not null) {
+                    if (args.Timestamp != model.ImageTimestamp) {
+                        model.Image = null;
+                        await Task.Delay(50);
                         model.ImageTimestamp = args.Timestamp;
                         var thumbnailWidth = (int)(args.Image.Width * 0.3);
                         var thumbnailHeight = (int)(args.Image.Height * 0.3);

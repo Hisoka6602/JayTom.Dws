@@ -43,7 +43,7 @@ namespace JayTom.Dws.Device.Camera {
         /// <summary>
         /// 相机Id
         /// </summary>
-        public string CameraId { get; }
+        public string CameraId { get; set; }
 
         /// <summary>
         /// 相机帧率
@@ -83,7 +83,7 @@ namespace JayTom.Dws.Device.Camera {
         /// <summary>
         /// 相机类型
         /// </summary>
-        public CameraType CameraType { get; }
+        public CameraType CameraType { get; set; }
 
         /// <summary>
         /// 连接类型
@@ -103,8 +103,18 @@ namespace JayTom.Dws.Device.Camera {
         /// <summary>
         /// 实时图片
         /// </summary>
-        event EventHandler<Bitmap> RealtimeImageEvent;
+        event EventHandler<RealtimeImageEventArgs> RealtimeImageEvent;
 
+        /// <summary>
+        /// 全景图捕获
+        /// </summary>
+        event EventHandler<PanoramaCaptureEventArgs> PanoramaCaptured;
+
+        /// <summary>
+        /// 枚举相机
+        /// </summary>
+        /// <param name="token"></param>
+        /// <returns></returns>
         Task<List<ICamera>> RetrieveCamera(CancellationToken token = default);
 
         /// <summary>
@@ -143,17 +153,12 @@ namespace JayTom.Dws.Device.Camera {
         KeyValuePair<bool, string> SetConfiguration<T>(T configData);
     }
 
-    public class BarcodeHitEventArgs : EventArgs {
-
-        /// <summary>
-        /// 图片
-        /// </summary>
-        public Bitmap? Image { get; set; }
+    public class BarcodeHitEventArgs : PanoramaCaptureEventArgs {
 
         /// <summary>
         /// 本次光电触发的全部条码
         /// </summary>
-        public string AllBarcodes { get; set; }
+        public string AllBarCodes { get; set; } = string.Empty;
 
         /// <summary>
         /// 条码
@@ -164,21 +169,6 @@ namespace JayTom.Dws.Device.Camera {
         /// 扫码时间
         /// </summary>
         public DateTime ScanTime { get; set; }
-
-        /// <summary>
-        /// 缩略图
-        /// </summary>
-        public Bitmap? ThumbImage { get; set; }
-
-        /// <summary>
-        /// 相机Id
-        /// </summary>
-        public string CameraId { get; set; } = string.Empty;
-
-        /// <summary>
-        /// 相机名称
-        /// </summary>
-        public string CameraName { get; set; } = string.Empty;
 
         /// <summary>
         /// 长
@@ -201,11 +191,6 @@ namespace JayTom.Dws.Device.Camera {
         public float Volume { get; set; }
 
         /// <summary>
-        /// 包裹时间戳
-        /// </summary>
-        public long Timestamp { get; set; }
-
-        /// <summary>
         /// 帧率
         /// </summary>
         public double FrameRate { get; set; }
@@ -214,6 +199,24 @@ namespace JayTom.Dws.Device.Camera {
         /// 区域坐标
         /// </summary>
         public System.Drawing.Point[]? AreaCoords { get; set; }
+    }
+
+    public class RealtimeImageEventArgs : EventArgs {
+        public ICamera? Camera { get; set; } = null;
+        public Bitmap? Bitmap { get; set; }
+    }
+
+    public class PanoramaCaptureEventArgs : EventArgs {
+
+        /// <summary>
+        /// 图片
+        /// </summary>
+        public Bitmap? Image { get; set; }
+
+        /// <summary>
+        /// 缩略图
+        /// </summary>
+        public Bitmap? ThumbImage { get; set; }
 
         /// <summary>
         /// 相机类型
@@ -224,6 +227,21 @@ namespace JayTom.Dws.Device.Camera {
         /// 连接类型
         /// </summary>
         public ConnectionType ConnectionType { get; set; }
+
+        /// <summary>
+        /// 包裹时间戳
+        /// </summary>
+        public long Timestamp { get; set; }
+
+        /// <summary>
+        /// 相机Id
+        /// </summary>
+        public string CameraId { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 相机名称
+        /// </summary>
+        public string CameraName { get; set; } = string.Empty;
     }
 
     [Flags]

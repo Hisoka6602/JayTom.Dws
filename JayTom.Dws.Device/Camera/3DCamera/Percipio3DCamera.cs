@@ -366,12 +366,11 @@ namespace JayTom.Dws.Device.Camera._3DCamera {
                             graphics.DrawPath(pen, graphicsPath);
                         }
                     }
-
-                    OnRealtimeImageEvent((Bitmap)byteToImage);
                 }
-                else {
-                    OnRealtimeImageEvent((Bitmap)byteToImage);
-                }
+                OnRealtimeImageEvent(new RealtimeImageEventArgs() {
+                    Camera = this,
+                    Bitmap = (Bitmap)byteToImage
+                });
             }
         }
 
@@ -557,14 +556,14 @@ namespace JayTom.Dws.Device.Camera._3DCamera {
         public string Version { get; set; }
         public string IpAddress { get; set; }
         public string CameraName { get; private set; } = string.Empty;
-        public string CameraId { get; private set; } = string.Empty;
+        public string CameraId { get; set; } = string.Empty;
         public float Framerate { get; private set; }
         public int BarcodeBorderSize { get; set; }
         public System.Drawing.Color BarcodeBorderColor { get; set; }
         public bool IsShowBarcodeBorder { get; set; }
         public string Brand => "图漾";
         public CameraStatus CameraStatus { get; } = CameraStatus.Disconnected;
-        public CameraType CameraType { get; } = CameraType.ThreeDCamera;
+        public CameraType CameraType { get; set; } = CameraType.ThreeDCamera;
         public ConnectionType ConnectionType { get; } = ConnectionType.Usb;
 
         public event EventHandler<BarcodeHitEventArgs>? BarcodeHitEvent;
@@ -576,7 +575,9 @@ namespace JayTom.Dws.Device.Camera._3DCamera {
         public bool IsShowDetectionBorder { get; set; } = true;
         public bool IsUseImageWatermark { get; set; }
 
-        public event EventHandler<Bitmap>? RealtimeImageEvent;
+        public event EventHandler<RealtimeImageEventArgs>? RealtimeImageEvent;
+
+        public event EventHandler<PanoramaCaptureEventArgs>? PanoramaCaptured;
 
         public event EventHandler<VolumeCapturedEventArgs>? VolumeCapturedEvent;
 
@@ -633,7 +634,7 @@ namespace JayTom.Dws.Device.Camera._3DCamera {
             Disconnected?.Invoke(this, e);
         }
 
-        protected virtual async void OnRealtimeImageEvent(Bitmap? e) {
+        protected virtual async void OnRealtimeImageEvent(RealtimeImageEventArgs? e) {
             await Task.Yield();
             if (e is not null) {
                 RealtimeImageEvent?.Invoke(this, e);

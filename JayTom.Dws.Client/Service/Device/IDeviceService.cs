@@ -42,6 +42,11 @@ namespace JayTom.Dws.Client.Service.Device {
         event EventHandler<BarcodeHitEventArgs> NotBarcodeHitEvent;
 
         /// <summary>
+        /// 相机捕获到全景图片触发事件
+        /// </summary>
+        event EventHandler<PanoramaCaptureEventArgs> PanoramaCaptured;
+
+        /// <summary>
         /// 当相机捕获到体积信息时触发的事件
         /// </summary>
         event EventHandler<VolumeCapturedEventArgs> VolumeCaptured;
@@ -141,6 +146,16 @@ namespace JayTom.Dws.Client.Service.Device {
         /// 停止设备服务
         /// </summary>
         Task<KeyValuePair<bool, string>> Stop(CancellationToken token = default);
+
+        /// <summary>
+        /// 初始化设备服务
+        /// </summary>
+        void Initialization();
+
+        /// <summary>
+        /// 释放设备注册资源
+        /// </summary>
+        void Dispose();
     }
 
     public class DeviceExceptionEventArgs {

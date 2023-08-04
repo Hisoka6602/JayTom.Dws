@@ -1,4 +1,5 @@
-﻿using System.Drawing;
+﻿using System;
+using System.Drawing;
 using System.Buffers;
 using Newtonsoft.Json;
 using TurboJpegWrapper;
@@ -43,6 +44,7 @@ namespace JayTom.Dws.Device.Camera.SmartCamera {
                 //注册包裹信息回调的方法.当DWS设备扫描到包裹信息,就会回调给PackageInfoCallBack方法
 
                 _dwsManager.CodeHandle += DwsManagerOnCodeHandle;
+                _dwsManager.IpcCombineInfoEventHandler += DwsManagerOnIpcCombineInfoEventHandler;
                 //注册包裹结束后所有相机的扫码信息
                 /*_dwsManager.AllCameraCodeInfoEventHandler += delegate (object? sender, AllCameraCodeInfoArgs args) {
                 };*/
@@ -51,6 +53,7 @@ namespace JayTom.Dws.Device.Camera.SmartCamera {
                 //_dwsManager.IpcCombineInfoEventHandler += IpcCombineInfoCBCallBack;
 
                 //注册相机实时图片信息
+                //_dwsManager.RealImageEventHandler += DwsManagerOnRealImageEventHandler;
                 /*_dwsManager.RealImageEventHandler += delegate (object? sender, RealImageArgs args) {
                     try {
                         File.AppendAllLinesAsync($"{Directory.GetCurrentDirectory()}\\异常日志.txt",
@@ -67,6 +70,50 @@ namespace JayTom.Dws.Device.Camera.SmartCamera {
                 return new KeyValuePair<bool, string>(true, "相机连接成功");
             }
             return new KeyValuePair<bool, string>(false, status.ToString());
+        }
+
+        /// <summary>
+        /// 全景相机照片实时回调
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="args"></param>
+        /// <exception cref="NotImplementedException"></exception>
+        private async void DwsManagerOnIpcCombineInfoEventHandler(object? sender, IpcCombineInfoArgs args) {
+            try {
+                await _semaphoreSlim.WaitAsync();
+                var rawImage = new RawImage(args.ipcImage.width, args.ipcImage.height, args.ipcImage.type, args.ipcImage.dataSize,
+                    args.ipcImage.ImageData, args.ipcImage.img_idx);
+                var image = ToBitmap(rawImage);
+                OnPanoramaCaptured(new PanoramaCaptureEventArgs() {
+                    Image = image,
+                    CameraId = args.Reserved
+                });
+            }
+            catch (Exception e) {
+                OnExcepted(e);
+                await File.AppendAllLinesAsync($"{Directory.GetCurrentDirectory()}\\异常日志.txt",
+                    new[] { JsonConvert.SerializeObject(e) });
+            }
+            finally {
+                _semaphoreSlim.Release();
+            }
+        }
+
+        private async void DwsManagerOnRealImageEventHandler(object? sender, RealImageArgs e) {
+            /*try {
+                await _semaphoreSlim.WaitAsync();
+                var bitmap = ToBitmap(e.realImage);
+                OnRealtimeImageEvent(new RealtimeImageEventArgs() {
+                    Bitmap = bitmap,
+                    Camera = this
+                });
+            }
+            catch (Exception exception) {
+                Console.WriteLine(exception);
+            }
+            finally {
+                _semaphoreSlim.Release();
+            }*/
         }
 
         /// <summary>
@@ -141,11 +188,12 @@ namespace JayTom.Dws.Device.Camera.SmartCamera {
                             }
                         }
                         for (var i = 0; i < info!.CodeList!.Count; i++) {
+                            var split = info.CameraID.Split(":");
                             OnBarcodeHitEvent(new BarcodeHitEventArgs {
                                 Image = image,
                                 Barcode = info.CodeList[i],
                                 AreaCoords = info.AreaList?[i],
-                                CameraId = info.CameraID,
+                                CameraId = split?.Length > 1 ? split[1] : info.CameraID,
                                 ScanTime = scanTime,
                                 Timestamp = info.CodeTimeStamp,
                                 Length = (float)volumeInfo.Length,
@@ -153,7 +201,7 @@ namespace JayTom.Dws.Device.Camera.SmartCamera {
                                 Height = (float)volumeInfo.Height,
                                 Volume = (float)volumeInfo.Volume,
                                 CameraName = CameraName,
-                                AllBarcodes = string.Join(",", info?.CodeList ?? new List<string>())
+                                AllBarCodes = string.Join(",", info?.CodeList ?? new List<string>())
                             });
                         }
                     }
@@ -185,6 +233,8 @@ namespace JayTom.Dws.Device.Camera.SmartCamera {
                 _dwsManager?.DetachRealImageCB();
                 if (_dwsManager is not null) {
                     _dwsManager.CodeHandle -= DwsManagerOnCodeHandle;
+                    _dwsManager.IpcCombineInfoEventHandler -= DwsManagerOnIpcCombineInfoEventHandler;
+                    _dwsManager.RealImageEventHandler -= DwsManagerOnRealImageEventHandler;
                 }
                 _dwsManager?.StopApp();
                 Status = DeviceStatus.Uninitialized;
@@ -249,14 +299,14 @@ namespace JayTom.Dws.Device.Camera.SmartCamera {
                 if (camerasStatus?.Any() == true) {
                     OnExcepted(new Exception(JsonConvert.SerializeObject(camerasStatus)));
                 }
-
+                Status = DeviceStatus.Initialized;
                 OnInitialized(this);
                 return new KeyValuePair<bool, string>(true, "初始化成功!");
             }
             catch (Exception e) {
                 Console.WriteLine(e);
+                return new KeyValuePair<bool, string>(false, $"初始化失败:{e.Message}");
             }
-            return new KeyValuePair<bool, string>(true, "初始化成功!");
         }
 
         public event EventHandler<IDevice>? Initialized;
@@ -274,7 +324,7 @@ namespace JayTom.Dws.Device.Camera.SmartCamera {
         public string Version { get; set; } = string.Empty;
         public string IpAddress { get; set; } = string.Empty;
         public string CameraName { get; private set; } = "大华智能相机";
-        public string CameraId { get; private set; } = string.Empty;
+        public string CameraId { get; set; } = string.Empty;
 
         public float Framerate { get; private set; } = 0;
         public int BarcodeBorderSize { get; set; } = 15;
@@ -284,15 +334,17 @@ namespace JayTom.Dws.Device.Camera.SmartCamera {
         public bool IsUseImageWatermark { get; set; }
 
         public string Brand => "华睿";
-        public CameraStatus CameraStatus { get; } = CameraStatus.Disconnected;
-        public CameraType CameraType { get; } = CameraType.SmartCamera;
-        public ConnectionType ConnectionType { get; } = ConnectionType.Ethernet;
+        public CameraStatus CameraStatus { get; private set; } = CameraStatus.Disconnected;
+        public CameraType CameraType { get; set; } = CameraType.SmartCamera;
+        public ConnectionType ConnectionType { get; private set; } = ConnectionType.Ethernet;
 
         public event EventHandler<BarcodeHitEventArgs>? BarcodeHitEvent;
 
         public event EventHandler<BarcodeHitEventArgs>? NotBarcodeHitEvent;
 
-        public event EventHandler<Bitmap>? RealtimeImageEvent;
+        public event EventHandler<RealtimeImageEventArgs>? RealtimeImageEvent;
+
+        public event EventHandler<PanoramaCaptureEventArgs>? PanoramaCaptured;
 
         /*// 导入 SetDllDirectory 函数
         [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
@@ -304,6 +356,7 @@ namespace JayTom.Dws.Device.Camera.SmartCamera {
 
         public async Task<List<ICamera>> RetrieveCamera(CancellationToken token = default) {
             await Task.Yield();
+            var tagsList = _dwsManager?.GetCamerasStatus().ToList();
 
             var infos = _dwsManager?.GetWorkCameraInfo()?.ToList();
             var list = infos?.Select(s => new HuaraytechSmartCamera {
@@ -311,7 +364,7 @@ namespace JayTom.Dws.Device.Camera.SmartCamera {
                 CameraName = s.camDevID,
                 Model = s.camDevModelName,
                 Version = s.camDevVendor,
-
+                CameraType = s.camDevModelName.Contains("DH-MV") ? CameraType.SmartCamera : CameraType.IndustrialCamera,
                 //Framerate = _dwsManager?.GetFrameRate()
             })?.ToList();
             return new List<ICamera>(list ?? new List<HuaraytechSmartCamera>());
@@ -389,11 +442,12 @@ namespace JayTom.Dws.Device.Camera.SmartCamera {
             Excepted?.Invoke(this, e);
         }
 
-        protected virtual async void OnRealtimeImageEvent(Bitmap e) {
+        protected virtual async void OnRealtimeImageEvent(RealtimeImageEventArgs e) {
             await Task.Yield();
             RealtimeImageEvent?.Invoke(this, e);
         }
 
+        //这个方法后续需要修改
         protected virtual async void OnInitialized(IDevice e) {
             await Task.Yield();
             Initialized?.Invoke(this, e);
@@ -948,6 +1002,11 @@ namespace JayTom.Dws.Device.Camera.SmartCamera {
         protected virtual async void OnNotBarcodeHitEvent(BarcodeHitEventArgs e) {
             await Task.Yield();
             NotBarcodeHitEvent?.Invoke(this, e);
+        }
+
+        protected virtual async void OnPanoramaCaptured(PanoramaCaptureEventArgs e) {
+            await Task.Yield();
+            PanoramaCaptured?.Invoke(this, e);
         }
     }
 }

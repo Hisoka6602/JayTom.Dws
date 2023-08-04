@@ -145,11 +145,11 @@ namespace JayTom.Dws.Device.Camera.SmartCamera {
         public string Version { get; set; }
         public string IpAddress { get; set; }
         public string CameraName { get; } = "中科微至智能相机";
-        public string CameraId { get; } = string.Empty;
+        public string CameraId { get; set; } = string.Empty;
         public float Framerate { get; } = 0;
         public string Brand => "中科微至";
         public CameraStatus CameraStatus { get; } = CameraStatus.Disconnected;
-        public CameraType CameraType { get; } = CameraType.SmartCamera;
+        public CameraType CameraType { get; set; } = CameraType.SmartCamera;
         public ConnectionType ConnectionType { get; } = ConnectionType.Ethernet;
         public int BarcodeBorderSize { get; set; }
         public System.Drawing.Color BarcodeBorderColor { get; set; }
@@ -160,7 +160,9 @@ namespace JayTom.Dws.Device.Camera.SmartCamera {
 
         public event EventHandler<BarcodeHitEventArgs>? NotBarcodeHitEvent;
 
-        public event EventHandler<Bitmap>? RealtimeImageEvent;
+        public event EventHandler<RealtimeImageEventArgs>? RealtimeImageEvent;
+
+        public event EventHandler<PanoramaCaptureEventArgs>? PanoramaCaptured;
 
         public Task<List<ICamera>> RetrieveCamera(CancellationToken token = default) {
             throw new NotImplementedException();
