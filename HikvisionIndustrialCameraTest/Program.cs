@@ -27,7 +27,10 @@ internal class Program {
         var line = Console.ReadLine();
         int.TryParse(line, out var id);
         var (key, value) = await camera.Initialize(infos?[id]);
-        await camera.Start(string.Empty);
+        Console.WriteLine(value);
+        var (b, s) = await camera.Start(string.Empty);
+        Console.WriteLine(s);
+        Console.ReadLine();
         Console.ReadLine();
     }
 

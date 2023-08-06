@@ -79,13 +79,15 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebApplication1", "WebAppli
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WpfApp2", "WpfApp2\WpfApp2.csproj", "{B17D4455-1E7E-4CB0-88DC-3F1777C8C265}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HuaraytechTest", "HuaraytechTest\HuaraytechTest.csproj", "{37818A33-70BB-4FDD-9CA2-B018EC8B7882}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HuaraytechTest", "HuaraytechTest\HuaraytechTest.csproj", "{37818A33-70BB-4FDD-9CA2-B018EC8B7882}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wpf.HuaraytechTest", "Wpf.HuaraytechTest\Wpf.HuaraytechTest.csproj", "{B34F9186-EBBF-4D08-8C9B-6073C16DBF52}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Wpf.HuaraytechTest", "Wpf.HuaraytechTest\Wpf.HuaraytechTest.csproj", "{B34F9186-EBBF-4D08-8C9B-6073C16DBF52}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JayTom.Dws.Camera", "JayTom.Dws.Camera\JayTom.Dws.Camera.csproj", "{2C4296EE-5178-4443-8A34-7D878B051C95}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "JayTom.Dws.Camera", "JayTom.Dws.Camera\JayTom.Dws.Camera.csproj", "{2C4296EE-5178-4443-8A34-7D878B051C95}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HikvisionIndustrialCameraTest", "HikvisionIndustrialCameraTest\HikvisionIndustrialCameraTest.csproj", "{2DF98EDC-F0C1-4B32-9050-253BD2311664}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HikvisionIndustrialCameraTest", "HikvisionIndustrialCameraTest\HikvisionIndustrialCameraTest.csproj", "{2DF98EDC-F0C1-4B32-9050-253BD2311664}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wpf.HikvisionIndustrialCameraTest", "Wpf.HikvisionIndustrialCameraTest\Wpf.HikvisionIndustrialCameraTest.csproj", "{B8F19B0E-16CC-40E6-9EF0-2CFADCCF1669}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -372,6 +374,18 @@ Global
 		{2DF98EDC-F0C1-4B32-9050-253BD2311664}.Release|x64.Build.0 = Release|Any CPU
 		{2DF98EDC-F0C1-4B32-9050-253BD2311664}.Release|x86.ActiveCfg = Release|Any CPU
 		{2DF98EDC-F0C1-4B32-9050-253BD2311664}.Release|x86.Build.0 = Release|Any CPU
+		{B8F19B0E-16CC-40E6-9EF0-2CFADCCF1669}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B8F19B0E-16CC-40E6-9EF0-2CFADCCF1669}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B8F19B0E-16CC-40E6-9EF0-2CFADCCF1669}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{B8F19B0E-16CC-40E6-9EF0-2CFADCCF1669}.Debug|x64.Build.0 = Debug|Any CPU
+		{B8F19B0E-16CC-40E6-9EF0-2CFADCCF1669}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{B8F19B0E-16CC-40E6-9EF0-2CFADCCF1669}.Debug|x86.Build.0 = Debug|Any CPU
+		{B8F19B0E-16CC-40E6-9EF0-2CFADCCF1669}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B8F19B0E-16CC-40E6-9EF0-2CFADCCF1669}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B8F19B0E-16CC-40E6-9EF0-2CFADCCF1669}.Release|x64.ActiveCfg = Release|Any CPU
+		{B8F19B0E-16CC-40E6-9EF0-2CFADCCF1669}.Release|x64.Build.0 = Release|Any CPU
+		{B8F19B0E-16CC-40E6-9EF0-2CFADCCF1669}.Release|x86.ActiveCfg = Release|Any CPU
+		{B8F19B0E-16CC-40E6-9EF0-2CFADCCF1669}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -404,6 +418,7 @@ Global
 		{B34F9186-EBBF-4D08-8C9B-6073C16DBF52} = {84DF72DC-A0A8-451F-AE8C-1E81A215A2DE}
 		{2C4296EE-5178-4443-8A34-7D878B051C95} = {3925DB83-41E1-4AC0-B8BA-D1EE05AEC57E}
 		{2DF98EDC-F0C1-4B32-9050-253BD2311664} = {84DF72DC-A0A8-451F-AE8C-1E81A215A2DE}
+		{B8F19B0E-16CC-40E6-9EF0-2CFADCCF1669} = {84DF72DC-A0A8-451F-AE8C-1E81A215A2DE}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {7D216EA9-F84D-4593-9B16-AA39F622BA27}

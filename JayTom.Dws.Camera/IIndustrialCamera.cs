@@ -42,6 +42,8 @@ namespace JayTom.Dws.Camera {
         /// 实时图像事件
         /// </summary>
         event EventHandler<RealtimeImageEventArgs> RealtimeImage;
+
+        //软触发方法
     }
 
     /// <summary>
@@ -72,7 +74,7 @@ namespace JayTom.Dws.Camera {
         /// <summary>
         /// 区域坐标
         /// </summary>
-        public System.Drawing.Point[]? AreaCoords { get; set; }
+        public List<Point>? AreaCoords { get; set; }
 
         /// <summary>
         /// 缩略图
