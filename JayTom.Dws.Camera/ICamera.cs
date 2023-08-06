@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Text;
+using System.ComponentModel;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
@@ -15,6 +16,16 @@ namespace JayTom.Dws.Camera {
         /// 相机信息
         /// </summary>
         public CameraInfo Info { get; }
+
+        /// <summary>
+        /// SDK类型
+        /// </summary>
+        public SdkType SdkType { get; }
+
+        /// <summary>
+        /// SDK名称
+        /// </summary>
+        public string SdkName { get; }
 
         /// <summary>
         /// 是否原图输出
@@ -271,6 +282,37 @@ namespace JayTom.Dws.Camera {
         /// 暂停中
         /// </summary>
         Paused
+    }
+
+    /// <summary>
+    /// SDK类型
+    /// </summary>
+    public enum SdkType {
+
+        /// <summary>
+        /// 智能相机SDK
+        /// </summary>
+        SmartCameraSdk,
+
+        /// <summary>
+        /// 工业相机SDK
+        /// </summary>
+        IndustrialCameraSdk,
+
+        /// <summary>
+        /// 体积相机SDK
+        /// </summary>
+        VolumeCameraSdk,
+
+        /// <summary>
+        /// 录像相机SDK
+        /// </summary>
+        VideoCameraSdk,
+
+        /// <summary>
+        /// 其他SDK
+        /// </summary>
+        OtherSdk
     }
 
     /// <summary>

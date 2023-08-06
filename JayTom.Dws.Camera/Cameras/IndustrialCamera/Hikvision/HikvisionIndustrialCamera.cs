@@ -30,6 +30,8 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
         public MVIDCodeReader.MVID_CAMERA_INFO Structure;
 
         public CameraInfo Info { get; private set; } = new();
+        public SdkType SdkType => SdkType.IndustrialCameraSdk;
+        public string SdkName => "MVIDCodeReader.Net";
         public bool IsOriginalImageOut { get; set; }
         public CameraStatus Status { get; private set; } = CameraStatus.Uninitialized;
         public CameraBindingType BindingType { get; } = CameraBindingType.ScannerCamera;
@@ -177,7 +179,6 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                 OnCameraInitialized(new CameraInitializedEventArgs() {
                     CameraInfo = this.Info
                 });
-                Console.WriteLine(JsonConvert.SerializeObject(param));
                 return new KeyValuePair<bool, string>(true, "初始化成功");
             }
             else {
@@ -307,7 +308,6 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                                         };
                                     return default;
                                 })?.ToList(),
-                                FrameRate =
                             });
                         }
 

@@ -29,6 +29,56 @@ namespace JayTom.Dws.Camera {
         /// <summary>
         /// 读码触发回调事件
         /// </summary>
-        event EventHandler<BarcodeReadEventArgs> CodeReadTriggered;
+        event EventHandler<BarcodeTriggeredEventArgs> BarcodeReadTriggered;
+
+        //软触发/主动触发
+    }
+
+    public class BarcodeTriggeredEventArgs : BarcodeReadEventArgs {
+
+        /// <summary>
+        /// 条码Id
+        /// </summary>
+        public string CodeId { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 处理总耗时
+        /// </summary>
+        public int TotalProcCost { get; set; }
+
+        /// <summary>
+        /// 算法耗时
+        /// </summary>
+        public ushort AlgoCost { get; set; }
+
+        /// <summary>
+        /// PPM(10倍)
+        /// </summary>
+        public ushort Ppm { get; set; }
+
+        /// <summary>
+        /// 字符长度
+        /// </summary>
+        public int Len { get; set; }
+
+        /// <summary>
+        /// 条码类型
+        /// </summary>
+        public int BarType { get; set; }
+
+        /// <summary>
+        /// 条码被识别的次数
+        /// </summary>
+        public int AppearCount { get; set; }
+
+        /// <summary>
+        /// 图像清晰度(10倍)
+        /// </summary>
+        public ushort Sharpness { get; set; }
+
+        /// <summary>
+        /// 条码角度(10倍)（0~3600）
+        /// </summary>
+        public int Angle { get; set; }
     }
 }

@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net7.0-windows</TargetFramework>
@@ -7,7 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Cameras\SmartCamera\" />
     <Folder Include="Cameras\VolumeCamera\" />
   </ItemGroup>
 
@@ -17,6 +16,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Reference Include="MvCodeReaderSDK.Net">
+      <HintPath>Cameras\SmartCamera\Hikvision\Dll\MvCodeReaderSDK.Net.dll</HintPath>
+    </Reference>
     <Reference Include="MVIDCodeReader.Net">
       <HintPath>Cameras\IndustrialCamera\Hikvision\Dll\MVIDCodeReader.Net.dll</HintPath>
     </Reference>
@@ -30,6 +32,12 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Cameras\IndustrialCamera\Hikvision\Dll\RulerFilter.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Cameras\SmartCamera\Hikvision\Dll\MvCodeReaderSDK.Net.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Cameras\SmartCamera\Hikvision\Dll\MvCodeReaderSDK.Net.XML">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
