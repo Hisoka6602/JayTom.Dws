@@ -15,7 +15,7 @@ namespace JayTom.Dws.Camera {
         /// <summary>
         /// 相机信息
         /// </summary>
-        public CameraInfo Info { get; }
+        public CameraInfo? Info { get; }
 
         /// <summary>
         /// SDK类型

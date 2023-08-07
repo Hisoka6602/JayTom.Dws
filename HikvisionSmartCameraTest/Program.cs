@@ -8,7 +8,7 @@ internal class Program {
         AppDomain.CurrentDomain.UnhandledException += UnhandledExceptionHandler;
         var camera = new HikvisionSmartCamera();
         camera.BarcodeReadTriggered += delegate (object? sender, BarcodeTriggeredEventArgs eventArgs) {
-            Console.WriteLine($"获取到条码:{eventArgs.Barcode}");
+            Console.WriteLine($"获取到条码返回:{JsonConvert.SerializeObject(eventArgs)}");
         };
         camera.CameraExceptionOccurred += delegate (object? sender, CameraExceptionEventArgs eventArgs) {
             Console.WriteLine($"相机异常:{eventArgs?.Exception?.Message}");

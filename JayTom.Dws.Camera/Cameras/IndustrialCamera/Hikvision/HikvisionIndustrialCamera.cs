@@ -29,7 +29,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
         /// </summary>
         public MVIDCodeReader.MVID_CAMERA_INFO Structure;
 
-        public CameraInfo Info { get; private set; } = new();
+        public CameraInfo? Info { get; private set; } = new();
         public SdkType SdkType => SdkType.IndustrialCameraSdk;
         public string SdkName => "MVIDCodeReader.Net";
         public bool IsOriginalImageOut { get; set; }

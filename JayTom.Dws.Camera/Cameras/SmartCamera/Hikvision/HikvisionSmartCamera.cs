@@ -19,7 +19,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
         private byte[] _bufForDriver = new byte[1024 * 1024 * 20];
         private MvCodeReader.MV_CODEREADER_DEVICE_INFO Structure;
         private CancellationTokenSource _tokenSource = new();
-        public CameraInfo Info { get; private set; }
+        public CameraInfo? Info { get; private set; } = new();
 
         public SdkType SdkType => SdkType.SmartCameraSdk;
         public string SdkName => "MvCodeReaderSDK.Net";
@@ -123,22 +123,48 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                     return new KeyValuePair<bool, string>(false, $"打开设备失败,{nRet:X}!");
                 }
                 //设置采集模式
-                nRet = _mvCodeReader.MV_CODEREADER_SetEnumValue_NET("TriggerMode", (uint)MvCodeReader.MV_CODEREADER_TRIGGER_MODE.MV_CODEREADER_TRIGGER_MODE_ON);
-                if (MvCodeReader.MV_CODEREADER_OK != nRet) {
-                    _mvCodeReader.MV_CODEREADER_DestroyHandle_NET();
-                    OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
-                        Exception = new Exception($"初始化失败:设置采集模式失败,{nRet:X}")
-                    });
-                    return new KeyValuePair<bool, string>(false, $"设置采集模式失败,{nRet:X}!");
+                if (IsUseTriggerMode) {
+                    nRet = _mvCodeReader.MV_CODEREADER_SetEnumValue_NET("TriggerMode", (uint)MvCodeReader.MV_CODEREADER_TRIGGER_MODE.MV_CODEREADER_TRIGGER_MODE_ON);
+                    if (MvCodeReader.MV_CODEREADER_OK != nRet) {
+                        _mvCodeReader.MV_CODEREADER_DestroyHandle_NET();
+                        OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
+                            Exception = new Exception($"初始化失败:设置采集模式失败,{nRet:X}")
+                        });
+                        return new KeyValuePair<bool, string>(false, $"设置采集模式失败,{nRet:X}!");
+                    }
+
+                    if (TriggerMode == TriggerMode.Software) {
+                        nRet = _mvCodeReader.MV_CODEREADER_SetEnumValue_NET("TriggerSource", (uint)MvCodeReader.MV_CODEREADER_TRIGGER_SOURCE.MV_CODEREADER_TRIGGER_SOURCE_SOFTWARE);
+                        if (MvCodeReader.MV_CODEREADER_OK != nRet) {
+                            _mvCodeReader.MV_CODEREADER_DestroyHandle_NET();
+                            OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
+                                Exception = new Exception($"初始化失败:设置采集模式失败,{nRet:X}")
+                            });
+                            return new KeyValuePair<bool, string>(false, $"设置采集模式失败,{nRet:X}!");
+                        }
+                    }
+                    else {
+                        nRet = _mvCodeReader.MV_CODEREADER_SetEnumValue_NET("TriggerSource", (uint)MvCodeReader.MV_CODEREADER_TRIGGER_SOURCE.MV_CODEREADER_TRIGGER_SOURCE_LINE0);
+                        if (MvCodeReader.MV_CODEREADER_OK != nRet) {
+                            _mvCodeReader.MV_CODEREADER_DestroyHandle_NET();
+                            OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
+                                Exception = new Exception($"初始化失败:设置采集模式失败,{nRet:X}")
+                            });
+                            return new KeyValuePair<bool, string>(false, $"设置采集模式失败,{nRet:X}!");
+                        }
+                    }
                 }
-                nRet = _mvCodeReader.MV_CODEREADER_SetEnumValue_NET("TriggerSource", (uint)MvCodeReader.MV_CODEREADER_TRIGGER_SOURCE.MV_CODEREADER_TRIGGER_SOURCE_LINE0);
-                if (MvCodeReader.MV_CODEREADER_OK != nRet) {
-                    _mvCodeReader.MV_CODEREADER_DestroyHandle_NET();
-                    OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
-                        Exception = new Exception($"初始化失败:设置采集模式失败,{nRet:X}")
-                    });
-                    return new KeyValuePair<bool, string>(false, $"设置采集模式失败,{nRet:X}!");
+                else {
+                    nRet = _mvCodeReader.MV_CODEREADER_SetEnumValue_NET("TriggerMode", (uint)MvCodeReader.MV_CODEREADER_TRIGGER_MODE.MV_CODEREADER_TRIGGER_MODE_OFF);
+                    if (MvCodeReader.MV_CODEREADER_OK != nRet) {
+                        _mvCodeReader.MV_CODEREADER_DestroyHandle_NET();
+                        OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
+                            Exception = new Exception($"初始化失败:设置采集模式失败,{nRet:X}")
+                        });
+                        return new KeyValuePair<bool, string>(false, $"设置采集模式失败,{nRet:X}!");
+                    }
                 }
+
                 //获取参数ExposureTime
                 //获取参数Gain
                 //获取参数AcquisitionFrameRate
@@ -192,6 +218,26 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
         public int BarcodeBorderSize { get; set; }
         public Color BarcodeBorderColor { get; set; }
         public bool IsShowBarcodeBorder { get; set; }
+        public bool IsUseTriggerMode { get; set; } = true;
+        public TriggerMode TriggerMode { get; set; } = TriggerMode.Hardware;
+
+        public void SoftwareTriggerOnce() {
+            Task.Run(() => {
+                if (IsUseTriggerMode && TriggerMode == TriggerMode.Software) {
+                    int nRet = _mvCodeReader?.MV_CODEREADER_SetCommandValue_NET("TriggerSoftware") ?? 0;
+                    if (MvCodeReader.MV_CODEREADER_OK != nRet) {
+                        OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
+                            Exception = new Exception($"软触发异常:{nRet:X}")
+                        });
+                    }
+                }
+                else {
+                    OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
+                        Exception = new Exception($"需要初始化时使用触发模式，并且使用软触发才能生效")
+                    });
+                }
+            });
+        }
 
         public event EventHandler<BarcodeTriggeredEventArgs>? BarcodeReadTriggered;
 
@@ -220,7 +266,6 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                         if (0 >= stFrameInfoEx2.nFrameLen) {
                             continue;
                         }
-
                         Bitmap? bmp = null;
                         // 绘制图像
                         Marshal.Copy(pData, _bufForDriver, 0, (int)stFrameInfoEx2.nFrameLen);
@@ -241,7 +286,8 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                         }
                         var stBcrResultEx2 = (MvCodeReader.MV_CODEREADER_RESULT_BCR_EX2)(Marshal.PtrToStructure(stFrameInfoEx2.UnparsedBcrList.pstCodeListEx2, typeof(MvCodeReader.MV_CODEREADER_RESULT_BCR_EX2)) ?? new MvCodeReader.MV_CODEREADER_RESULT_BCR_EX2());
                         //返回条码
-                        long timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+                        var localTime = DateTimeOffset.Now.ToLocalTime();
+                        long timestamp = localTime.ToUnixTimeMilliseconds();
                         if (stBcrResultEx2.nCodeNum > 0) {
                             //条码区域
                             /*for (int j = 0; j < 4; ++j) {
@@ -250,6 +296,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                             }*/
                             //识别到条码调用
                             char[] nullChars = { '\0' };
+                            //需要设置触发时间才能过滤
                             for (int i = 0; i < stBcrResultEx2.nCodeNum; i++) {
                                 var barcode = Encoding.Default.GetString(stBcrResultEx2.stBcrInfoEx2[i].chCode)?.TrimEnd(nullChars);
                                 OnBarcodeReadTriggered(new BarcodeTriggeredEventArgs() {
@@ -260,9 +307,26 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                                     BarType = GetBarType((MvCodeReader.MV_CODEREADER_CODE_TYPE)stBcrResultEx2.stBcrInfoEx2[i].nBarType),
                                     Barcode = string.IsNullOrWhiteSpace(barcode) ? "NoRead" : barcode,
                                     Image = bmp,
-                                    ThumbImage = bmp
+                                    ThumbImage = bmp,
+                                    AppearCount = stBcrResultEx2.stBcrInfoEx2[i].sAppearCount,
+                                    Angle = stBcrResultEx2.stBcrInfoEx2[i].nAngle,
+                                    CodeId = stBcrResultEx2.stBcrInfoEx2[i].nSubPackageId.ToString(),
+                                    Len = (int)stBcrResultEx2.stBcrInfoEx2[i].nLen,
+                                    CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
+                                    ScanTime = localTime.DateTime
                                 });
                             }
+                        }
+                        else {
+                            //如果没读到条码
+                            OnBarcodeReadTriggered(new BarcodeTriggeredEventArgs() {
+                                Timestamp = timestamp,
+                                Barcode = "NoRead",
+                                Image = bmp,
+                                ThumbImage = bmp,
+                                CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
+                                ScanTime = localTime.DateTime
+                            });
                         }
                     }
                 }

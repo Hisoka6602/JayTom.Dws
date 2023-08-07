@@ -27,11 +27,37 @@ namespace JayTom.Dws.Camera {
         public bool IsShowBarcodeBorder { get; set; }
 
         /// <summary>
+        /// 是否使用触发模式
+        /// </summary>
+        public bool IsUseTriggerMode { get; set; }
+
+        /// <summary>
+        /// 触发模式
+        /// </summary>
+        public TriggerMode TriggerMode { get; set; }
+
+        /// <summary>
+        /// 软触发一次
+        /// </summary>
+        void SoftwareTriggerOnce();
+
+        /// <summary>
         /// 读码触发回调事件
         /// </summary>
         event EventHandler<BarcodeTriggeredEventArgs> BarcodeReadTriggered;
+    }
 
-        //软触发/主动触发
+    public enum TriggerMode {
+
+        /// <summary>
+        /// 软件触发模式
+        /// </summary>
+        Software,
+
+        /// <summary>
+        /// 硬件触发模式
+        /// </summary>
+        Hardware
     }
 
     public class BarcodeTriggeredEventArgs : BarcodeReadEventArgs {
