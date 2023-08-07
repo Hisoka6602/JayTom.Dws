@@ -64,7 +64,7 @@ namespace JayTom.Dws.Camera {
         /// <summary>
         /// 条码类型
         /// </summary>
-        public int BarType { get; set; }
+        public string BarType { get; set; } = string.Empty;
 
         /// <summary>
         /// 条码被识别的次数
