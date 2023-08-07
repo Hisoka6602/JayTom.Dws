@@ -14,7 +14,7 @@ using System.Runtime.InteropServices;
 namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
 
     public class HikvisionSmartCamera : ISmartCamera {
-        private MvCodeReader.MV_CODEREADER_DEVICE_INFO_LIST _mStDeviceList = new();
+        private MvCodeReader.MV_CODEREADER_DEVICE_INFO_LIST _mStDeviceList;
         private MvCodeReader? _mvCodeReader;
         private byte[] _bufForDriver = new byte[1024 * 1024 * 20];
         private MvCodeReader.MV_CODEREADER_DEVICE_INFO Structure;
@@ -208,16 +208,30 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
         }
 
         public void Dispose() {
-            throw new NotImplementedException();
+            if (Status != CameraStatus.Uninitialized) {
+                //注销线程
+                _tokenSource.Cancel();
+                //停止SDK
+                _mvCodeReader?.MV_CODEREADER_StopGrabbing_NET();
+                _mvCodeReader?.MV_CODEREADER_CloseDevice_NET();
+                _mvCodeReader?.MV_CODEREADER_DestroyHandle_NET();
+                //置空对象
+                _mvCodeReader = null;
+                OnCameraUnregistered(new CameraUnregisteredEventArgs() {
+                    CameraInfo = this.Info
+                });
+                this.Info = null;
+                System.GC.Collect();
+            }
         }
 
         public void SetParameters(Dictionary<string, object> parameters) {
             throw new NotImplementedException();
         }
 
-        public int BarcodeBorderSize { get; set; }
-        public Color BarcodeBorderColor { get; set; }
-        public bool IsShowBarcodeBorder { get; set; }
+        public int BarcodeBorderSize { get; set; } = 5;
+        public Color BarcodeBorderColor { get; set; } = Color.LawnGreen;
+        public bool IsShowBarcodeBorder { get; set; } = true;
         public bool IsUseTriggerMode { get; set; } = true;
         public TriggerMode TriggerMode { get; set; } = TriggerMode.Hardware;
 
@@ -266,34 +280,30 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                         if (0 >= stFrameInfoEx2.nFrameLen) {
                             continue;
                         }
-                        Bitmap? bmp = null;
-                        // 绘制图像
-                        Marshal.Copy(pData, _bufForDriver, 0, (int)stFrameInfoEx2.nFrameLen);
-                        if (stFrameInfoEx2.enPixelType == MvCodeReader.MvCodeReaderGvspPixelType.PixelType_CodeReader_Gvsp_Mono8) {
-                            var pImage = Marshal.UnsafeAddrOfPinnedArrayElement(_bufForDriver, 0);
-                            bmp = new Bitmap(stFrameInfoEx2.nWidth, stFrameInfoEx2.nHeight, stFrameInfoEx2.nWidth, PixelFormat.Format8bppIndexed, pImage);
-                            var cp = bmp.Palette;
-                            for (int i = 0; i < 256; i++) {
-                                cp.Entries[i] = Color.FromArgb(i, i, i);
-                            }
-                            bmp.Palette = cp;
-                        }
-                        else if (stFrameInfoEx2.enPixelType == MvCodeReader.MvCodeReaderGvspPixelType.PixelType_CodeReader_Gvsp_Jpeg) {
-                            GC.Collect();
-                            using var ms = new MemoryStream();
-                            ms.Write(_bufForDriver, 0, (int)stFrameInfoEx2.nFrameLen);
-                            bmp = new Bitmap(ms);
-                        }
+
+                        var bmp = await GetBitmapAsync(pData, _bufForDriver, stFrameInfoEx2);
                         var stBcrResultEx2 = (MvCodeReader.MV_CODEREADER_RESULT_BCR_EX2)(Marshal.PtrToStructure(stFrameInfoEx2.UnparsedBcrList.pstCodeListEx2, typeof(MvCodeReader.MV_CODEREADER_RESULT_BCR_EX2)) ?? new MvCodeReader.MV_CODEREADER_RESULT_BCR_EX2());
                         //返回条码
                         var localTime = DateTimeOffset.Now.ToLocalTime();
                         long timestamp = localTime.ToUnixTimeMilliseconds();
                         if (stBcrResultEx2.nCodeNum > 0) {
-                            //条码区域
-                            /*for (int j = 0; j < 4; ++j) {
-                                stPointList[j].X = (int)(stBcrResultEx2.stBcrInfoEx2[i].pt[j].x * (float)(pictureBox1.Size.Width) / stFrameInfoEx2.nWidth);
-                                stPointList[j].Y = (int)(stBcrResultEx2.stBcrInfoEx2[i].pt[j].y * (float)(pictureBox1.Size.Height) / stFrameInfoEx2.nHeight);
-                            }*/
+                            //画区域
+                            if (IsShowBarcodeBorder && bmp is not null &&
+                                bmp.PixelFormat != PixelFormat.Format8bppIndexed &&
+                                stBcrResultEx2.stBcrInfoEx2?.Any() == true) {
+                                using var g = Graphics.FromImage(bmp);
+                                for (int i = 0; i < stBcrResultEx2.stBcrInfoEx2.Length; i++) {
+                                    var points = new Point[4];
+                                    for (int j = 0; j < 4; ++j) {
+                                        points[j].X = (int)(stBcrResultEx2.stBcrInfoEx2[i].pt[j].x *
+                                            (float)(bmp.Size.Width) / stFrameInfoEx2.nWidth);
+                                        points[j].Y = (int)(stBcrResultEx2.stBcrInfoEx2[i].pt[j].y *
+                                            (float)(bmp.Size.Height) / stFrameInfoEx2.nHeight);
+                                    }
+                                    g.DrawPolygon(new Pen(BarcodeBorderColor, BarcodeBorderSize), points);
+                                }
+                            }
+
                             //识别到条码调用
                             char[] nullChars = { '\0' };
                             //需要设置触发时间才能过滤
@@ -313,7 +323,18 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                                     CodeId = stBcrResultEx2.stBcrInfoEx2[i].nSubPackageId.ToString(),
                                     Len = (int)stBcrResultEx2.stBcrInfoEx2[i].nLen,
                                     CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
-                                    ScanTime = localTime.DateTime
+                                    ScanTime = localTime.DateTime,
+                                    AreaCoords = Enumerable.Range(0, 4).Select(s => {
+                                        if (bmp != null)
+                                            return new Point {
+                                                X = (int)(stBcrResultEx2.stBcrInfoEx2[i].pt[s].x *
+                                                    (float)(bmp.Size.Width) / stFrameInfoEx2.nWidth),
+                                                Y = (int)(stBcrResultEx2.stBcrInfoEx2[i].pt[s].y *
+                                                          (float)(bmp.Size.Height) /
+                                                          stFrameInfoEx2.nHeight)
+                                            };
+                                        return default;
+                                    })?.ToList()
                                 });
                             }
                         }
@@ -338,17 +359,43 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
             }
         }
 
-        private async Task ProcessImageAsync() {
-            //帧时间戳
-            long timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-            var nRet = MvCodeReader.MV_CODEREADER_OK;
-            var pData = IntPtr.Zero;
-            var stFrameInfoEx2 = new MvCodeReader.MV_CODEREADER_IMAGE_OUT_INFO_EX2();
-        }
+        /// <summary>
+        /// 获取图像
+        /// </summary>
+        /// <param name="pData"></param>
+        /// <param name="imageBuffBytes"></param>
+        /// <param name="stFrameInfoEx2"></param>
+        /// <returns></returns>
+        private async Task<Bitmap?> GetBitmapAsync(nint pData, byte[] imageBuffBytes,
+            MvCodeReader.MV_CODEREADER_IMAGE_OUT_INFO_EX2 stFrameInfoEx2) {
+            await Task.Yield();
+            Bitmap? bmp = null;
+            // 绘制图像
+            Marshal.Copy(pData, imageBuffBytes, 0, (int)stFrameInfoEx2.nFrameLen);
+            switch (stFrameInfoEx2.enPixelType) {
+                case MvCodeReader.MvCodeReaderGvspPixelType.PixelType_CodeReader_Gvsp_Mono8: {
+                        var pImage = Marshal.UnsafeAddrOfPinnedArrayElement(imageBuffBytes, 0);
+                        bmp = new Bitmap(stFrameInfoEx2.nWidth, stFrameInfoEx2.nHeight, stFrameInfoEx2.nWidth, PixelFormat.Format8bppIndexed, pImage);
+                        var cp = bmp.Palette;
+                        for (var i = 0; i < 256; i++) {
+                            cp.Entries[i] = Color.FromArgb(i, i, i);
+                        }
+                        bmp.Palette = cp;
+                        break;
+                    }
+                case MvCodeReader.MvCodeReaderGvspPixelType.PixelType_CodeReader_Gvsp_Jpeg: {
+                        GC.Collect();
+                        using var ms = new MemoryStream();
+                        ms.Write(imageBuffBytes, 0, (int)stFrameInfoEx2.nFrameLen);
+                        bmp = new Bitmap(ms);
+                        break;
+                    }
+            }
+            if (!IsOriginalImageOut) {
+                bmp = (Bitmap?)bmp?.GetThumbnailImage(1280, 960, () => false, IntPtr.Zero);
+            }
 
-        private async Task<Bitmap?> GetBitmapAsync() {
-            var pstFrameInfoEx2 = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(MvCodeReader.MV_CODEREADER_IMAGE_OUT_INFO_EX2)));
-            return null;
+            return bmp;
         }
 
         private string GetBarType(MvCodeReader.MV_CODEREADER_CODE_TYPE nBarType) {
@@ -397,6 +444,12 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
             await Task.Yield();
             Status = CameraStatus.Running;
             CameraStarted?.Invoke(this, e);
+        }
+
+        protected virtual async void OnCameraUnregistered(CameraUnregisteredEventArgs e) {
+            await Task.Yield();
+            Status = CameraStatus.Uninitialized;
+            CameraUnregistered?.Invoke(this, e);
         }
     }
 }

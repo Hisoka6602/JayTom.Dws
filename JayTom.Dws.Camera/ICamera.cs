@@ -10,7 +10,7 @@ namespace JayTom.Dws.Camera {
     /// <summary>
     /// 相机接口
     /// </summary>
-    public interface ICamera {
+    public interface ICamera : IDisposable {
 
         /// <summary>
         /// 相机信息

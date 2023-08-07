@@ -238,6 +238,8 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                         Exception = new Exception($"释放句柄失败:{_nRet:X}")
                     });
                 }
+
+                this.Info = null;
             }
             System.GC.Collect();
         }
@@ -458,6 +460,12 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
             await Task.Yield();
             Status = CameraStatus.Paused;
             CameraStopped?.Invoke(this, e);
+        }
+
+        protected virtual async void OnCameraUnregistered(CameraUnregisteredEventArgs e) {
+            await Task.Yield();
+            Status = CameraStatus.Uninitialized;
+            CameraUnregistered?.Invoke(this, e);
         }
     }
 }

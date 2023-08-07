@@ -87,9 +87,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "JayTom.Dws.Camera", "JayTom
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HikvisionIndustrialCameraTest", "HikvisionIndustrialCameraTest\HikvisionIndustrialCameraTest.csproj", "{2DF98EDC-F0C1-4B32-9050-253BD2311664}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wpf.HikvisionIndustrialCameraTest", "Wpf.HikvisionIndustrialCameraTest\Wpf.HikvisionIndustrialCameraTest.csproj", "{B8F19B0E-16CC-40E6-9EF0-2CFADCCF1669}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Wpf.HikvisionIndustrialCameraTest", "Wpf.HikvisionIndustrialCameraTest\Wpf.HikvisionIndustrialCameraTest.csproj", "{B8F19B0E-16CC-40E6-9EF0-2CFADCCF1669}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HikvisionSmartCameraTest", "HikvisionSmartCameraTest\HikvisionSmartCameraTest.csproj", "{D53A8361-D360-486E-B369-E8CFA80A9A1C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HikvisionSmartCameraTest", "HikvisionSmartCameraTest\HikvisionSmartCameraTest.csproj", "{D53A8361-D360-486E-B369-E8CFA80A9A1C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wpf.HikvisionSmartCameraTest", "Wpf.HikvisionSmartCameraTest\Wpf.HikvisionSmartCameraTest.csproj", "{B550D089-0D3E-4694-BE5F-92C740C11BB2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -400,6 +402,18 @@ Global
 		{D53A8361-D360-486E-B369-E8CFA80A9A1C}.Release|x64.Build.0 = Release|Any CPU
 		{D53A8361-D360-486E-B369-E8CFA80A9A1C}.Release|x86.ActiveCfg = Release|Any CPU
 		{D53A8361-D360-486E-B369-E8CFA80A9A1C}.Release|x86.Build.0 = Release|Any CPU
+		{B550D089-0D3E-4694-BE5F-92C740C11BB2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B550D089-0D3E-4694-BE5F-92C740C11BB2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B550D089-0D3E-4694-BE5F-92C740C11BB2}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{B550D089-0D3E-4694-BE5F-92C740C11BB2}.Debug|x64.Build.0 = Debug|Any CPU
+		{B550D089-0D3E-4694-BE5F-92C740C11BB2}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{B550D089-0D3E-4694-BE5F-92C740C11BB2}.Debug|x86.Build.0 = Debug|Any CPU
+		{B550D089-0D3E-4694-BE5F-92C740C11BB2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B550D089-0D3E-4694-BE5F-92C740C11BB2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B550D089-0D3E-4694-BE5F-92C740C11BB2}.Release|x64.ActiveCfg = Release|Any CPU
+		{B550D089-0D3E-4694-BE5F-92C740C11BB2}.Release|x64.Build.0 = Release|Any CPU
+		{B550D089-0D3E-4694-BE5F-92C740C11BB2}.Release|x86.ActiveCfg = Release|Any CPU
+		{B550D089-0D3E-4694-BE5F-92C740C11BB2}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -434,6 +448,7 @@ Global
 		{2DF98EDC-F0C1-4B32-9050-253BD2311664} = {84DF72DC-A0A8-451F-AE8C-1E81A215A2DE}
 		{B8F19B0E-16CC-40E6-9EF0-2CFADCCF1669} = {84DF72DC-A0A8-451F-AE8C-1E81A215A2DE}
 		{D53A8361-D360-486E-B369-E8CFA80A9A1C} = {84DF72DC-A0A8-451F-AE8C-1E81A215A2DE}
+		{B550D089-0D3E-4694-BE5F-92C740C11BB2} = {84DF72DC-A0A8-451F-AE8C-1E81A215A2DE}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {7D216EA9-F84D-4593-9B16-AA39F622BA27}
