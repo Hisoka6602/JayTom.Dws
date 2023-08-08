@@ -16,12 +16,13 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
 
     public class HikvisionIndustrialCamera : IIndustrialCamera {
         private int _nRet = MVIDCodeReader.MVID_CR_OK;
-        private MVIDCodeReader.MVID_CAMERA_INFO_LIST _stDevList = new();
+        private static MVIDCodeReader.MVID_CAMERA_INFO_LIST _stDevList = new();
         private static SemaphoreSlim _semaphoreSlim = new(1, 1);
         private MVIDCodeReader.MVID_CAM_OUTPUT_INFO _stOutput = new();
         private MVIDCodeReader? _myCodeReader;
         private byte[] _imageBuffer = null;
         private MVIDCodeReader.cbOutputdelegate _imageCallback;
+        private Queue<DateTime> _capturePhotoQueue = new();
         private double FrameRate { get; set; }
 
         /// <summary>
@@ -34,7 +35,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
         public string SdkName => "MVIDCodeReader.Net";
         public bool IsOriginalImageOut { get; set; }
         public CameraStatus Status { get; private set; } = CameraStatus.Uninitialized;
-        public CameraBindingType BindingType { get; } = CameraBindingType.ScannerCamera;
+        public CameraBindingType BindingType { get; set; } = CameraBindingType.ScannerCamera;
 
         public List<CameraInfo>? EnumerateCameras() {
             var cameraInfos = new List<CameraInfo>();
@@ -85,6 +86,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                 return new KeyValuePair<bool, string>(false, "已初始化过!");
             }
             if (param is CameraInfo cameraInfo) {
+                this.Info = cameraInfo;
                 if (cameraInfo.Id >= MVIDCodeReader.MVID_MAX_CAM_NUM) {
                     OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
                         Exception = new Exception("初始化失败:Id大于最大设备支持个数!")
@@ -175,7 +177,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                 }
                 //获取帧率
                 //FrameRate
-                this.Info = cameraInfo;
+
                 OnCameraInitialized(new CameraInitializedEventArgs() {
                     CameraInfo = this.Info
                 });
@@ -230,15 +232,26 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
         public void Dispose() {
             if (Status != CameraStatus.Uninitialized) {
                 _imageCallback = null;
-                _myCodeReader = null;
+
                 var nRet = _myCodeReader?.MVID_CR_CAM_StopGrabbing_NET() ?? 0;
+                if (MVIDCodeReader.MVID_CR_OK != nRet) {
+                    OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
+                        Exception = new Exception($"停止相机失败:{_nRet:X}")
+                    });
+                }
                 nRet = _myCodeReader?.MVID_CR_DestroyHandle_NET() ?? 0;
                 if (MVIDCodeReader.MVID_CR_OK != nRet) {
                     OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
                         Exception = new Exception($"释放句柄失败:{_nRet:X}")
                     });
                 }
-
+                OnCameraDisconnected(new CameraConnectionEventArgs() {
+                    CameraInfo = this.Info
+                });
+                OnCameraUnregistered(new CameraUnregisteredEventArgs() {
+                    CameraInfo = this.Info
+                });
+                _myCodeReader = null;
                 this.Info = null;
             }
             System.GC.Collect();
@@ -258,6 +271,14 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
 
         public event EventHandler<RealtimeImageEventArgs>? RealtimeImage;
 
+        public event EventHandler<PhotoTakenEventArgs>? PhotoTaken;
+
+        public async Task TakePhotoAsync() {
+            await Task.Yield();
+            //提交拍照请求
+            _capturePhotoQueue.Enqueue(DateTime.Now);
+        }
+
         private async Task ProcessImageAsync(MVIDCodeReader.MVID_CAM_OUTPUT_INFO stOutput, IntPtr ptr) {
             //帧时间戳
             long timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds();
@@ -265,7 +286,16 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                 stOutput = (MVIDCodeReader.MVID_CAM_OUTPUT_INFO)(Marshal.PtrToStructure(ptr,
                     typeof(MVIDCodeReader.MVID_CAM_OUTPUT_INFO)) ?? new MVIDCodeReader.MVID_CAM_OUTPUT_INFO());
                 var bitmap = await GetBitmapAsync(stOutput, ptr);
-                if (0 != stOutput.stCodeList.nCodeNum) {
+                if (bitmap is not null && _capturePhotoQueue.Count > 0) {
+                    _capturePhotoQueue.Dequeue();
+                    OnPhotoTaken(new PhotoTakenEventArgs() {
+                        Timestamp = timestamp,
+                        CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
+                        Image = bitmap,
+                        PhotoTime = DateTime.Now
+                    });
+                }
+                if (0 != stOutput.stCodeList.nCodeNum && BindingType != CameraBindingType.PanoramicCamera) {
                     if (IsShowBarcodeBorder && bitmap is not null && bitmap.PixelFormat != PixelFormat.Format8bppIndexed &&
                         stOutput.stCodeList.stCodeInfo?.Any() == true) {
                         //设置图像边框
@@ -316,7 +346,6 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                         await Task.Delay(1);
                     }
                 }
-
                 if (IsRealtimeImageEnabled) {
                     OnRealtimeImage(new RealtimeImageEventArgs() {
                         Image = bitmap,
@@ -466,6 +495,17 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
             await Task.Yield();
             Status = CameraStatus.Uninitialized;
             CameraUnregistered?.Invoke(this, e);
+        }
+
+        protected virtual async void OnCameraDisconnected(CameraConnectionEventArgs e) {
+            await Task.Yield();
+            Status = CameraStatus.Disconnected;
+            CameraDisconnected?.Invoke(this, e);
+        }
+
+        protected virtual async void OnPhotoTaken(PhotoTakenEventArgs e) {
+            await Task.Yield();
+            PhotoTaken?.Invoke(this, e);
         }
     }
 }

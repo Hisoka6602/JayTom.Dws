@@ -55,8 +55,6 @@ namespace Wpf.HuaraytechTest {
         }
 
         private void FrameCallBack(ref IMVDefine.IMV_Frame frame, IntPtr pUser) {
-            frame.frameInfo.
-
             //frame.frameHandle图像句柄
         }
     }

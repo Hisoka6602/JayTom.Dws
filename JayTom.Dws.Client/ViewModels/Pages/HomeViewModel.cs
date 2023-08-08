@@ -7,12 +7,12 @@ using Prism.Commands;
 using System.Windows;
 using System.Drawing;
 using System.Threading;
+using JayTom.Dws.Camera;
 using System.Windows.Input;
 using System.Threading.Tasks;
 using Prism.Services.Dialogs;
 using System.Windows.Controls;
 using JayTom.Dws.Client.Models;
-using JayTom.Dws.Device.Camera;
 using System.Windows.Documents;
 using MaterialDesignThemes.Wpf;
 using JayTom.Dws.Data.LocalData;
@@ -230,41 +230,57 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     Weight = (float)8.6,
                 },
             };
-            _computerInfoReporter.ComputerInfoReceived += delegate (object? sender, ComputerInfoModel model) {
-                /*AddNewRow(new BarCodeItemModel() {
-                    Num = BarCodeItems.Count + 1,
-                    Barcode = new Random().Next(100000000, 999999999).ToString(),
-                    ScanTime = DateTime.Now,
-                    BarcodeImagePath = @"C:\Users\77051\Desktop\16.jpg",
-                    IsBarcodeImageExists = true,
-                    PanoramaImagePath = @"C:\Users\77051\Desktop\16.jpg",
-                    IsPanoramaImageExists = true
-                });*/
-            };
             _deviceService.CameraInitialized += async delegate (object? sender, List<ICamera> list) {
                 await Application.Current.Dispatcher.InvokeAsync(() => {
                     CameraItems.Clear();
                     Task.Delay(100);
                     var infoModels = list.Select(s => new CameraItemInfoModel {
-                        ConnectionType = (ConnectionType)s.ConnectionType,
-                        CameraName = s.CameraName,
-                        Type = (CameraType)s.CameraType,
+                        ConnectionType = (ConnectionType)(s?.Info?.ConnectionType ?? CameraConnectionType.Ethernet),
+                        CameraName = $"{s?.Info?.Brand}:{s?.Info?.SerialNumber}" ?? string.Empty,
+                        Type = (CameraType)(s?.Info?.Type ?? JayTom.Dws.Camera.CameraType.IndustrialCamera),
                         Status = CameraStatus.Running,
-                        CameraId = s.CameraId,
+                        CameraId = (s?.Info?.Id)?.ToString() ?? string.Empty,
+                        SerialNumber = s?.Info?.SerialNumber ?? string.Empty
                     })?.ToList();
                     CameraItems.AddRange(infoModels);
+                });
+            };
+            _deviceService.CameraReleased += async delegate (object? sender, string s) {
+                await Application.Current.Dispatcher.InvokeAsync(() => {
+                    var model = CameraItems.FirstOrDefault(f => f.SerialNumber.Equals(s));
+                    if (model != null) {
+                        CameraItems.Remove(model);
+                    }
                 });
             };
             _deviceService.BarcodeScanned += DeviceServiceOnBarcodeScanned;
             _deviceService.RealTimeImage += DeviceServiceOnRealTimeImage;
             _deviceService.PanoramaCaptured += DeviceServiceOnPanoramaCaptured;
-            _deviceService.NotBarcodeHitEvent += async delegate (object? sender, BarcodeHitEventArgs args) {
-                await Application.Current.Dispatcher.InvokeAsync(() => {
-                    var model = CameraItems.FirstOrDefault(f => f.CameraName.Equals(args.CameraName));
+            _deviceService.NotBarcodeHitEvent += async delegate (object? sender, BarcodeReadEventArgs args) {
+                await Application.Current.Dispatcher.InvokeAsync(async () => {
+                    var model = CameraItems.FirstOrDefault(f => f.SerialNumber.Equals(args.CameraSerialNumber));
+
                     if (model is not null) {
-                        model.Image = null;
-                        //更新右边信息
-                        BarCode = "未识别到条码";
+                        //图片转换
+                        if (args?.Image is not null) {
+                            if (args.Timestamp != model.ImageTimestamp) {
+                                model.Image = null;
+                                await Task.Delay(10);
+                                model.ImageTimestamp = args.Timestamp;
+                                var thumbnailWidth = (int)(args.Image.Width * 0.3);
+                                var thumbnailHeight = (int)(args.Image.Height * 0.3);
+                                using var thumbnail = args.Image.GetThumbnailImage(thumbnailWidth, thumbnailHeight,
+                                    null, IntPtr.Zero);
+                                // 将缩略图转换为BitmapSource
+                                await Application.Current.Dispatcher.InvokeAsync(() => {
+                                    //更新图片
+                                    model.Image = ((Bitmap)thumbnail).ConvertBitmapToBitmapSource();
+                                    model.FrameRate = args?.FrameRate ?? 0;
+                                    //更新右边信息
+                                    BarCode = "未识别到条码";
+                                });
+                            }
+                        }
                     }
                 });
                 AddNewRow(new BarCodeItemModel() {
@@ -287,9 +303,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         private async void DeviceServiceOnPanoramaCaptured(object? sender, PanoramaCaptureEventArgs args) {
             //全景相机
             await _imageSemaphoreSlim.WaitAsync();
-            var model = CameraItems.FirstOrDefault(f => f.CameraId.Equals(args.CameraId) &&
+            var model = CameraItems.FirstOrDefault(f => f.SerialNumber.Equals(args.CameraSerialNumber) &&
                                                         f.Type is CameraType.PanoramicCamera);
-            HomeMessageQueue.Enqueue($"id:{args.CameraId}-列表:{string.Join(",", CameraItems.Select(s => $"{s.CameraId}"))}");
             if (model is not null) {
                 //图片转换
                 if (args?.Image is not null) {
@@ -316,10 +331,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             //实时画面
         }
 
-        private async void DeviceServiceOnBarcodeScanned(object? sender, BarcodeHitEventArgs args) {
+        private async void DeviceServiceOnBarcodeScanned(object? sender, BarcodeReadEventArgs args) {
             //更新图片
             await _imageSemaphoreSlim.WaitAsync();
-            var model = CameraItems.FirstOrDefault(f => f.CameraId.Equals(args.CameraId) &&
+
+            var model = CameraItems.FirstOrDefault(f => f.SerialNumber.Equals(args.CameraSerialNumber) &&
                                                         f.Type is CameraType.IndustrialCamera or CameraType.SmartCamera);
             if (model is not null) {
                 //图片转换

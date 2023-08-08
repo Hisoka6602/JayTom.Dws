@@ -45,6 +45,12 @@ namespace JayTom.Dws.Camera {
         /// 读码触发回调事件
         /// </summary>
         event EventHandler<BarcodeTriggeredEventArgs> BarcodeReadTriggered;
+
+        /// <summary>
+        /// 包裹触发但未识别到条码
+        /// </summary>
+
+        event EventHandler<BarcodeReadEventArgs> NotBarcodeHitEvent;
     }
 
     public enum TriggerMode {

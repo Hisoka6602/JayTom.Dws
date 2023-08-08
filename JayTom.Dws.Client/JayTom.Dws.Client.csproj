@@ -64,7 +64,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\JayTom.Dws.Device\JayTom.Dws.Device.csproj" />
+    <ProjectReference Include="..\JayTom.Dws.Camera\JayTom.Dws.Camera.csproj" />
     <ProjectReference Include="..\JayTom.Dws.Infrastructure\JayTom.Dws.Infrastructure.csproj" />
     <ProjectReference Include="..\JayTom.Dws.PluginInterface\JayTom.Dws.PluginInterface.csproj" />
     <ProjectReference Include="..\JayTom.Dws.Plugin\JayTom.Dws.Plugin.csproj" />
@@ -77,10 +77,16 @@
     <Resource Include="Image\Logo\icon logo.png" />
     <Resource Include="Image\ocr-img.png" />
   </ItemGroup>
-  <Target Name="CopyDeviceLib" AfterTargets="AfterBuild">
+
+  <ItemGroup>
+    <None Update="Nlog.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  <!--<Target Name="CopyDeviceLib" AfterTargets="AfterBuild">
     <ItemGroup>
       <DeviceLibFiles Include="$(SolutionDir)JayTom.Dws.Device\DeviceLib\*\*" />
     </ItemGroup>
     <Copy SourceFiles="@(DeviceLibFiles)" DestinationFolder="$(TargetDir)" />
-  </Target>
+  </Target>-->
 </Project>

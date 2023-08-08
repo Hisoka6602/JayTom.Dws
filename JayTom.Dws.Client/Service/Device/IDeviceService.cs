@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Drawing;
 using System.Threading;
-using JayTom.Dws.Device;
+using JayTom.Dws.Camera;
 using System.Threading.Tasks;
-using JayTom.Dws.Device.Camera;
 using System.Collections.Generic;
 using JayTom.Dws.Client.Models.Cameras;
 
@@ -34,12 +33,12 @@ namespace JayTom.Dws.Client.Service.Device {
         /// <summary>
         /// 当相机扫到条码时触发的事件
         /// </summary>
-        event EventHandler<BarcodeHitEventArgs> BarcodeScanned;
+        event EventHandler<BarcodeReadEventArgs> BarcodeScanned;
 
         /// <summary>
         /// 包裹触发但未识别到条码
         /// </summary>
-        event EventHandler<BarcodeHitEventArgs> NotBarcodeHitEvent;
+        event EventHandler<BarcodeReadEventArgs> NotBarcodeHitEvent;
 
         /// <summary>
         /// 相机捕获到全景图片触发事件
@@ -107,6 +106,11 @@ namespace JayTom.Dws.Client.Service.Device {
         /// <returns></returns>
         Task<KeyValuePair<bool, string>> OnCameraParametersModified(List<CameraParametersModifiedEventArgs> camera, CancellationToken token = default);
 
+        /// <summary>
+        /// 相机释放事件
+        /// </summary>
+        event EventHandler<string> CameraReleased;
+
         /*/// <summary>
         /// 当磅秤连接时触发的事件
         /// </summary>
@@ -150,7 +154,7 @@ namespace JayTom.Dws.Client.Service.Device {
         /// <summary>
         /// 初始化设备服务
         /// </summary>
-        void Initialization();
+        Task Initialization();
 
         /// <summary>
         /// 释放设备注册资源
@@ -159,11 +163,10 @@ namespace JayTom.Dws.Client.Service.Device {
     }
 
     public class DeviceExceptionEventArgs {
-
-        /// <summary>
+        /*/// <summary>
         /// 设备
         /// </summary>
-        public IDevice? Device;
+        public ICamera? Camera;*/
 
         /// <summary>
         /// 异常信息
@@ -200,5 +203,31 @@ namespace JayTom.Dws.Client.Service.Device {
         /// 参数
         /// </summary>
         public object? Parameters { get; set; }
+    }
+
+    public class PanoramaCaptureEventArgs : EventArgs {
+
+        /// <summary>
+        /// 图片
+        /// </summary>
+        public Bitmap? Image { get; set; }
+
+        /// <summary>
+        /// 拍照时间
+        /// </summary>
+        public DateTime PhotoTime { get; set; }
+
+        /// <summary>
+        /// 拍照时间戳
+        /// </summary>
+        public long Timestamp { get; set; }
+
+        /// <summary>
+        /// 相机序列号
+        /// </summary>
+        public string CameraSerialNumber { get; set; } = string.Empty;
+    }
+
+    public class VolumeCapturedEventArgs : EventArgs {
     }
 }

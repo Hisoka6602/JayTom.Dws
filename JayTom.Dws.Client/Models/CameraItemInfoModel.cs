@@ -18,6 +18,7 @@ namespace JayTom.Dws.Client.Models {
         private string _cameraId = string.Empty;
         private bool _isSwitchingState;
         private long _imageTimestamp;
+        private string _serialNumber = string.Empty;
 
         public string CameraId {
             get => _cameraId;
@@ -70,6 +71,14 @@ namespace JayTom.Dws.Client.Models {
         public double FrameRate {
             get => _frameRate;
             set => SetProperty(ref _frameRate, value);
+        }
+
+        /// <summary>
+        /// 序列号
+        /// </summary>
+        public string SerialNumber {
+            get => _serialNumber;
+            set => SetProperty(ref _serialNumber, value);
         }
 
         /// <summary>

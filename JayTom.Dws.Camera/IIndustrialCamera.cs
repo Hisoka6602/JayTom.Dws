@@ -43,7 +43,16 @@ namespace JayTom.Dws.Camera {
         /// </summary>
         event EventHandler<RealtimeImageEventArgs> RealtimeImage;
 
-        //软触发方法
+        /// <summary>
+        /// 拍照回调事件
+        /// </summary>
+        public event EventHandler<PhotoTakenEventArgs> PhotoTaken;
+
+        /// <summary>
+        /// 拍照
+        /// </summary>
+        /// <returns></returns>
+        Task TakePhotoAsync();
     }
 
     /// <summary>
@@ -111,5 +120,28 @@ namespace JayTom.Dws.Camera {
         /// 缩略图
         /// </summary>
         public Bitmap? ThumbImage { get; set; }
+    }
+
+    public class PhotoTakenEventArgs : EventArgs {
+
+        /// <summary>
+        /// 图片
+        /// </summary>
+        public Bitmap? Image { get; set; }
+
+        /// <summary>
+        /// 拍照时间
+        /// </summary>
+        public DateTime PhotoTime { get; set; }
+
+        /// <summary>
+        /// 拍照时间戳
+        /// </summary>
+        public long Timestamp { get; set; }
+
+        /// <summary>
+        /// 相机序列号
+        /// </summary>
+        public string CameraSerialNumber { get; set; } = string.Empty;
     }
 }

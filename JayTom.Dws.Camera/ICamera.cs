@@ -40,7 +40,7 @@ namespace JayTom.Dws.Camera {
         /// <summary>
         /// 相机绑定类型
         /// </summary>
-        CameraBindingType BindingType { get; }
+        CameraBindingType BindingType { get; set; }
 
         /// <summary>
         /// 枚举相机
@@ -91,11 +91,6 @@ namespace JayTom.Dws.Camera {
         /// 停止相机
         /// </summary>
         Task<KeyValuePair<bool, string>> Stop();
-
-        /// <summary>
-        /// 注销相机
-        /// </summary>
-        void Dispose();
 
         /// <summary>
         /// 设置参数方法
@@ -153,6 +148,28 @@ namespace JayTom.Dws.Camera {
         /// 相机连接类型
         /// </summary>
         public CameraConnectionType ConnectionType { get; set; }
+
+        public override bool Equals(object? obj) {
+            if (obj == null || GetType() != obj.GetType())
+                return false;
+
+            var otherInfo = (CameraInfo)obj;
+            return Name == otherInfo.Name &&
+                   Brand == otherInfo.Brand &&
+                   SerialNumber == otherInfo.SerialNumber &&
+                   IpAddress == otherInfo.IpAddress &&
+                   Version == otherInfo.Version &&
+                   Model == otherInfo.Model;
+        }
+
+        public override int GetHashCode() {
+            return Name.GetHashCode()
+                                    ^ Brand.GetHashCode()
+                                    ^ SerialNumber.GetHashCode()
+                                    ^ IpAddress.GetHashCode()
+                                    ^ Version.GetHashCode()
+                                    ^ Model.GetHashCode();
+        }
     }
 
     /// <summary>
@@ -163,27 +180,32 @@ namespace JayTom.Dws.Camera {
         /// <summary>
         /// 工业相机
         /// </summary>
-        IndustrialCamera,
+        IndustrialCamera = 0,
 
         /// <summary>
-        /// 智能相机
+        /// 全景相机
         /// </summary>
-        SmartCamera,
+        PanoramicCamera = 1,
 
         /// <summary>
         /// 体积相机
         /// </summary>
-        VolumeCamera,
+        VolumeCamera = 2,
+
+        /// <summary>
+        /// 智能相机
+        /// </summary>
+        SmartCamera = 3,
 
         /// <summary>
         /// 录像相机
         /// </summary>
-        VideoCamera,
+        VideoCamera = 4,
 
         /// <summary>
         /// 普通相机
         /// </summary>
-        StandardCamera
+        StandardCamera = 5
     }
 
     /// <summary>
@@ -238,9 +260,14 @@ namespace JayTom.Dws.Camera {
         PanoramicCamera = 1,
 
         /// <summary>
+        /// 体积相机
+        /// </summary>
+        VolumeCamera = 2,
+
+        /// <summary>
         /// 录像相机
         /// </summary>
-        VideoCamera = 2
+        VideoCamera = 3
     }
 
     /// <summary>

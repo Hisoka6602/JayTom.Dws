@@ -7,7 +7,9 @@ using System.Linq;
 using Prism.DryIoc;
 using System.Windows;
 using System.Net.Http;
+using Newtonsoft.Json;
 using JayTom.Dws.Plugin;
+using JayTom.Dws.Camera;
 using System.Configuration;
 using System.Windows.Media;
 using System.Threading.Tasks;
@@ -15,7 +17,6 @@ using System.Windows.Interop;
 using JayTom.Dws.Client.Views;
 using JayTom.Dws.Plugin.Excel;
 using System.Windows.Threading;
-using JayTom.Dws.Device.Camera;
 using JayTom.Dws.Infrastructure;
 using JayTom.Dws.Client.Service;
 using System.Collections.Generic;
@@ -27,11 +28,9 @@ using JayTom.Dws.Client.Views.Dialog;
 using JayTom.Dws.Client.Views.Editors;
 using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Client.ViewModels.Pages;
-using JayTom.Dws.Device.Camera._3DCamera;
 using JayTom.Dws.Infrastructure.IComputer;
 using JayTom.Dws.Client.ViewModels.Dialog;
 using JayTom.Dws.Client.ViewModels.Editors;
-using JayTom.Dws.Device.Camera.SmartCamera;
 using JayTom.Dws.Domain.Repository.LocalData;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using Microsoft.Extensions.DependencyInjection;
@@ -41,6 +40,7 @@ using JayTom.Dws.Client.ViewModels.Pages.Preferences;
 using DryIoc.Microsoft.DependencyInjection.Extension;
 using JayTom.Dws.Infrastructure.Repository.LocalConf;
 using JayTom.Dws.Infrastructure.Repository.LocalData;
+using JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision;
 using JayTom.Dws.Client.Views.Pages.Preferences.CameraConfiguration;
 using JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration;
 
@@ -97,9 +97,9 @@ namespace JayTom.Dws.Client {
                 //电脑信息上报
                 services.AddScoped<IComputerInfoReporter, ComputerInfoReporter>();
                 //设备注册
-                services.AddScoped<ICamera, HuaraytechSmartCamera>();
+                services.AddScoped<ICamera, HikvisionSmartCamera>();
 
-                services.AddScoped<IDeviceService, DeviceService>();
+                services.AddScoped<IDeviceService, DefaultDeviceService>();
             });
         }
 
@@ -110,9 +110,11 @@ namespace JayTom.Dws.Client {
         protected override void OnStartup(StartupEventArgs e) {
             this.DispatcherUnhandledException += delegate (object sender, DispatcherUnhandledExceptionEventArgs args) {
                 //异常触发
+                NLog.LogManager.GetCurrentClassLogger().Error($"{JsonConvert.SerializeObject(args.Exception)}");
             };
             AppDomain.CurrentDomain.UnhandledException += delegate (object sender, UnhandledExceptionEventArgs args) {
                 //异常触发
+                NLog.LogManager.GetCurrentClassLogger().Error($"{JsonConvert.SerializeObject(args.ExceptionObject)}");
             };
             base.OnStartup(e);
             // 创建主机并注册后台服务
