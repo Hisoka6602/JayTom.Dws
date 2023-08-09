@@ -38,6 +38,22 @@
             ResizeBorderThickness="5"
             UseAeroCaptionButtons="True" />
     </WindowChrome.WindowChrome>
+    <Window.Resources>
+        <materialDesign:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+        <Storyboard x:Key="ShowFrameStoryboard">
+            <ObjectAnimationUsingKeyFrames
+                BeginTime="0:0:0.8"
+                FillBehavior="HoldEnd"
+                Storyboard.TargetProperty="(Frame.Visibility)"
+                Duration="0:0:0.2">
+                <DiscreteObjectKeyFrame KeyTime="0">
+                    <DiscreteObjectKeyFrame.Value>
+                        <Visibility>Visible</Visibility>
+                    </DiscreteObjectKeyFrame.Value>
+                </DiscreteObjectKeyFrame>
+            </ObjectAnimationUsingKeyFrames>
+        </Storyboard>
+    </Window.Resources>
     <!--  任务栏  -->
     <!--<Window.TaskbarItemInfo>
         <TaskbarItemInfo x:Name="taskBarItem">
@@ -306,11 +322,25 @@
                             </TextBlock>
                             <!--  主页面 跨2列  -->
                             <Frame
+                                Name="PagesFrame"
                                 Grid.Row="1"
                                 Grid.RowSpan="2"
                                 Focusable="False"
                                 NavigationUIVisibility="Hidden"
-                                Source="Pages/HomePage.xaml" />
+                                Source="Pages/HomePage.xaml">
+                                <Frame.Style>
+                                    <Style TargetType="Frame">
+                                        <Setter Property="Visibility" Value="Hidden" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsLoaded, UpdateSourceTrigger=PropertyChanged}" Value="True">
+                                                <DataTrigger.EnterActions>
+                                                    <BeginStoryboard Storyboard="{StaticResource ShowFrameStoryboard}" />
+                                                </DataTrigger.EnterActions>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Frame.Style>
+                            </Frame>
                         </Grid>
                         <!--  状态栏  -->
                         <Frame

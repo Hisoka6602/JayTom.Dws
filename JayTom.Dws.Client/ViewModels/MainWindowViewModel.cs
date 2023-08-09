@@ -129,8 +129,8 @@ namespace JayTom.Dws.Client.ViewModels {
                     visualChild.Visibility = Visibility.Visible;
                 }
             }
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                //await Task.Delay(TimeSpan.FromSeconds(10));
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+                await Task.Delay(TimeSpan.FromSeconds(2));
                 IsLoaded = true;
             });
         }
