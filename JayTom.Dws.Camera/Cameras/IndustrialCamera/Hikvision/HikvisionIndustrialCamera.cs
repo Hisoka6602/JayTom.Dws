@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Drawing;
 using Newtonsoft.Json;
+using Microsoft.Win32;
 using MVIDCodeReaderNet;
 using System.Reflection;
 using System.Diagnostics;
@@ -13,7 +14,6 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
 namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
-
     public class HikvisionIndustrialCamera : IIndustrialCamera {
         private int _nRet = MVIDCodeReader.MVID_CR_OK;
         private static MVIDCodeReader.MVID_CAMERA_INFO_LIST _stDevList = new();
@@ -21,7 +21,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
         private MVIDCodeReader.MVID_CAM_OUTPUT_INFO _stOutput = new();
         private MVIDCodeReader? _myCodeReader;
         private byte[] _imageBuffer = null;
-        private MVIDCodeReader.cbOutputdelegate _imageCallback;
+        private MVIDCodeReader.cbOutputdelegate _imageCallback = null;
         private Queue<DateTime> _capturePhotoQueue = new();
         private double FrameRate { get; set; }
 
@@ -29,6 +29,16 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
         /// 相机信息
         /// </summary>
         public MVIDCodeReader.MVID_CAMERA_INFO Structure;
+
+        public HikvisionIndustrialCamera() {
+            /*Environment.SetEnvironmentVariable("PATH",
+                $"{AppContext.BaseDirectory}Cameras\\IndustrialCamera\\Hikvision\\Dll", EnvironmentVariableTarget.Machine);
+            AppDomain.CurrentDomain.ProcessExit += (sender, e) => {
+                Environment.SetEnvironmentVariable("PATH", $"{AppContext.BaseDirectory}Cameras\\IndustrialCamera\\Hikvision\\Dll", EnvironmentVariableTarget.Machine);
+            };*/
+            /*var (key, value) = AddSystemEnvironmentVariable($"{AppContext.BaseDirectory}Cameras\\IndustrialCamera\\Hikvision\\Dll");
+            Console.WriteLine(value);*/
+        }
 
         public CameraInfo? Info { get; private set; } = new();
         public SdkType SdkType => SdkType.IndustrialCameraSdk;
@@ -506,6 +516,46 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
         protected virtual async void OnPhotoTaken(PhotoTakenEventArgs e) {
             await Task.Yield();
             PhotoTaken?.Invoke(this, e);
+        }
+
+        private const int HWND_BROADCAST = 0xffff;
+        private const int WM_SETTINGCHANGE = 0x001A;
+        private const int SMTO_ABORTIFHUNG = 0x0002;
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern IntPtr SendMessageTimeout(IntPtr hWnd, int Msg, int wParam, string lParam, int fuFlags,
+            int uTimeout, IntPtr lpdwResult);
+
+        public KeyValuePair<bool, string> AddSystemEnvironmentVariable(string path, string variableName = "Path") {
+            try {
+                using (RegistryKey? environmentKey = Registry.CurrentUser.OpenSubKey(@"Environment", true)) {
+                    if (environmentKey != null) {
+                        var currentValue = environmentKey.GetValue(variableName) as string;
+
+                        // 检查是否已经包含 Percipio 路径
+                        if (string.IsNullOrEmpty(currentValue) || !currentValue.Contains(path)) {
+                            // 在现有值的末尾添加 Percipio 路径，并使用分号进行分隔
+                            var newValue = currentValue + path;
+
+                            environmentKey.SetValue(variableName, newValue);
+
+                            SendMessageTimeout((IntPtr)HWND_BROADCAST, WM_SETTINGCHANGE, 0, "Environment",
+                                SMTO_ABORTIFHUNG, 5000, IntPtr.Zero);
+
+                            return new KeyValuePair<bool, string>(true, $"路径已成功添加到环境变量中");
+                        }
+                        else {
+                            return new KeyValuePair<bool, string>(true, $"环境变量中已存在{path} 路径，无需添加。");
+                        }
+                    }
+                    else {
+                        return new KeyValuePair<bool, string>(false, "无法打开环境变量注册表项");
+                    }
+                }
+            }
+            catch (Exception e) {
+                return new KeyValuePair<bool, string>(false, e.Message);
+            }
         }
     }
 }

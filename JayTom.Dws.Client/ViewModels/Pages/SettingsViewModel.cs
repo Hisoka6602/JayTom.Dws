@@ -17,6 +17,7 @@ using System.Security.AccessControl;
 using System.Collections.ObjectModel;
 
 namespace JayTom.Dws.Client.ViewModels.Pages {
+
     public class SettingsViewModel : BindableBase {
         private readonly IRegionManager _regionManager;
 
@@ -65,7 +66,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     ClickCommand = ClickCommand,
                     PageClassName = "CameraConfigurationPage"
                 },
-                //&#xe63a;
                 new MenuItemInfoModel()
                 {
                     IconFont = new IconInfoModel()
@@ -76,7 +76,73 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     },
                     Title = "Api接口",
                     Description = "Api上传接口设置",
-                    ClickCommand = ClickCommand
+                    ClickCommand = ClickCommand,
+                    PageClassName = "APISettingsPage"
+                },
+                new MenuItemInfoModel()
+                {
+                    IconFont = new IconInfoModel()
+                    {
+                        IconFont = "pack://application:,,,/Fonts/#iconfont",
+                        IconCode = "\xe6b1",
+                        IconSize = 23
+                    },
+                    Title = "存图设置",
+                    Description = "存图相关设置",
+                    ClickCommand = ClickCommand,
+                    PageClassName = "SaveImageSettingsPage"
+                },
+                new MenuItemInfoModel()
+                {
+                    IconFont = new IconInfoModel()
+                    {
+                        IconFont = "pack://application:,,,/Fonts/#iconfont",
+                        IconCode = "\xe6af",
+                        IconSize = 30
+                    },
+                    Title = "条码过滤",
+                    Description = "条码过滤相关设置",
+                    ClickCommand = ClickCommand,
+                    PageClassName = "BarcodeFilterSettingsPage"
+                },
+                new MenuItemInfoModel()
+                {
+                    IconFont = new IconInfoModel()
+                    {
+                        IconFont = "pack://application:,,,/Fonts/#iconfont",
+                        IconCode = "\xe641",
+                        IconSize = 30
+                    },
+                    Title = "结果输出",
+                    Description = "结果输出相关设置",
+                    ClickCommand = ClickCommand,
+                    PageClassName = "ResultOutputSettingsPage"
+                },
+                new MenuItemInfoModel()
+                {
+                    IconFont = new IconInfoModel()
+                    {
+                        IconFont = "pack://application:,,,/Fonts/#iconfont",
+                        IconCode = "\xe6b5",
+                        IconSize = 30
+                    },
+                    Title = "内容输入",
+                    Description = "内容输入相关设置",
+                    ClickCommand = ClickCommand,
+                    PageClassName = "ContentInputSettingsPage"
+                },
+                new MenuItemInfoModel()
+                {
+                    IconFont = new IconInfoModel()
+                    {
+                        IconFont = "pack://application:,,,/Fonts/#iconfont",
+                        IconCode = "\xe74a",
+                        IconSize = 25
+                    },
+                    Title = "空间清理",
+                    Description = "释放缓存/空间的方案",
+                    ClickCommand = ClickCommand,
+                    PageClassName = "CacheClearSettingsPage"
                 },
             };
         }

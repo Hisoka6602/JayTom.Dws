@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using System.Drawing.Imaging;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision;
 
 namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
 
@@ -59,7 +60,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                         ConnectionType = stDevInfo.nTLayerType == MvCodeReader.MV_CODEREADER_GIGE_DEVICE ?
                             CameraConnectionType.Ethernet :
                             (stDevInfo.nTLayerType == MvCodeReader.MV_CODEREADER_USB_DEVICE ? CameraConnectionType.Usb : CameraConnectionType.Unknown),
-                        Id = i
+                        Id = i,
                     });
                 }
             }

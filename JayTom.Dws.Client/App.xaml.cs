@@ -60,6 +60,12 @@ namespace JayTom.Dws.Client {
                 containerRegistry.RegisterForNavigation<PluginMarketplacePage>();
                 containerRegistry.RegisterForNavigation<DataManagementPage>();
                 containerRegistry.RegisterForNavigation<CameraConfigurationPage>();
+                containerRegistry.RegisterForNavigation<APISettingsPage>();
+                containerRegistry.RegisterForNavigation<SaveImageSettingsPage>();
+                containerRegistry.RegisterForNavigation<BarcodeFilterSettingsPage>();
+                containerRegistry.RegisterForNavigation<ResultOutputSettingsPage>();
+                containerRegistry.RegisterForNavigation<ContentInputSettingsPage>();
+                containerRegistry.RegisterForNavigation<CacheClearSettingsPage>();
                 //相机
                 containerRegistry.RegisterForNavigation<BarcodeScannerCameraConfigPage>();
                 containerRegistry.RegisterForNavigation<CameraFinderPage>();
@@ -176,6 +182,13 @@ namespace JayTom.Dws.Client {
             ViewModelLocationProvider.Register<PanoramaCameraConfigPage, PanoramaCameraConfigViewModel>();
             ViewModelLocationProvider.Register<VolumeCameraConfigPage, VolumeCameraConfigViewModel>();
             ViewModelLocationProvider.Register<CameraFinderPage, CameraFinderViewModel>();
+
+            ViewModelLocationProvider.Register<APISettingsPage, ApiSettingsPageViewModel>();
+            ViewModelLocationProvider.Register<SaveImageSettingsPage, SaveImageSettingsPageViewModel>();
+            ViewModelLocationProvider.Register<BarcodeFilterSettingsPage, BarcodeFilterSettingsPageViewModel>();
+            ViewModelLocationProvider.Register<ResultOutputSettingsPage, ResultOutputSettingsPageViewModel>();
+            ViewModelLocationProvider.Register<ContentInputSettingsPage, ContentInputSettingsPageViewModel>();
+            ViewModelLocationProvider.Register<CacheClearSettingsPage, CacheClearSettingsPageViewModel>();
         }
     }
 }

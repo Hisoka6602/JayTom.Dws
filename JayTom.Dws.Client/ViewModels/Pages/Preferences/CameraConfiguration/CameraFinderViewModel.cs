@@ -24,6 +24,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
         private readonly IPanoramaCameraConfigRepository _panoramaCameraConfigRepository;
         private readonly IVolumeCameraConfigRepository _volumeCameraConfigRepository;
         private bool _isExecuting;
+        private static bool _isLoaded;
 
         private ObservableCollection<CameraFinderItemInfoModel> _cameraFinderItems = new()
         {
@@ -68,6 +69,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
         };
 
         private SnackbarMessageQueue _cameraFinderMessageQueue = new(TimeSpan.FromSeconds(2));
+        private bool _isRefreshing;
 
         public CameraFinderViewModel(IDeviceService deviceService,
             IBarcodeScannerCameraConfigRepository barcodeScannerCameraConfigRepository,
@@ -152,23 +154,35 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
             get => new DelegateCommand<object>(LoadeDelegate);
         }
 
+        /// <summary>
+        /// 刷新中
+        /// </summary>
+        public bool IsRefreshing {
+            get => _isRefreshing;
+            set => SetProperty(ref _isRefreshing, value);
+        }
+
         private void LoadeDelegate(object obj) {
             //加载相机对比绑定状态
+            if (!_isLoaded) {
+                _isLoaded = true;
+                RefreshDelegate(obj);
+            }
         }
 
         /// <summary>
         /// 刷新
         /// </summary>
         public ICommand RefreshCommand {
-            get => new DelegateCommand<CameraFinderItemInfoModel>(RefreshDelegate);
+            get => new DelegateCommand<object>(RefreshDelegate);
         }
 
-        private async void RefreshDelegate(CameraFinderItemInfoModel obj) {
-            if (_isExecuting) {
+        private async void RefreshDelegate(object obj) {
+            if (IsRefreshing) {
                 return;
             }
             await Application.Current.Dispatcher.InvokeAsync(async () => {
-                _isExecuting = true;
+                IsRefreshing = true;
                 var (key, value) = await _deviceService.OnCameraEnumerationRefreshed();
                 if (key) {
                     CameraFinderMessageQueue.Enqueue($"已重新枚举连接相机");
@@ -177,7 +191,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                     CameraFinderMessageQueue.Enqueue(value);
                 }
 
-                _isExecuting = false;
+                IsRefreshing = false;
             });
         }
 

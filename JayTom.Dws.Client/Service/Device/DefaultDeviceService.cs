@@ -63,7 +63,7 @@ namespace JayTom.Dws.Client.Service.Device {
                     Name = s.Name,
                     IpAddress = s.IpAddress,
                     ConnectionType = (ConnectionType)s.ConnectionType,
-                    CameraType = (JayTom.Dws.Client.Models.CameraType)s.Type,
+                    CameraType = (JayTom.Dws.Client.Models.CameraType)ConvertCameraType(s.Brand, s.Model),
                     Version = s.Version
                 })?.ToList();
                 CameraEnumerationRefreshed?.Invoke(null, itemInfoModels ?? new List<CameraFinderItemInfoModel>());
@@ -191,21 +191,7 @@ namespace JayTom.Dws.Client.Service.Device {
                 var (key, value) = await OnCameraEnumerationRefreshed();
                 if (key) {
                     foreach (var info in _cameraInfos) {
-                        ICamera? camera = null;
-                        if (info.Brand.Contains("Hikrobot") && info.Model.Contains("MV-ID")) {
-                            //海康智能相机
-                            camera = new HikvisionSmartCamera();
-                        }
-                        else if (info.Brand.Contains("Hikrobot") && info.Model.Contains("MV-PD")) {
-                            //海康工业相机
-                            camera = new HikvisionIndustrialCamera();
-                        }
-                        else if (info.Brand.Contains("Dahua") && info.Model.Contains("DH-MV")) {
-                            //大华智能相机
-                        }
-                        else if (info.Brand.Contains("Dahua")) {
-                            //大华工业相机
-                        }
+                        var camera = ConvertCamera(info.Brand, info.Model);
                         if (camera is not null) {
                             //注册事件
                             camera.CameraDisconnected += delegate (object? sender, CameraConnectionEventArgs args) {
@@ -253,7 +239,9 @@ namespace JayTom.Dws.Client.Service.Device {
                                 //注册事件
                                 var (b, s) = await camera.Initialize(cameraInfo);
                                 if (!b) {
-                                    CameraInitializationException.Add(s);
+                                    OnDeviceException(new DeviceExceptionEventArgs() {
+                                        ExceptionMessage = new Exception(s)
+                                    });
                                 }
                                 else {
                                     _cameras.Add(camera);
@@ -262,6 +250,7 @@ namespace JayTom.Dws.Client.Service.Device {
                         }
                     }
                 }
+
                 //判断绑定
                 var cameras = new List<ICamera>();
                 cameras.AddRange(CheckAndAddCamera(_cameras, scannerCameraConfigInfoModels?.Select(s => new BaseCameraConfigInfoModel {
@@ -292,6 +281,7 @@ namespace JayTom.Dws.Client.Service.Device {
                     CameraType = s.CameraType,
                 })?.ToList() ?? new List<BaseCameraConfigInfoModel>(), "体积"));
                 _cameras = cameras;
+
                 OnCameraInitialized(_cameras);
             });
         }
@@ -428,6 +418,42 @@ namespace JayTom.Dws.Client.Service.Device {
         protected virtual async void OnCameraReleased(string e) {
             await Task.Yield();
             CameraReleased?.Invoke(this, e);
+        }
+
+        private CameraType ConvertCameraType(string brand, string modelName) {
+            switch (brand) {
+                case not null when (brand.Contains("Hikrobot") || brand.Contains("Hikvision")):
+                    if (modelName.Contains("MV-ID"))
+                        return CameraType.SmartCamera;
+                    if (modelName.Contains("MV-PD"))
+                        return CameraType.IndustrialCamera;
+                    break;
+
+                case not null when brand.Contains("Dahua"):
+                    return modelName.Contains("DH-MV") ? CameraType.SmartCamera : CameraType.IndustrialCamera;
+
+                default:
+                    return CameraType.IndustrialCamera;
+            }
+            return CameraType.IndustrialCamera;
+        }
+
+        private ICamera? ConvertCamera(string brand, string modelName) {
+            switch (brand) {
+                case not null when (brand.Contains("Hikrobot") || brand.Contains("Hikvision")):
+                    if (modelName.Contains("MV-ID"))
+                        return new HikvisionSmartCamera();
+                    if (modelName.Contains("MV-PD"))
+                        return new HikvisionIndustrialCamera();
+                    break;
+
+                case not null when brand.Contains("Dahua"):
+                    return null;
+
+                default:
+                    return null;
+            }
+            return null;
         }
     }
 }

@@ -18,9 +18,11 @@
   <ItemGroup>
     <Reference Include="MvCodeReaderSDK.Net">
       <HintPath>Cameras\SmartCamera\Hikvision\Dll\MvCodeReaderSDK.Net.dll</HintPath>
+      <Private></Private>
     </Reference>
     <Reference Include="MVIDCodeReader.Net">
       <HintPath>Cameras\IndustrialCamera\Hikvision\Dll\MVIDCodeReader.Net.dll</HintPath>
+      <Private></Private>
     </Reference>
   </ItemGroup>
 

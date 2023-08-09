@@ -4,8 +4,6 @@ internal class Program {
     private static MyCamera camera = new();
 
     private static void Main(string[] args) {
-        Console.WriteLine("Hello, World!");
-
         int res = IMVDefine.IMV_OK;
         IMVDefine.IMV_DeviceList deviceList = new IMVDefine.IMV_DeviceList();
 

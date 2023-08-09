@@ -17,7 +17,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
 
     public class CameraConfigurationViewModel : BindableBase {
         private readonly IRegionManager _regionManager;
-
+        private static bool _isLoaded;
         private ObservableCollection<MenuItemInfoModel> _cameraMenuItems = new();
 
         public CameraConfigurationViewModel(IRegionManager regionManager) {
@@ -90,14 +90,17 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         }
 
         private async void LoadedDelegate(Frame obj) {
-            await Application.Current.Dispatcher.InvokeAsync(() => {
-                if (!_regionManager.Regions.ContainsRegionWithName("CameraConfigRegion")) {
-                    //创建区域(用于视觉树以外控件)
-                    RegionManager.SetRegionName(obj, "CameraConfigRegion");
-                    RegionManager.SetRegionManager(obj, _regionManager);
-                }
-                _regionManager.Regions["CameraConfigRegion"].RequestNavigate("CameraFinderPage");
-            });
+            if (!_isLoaded) {
+                _isLoaded = true;
+                await Application.Current.Dispatcher.InvokeAsync(() => {
+                    if (!_regionManager.Regions.ContainsRegionWithName("CameraConfigRegion")) {
+                        //创建区域(用于视觉树以外控件)
+                        RegionManager.SetRegionName(obj, "CameraConfigRegion");
+                        RegionManager.SetRegionManager(obj, _regionManager);
+                    }
+                    _regionManager.Regions["CameraConfigRegion"].RequestNavigate("CameraFinderPage");
+                });
+            }
         }
 
         /// <summary>
