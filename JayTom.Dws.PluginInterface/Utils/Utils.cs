@@ -67,5 +67,14 @@ namespace JayTom.Dws.PluginInterface.Utils {
             bitmapSource = bitmapDecoder.Frames[0];
             return bitmapSource;
         }
+
+        public static Image? ConvertImageSourceToImage<T>(this T imageSource) where T : ImageSource {
+            if (imageSource is not BitmapSource bitmapSource) return null;
+            using var memoryStream = new MemoryStream();
+            BitmapEncoder encoder = new BmpBitmapEncoder(); // 选择合适的编码器（这里使用 BMP 编码器）
+            encoder.Frames.Add(BitmapFrame.Create(bitmapSource));
+            encoder.Save(memoryStream);
+            return Image.FromStream(memoryStream);
+        }
     }
 }
