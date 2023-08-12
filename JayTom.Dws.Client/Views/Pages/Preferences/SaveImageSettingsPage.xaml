@@ -4,10 +4,14 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:dataTemplateSelectors="clr-namespace:JayTom.Dws.Client.DataTemplateSelectors"
+    xmlns:imageSettingModels="clr-namespace:JayTom.Dws.Client.Models.ImageSettingModels"
     xmlns:local="clr-namespace:JayTom.Dws.Client.Views.Pages.Preferences"
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:mvvm="http://prismlibrary.com/"
+    xmlns:settingsConverter="clr-namespace:JayTom.Dws.Client.Converters.SettingsConverter"
+    Name="SaveImageSettingsView"
     Title="SaveImageSettingsPage"
     d:DesignHeight="450"
     d:DesignWidth="800"
@@ -15,6 +19,52 @@
     Focusable="False"
     FontFamily="{StaticResource CustomFontFamily}"
     mc:Ignorable="d">
+    <Page.Resources>
+        <settingsConverter:ShortcutMacroConverter x:Key="ShortcutMacroConverter" />
+        <DataTemplate x:Key="ImageSettingButtonTemplate" DataType="{x:Type imageSettingModels:ItemBaseTemplateModel}">
+            <Button
+                Height="25"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                VerticalContentAlignment="Center"
+                materialDesign:ButtonAssist.CornerRadius="12"
+                Background="DodgerBlue"
+                BorderThickness="0"
+                Command="{Binding DataContext.RemoveTemplateItemCommand, ElementName=SaveImageSettingsView}"
+                CommandParameter="{Binding}"
+                Focusable="False"
+                Style="{StaticResource MaterialDesignRaisedDarkButton}">
+                <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{Binding Content, Converter={StaticResource ShortcutMacroConverter}}" />
+            </Button>
+        </DataTemplate>
+        <DataTemplate x:Key="ImageSettingTextBoxTemplate" DataType="{x:Type imageSettingModels:ItemBaseTemplateModel}">
+            <TextBox
+                Width="Auto"
+                Height="18"
+                MinWidth="20"
+                MaxWidth="900"
+                Margin="5,0"
+                Padding="0"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Bottom"
+                materialDesign:TextFieldAssist.CharacterCounterVisibility="Hidden"
+                materialDesign:TextFieldAssist.HasClearButton="False"
+                materialDesign:TextFieldAssist.IncludeSpellingSuggestions="False"
+                materialDesign:TextFieldAssist.RippleOnFocusEnabled="False"
+                materialDesign:TextFieldAssist.TextBoxViewMargin="0"
+                Background="Transparent"
+                BorderThickness="0"
+                FocusVisualStyle="{x:Null}"
+                FontSize="15"
+                FontWeight="Bold"
+                Foreground="White"
+                Text="{Binding Content, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+        </DataTemplate>
+        <dataTemplateSelectors:ImageSettingItemDataTemplateSelectors
+            x:Key="ImageSettingItemDataTemplateSelectors"
+            ButtonTemplate="{StaticResource ImageSettingButtonTemplate}"
+            TextBoxTemplate="{StaticResource ImageSettingTextBoxTemplate}" />
+    </Page.Resources>
 
     <Grid Margin="20,0">
         <Grid.RowDefinitions>
@@ -72,7 +122,7 @@
                     FontWeight="Bold"
                     Foreground="White"
                     IsReadOnly="True"
-                    Text="{Binding BarCode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    Text="{Binding ImageRootDirectory, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
             </Border>
             <Button
                 Width="90"
@@ -82,7 +132,7 @@
                 materialDesign:ButtonAssist.CornerRadius="5"
                 Background="#2E2E2E"
                 BorderThickness="0"
-                Command="{Binding RefreshCommand}"
+                Command="{Binding OpenFolderCommand}"
                 FocusVisualStyle="{x:Null}"
                 Style="{StaticResource MaterialDesignFlatAccentBgButton}">
                 <TextBlock
@@ -117,8 +167,8 @@
                 FontWeight="Bold"
                 Foreground="DarkGray"
                 Text="存图类型:" />
-            <ListBox Style="{StaticResource MaterialDesignFilterChipPrimaryListBox}">
-                <ListBoxItem>
+            <ListBox SelectionMode="Multiple" Style="{StaticResource MaterialDesignFilterChipPrimaryListBox}">
+                <ListBoxItem IsSelected="{Binding IsSaveBarcodeImage, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
                     <TextBlock
                         VerticalAlignment="Center"
                         FontFamily="{StaticResource CustomFontFamily}"
@@ -127,7 +177,7 @@
                         Foreground="WhiteSmoke"
                         Text="扫码图" />
                 </ListBoxItem>
-                <ListBoxItem>
+                <ListBoxItem IsSelected="{Binding IsSavePanoramaImage, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
                     <TextBlock
                         VerticalAlignment="Center"
                         FontFamily="{StaticResource CustomFontFamily}"
@@ -136,7 +186,7 @@
                         Foreground="WhiteSmoke"
                         Text="全景图" />
                 </ListBoxItem>
-                <ListBoxItem>
+                <ListBoxItem IsSelected="{Binding IsSaveVolumeImage, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
                     <TextBlock
                         VerticalAlignment="Center"
                         FontFamily="{StaticResource CustomFontFamily}"
@@ -169,7 +219,7 @@
                     FontWeight="Bold"
                     Foreground="DarkGray"
                     Text="是否存原图:" />
-                <CheckBox materialDesign:CheckBoxAssist.CheckBoxSize="20" IsChecked="True" />
+                <CheckBox materialDesign:CheckBoxAssist.CheckBoxSize="20" IsChecked="{Binding SaveOriginalImage, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
             </StackPanel>
         </StackPanel>
         <!--  图片质量  -->
@@ -227,6 +277,8 @@
                         materialDesign:ButtonAssist.CornerRadius="15"
                         Background="DarkGray"
                         BorderThickness="0"
+                        Command="{Binding AddWatermarkItemCommand}"
+                        CommandParameter="'{BarCode}'"
                         Focusable="False"
                         Style="{StaticResource MaterialDesignRaisedDarkButton}">
                         <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="条码" />
@@ -237,6 +289,8 @@
                         materialDesign:ButtonAssist.CornerRadius="15"
                         Background="DarkGray"
                         BorderThickness="0"
+                        Command="{Binding AddWatermarkItemCommand}"
+                        CommandParameter="'{Weight}'"
                         Focusable="False"
                         Style="{StaticResource MaterialDesignRaisedDarkButton}">
                         <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="重量" />
@@ -247,6 +301,8 @@
                         materialDesign:ButtonAssist.CornerRadius="15"
                         Background="DarkGray"
                         BorderThickness="0"
+                        Command="{Binding AddWatermarkItemCommand}"
+                        CommandParameter="'{ScanTime}'"
                         Focusable="False"
                         Style="{StaticResource MaterialDesignRaisedDarkButton}">
                         <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="扫码时间" />
@@ -257,6 +313,8 @@
                         materialDesign:ButtonAssist.CornerRadius="15"
                         Background="DarkGray"
                         BorderThickness="0"
+                        Command="{Binding AddWatermarkItemCommand}"
+                        CommandParameter="'{TimestampedGuid}'"
                         Focusable="False"
                         Style="{StaticResource MaterialDesignRaisedDarkButton}">
                         <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="扫码时间戳" />
@@ -267,6 +325,8 @@
                         materialDesign:ButtonAssist.CornerRadius="15"
                         Background="DarkGray"
                         BorderThickness="0"
+                        Command="{Binding AddWatermarkItemCommand}"
+                        CommandParameter="'{Length}'"
                         Focusable="False"
                         Style="{StaticResource MaterialDesignRaisedDarkButton}">
                         <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="长" />
@@ -277,6 +337,8 @@
                         materialDesign:ButtonAssist.CornerRadius="15"
                         Background="DarkGray"
                         BorderThickness="0"
+                        Command="{Binding AddWatermarkItemCommand}"
+                        CommandParameter="'{Width}'"
                         Focusable="False"
                         Style="{StaticResource MaterialDesignRaisedDarkButton}">
                         <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="宽" />
@@ -287,6 +349,8 @@
                         materialDesign:ButtonAssist.CornerRadius="15"
                         Background="DarkGray"
                         BorderThickness="0"
+                        Command="{Binding AddWatermarkItemCommand}"
+                        CommandParameter="'{Height}'"
                         Focusable="False"
                         Style="{StaticResource MaterialDesignRaisedDarkButton}">
                         <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="高" />
@@ -297,6 +361,8 @@
                         materialDesign:ButtonAssist.CornerRadius="15"
                         Background="DarkGray"
                         BorderThickness="0"
+                        Command="{Binding AddWatermarkItemCommand}"
+                        CommandParameter="'{Volume}'"
                         Focusable="False"
                         Style="{StaticResource MaterialDesignRaisedDarkButton}">
                         <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="体积" />
@@ -307,6 +373,8 @@
                         materialDesign:ButtonAssist.CornerRadius="15"
                         Background="DarkGray"
                         BorderThickness="0"
+                        Command="{Binding AddWatermarkItemCommand}"
+                        CommandParameter="'{CameraSerialNumber}'"
                         Focusable="False"
                         Style="{StaticResource MaterialDesignRaisedDarkButton}">
                         <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="相机序列号" />
@@ -341,6 +409,9 @@
                         MaxWidth="900"
                         Margin="50,0,0,0"
                         Focusable="False"
+                        ItemTemplateSelector="{StaticResource ImageSettingItemDataTemplateSelectors}"
+                        ItemsSource="{Binding WatermarkItems, UpdateSourceTrigger=PropertyChanged}"
+                        ScrollViewer.HorizontalScrollBarVisibility="Hidden"
                         ScrollViewer.VerticalScrollBarVisibility="Hidden"
                         SelectionMode="Extended">
                         <ListView.ItemContainerStyle>
@@ -376,60 +447,6 @@
                                 <StackPanel Background="Transparent" Orientation="Horizontal" />
                             </ItemsPanelTemplate>
                         </ListView.ItemsPanel>
-                        <ListView.Items>
-
-                            <ListViewItem>
-                                <Button
-                                    Height="25"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    VerticalContentAlignment="Center"
-                                    materialDesign:ButtonAssist.CornerRadius="12"
-                                    Background="DarkGray"
-                                    BorderThickness="0"
-                                    Focusable="False"
-                                    Style="{StaticResource MaterialDesignRaisedDarkButton}">
-                                    <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="相机序列号" />
-                                </Button>
-                            </ListViewItem>
-                            <ListViewItem>
-                                <Button
-                                    Height="25"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    VerticalContentAlignment="Center"
-                                    materialDesign:ButtonAssist.CornerRadius="12"
-                                    Background="DarkGray"
-                                    BorderThickness="0"
-                                    Focusable="False"
-                                    Style="{StaticResource MaterialDesignRaisedDarkButton}">
-                                    <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="条码" />
-                                </Button>
-                            </ListViewItem>
-                            <ListViewItem>
-                                <TextBox
-                                    Width="Auto"
-                                    Height="18"
-                                    MinWidth="20"
-                                    MaxWidth="900"
-                                    Margin="5,0"
-                                    Padding="0"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Bottom"
-                                    materialDesign:TextFieldAssist.CharacterCounterVisibility="Hidden"
-                                    materialDesign:TextFieldAssist.HasClearButton="False"
-                                    materialDesign:TextFieldAssist.IncludeSpellingSuggestions="False"
-                                    materialDesign:TextFieldAssist.RippleOnFocusEnabled="False"
-                                    materialDesign:TextFieldAssist.TextBoxViewMargin="0"
-                                    Background="Transparent"
-                                    BorderThickness="0"
-                                    FocusVisualStyle="{x:Null}"
-                                    FontSize="15"
-                                    FontWeight="Bold"
-                                    Foreground="White"
-                                    Text="{Binding WatermarkText, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-                            </ListViewItem>
-                        </ListView.Items>
                     </ListView>
                     <!--  需要使用一个横向List来实现  -->
                     <!--<TextBox
@@ -493,7 +510,7 @@
                     IsMoveToPointEnabled="True"
                     IsSelectionRangeEnabled="True"
                     Maximum="1000"
-                    Minimum="20"
+                    Minimum="10"
                     Value="{Binding WatermarkFontSize, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
                     <b:Interaction.Triggers>
                         <b:EventTrigger EventName="PreviewMouseUp">
@@ -604,6 +621,8 @@
                         materialDesign:ButtonAssist.CornerRadius="15"
                         Background="DarkGray"
                         BorderThickness="0"
+                        Command="{Binding AddSubDirectoryItemCommand}"
+                        CommandParameter="'{ImageType}'"
                         Focusable="False"
                         Style="{StaticResource MaterialDesignRaisedDarkButton}">
                         <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="存图类型" />
@@ -614,6 +633,8 @@
                         materialDesign:ButtonAssist.CornerRadius="15"
                         Background="DarkGray"
                         BorderThickness="0"
+                        Command="{Binding AddSubDirectoryItemCommand}"
+                        CommandParameter="'{Year}'"
                         Focusable="False"
                         Style="{StaticResource MaterialDesignRaisedDarkButton}">
                         <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="年份" />
@@ -624,6 +645,8 @@
                         materialDesign:ButtonAssist.CornerRadius="15"
                         Background="DarkGray"
                         BorderThickness="0"
+                        Command="{Binding AddSubDirectoryItemCommand}"
+                        CommandParameter="'{Month}'"
                         Focusable="False"
                         Style="{StaticResource MaterialDesignRaisedDarkButton}">
                         <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="月份" />
@@ -634,6 +657,8 @@
                         materialDesign:ButtonAssist.CornerRadius="15"
                         Background="DarkGray"
                         BorderThickness="0"
+                        Command="{Binding AddSubDirectoryItemCommand}"
+                        CommandParameter="'{Day}'"
                         Focusable="False"
                         Style="{StaticResource MaterialDesignRaisedDarkButton}">
                         <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="日期" />
@@ -644,6 +669,8 @@
                         materialDesign:ButtonAssist.CornerRadius="15"
                         Background="DarkGray"
                         BorderThickness="0"
+                        Command="{Binding AddSubDirectoryItemCommand}"
+                        CommandParameter="'{Hour}'"
                         Focusable="False"
                         Style="{StaticResource MaterialDesignRaisedDarkButton}">
                         <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="小时" />
@@ -654,6 +681,8 @@
                         materialDesign:ButtonAssist.CornerRadius="15"
                         Background="DarkGray"
                         BorderThickness="0"
+                        Command="{Binding AddSubDirectoryItemCommand}"
+                        CommandParameter="'{CameraSerialNumber}'"
                         Focusable="False"
                         Style="{StaticResource MaterialDesignRaisedDarkButton}">
                         <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="相机序列号" />
@@ -682,20 +711,51 @@
                             Foreground="#2E2E2E"
                             Text="根目录" />
                     </Border>
-                    <TextBox
+                    <ListView
                         Width="680"
                         Height="30"
                         MaxWidth="900"
-                        Margin="5,0"
-                        Padding="40,0,0,0"
-                        materialDesign:TextFieldAssist.HasClearButton="False"
-                        materialDesign:TextFieldAssist.HasFilledTextField="True"
-                        Background="Transparent"
-                        BorderThickness="0"
-                        FontSize="15"
-                        FontWeight="Bold"
-                        Foreground="White"
-                        Text="{Binding BarCode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                        Margin="50,0,0,0"
+                        Focusable="False"
+                        ItemTemplateSelector="{StaticResource ImageSettingItemDataTemplateSelectors}"
+                        ItemsSource="{Binding SubDirectoryItems, UpdateSourceTrigger=PropertyChanged}"
+                        ScrollViewer.HorizontalScrollBarVisibility="Hidden"
+                        ScrollViewer.VerticalScrollBarVisibility="Hidden"
+                        SelectionMode="Extended">
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="ListViewItem">
+                                <Setter Property="Background" Value="Transparent" />
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="ListViewItem">
+                                            <Border
+                                                x:Name="Border"
+                                                Background="{TemplateBinding Background}"
+                                                BorderBrush="{TemplateBinding BorderBrush}"
+                                                BorderThickness="1"
+                                                SnapsToDevicePixels="True">
+                                                <ContentPresenter
+                                                    HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                    VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                                    SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsSelected" Value="True">
+                                                    <Setter TargetName="Border" Property="Background" Value="Transparent" />
+                                                    <Setter TargetName="Border" Property="BorderBrush" Value="Transparent" />
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </ListView.ItemContainerStyle>
+                        <ListView.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Background="Transparent" Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                        </ListView.ItemsPanel>
+                    </ListView>
                 </Grid>
             </Border>
         </StackPanel>
@@ -737,6 +797,8 @@
                         materialDesign:ButtonAssist.CornerRadius="15"
                         Background="DarkGray"
                         BorderThickness="0"
+                        Command="{Binding AddImageNamingItemCommand}"
+                        CommandParameter="'{BarCode}'"
                         Focusable="False"
                         Style="{StaticResource MaterialDesignRaisedDarkButton}">
                         <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="条码" />
@@ -747,6 +809,8 @@
                         materialDesign:ButtonAssist.CornerRadius="15"
                         Background="DarkGray"
                         BorderThickness="0"
+                        Command="{Binding AddImageNamingItemCommand}"
+                        CommandParameter="'{Weight}'"
                         Focusable="False"
                         Style="{StaticResource MaterialDesignRaisedDarkButton}">
                         <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="重量" />
@@ -757,6 +821,8 @@
                         materialDesign:ButtonAssist.CornerRadius="15"
                         Background="DarkGray"
                         BorderThickness="0"
+                        Command="{Binding AddImageNamingItemCommand}"
+                        CommandParameter="'{ScanTime}'"
                         Focusable="False"
                         Style="{StaticResource MaterialDesignRaisedDarkButton}">
                         <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="扫码时间" />
@@ -767,6 +833,8 @@
                         materialDesign:ButtonAssist.CornerRadius="15"
                         Background="DarkGray"
                         BorderThickness="0"
+                        Command="{Binding AddImageNamingItemCommand}"
+                        CommandParameter="'{TimestampedGuid}'"
                         Focusable="False"
                         Style="{StaticResource MaterialDesignRaisedDarkButton}">
                         <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="扫码时间戳" />
@@ -777,6 +845,8 @@
                         materialDesign:ButtonAssist.CornerRadius="15"
                         Background="DarkGray"
                         BorderThickness="0"
+                        Command="{Binding AddImageNamingItemCommand}"
+                        CommandParameter="'{Length}'"
                         Focusable="False"
                         Style="{StaticResource MaterialDesignRaisedDarkButton}">
                         <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="长" />
@@ -787,6 +857,8 @@
                         materialDesign:ButtonAssist.CornerRadius="15"
                         Background="DarkGray"
                         BorderThickness="0"
+                        Command="{Binding AddImageNamingItemCommand}"
+                        CommandParameter="'{Width}'"
                         Focusable="False"
                         Style="{StaticResource MaterialDesignRaisedDarkButton}">
                         <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="宽" />
@@ -797,6 +869,8 @@
                         materialDesign:ButtonAssist.CornerRadius="15"
                         Background="DarkGray"
                         BorderThickness="0"
+                        Command="{Binding AddImageNamingItemCommand}"
+                        CommandParameter="'{Height}'"
                         Focusable="False"
                         Style="{StaticResource MaterialDesignRaisedDarkButton}">
                         <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="高" />
@@ -807,6 +881,8 @@
                         materialDesign:ButtonAssist.CornerRadius="15"
                         Background="DarkGray"
                         BorderThickness="0"
+                        Command="{Binding AddImageNamingItemCommand}"
+                        CommandParameter="'{Volume}'"
                         Focusable="False"
                         Style="{StaticResource MaterialDesignRaisedDarkButton}">
                         <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="体积" />
@@ -817,6 +893,8 @@
                         materialDesign:ButtonAssist.CornerRadius="15"
                         Background="DarkGray"
                         BorderThickness="0"
+                        Command="{Binding AddImageNamingItemCommand}"
+                        CommandParameter="'{CameraSerialNumber}'"
                         Focusable="False"
                         Style="{StaticResource MaterialDesignRaisedDarkButton}">
                         <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="相机序列号" />
@@ -845,20 +923,51 @@
                             Foreground="#2E2E2E"
                             Text="图片名" />
                     </Border>
-                    <TextBox
+                    <ListView
                         Width="680"
                         Height="30"
                         MaxWidth="900"
-                        Margin="5,0"
-                        Padding="40,0,0,0"
-                        materialDesign:TextFieldAssist.HasClearButton="False"
-                        materialDesign:TextFieldAssist.HasFilledTextField="True"
-                        Background="Transparent"
-                        BorderThickness="0"
-                        FontSize="15"
-                        FontWeight="Bold"
-                        Foreground="White"
-                        Text="{Binding BarCode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                        Margin="50,0,0,0"
+                        Focusable="False"
+                        ItemTemplateSelector="{StaticResource ImageSettingItemDataTemplateSelectors}"
+                        ItemsSource="{Binding ImageNamingItems, UpdateSourceTrigger=PropertyChanged}"
+                        ScrollViewer.HorizontalScrollBarVisibility="Hidden"
+                        ScrollViewer.VerticalScrollBarVisibility="Hidden"
+                        SelectionMode="Extended">
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="ListViewItem">
+                                <Setter Property="Background" Value="Transparent" />
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="ListViewItem">
+                                            <Border
+                                                x:Name="Border"
+                                                Background="{TemplateBinding Background}"
+                                                BorderBrush="{TemplateBinding BorderBrush}"
+                                                BorderThickness="1"
+                                                SnapsToDevicePixels="True">
+                                                <ContentPresenter
+                                                    HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                    VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                                    SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsSelected" Value="True">
+                                                    <Setter TargetName="Border" Property="Background" Value="Transparent" />
+                                                    <Setter TargetName="Border" Property="BorderBrush" Value="Transparent" />
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </ListView.ItemContainerStyle>
+                        <ListView.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Background="Transparent" Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                        </ListView.ItemsPanel>
+                    </ListView>
                 </Grid>
             </Border>
         </StackPanel>
@@ -893,7 +1002,7 @@
                     FontWeight="Bold"
                     Foreground="DarkGray"
                     Text="是否开启上传:" />
-                <CheckBox materialDesign:CheckBoxAssist.CheckBoxSize="20" IsChecked="True" />
+                <CheckBox materialDesign:CheckBoxAssist.CheckBoxSize="20" IsChecked="{Binding IsFtpUploadEnabled, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
             </StackPanel>
             <StackPanel Margin="50,10,0,0" Orientation="Horizontal">
                 <!--  IP地址  -->
@@ -924,7 +1033,8 @@
                             FontSize="13"
                             FontWeight="Bold"
                             Foreground="White"
-                            Text="{Binding BarCode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                            InputMethod.IsInputMethodEnabled="False"
+                            Text="{Binding IpAddress, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                     </Border>
                 </StackPanel>
                 <!--  端口号  -->
@@ -955,7 +1065,8 @@
                             FontSize="13"
                             FontWeight="Bold"
                             Foreground="White"
-                            Text="{Binding BarCode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                            InputMethod.IsInputMethodEnabled="False"
+                            Text="{Binding Port, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                     </Border>
                 </StackPanel>
                 <!--  用户名  -->
@@ -986,7 +1097,8 @@
                             FontSize="13"
                             FontWeight="Bold"
                             Foreground="White"
-                            Text="{Binding BarCode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                            InputMethod.IsInputMethodEnabled="False"
+                            Text="{Binding Username, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                     </Border>
                 </StackPanel>
                 <!--  密码  -->
@@ -1017,7 +1129,8 @@
                             FontSize="13"
                             FontWeight="Bold"
                             Foreground="White"
-                            Text="{Binding BarCode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                            InputMethod.IsInputMethodEnabled="False"
+                            Text="{Binding Password, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                     </Border>
                 </StackPanel>
                 <!--  超时时间  -->
@@ -1049,7 +1162,8 @@
                             FontSize="13"
                             FontWeight="Bold"
                             Foreground="White"
-                            Text="{Binding BarCode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                            InputMethod.IsInputMethodEnabled="False"
+                            Text="{Binding Timeout, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                     </Border>
                 </StackPanel>
             </StackPanel>
@@ -1058,24 +1172,34 @@
         <Button
             Grid.Row="7"
             Grid.Column="0"
-            Width="90"
+            Width="110"
             MinHeight="30"
             Margin="30,0"
             HorizontalAlignment="Left"
             materialDesign:ButtonAssist.CornerRadius="5"
             Background="#2E2E2E"
             BorderThickness="0"
-            Command="{Binding RefreshCommand}"
+            Command="{Binding SaveSettingsCommand}"
             FocusVisualStyle="{x:Null}"
             Style="{StaticResource MaterialDesignFlatAccentBgButton}">
-            <TextBlock
-                Margin="2,1,0,0"
-                VerticalAlignment="Center"
-                FontFamily="{StaticResource CustomFontFamily}"
-                FontSize="14"
-                FontWeight="Bold"
-                Foreground="DarkGray"
-                Text="保存设置" />
+            <StackPanel Orientation="Horizontal">
+                <TextBlock
+                    Margin="0,0,0,0"
+                    VerticalAlignment="Center"
+                    FontFamily="{StaticResource IconFontFamily}"
+                    FontSize="18"
+                    Foreground="DarkGray"
+                    Text="&#xe66e;" />
+                <TextBlock
+                    Margin="2,1,0,0"
+                    VerticalAlignment="Center"
+                    FontFamily="{StaticResource CustomFontFamily}"
+                    FontSize="14"
+                    FontWeight="Bold"
+                    Foreground="DarkGray"
+                    Text="保存设置" />
+            </StackPanel>
+
         </Button>
 
         <!--  右边图片  -->
@@ -1145,7 +1269,7 @@
                     FontWeight="Bold"
                     Foreground="White"
                     IsReadOnly="True"
-                    Text="{Binding BarCode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    Text="{Binding LoadImagePath, UpdateSourceTrigger=PropertyChanged}" />
             </Border>
             <Button
                 Width="90"
@@ -1155,7 +1279,7 @@
                 materialDesign:ButtonAssist.CornerRadius="5"
                 Background="#2E2E2E"
                 BorderThickness="0"
-                Command="{Binding RefreshCommand}"
+                Command="{Binding LoadImageCommand}"
                 FocusVisualStyle="{x:Null}"
                 Style="{StaticResource MaterialDesignFlatAccentBgButton}">
                 <TextBlock
@@ -1166,26 +1290,6 @@
                     FontWeight="Bold"
                     Foreground="DarkGray"
                     Text="加载图片" />
-            </Button>
-            <Button
-                Width="90"
-                MinHeight="30"
-                Margin="5,0"
-                HorizontalAlignment="Left"
-                materialDesign:ButtonAssist.CornerRadius="5"
-                Background="#2E2E2E"
-                BorderThickness="0"
-                Command="{Binding RefreshCommand}"
-                FocusVisualStyle="{x:Null}"
-                Style="{StaticResource MaterialDesignFlatAccentBgButton}">
-                <TextBlock
-                    Margin="2,1,0,0"
-                    VerticalAlignment="Center"
-                    FontFamily="{StaticResource CustomFontFamily}"
-                    FontSize="14"
-                    FontWeight="Bold"
-                    Foreground="DarkGray"
-                    Text="预览水印" />
             </Button>
         </StackPanel>
         <!--  预览水印  -->
