@@ -87,6 +87,8 @@ namespace JayTom.Dws.Client {
                 services.AddScoped<IPanoramaCameraConfigRepository, PanoramaCameraConfigRepository>();
                 services.AddScoped<IVolumeCameraConfigRepository, VolumeCameraConfigRepository>();
                 services.AddScoped<IBarCodeRepository, BarCodeRepository>();
+                services.AddScoped<IConfigRepository, ConfigRepository>();
+
                 /*services.AddScoped<IConfigRepository, ConfigRepository>();
 
                 //服务注册

@@ -2,6 +2,7 @@
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
+using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
@@ -45,21 +46,5 @@ namespace JayTom.Dws.Client.Models.ImageSettingModels {
         }
     }
 
-    public enum ItemApplicationType {
 
-        /// <summary>
-        /// 水印
-        /// </summary>
-        Watermark = 0,
-
-        /// <summary>
-        /// 子路径
-        /// </summary>
-        SubDirectory = 1,
-
-        /// <summary>
-        /// 图片命名
-        /// </summary>
-        ImageNaming = 2
-    }
 }
