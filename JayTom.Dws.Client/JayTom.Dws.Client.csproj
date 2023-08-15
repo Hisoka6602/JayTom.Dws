@@ -10,6 +10,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Remove="C:\Users\77051\.nuget\packages\lottiesharp\2.0.1\contentFiles\any\net6.0-windows7.0\lottie_sharp.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Remove="Fonts\FiraCode-Bold.ttf" />
     <None Remove="Fonts\iconfont.ttf" />
     <None Remove="Fonts\sarasa-mono-sc-nerd-light.ttf" />
@@ -29,6 +33,16 @@
     <None Remove="Image\NationalFlag\Vietnamese national flag.png" />
     <None Remove="Image\Logo\icon logo.png" />
     <None Remove="Image\ocr-img.png" />
+    <None Remove="Lotties\HbilMZjmmc.json" />
+    <None Remove="Lotties\Loading.json" />
+    <None Remove="Lotties\loading5.json" />
+    <None Remove="Lotties\Ok.json" />
+    <None Remove="Lotties\oo.json" />
+    <None Remove="Lotties\TextLoading.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Lotties\HbilMZjmmc.json" />
   </ItemGroup>
 
   <ItemGroup>
@@ -56,6 +70,7 @@
 
   <ItemGroup>
     <PackageReference Include="DryIoc.Microsoft.DependencyInjection.Extension" Version="1.0.0.2" />
+    <PackageReference Include="LottieSharp" Version="2.2.0" />
     <PackageReference Include="MaterialDesignThemes" Version="4.8.0" />
     <PackageReference Include="Microsoft-WindowsAPICodePack-Shell" Version="1.1.5" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="7.0.0" />
@@ -76,6 +91,17 @@
     <Resource Include="Fonts\更纱黑体 Mono SC Nerd.ttf" />
     <Resource Include="Image\Logo\icon logo.png" />
     <Resource Include="Image\ocr-img.png" />
+    <Resource Include="Lotties\Loading.json">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Lotties\loading5.json" />
+    <Resource Include="Lotties\Ok.json">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Lotties\oo.json">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Lotties\TextLoading.json" />
   </ItemGroup>
 
   <ItemGroup>

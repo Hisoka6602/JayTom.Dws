@@ -4,6 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="clr-namespace:JayTom.Dws.Client.Views.Pages.Preferences"
+    xmlns:lottie="clr-namespace:LottieSharp.WPF;assembly=LottieSharp"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:mvvm="http://prismlibrary.com/"
     Title="BarcodeFilterSettingsPage"
@@ -14,5 +15,21 @@
     FontFamily="{StaticResource CustomFontFamily}"
     mc:Ignorable="d">
 
-    <Grid />
+    <Grid>
+        <!--<lottie:LottieAnimationView
+            Name="AnimationView"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            AutoPlay="True"
+            RepeatCount="300"
+            ResourcePath="pack://application:,,,/Lotties/animation_llambqsg.json" />-->
+        <lottie:LottieAnimationView
+            Width="300"
+            Height="500"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            AutoPlay="True"
+            RepeatCount="-1"
+            ResourcePath="pack://application:,,,/Lotties/TextLoading.json" />
+    </Grid>
 </Page>

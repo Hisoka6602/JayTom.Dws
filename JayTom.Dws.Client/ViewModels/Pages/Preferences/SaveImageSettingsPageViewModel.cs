@@ -19,6 +19,7 @@ using System.Windows.Media.Imaging;
 using Brush = System.Drawing.Brush;
 using LibreHardwareMonitor.Hardware;
 using System.Collections.ObjectModel;
+using JayTom.Dws.Client.Views.Dialog;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.PluginInterface.Utils;
 using Color = System.Windows.Media.Color;
@@ -442,53 +443,57 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         private async void SaveSettingDelegate(object obj) {
             if (!IsSavingInProgress) {
                 IsSavingInProgress = true;
-                var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
-                    ConfigName = "SaveImageSettings",
-                    Value = JsonConvert.SerializeObject(new ImageSettingsDto {
-                        ImageRootDirectory = ImageRootDirectory,
-                        IsSaveBarcodeImage = IsSaveBarcodeImage,
-                        IsSavePanoramaImage = IsSavePanoramaImage,
-                        IsSaveVolumeImage = IsSaveVolumeImage,
-                        IsSaveOriginalImage = IsSaveOriginalImage,
-                        IsUseWatermark = IsUseWatermark,
-                        WatermarkInfo = new WatermarkInfo {
-                            WatermarkColor = System.Drawing.Color.FromArgb(WatermarkColor.A,
-                           WatermarkColor.R, WatermarkColor.G, WatermarkColor.B),
-                            WatermarkFontSize = WatermarkFontSize,
-                            WatermarkPosition = WatermarkPosition,
-                            ItemTemplate = WatermarkItems.Select(s => new ItemTemplateInfo {
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+                    // var loadingDialog = new LoadingDialog();
+                    var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
+                        ConfigName = "SaveImageSettings",
+                        Value = JsonConvert.SerializeObject(new ImageSettingsDto {
+                            ImageRootDirectory = ImageRootDirectory,
+                            IsSaveBarcodeImage = IsSaveBarcodeImage,
+                            IsSavePanoramaImage = IsSavePanoramaImage,
+                            IsSaveVolumeImage = IsSaveVolumeImage,
+                            IsSaveOriginalImage = IsSaveOriginalImage,
+                            IsUseWatermark = IsUseWatermark,
+                            WatermarkInfo = new WatermarkInfo {
+                                WatermarkColor = System.Drawing.Color.FromArgb(WatermarkColor.A,
+                                    WatermarkColor.R, WatermarkColor.G, WatermarkColor.B),
+                                WatermarkFontSize = WatermarkFontSize,
+                                WatermarkPosition = WatermarkPosition,
+                                ItemTemplate = WatermarkItems.Select(s => new ItemTemplateInfo {
+                                    ApplicationType = s.ApplicationType,
+                                    Content = s.Content,
+                                    Type = s.Type,
+                                }).ToList()
+                            },
+                            SubDirectoryTemplate = SubDirectoryItems.Select(s => new ItemTemplateInfo() {
                                 ApplicationType = s.ApplicationType,
                                 Content = s.Content,
                                 Type = s.Type,
-                            }).ToList()
-                        },
-                        SubDirectoryTemplate = SubDirectoryItems.Select(s => new ItemTemplateInfo() {
-                            ApplicationType = s.ApplicationType,
-                            Content = s.Content,
-                            Type = s.Type,
-                        }).ToList(),
-                        ImageNamingTemplate = ImageNamingItems.Select(s => new ItemTemplateInfo() {
-                            ApplicationType = s.ApplicationType,
-                            Content = s.Content,
-                            Type = s.Type,
-                        }).ToList(),
-                        IsFtpUploadEnabled = IsFtpUploadEnabled,
-                        FtpInfo = new FtpInfo() {
-                            IpAddress = IpAddress,
-                            Password = Password,
-                            Port = Port,
-                            Timeout = Timeout,
-                            Username = Username
-                        }
-                    })
-                });
-                if (insertOrUpdate) {
-                    EventAggregator.Instance.Publish(new SettingsChangedEvent {
-                        SettingsName = "SaveImageSettings"
+                            }).ToList(),
+                            ImageNamingTemplate = ImageNamingItems.Select(s => new ItemTemplateInfo() {
+                                ApplicationType = s.ApplicationType,
+                                Content = s.Content,
+                                Type = s.Type,
+                            }).ToList(),
+                            IsFtpUploadEnabled = IsFtpUploadEnabled,
+                            FtpInfo = new FtpInfo() {
+                                IpAddress = IpAddress,
+                                Password = Password,
+                                Port = Port,
+                                Timeout = Timeout,
+                                Username = Username
+                            }
+                        })
                     });
-                }
-                IsSavingInProgress = false;
-                SaveImageSettingsMessageQueue.Enqueue($"保存{(insertOrUpdate ? "成功" : "失败")}");
+                    if (insertOrUpdate) {
+                        EventAggregator.Instance.Publish(new SettingsChangedEvent {
+                            SettingsName = "SaveImageSettings"
+                        });
+                    }
+
+                    IsSavingInProgress = false;
+                    SaveImageSettingsMessageQueue.Enqueue($"保存{(insertOrUpdate ? "成功" : "失败")}");
+                });
             }
 
             //显示遮罩
