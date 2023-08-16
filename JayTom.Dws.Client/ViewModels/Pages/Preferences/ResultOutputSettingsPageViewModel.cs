@@ -8,5 +8,6 @@ using System.Collections.Generic;
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
 
     public class ResultOutputSettingsPageViewModel : BindableBase {
+        //
     }
 }

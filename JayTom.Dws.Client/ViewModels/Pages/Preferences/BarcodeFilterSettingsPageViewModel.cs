@@ -19,7 +19,6 @@ using JayTom.Dws.Domain.Repository.LocalConf;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.StartPanel;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
-
     public class BarcodeFilterSettingsPageViewModel : BindableBase {
         private readonly IConfigRepository _configRepository;
         private int _minimumLength = 10;
@@ -244,6 +243,20 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         private async void UpdateRegularExpression() {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
                 var regularChars = new List<string>();
+                //不能包含
+                if (!string.IsNullOrWhiteSpace(DisallowedCharacters)) {
+                    var strings = DisallowedCharacters.Split(";");
+                    strings.ForEach(f => {
+                        regularChars.Add($"(^(?!.*{f}))");
+                    });
+                }
+                //必须包含
+                if (!string.IsNullOrWhiteSpace(RequiredCharacters)) {
+                    var strings = RequiredCharacters.Split(";");
+                    strings.ForEach(f => {
+                        regularChars.Add($"(?=.*{f})");
+                    });
+                }
                 //开头字符
                 switch (StartCharacterType) {
                     case CharacterType.Alphanumeric:
@@ -274,20 +287,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                 }
                 //位数限制
                 regularChars.Add($"(^.{{{MinimumLength},{MaximumLength}}}$)");
-                //不能包含
-                if (!string.IsNullOrWhiteSpace(DisallowedCharacters)) {
-                    var strings = DisallowedCharacters.Split(";");
-                    strings.ForEach(f => {
-                        regularChars.Add($"^(?!.*{f})");
-                    });
-                }
-                //必须包含
-                if (!string.IsNullOrWhiteSpace(RequiredCharacters)) {
-                    var strings = RequiredCharacters.Split(";");
-                    strings.ForEach(f => {
-                        regularChars.Add($"(?=.*{f})");
-                    });
-                }
+
                 RegularExpression = string.Join(string.Empty, regularChars);
             });
         }
