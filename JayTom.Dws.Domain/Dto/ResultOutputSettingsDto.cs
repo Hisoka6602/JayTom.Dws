@@ -11,7 +11,11 @@ namespace JayTom.Dws.Domain.Dto {
 
     public class ResultOutputSettingsDto {
 
-        //数据模板
+        /// <summary>
+        /// 数据模板
+        /// </summary>
+        public List<ItemTemplateInfo> DataTemplate { get; set; } = new();
+
         /// <summary>
         /// 上传设置
         /// </summary>

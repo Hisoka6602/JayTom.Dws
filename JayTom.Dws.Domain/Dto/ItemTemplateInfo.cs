@@ -1,0 +1,49 @@
+﻿using System;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+
+namespace JayTom.Dws.Domain.Dto {
+
+    public class ItemTemplateInfo {
+
+        /// <summary>
+        /// 类型(0=编辑框、1=按钮)
+        /// </summary>
+        public int Type { get; set; }
+
+        /// <summary>
+        /// 实际内容
+        /// </summary>
+        public string Content { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 应用类型
+        /// </summary>
+        public ItemApplicationType ApplicationType { get; set; }
+    }
+
+    public enum ItemApplicationType {
+
+        /// <summary>
+        /// 水印
+        /// </summary>
+        Watermark = 0,
+
+        /// <summary>
+        /// 子路径
+        /// </summary>
+        SubDirectory = 1,
+
+        /// <summary>
+        /// 图片命名
+        /// </summary>
+        ImageNaming = 2,
+
+        /// <summary>
+        /// 结果数据
+        /// </summary>
+        ResultData,
+    }
+}

@@ -680,7 +680,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         }
 
         private string TestWatermarkConvertGroup(ItemBaseTemplateModel model) {
-            if (model.Type == 0) {
+            if (model.Type == 0 && !string.IsNullOrWhiteSpace(model.Content)) {
                 return $"附加:{model.Content}";
             }
             if (model.Type != 1) return string.Empty;

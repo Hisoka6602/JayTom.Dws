@@ -33,6 +33,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         private SnackbarMessageQueue _barcodeFilterSettingsMessageQueue = new(TimeSpan.FromSeconds(2));
         private bool _isSavingInProgress;
         private bool _isLoaded;
+        private int _duplicateBarcodeFilterCount;
 
         public BarcodeFilterSettingsPageViewModel(IConfigRepository configRepository) {
             _configRepository = configRepository;
@@ -100,6 +101,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         public int ScanInterval {
             get => _scanInterval;
             set => SetProperty(ref _scanInterval, value);
+        }
+        /// <summary>
+        /// 重复条码过滤数量
+        /// </summary>
+        public int DuplicateBarcodeFilterCount {
+            get => _duplicateBarcodeFilterCount;
+            set => SetProperty(ref _duplicateBarcodeFilterCount, value);
         }
 
         /// <summary>
@@ -186,7 +194,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                             DisallowedCharacters = DisallowedCharacters,
                             RequiredCharacters = RequiredCharacters,
                             ScanInterval = ScanInterval,
-                            RegularExpression = RegularExpression
+                            RegularExpression = RegularExpression,
+                            DuplicateBarcodeFilterCount = DuplicateBarcodeFilterCount
                         })
                     });
                     if (insertOrUpdate) {
@@ -227,6 +236,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
 
                                 ScanInterval = settingsDto.ScanInterval;
                                 RegularExpression = settingsDto.RegularExpression;
+                                DuplicateBarcodeFilterCount = settingsDto.DuplicateBarcodeFilterCount;
                             }
                         }
                         catch (Exception e) {

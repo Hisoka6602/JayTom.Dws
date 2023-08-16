@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 
 namespace JayTom.Dws.Domain.Dto {
-
     public class BarcodeFilterSettingsDto {
 
         /// <summary>
@@ -47,6 +46,10 @@ namespace JayTom.Dws.Domain.Dto {
         /// 正则表达式
         /// </summary>
         public string RegularExpression { get; set; } = string.Empty;
+        /// <summary>
+        /// 重复条码过滤数量
+        /// </summary>
+        public int DuplicateBarcodeFilterCount { get; set; }
     }
 
     public enum CharacterType {

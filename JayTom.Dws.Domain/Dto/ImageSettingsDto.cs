@@ -116,46 +116,10 @@ namespace JayTom.Dws.Domain.Dto {
         public int Timeout { get; set; }
     }
 
-    public class ItemTemplateInfo {
-
-        /// <summary>
-        /// 类型(0=编辑框、1=按钮)
-        /// </summary>
-        public int Type { get; set; }
-
-        /// <summary>
-        /// 实际内容
-        /// </summary>
-        public string Content { get; set; } = string.Empty;
-
-        /// <summary>
-        /// 应用类型
-        /// </summary>
-        public ItemApplicationType ApplicationType { get; set; }
-    }
-
     public enum WatermarkPosition {
         TopLeft = 0,
         BottomLeft = 1,
         TopRight = 2,
         BottomRight = 3
-    }
-
-    public enum ItemApplicationType {
-
-        /// <summary>
-        /// 水印
-        /// </summary>
-        Watermark = 0,
-
-        /// <summary>
-        /// 子路径
-        /// </summary>
-        SubDirectory = 1,
-
-        /// <summary>
-        /// 图片命名
-        /// </summary>
-        ImageNaming = 2
     }
 }
