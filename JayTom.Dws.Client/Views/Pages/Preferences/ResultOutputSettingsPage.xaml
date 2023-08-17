@@ -4,10 +4,14 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:dataTemplateSelectors="clr-namespace:JayTom.Dws.Client.DataTemplateSelectors"
+    xmlns:imageSettingModels="clr-namespace:JayTom.Dws.Client.Models.ImageSettingModels"
     xmlns:local="clr-namespace:JayTom.Dws.Client.Views.Pages.Preferences"
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:mvvm="http://prismlibrary.com/"
+    xmlns:settingsConverter="clr-namespace:JayTom.Dws.Client.Converters.SettingsConverter"
+    Name="ResultOutputSettingsView"
     Title="ResultOutputSettingsPage"
     d:DesignHeight="450"
     d:DesignWidth="800"
@@ -15,6 +19,52 @@
     Focusable="False"
     FontFamily="{StaticResource CustomFontFamily}"
     mc:Ignorable="d">
+    <Page.Resources>
+        <settingsConverter:ShortcutMacroConverter x:Key="ShortcutMacroConverter" />
+        <DataTemplate x:Key="ImageSettingButtonTemplate" DataType="{x:Type imageSettingModels:ItemBaseTemplateModel}">
+            <Button
+                Height="25"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                VerticalContentAlignment="Center"
+                materialDesign:ButtonAssist.CornerRadius="12"
+                Background="DodgerBlue"
+                BorderThickness="0"
+                Command="{Binding DataContext.RemoveTemplateItemCommand, ElementName=ResultOutputSettingsView}"
+                CommandParameter="{Binding}"
+                Focusable="False"
+                Style="{StaticResource MaterialDesignRaisedDarkButton}">
+                <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{Binding Content, Converter={StaticResource ShortcutMacroConverter}}" />
+            </Button>
+        </DataTemplate>
+        <DataTemplate x:Key="ImageSettingTextBoxTemplate" DataType="{x:Type imageSettingModels:ItemBaseTemplateModel}">
+            <TextBox
+                Width="Auto"
+                Height="18"
+                MinWidth="20"
+                MaxWidth="900"
+                Margin="5,0"
+                Padding="0"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Bottom"
+                materialDesign:TextFieldAssist.CharacterCounterVisibility="Hidden"
+                materialDesign:TextFieldAssist.HasClearButton="False"
+                materialDesign:TextFieldAssist.IncludeSpellingSuggestions="False"
+                materialDesign:TextFieldAssist.RippleOnFocusEnabled="False"
+                materialDesign:TextFieldAssist.TextBoxViewMargin="0"
+                Background="Transparent"
+                BorderThickness="0"
+                FocusVisualStyle="{x:Null}"
+                FontSize="15"
+                FontWeight="Bold"
+                Foreground="White"
+                Text="{Binding Content, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+        </DataTemplate>
+        <dataTemplateSelectors:ImageSettingItemDataTemplateSelectors
+            x:Key="ImageSettingItemDataTemplateSelectors"
+            ButtonTemplate="{StaticResource ImageSettingButtonTemplate}"
+            TextBoxTemplate="{StaticResource ImageSettingTextBoxTemplate}" />
+    </Page.Resources>
     <materialDesign:DialogHost
         Background="Transparent"
         DialogBackground="Transparent"
@@ -73,7 +123,7 @@
                             materialDesign:ButtonAssist.CornerRadius="15"
                             Background="DarkGray"
                             BorderThickness="0"
-                            Command="{Binding AddWatermarkItemCommand}"
+                            Command="{Binding AddOutputItemCommand}"
                             CommandParameter="'{BarCode}'"
                             Focusable="False"
                             Style="{StaticResource MaterialDesignRaisedDarkButton}">
@@ -85,7 +135,7 @@
                             materialDesign:ButtonAssist.CornerRadius="15"
                             Background="DarkGray"
                             BorderThickness="0"
-                            Command="{Binding AddWatermarkItemCommand}"
+                            Command="{Binding AddOutputItemCommand}"
                             CommandParameter="'{Weight}'"
                             Focusable="False"
                             Style="{StaticResource MaterialDesignRaisedDarkButton}">
@@ -97,7 +147,7 @@
                             materialDesign:ButtonAssist.CornerRadius="15"
                             Background="DarkGray"
                             BorderThickness="0"
-                            Command="{Binding AddWatermarkItemCommand}"
+                            Command="{Binding AddOutputItemCommand}"
                             CommandParameter="'{ScanTime}'"
                             Focusable="False"
                             Style="{StaticResource MaterialDesignRaisedDarkButton}">
@@ -109,7 +159,7 @@
                             materialDesign:ButtonAssist.CornerRadius="15"
                             Background="DarkGray"
                             BorderThickness="0"
-                            Command="{Binding AddWatermarkItemCommand}"
+                            Command="{Binding AddOutputItemCommand}"
                             CommandParameter="'{TimestampedGuid}'"
                             Focusable="False"
                             Style="{StaticResource MaterialDesignRaisedDarkButton}">
@@ -121,7 +171,7 @@
                             materialDesign:ButtonAssist.CornerRadius="15"
                             Background="DarkGray"
                             BorderThickness="0"
-                            Command="{Binding AddWatermarkItemCommand}"
+                            Command="{Binding AddOutputItemCommand}"
                             CommandParameter="'{Length}'"
                             Focusable="False"
                             Style="{StaticResource MaterialDesignRaisedDarkButton}">
@@ -133,7 +183,7 @@
                             materialDesign:ButtonAssist.CornerRadius="15"
                             Background="DarkGray"
                             BorderThickness="0"
-                            Command="{Binding AddWatermarkItemCommand}"
+                            Command="{Binding AddOutputItemCommand}"
                             CommandParameter="'{Width}'"
                             Focusable="False"
                             Style="{StaticResource MaterialDesignRaisedDarkButton}">
@@ -145,7 +195,7 @@
                             materialDesign:ButtonAssist.CornerRadius="15"
                             Background="DarkGray"
                             BorderThickness="0"
-                            Command="{Binding AddWatermarkItemCommand}"
+                            Command="{Binding AddOutputItemCommand}"
                             CommandParameter="'{Height}'"
                             Focusable="False"
                             Style="{StaticResource MaterialDesignRaisedDarkButton}">
@@ -157,7 +207,7 @@
                             materialDesign:ButtonAssist.CornerRadius="15"
                             Background="DarkGray"
                             BorderThickness="0"
-                            Command="{Binding AddWatermarkItemCommand}"
+                            Command="{Binding AddOutputItemCommand}"
                             CommandParameter="'{Volume}'"
                             Focusable="False"
                             Style="{StaticResource MaterialDesignRaisedDarkButton}">
@@ -169,7 +219,7 @@
                             materialDesign:ButtonAssist.CornerRadius="15"
                             Background="DarkGray"
                             BorderThickness="0"
-                            Command="{Binding AddWatermarkItemCommand}"
+                            Command="{Binding AddOutputItemCommand}"
                             CommandParameter="'{CameraSerialNumber}'"
                             Focusable="False"
                             Style="{StaticResource MaterialDesignRaisedDarkButton}">
@@ -205,7 +255,8 @@
                             MaxWidth="900"
                             Margin="50,0,0,0"
                             Focusable="False"
-                            ItemsSource="{Binding SubDirectoryItems, UpdateSourceTrigger=PropertyChanged}"
+                            ItemTemplateSelector="{StaticResource ImageSettingItemDataTemplateSelectors}"
+                            ItemsSource="{Binding OutputItems, UpdateSourceTrigger=PropertyChanged}"
                             ScrollViewer.HorizontalScrollBarVisibility="Hidden"
                             ScrollViewer.VerticalScrollBarVisibility="Hidden"
                             SelectionMode="Extended">
@@ -267,11 +318,6 @@
                         FontWeight="Bold"
                         Foreground="DarkGray"
                         Text="上传配置:" />
-                    <ToggleButton
-                        materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
-                        materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
-                        Focusable="False"
-                        Style="{StaticResource MaterialDesignSwitchToggleButton}" />
                 </StackPanel>
                 <StackPanel Margin="50,5,0,0" Orientation="Horizontal">
                     <StackPanel Orientation="Horizontal">
@@ -303,13 +349,7 @@
                                     FontWeight="Bold"
                                     Foreground="White"
                                     InputMethod.IsInputMethodEnabled="False"
-                                    Text="{Binding MinimumLength, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
-                                    <b:Interaction.Triggers>
-                                        <b:EventTrigger EventName="TextChanged">
-                                            <mvvm:InvokeCommandAction Command="{Binding MinimumLengthChangedCommand}" />
-                                        </b:EventTrigger>
-                                    </b:Interaction.Triggers>
-                                </TextBox>
+                                    Text="{Binding UploadSettingsInfo.RetryCount, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                             </Border>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal">
@@ -341,12 +381,7 @@
                                     FontWeight="Bold"
                                     Foreground="White"
                                     InputMethod.IsInputMethodEnabled="False"
-                                    Text="{Binding MaximumLength, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
-                                    <b:Interaction.Triggers>
-                                        <b:EventTrigger EventName="TextChanged">
-                                            <mvvm:InvokeCommandAction Command="{Binding MaximumLengthChangedCommand}" />
-                                        </b:EventTrigger>
-                                    </b:Interaction.Triggers>
+                                    Text="{Binding UploadSettingsInfo.SendDelay, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
                                 </TextBox>
                             </Border>
                         </StackPanel>
@@ -363,6 +398,7 @@
                                 materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
                                 materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
                                 Focusable="False"
+                                IsChecked="{Binding UploadSettingsInfo.SendDelay, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                 Style="{StaticResource MaterialDesignSwitchToggleButton}" />
                         </StackPanel>
                     </StackPanel>
@@ -393,6 +429,7 @@
                         materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
                         materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
                         Focusable="False"
+                        IsChecked="{Binding IsUseTcpOutput, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                         Style="{StaticResource MaterialDesignSwitchToggleButton}" />
                 </StackPanel>
                 <StackPanel Margin="50,5,0,0" Orientation="Horizontal">
@@ -436,13 +473,7 @@
                                         Foreground="White"
                                         InputMethod.IsInputMethodEnabled="False"
                                         IsReadOnly="True"
-                                        Text="{Binding MinimumLength, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
-                                        <b:Interaction.Triggers>
-                                            <b:EventTrigger EventName="TextChanged">
-                                                <mvvm:InvokeCommandAction Command="{Binding MinimumLengthChangedCommand}" />
-                                            </b:EventTrigger>
-                                        </b:Interaction.Triggers>
-                                    </TextBox>
+                                        Text="{Binding TcpSettingsInfo.ServerConfig.IpAddress, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                                 </Border>
                             </StackPanel>
                             <StackPanel Orientation="Horizontal">
@@ -473,12 +504,7 @@
                                         FontWeight="Bold"
                                         Foreground="White"
                                         InputMethod.IsInputMethodEnabled="False"
-                                        Text="{Binding MaximumLength, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
-                                        <b:Interaction.Triggers>
-                                            <b:EventTrigger EventName="TextChanged">
-                                                <mvvm:InvokeCommandAction Command="{Binding MaximumLengthChangedCommand}" />
-                                            </b:EventTrigger>
-                                        </b:Interaction.Triggers>
+                                        Text="{Binding TcpSettingsInfo.ServerConfig.Port, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
                                     </TextBox>
                                 </Border>
                             </StackPanel>
@@ -520,13 +546,7 @@
                                         FontWeight="Bold"
                                         Foreground="White"
                                         InputMethod.IsInputMethodEnabled="False"
-                                        Text="{Binding MinimumLength, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
-                                        <b:Interaction.Triggers>
-                                            <b:EventTrigger EventName="TextChanged">
-                                                <mvvm:InvokeCommandAction Command="{Binding MinimumLengthChangedCommand}" />
-                                            </b:EventTrigger>
-                                        </b:Interaction.Triggers>
-                                    </TextBox>
+                                        Text="{Binding TcpSettingsInfo.ClientConfig.IpAddress, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                                 </Border>
                             </StackPanel>
                             <StackPanel Orientation="Horizontal">
@@ -557,18 +577,12 @@
                                         FontWeight="Bold"
                                         Foreground="White"
                                         InputMethod.IsInputMethodEnabled="False"
-                                        Text="{Binding MaximumLength, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
-                                        <b:Interaction.Triggers>
-                                            <b:EventTrigger EventName="TextChanged">
-                                                <mvvm:InvokeCommandAction Command="{Binding MaximumLengthChangedCommand}" />
-                                            </b:EventTrigger>
-                                        </b:Interaction.Triggers>
+                                        Text="{Binding TcpSettingsInfo.ClientConfig.Port, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
                                     </TextBox>
                                 </Border>
                             </StackPanel>
                         </StackPanel>
                     </StackPanel>
-
                 </StackPanel>
             </StackPanel>
             <!--  Http输出  -->
@@ -596,6 +610,7 @@
                         materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
                         materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
                         Focusable="False"
+                        IsChecked="{Binding IsUseHttpOutput, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                         Style="{StaticResource MaterialDesignSwitchToggleButton}" />
                 </StackPanel>
                 <StackPanel Margin="50,5,0,0" Orientation="Horizontal">
@@ -616,7 +631,7 @@
                                 Background="#1A696969"
                                 CornerRadius="5">
                                 <TextBox
-                                    Width="300"
+                                    Width="280"
                                     Height="30"
                                     MaxWidth="500"
                                     Margin="5,0"
@@ -628,13 +643,7 @@
                                     FontWeight="Bold"
                                     Foreground="White"
                                     InputMethod.IsInputMethodEnabled="False"
-                                    Text="{Binding MinimumLength, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
-                                    <b:Interaction.Triggers>
-                                        <b:EventTrigger EventName="TextChanged">
-                                            <mvvm:InvokeCommandAction Command="{Binding MinimumLengthChangedCommand}" />
-                                        </b:EventTrigger>
-                                    </b:Interaction.Triggers>
-                                </TextBox>
+                                    Text="{Binding HttpUploadSettingsInfo.Url, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                             </Border>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal">
@@ -653,7 +662,7 @@
                                 Background="#1A696969"
                                 CornerRadius="5">
                                 <TextBox
-                                    Width="290"
+                                    Width="130"
                                     Height="30"
                                     MaxWidth="500"
                                     Margin="5,0"
@@ -665,12 +674,39 @@
                                     FontWeight="Bold"
                                     Foreground="White"
                                     InputMethod.IsInputMethodEnabled="False"
-                                    Text="{Binding MaximumLength, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
-                                    <b:Interaction.Triggers>
-                                        <b:EventTrigger EventName="TextChanged">
-                                            <mvvm:InvokeCommandAction Command="{Binding MaximumLengthChangedCommand}" />
-                                        </b:EventTrigger>
-                                    </b:Interaction.Triggers>
+                                    Text="{Binding HttpUploadSettingsInfo.SuccessResponseContent, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                            </Border>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <!--  图标  -->
+                            <TextBlock
+                                Margin="5,0"
+                                VerticalAlignment="Center"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                Text="请求超时时间:" />
+                            <Border
+                                Margin="5"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Background="#1A696969"
+                                CornerRadius="5">
+                                <TextBox
+                                    Width="60"
+                                    Height="30"
+                                    MaxWidth="500"
+                                    Margin="5,0"
+                                    materialDesign:HintAssist.Hint="ms"
+                                    materialDesign:TextFieldAssist.HasClearButton="False"
+                                    materialDesign:TextFieldAssist.HasFilledTextField="True"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    FontSize="13"
+                                    FontWeight="Bold"
+                                    Foreground="White"
+                                    InputMethod.IsInputMethodEnabled="False"
+                                    Text="{Binding HttpUploadSettingsInfo.Timeout, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
                                 </TextBox>
                             </Border>
                         </StackPanel>
@@ -702,6 +738,7 @@
                         materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
                         materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
                         Focusable="False"
+                        IsChecked="{Binding IsUseSerialOutput, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                         Style="{StaticResource MaterialDesignSwitchToggleButton}" />
                 </StackPanel>
                 <StackPanel Margin="50,5,0,0" Orientation="Horizontal">
@@ -862,6 +899,7 @@
                         materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
                         materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
                         Focusable="False"
+                        IsChecked="{Binding IsUseAudioOutput, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                         Style="{StaticResource MaterialDesignSwitchToggleButton}" />
                 </StackPanel>
                 <StackPanel Margin="50,5,0,0" Orientation="Horizontal">
@@ -1014,7 +1052,6 @@
                                             Text="..." />
                                     </Button>
                                 </StackPanel>
-
                             </Border>
                             <Button
                                 Width="70"
@@ -1038,7 +1075,6 @@
                             </Button>
                         </StackPanel>
                     </StackPanel>
-
                 </StackPanel>
             </StackPanel>
             <!--  位置输出  -->
@@ -1066,6 +1102,7 @@
                         materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
                         materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
                         Focusable="False"
+                        IsChecked="{Binding IsUseLocationOutput, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                         Style="{StaticResource MaterialDesignSwitchToggleButton}" />
                 </StackPanel>
                 <StackPanel Margin="50,5,0,0" Orientation="Horizontal">
@@ -1078,7 +1115,8 @@
                             Focusable="False"
                             FontSize="13"
                             FontWeight="Bold"
-                            Foreground="DarkGray" />
+                            Foreground="DarkGray"
+                            IsChecked="{Binding LocationOutputSettingsInfo.IsOutputBarcode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                         <StackPanel Margin="50,0,0,0" Orientation="Horizontal">
                             <StackPanel Orientation="Horizontal">
                                 <!--  图标  -->
@@ -1110,13 +1148,7 @@
                                             Foreground="White"
                                             InputMethod.IsInputMethodEnabled="False"
                                             IsReadOnly="True"
-                                            Text="{Binding MinimumLength, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
-                                            <b:Interaction.Triggers>
-                                                <b:EventTrigger EventName="TextChanged">
-                                                    <mvvm:InvokeCommandAction Command="{Binding MinimumLengthChangedCommand}" />
-                                                </b:EventTrigger>
-                                            </b:Interaction.Triggers>
-                                        </TextBox>
+                                            Text="{Binding LocationOutputSettingsInfo.BarcodeOutputPosition, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                                         <Button
                                             Width="60"
                                             MinHeight="30"
@@ -1137,7 +1169,6 @@
                                                 Text="&#xe6f8;" />
                                         </Button>
                                     </StackPanel>
-
                                 </Border>
                             </StackPanel>
                             <StackPanel Orientation="Horizontal">
@@ -1167,12 +1198,7 @@
                                         FontWeight="Bold"
                                         Foreground="White"
                                         InputMethod.IsInputMethodEnabled="False"
-                                        Text="{Binding MaximumLength, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
-                                        <b:Interaction.Triggers>
-                                            <b:EventTrigger EventName="TextChanged">
-                                                <mvvm:InvokeCommandAction Command="{Binding MaximumLengthChangedCommand}" />
-                                            </b:EventTrigger>
-                                        </b:Interaction.Triggers>
+                                        Text="{Binding LocationOutputSettingsInfo.BarcodeOutputKey, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
                                     </TextBox>
                                 </Border>
                             </StackPanel>
@@ -1184,7 +1210,8 @@
                             Focusable="False"
                             FontSize="13"
                             FontWeight="Bold"
-                            Foreground="DarkGray" />
+                            Foreground="DarkGray"
+                            IsChecked="{Binding LocationOutputSettingsInfo, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                         <StackPanel Margin="50,0,0,0" Orientation="Horizontal">
                             <StackPanel Orientation="Horizontal">
                                 <!--  图标  -->
@@ -1216,13 +1243,7 @@
                                             Foreground="White"
                                             InputMethod.IsInputMethodEnabled="False"
                                             IsReadOnly="True"
-                                            Text="{Binding MinimumLength, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
-                                            <b:Interaction.Triggers>
-                                                <b:EventTrigger EventName="TextChanged">
-                                                    <mvvm:InvokeCommandAction Command="{Binding MinimumLengthChangedCommand}" />
-                                                </b:EventTrigger>
-                                            </b:Interaction.Triggers>
-                                        </TextBox>
+                                            Text="{Binding LocationOutputSettingsInfo.WeightOutputPosition, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                                         <Button
                                             Width="60"
                                             MinHeight="30"
@@ -1243,7 +1264,6 @@
                                                 Text="&#xe6f8;" />
                                         </Button>
                                     </StackPanel>
-
                                 </Border>
                             </StackPanel>
                             <StackPanel Orientation="Horizontal">
@@ -1273,18 +1293,54 @@
                                         FontWeight="Bold"
                                         Foreground="White"
                                         InputMethod.IsInputMethodEnabled="False"
-                                        Text="{Binding MaximumLength, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
-                                        <b:Interaction.Triggers>
-                                            <b:EventTrigger EventName="TextChanged">
-                                                <mvvm:InvokeCommandAction Command="{Binding MaximumLengthChangedCommand}" />
-                                            </b:EventTrigger>
-                                        </b:Interaction.Triggers>
-                                    </TextBox>
+                                        Text="{Binding LocationOutputSettingsInfo.WeightOutputKey, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                                 </Border>
                             </StackPanel>
                         </StackPanel>
                     </StackPanel>
-
+                </StackPanel>
+                <StackPanel Margin="50,5,0,0" Orientation="Horizontal">
+                    <!--  是否先输出重量  -->
+                    <CheckBox
+                        materialDesign:CheckBoxAssist.CheckBoxSize="20"
+                        Content="是否先输出重量"
+                        Focusable="False"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        IsChecked="{Binding LocationOutputSettingsInfo.IsOutputWeightFirst, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    <StackPanel Margin="30,0,0,0" Orientation="Horizontal">
+                        <!--  图标  -->
+                        <TextBlock
+                            Margin="5,0"
+                            VerticalAlignment="Center"
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="DarkGray"
+                            Text="操作延时:" />
+                        <Border
+                            Margin="5"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Background="#1A696969"
+                            CornerRadius="5">
+                            <TextBox
+                                Width="60"
+                                Height="30"
+                                MaxWidth="500"
+                                Margin="5,0"
+                                materialDesign:HintAssist.Hint="ms"
+                                materialDesign:TextFieldAssist.HasClearButton="False"
+                                materialDesign:TextFieldAssist.HasFilledTextField="True"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="White"
+                                InputMethod.IsInputMethodEnabled="False"
+                                Text="{Binding LocationOutputSettingsInfo.OperationDelay, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                        </Border>
+                    </StackPanel>
                 </StackPanel>
             </StackPanel>
             <!--  保存设置  -->
@@ -1359,8 +1415,8 @@
             </Button>
             <!--  提示框  -->
             <materialDesign:Snackbar
-                Grid.Row="8"
-                Grid.Column="0"
+                Grid.Row="5"
+                Grid.RowSpan="3"
                 Width="Auto"
                 Height="Auto"
                 VerticalAlignment="Bottom"

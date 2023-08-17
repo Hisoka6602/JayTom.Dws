@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 
 namespace JayTom.Dws.Domain.Dto {
-
     public class ResultOutputSettingsDto {
 
         /// <summary>
@@ -275,5 +274,14 @@ namespace JayTom.Dws.Domain.Dto {
         /// 是否先输出重量
         /// </summary>
         public bool IsOutputWeightFirst { get; set; }
+        /// <summary>
+        /// 是否输出条码
+        /// </summary>
+        public bool IsOutputBarcode { get; set; }
+
+        /// <summary>
+        /// 是否输出重量
+        /// </summary>
+        public bool IsOutputWeight { get; set; }
     }
 }
