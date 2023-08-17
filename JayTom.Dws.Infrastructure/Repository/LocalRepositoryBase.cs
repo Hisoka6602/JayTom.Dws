@@ -142,6 +142,8 @@ namespace JayTom.Dws.Infrastructure.Repository {
             IDbContextTransaction? contextTransaction = null;
             try {
                 await _transactionSlim.WaitAsync(token);
+                var propertyInfos = typeof(T).GetProperties(
+                    System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public);
                 await using var concardContext = _contextFactory.CreateDbContext();
                 var strategy = concardContext.Database.CreateExecutionStrategy();
                 await strategy.ExecuteAsync(async () => {
@@ -149,7 +151,18 @@ namespace JayTom.Dws.Infrastructure.Repository {
                         var dbSet = concardContext?.Set<T>();
                         if (dbSet is not null && concardContext is not null) {
                             await concardContext.BulkInsertAsync(entitylist, new BulkConfig() {
-                                UseTempDB = true
+                                UseTempDB = true,
+                                UniqueTableNameTempDb = false,
+                                PropertiesToIncludeOnUpdate = propertyInfos?.Where(
+                                    w => w.GetCustomAttribute<InsertOrUpdataAttribute>() != null)?.Select(s => s.Name)?.ToList(),
+                                UpdateByProperties = propertyInfos
+                                    ?.Where(w => w.GetCustomAttribute<UpdateByAttribute>() != null)
+                                    ?.Select(s => s.Name)?.ToList(),
+                                PropertiesToExclude = propertyInfos
+                                    ?.Where(w => w.GetCustomAttribute<DatabaseGeneratedAttribute>() != null)
+                                    ?.Select(s => s.Name)?.ToList(),
+                                PreserveInsertOrder = true,
+                                SetOutputIdentity = false,
                             }, cancellationToken: token);
                             await contextTransaction.CommitAsync(token);
                         }

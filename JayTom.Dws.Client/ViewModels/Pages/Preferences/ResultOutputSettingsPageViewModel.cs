@@ -1,18 +1,35 @@
 ﻿using System;
+using System.IO;
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
 using Prism.Commands;
+using Newtonsoft.Json;
+using Mono.Unix.Native;
+using System.Threading;
 using System.Windows.Input;
+using System.Windows.Forms;
 using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
+using JayTom.Dws.Client.Models;
+using MaterialDesignThemes.Wpf;
 using NPOI.SS.Formula.Functions;
+using JayTom.Dws.Data.LocalData;
+using JayTom.Dws.Data.LocalConf;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using JayTom.Dws.Client.EventMediators;
+using JayTom.Dws.Domain.Repository.LocalData;
+using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Client.Models.ImageSettingModels;
+using JayTom.Dws.Client.Models.ResultOutputSettingsModel;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.StartPanel;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
+
     public class ResultOutputSettingsPageViewModel : BindableBase {
+        private readonly ISoundRepository _soundRepository;
+        private readonly IConfigRepository _configRepository;
 
         private ObservableCollection<ItemBaseTemplateModel> _outputItems = new()
         {
@@ -39,15 +56,164 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             },
         };
 
+        private bool _isLoaded;
         private bool _isUseTcpOutput;
         private bool _isUseHttpOutput;
         private bool _isUseSerialOutput;
         private bool _isUseAudioOutput;
         private bool _isUseLocationOutput;
-        private UploadSettingsInfo _uploadSettingsInfo = new();
-        private TcpSettingsInfo _tcpSettingsInfo = new();
-        private HttpUploadSettingsInfo _httpUploadSettingsInfo = new();
-        private LocationOutputSettingsInfo _locationOutputSettingsInfo = new();
+        private UploadSettingsInfoModel _uploadSettingsInfo = new();
+        private TcpSettingsInfoModel _tcpSettingsInfo = new();
+        private HttpUploadSettingsInfoModel _httpUploadSettingsInfo = new();
+        private LocationOutputSettingsInfoModel _locationOutputSettingsInfo = new();
+        private ObservableCollection<string> _portItems = new();
+        private string _portName = string.Empty;
+        private ParityInfoModel _selectParity = new();
+
+        private ObservableCollection<ParityInfoModel> _parityItems = new()
+        {
+            new ParityInfoModel()
+            {
+                Name = "None",
+                Value = 0
+            },
+            new ParityInfoModel()
+            {
+                Name = "Odd",
+                Value = 1
+            },
+            new ParityInfoModel()
+            {
+                Name = "Even",
+                Value = 2
+            },
+            new ParityInfoModel()
+            {
+                Name = "Mark",
+                Value = 3
+            },
+            new ParityInfoModel()
+            {
+                Name = "Space",
+                Value = 4
+            },
+        };
+
+        private StopBitsInfoModel _selectedStopBits = new();
+
+        private ObservableCollection<StopBitsInfoModel> _stopBitsItems = new()
+        {
+            new StopBitsInfoModel()
+            {
+                Name = "None",
+                Value = 0,
+            },
+            new StopBitsInfoModel()
+            {
+                Name = "One",
+                Value = 1,
+            },
+            new StopBitsInfoModel()
+            {
+                Name = "Two",
+                Value = 2,
+            },
+            new StopBitsInfoModel()
+            {
+                Name = "OnePointFive",
+                Value = 3,
+            },
+        };
+
+        private int _selectBaudRate = 115200;
+
+        private ObservableCollection<int> _baudRateItems = new()
+        {
+            4800,9600,14400,19200,38400,115200
+        };
+
+        private ObservableCollection<int> _dataBitsItems = new()
+        {
+            5,6,7,8,
+        };
+
+        private int _selectedDataBits = 8;
+
+        private ObservableCollection<TriggerPositionModel> _triggerPositionItems = new()
+        {
+            new TriggerPositionModel()
+            {
+                TriggerPositionName = "Http输出后",
+                TriggerPositionValue = TriggerPositionEnum.HttpOutput,
+            },
+            new TriggerPositionModel()
+            {
+                TriggerPositionName = "Tcp输出后",
+                TriggerPositionValue = TriggerPositionEnum.TcpOutput,
+            },
+            new TriggerPositionModel()
+            {
+                TriggerPositionName = "串口输出后",
+                TriggerPositionValue = TriggerPositionEnum.SerialPortOutput,
+            },
+            new TriggerPositionModel()
+            {
+                TriggerPositionName = "位置输出后",
+                TriggerPositionValue = TriggerPositionEnum.LocationOutput,
+            },
+            new TriggerPositionModel()
+            {
+                TriggerPositionName = "包裹触发后",
+                TriggerPositionValue = TriggerPositionEnum.PackageTrigger,
+            },
+        };
+
+        private TriggerPositionModel _selectedTriggerPosition = new();
+
+        private SerialPortSettingsInfoModel _serialPortSettingsInfo = new();
+
+        private ObservableCollection<TriggerPositionResultModel> _triggerPositionResultItems = new()
+        {
+            new TriggerPositionResultModel()
+            {
+                ResultName = "Api接口响应",
+                ResultValue = ResultEnum.ApiResponse,
+            },
+            new TriggerPositionResultModel()
+            {
+                ResultName = "http输出响应",
+                ResultValue = ResultEnum.HttpOutputResponse,
+            },
+            new TriggerPositionResultModel()
+            {
+                ResultName = "包裹识别",
+                ResultValue = ResultEnum.PackageRecognition,
+            },
+            new TriggerPositionResultModel()
+            {
+                ResultName = "无",
+                ResultValue = ResultEnum.NotSet,
+            },
+        };
+
+        private TriggerPositionResultModel _selectedTriggerPositionResult = new();
+        private string _soundFilePath = string.Empty;
+        private ObservableCollection<string> _sounds = new();
+        private SnackbarMessageQueue _resultOutputSettingsMessageQueue = new(TimeSpan.FromSeconds(2));
+        private AudioOutputSettingsInfoModel _audioOutputSettingsInfo = new();
+        private bool _isSavingInProgress;
+        private TcpConnectionMode? _connectionMode;
+
+        public ResultOutputSettingsPageViewModel(ISoundRepository soundRepository,
+            IConfigRepository configRepository) {
+            _soundRepository = soundRepository;
+            _configRepository = configRepository;
+        }
+
+        public SnackbarMessageQueue ResultOutputSettingsMessageQueue {
+            get => _resultOutputSettingsMessageQueue;
+            set => SetProperty(ref _resultOutputSettingsMessageQueue, value);
+        }
 
         /// <summary>
         /// 数据模板
@@ -55,6 +221,90 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         public ObservableCollection<ItemBaseTemplateModel> OutputItems {
             get => _outputItems;
             set => SetProperty(ref _outputItems, value);
+        }
+
+        /// <summary>
+        /// 成功音频列表
+        /// </summary>
+        public ObservableCollection<string> Sounds {
+            get => _sounds;
+            set => SetProperty(ref _sounds, value);
+        }
+
+        /// <summary>
+        /// 串口列表
+        /// </summary>
+        public ObservableCollection<string> PortItems {
+            get => _portItems;
+            set => SetProperty(ref _portItems, value);
+        }
+
+        /// <summary>
+        /// 选中串口名称
+        /// </summary>
+        public string SelectedPort {
+            get => _portName;
+            set => SetProperty(ref _portName, value);
+        }
+
+        public ParityInfoModel SelectedParity {
+            get => _selectParity;
+            set => SetProperty(ref _selectParity, value);
+        }
+
+        public ObservableCollection<ParityInfoModel> ParityItems {
+            get => _parityItems;
+            set => SetProperty(ref _parityItems, value);
+        }
+
+        public StopBitsInfoModel SelectedStopBits {
+            get => _selectedStopBits;
+            set => SetProperty(ref _selectedStopBits, value);
+        }
+
+        public ObservableCollection<StopBitsInfoModel> StopBitsItems {
+            get => _stopBitsItems;
+            set => SetProperty(ref _stopBitsItems, value);
+        }
+
+        public int SelectBaudRate {
+            get => _selectBaudRate;
+            set => SetProperty(ref _selectBaudRate, value);
+        }
+
+        public ObservableCollection<int> BaudRateItems {
+            get => _baudRateItems;
+            set => SetProperty(ref _baudRateItems, value);
+        }
+
+        public int SelectedDataBits {
+            get => _selectedDataBits;
+            set => SetProperty(ref _selectedDataBits, value);
+        }
+
+        public ObservableCollection<int> DataBitsItems {
+            get => _dataBitsItems;
+            set => SetProperty(ref _dataBitsItems, value);
+        }
+
+        public ObservableCollection<TriggerPositionModel> TriggerPositionItems {
+            get => _triggerPositionItems;
+            set => SetProperty(ref _triggerPositionItems, value);
+        }
+
+        public TriggerPositionModel SelectedTriggerPosition {
+            get => _selectedTriggerPosition;
+            set => SetProperty(ref _selectedTriggerPosition, value);
+        }
+
+        public ObservableCollection<TriggerPositionResultModel> TriggerPositionResultItems {
+            get => _triggerPositionResultItems;
+            set => SetProperty(ref _triggerPositionResultItems, value);
+        }
+
+        public TriggerPositionResultModel SelectedTriggerPositionResult {
+            get => _selectedTriggerPositionResult;
+            set => SetProperty(ref _selectedTriggerPositionResult, value);
         }
 
         /// <summary>
@@ -79,7 +329,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         }
 
         /// <summary>
-        /// 添加水印
+        /// 添加数据模板
         /// </summary>
         public ICommand AddOutputItemCommand {
             get => new DelegateCommand<string>(AddOutputItemDelegate);
@@ -149,30 +399,264 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 上传设置
         /// </summary>
-        public UploadSettingsInfo UploadSettingsInfo {
+        public UploadSettingsInfoModel UploadSettingsInfo {
             get => _uploadSettingsInfo;
             set => SetProperty(ref _uploadSettingsInfo, value);
         }
+
         /// <summary>
         /// Tcp输出设置
         /// </summary>
-        public TcpSettingsInfo TcpSettingsInfo {
+        public TcpSettingsInfoModel TcpSettingsInfo {
             get => _tcpSettingsInfo;
             set => SetProperty(ref _tcpSettingsInfo, value);
         }
+
         /// <summary>
         /// Http输出设置
         /// </summary>
-        public HttpUploadSettingsInfo HttpUploadSettingsInfo {
+        public HttpUploadSettingsInfoModel HttpUploadSettingsInfo {
             get => _httpUploadSettingsInfo;
             set => SetProperty(ref _httpUploadSettingsInfo, value);
         }
+
+        /// <summary>
+        /// 串口输出
+        /// </summary>
+        public SerialPortSettingsInfoModel SerialPortSettingsInfo {
+            get => _serialPortSettingsInfo;
+            set => SetProperty(ref _serialPortSettingsInfo, value);
+        }
+
         /// <summary>
         /// 位置输出
         /// </summary>
-        public LocationOutputSettingsInfo LocationOutputSettingsInfo {
+        public LocationOutputSettingsInfoModel LocationOutputSettingsInfo {
             get => _locationOutputSettingsInfo;
             set => SetProperty(ref _locationOutputSettingsInfo, value);
+        }
+
+        /// <summary>
+        /// 声音输出
+        /// </summary>
+        public AudioOutputSettingsInfoModel AudioOutputSettingsInfo {
+            get => _audioOutputSettingsInfo;
+            set => SetProperty(ref _audioOutputSettingsInfo, value);
+        }
+
+        /// <summary>
+        /// 声音文件路径
+        /// </summary>
+        public string SoundFilePath {
+            get => _soundFilePath;
+            set => SetProperty(ref _soundFilePath, value);
+        }
+
+        /// <summary>
+        /// Tcp连接模式
+        /// </summary>
+        public TcpConnectionMode? ConnectionMode {
+            get => _connectionMode;
+            set => SetProperty(ref _connectionMode, value);
+        }
+
+        /// <summary>
+        /// 是否保存中
+        /// </summary>
+        public bool IsSavingInProgress {
+            get => _isSavingInProgress;
+            set => SetProperty(ref _isSavingInProgress, value);
+        }
+
+        public ICommand BarCodeKeyDownCommand {
+            get => new DelegateCommand<System.Windows.Input.KeyEventArgs>(BarCodeKeyDownDelegate);
+        }
+
+        private async void BarCodeKeyDownDelegate(System.Windows.Input.KeyEventArgs obj) {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                LocationOutputSettingsInfo.BarcodeOutputKey = obj.Key.ToString();
+            });
+        }
+
+        public ICommand WeightKeyDownCommand {
+            get => new DelegateCommand<System.Windows.Input.KeyEventArgs>(WeightKeyDownDelegate);
+        }
+
+        private async void WeightKeyDownDelegate(System.Windows.Input.KeyEventArgs obj) {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                LocationOutputSettingsInfo.WeightOutputKey = obj.Key.ToString();
+            });
+        }
+
+        public ICommand BrowseSoundFileCommand {
+            get => new DelegateCommand<object>(BrowseSoundFileDelegate);
+        }
+
+        private async void BrowseSoundFileDelegate(object obj) {
+            var openFileDialog = new OpenFileDialog() {
+                Filter = "声音文件|*.wav;*.mp3",
+                Title = "选择声音文件",
+                InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop)
+            };
+            if (openFileDialog.ShowDialog() == DialogResult.OK) {
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                    SoundFilePath = openFileDialog.FileName;
+                });
+            }
+        }
+
+        public ICommand AddSoundFileCommand {
+            get => new DelegateCommand<object>(AddSoundFileDelegate);
+        }
+
+        private async void AddSoundFileDelegate(object obj) {
+            if (!string.IsNullOrWhiteSpace(SoundFilePath) &&
+                File.Exists(SoundFilePath)) {
+                //加载遮罩,加载锁
+
+                var update = await _soundRepository.InsertOrUpdate(new SoundInfoModel() {
+                    SoundName = new FileInfo(SoundFilePath).Name,
+                    SoundFile = await File.ReadAllBytesAsync(SoundFilePath)
+                });
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+                    if (update) {
+                        Sounds.Clear();
+                        var soundInfoModels = await _soundRepository.Select(w => w.Id > 0, o => o.Id);
+                        if (soundInfoModels?.Any() == true) {
+                            Sounds.AddRange(soundInfoModels.Select(s => s.SoundName));
+                        }
+                        ResultOutputSettingsMessageQueue.Enqueue("添加成功");
+                    }
+                    else {
+                        ResultOutputSettingsMessageQueue.Enqueue("添加失败!");
+                        //提示失败
+                    }
+                });
+            }
+        }
+
+        /// <summary>
+        /// 保存设置
+        /// </summary>
+        public ICommand SaveSettingsCommand {
+            get => new DelegateCommand<object>(SaveSettingDelegate);
+        }
+
+        private async void SaveSettingDelegate(object obj) {
+            if (!IsSavingInProgress) {
+                IsSavingInProgress = true;
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+                    var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
+                        ConfigName = "ResultOutputSettings",
+                        Value = JsonConvert.SerializeObject(new ResultOutputSettingsDto {
+                            DataTemplate = OutputItems.Select(s => new ItemTemplateInfo {
+                                ApplicationType = s.ApplicationType,
+                                Content = s.Content,
+                                Type = s.Type,
+                            }).ToList(),
+                            UploadSettingsInfo = new UploadSettingsInfo() {
+                                IsAutoUploadOnRestart = UploadSettingsInfo.IsAutoUploadOnRestart,
+                                RetryCount = UploadSettingsInfo.RetryCount,
+                                SendDelay = UploadSettingsInfo.SendDelay,
+                            },
+                            IsUseTcpOutput = IsUseTcpOutput,
+                            TcpSettingsInfo = new TcpSettingsInfo() {
+                                ClientConfig = new TcpInfo() {
+                                    IpAddress = TcpSettingsInfo.ClientConfig.IpAddress,
+                                    Port = TcpSettingsInfo.ClientConfig.Port
+                                },
+                                ServerConfig = new TcpInfo() {
+                                    IpAddress = TcpSettingsInfo.ServerConfig.IpAddress,
+                                    Port = TcpSettingsInfo.ServerConfig.Port
+                                },
+                                ConnectionMode = ConnectionMode
+                            },
+                            IsUseHttpOutput = IsUseHttpOutput,
+                            HttpUploadSettingsInfo = new HttpUploadSettingsInfo() {
+                                SuccessResponseContent = HttpUploadSettingsInfo.SuccessResponseContent,
+                                Timeout = HttpUploadSettingsInfo.Timeout,
+                                Url = HttpUploadSettingsInfo.Url,
+                            },
+                            IsUseSerialOutput = IsUseSerialOutput,
+                            SerialPortSettingsInfo = new SerialPortSettingsInfo() {
+                                BaudRate = SerialPortSettingsInfo.BaudRate,
+                                Parity = SerialPortSettingsInfo.Parity,
+                                PortName = SerialPortSettingsInfo.PortName,
+                                DataBits = SerialPortSettingsInfo.DataBits,
+                                StopBits = SerialPortSettingsInfo.StopBits
+                            },
+                            IsUseAudioOutput = IsUseAudioOutput,
+                            AudioOutputSettingsInfo = new AudioOutputSettingsInfo() {
+                                FailureAudio = AudioOutputSettingsInfo.FailureAudio,
+                                SuccessAudio = AudioOutputSettingsInfo.SuccessAudio,
+                                TriggerPosition = SelectedTriggerPosition.TriggerPositionValue,
+                                Result = SelectedTriggerPositionResult.ResultValue,
+                            },
+                            IsUseLocationOutput = IsUseLocationOutput,
+                            LocationOutputSettingsInfo = new LocationOutputSettingsInfo() {
+                                BarcodeOutputKey = LocationOutputSettingsInfo.BarcodeOutputKey,
+                                BarcodeOutputPosition = LocationOutputSettingsInfo.BarcodeOutputPosition,
+                                IsOutputBarcode = LocationOutputSettingsInfo.IsOutputBarcode,
+                                IsOutputWeight = LocationOutputSettingsInfo.IsOutputWeight,
+                                IsOutputWeightFirst = LocationOutputSettingsInfo.IsOutputWeightFirst,
+                                OperationDelay = LocationOutputSettingsInfo.OperationDelay,
+                                WeightOutputKey = LocationOutputSettingsInfo.WeightOutputKey,
+                                WeightOutputPosition = LocationOutputSettingsInfo.WeightOutputPosition
+                            },
+                        })
+                    });
+                    if (insertOrUpdate) {
+                        EventAggregator.Instance.Publish(new SettingsChangedEvent {
+                            SettingsName = "ResultOutputSettings"
+                        });
+                    }
+
+                    IsSavingInProgress = false;
+                    ResultOutputSettingsMessageQueue.Enqueue($"保存{(insertOrUpdate ? "成功" : "失败")}");
+                });
+            }
+
+            //显示遮罩
+            //保存设置到数据库
+            //通知设置更改事件
+            //隐藏遮罩
+        }
+
+        /// <summary>
+        /// 页面加载完成
+        /// </summary>
+        public ICommand LoadedCommand {
+            get => new DelegateCommand<object>(LoadedDelegate);
+        }
+
+        private async void LoadedDelegate(object obj) {
+            if (!_isLoaded) {
+                _isLoaded = true;
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+                    var configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("ResultOutputSettings"));
+                    if (configInfoModel is not null) {
+                        /*try {
+                            var settingsDto = JsonConvert.DeserializeObject<ResultOutputSettingsDto>(configInfoModel.Value);
+                            if (settingsDto is not null) {
+                                MinimumLength = settingsDto.MinimumLength;
+                                MaximumLength = settingsDto.MaximumLength;
+                                StartCharacterType = settingsDto.StartCharacterType;
+
+                                EndCharacterType = settingsDto.EndCharacterType;
+                                DisallowedCharacters = settingsDto.DisallowedCharacters;
+                                RequiredCharacters = settingsDto.RequiredCharacters;
+
+                                ScanInterval = settingsDto.ScanInterval;
+                                RegularExpression = settingsDto.RegularExpression;
+                                DuplicateBarcodeFilterCount = settingsDto.DuplicateBarcodeFilterCount;
+                            }
+                        }
+                        catch (Exception e) {
+                            BarcodeFilterSettingsMessageQueue.Enqueue($"加载设置失败:{e.Message}");
+                        }*/
+                    }
+                });
+            }
         }
     }
 }

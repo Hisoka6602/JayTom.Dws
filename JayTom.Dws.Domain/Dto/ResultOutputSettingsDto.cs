@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 
 namespace JayTom.Dws.Domain.Dto {
+
     public class ResultOutputSettingsDto {
 
         /// <summary>
@@ -100,7 +101,7 @@ namespace JayTom.Dws.Domain.Dto {
         /// <summary>
         /// 连接模式(客户端、服务端)
         /// </summary>
-        public TcpConnectionMode ConnectionMode { get; set; }
+        public TcpConnectionMode? ConnectionMode { get; set; }
 
         /// <summary>
         /// 客户端配置
@@ -199,17 +200,22 @@ namespace JayTom.Dws.Domain.Dto {
         /// <summary>
         /// 成功音频
         /// </summary>
-        public byte[]? SuccessAudio { get; set; }
+        public string? SuccessAudio { get; set; }
 
         /// <summary>
         /// 失败音频
         /// </summary>
-        public byte[]? FailureAudio { get; set; }
+        public string? FailureAudio { get; set; }
 
         /// <summary>
         /// 触发位置
         /// </summary>
         public TriggerPositionEnum TriggerPosition { get; set; }
+
+        /// <summary>
+        /// 结果判断
+        /// </summary>
+        public ResultEnum Result { get; set; }
     }
 
     public enum TriggerPositionEnum {
@@ -274,6 +280,7 @@ namespace JayTom.Dws.Domain.Dto {
         /// 是否先输出重量
         /// </summary>
         public bool IsOutputWeightFirst { get; set; }
+
         /// <summary>
         /// 是否输出条码
         /// </summary>
@@ -283,5 +290,28 @@ namespace JayTom.Dws.Domain.Dto {
         /// 是否输出重量
         /// </summary>
         public bool IsOutputWeight { get; set; }
+    }
+
+    public enum ResultEnum {
+
+        /// <summary>
+        /// Api响应
+        /// </summary>
+        ApiResponse,
+
+        /// <summary>
+        /// http输出
+        /// </summary>
+        HttpOutputResponse,
+
+        /// <summary>
+        /// 包裹识别
+        /// </summary>
+        PackageRecognition,
+
+        /// <summary>
+        /// 无
+        /// </summary>
+        NotSet
     }
 }

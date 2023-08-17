@@ -3,6 +3,7 @@ using JayTom.Dws.Data.LocalData;
 using JayTom.Dws.Data.LocalConf;
 using Microsoft.EntityFrameworkCore;
 using JayTom.Dws.Data.LocalConf.CameraConfig;
+using JayTom.Dws.Infrastructure.Repository.LocalData;
 
 namespace JayTom.Dws.Infrastructure {
 
@@ -39,6 +40,13 @@ namespace JayTom.Dws.Infrastructure {
                     .HasIndex(b => b.ScanTime)
                     .IsUnique(false)
                     .HasAnnotation("IndexSortOrder", "Descending");
+                modelBuilder.Entity<SoundInfoModel>().HasKey(c => new {
+                    c.Id
+                });
+                modelBuilder.Entity<SoundInfoModel>()
+                    .HasIndex(b => b.SoundName)
+                    .IsUnique();
+                //
             }
             //conf
             {
