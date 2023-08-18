@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using Prism.Commands;
 using Newtonsoft.Json;
+using System.IO.Ports;
 using Mono.Unix.Native;
 using System.Threading;
 using System.Windows.Input;
@@ -75,27 +76,27 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             new ParityInfoModel()
             {
                 Name = "None",
-                Value = 0
+                Value = Parity.None
             },
             new ParityInfoModel()
             {
                 Name = "Odd",
-                Value = 1
+                Value = Parity.Odd
             },
             new ParityInfoModel()
             {
                 Name = "Even",
-                Value = 2
+                Value = Parity.Even
             },
             new ParityInfoModel()
             {
                 Name = "Mark",
-                Value = 3
+                Value = Parity.Mark
             },
             new ParityInfoModel()
             {
                 Name = "Space",
-                Value = 4
+                Value = Parity.Space
             },
         };
 
@@ -111,17 +112,17 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             new StopBitsInfoModel()
             {
                 Name = "One",
-                Value = 1,
+                Value = StopBits.One,
             },
             new StopBitsInfoModel()
             {
                 Name = "Two",
-                Value = 2,
+                Value = StopBits.Two,
             },
             new StopBitsInfoModel()
             {
                 Name = "OnePointFive",
-                Value = 3,
+                Value = StopBits.OnePointFive,
             },
         };
 
@@ -579,11 +580,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                             },
                             IsUseSerialOutput = IsUseSerialOutput,
                             SerialPortSettingsInfo = new SerialPortSettingsInfo() {
-                                BaudRate = SerialPortSettingsInfo.BaudRate,
-                                Parity = SerialPortSettingsInfo.Parity,
-                                PortName = SerialPortSettingsInfo.PortName,
-                                DataBits = SerialPortSettingsInfo.DataBits,
-                                StopBits = SerialPortSettingsInfo.StopBits
+                                BaudRate = SelectBaudRate,
+                                Parity = SelectedParity.Value,
+                                PortName = SelectedPort,
+                                DataBits = SelectedDataBits,
+                                StopBits = SelectedStopBits.Value,
                             },
                             IsUseAudioOutput = IsUseAudioOutput,
                             AudioOutputSettingsInfo = new AudioOutputSettingsInfo() {
@@ -633,27 +634,96 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             if (!_isLoaded) {
                 _isLoaded = true;
                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+                    //加载音频列表
+                    Sounds.Clear();
+                    var soundInfoModels = await _soundRepository.Select(w => w.Id > 0, o => o.Id);
+                    if (soundInfoModels?.Any() == true) {
+                        Sounds.AddRange(soundInfoModels.Select(s => s.SoundName));
+                    }
+                    PortItems.Clear();
+                    //加载串口列表
+                    PortItems.AddRange(SerialPort.GetPortNames()?.ToList());
+
                     var configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("ResultOutputSettings"));
                     if (configInfoModel is not null) {
-                        /*try {
+                        try {
                             var settingsDto = JsonConvert.DeserializeObject<ResultOutputSettingsDto>(configInfoModel.Value);
                             if (settingsDto is not null) {
-                                MinimumLength = settingsDto.MinimumLength;
-                                MaximumLength = settingsDto.MaximumLength;
-                                StartCharacterType = settingsDto.StartCharacterType;
-
-                                EndCharacterType = settingsDto.EndCharacterType;
-                                DisallowedCharacters = settingsDto.DisallowedCharacters;
-                                RequiredCharacters = settingsDto.RequiredCharacters;
-
-                                ScanInterval = settingsDto.ScanInterval;
-                                RegularExpression = settingsDto.RegularExpression;
-                                DuplicateBarcodeFilterCount = settingsDto.DuplicateBarcodeFilterCount;
+                                //加载停止位的值
+                                SelectedStopBits = StopBitsItems.FirstOrDefault(f =>
+                                    f.Value.Equals(settingsDto.SerialPortSettingsInfo.StopBits)) ?? new StopBitsInfoModel();
+                                //加载效验位的值
+                                SelectedParity = ParityItems.FirstOrDefault(f =>
+                                    f.Value.Equals(settingsDto.SerialPortSettingsInfo.Parity)) ?? new ParityInfoModel();
+                                //加载触发位置的值
+                                SelectedTriggerPosition = TriggerPositionItems.FirstOrDefault(f =>
+                                    f.TriggerPositionValue.Equals(settingsDto.AudioOutputSettingsInfo.TriggerPosition)) ?? new TriggerPositionModel();
+                                //加载结果判断值
+                                SelectedTriggerPositionResult = TriggerPositionResultItems.FirstOrDefault(f =>
+                                    f.ResultValue.Equals(settingsDto.AudioOutputSettingsInfo.Result)) ?? new TriggerPositionResultModel();
+                                OutputItems.Clear();
+                                var models = settingsDto.DataTemplate.Select((s, i) => new ItemBaseTemplateModel() {
+                                    ApplicationType = s.ApplicationType,
+                                    Content = s.Content,
+                                    Type = s.Type,
+                                    Id = i + 1
+                                }).ToList();
+                                OutputItems.AddRange(models);
+                                UploadSettingsInfo = new UploadSettingsInfoModel() {
+                                    IsAutoUploadOnRestart = settingsDto.UploadSettingsInfo.IsAutoUploadOnRestart,
+                                    RetryCount = settingsDto.UploadSettingsInfo.RetryCount,
+                                    SendDelay = settingsDto.UploadSettingsInfo.SendDelay,
+                                };
+                                IsUseTcpOutput = settingsDto.IsUseTcpOutput;
+                                TcpSettingsInfo = new TcpSettingsInfoModel() {
+                                    ClientConfig = new TcpInfoModel() {
+                                        IpAddress = settingsDto.TcpSettingsInfo.ClientConfig.IpAddress,
+                                        Port = settingsDto.TcpSettingsInfo.ClientConfig.Port,
+                                    },
+                                    ServerConfig = new TcpInfoModel() {
+                                        IpAddress = settingsDto.TcpSettingsInfo.ServerConfig.IpAddress,
+                                        Port = settingsDto.TcpSettingsInfo.ServerConfig.Port,
+                                    },
+                                    ConnectionMode = settingsDto.TcpSettingsInfo.ConnectionMode,
+                                };
+                                IsUseHttpOutput = settingsDto.IsUseHttpOutput;
+                                HttpUploadSettingsInfo = new HttpUploadSettingsInfoModel() {
+                                    SuccessResponseContent = settingsDto.HttpUploadSettingsInfo.SuccessResponseContent,
+                                    Timeout = settingsDto.HttpUploadSettingsInfo.Timeout,
+                                    Url = settingsDto.HttpUploadSettingsInfo.Url
+                                };
+                                IsUseSerialOutput = settingsDto.IsUseSerialOutput;
+                                SerialPortSettingsInfo = new SerialPortSettingsInfoModel() {
+                                    BaudRate = settingsDto.SerialPortSettingsInfo.BaudRate,
+                                    Parity = settingsDto.SerialPortSettingsInfo.Parity,
+                                    DataBits = settingsDto.SerialPortSettingsInfo.DataBits,
+                                    PortName = settingsDto.SerialPortSettingsInfo.PortName,
+                                    StopBits = settingsDto.SerialPortSettingsInfo.StopBits,
+                                };
+                                IsUseAudioOutput = settingsDto.IsUseAudioOutput;
+                                AudioOutputSettingsInfo = new AudioOutputSettingsInfoModel() {
+                                    FailureAudio = settingsDto.AudioOutputSettingsInfo.FailureAudio,
+                                    Result = settingsDto.AudioOutputSettingsInfo.Result,
+                                    SuccessAudio = settingsDto.AudioOutputSettingsInfo.SuccessAudio,
+                                    TriggerPosition = settingsDto.AudioOutputSettingsInfo.TriggerPosition,
+                                };
+                                IsUseLocationOutput = settingsDto.IsUseLocationOutput;
+                                LocationOutputSettingsInfo = new LocationOutputSettingsInfoModel() {
+                                    BarcodeOutputKey = settingsDto.LocationOutputSettingsInfo.BarcodeOutputKey,
+                                    BarcodeOutputPosition =
+                                        settingsDto.LocationOutputSettingsInfo.BarcodeOutputPosition,
+                                    IsOutputBarcode = settingsDto.LocationOutputSettingsInfo.IsOutputBarcode,
+                                    IsOutputWeight = settingsDto.LocationOutputSettingsInfo.IsOutputWeight,
+                                    IsOutputWeightFirst = settingsDto.LocationOutputSettingsInfo.IsOutputWeightFirst,
+                                    OperationDelay = settingsDto.LocationOutputSettingsInfo.OperationDelay,
+                                    WeightOutputKey = settingsDto.LocationOutputSettingsInfo.WeightOutputKey,
+                                    WeightOutputPosition = settingsDto.LocationOutputSettingsInfo.WeightOutputPosition,
+                                };
                             }
                         }
                         catch (Exception e) {
-                            BarcodeFilterSettingsMessageQueue.Enqueue($"加载设置失败:{e.Message}");
-                        }*/
+                            ResultOutputSettingsMessageQueue.Enqueue($"加载设置失败:{e.Message}");
+                        }
                     }
                 });
             }

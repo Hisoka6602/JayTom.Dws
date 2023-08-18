@@ -404,7 +404,7 @@
                                 materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
                                 materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
                                 Focusable="False"
-                                IsChecked="{Binding UploadSettingsInfo.SendDelay, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                IsChecked="{Binding UploadSettingsInfo.IsAutoUploadOnRestart, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                 Style="{StaticResource MaterialDesignSwitchToggleButton}" />
                         </StackPanel>
                     </StackPanel>
@@ -432,13 +432,17 @@
                         Foreground="DarkGray"
                         Text="Tcp输出:" />
                     <ToggleButton
+                        Name="TcpToggleButton"
                         materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
                         materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
                         Focusable="False"
                         IsChecked="{Binding IsUseTcpOutput, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                         Style="{StaticResource MaterialDesignSwitchToggleButton}" />
                 </StackPanel>
-                <StackPanel Margin="50,5,0,0" Orientation="Horizontal">
+                <StackPanel
+                    Margin="50,5,0,0"
+                    IsEnabled="{Binding ElementName=TcpToggleButton, Path=IsChecked}"
+                    Orientation="Horizontal">
 
                     <StackPanel Orientation="Vertical">
                         <!--  使用Tcp服务端  -->
@@ -623,13 +627,17 @@
                         Foreground="DarkGray"
                         Text="Http输出:" />
                     <ToggleButton
+                        Name="HttpToggleButton"
                         materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
                         materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
                         Focusable="False"
                         IsChecked="{Binding IsUseHttpOutput, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                         Style="{StaticResource MaterialDesignSwitchToggleButton}" />
                 </StackPanel>
-                <StackPanel Margin="50,5,0,0" Orientation="Horizontal">
+                <StackPanel
+                    Margin="50,5,0,0"
+                    IsEnabled="{Binding ElementName=HttpToggleButton, Path=IsChecked}"
+                    Orientation="Horizontal">
                     <StackPanel Orientation="Horizontal">
                         <StackPanel Orientation="Horizontal">
                             <!--  图标  -->
@@ -750,13 +758,17 @@
                         Foreground="DarkGray"
                         Text="串口输出:" />
                     <ToggleButton
+                        Name="SerialOutputToggleButton"
                         materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
                         materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
                         Focusable="False"
                         IsChecked="{Binding IsUseSerialOutput, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                         Style="{StaticResource MaterialDesignSwitchToggleButton}" />
                 </StackPanel>
-                <StackPanel Margin="50,5,0,0" Orientation="Horizontal">
+                <StackPanel
+                    Margin="50,5,0,0"
+                    IsEnabled="{Binding ElementName=SerialOutputToggleButton, Path=IsChecked}"
+                    Orientation="Horizontal">
                     <StackPanel Orientation="Horizontal">
                         <StackPanel Orientation="Horizontal">
                             <!--  图标  -->
@@ -957,13 +969,17 @@
                         Foreground="DarkGray"
                         Text="音频输出:" />
                     <ToggleButton
+                        Name="AudioOutputToggleButton"
                         materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
                         materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
                         Focusable="False"
                         IsChecked="{Binding IsUseAudioOutput, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                         Style="{StaticResource MaterialDesignSwitchToggleButton}" />
                 </StackPanel>
-                <StackPanel Margin="50,5,0,0" Orientation="Horizontal">
+                <StackPanel
+                    Margin="50,5,0,0"
+                    IsEnabled="{Binding ElementName=AudioOutputToggleButton, Path=IsChecked}"
+                    Orientation="Horizontal">
                     <StackPanel Orientation="Vertical">
                         <StackPanel Orientation="Horizontal">
                             <StackPanel Orientation="Horizontal">
@@ -1204,13 +1220,17 @@
                         Foreground="DarkGray"
                         Text="位置输出:" />
                     <ToggleButton
+                        Name="LocationOutputToggleButton"
                         materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
                         materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
                         Focusable="False"
                         IsChecked="{Binding IsUseLocationOutput, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                         Style="{StaticResource MaterialDesignSwitchToggleButton}" />
                 </StackPanel>
-                <StackPanel Margin="50,5,0,0" Orientation="Horizontal">
+                <StackPanel
+                    Margin="50,5,0,0"
+                    IsEnabled="{Binding ElementName=LocationOutputToggleButton, Path=IsChecked}"
+                    Orientation="Horizontal">
 
                     <StackPanel Orientation="Vertical">
                         <!--  输出条码  -->
@@ -1417,7 +1437,10 @@
                         </StackPanel>
                     </StackPanel>
                 </StackPanel>
-                <StackPanel Margin="50,5,0,0" Orientation="Horizontal">
+                <StackPanel
+                    Margin="50,5,0,0"
+                    IsEnabled="{Binding ElementName=LocationOutputToggleButton, Path=IsChecked}"
+                    Orientation="Horizontal">
                     <!--  是否先输出重量  -->
                     <CheckBox
                         materialDesign:CheckBoxAssist.CheckBoxSize="20"
