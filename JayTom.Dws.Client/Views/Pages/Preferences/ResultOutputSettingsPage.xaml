@@ -21,6 +21,7 @@
     FontFamily="{StaticResource CustomFontFamily}"
     mc:Ignorable="d">
     <Page.Resources>
+        <materialDesign:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
         <settingsConverter:TcpConnectionModeToBooleanConverter x:Key="TcpConnectionModeToBooleanConverter" />
         <settingsConverter:ShortcutMacroConverter x:Key="ShortcutMacroConverter" />
         <DataTemplate x:Key="ImageSettingButtonTemplate" DataType="{x:Type imageSettingModels:ItemBaseTemplateModel}">
@@ -442,7 +443,8 @@
                 <StackPanel
                     Margin="50,5,0,0"
                     IsEnabled="{Binding ElementName=TcpToggleButton, Path=IsChecked}"
-                    Orientation="Horizontal">
+                    Orientation="Horizontal"
+                    Visibility="{Binding ElementName=TcpToggleButton, Path=IsChecked, Converter={StaticResource BooleanToVisibilityConverter}}">
 
                     <StackPanel Orientation="Vertical">
                         <!--  使用Tcp服务端  -->
@@ -637,7 +639,8 @@
                 <StackPanel
                     Margin="50,5,0,0"
                     IsEnabled="{Binding ElementName=HttpToggleButton, Path=IsChecked}"
-                    Orientation="Horizontal">
+                    Orientation="Horizontal"
+                    Visibility="{Binding ElementName=HttpToggleButton, Path=IsChecked, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <StackPanel Orientation="Horizontal">
                         <StackPanel Orientation="Horizontal">
                             <!--  图标  -->
@@ -768,7 +771,8 @@
                 <StackPanel
                     Margin="50,5,0,0"
                     IsEnabled="{Binding ElementName=SerialOutputToggleButton, Path=IsChecked}"
-                    Orientation="Horizontal">
+                    Orientation="Horizontal"
+                    Visibility="{Binding ElementName=SerialOutputToggleButton, Path=IsChecked, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <StackPanel Orientation="Horizontal">
                         <StackPanel Orientation="Horizontal">
                             <!--  图标  -->
@@ -979,7 +983,8 @@
                 <StackPanel
                     Margin="50,5,0,0"
                     IsEnabled="{Binding ElementName=AudioOutputToggleButton, Path=IsChecked}"
-                    Orientation="Horizontal">
+                    Orientation="Horizontal"
+                    Visibility="{Binding ElementName=AudioOutputToggleButton, Path=IsChecked, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <StackPanel Orientation="Vertical">
                         <StackPanel Orientation="Horizontal">
                             <StackPanel Orientation="Horizontal">
@@ -1230,7 +1235,8 @@
                 <StackPanel
                     Margin="50,5,0,0"
                     IsEnabled="{Binding ElementName=LocationOutputToggleButton, Path=IsChecked}"
-                    Orientation="Horizontal">
+                    Orientation="Horizontal"
+                    Visibility="{Binding ElementName=LocationOutputToggleButton, Path=IsChecked, Converter={StaticResource BooleanToVisibilityConverter}}">
 
                     <StackPanel Orientation="Vertical">
                         <!--  输出条码  -->
@@ -1440,7 +1446,8 @@
                 <StackPanel
                     Margin="50,5,0,0"
                     IsEnabled="{Binding ElementName=LocationOutputToggleButton, Path=IsChecked}"
-                    Orientation="Horizontal">
+                    Orientation="Horizontal"
+                    Visibility="{Binding ElementName=LocationOutputToggleButton, Path=IsChecked, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <!--  是否先输出重量  -->
                     <CheckBox
                         materialDesign:CheckBoxAssist.CheckBoxSize="20"
@@ -1557,7 +1564,7 @@
             <!--  提示框  -->
             <materialDesign:Snackbar
                 Grid.Row="5"
-                Grid.RowSpan="3"
+                Grid.RowSpan="4"
                 Width="Auto"
                 Height="Auto"
                 VerticalAlignment="Bottom"

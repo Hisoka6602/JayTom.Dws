@@ -65,6 +65,7 @@
                 Foreground="White"
                 Text="{Binding Content, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
         </DataTemplate>
+
         <dataTemplateSelectors:ImageSettingItemDataTemplateSelectors
             x:Key="ImageSettingItemDataTemplateSelectors"
             ButtonTemplate="{StaticResource ImageSettingButtonTemplate}"
