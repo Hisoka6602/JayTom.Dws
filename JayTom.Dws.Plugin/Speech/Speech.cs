@@ -6,6 +6,7 @@ namespace JayTom.Dws.Plugin.Speech {
 
     public class Speech : ISpeech {
         private static SpeechSynthesizer? _synthesizer;
+        private static Dictionary<string, byte[]>? _soundDictionary = new();
 
         public Speech() {
             _synthesizer ??= new() {
@@ -25,6 +26,30 @@ namespace JayTom.Dws.Plugin.Speech {
                 new System.Media.SoundPlayer(stream)?.PlaySync();
             }
             catch (Exception) {
+            }
+        }
+
+        public async void PlayByteFile(byte[] file) {
+            try {
+                await Task.Yield();
+                using var stream = new MemoryStream(file);
+                using var player = new SoundPlayer(stream);
+                player?.PlaySync();
+            }
+            catch {
+                // ignored
+            }
+        }
+
+        public async void PlayCacheByteFile(string name, byte[] file) {
+            await Task.Yield();
+            var valuePair = _soundDictionary?.FirstOrDefault(f => f.Key.Equals(name));
+            if (valuePair is not null) {
+                PlayByteFile(valuePair.Value.Value);
+            }
+            else {
+                _soundDictionary?.Add(name, file);
+                PlayByteFile(file);
             }
         }
 

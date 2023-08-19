@@ -16,6 +16,19 @@
         void PlayStream(Stream stream);
 
         /// <summary>
+        /// 播放字节文件
+        /// </summary>
+        /// <param name="file"></param>
+        void PlayByteFile(byte[] file);
+
+        /// <summary>
+        /// 播放缓存字节文件
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="file"></param>
+        void PlayCacheByteFile(string name, byte[] file);
+
+        /// <summary>
         /// 播放文件
         /// </summary>
         /// <param name="path"></param>

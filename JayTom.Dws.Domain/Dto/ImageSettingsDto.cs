@@ -122,4 +122,22 @@ namespace JayTom.Dws.Domain.Dto {
         TopRight = 2,
         BottomRight = 3
     }
+
+    public enum SaveImageType {
+
+        /// <summary>
+        /// 扫码图片
+        /// </summary>
+        BarcodeImage,
+
+        /// <summary>
+        /// 全景图片
+        /// </summary>
+        PanoramaImage,
+
+        /// <summary>
+        /// 体积图片
+        /// </summary>
+        VolumeImage
+    }
 }

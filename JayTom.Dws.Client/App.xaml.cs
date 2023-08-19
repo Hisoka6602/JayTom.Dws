@@ -12,6 +12,7 @@ using JayTom.Dws.Plugin;
 using JayTom.Dws.Camera;
 using System.Configuration;
 using System.Windows.Media;
+using JayTom.Dws.Plugin.Ftp;
 using System.Threading.Tasks;
 using System.Windows.Interop;
 using JayTom.Dws.Client.Views;
@@ -20,6 +21,7 @@ using System.Windows.Threading;
 using JayTom.Dws.Infrastructure;
 using JayTom.Dws.Client.Service;
 using System.Collections.Generic;
+using JayTom.Dws.Plugin.SaveImage;
 using JayTom.Dws.Client.ViewModels;
 using Microsoft.Extensions.Hosting;
 using JayTom.Dws.Client.Views.Pages;
@@ -101,6 +103,8 @@ namespace JayTom.Dws.Client {
                 services.AddScoped<I3DCamera, Percipio3DCamera>();*/
                 //插件注册
                 services.AddScoped<IExcel, NpoiExport>();
+                services.AddScoped<IFtp, FluentFtpClient>();
+                services.AddScoped<ISaveImage, SaveImage>();
                 //电脑注册
                 services.AddScoped<IComputer, Computer>();
                 //电脑信息上报

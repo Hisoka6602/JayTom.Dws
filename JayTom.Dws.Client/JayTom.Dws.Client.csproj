@@ -63,6 +63,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Service\ScanProcess\" />
     <Folder Include="Sound\" />
     <Folder Include="Icons\" />
     <Folder Include="PluginInterface\" />
