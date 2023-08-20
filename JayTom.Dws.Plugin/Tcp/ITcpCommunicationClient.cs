@@ -1,18 +1,17 @@
 ﻿using System;
 using System.Linq;
 using System.Text;
-using TouchSocket.Sockets;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
 namespace JayTom.Dws.Plugin.Tcp {
 
-    public interface ITcpCommunication {
+    public interface ITcpCommunicationClient {
 
         /// <summary>
         /// 是否已连接
         /// </summary>
-        ServerState Status { get; }
+        bool IsConnected { get; }
 
         /// <summary>
         /// 连接异常事件(直接返回异常信息的Json)
@@ -23,11 +22,6 @@ namespace JayTom.Dws.Plugin.Tcp {
         /// 异常事件
         /// </summary>
         event EventHandler<Exception> Exception;
-
-        /// <summary>
-        /// 断开事件(直接返回断开信息的Json)
-        /// </summary>
-        event EventHandler<string> Disconnected;
 
         /// <summary>
         /// 用户完成连接事件
@@ -43,7 +37,20 @@ namespace JayTom.Dws.Plugin.Tcp {
         /// 连接
         /// </summary>
         /// <returns></returns>
-        bool Connect();
+        Task<bool> Connect();
+
+        /// <summary>
+        /// 重新连接
+        /// </summary>
+        /// <returns></returns>
+        Task<bool> Reconnect(int count);
+
+        /// <summary>
+        /// 设置参数
+        /// </summary>
+        /// <param name="par"></param>
+        /// <returns></returns>
+        bool SetParameter(object par);
 
         /// <summary>
         /// 发送信息
@@ -60,32 +67,9 @@ namespace JayTom.Dws.Plugin.Tcp {
         Task<bool> SendMessage(byte[] message);
 
         /// <summary>
-        /// 重新连接
-        /// </summary>
-        /// <returns></returns>
-        bool Reconnect(int count);
-
-        /// <summary>
-        /// 设置参数
-        /// </summary>
-        /// <param name="par"></param>
-        /// <returns></returns>
-        bool SetParameter(object par);
-
-        /// <summary>
         /// 关闭
         /// </summary>
         /// <returns></returns>
         void Close();
-    }
-
-    public class CommunicationInfo {
-        public DateTime Time { get; set; }
-        public string Content { get; set; } = string.Empty;
-        public CommunicationType Type { get; set; }
-    }
-
-    public enum CommunicationType {
-        Send, Receive
     }
 }

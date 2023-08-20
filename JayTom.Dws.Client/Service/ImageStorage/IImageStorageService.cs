@@ -17,6 +17,11 @@ namespace JayTom.Dws.Client.Service.ImageStorage {
         event EventHandler<Exception> ImageSaveFailed;
 
         /// <summary>
+        /// 存图完成事件
+        /// </summary>
+        event EventHandler<ImageSavedEventArgs> ImageSaved;
+
+        /// <summary>
         /// 保存图片
         /// </summary>
         /// <param name="image"></param>
@@ -33,5 +38,33 @@ namespace JayTom.Dws.Client.Service.ImageStorage {
         void SaveImage(Image image, SaveImageType type, string barCode, float weight,
            DateTime scanTime, float length, float width, float height, float volume,
            string cameraSerialNumber, CancellationToken cancellationToken = default);
+    }
+
+    public class ImageSavedEventArgs : EventArgs {
+
+        /// <summary>
+        /// 相机序列号
+        /// </summary>
+        public string? CameraSerialNumber { get; set; }
+
+        /// <summary>
+        /// 条码
+        /// </summary>
+        public string? BarCode { get; set; }
+
+        /// <summary>
+        /// 文件路径
+        /// </summary>
+        public string? FilePath { get; set; }
+
+        /// <summary>
+        /// 图片类型
+        /// </summary>
+        public SaveImageType? ImageType { get; set; }
+
+        /// <summary>
+        /// 存图的时间
+        /// </summary>
+        public DateTime SaveDateTime { get; set; }
     }
 }

@@ -229,5 +229,35 @@ namespace JayTom.Dws.Client.Service.Device {
     }
 
     public class VolumeCapturedEventArgs : EventArgs {
+
+        /// <summary>
+        /// 测量图片
+        /// </summary>
+        public Bitmap? Image { get; set; }
+
+        /// <summary>
+        /// 相机序列号
+        /// </summary>
+        public string CameraSerialNumber { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 长度
+        /// </summary>
+        public double Length { get; set; }
+
+        /// <summary>
+        /// 宽度
+        /// </summary>
+        public double Width { get; set; }
+
+        /// <summary>
+        /// 高度
+        /// </summary>
+        public double Height { get; set; }
+
+        /// <summary>
+        /// 体积
+        /// </summary>
+        public double Volume { get; set; }
     }
 }

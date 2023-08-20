@@ -13,11 +13,13 @@ using JayTom.Dws.Camera;
 using System.Configuration;
 using System.Windows.Media;
 using JayTom.Dws.Plugin.Ftp;
+using JayTom.Dws.Plugin.Tcp;
 using System.Threading.Tasks;
 using System.Windows.Interop;
 using JayTom.Dws.Client.Views;
 using JayTom.Dws.Plugin.Excel;
 using System.Windows.Threading;
+using JayTom.Dws.Plugin.Speech;
 using JayTom.Dws.Infrastructure;
 using JayTom.Dws.Client.Service;
 using System.Collections.Generic;
@@ -35,6 +37,8 @@ using JayTom.Dws.Client.ViewModels.Dialog;
 using JayTom.Dws.Client.ViewModels.Editors;
 using JayTom.Dws.Domain.Repository.LocalData;
 using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Client.Service.ImageStorage;
+using JayTom.Dws.Client.Service.ResultOutput;
 using Microsoft.Extensions.DependencyInjection;
 using JayTom.Dws.Client.Views.Pages.Preferences;
 using JayTom.Dws.Client.Service.BackgroundService;
@@ -105,6 +109,9 @@ namespace JayTom.Dws.Client {
                 services.AddScoped<IExcel, NpoiExport>();
                 services.AddScoped<IFtp, FluentFtpClient>();
                 services.AddScoped<ISaveImage, SaveImage>();
+                services.AddScoped<ISpeech, Speech>();
+                services.AddScoped<ITcpCommunication, TcpCommunication>();
+                services.AddScoped<ITcpCommunicationClient, TcpCommunicationClient>();
                 //电脑注册
                 services.AddScoped<IComputer, Computer>();
                 //电脑信息上报
@@ -113,6 +120,8 @@ namespace JayTom.Dws.Client {
                 services.AddScoped<ICamera, HikvisionSmartCamera>();
 
                 services.AddScoped<IDeviceService, DefaultDeviceService>();
+                services.AddScoped<IImageStorageService, DefaultImageStorageService>();
+                services.AddScoped<IResultOutputService, DefaultResultOutputService>();
             });
         }
 
@@ -157,6 +166,7 @@ namespace JayTom.Dws.Client {
                         services.AddSingleton(container.Resolve<IComputer>());
                         services.AddSingleton(container.Resolve<IComputerInfoReporter>());
                         services.AddHostedService<ComputerInfoBackgroundService>(); // 注册后台服务
+                        services.AddHostedService<ScanProcessBackgroundService>(); // 注册后扫码过程服务
                     })
                     .Build();
                 _host.Start();

@@ -8,8 +8,16 @@ namespace JayTom.Dws.Plugin.Tcp {
 
     public class TcpCommunication : ITcpCommunication {
         private TcpService? _tcpService;
+        private static ServerState _status;
+
+        public ServerState Status {
+            get => _status;
+            private set => _status = value;
+        }
 
         public event EventHandler<string>? ConnectionException;
+
+        public event EventHandler<Exception>? Exception;
 
         public event EventHandler<string>? Disconnected;
 
@@ -38,9 +46,64 @@ namespace JayTom.Dws.Plugin.Tcp {
                 return true;
             }
             catch (Exception e) {
-                LogManager.GetCurrentClassLogger().Log(LogLevel.Error, $"{e}");
+                OnException(e);
                 return false;
             }
+            finally {
+                Status = _tcpService.ServerState;
+            }
+        }
+
+        public async Task<bool> SendMessage(string message) {
+            try {
+                if (Status == ServerState.Running) {
+                    //var bytes = Encoding.UTF8.GetBytes(message);
+                    var clients = _tcpService?.SocketClients?.GetClients()?.ToList();
+                    if (clients?.Any() == true) {
+                        foreach (var socketClient in clients) {
+                            await _tcpService.SendAsync(socketClient.ID, message);
+                            OnCommunication(new CommunicationInfo() {
+                                Content = message,
+                                Time = DateTime.Now,
+                                Type = CommunicationType.Send
+                            });
+                        }
+                    }
+
+                    return true;
+                }
+            }
+            catch (Exception e) {
+                OnException(e);
+                return false;
+            }
+            return false;
+        }
+
+        public async Task<bool> SendMessage(byte[] message) {
+            try {
+                if (Status == ServerState.Running) {
+                    //var bytes = Encoding.UTF8.GetBytes(message);
+                    var clients = _tcpService?.SocketClients?.GetClients()?.ToList();
+                    if (clients?.Any() == true) {
+                        foreach (var socketClient in clients) {
+                            await _tcpService.SendAsync(socketClient.ID, message);
+                            OnCommunication(new CommunicationInfo() {
+                                Content = BitConverter.ToString(message).Replace("-", ", "),
+                                Time = DateTime.Now,
+                                Type = CommunicationType.Send
+                            });
+                        }
+                    }
+
+                    return true;
+                }
+            }
+            catch (Exception e) {
+                OnException(e);
+                return false;
+            }
+            return false;
         }
 
         public bool Reconnect(int count) {
@@ -63,7 +126,7 @@ namespace JayTom.Dws.Plugin.Tcp {
                     return true;
                 }
                 catch (Exception e) {
-                    LogManager.GetCurrentClassLogger().Log(LogLevel.Error, $"{e}");
+                    OnException(e);
                     return false;
                 }
             }
@@ -91,6 +154,12 @@ namespace JayTom.Dws.Plugin.Tcp {
             await Task.Yield();
             LogManager.GetCurrentClassLogger().Log(LogLevel.Info, e);
             Disconnected?.Invoke(this, e);
+        }
+
+        protected virtual async void OnException(Exception e) {
+            await Task.Yield();
+            LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e);
+            Exception?.Invoke(this, e);
         }
     }
 

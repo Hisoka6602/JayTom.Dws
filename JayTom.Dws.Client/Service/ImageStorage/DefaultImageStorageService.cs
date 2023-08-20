@@ -57,6 +57,8 @@ namespace JayTom.Dws.Client.Service.ImageStorage {
 
         public event EventHandler<Exception>? ImageSaveFailed;
 
+        public event EventHandler<ImageSavedEventArgs>? ImageSaved;
+
         public async void SaveImage(Image image, SaveImageType type, string barCode, float weight, DateTime scanTime, float length,
             float width, float height, float volume, string cameraSerialNumber, CancellationToken cancellationToken = default) {
             if (_imageSettingsDto is null) {
@@ -132,11 +134,29 @@ namespace JayTom.Dws.Client.Service.ImageStorage {
                     if (!key) {
                         OnImageSaveFailed(new Exception(value));
                     }
+                    else {
+                        OnImageSaved(new ImageSavedEventArgs() {
+                            BarCode = barCode,
+                            CameraSerialNumber = cameraSerialNumber,
+                            FilePath = $"{fullPath}\\{imageName}.{(_imageSettingsDto.IsSaveOriginalImage ? "bmp" : "jpg")}",
+                            ImageType = type,
+                            SaveDateTime = DateTime.Now
+                        });
+                    }
                 }
                 else {
                     var (key, value) = await _saveImage.SaveCompressedImage(image, imageName, fullPath, watermarkParams, cancellationToken);
                     if (!key) {
                         OnImageSaveFailed(new Exception(value));
+                    }
+                    else {
+                        OnImageSaved(new ImageSavedEventArgs() {
+                            BarCode = barCode,
+                            CameraSerialNumber = cameraSerialNumber,
+                            FilePath = $"{fullPath}\\{imageName}.{(_imageSettingsDto.IsSaveOriginalImage ? "bmp" : "jpg")}",
+                            ImageType = type,
+                            SaveDateTime = DateTime.Now
+                        });
                     }
                 }
                 //判断是否需要上传Ftp
@@ -177,6 +197,11 @@ namespace JayTom.Dws.Client.Service.ImageStorage {
         protected virtual async void OnImageSaveFailed(Exception e) {
             await Task.Yield();
             ImageSaveFailed?.Invoke(this, e);
+        }
+
+        protected virtual async void OnImageSaved(ImageSavedEventArgs e) {
+            await Task.Yield();
+            ImageSaved?.Invoke(this, e);
         }
     }
 }
