@@ -3,12 +3,14 @@ using DryIoc;
 using System.Linq;
 using System.Text;
 using System.Drawing;
+using Newtonsoft.Json;
 using System.Threading;
 using JayTom.Dws.Camera;
 using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using JayTom.Dws.Client.Service.Device;
+using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Service.ImageStorage;
 using JayTom.Dws.Client.Service.ResultOutput;
 
@@ -38,6 +40,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     BarCode = args.BarCode,
                     FilePath = args.FilePath,
                     ImageType = args.ImageType,
+                    CameraSerialNumber = args.CameraSerialNumber ?? string.Empty
                 });
             };
             _deviceService.CameraInitialized += delegate (object? sender, List<ICamera> list) {
@@ -55,6 +58,16 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     Weight = 0.5//先给一个默认重量，以后重量需要从传感器获取
                 });
                 _semaphore.Release();
+                EventAggregator.Instance.Publish(new TriggerPositionEvent() {
+                    IsSuccess = true,
+                    TriggerPosition = TriggerPositionEnum.PackageTrigger
+                });
+            };
+            _deviceService.NotBarcodeHitEvent += delegate (object? sender, BarcodeReadEventArgs args) {
+                EventAggregator.Instance.Publish(new TriggerPositionEvent() {
+                    IsSuccess = false,
+                    TriggerPosition = TriggerPositionEnum.PackageTrigger
+                });
             };
             _deviceService.PanoramaCaptured += async delegate (object? sender, PanoramaCaptureEventArgs args) {
                 await Task.Yield();
@@ -87,25 +100,25 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
             while (!stoppingToken.IsCancellationRequested) {
                 if (_scanBarCodeItems.Count > 0) {
-                    var scanBarCodeInfo = _scanBarCodeItems.FirstOrDefault(f => !f.IsCompleted && !string.IsNullOrEmpty(f.BarCode) && f.Width != null);
+                    var scanBarCodeInfo = _scanBarCodeItems.FirstOrDefault(f => !f.IsCompleted && !string.IsNullOrEmpty(f.BarCode) && f.Weight != null);
                     //判断填充包裹信息
                     if (scanBarCodeInfo is not null) {
                         //判断是不是有体积相机、如果有则判断是否已经获取体积
-                        if (_cameras.Any(a => a.BindingType == CameraBindingType.VolumeCamera)) {
-                            if (scanBarCodeInfo.Length is not null &&
-                                scanBarCodeInfo.Width is not null &&
-                                scanBarCodeInfo.Height is not null) {
-                                //创建另一个对象处理耗时长的内容
-                                //上传
-                                //输出
-                                //条码回调(告诉界面这个条码完成)
-                                scanBarCodeInfo.IsCompleted = true;
-                            }
+                        if (scanBarCodeInfo.Length is not null &&
+                            scanBarCodeInfo.Width is not null &&
+                            scanBarCodeInfo.Height is not null) {
+                            //创建另一个对象处理耗时长的内容
+                            //上传
+                            //输出
+                            //条码回调(告诉界面这个条码完成)
+                            scanBarCodeInfo.IsCompleted = true;
                         }
                         else {
-                            scanBarCodeInfo.Length = 0;
-                            scanBarCodeInfo.Width = 0;
-                            scanBarCodeInfo.Height = 0;
+                            if (_cameras.All(a => a.BindingType != CameraBindingType.VolumeCamera)) {
+                                scanBarCodeInfo.Length = 0;
+                                scanBarCodeInfo.Width = 0;
+                                scanBarCodeInfo.Height = 0;
+                            }
                         }
                     }
 
@@ -127,10 +140,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                                                              && !f.VolumeImages.Any(a => a.CameraSerialNumber.Equals(cameraImageInfo.CameraSerialNumber)));
                         codeInfo?.VolumeImages?.Add(cameraImageInfo);
                     }
-                    //如果信息齐全则输出
-                    //匹配体积
-                    //匹配全景相机图片
-
                     //存图判断
                     var barCodeInfo = _scanBarCodeItems.FirstOrDefault(f => !f.IsSavedImage &&
                         f is { IsCompleted: true, PanoramaImages: not null, VolumeImages: not null }
@@ -142,7 +151,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     if (barCodeInfo is not null) {
                         //存图
                         //扫码图
-                        _imageStorageService.SaveImage(barCodeInfo.Image, SaveImageType.PanoramaImage,
+                        _imageStorageService.SaveImage(barCodeInfo.Image, SaveImageType.BarcodeImage,
                             barCodeInfo.BarCode, (float)(barCodeInfo.Weight ?? 0),
                             barCodeInfo.ScanTime, (float)(barCodeInfo.Length ?? 0),
                             (float)(barCodeInfo.Width ?? 0), (float)(barCodeInfo.Height ?? 0),
@@ -157,7 +166,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         });
                         //体积图
                         barCodeInfo.VolumeImages?.ForEach(f => {
-                            _imageStorageService.SaveImage(f.Image, SaveImageType.PanoramaImage,
+                            _imageStorageService.SaveImage(f.Image, SaveImageType.VolumeImage,
                                 barCodeInfo.BarCode, (float)(barCodeInfo.Weight ?? 0),
                                 barCodeInfo.ScanTime, (float)(barCodeInfo.Length ?? 0),
                                 (float)(barCodeInfo.Width ?? 0), (float)(barCodeInfo.Height ?? 0),
@@ -165,9 +174,46 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         });
                         barCodeInfo.IsSavedImage = true;
                     }
-                    //匹配存图路径
-                    //移除判断
+
+                    if (_savedImageItems.Count > 0) {
+                        var savedImageInfo = _savedImageItems.Dequeue();
+                        var codeInfo = _scanBarCodeItems.FirstOrDefault(f =>
+                            f.BarCode.Equals(savedImageInfo.BarCode));
+                        if (codeInfo is not null) {
+                            if (savedImageInfo.ImageType == SaveImageType.BarcodeImage) {
+                                codeInfo.BarcodeImageFilePath = savedImageInfo.FilePath;
+                            }
+                            else if (savedImageInfo.ImageType == SaveImageType.PanoramaImage) {
+                                var imageInfo = codeInfo.PanoramaImages?.FirstOrDefault(f =>
+                                    f.CameraSerialNumber.Equals(savedImageInfo.CameraSerialNumber));
+                                if (imageInfo is not null) {
+                                    imageInfo.ImageFilePath = savedImageInfo.FilePath;
+                                }
+                            }
+                            else if (savedImageInfo.ImageType == SaveImageType.VolumeImage) {
+                                var imageInfo = codeInfo.VolumeImages?.FirstOrDefault(f =>
+                                    f.CameraSerialNumber.Equals(savedImageInfo.CameraSerialNumber));
+                                if (imageInfo is not null) {
+                                    imageInfo.ImageFilePath = savedImageInfo.FilePath;
+                                }
+                            }
+                        }
+                    }
+
+                    var scanBarCodeInfos = _scanBarCodeItems.Where(w => w is { PanoramaImages: not null, VolumeImages: not null, IsCompleted: true, IsSavedImage: true }
+                                                                        && w.PanoramaImages.All(a => a.ImageFilePath != null)
+                                                                        && w.VolumeImages.All(a => a.ImageFilePath != null)).ToList();
+
+                    //告诉界面这些scanBarCodeInfos已经填充完全部信息，即将移除
+
+                    await _semaphore.WaitAsync(stoppingToken);
+                    scanBarCodeInfos.ForEach(f => {
+                        _scanBarCodeItems.Remove(f);
+                    });
+                    _semaphore.Release();
                 }
+
+                await Task.Delay(200, stoppingToken);
             }
         }
 
@@ -182,6 +228,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             /// 条码图片
             /// </summary>
             public Image? Image { get; set; }
+
+            /// <summary>
+            /// 条码存图路径
+            /// </summary>
+            public string? BarcodeImageFilePath { get; set; }
 
             /// <summary>
             /// 重量
@@ -253,6 +304,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         public class CameraImageInfo {
             public Image? Image { get; set; }
             public string CameraSerialNumber { get; set; } = string.Empty;
+            public string? ImageFilePath { get; set; }
         }
 
         public class SavedImageInfo {
@@ -271,6 +323,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             /// 图片类型
             /// </summary>
             public SaveImageType? ImageType { get; set; }
+
+            /// <summary>
+            /// 相机序列号
+            /// </summary>
+            public string CameraSerialNumber { get; set; } = string.Empty;
         }
     }
 }

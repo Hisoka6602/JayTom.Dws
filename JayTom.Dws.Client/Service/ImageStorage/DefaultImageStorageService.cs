@@ -59,8 +59,9 @@ namespace JayTom.Dws.Client.Service.ImageStorage {
 
         public event EventHandler<ImageSavedEventArgs>? ImageSaved;
 
-        public async void SaveImage(Image image, SaveImageType type, string barCode, float weight, DateTime scanTime, float length,
+        public async void SaveImage(Image? image, SaveImageType type, string barCode, float weight, DateTime scanTime, float length,
             float width, float height, float volume, string cameraSerialNumber, CancellationToken cancellationToken = default) {
+            if (image is null) return;
             if (_imageSettingsDto is null) {
                 await _semaphore.WaitAsync(cancellationToken);
                 var configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("SaveImageSettings"), cancellationToken);
@@ -87,12 +88,14 @@ namespace JayTom.Dws.Client.Service.ImageStorage {
             Task.Run(async () => {
                 //开始保存
                 //获取存图目录(根目录+模板子目录)
+
                 var pathList = _imageSettingsDto.SubDirectoryTemplate?
-                    .Where(w => w is { ApplicationType: ItemApplicationType.SubDirectory, Type: 0 })?
+                    .Where(w => w is { ApplicationType: ItemApplicationType.SubDirectory, Type: 1 })?
                     .Select(s => ParseTemplate(s.Content, type, barCode, weight, scanTime, length, width, height,
                         volume, cameraSerialNumber))?
                     .ToList();
                 if (pathList?.Any() != true) {
+                    NLog.LogManager.GetCurrentClassLogger().Error(JsonConvert.SerializeObject(_imageSettingsDto.SubDirectoryTemplate));
                     OnImageSaveFailed(new Exception("存图路径解析错误,未找到模板内容!"));
                     return;
                 }
@@ -112,7 +115,7 @@ namespace JayTom.Dws.Client.Service.ImageStorage {
                 //判断是否需要水印
                 if (_imageSettingsDto.IsUseWatermark) {
                     //解析水印模板(使用图片命名解析)
-                    var watermarkList = _imageSettingsDto.WatermarkInfo.ItemTemplate?.Where(w => w.ApplicationType == ItemApplicationType.ImageNaming)?
+                    var watermarkList = _imageSettingsDto.WatermarkInfo.ItemTemplate?.Where(w => w.ApplicationType == ItemApplicationType.Watermark)?
                         .Select(s => ParseTemplate(s.Content, type, barCode, weight, scanTime, length, width, height,
                             volume, cameraSerialNumber, true))
                         ?.ToList();
@@ -147,6 +150,7 @@ namespace JayTom.Dws.Client.Service.ImageStorage {
                 else {
                     var (key, value) = await _saveImage.SaveCompressedImage(image, imageName, fullPath, watermarkParams, cancellationToken);
                     if (!key) {
+                        NLog.LogManager.GetCurrentClassLogger().Error(value);
                         OnImageSaveFailed(new Exception(value));
                     }
                     else {
@@ -176,20 +180,20 @@ namespace JayTom.Dws.Client.Service.ImageStorage {
         public string ParseTemplate(string source, SaveImageType type, string barCode, float weight, DateTime scanTime, float length,
             float width, float height, float volume, string cameraSerialNumber, bool isWatermark = false) {
             return source switch {
-                "{BarCode}" => barCode,
-                "{Weight}" => weight.ToString(CultureInfo.InvariantCulture),
-                "{Volume}" => volume.ToString(CultureInfo.InvariantCulture),
-                "{Length}" => length.ToString(CultureInfo.InvariantCulture),
-                "{Width}" => width.ToString(CultureInfo.InvariantCulture),
-                "{Height}" => height.ToString(CultureInfo.InvariantCulture),
-                "{ScanTime}" => isWatermark ? $"{scanTime:yyyy-MM-dd HH:mm:ss.fff}" : $"{scanTime:yyyyMMddHHmmssfff}",
-                "{TimestampedGuid}" => new DateTimeOffset(scanTime).ToUnixTimeMilliseconds().ToString(),
-                "{CameraSerialNumber}" => cameraSerialNumber,
-                "{ImageType}" => type.ToString(),
-                "{Year}" => $"{scanTime:yyyy}",
-                "{Month}" => $"{scanTime:MM}",
-                "{Day}" => $"{scanTime:dd}",
-                "{Hour}" => $"{scanTime:hh}",
+                "{BarCode}" => $"{(isWatermark ? "BarCode:" : string.Empty)}{barCode}",
+                "{Weight}" => $"{(isWatermark ? "Weight:" : string.Empty)}{weight.ToString(CultureInfo.InvariantCulture)}",
+                "{Volume}" => $"{(isWatermark ? "Volume:" : string.Empty)}{volume.ToString(CultureInfo.InvariantCulture)}",
+                "{Length}" => $"{(isWatermark ? "Length:" : string.Empty)}{length.ToString(CultureInfo.InvariantCulture)}",
+                "{Width}" => $"{(isWatermark ? "Width:" : string.Empty)}{width.ToString(CultureInfo.InvariantCulture)}",
+                "{Height}" => $"{(isWatermark ? "Height:" : string.Empty)}{height.ToString(CultureInfo.InvariantCulture)}",
+                "{ScanTime}" => $"{(isWatermark ? "ScanTime:" : string.Empty)}{(isWatermark ? $"{scanTime:yyyy-MM-dd HH:mm:ss.fff}" : $"{scanTime:yyyyMMddHHmmssfff}")}",
+                "{TimestampedGuid}" => $"{(isWatermark ? "TimestampedGuid:" : string.Empty)}{new DateTimeOffset(scanTime).ToUnixTimeMilliseconds().ToString()}",
+                "{CameraSerialNumber}" => $"{(isWatermark ? "CameraSerialNumber:" : string.Empty)}{cameraSerialNumber}",
+                "{ImageType}" => $"{(isWatermark ? "ImageType:" : string.Empty)}{type.ToString()}",
+                "{Year}" => $"{(isWatermark ? "Year:" : string.Empty)}{scanTime:yyyy}",
+                "{Month}" => $"{(isWatermark ? "Month:" : string.Empty)}{scanTime:MM}",
+                "{Day}" => $"{(isWatermark ? "Day:" : string.Empty)}{scanTime:dd}",
+                "{Hour}" => $"{(isWatermark ? "Hour:" : string.Empty)}{scanTime:HH}",
                 _ => "null"
             };
         }

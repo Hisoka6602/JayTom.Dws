@@ -18,7 +18,7 @@ namespace JayTom.Dws.Plugin.SaveImage {
         /// <param name="watermarkParams"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        Task<KeyValuePair<bool, string>> SaveOriginalImage(Image image, string imageName, string imagePath, WatermarkParams? watermarkParams = null, CancellationToken cancellationToken = default);
+        Task<KeyValuePair<bool, string>> SaveOriginalImage(Image? image, string imageName, string imagePath, WatermarkParams? watermarkParams = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// 异步保存压缩图

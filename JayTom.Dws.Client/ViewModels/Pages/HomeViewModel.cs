@@ -1,4 +1,5 @@
 ﻿using System;
+using DryIoc;
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
@@ -21,6 +22,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using JayTom.Dws.PluginInterface.Utils;
 using JayTom.Dws.Client.Service.Device;
+using JayTom.Dws.Client.Service.ImageStorage;
 using JayTom.Dws.Domain.Repository.LocalData;
 using CameraType = JayTom.Dws.Client.Models.CameraType;
 using CameraStatus = JayTom.Dws.Client.Models.CameraStatus;
@@ -33,6 +35,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         private readonly IComputerInfoReporter _computerInfoReporter;
         private readonly IBarCodeRepository _barCodeRepository;
         private readonly IDeviceService _deviceService;
+        private readonly IImageStorageService _imageStorageService;
         private ObservableCollection<CameraItemInfoModel> _cameraItems = new();
         private ObservableCollection<BarCodeItemModel> _barCodeItems = new();
         private DataGrid? _dataGrid = null;
@@ -160,11 +163,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
 
         public HomeViewModel(IDialogService dialogService,
             IComputerInfoReporter computerInfoReporter,
-            IBarCodeRepository barCodeRepository, IDeviceService deviceService) {
+            IBarCodeRepository barCodeRepository, IDeviceService deviceService,
+            IImageStorageService imageStorageService) {
             _dialogService = dialogService;
             _computerInfoReporter = computerInfoReporter;
             _barCodeRepository = barCodeRepository;
             _deviceService = deviceService;
+            _imageStorageService = imageStorageService;
             CameraItems = new()
             {
                 new CameraItemInfoModel()
@@ -298,6 +303,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
 
                 //弹出提示框
             };
+            _imageStorageService.ImageSaveFailed += async delegate (object? sender, Exception exception) {
+                await Application.Current.Dispatcher.InvokeAsync(() => {
+                    HomeMessageQueue.Enqueue($"图片保存异常:{exception.Message}");
+                });
+            };
         }
 
         private async void DeviceServiceOnPanoramaCaptured(object? sender, PanoramaCaptureEventArgs args) {
@@ -307,19 +317,19 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                                                         f.Type is CameraType.PanoramicCamera);
             if (model is not null) {
                 //图片转换
-                if (args?.Image is not null) {
+                if (args?.ThumbImage is not null) {
                     if (args.Timestamp != model.ImageTimestamp) {
                         model.Image = null;
-                        await Task.Delay(50);
+                        await Task.Delay(5);
                         model.ImageTimestamp = args.Timestamp;
-                        var thumbnailWidth = (int)(args.Image.Width * 0.3);
-                        var thumbnailHeight = (int)(args.Image.Height * 0.3);
-                        using var thumbnail = args.Image.GetThumbnailImage(thumbnailWidth, thumbnailHeight,
-                            null, IntPtr.Zero);
+                        /*var thumbnailWidth = (int)(args.ThumbImage.Width * 0.3);
+                        var thumbnailHeight = (int)(args.ThumbImage.Height * 0.3);
+                        using var thumbnail = args.ThumbImage.GetThumbnailImage(thumbnailWidth, thumbnailHeight,
+                            null, IntPtr.Zero);*/
                         // 将缩略图转换为BitmapSource
                         await Application.Current.Dispatcher.InvokeAsync(() => {
                             //更新图片
-                            model.Image = ((Bitmap)thumbnail).ConvertBitmapToBitmapSource();
+                            model.Image = ((Bitmap)args.ThumbImage).ConvertBitmapToBitmapSource();
                         });
                     }
                 }

@@ -2,6 +2,7 @@
 using DryIoc;
 using System.Linq;
 using System.Text;
+using System.Drawing;
 using Newtonsoft.Json;
 using System.Threading;
 using JayTom.Dws.Camera;
@@ -219,7 +220,8 @@ namespace JayTom.Dws.Client.Service.Device {
                                         CameraSerialNumber = args.CameraSerialNumber,
                                         Image = args.Image,
                                         PhotoTime = args.PhotoTime,
-                                        Timestamp = args.Timestamp
+                                        Timestamp = args.Timestamp,
+                                        ThumbImage = (Bitmap?)args.Image?.GetThumbnailImage(1280, 960, () => false, IntPtr.Zero)
                                     });
                                 };
                             }
@@ -236,7 +238,7 @@ namespace JayTom.Dws.Client.Service.Device {
                             //在这里还需要各自SDK枚举
                             var cameraInfo = camera.EnumerateCameras()?.FirstOrDefault(f => f.SerialNumber.Equals(info.SerialNumber));
                             if (cameraInfo is not null) {
-                                //注册事件
+                                //设置相机绑定模式
                                 var (b, s) = await camera.Initialize(cameraInfo);
                                 if (!b) {
                                     OnDeviceException(new DeviceExceptionEventArgs() {

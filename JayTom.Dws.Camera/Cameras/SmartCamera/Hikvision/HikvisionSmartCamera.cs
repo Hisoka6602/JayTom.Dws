@@ -273,7 +273,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
 
         private async Task BarcodeCallbackThread(CancellationToken token) {
             try {
-                var nRet = MvCodeReader.MV_CODEREADER_OK;
+                int nRet;
                 var pData = IntPtr.Zero;
                 var stFrameInfoEx2 = new MvCodeReader.MV_CODEREADER_IMAGE_OUT_INFO_EX2();
                 var pstFrameInfoEx2 = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(MvCodeReader.MV_CODEREADER_IMAGE_OUT_INFO_EX2)));
@@ -362,6 +362,8 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                             }
                         }
                     }
+
+                    await Task.Delay(10, token);
                 }
             }
             catch (Exception e) {

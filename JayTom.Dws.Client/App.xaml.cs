@@ -165,6 +165,26 @@ namespace JayTom.Dws.Client {
 
                         services.AddSingleton(container.Resolve<IComputer>());
                         services.AddSingleton(container.Resolve<IComputerInfoReporter>());
+                        services.AddSingleton(container.Resolve<IFtp>());
+                        services.AddSingleton(container.Resolve<ISaveImage>());
+                        services.AddSingleton(container.Resolve<ISpeech>());
+                        services.AddSingleton(container.Resolve<ITcpCommunication>());
+                        services.AddSingleton(container.Resolve<ITcpCommunicationClient>());
+
+                        services.AddSingleton(container.Resolve<IDeviceService>());
+                        services.AddSingleton(container.Resolve<IDeviceService>());
+
+                        services.AddSingleton(container.Resolve<IDeviceService>());
+                        services.AddSingleton(container.Resolve<IImageStorageService>());
+                        services.AddSingleton(container.Resolve<IResultOutputService>());
+                        services.AddSingleton(container.Resolve<IBarCodeRepository>());
+                        services.AddSingleton(container.Resolve<IBarcodeScannerCameraConfigRepository>());
+                        services.AddSingleton(container.Resolve<IPanoramaCameraConfigRepository>());
+                        services.AddSingleton(container.Resolve<IVolumeCameraConfigRepository>());
+                        services.AddSingleton(container.Resolve<ISoundRepository>());
+                        services.AddSingleton(container.Resolve<IConfigRepository>());
+                        //补注册
+
                         services.AddHostedService<ComputerInfoBackgroundService>(); // 注册后台服务
                         services.AddHostedService<ScanProcessBackgroundService>(); // 注册后扫码过程服务
                     })

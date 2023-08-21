@@ -8,12 +8,14 @@ using Microsoft.Win32;
 using MVIDCodeReaderNet;
 using System.Reflection;
 using System.Diagnostics;
+using MvCodeReaderSDKNet;
 using System.Threading.Tasks;
 using System.Drawing.Imaging;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
 namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
+
     public class HikvisionIndustrialCamera : IIndustrialCamera {
         private int _nRet = MVIDCodeReader.MVID_CR_OK;
         private static MVIDCodeReader.MVID_CAMERA_INFO_LIST _stDevList = new();
@@ -21,8 +23,8 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
         private MVIDCodeReader.MVID_CAM_OUTPUT_INFO _stOutput = new();
         private MVIDCodeReader? _myCodeReader;
         private byte[] _imageBuffer = null;
-        private MVIDCodeReader.cbOutputdelegate _imageCallback = null;
-        private Queue<DateTime> _capturePhotoQueue = new();
+        private MVIDCodeReader.cbOutputdelegate? _imageCallback = null;
+        private MVIDCodeReader.cbImageBufferdelegate? _readImageCallback = null;
         private double FrameRate { get; set; }
 
         /// <summary>
@@ -130,15 +132,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                     });
                     return new KeyValuePair<bool, string>(false, $"绑定设备失败,{_nRet:X}!");
                 }
-                //注册回调函数
-                _imageCallback = new MVIDCodeReader.cbOutputdelegate(ImageCallbackFunc);
-                _nRet = _myCodeReader?.MVID_CR_CAM_RegisterImageCallBack_NET(_imageCallback, IntPtr.Zero) ?? 0;
-                if (_nRet != MVIDCodeReader.MVID_CR_OK) {
-                    OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
-                        Exception = new Exception($"初始化失败:注册回调函数失败,{_nRet:X}")
-                    });
-                    return new KeyValuePair<bool, string>(false, $"注册回调函数失败,{_nRet:X}!");
-                }
+
                 //获取相机属性值
                 int nWidth, nHeight = 0;
                 var nIntValue = new MVIDCodeReader.MVID_CAM_INTVALUE_EX();
@@ -211,6 +205,34 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
 
         public async Task<KeyValuePair<bool, string>> Start(object param) {
             await Task.Yield();
+
+            //注册回调函数
+            if (BindingType is CameraBindingType.ScannerCamera) {
+                if (_imageCallback is null) {
+                    _imageCallback = ImageCallbackFunc;
+                    _nRet = _myCodeReader?.MVID_CR_CAM_RegisterImageCallBack_NET(_imageCallback, IntPtr.Zero) ?? 0;
+                    if (_nRet != MVIDCodeReader.MVID_CR_OK) {
+                        OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
+                            Exception = new Exception($"初始化失败:注册扫码回调函数失败,{_nRet:X}")
+                        });
+                        return new KeyValuePair<bool, string>(false, $"注册扫码回调函数失败,{_nRet:X}!");
+                    }
+                }
+            }
+            else if (BindingType is CameraBindingType.VideoCamera) {
+                //注册不包含解码信息的回调
+                if (_readImageCallback is null) {
+                    _readImageCallback = (ref MVIDCodeReader.MVID_IMAGE_INFO output, IntPtr user) => { };
+                    _nRet = _myCodeReader?.MVID_CR_CAM_RegisterImageBufferCallBack_NET(_readImageCallback, IntPtr.Zero) ?? 0;
+                    if (_nRet != MVIDCodeReader.MVID_CR_OK) {
+                        OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
+                            Exception = new Exception($"初始化失败:注册实时图像回调函数失败,{_nRet:X}")
+                        });
+                        return new KeyValuePair<bool, string>(false, $"注册实时图像回调函数失败,{_nRet:X}!");
+                    }
+                }
+            }
+
             _nRet = _myCodeReader?.MVID_CR_CAM_StartGrabbing_NET() ?? 0;
             if (_nRet != MVIDCodeReader.MVID_CR_OK) {
                 OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
@@ -242,7 +264,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
         public void Dispose() {
             if (Status != CameraStatus.Uninitialized) {
                 _imageCallback = null;
-
+                _readImageCallback = null;
                 var nRet = _myCodeReader?.MVID_CR_CAM_StopGrabbing_NET() ?? 0;
                 if (MVIDCodeReader.MVID_CR_OK != nRet) {
                     OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
@@ -262,6 +284,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                     CameraInfo = this.Info
                 });
                 _myCodeReader = null;
+
                 this.Info = null;
             }
             System.GC.Collect();
@@ -286,7 +309,21 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
         public async Task TakePhotoAsync() {
             await Task.Yield();
             //提交拍照请求
-            _capturePhotoQueue.Enqueue(DateTime.Now);
+            var pFrameInfo = new MVIDCodeReader.MVID_IMAGE_INFO();
+            _nRet = _myCodeReader?.MVID_CR_CAM_GetImageBuffer_NET(ref pFrameInfo, 5000) ?? -1;
+            if (_nRet != MVIDCodeReader.MVID_CR_OK) {
+                OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
+                    Exception = new Exception($"截图失败:截取一帧图片失败,{_nRet:X}")
+                });
+                return;
+            }
+            var image = await ConvertPointerToImage(pFrameInfo);
+            OnPhotoTaken(new PhotoTakenEventArgs() {
+                Timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds(),
+                CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
+                Image = image,
+                PhotoTime = DateTime.Now
+            });
         }
 
         private async Task ProcessImageAsync(MVIDCodeReader.MVID_CAM_OUTPUT_INFO stOutput, IntPtr ptr) {
@@ -296,15 +333,6 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                 stOutput = (MVIDCodeReader.MVID_CAM_OUTPUT_INFO)(Marshal.PtrToStructure(ptr,
                     typeof(MVIDCodeReader.MVID_CAM_OUTPUT_INFO)) ?? new MVIDCodeReader.MVID_CAM_OUTPUT_INFO());
                 var bitmap = await GetBitmapAsync(stOutput, ptr);
-                if (bitmap is not null && _capturePhotoQueue.Count > 0) {
-                    _capturePhotoQueue.Dequeue();
-                    OnPhotoTaken(new PhotoTakenEventArgs() {
-                        Timestamp = timestamp,
-                        CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
-                        Image = bitmap,
-                        PhotoTime = DateTime.Now
-                    });
-                }
                 if (0 != stOutput.stCodeList.nCodeNum && BindingType != CameraBindingType.PanoramicCamera) {
                     if (IsShowBarcodeBorder && bitmap is not null && bitmap.PixelFormat != PixelFormat.Format8bppIndexed &&
                         stOutput.stCodeList.stCodeInfo?.Any() == true) {
@@ -371,36 +399,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
         private async Task<Bitmap?> GetBitmapAsync(MVIDCodeReader.MVID_CAM_OUTPUT_INFO stOutput, IntPtr ptr) {
             await Task.Yield();
             try {
-                await _semaphoreSlim.WaitAsync();
-                await Task.Delay(50);
-                Bitmap? bitmap = null;
-                var handle = GCHandle.Alloc(_imageBuffer, GCHandleType.Pinned);
-                Marshal.Copy(stOutput.stImage.pImageBuf, _imageBuffer, 0, (int)stOutput.stImage.nImageLen);
-                var pImage = handle.AddrOfPinnedObject();
-                if (MVIDCodeReader.MVID_IMAGE_TYPE.MVID_IMAGE_MONO8 == stOutput.stImage.enImageType) {
-                    bitmap = new Bitmap(stOutput.stImage.nWidth, stOutput.stImage.nHeight, stOutput.stImage.nWidth,
-                        PixelFormat.Format8bppIndexed, pImage);
-
-                    var cp = bitmap.Palette;
-                    for (int i = 0; i < 256; i++) {
-                        cp.Entries[i] = Color.FromArgb(i, i, i);
-                    }
-
-                    bitmap.Palette = cp;
-                }
-                else {
-                    bitmap = new Bitmap(stOutput.stImage.nWidth, stOutput.stImage.nHeight, stOutput.stImage.nWidth * 3,
-                        PixelFormat.Format24bppRgb, pImage);
-                }
-
-                if (handle.IsAllocated) {
-                    try {
-                        handle.Free();
-                    }
-                    catch {
-                        // ignored
-                    }
-                }
+                var bitmap = await ConvertPointerToImage(stOutput.stImage);
 
                 if (stOutput.stCodeList.nCodeNum > 0) {
                     if (IsOriginalImageOut) {
@@ -414,7 +413,6 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                 return bitmap;
             }
             finally {
-                _semaphoreSlim.Release();
             }
 
             /*await Task.Yield();
@@ -459,6 +457,46 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
             }
 
             return bitmap;*/
+        }
+
+        private async Task<Bitmap?> ConvertPointerToImage(MVIDCodeReader.MVID_IMAGE_INFO pFrameInfo) {
+            await Task.Yield();
+            try {
+                await _semaphoreSlim.WaitAsync();
+                await Task.Delay(50);
+                Bitmap? bitmap = null;
+                var handle = GCHandle.Alloc(_imageBuffer, GCHandleType.Pinned);
+                Marshal.Copy(pFrameInfo.pImageBuf, _imageBuffer, 0, (int)pFrameInfo.nImageLen);
+                var pImage = handle.AddrOfPinnedObject();
+                if (MVIDCodeReader.MVID_IMAGE_TYPE.MVID_IMAGE_MONO8 == pFrameInfo.enImageType) {
+                    bitmap = new Bitmap(pFrameInfo.nWidth, pFrameInfo.nHeight, pFrameInfo.nWidth,
+                        PixelFormat.Format8bppIndexed, pImage);
+
+                    var cp = bitmap.Palette;
+                    for (int i = 0; i < 256; i++) {
+                        cp.Entries[i] = Color.FromArgb(i, i, i);
+                    }
+
+                    bitmap.Palette = cp;
+                }
+                else {
+                    bitmap = new Bitmap(pFrameInfo.nWidth, pFrameInfo.nHeight, pFrameInfo.nWidth * 3,
+                        PixelFormat.Format24bppRgb, pImage);
+                }
+
+                if (handle.IsAllocated) {
+                    try {
+                        handle.Free();
+                    }
+                    catch {
+                        // ignored
+                    }
+                }
+                return bitmap;
+            }
+            finally {
+                _semaphoreSlim.Release();
+            }
         }
 
         private static IPAddress ConvertUintToIpAddress(uint ipAddressValue) {

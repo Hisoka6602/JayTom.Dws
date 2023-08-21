@@ -213,6 +213,11 @@ namespace JayTom.Dws.Client.Service.Device {
         public Bitmap? Image { get; set; }
 
         /// <summary>
+        /// 缩略图
+        /// </summary>
+        public Bitmap? ThumbImage { get; set; }
+
+        /// <summary>
         /// 拍照时间
         /// </summary>
         public DateTime PhotoTime { get; set; }
