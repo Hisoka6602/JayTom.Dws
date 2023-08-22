@@ -390,4 +390,25 @@ namespace JayTom.Dws.Camera {
     public class CameraUnregisteredEventArgs : EventArgs {
         public CameraInfo? CameraInfo { get; set; }
     }
+
+    /// <summary>
+    /// 扫码过滤参数
+    /// </summary>
+    public class ScanCodeFilterParams {
+
+        /// <summary>
+        /// 扫码时间间隔
+        /// </summary>
+        public int ScanInterval { get; set; }
+
+        /// <summary>
+        /// 正则表达式
+        /// </summary>
+        public string RegularExpression { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 重复条码过滤数量
+        /// </summary>
+        public int DuplicateBarcodeFilterCount { get; set; }
+    }
 }

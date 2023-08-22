@@ -3,6 +3,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace JayTom.Dws.Camera {
 
@@ -51,6 +52,13 @@ namespace JayTom.Dws.Camera {
         /// </summary>
 
         event EventHandler<BarcodeReadEventArgs> NotBarcodeHitEvent;
+
+        /// <summary>
+        /// 设置扫码过滤参数
+        /// </summary>
+        /// <param name="params"></param>
+        /// <returns></returns>
+        void SetScanCodeFilterParams([NotNull] ScanCodeFilterParams @params);
     }
 
     public enum TriggerMode {

@@ -39,21 +39,21 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                 Id = 0,
                 Content = "{BarCode}",
                 Type = 1,
-                ApplicationType = ItemApplicationType.Watermark
+                ApplicationType = ItemApplicationType.ResultData
             },
             new ItemBaseTemplateModel()
             {
                 Id = 1,
                 Content = "{TimestampedGuid}",
                 Type = 1,
-                ApplicationType = ItemApplicationType.Watermark
+                ApplicationType = ItemApplicationType.ResultData
             },
             new ItemBaseTemplateModel()
             {
                 Id = 2,
                 Content = "",
                 Type = 0,
-                ApplicationType = ItemApplicationType.Watermark
+                ApplicationType = ItemApplicationType.ResultData
             },
         };
 
@@ -203,7 +203,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         private SnackbarMessageQueue _resultOutputSettingsMessageQueue = new(TimeSpan.FromSeconds(2));
         private AudioOutputSettingsInfoModel _audioOutputSettingsInfo = new();
         private bool _isSavingInProgress;
-        private TcpConnectionMode? _connectionMode;
 
         public ResultOutputSettingsPageViewModel(ISoundRepository soundRepository,
             IConfigRepository configRepository) {
@@ -317,7 +316,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
 
         private async void RemoveTemplateItemDelegate(ItemBaseTemplateModel model) {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                if (model.ApplicationType == ItemApplicationType.Watermark) {
+                if (model.ApplicationType == ItemApplicationType.ResultData) {
                     OutputItems.Remove(model);
                     foreach (var item in OutputItems) {
                         if (item.Type == 0 && string.IsNullOrEmpty(item.Content) &&
@@ -344,14 +343,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     Content = obj,
                     Id = count,
                     Type = 1,
-                    ApplicationType = ItemApplicationType.Watermark
+                    ApplicationType = ItemApplicationType.ResultData
                 });
                 var model = OutputItems?.LastOrDefault();
                 if (model?.Type != 0) {
                     OutputItems?.Add(new ItemBaseTemplateModel() {
                         Content = string.Empty,
                         Id = OutputItems.Count,
-                        ApplicationType = ItemApplicationType.Watermark
+                        ApplicationType = ItemApplicationType.ResultData
                     });
                 }
             });
@@ -451,14 +450,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         public string SoundFilePath {
             get => _soundFilePath;
             set => SetProperty(ref _soundFilePath, value);
-        }
-
-        /// <summary>
-        /// Tcp连接模式
-        /// </summary>
-        public TcpConnectionMode? ConnectionMode {
-            get => _connectionMode;
-            set => SetProperty(ref _connectionMode, value);
         }
 
         /// <summary>
@@ -570,7 +561,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                                     IpAddress = TcpSettingsInfo.ServerConfig.IpAddress,
                                     Port = TcpSettingsInfo.ServerConfig.Port
                                 },
-                                ConnectionMode = ConnectionMode
+                                ConnectionMode = TcpSettingsInfo.ConnectionMode
                             },
                             IsUseHttpOutput = IsUseHttpOutput,
                             HttpUploadSettingsInfo = new HttpUploadSettingsInfo() {

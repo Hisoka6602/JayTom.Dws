@@ -454,7 +454,7 @@
                             FontSize="13"
                             FontWeight="Bold"
                             Foreground="DarkGray"
-                            IsChecked="{Binding ConnectionMode, Converter={StaticResource TcpConnectionModeToBooleanConverter}, ConverterParameter=Server}"
+                            IsChecked="{Binding TcpSettingsInfo.ConnectionMode, Converter={StaticResource TcpConnectionModeToBooleanConverter}, ConverterParameter=Server}"
                             Style="{StaticResource MaterialDesignRadioButton}" />
                         <StackPanel Margin="50,0,0,0" Orientation="Horizontal">
                             <StackPanel Orientation="Horizontal">
@@ -528,7 +528,7 @@
                             FontSize="13"
                             FontWeight="Bold"
                             Foreground="DarkGray"
-                            IsChecked="{Binding ConnectionMode, Converter={StaticResource TcpConnectionModeToBooleanConverter}, ConverterParameter=Client}"
+                            IsChecked="{Binding TcpSettingsInfo.ConnectionMode, Converter={StaticResource TcpConnectionModeToBooleanConverter}, ConverterParameter=Client}"
                             Style="{StaticResource MaterialDesignRadioButton}" />
                         <StackPanel Margin="50,0,0,0" Orientation="Horizontal">
                             <StackPanel Orientation="Horizontal">

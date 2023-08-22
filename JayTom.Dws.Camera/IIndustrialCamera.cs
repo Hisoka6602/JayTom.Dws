@@ -4,6 +4,7 @@ using System.Text;
 using System.Drawing;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using static System.Net.Mime.MediaTypeNames;
 
 namespace JayTom.Dws.Camera {
@@ -53,6 +54,13 @@ namespace JayTom.Dws.Camera {
         /// </summary>
         /// <returns></returns>
         Task TakePhotoAsync();
+
+        /// <summary>
+        /// 设置扫码过滤参数
+        /// </summary>
+        /// <param name="params"></param>
+        /// <returns></returns>
+        void SetScanCodeFilterParams([NotNull] ScanCodeFilterParams @params);
     }
 
     /// <summary>

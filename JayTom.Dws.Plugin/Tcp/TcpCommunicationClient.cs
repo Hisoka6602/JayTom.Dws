@@ -131,7 +131,7 @@ namespace JayTom.Dws.Plugin.Tcp {
 
         public void Close() {
             _tcpClient?.Close();
-            _tcpClient?.Dispose();
+            //_tcpClient?.Dispose();
             IsConnected = false;
         }
 

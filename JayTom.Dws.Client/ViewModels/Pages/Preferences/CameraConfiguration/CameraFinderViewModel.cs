@@ -88,54 +88,56 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                 });
             };
             _deviceService.CameraEnumerationRefreshed += async delegate (object? sender, List<CameraFinderItemInfoModel> list) {
-                var infoModels = new List<CameraFinderItemInfoModel>();
-                var scannerCameraConfigInfoModels = await _barcodeScannerCameraConfigRepository.Select(s => s.Id > 0, o => o.Id);
-                var panoramaCameraConfigInfoModels = await _panoramaCameraConfigRepository.Select(s => s.Id > 0, o => o.Id);
-                var volumeCameraConfigInfoModels = await _volumeCameraConfigRepository.Select(s => s.Id > 0, o => o.Id);
-                infoModels.AddRange(scannerCameraConfigInfoModels.Select(s => new CameraFinderItemInfoModel {
-                    BoundType = BoundCameraType.BarcodeScannerCamera,
-                    ConnectionType = (ConnectionType)s.ConnectionType,
-                    CameraType = (CameraType)s.CameraType,
-                    HasBinding = true,
-                    IpAddress = s.IpAddress,
-                    Model = s.Model,
-                    Name = s.Name,
-                    SerialNumber = s.SerialNumber,
-                    Version = s.Version,
-                })?.ToList() ?? new List<CameraFinderItemInfoModel>());
-                infoModels.AddRange(panoramaCameraConfigInfoModels.Select(s => new CameraFinderItemInfoModel {
-                    BoundType = BoundCameraType.PanoramicCamera,
-                    ConnectionType = (ConnectionType)s.ConnectionType,
-                    CameraType = (CameraType)s.CameraType,
-                    HasBinding = true,
-                    IpAddress = s.IpAddress,
-                    Model = s.Model,
-                    Name = s.Name,
-                    SerialNumber = s.SerialNumber,
-                    Version = s.Version,
-                })?.ToList() ?? new List<CameraFinderItemInfoModel>());
-                infoModels.AddRange(volumeCameraConfigInfoModels.Select(s => new CameraFinderItemInfoModel {
-                    BoundType = BoundCameraType.VolumeCamera,
-                    ConnectionType = (ConnectionType)s.ConnectionType,
-                    CameraType = (CameraType)s.CameraType,
-                    HasBinding = true,
-                    IpAddress = s.IpAddress,
-                    Model = s.Model,
-                    Name = s.Name,
-                    SerialNumber = s.SerialNumber,
-                    Version = s.Version,
-                })?.ToList() ?? new List<CameraFinderItemInfoModel>());
-                await Application.Current.Dispatcher.InvokeAsync(async () => {
-                    CameraFinderItems.Clear();
-                    await Task.Delay(100);
-                    list = list.OrderBy(f => f.SerialNumber).ToList();
-                    for (var i = 0; i < list.Count; i++) {
-                        list[i].Num = i + 1;
-                        list[i].HasBinding = infoModels?.Any(a => a.SerialNumber.Equals(list[i].SerialNumber)) ?? false;
-                        list[i].BoundType = infoModels?.FirstOrDefault(f => f.SerialNumber.Equals(list[i].SerialNumber))?.BoundType ??
-                                            BoundCameraType.BarcodeScannerCamera;
-                    }
-                    CameraFinderItems.AddRange(list);
+                await Task.Run(async () => {
+                    var infoModels = new List<CameraFinderItemInfoModel>();
+                    var scannerCameraConfigInfoModels = await _barcodeScannerCameraConfigRepository.Select(s => s.Id > 0, o => o.Id);
+                    var panoramaCameraConfigInfoModels = await _panoramaCameraConfigRepository.Select(s => s.Id > 0, o => o.Id);
+                    var volumeCameraConfigInfoModels = await _volumeCameraConfigRepository.Select(s => s.Id > 0, o => o.Id);
+                    infoModels.AddRange(scannerCameraConfigInfoModels.Select(s => new CameraFinderItemInfoModel {
+                        BoundType = BoundCameraType.BarcodeScannerCamera,
+                        ConnectionType = (ConnectionType)s.ConnectionType,
+                        CameraType = (CameraType)s.CameraType,
+                        HasBinding = true,
+                        IpAddress = s.IpAddress,
+                        Model = s.Model,
+                        Name = s.Name,
+                        SerialNumber = s.SerialNumber,
+                        Version = s.Version,
+                    })?.ToList() ?? new List<CameraFinderItemInfoModel>());
+                    infoModels.AddRange(panoramaCameraConfigInfoModels.Select(s => new CameraFinderItemInfoModel {
+                        BoundType = BoundCameraType.PanoramicCamera,
+                        ConnectionType = (ConnectionType)s.ConnectionType,
+                        CameraType = (CameraType)s.CameraType,
+                        HasBinding = true,
+                        IpAddress = s.IpAddress,
+                        Model = s.Model,
+                        Name = s.Name,
+                        SerialNumber = s.SerialNumber,
+                        Version = s.Version,
+                    })?.ToList() ?? new List<CameraFinderItemInfoModel>());
+                    infoModels.AddRange(volumeCameraConfigInfoModels.Select(s => new CameraFinderItemInfoModel {
+                        BoundType = BoundCameraType.VolumeCamera,
+                        ConnectionType = (ConnectionType)s.ConnectionType,
+                        CameraType = (CameraType)s.CameraType,
+                        HasBinding = true,
+                        IpAddress = s.IpAddress,
+                        Model = s.Model,
+                        Name = s.Name,
+                        SerialNumber = s.SerialNumber,
+                        Version = s.Version,
+                    })?.ToList() ?? new List<CameraFinderItemInfoModel>());
+                    await Application.Current.Dispatcher.BeginInvoke(async () => {
+                        CameraFinderItems.Clear();
+                        await Task.Delay(300);
+                        list = list.OrderBy(f => f.SerialNumber).ToList();
+                        for (var i = 0; i < list.Count; i++) {
+                            list[i].Num = i + 1;
+                            list[i].HasBinding = infoModels?.Any(a => a.SerialNumber.Equals(list[i].SerialNumber)) ?? false;
+                            list[i].BoundType = infoModels?.FirstOrDefault(f => f.SerialNumber.Equals(list[i].SerialNumber))?.BoundType ??
+                                                BoundCameraType.BarcodeScannerCamera;
+                        }
+                        CameraFinderItems.AddRange(list);
+                    });
                 });
             };
         }
@@ -181,18 +183,16 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
             if (IsRefreshing) {
                 return;
             }
-            await Application.Current.Dispatcher.InvokeAsync(async () => {
-                IsRefreshing = true;
-                var (key, value) = await _deviceService.OnCameraEnumerationRefreshed();
-                if (key) {
-                    CameraFinderMessageQueue.Enqueue($"已重新枚举连接相机");
-                }
-                else {
-                    CameraFinderMessageQueue.Enqueue(value);
-                }
+            IsRefreshing = true;
+            await Task.Delay(100);
+            Task.Run(async () => {
+                await Application.Current.Dispatcher.InvokeAsync(async () => {
+                    var (key, value) = await _deviceService.OnCameraEnumerationRefreshed();
+                    CameraFinderMessageQueue.Enqueue(key ? $"已重新枚举连接相机" : value);
 
-                IsRefreshing = false;
-            });
+                    IsRefreshing = false;
+                });
+            }).ConfigureAwait(false).GetAwaiter();
         }
 
         /// <summary>

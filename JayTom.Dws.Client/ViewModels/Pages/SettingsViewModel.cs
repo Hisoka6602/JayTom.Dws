@@ -12,12 +12,14 @@ using System.Threading.Tasks;
 using System.Windows.Controls;
 using JayTom.Dws.Client.Models;
 using System.Windows.Threading;
+using MaterialDesignThemes.Wpf;
 using System.Collections.Generic;
 using System.Security.AccessControl;
 using System.Collections.ObjectModel;
+using JayTom.Dws.Client.Views.Dialog;
+using JayTom.Dws.Client.ViewModels.Dialog;
 
 namespace JayTom.Dws.Client.ViewModels.Pages {
-
     public class SettingsViewModel : BindableBase {
         private readonly IRegionManager _regionManager;
 
@@ -169,44 +171,67 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
 
         private async void LoadedDelegate(Frame obj) {
             await Application.Current.Dispatcher.InvokeAsync(() => {
-                if (!_regionManager.Regions.ContainsRegionWithName("ContentRegion")) {
-                    //创建区域(用于视觉树以外控件)
-                    RegionManager.SetRegionName(obj, "ContentRegion");
-                    RegionManager.SetRegionManager(obj, _regionManager);
-                    _regionManager.Regions["ContentRegion"].RequestNavigate("DataManagementPage");
+                //加载loading
+                var loadingDialog = new LoadingDialog();
+                if (loadingDialog.DataContext is LoadingDialogViewModel model) {
+                    model.Identifier = "SettingDialog";
+                    DialogHost.Show(loadingDialog, model.Identifier).ConfigureAwait(false);
+                    if (!_regionManager.Regions.ContainsRegionWithName("ContentRegion")) {
+                        //创建区域(用于视觉树以外控件)
+                        RegionManager.SetRegionName(obj, "ContentRegion");
+                        RegionManager.SetRegionManager(obj, _regionManager);
+                        _regionManager.Regions["ContentRegion"].RequestNavigate("DataManagementPage");
+                    }
+                    if (DialogHost.IsDialogOpen(model.Identifier)) {
+                        DialogHost.Close(model.Identifier);
+                    }
                 }
             });
         }
 
-        private async void MenuClickDelegate(MenuItemInfoModel obj) {
-            await Application.Current.Dispatcher.InvokeAsync(() => {
-                if (!obj.PageClassName.Equals(string.Empty)) {
-                    foreach (var item in MenuItems) {
-                        item.IsSelected = false;
-                        item.RadiusRight = new CornerRadius(0, 0, 0, 0);
-                    }
-                    obj.IsSelected = true;
-                    MenuItemInfoModel? previousItem = null, nextItem = null;
-                    var of = MenuItems.IndexOf(obj);
-                    if (of - 1 >= 0) {
-                        //有前一个
-                        previousItem = MenuItems[of - 1];
-                    }
-                    if (of < MenuItems.Count - 1) {
-                        nextItem = MenuItems[of + 1];
-                    }
+        private void MenuClickDelegate(MenuItemInfoModel obj) {
+            //加载loading
+            Task.Run(async () => {
+                await Application.Current.Dispatcher.InvokeAsync(async () => {
+                    var loadingDialog = new LoadingDialog();
+                    if (loadingDialog.DataContext is LoadingDialogViewModel model) {
+                        model.Identifier = "SettingDialog";
+                        DialogHost.Show(loadingDialog, model.Identifier).ConfigureAwait(false);
+                        await Task.Delay(400);
+                        //跳转
+                        {
+                            if (!obj.PageClassName.Equals(string.Empty)) {
+                                foreach (var item in MenuItems) {
+                                    item.IsSelected = false;
+                                    item.RadiusRight = new CornerRadius(0, 0, 0, 0);
+                                }
+                                obj.IsSelected = true;
+                                MenuItemInfoModel? previousItem = null, nextItem = null;
+                                var of = MenuItems.IndexOf(obj);
+                                if (of - 1 >= 0) {
+                                    //有前一个
+                                    previousItem = MenuItems[of - 1];
+                                }
+                                if (of < MenuItems.Count - 1) {
+                                    nextItem = MenuItems[of + 1];
+                                }
 
-                    if (previousItem is not null) {
-                        previousItem.RadiusRight = new CornerRadius(0, 0, 10, 0);
-                    }
+                                if (previousItem is not null) {
+                                    previousItem.RadiusRight = new CornerRadius(0, 0, 10, 0);
+                                }
 
-                    if (nextItem is not null) {
-                        nextItem.RadiusRight = new CornerRadius(0, 10, 0, 0);
+                                if (nextItem is not null) {
+                                    nextItem.RadiusRight = new CornerRadius(0, 10, 0, 0);
+                                }
+                                _regionManager?.Regions?["ContentRegion"]?.RequestNavigate(new Uri(obj.PageClassName, UriKind.Relative));
+                            }
+                        }
+                        if (DialogHost.IsDialogOpen(model.Identifier)) {
+                            DialogHost.Close(model.Identifier);
+                        }
                     }
-
-                    _regionManager?.Regions?["ContentRegion"]?.RequestNavigate(new Uri(obj.PageClassName, UriKind.Relative));
-                }
-            }, DispatcherPriority.Background);
+                });
+            });
         }
     }
 }

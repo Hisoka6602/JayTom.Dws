@@ -10,6 +10,8 @@ using System.Threading.Tasks;
 using System.Drawing.Imaging;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using JayTom.Dws.Camera.FilterContainer;
+using static MVIDCodeReaderNet.MVIDCodeReader;
 using JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision;
 
 namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
@@ -23,6 +25,10 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
         public CameraInfo? Info { get; private set; } = new();
         private TimeSpan _lockTimeSpan = TimeSpan.FromMilliseconds(500);
         private DateTime _lockDateTime = DateTime.Now;
+
+        //过滤器
+        private readonly BarCodeFilterContainer _barCodeFilterContainer = new();
+
         public SdkType SdkType => SdkType.SmartCameraSdk;
         public string SdkName => "MvCodeReaderSDK.Net";
 
@@ -264,6 +270,12 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
 
         public event EventHandler<BarcodeReadEventArgs>? NotBarcodeHitEvent;
 
+        public void SetScanCodeFilterParams(ScanCodeFilterParams @params) {
+            _barCodeFilterContainer.Pattern = @params.RegularExpression;
+            _barCodeFilterContainer.MaxSize = @params.DuplicateBarcodeFilterCount;
+            _barCodeFilterContainer.ExpirationTime = TimeSpan.FromMilliseconds(@params.ScanInterval);
+        }
+
         private static IPAddress ConvertUintToIpAddress(uint ipAddressValue) {
             var addressBytes = BitConverter.GetBytes(ipAddressValue);
             Array.Reverse(addressBytes);
@@ -319,34 +331,40 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                                 char[] nullChars = { '\0' };
                                 //需要设置触发时间才能过滤
                                 for (int i = 0; i < stBcrResultEx2.nCodeNum; i++) {
-                                    var barcode = Encoding.Default.GetString(stBcrResultEx2.stBcrInfoEx2[i].chCode)?.TrimEnd(nullChars);
-                                    OnBarcodeReadTriggered(new BarcodeTriggeredEventArgs() {
-                                        Timestamp = timestamp,
-                                        TotalProcCost = (int)stBcrResultEx2.stBcrInfoEx2[i].nTotalProcCost,
-                                        AlgoCost = stBcrResultEx2.stBcrInfoEx2[i].sAlgoCost,
-                                        Ppm = stBcrResultEx2.stBcrInfoEx2[i].sPPM,
-                                        BarType = GetBarType((MvCodeReader.MV_CODEREADER_CODE_TYPE)stBcrResultEx2.stBcrInfoEx2[i].nBarType),
-                                        Barcode = string.IsNullOrWhiteSpace(barcode) ? "NoRead" : barcode,
-                                        Image = bmp,
-                                        ThumbImage = bmp,
-                                        AppearCount = stBcrResultEx2.stBcrInfoEx2[i].sAppearCount,
-                                        Angle = stBcrResultEx2.stBcrInfoEx2[i].nAngle,
-                                        CodeId = stBcrResultEx2.stBcrInfoEx2[i].nSubPackageId.ToString(),
-                                        Len = (int)stBcrResultEx2.stBcrInfoEx2[i].nLen,
-                                        CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
-                                        ScanTime = localTime.DateTime,
-                                        AreaCoords = Enumerable.Range(0, 4).Select(s => {
-                                            if (bmp != null)
-                                                return new Point {
-                                                    X = (int)(stBcrResultEx2.stBcrInfoEx2[i].pt[s].x *
-                                                        (float)(bmp.Size.Width) / stFrameInfoEx2.nWidth),
-                                                    Y = (int)(stBcrResultEx2.stBcrInfoEx2[i].pt[s].y *
-                                                              (float)(bmp.Size.Height) /
-                                                              stFrameInfoEx2.nHeight)
-                                                };
-                                            return default;
-                                        })?.ToList()
+                                    var barcode = Encoding.Default.GetString(stBcrResultEx2.stBcrInfoEx2?[i].chCode ?? Array.Empty<byte>())?.TrimEnd(nullChars);
+                                    var validateData = _barCodeFilterContainer.ValidateData(new BarCodeFilterInfo() {
+                                        BarCode = string.IsNullOrWhiteSpace(barcode) ? "NoRead" : barcode,
+                                        ScanTime = DateTime.Now
                                     });
+                                    if (validateData) {
+                                        OnBarcodeReadTriggered(new BarcodeTriggeredEventArgs() {
+                                            Timestamp = timestamp,
+                                            TotalProcCost = (int)stBcrResultEx2.stBcrInfoEx2[i].nTotalProcCost,
+                                            AlgoCost = stBcrResultEx2.stBcrInfoEx2[i].sAlgoCost,
+                                            Ppm = stBcrResultEx2.stBcrInfoEx2[i].sPPM,
+                                            BarType = GetBarType((MvCodeReader.MV_CODEREADER_CODE_TYPE)stBcrResultEx2.stBcrInfoEx2[i].nBarType),
+                                            Barcode = string.IsNullOrWhiteSpace(barcode) ? "NoRead" : barcode,
+                                            Image = bmp,
+                                            ThumbImage = bmp,
+                                            AppearCount = stBcrResultEx2.stBcrInfoEx2[i].sAppearCount,
+                                            Angle = stBcrResultEx2.stBcrInfoEx2[i].nAngle,
+                                            CodeId = stBcrResultEx2.stBcrInfoEx2[i].nSubPackageId.ToString(),
+                                            Len = (int)stBcrResultEx2.stBcrInfoEx2[i].nLen,
+                                            CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
+                                            ScanTime = localTime.DateTime,
+                                            AreaCoords = Enumerable.Range(0, 4).Select(s => {
+                                                if (bmp != null)
+                                                    return new Point {
+                                                        X = (int)(stBcrResultEx2.stBcrInfoEx2[i].pt[s].x *
+                                                            (float)(bmp.Size.Width) / stFrameInfoEx2.nWidth),
+                                                        Y = (int)(stBcrResultEx2.stBcrInfoEx2[i].pt[s].y *
+                                                                  (float)(bmp.Size.Height) /
+                                                                  stFrameInfoEx2.nHeight)
+                                                    };
+                                                return default;
+                                            })?.ToList()
+                                        });
+                                    }
                                 }
                             }
                             else {

@@ -19,6 +19,7 @@ using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Repository.LocalData;
 
 namespace JayTom.Dws.Client.Service.ResultOutput {
+
     public class DefaultResultOutputService : IResultOutputService {
         private readonly IConfigRepository _configRepository;
         private readonly ISpeech _speech;
@@ -28,6 +29,7 @@ namespace JayTom.Dws.Client.Service.ResultOutput {
         private SemaphoreSlim _semaphore = new(1);
         private ResultOutputSettingsDto? _outputSettingsDto;
         private List<SoundInfoModel>? _soundInfoModels = new();
+
         public DefaultResultOutputService(IConfigRepository configRepository,
             ISpeech speech, ITcpCommunicationClient tcpCommunicationClient,
             ITcpCommunication tcpCommunication, ISoundRepository soundRepository) {
@@ -42,7 +44,6 @@ namespace JayTom.Dws.Client.Service.ResultOutput {
                 if (position is TriggerPositionEvent trigger) {
                     if (_outputSettingsDto?.IsUseAudioOutput == true) {
                         if (_outputSettingsDto?.AudioOutputSettingsInfo?.TriggerPosition == trigger.TriggerPosition) {
-
                             SoundOutput(trigger.IsSuccess);
                         }
                     }
@@ -51,7 +52,7 @@ namespace JayTom.Dws.Client.Service.ResultOutput {
             EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async settings => {
                 if (settings is SettingsChangedEvent { SettingsName: "ResultOutputSettings" }) {
                     await _semaphore.WaitAsync();
-                    var configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("SaveImageSettings"));
+                    var configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("ResultOutputSettings"));
                     if (configInfoModel is not null) {
                         try {
                             _outputSettingsDto = JsonConvert.DeserializeObject<ResultOutputSettingsDto>(configInfoModel.Value);
@@ -102,7 +103,7 @@ namespace JayTom.Dws.Client.Service.ResultOutput {
             float volume, string cameraSerialNumber, CancellationToken cancellationToken = default) {
             if (_outputSettingsDto is null) {
                 await _semaphore.WaitAsync(cancellationToken);
-                var configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("SaveImageSettings"), cancellationToken);
+                var configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("ResultOutputSettings"), cancellationToken);
                 if (configInfoModel is not null) {
                     try {
                         _outputSettingsDto = JsonConvert.DeserializeObject<ResultOutputSettingsDto>(configInfoModel.Value);
@@ -155,7 +156,6 @@ namespace JayTom.Dws.Client.Service.ResultOutput {
                 //使用polly
                 var retryPolicy = Policy.HandleResult<bool>(result => !result)
                     .Or<TimeoutException>().RetryAsync(_outputSettingsDto.UploadSettingsInfo.RetryCount, (a, b) => {
-
                     });
 
                 await retryPolicy.ExecuteAsync(async () => {
@@ -171,6 +171,7 @@ namespace JayTom.Dws.Client.Service.ResultOutput {
                 });
             }, cancellationToken);
         }
+
         /// <summary>
         /// Tcp输出
         /// </summary>
@@ -181,7 +182,6 @@ namespace JayTom.Dws.Client.Service.ResultOutput {
             var isSend = false;
             if (_outputSettingsDto is not null) {
                 if (_outputSettingsDto.IsUseTcpOutput) {
-
                     if (_outputSettingsDto.TcpSettingsInfo.ConnectionMode == TcpConnectionMode.Server) {
                         isSend = await _tcpCommunication.SendMessage(message);
                     }
@@ -194,12 +194,12 @@ namespace JayTom.Dws.Client.Service.ResultOutput {
                             TriggerPosition = TriggerPositionEnum.TcpOutput
                         });
                     }
-
                 }
             }
 
             return isSend;
         }
+
         /// <summary>
         /// 声音输出
         /// </summary>
@@ -225,6 +225,7 @@ namespace JayTom.Dws.Client.Service.ResultOutput {
                 }
             }
         }
+
         //Tcp输出
         //串口输出(暂缓)
         //位置输出(暂缓)
@@ -249,6 +250,7 @@ namespace JayTom.Dws.Client.Service.ResultOutput {
                 _ => "null"
             };
         }
+
         protected virtual async void OnOutputFailed(Exception e) {
             await Task.Yield();
             OutputFailed?.Invoke(this, e);

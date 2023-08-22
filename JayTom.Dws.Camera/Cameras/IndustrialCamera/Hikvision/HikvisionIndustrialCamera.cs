@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using System.Drawing.Imaging;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using JayTom.Dws.Camera.FilterContainer;
 
 namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
 
@@ -26,6 +27,9 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
         private MVIDCodeReader.cbOutputdelegate? _imageCallback = null;
         private MVIDCodeReader.cbImageBufferdelegate? _readImageCallback = null;
         private double FrameRate { get; set; }
+
+        //过滤器
+        private readonly BarCodeFilterContainer _barCodeFilterContainer = new();
 
         /// <summary>
         /// 相机信息
@@ -326,6 +330,12 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
             });
         }
 
+        public void SetScanCodeFilterParams(ScanCodeFilterParams @params) {
+            _barCodeFilterContainer.Pattern = @params.RegularExpression;
+            _barCodeFilterContainer.MaxSize = @params.DuplicateBarcodeFilterCount;
+            _barCodeFilterContainer.ExpirationTime = TimeSpan.FromMilliseconds(@params.ScanInterval);
+        }
+
         private async Task ProcessImageAsync(MVIDCodeReader.MVID_CAM_OUTPUT_INFO stOutput, IntPtr ptr) {
             //帧时间戳
             long timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds();
@@ -337,7 +347,6 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                     if (IsShowBarcodeBorder && bitmap is not null && bitmap.PixelFormat != PixelFormat.Format8bppIndexed &&
                         stOutput.stCodeList.stCodeInfo?.Any() == true) {
                         //设置图像边框
-
                         using var g = Graphics.FromImage(bitmap);
                         //画框
                         for (var i = 0; i < stOutput.stCodeList.nCodeNum; ++i) {
@@ -359,26 +368,32 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                     for (var i = 0; i < stOutput.stCodeList.nCodeNum; ++i) {
                         if (stOutput.stCodeList.stCodeInfo != null) {
                             var mvidCodeInfo = stOutput.stCodeList.stCodeInfo[i];
-                            OnBarcodeRead(new BarcodeReadEventArgs() {
-                                Barcode = mvidCodeInfo.strCode,
-                                Timestamp = timestamp,
-                                CameraSerialNumber = this.Structure.chSerialNumber,
-                                ScanTime = DateTime.Now,
-                                ThumbImage = bitmap?.Clone(new Rectangle(0, 0, bitmap.Width, bitmap.Height),
-                                    PixelFormat.Format32bppArgb),
-                                Image = bitmap,
-                                AreaCoords = Enumerable.Range(0, 4).Select(s => {
-                                    if (bitmap != null)
-                                        return new Point {
-                                            X = (int)(stOutput.stCodeList.stCodeInfo[i].stCornerPt[s].nX *
-                                                (float)(bitmap.Size.Width) / stOutput.stImage.nWidth),
-                                            Y = (int)(stOutput.stCodeList.stCodeInfo[i].stCornerPt[s].nY *
-                                                      (float)(bitmap.Size.Height) /
-                                                      stOutput.stImage.nHeight)
-                                        };
-                                    return default;
-                                })?.ToList(),
+                            var validateData = _barCodeFilterContainer.ValidateData(new BarCodeFilterInfo() {
+                                BarCode = mvidCodeInfo.strCode,
+                                ScanTime = DateTime.Now
                             });
+                            if (validateData) {
+                                OnBarcodeRead(new BarcodeReadEventArgs() {
+                                    Barcode = mvidCodeInfo.strCode,
+                                    Timestamp = timestamp,
+                                    CameraSerialNumber = this.Structure.chSerialNumber,
+                                    ScanTime = DateTime.Now,
+                                    ThumbImage = bitmap?.Clone(new Rectangle(0, 0, bitmap.Width, bitmap.Height),
+                                        PixelFormat.Format32bppArgb),
+                                    Image = bitmap,
+                                    AreaCoords = Enumerable.Range(0, 4).Select(s => {
+                                        if (bitmap != null)
+                                            return new Point {
+                                                X = (int)(stOutput.stCodeList.stCodeInfo[i].stCornerPt[s].nX *
+                                                    (float)(bitmap.Size.Width) / stOutput.stImage.nWidth),
+                                                Y = (int)(stOutput.stCodeList.stCodeInfo[i].stCornerPt[s].nY *
+                                                          (float)(bitmap.Size.Height) /
+                                                          stOutput.stImage.nHeight)
+                                            };
+                                        return default;
+                                    })?.ToList(),
+                                });
+                            }
                         }
 
                         await Task.Delay(1);

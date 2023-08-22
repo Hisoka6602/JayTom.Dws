@@ -109,8 +109,15 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             scanBarCodeInfo.Height is not null) {
                             //创建另一个对象处理耗时长的内容
                             //上传
-                            //输出
                             //条码回调(告诉界面这个条码完成)
+                            //保存到数据库
+                            //输出
+                            _resultOutputService.ExecuteOutput(
+                                scanBarCodeInfo.BarCode, (float)(scanBarCodeInfo.Weight ?? 0),
+                                scanBarCodeInfo.ScanTime, (float)(scanBarCodeInfo.Length ?? 0),
+                                (float)(scanBarCodeInfo.Width ?? 0), (float)(scanBarCodeInfo.Height ?? 0),
+                               (float)(scanBarCodeInfo.Volume ?? 0), scanBarCodeInfo.CameraSerialNumber,
+                                stoppingToken);
                             scanBarCodeInfo.IsCompleted = true;
                         }
                         else {
@@ -121,7 +128,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             }
                         }
                     }
-
                     //判断全景图
                     if (_panoramicImageItems.Count > 0) {
                         var cameraImageInfo = _panoramicImageItems.Dequeue();

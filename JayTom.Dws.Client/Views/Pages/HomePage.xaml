@@ -541,18 +541,18 @@
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
-                                <GridViewColumn Width="Auto" Header="扫描时间">
+                                <GridViewColumn Width="180" Header="扫描时间">
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBlock
-                                                Width="130"
-                                                MinWidth="130"
+                                                Width="180"
+                                                MinWidth="180"
                                                 Style="{StaticResource CustomGridViewTextBlockCellStyle}"
                                                 Text="{Binding ScanTime, StringFormat={}{0:yyyy-MM-dd HH:mm:ss}}" />
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
-                                <GridViewColumn Width="Auto" Header="上传状态">
+                                <GridViewColumn Width="100" Header="上传状态">
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <Button

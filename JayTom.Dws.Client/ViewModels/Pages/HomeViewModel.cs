@@ -24,6 +24,7 @@ using JayTom.Dws.PluginInterface.Utils;
 using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Client.Service.ImageStorage;
 using JayTom.Dws.Domain.Repository.LocalData;
+using JayTom.Dws.Client.Service.ResultOutput;
 using CameraType = JayTom.Dws.Client.Models.CameraType;
 using CameraStatus = JayTom.Dws.Client.Models.CameraStatus;
 using ConnectionType = JayTom.Dws.Client.Models.ConnectionType;
@@ -36,6 +37,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         private readonly IBarCodeRepository _barCodeRepository;
         private readonly IDeviceService _deviceService;
         private readonly IImageStorageService _imageStorageService;
+        private readonly IResultOutputService _resultOutputService;
         private ObservableCollection<CameraItemInfoModel> _cameraItems = new();
         private ObservableCollection<BarCodeItemModel> _barCodeItems = new();
         private DataGrid? _dataGrid = null;
@@ -164,12 +166,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         public HomeViewModel(IDialogService dialogService,
             IComputerInfoReporter computerInfoReporter,
             IBarCodeRepository barCodeRepository, IDeviceService deviceService,
-            IImageStorageService imageStorageService) {
+            IImageStorageService imageStorageService, IResultOutputService resultOutputService) {
             _dialogService = dialogService;
             _computerInfoReporter = computerInfoReporter;
             _barCodeRepository = barCodeRepository;
             _deviceService = deviceService;
             _imageStorageService = imageStorageService;
+            _resultOutputService = resultOutputService;
             CameraItems = new()
             {
                 new CameraItemInfoModel()
@@ -306,6 +309,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             _imageStorageService.ImageSaveFailed += async delegate (object? sender, Exception exception) {
                 await Application.Current.Dispatcher.InvokeAsync(() => {
                     HomeMessageQueue.Enqueue($"图片保存异常:{exception.Message}");
+                });
+            };
+            _resultOutputService.OutputFailed += async delegate (object? sender, Exception exception) {
+                await Application.Current.Dispatcher.InvokeAsync(() => {
+                    HomeMessageQueue.Enqueue($"结果输出异常:{exception.Message}");
                 });
             };
         }

@@ -10,7 +10,6 @@ using MaterialDesignThemes.Wpf;
 using System.Collections.Generic;
 
 namespace JayTom.Dws.Client.Converters.CameraConverter {
-
     public class BoundCameraTypeCornerRadiusConverter : IValueConverter {
 
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
@@ -19,10 +18,10 @@ namespace JayTom.Dws.Client.Converters.CameraConverter {
                     return new CornerRadius(5, 0, 0, 5);
                 }
                 else if (parameter?.ToString()?.Equals("BarcodeScannerCamera") == true) {
-                    return new CornerRadius(0, 20, 20, 0);
+                    return new CornerRadius(0, 5, 5, 0);
                 }
                 else if (parameter?.ToString()?.Equals("VolumeCamera") == true) {
-                    return new CornerRadius(5, 20, 20, 5);
+                    return new CornerRadius(5, 5, 5, 5);
                 }
             }
             return new CornerRadius(0, 0, 0, 0);
@@ -34,10 +33,10 @@ namespace JayTom.Dws.Client.Converters.CameraConverter {
                     return new CornerRadius(5, 0, 0, 5);
                 }
                 else if (parameter?.ToString()?.Equals("BarcodeScannerCamera") == true) {
-                    return new CornerRadius(0, 20, 20, 0);
+                    return new CornerRadius(0, 5, 5, 0);
                 }
                 else if (parameter?.ToString()?.Equals("VolumeCamera") == true) {
-                    return new CornerRadius(5, 20, 20, 5);
+                    return new CornerRadius(5, 5, 5, 5);
                 }
             }
             return new CornerRadius(0, 0, 0, 0);

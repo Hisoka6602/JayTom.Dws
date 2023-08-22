@@ -95,7 +95,6 @@ namespace JayTom.Dws.Client.Service.ImageStorage {
                         volume, cameraSerialNumber))?
                     .ToList();
                 if (pathList?.Any() != true) {
-                    NLog.LogManager.GetCurrentClassLogger().Error(JsonConvert.SerializeObject(_imageSettingsDto.SubDirectoryTemplate));
                     OnImageSaveFailed(new Exception("存图路径解析错误,未找到模板内容!"));
                     return;
                 }

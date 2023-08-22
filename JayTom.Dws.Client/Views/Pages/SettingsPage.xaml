@@ -17,66 +17,74 @@
             <b:InvokeCommandAction Command="{Binding LoadedCommand}" CommandParameter="{Binding ElementName=RegionFrame}" />
         </b:EventTrigger>
     </b:Interaction.Triggers>
-    <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="180" />
-            <ColumnDefinition Width="*" />
-        </Grid.ColumnDefinitions>
-        <!--  菜单列表  -->
-        <Grid Grid.Column="0">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="*" />
-            </Grid.RowDefinitions>
-            <ListBox
+    <materialDesign:DialogHost
+        Background="Transparent"
+        DialogBackground="Transparent"
+        DialogMargin="5"
+        FocusVisualStyle="{x:Null}"
+        Focusable="False"
+        Identifier="SettingDialog"
+        Style="{StaticResource MaterialDesignEmbeddedDialogHost}">
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="180" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <!--  菜单列表  -->
+            <Grid Grid.Column="0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <ListBox
                 Grid.Row="0"
                 MinHeight="100"
                 ItemTemplate="{StaticResource MenuTemplate}"
                 ItemsSource="{Binding MenuItems, UpdateSourceTrigger=PropertyChanged}">
-                <ListBox.ItemContainerStyle>
-                    <Style TargetType="ListBoxItem">
-                        <Setter Property="Height" Value="Auto" />
-                        <Setter Property="Margin" Value="0" />
-                        <Setter Property="Padding" Value="0" />
-                        <Setter Property="Focusable" Value="False" />
-                        <Setter Property="IsSelected" Value="False" />
-                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                        <Setter Property="Background" Value="Transparent" />
-                        <Setter Property="Foreground" Value="Transparent" />
-                        <Setter Property="SnapsToDevicePixels" Value="True" />
-                        <!--  去掉焦点框  -->
-                        <Setter Property="Template">
-                            <Setter.Value>
-                                <ControlTemplate TargetType="{x:Type ListBoxItem}">
-                                    <ContentPresenter
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="Height" Value="Auto" />
+                            <Setter Property="Margin" Value="0" />
+                            <Setter Property="Padding" Value="0" />
+                            <Setter Property="Focusable" Value="False" />
+                            <Setter Property="IsSelected" Value="False" />
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                            <Setter Property="Background" Value="Transparent" />
+                            <Setter Property="Foreground" Value="Transparent" />
+                            <Setter Property="SnapsToDevicePixels" Value="True" />
+                            <!--  去掉焦点框  -->
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="{x:Type ListBoxItem}">
+                                        <ContentPresenter
                                         Content="{TemplateBinding Content}"
                                         ContentStringFormat="{TemplateBinding ContentStringFormat}"
                                         ContentTemplate="{TemplateBinding ContentTemplate}" />
-                                </ControlTemplate>
-                            </Setter.Value>
-                        </Setter>
-                    </Style>
-                </ListBox.ItemContainerStyle>
-            </ListBox>
-            <Grid
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+                </ListBox>
+                <Grid
                 Grid.Row="1"
                 MinWidth="1000"
                 Background="#2E2E2E" />
-        </Grid>
+            </Grid>
 
-        <!--  区域内容  -->
-        <!--<ScrollViewer
+            <!--  区域内容  -->
+            <!--<ScrollViewer
             Grid.Column="1"
             Focusable="False"
             HorizontalScrollBarVisibility="Auto"
             VerticalScrollBarVisibility="Auto">
-
         </ScrollViewer>-->
-        <Frame
+            <Frame
             Name="RegionFrame"
             Grid.Column="1"
             mvvm:RegionManager.RegionName="ContentRegion"
             Focusable="False"
             NavigationUIVisibility="Hidden" />
-    </Grid>
+        </Grid>
+    </materialDesign:DialogHost>
 </Page>

@@ -6,11 +6,13 @@ using System.Drawing;
 using Newtonsoft.Json;
 using System.Threading;
 using JayTom.Dws.Camera;
+using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
 using JayTom.Dws.Client.Models;
 using System.Collections.Generic;
 using System.Windows.Media.Media3D;
 using JayTom.Dws.Client.Models.Cameras;
+using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Data.LocalConf.CameraConfig;
 using CameraType = JayTom.Dws.Camera.CameraType;
@@ -23,10 +25,12 @@ namespace JayTom.Dws.Client.Service.Device {
         private readonly IBarcodeScannerCameraConfigRepository _barcodeScannerCameraConfigRepository;
         private readonly IPanoramaCameraConfigRepository _panoramaCameraConfigRepository;
         private readonly IVolumeCameraConfigRepository _volumeCameraConfigRepository;
+        private readonly IConfigRepository _configRepository;
         private List<string> CameraInitializationException { get; set; } = new();
         private List<CameraInfo> _cameraInfos = new();
         private List<ICamera> _cameras = new();
-        private List<CameraParametersModifiedEventArgs> _cameraParameters = new();
+        private readonly List<CameraParametersModifiedEventArgs> _cameraParameters = new();
+        private BarcodeFilterSettingsDto? _barcodeFilterSettingsDto = new();
         public bool RunningStatus { get; private set; } = false;
 
         public event EventHandler<List<ICamera>>? CameraInitialized;
@@ -79,10 +83,32 @@ namespace JayTom.Dws.Client.Service.Device {
 
         public DefaultDeviceService(IBarcodeScannerCameraConfigRepository barcodeScannerCameraConfigRepository,
             IPanoramaCameraConfigRepository panoramaCameraConfigRepository,
-            IVolumeCameraConfigRepository volumeCameraConfigRepository) {
+            IVolumeCameraConfigRepository volumeCameraConfigRepository, IConfigRepository configRepository) {
             _barcodeScannerCameraConfigRepository = barcodeScannerCameraConfigRepository;
             _panoramaCameraConfigRepository = panoramaCameraConfigRepository;
             _volumeCameraConfigRepository = volumeCameraConfigRepository;
+            _configRepository = configRepository;
+            EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async settings => {
+                if (settings is SettingsChangedEvent { SettingsName: "BarcodeFilterSettings" }) {
+                    var configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("BarcodeFilterSettings"));
+                    if (configInfoModel is not null) {
+                        try {
+                            _barcodeFilterSettingsDto = JsonConvert.DeserializeObject<BarcodeFilterSettingsDto>(configInfoModel.Value);
+                        }
+                        catch (Exception e) {
+                            OnDeviceException(new DeviceExceptionEventArgs() {
+                                ExceptionMessage = new Exception($"加载过滤设置失败:{e.Message}")
+                            });
+                        }
+                    }
+
+                    if (RunningStatus) {
+                        OnDeviceException(new DeviceExceptionEventArgs() {
+                            ExceptionMessage = new Exception($"必须先停止运行再设置条码过滤才能生效")
+                        });
+                    }
+                }
+            });
         }
 
         public async Task<KeyValuePair<bool, string>> OnCameraBound(CameraFinderItemInfoModel camera, CancellationToken token = default) {
@@ -150,6 +176,23 @@ namespace JayTom.Dws.Client.Service.Device {
             await Initialization();
             //启动(逐个相机启动)
             foreach (var camera in _cameras) {
+                //设置过滤
+                if (camera.BindingType == CameraBindingType.ScannerCamera) {
+                    if (camera is IIndustrialCamera industrialCamera) {
+                        industrialCamera.SetScanCodeFilterParams(new ScanCodeFilterParams() {
+                            DuplicateBarcodeFilterCount = _barcodeFilterSettingsDto?.DuplicateBarcodeFilterCount ?? 0,
+                            RegularExpression = _barcodeFilterSettingsDto?.RegularExpression ?? string.Empty,
+                            ScanInterval = _barcodeFilterSettingsDto?.ScanInterval ?? 1000,
+                        });
+                    }
+                    else if (camera is ISmartCamera smartCamera) {
+                        smartCamera.SetScanCodeFilterParams(new ScanCodeFilterParams() {
+                            DuplicateBarcodeFilterCount = _barcodeFilterSettingsDto?.DuplicateBarcodeFilterCount ?? 0,
+                            RegularExpression = _barcodeFilterSettingsDto?.RegularExpression ?? string.Empty,
+                            ScanInterval = _barcodeFilterSettingsDto?.ScanInterval ?? 1000,
+                        });
+                    }
+                }
                 await camera.Start(string.Empty);
             }
             return new KeyValuePair<bool, string>(false, string.Empty);
@@ -169,6 +212,18 @@ namespace JayTom.Dws.Client.Service.Device {
             }
 
             await Task.Run(async () => {
+                //获取过滤配置
+                var configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("BarcodeFilterSettings"));
+                if (configInfoModel is not null) {
+                    try {
+                        _barcodeFilterSettingsDto = JsonConvert.DeserializeObject<BarcodeFilterSettingsDto>(configInfoModel.Value);
+                    }
+                    catch (Exception e) {
+                        OnDeviceException(new DeviceExceptionEventArgs() {
+                            ExceptionMessage = new Exception($"加载过滤设置失败:{e.Message}")
+                        });
+                    }
+                }
                 CameraInitializationException.Clear();
                 _cameras.Clear();
                 var scannerCameraConfigInfoModels = await _barcodeScannerCameraConfigRepository.Select(s => s.Id > 0, o => o.Id);

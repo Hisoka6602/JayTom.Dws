@@ -170,8 +170,8 @@
                 </DataGridTextColumn>
                 <!--  序列号  -->
                 <DataGridTextColumn
-                    Width="150"
-                    MinWidth="150"
+                    Width="180"
+                    MinWidth="180"
                     Binding="{Binding SerialNumber, UpdateSourceTrigger=PropertyChanged}"
                     CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                     EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
@@ -181,8 +181,8 @@
                 </DataGridTextColumn>
                 <!--  型号  -->
                 <DataGridTextColumn
-                    Width="100"
-                    MinWidth="100"
+                    Width="180"
+                    MinWidth="180"
                     Binding="{Binding Model, UpdateSourceTrigger=PropertyChanged}"
                     CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                     EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
@@ -192,8 +192,8 @@
                 </DataGridTextColumn>
                 <!--  版本  -->
                 <DataGridTextColumn
-                    Width="100"
-                    MinWidth="100"
+                    Width="180"
+                    MinWidth="180"
                     Binding="{Binding Version, UpdateSourceTrigger=PropertyChanged}"
                     CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                     EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
