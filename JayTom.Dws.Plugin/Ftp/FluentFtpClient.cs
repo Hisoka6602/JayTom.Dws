@@ -10,6 +10,7 @@ namespace JayTom.Dws.Plugin.Ftp {
 
     public class FluentFtpClient : IFtp {
         private readonly FtpClient _ftpClient;
+        private SemaphoreSlim _semaphore = new(1);
 
         public FluentFtpClient() {
             _ftpClient = new FtpClient() {
@@ -25,6 +26,7 @@ namespace JayTom.Dws.Plugin.Ftp {
                 }
                 _ftpClient.Host = server;
                 _ftpClient.Config.DataConnectionConnectTimeout = 60 * 1000;
+                _ftpClient.Config.ConnectTimeout = 60 * 1000;
                 _ftpClient.Config.SocketKeepAlive = true;
                 _ftpClient.Config.EncryptionMode = FtpEncryptionMode.None;
                 _ftpClient.Config.DataConnectionType = FtpDataConnectionType.AutoPassive;
@@ -33,6 +35,7 @@ namespace JayTom.Dws.Plugin.Ftp {
                 return new KeyValuePair<bool, string>(true, "连接成功!");
             }
             catch (Exception ex) {
+                NLog.LogManager.GetCurrentClassLogger().Error($"{ex}");
                 return new KeyValuePair<bool, string>(false, ex.Message);
             }
         }
@@ -49,14 +52,22 @@ namespace JayTom.Dws.Plugin.Ftp {
         public async Task<KeyValuePair<bool, string>> UploadFile(string localFilePath, string remoteFilePath, CancellationToken cancellationToken = default) {
             await Task.Yield();
             try {
+                await _semaphore.WaitAsync(cancellationToken);
                 if (!_ftpClient.IsConnected) {
                     return new KeyValuePair<bool, string>(false, "Ftp未连接!");
                 }
+
                 var status = _ftpClient.UploadFile(localFilePath, remoteFilePath, FtpRemoteExists.Overwrite, true);
-                return status is FtpStatus.Success or FtpStatus.Skipped ? new KeyValuePair<bool, string>(true, "上传成功") : new KeyValuePair<bool, string>(false, "上传失败");
+                return status is FtpStatus.Success or FtpStatus.Skipped
+                    ? new KeyValuePair<bool, string>(true, "上传成功")
+                    : new KeyValuePair<bool, string>(false, "上传失败");
             }
             catch (Exception e) {
+                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
                 return new KeyValuePair<bool, string>(false, e.Message);
+            }
+            finally {
+                _semaphore.Release();
             }
         }
 
@@ -71,6 +82,7 @@ namespace JayTom.Dws.Plugin.Ftp {
                 return new KeyValuePair<bool, string>(true, "删除成功");
             }
             catch (Exception e) {
+                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
                 return new KeyValuePair<bool, string>(false, e.Message);
             }
         }

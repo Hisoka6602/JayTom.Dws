@@ -17,13 +17,12 @@ namespace JayTom.Dws.Plugin.SaveImage {
             await Task.Yield();
             if (image is null) return new KeyValuePair<bool, string>(false, "图片不能为空!");
 
-            if (image.PixelFormat == PixelFormat.Format8bppIndexed) {
-                image = image?.GetThumbnailImage(image?.Width ?? 1280, image?.Height ?? 960,
-                    () => false, IntPtr.Zero);
-            }
-
             try {
                 await _semaphore.WaitAsync(cancellationToken);
+                if (image.PixelFormat == PixelFormat.Format8bppIndexed) {
+                    image = image?.GetThumbnailImage(image?.Width ?? 1280, image?.Height ?? 960,
+                        () => false, IntPtr.Zero);
+                }
                 if (watermarkParams is not null && image is not null) {
                     //添加水印
                     //组合水印
