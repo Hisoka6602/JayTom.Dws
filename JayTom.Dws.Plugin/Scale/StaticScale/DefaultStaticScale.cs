@@ -4,6 +4,7 @@ using System.Text;
 using System.IO.Ports;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using JayTom.Dws.Plugin.SerialPort;
 using System.Collections.Concurrent;
 using JayTom.Dws.Plugin.WeighingScale;
 using JayTom.Dws.Plugin.Scale.ScaleValueParameters;
@@ -69,9 +70,22 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
                         await Task.Delay(_defaultStaticScaleValueParameters.DataInterval);
                         try {
                             var port = (System.IO.Ports.SerialPort)sender;
+                            var receivedData = string.Empty;
+                            if (WeightFormat == ScaleWeightFormat.Ascii) {
+                                // 读取接收到的数据
+                                receivedData = port.ReadExisting()/*.Trim().Replace(" ", string.Empty)*/;
+                            }
+                            else {
+                                //接收十六进制内容
+                                // 接收数据存储的字节数组
+                                var buffer = new byte[_serialPort.BytesToRead];
 
-                            // 读取接收到的数据
-                            var receivedData = port.ReadExisting()/*.Trim().Replace(" ", string.Empty)*/;
+                                // 读取数据到字节数组
+                                _serialPort.Read(buffer, 0, buffer.Length);
+
+                                // 将字节数组转换为十六进制表示
+                                var hexString = BitConverter.ToString(buffer).Replace("-", "");
+                            }
                             _character.Enqueue(receivedData);
                             // 添加到接收数据缓冲区
                             //receivedDataBuffer += receivedData;
@@ -100,8 +114,13 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
                 _serialPort.Open();
                 if (_serialPort.IsOpen) {
                     //注册转换事件
+                    _tokenSource?.Cancel();
                     _tokenSource = new();
                     Task.Factory.StartNew(ProcessReceivedData, TaskCreationOptions.LongRunning);
+                    if (_defaultStaticScaleValueParameters.AccessMode == WeightAccessMode.QuestionAnswer) {
+                        //问答式
+                        Task.Factory.StartNew(ProcessSending, TaskCreationOptions.LongRunning);
+                    }
                     OnConnected(this);
                     return true;
                 }
@@ -147,7 +166,6 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
                         }
                     }
                 }
-
                 await Task.Delay(1);
             }
         }
@@ -192,6 +210,19 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
             }
         }
 
+        private async void ProcessSending() {
+            while (!_tokenSource.Token.IsCancellationRequested) {
+                await Task.Delay(20);
+                if (_defaultStaticScaleValueParameters.SendingFormat == ScaleWeightFormat.Ascii) {
+                    _serialPort?.WriteLine(_defaultStaticScaleValueParameters.SendingContent);
+                }
+                else {
+                    var toByteArray = HexStringToByteArray(_defaultStaticScaleValueParameters.SendingContent);
+                    _serialPort?.Write(toByteArray, 0, toByteArray.Length);
+                }
+            }
+        }
+
         public event EventHandler<float>? CurrentWeight;
 
         protected virtual async void OnCurrentWeight(float e) {
@@ -213,6 +244,21 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
 
         protected virtual async void OnStabledWeight(float e) {
             await Task.Yield();
+            //使用附加属性
+            if (WeightAdditionalProperties.IsUseActualWeightConversionRate) {
+                //使用重量转换率
+                e = (float)(e * (WeightAdditionalProperties.WeightConversionRate / 100));
+            }
+            if (WeightAdditionalProperties.IsUseAppendedWeight) {
+                //追加重量
+                e = (float)(e + WeightAdditionalProperties.AppendedWeightValue);
+            }
+
+            if (WeightAdditionalProperties.IsUseFixedWeight) {
+                //固定重量输出
+                e = (float)WeightAdditionalProperties.FixedWeightValue;
+            }
+
             StabledWeight?.Invoke(this, e);
         }
 
@@ -224,6 +270,17 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
         protected virtual async void OnReceived(string e) {
             await Task.Yield();
             Received?.Invoke(this, e);
+        }
+
+        private static byte[] HexStringToByteArray(string hexString) {
+            hexString = hexString.Replace(" ", ""); // 移除空格
+
+            var bytes = new byte[hexString.Length / 2];
+            for (var i = 0; i < hexString.Length; i += 2) {
+                bytes[i / 2] = Convert.ToByte(hexString.Substring(i, 2), 16);
+            }
+
+            return bytes;
         }
     }
 }

@@ -68,5 +68,15 @@ namespace JayTom.Dws.Plugin.Scale.ScaleValueParameters {
         /// 小数结束位置
         /// </summary>
         public int DecimalEndPosition { get; set; }
+
+        /// <summary>
+        /// 发送内容
+        /// </summary>
+        public string SendingContent { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 发送格式
+        /// </summary>
+        public ScaleWeightFormat SendingFormat { get; set; }
     }
 }

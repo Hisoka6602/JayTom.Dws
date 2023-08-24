@@ -15,6 +15,15 @@ internal class Program {
             Console.WriteLine(result); // 输出: 0.000
         }
         return;*/
+
+        string input1 = "88 02 00 00 00 04 01 16 ";
+        float weight1 = ExtractWeightFromHex(input1);
+        Console.WriteLine("Weight 1: " + weight1); // 输出：4.268
+
+        string input2 = "88 02 02 07 01 01 06 16";
+        float weight2 = ExtractWeightFromHex(input2);
+        Console.WriteLine("Weight 2: " + weight2); // 输出：27.116
+        return;
         var weighingScale = new WeighingScale();
         weighingScale.CurrentWeight += delegate (object? sender, float f) {
             Console.WriteLine($"实时重量:{f:F3}");
@@ -50,5 +59,21 @@ internal class Program {
         Console.WriteLine(connect);
         Console.WriteLine("Hello, World!");
         Console.ReadLine();
+    }
+
+    public static float ExtractWeightFromHex(string input) {
+        // 移除所有空格
+        try {
+            var hexString = input.Replace(" ", "");
+            if (hexString.Length == 16) {
+                string weightSubstring = hexString.Substring(4, 10).Replace("0", string.Empty);
+                int.TryParse(weightSubstring, out var weightInt);
+                return weightInt / 1000f;
+            }
+        }
+        catch {
+        }
+
+        return 0;
     }
 }
