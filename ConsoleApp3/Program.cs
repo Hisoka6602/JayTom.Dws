@@ -37,7 +37,8 @@ internal class Program {
             DecimalStartPosition = 1,
             DecimalEndPosition = 3,
             MinWeight = -50,
-            IsReversed = true
+            IsReversed = true,
+            Identifier = "=",
         });
         var connect = weighingScale.Connect(new WeighingScale.ConnectInfo() {
             PortName = "COM3",

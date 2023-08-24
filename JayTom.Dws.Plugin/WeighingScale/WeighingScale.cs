@@ -69,7 +69,7 @@ namespace JayTom.Dws.Plugin.WeighingScale {
                                 var port = (System.IO.Ports.SerialPort)sender;
 
                                 // 读取接收到的数据
-                                var receivedData = port.ReadExisting().Trim().Replace(" ", string.Empty);
+                                var receivedData = port.ReadExisting()/*.Trim().Replace(" ", string.Empty)*/;
                                 _character.Enqueue(receivedData);
                                 // 添加到接收数据缓冲区
                                 //receivedDataBuffer += receivedData;
@@ -131,27 +131,31 @@ namespace JayTom.Dws.Plugin.WeighingScale {
                 var dequeue = _character.TryDequeue(out var buffResult);
                 if (dequeue) {
                     dataBuffer += buffResult;
-                    if (dataBuffer.Length >= (WeightCalculationParameters.IdentifierPosition + WeightCalculationParameters.CharacterLength)) {
-                        //取出完整一条
-                        var substring = dataBuffer.Substring(WeightCalculationParameters.IdentifierPosition, WeightCalculationParameters.CharacterLength);
-                        if (substring.Length <= WeightCalculationParameters.IntegerStartPosition ||
-                            substring.Length <= WeightCalculationParameters.IntegerEndPosition ||
-                            substring.Length <= WeightCalculationParameters.DecimalStartPosition ||
-                            substring.Length <= WeightCalculationParameters.DecimalEndPosition ||
-                            WeightCalculationParameters.IntegerEndPosition - WeightCalculationParameters.IntegerStartPosition < 0 ||
-                            WeightCalculationParameters.DecimalEndPosition - WeightCalculationParameters.DecimalStartPosition < 0) {
-                            continue;
+                    var indexOf = dataBuffer.IndexOf(WeightCalculationParameters.Identifier, StringComparison.Ordinal);
+                    int identifierPosition = indexOf - WeightCalculationParameters.IdentifierPosition;
+                    if (identifierPosition >= 0) {
+                        if (dataBuffer.Length >= (identifierPosition + WeightCalculationParameters.CharacterLength)) {
+                            //取出完整一条
+                            var substring = dataBuffer.Substring(identifierPosition, WeightCalculationParameters.CharacterLength);
+                            if (substring.Length <= WeightCalculationParameters.IntegerStartPosition ||
+                                substring.Length <= WeightCalculationParameters.IntegerEndPosition ||
+                                substring.Length <= WeightCalculationParameters.DecimalStartPosition ||
+                                substring.Length <= WeightCalculationParameters.DecimalEndPosition ||
+                                WeightCalculationParameters.IntegerEndPosition - WeightCalculationParameters.IntegerStartPosition < 0 ||
+                                WeightCalculationParameters.DecimalEndPosition - WeightCalculationParameters.DecimalStartPosition < 0) {
+                                continue;
+                            }
+                            //取出整数
+                            var _integer = substring.Substring(WeightCalculationParameters.IntegerStartPosition, WeightCalculationParameters.IntegerEndPosition - WeightCalculationParameters.IntegerStartPosition + 1);
+                            _integer = WeightCalculationParameters.IsReversed ? new string(_integer.Reverse().ToArray()) : _integer;
+                            //取出小数
+                            var _decimal = substring.Substring(WeightCalculationParameters.DecimalStartPosition, WeightCalculationParameters.DecimalEndPosition - WeightCalculationParameters.DecimalStartPosition + 1);
+                            _decimal = WeightCalculationParameters.IsReversed ? new string(_decimal.Reverse().ToArray()) : _decimal;
+                            //组合
+                            string data = $"{_integer}.{_decimal}";
+                            ProcessDataPackage(data);
+                            dataBuffer = string.Empty;
                         }
-                        //取出整数
-                        var _integer = substring.Substring(WeightCalculationParameters.IntegerStartPosition, WeightCalculationParameters.IntegerEndPosition - WeightCalculationParameters.IntegerStartPosition + 1);
-                        _integer = WeightCalculationParameters.IsReversed ? new string(_integer.Reverse().ToArray()) : _integer;
-                        //取出小数
-                        var _decimal = substring.Substring(WeightCalculationParameters.DecimalStartPosition, WeightCalculationParameters.DecimalEndPosition - WeightCalculationParameters.DecimalStartPosition + 1);
-                        _decimal = WeightCalculationParameters.IsReversed ? new string(_decimal.Reverse().ToArray()) : _decimal;
-                        //组合
-                        string data = $"{_integer}.{_decimal}";
-                        ProcessDataPackage(data);
-                        dataBuffer = string.Empty;
                     }
                 }
 
