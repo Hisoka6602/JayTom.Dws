@@ -1,22 +1,38 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.IO.Ports;
+using JayTom.Dws.Plugin.Scale;
+using System.Text.RegularExpressions;
 using JayTom.Dws.Plugin.WeighingScale;
+using JayTom.Dws.Plugin.Scale.DynamicScale;
 
 internal class Program {
+    private static IScale _scale;
 
     private static void Main(string[] args) {
-        /*string pattern = @"^\+\s*([\d.]+)\s*kg$";
-        string input = "+  0.000 kg";
+        _scale = new DefaultDynamicScale() {
+            WeightFormat = ScaleWeightFormat.Ascii
+        };
+        _scale.Excepted += delegate (object? sender, Exception exception) {
+            Console.WriteLine($"{exception}");
+        };
+        _scale.StabledWeight += async delegate (object? sender, float f) {
+            await Task.Delay(10);
+            Console.WriteLine($"稳定重量:{f:F3}");
+        };
+        _scale.Received += delegate (object? sender, string s) {
+            Console.WriteLine($"接收到的内容:{s}");
+        };
+        _scale.Connect(new BaseScaleConnectParam() {
+            PortName = "COM3",
+            BaudRate = 9600,
+            DataBits = 8,
+            Parity = Parity.None,
+            StopBits = StopBits.One
+        });
 
-        Regex regex = new Regex(pattern);
-        Match match = regex.Match(input);
-
-        if (match.Success) {
-            string result = match.Groups[1].Value;
-            Console.WriteLine(result); // 输出: 0.000
-        }
-        return;*/
-
-        string input1 = "88 02 00 00 00 04 01 16 ";
+        Console.ReadLine();
+        Console.ReadLine();
+        return;
+        string input1 = "88 02 00 00 00 04 00 16 ";
         float weight1 = ExtractWeightFromHex(input1);
         Console.WriteLine("Weight 1: " + weight1); // 输出：4.268
 
@@ -66,8 +82,9 @@ internal class Program {
         try {
             var hexString = input.Replace(" ", "");
             if (hexString.Length == 16) {
-                string weightSubstring = hexString.Substring(4, 10).Replace("0", string.Empty);
-                int.TryParse(weightSubstring, out var weightInt);
+                var weightSubstring = hexString.Substring(4, 10);
+                var processedWeight = string.Concat(weightSubstring.Where((ch, index) => index % 2 == 1));
+                int.TryParse(processedWeight, out var weightInt);
                 return weightInt / 1000f;
             }
         }

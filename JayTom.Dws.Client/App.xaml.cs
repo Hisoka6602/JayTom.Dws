@@ -72,6 +72,7 @@ namespace JayTom.Dws.Client {
                 containerRegistry.RegisterForNavigation<ResultOutputSettingsPage>();
                 containerRegistry.RegisterForNavigation<ContentInputSettingsPage>();
                 containerRegistry.RegisterForNavigation<CacheClearSettingsPage>();
+                containerRegistry.RegisterForNavigation<WeightSettingPage>();
                 //相机
                 containerRegistry.RegisterForNavigation<BarcodeScannerCameraConfigPage>();
                 containerRegistry.RegisterForNavigation<CameraFinderPage>();
@@ -227,6 +228,7 @@ namespace JayTom.Dws.Client {
             ViewModelLocationProvider.Register<ContentInputSettingsPage, ContentInputSettingsPageViewModel>();
             ViewModelLocationProvider.Register<CacheClearSettingsPage, CacheClearSettingsPageViewModel>();
             ViewModelLocationProvider.Register<BarcodeFilterSettingsPage, BarcodeFilterSettingsPageViewModel>();
+            ViewModelLocationProvider.Register<WeightSettingPage, WeightSettingViewModel>();
         }
     }
 }

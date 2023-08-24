@@ -67,33 +67,35 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
                     //注册事件
                     _serialPort.DataReceived += async delegate (object sender, SerialDataReceivedEventArgs args) {
                         //读数据
-                        await Task.Delay(_defaultStaticScaleValueParameters.DataInterval);
-                        try {
-                            var port = (System.IO.Ports.SerialPort)sender;
-                            var receivedData = string.Empty;
-                            if (WeightFormat == ScaleWeightFormat.Ascii) {
-                                // 读取接收到的数据
-                                receivedData = port.ReadExisting()/*.Trim().Replace(" ", string.Empty)*/;
+                        if (_serialPort.BytesToRead > 0) {
+                            await Task.Delay(_defaultStaticScaleValueParameters.DataInterval);
+                            try {
+                                var port = (System.IO.Ports.SerialPort)sender;
+                                var receivedData = string.Empty;
+                                if (WeightFormat == ScaleWeightFormat.Ascii) {
+                                    // 读取接收到的数据
+                                    receivedData = port.ReadExisting()/*.Trim().Replace(" ", string.Empty)*/;
+                                }
+                                else {
+                                    //接收十六进制内容
+                                    // 接收数据存储的字节数组
+                                    var buffer = new byte[_serialPort.BytesToRead];
+
+                                    // 读取数据到字节数组
+                                    _serialPort.Read(buffer, 0, buffer.Length);
+
+                                    // 将字节数组转换为十六进制表示
+                                    var hexString = BitConverter.ToString(buffer).Replace("-", "");
+                                }
+                                _character.Enqueue(receivedData);
+                                // 添加到接收数据缓冲区
+                                //receivedDataBuffer += receivedData;
+
+                                OnReceived(receivedData);
                             }
-                            else {
-                                //接收十六进制内容
-                                // 接收数据存储的字节数组
-                                var buffer = new byte[_serialPort.BytesToRead];
-
-                                // 读取数据到字节数组
-                                _serialPort.Read(buffer, 0, buffer.Length);
-
-                                // 将字节数组转换为十六进制表示
-                                var hexString = BitConverter.ToString(buffer).Replace("-", "");
+                            catch (Exception e) {
+                                OnExcepted(e);
                             }
-                            _character.Enqueue(receivedData);
-                            // 添加到接收数据缓冲区
-                            //receivedDataBuffer += receivedData;
-
-                            OnReceived(receivedData);
-                        }
-                        catch (Exception e) {
-                            OnExcepted(e);
                         }
                     };
                     _serialPort.Disposed += delegate {

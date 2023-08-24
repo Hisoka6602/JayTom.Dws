@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using JayTom.Dws.Plugin.Scale.StaticScale;
 
 namespace JayTom.Dws.Plugin.Scale.ScaleValueParameters {
-
     public class DefaultStaticScaleValueParameters : BaseScaleValueParameters {
 
         /// <summary>

@@ -20,6 +20,7 @@ using JayTom.Dws.Client.Views.Dialog;
 using JayTom.Dws.Client.ViewModels.Dialog;
 
 namespace JayTom.Dws.Client.ViewModels.Pages {
+
     public class SettingsViewModel : BindableBase {
         private readonly IRegionManager _regionManager;
 
@@ -29,7 +30,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             _regionManager = regionManager;
             _menuItems = new()
             {
-                new MenuItemInfoModel()
+                /*new MenuItemInfoModel()
                 {
                     IconFont = new IconInfoModel()
                     {
@@ -41,7 +42,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     Description = "灵活下载/组合插件插件",
                     ClickCommand = ClickCommand,
                     PageClassName = "PluginMarketplacePage"
-                },
+                },*/
                 new MenuItemInfoModel()
                 {
                     IconFont = new IconInfoModel()
@@ -53,7 +54,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     Title = "数据管理",
                     Description = "数据信息管理",
                     ClickCommand = ClickCommand,
-                    PageClassName = "DataManagementPage"
+                    PageClassName = "DataManagementPage",
+                    IsSelected = true
                 },
                 new MenuItemInfoModel()
                 {
@@ -106,6 +108,19 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     Description = "条码过滤相关设置",
                     ClickCommand = ClickCommand,
                     PageClassName = "BarcodeFilterSettingsPage"
+                },
+                new MenuItemInfoModel()
+                {
+                    IconFont = new IconInfoModel()
+                    {
+                        IconFont = "pack://application:,,,/Fonts/#iconfont",
+                        IconCode = "\xe71e",
+                        IconSize = 26
+                    },
+                    Title = "称重设置",
+                    Description = "磅秤和称重设置相关",
+                    ClickCommand = ClickCommand,
+                    PageClassName = "WeightSettingPage"
                 },
                 new MenuItemInfoModel()
                 {

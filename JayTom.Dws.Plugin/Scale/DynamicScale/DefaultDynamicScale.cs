@@ -63,46 +63,48 @@ namespace JayTom.Dws.Plugin.Scale.DynamicScale {
                     //注册事件
                     _serialPort.DataReceived += async delegate (object sender, SerialDataReceivedEventArgs args) {
                         //读数据
-                        await Task.Delay(50);
-                        try {
-                            var port = (System.IO.Ports.SerialPort)sender;
-                            string receivedData;
-                            if (WeightFormat == ScaleWeightFormat.Ascii) {
-                                // 读取接收到的数据
-                                receivedData = port.ReadExisting()/*.Trim().Replace(" ", string.Empty)*/;
-                                // 定义匹配重量的正则表达式模式(不考虑负数)
-                                const string pattern = @"\b\d+\.\d+\b";
-                                var regex = new Regex(pattern);
-                                // 在输入字符串中查找匹配项
-                                var match = regex.Match(receivedData);
-                                // 提取重量值
-                                if (match.Success) {
-                                    var weight = match.Value;
-                                    var tryParse = float.TryParse(weight, out var result);
-                                    if (tryParse) {
-                                        //输出重量
-                                        OnStabledWeight(result);
+                        await Task.Delay(150);
+                        if (_serialPort.BytesToRead > 0) {
+                            try {
+                                var port = (System.IO.Ports.SerialPort)sender;
+                                string receivedData;
+                                if (WeightFormat == ScaleWeightFormat.Ascii) {
+                                    // 读取接收到的数据
+                                    receivedData = port.ReadExisting()/*.Trim().Replace(" ", string.Empty)*/;
+                                    // 定义匹配重量的正则表达式模式(不考虑负数)
+                                    const string pattern = @"\b\d+\.\d+\b";
+                                    var regex = new Regex(pattern);
+                                    // 在输入字符串中查找匹配项
+                                    var match = regex.Match(receivedData);
+                                    // 提取重量值
+                                    if (match.Success) {
+                                        var weight = match.Value;
+                                        var tryParse = float.TryParse(weight, out var result);
+                                        if (tryParse) {
+                                            //输出重量
+                                            OnStabledWeight(result);
+                                        }
                                     }
                                 }
+                                else {
+                                    //接收十六进制内容
+                                    // 接收数据存储的字节数组
+                                    var buffer = new byte[_serialPort.BytesToRead];
+                                    // 读取数据到字节数组
+                                    _serialPort.Read(buffer, 0, buffer.Length);
+                                    // 将字节数组转换为十六进制表示
+                                    receivedData = BitConverter.ToString(buffer).Replace("-", " ");
+                                    if (!string.IsNullOrEmpty(receivedData)) {
+                                        var weightFromHex = ExtractWeightFromHex(receivedData);
+                                        //输出重量
+                                        OnStabledWeight(weightFromHex);
+                                    }
+                                }
+                                OnReceived(receivedData);
                             }
-                            else {
-                                //接收十六进制内容
-                                // 接收数据存储的字节数组
-                                var buffer = new byte[_serialPort.BytesToRead];
-
-                                // 读取数据到字节数组
-                                _serialPort.Read(buffer, 0, buffer.Length);
-
-                                // 将字节数组转换为十六进制表示
-                                receivedData = BitConverter.ToString(buffer).Replace("-", "");
-                                var weightFromHex = ExtractWeightFromHex(receivedData);
-                                //输出重量
-                                OnStabledWeight(weightFromHex);
+                            catch (Exception e) {
+                                OnExcepted(e);
                             }
-                            OnReceived(receivedData);
-                        }
-                        catch (Exception e) {
-                            OnExcepted(e);
                         }
                     };
                     _serialPort.Disposed += delegate {
@@ -138,8 +140,9 @@ namespace JayTom.Dws.Plugin.Scale.DynamicScale {
             try {
                 var hexString = input.Replace(" ", "");
                 if (hexString.Length == 16) {
-                    var weightSubstring = hexString.Substring(4, 10).Replace("0", string.Empty);
-                    int.TryParse(weightSubstring, out var weightInt);
+                    var weightSubstring = hexString.Substring(4, 10);
+                    var processedWeight = string.Concat(weightSubstring.Where((ch, index) => index % 2 == 1));
+                    int.TryParse(processedWeight, out var weightInt);
                     return weightInt / 1000f;
                 }
             }

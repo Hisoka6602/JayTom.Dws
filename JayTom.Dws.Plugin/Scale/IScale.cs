@@ -7,7 +7,6 @@ using System.Collections.Generic;
 using JayTom.Dws.Plugin.Scale.ScaleValueParameters;
 
 namespace JayTom.Dws.Plugin.Scale {
-
     public interface IScale : IDisposable {
 
         /// <summary>
