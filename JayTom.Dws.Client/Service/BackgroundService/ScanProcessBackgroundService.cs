@@ -126,6 +126,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                (float)(scanBarCodeInfo.Volume ?? 0), scanBarCodeInfo.CameraSerialNumber,
                                 stoppingToken);
                             scanBarCodeInfo.IsCompleted = true;
+                            EventAggregator.Instance.Publish(scanBarCodeInfo);
                         }
                         else {
                             if (_cameras.All(a => a.BindingType != CameraBindingType.VolumeCamera)) {

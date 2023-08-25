@@ -20,6 +20,7 @@ using JayTom.Dws.Data.LocalData;
 using JayTom.Dws.Client.Service;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.PluginInterface.Utils;
 using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Client.Service.ImageStorage;
@@ -28,6 +29,7 @@ using JayTom.Dws.Client.Service.ResultOutput;
 using CameraType = JayTom.Dws.Client.Models.CameraType;
 using CameraStatus = JayTom.Dws.Client.Models.CameraStatus;
 using ConnectionType = JayTom.Dws.Client.Models.ConnectionType;
+using static JayTom.Dws.Client.Service.BackgroundService.ScanProcessBackgroundService;
 
 namespace JayTom.Dws.Client.ViewModels.Pages {
 
@@ -321,6 +323,19 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     HomeMessageQueue.Enqueue($"结果输出异常:{exception.Message}");
                 });
             };
+            EventAggregator.Instance.Subscribe<ScanBarCodeInfo>(async Info => {
+                //填充数据到列表
+                if (Info is ScanBarCodeInfo model) {
+                    AddNewRow(new BarCodeItemModel() {
+                        Barcode = model.BarCode,
+                        ScanTime = model.ScanTime,
+                        Weight = (float)(model.Weight ?? 0),
+                        Length = (float)(model.Length ?? 0),
+                        Width = (float)(model.Width ?? 0),
+                        Height = (float)(model.Height ?? 0)
+                    });
+                }
+            });
         }
 
         private async void DeviceServiceOnPanoramaCaptured(object? sender, PanoramaCaptureEventArgs args) {
@@ -382,10 +397,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     }
                 }
             }
-            AddNewRow(new BarCodeItemModel() {
-                Barcode = args.Barcode!,
-                ScanTime = args.ScanTime!,
-            });
             _imageSemaphoreSlim.Release();
         }
 
@@ -473,6 +484,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                         }
                         else {
                             //停止
+                            HomeMessageQueue.Clear();
                             var (key, value) = await _deviceService.Stop();
                             //提示
                         }
