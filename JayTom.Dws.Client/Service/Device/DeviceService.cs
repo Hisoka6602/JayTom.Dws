@@ -28,6 +28,7 @@ namespace JayTom.Dws.Client.Service.Device {
         private List<CameraInfo> _cameraInfos = new();
         private List<ICamera> _cameras = new();
         public bool RunningStatus { get; private set; } = false;
+        public ScaleType ScaleType { get; }
 
         public event EventHandler<List<ICamera>>? CameraInitialized;
 
@@ -124,6 +125,14 @@ namespace JayTom.Dws.Client.Service.Device {
         }
 
         public event EventHandler<string>? CameraReleased;
+
+        public event EventHandler<ScaleConnectedEventArgs>? ScaleConnected;
+
+        public event EventHandler<ScaleDisconnectedEventArgs>? ScaleDisconnected;
+
+        public event EventHandler<RealTimeWeightEventArgs>? RealTimeWeight;
+
+        public event EventHandler<StableWeightEventArgs>? StableWeight;
 
         public event EventHandler<DeviceExceptionEventArgs>? DeviceException;
 

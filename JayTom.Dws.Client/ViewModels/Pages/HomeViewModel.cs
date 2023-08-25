@@ -306,6 +306,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
 
                 //弹出提示框
             };
+            _deviceService.StableWeight += async delegate (object? sender, StableWeightEventArgs args) {
+                await Application.Current.Dispatcher.InvokeAsync(() => {
+                    Weight = args.Weight;
+                });
+            };
             _imageStorageService.ImageSaveFailed += async delegate (object? sender, Exception exception) {
                 await Application.Current.Dispatcher.InvokeAsync(() => {
                     HomeMessageQueue.Enqueue($"图片保存异常:{exception.Message}");

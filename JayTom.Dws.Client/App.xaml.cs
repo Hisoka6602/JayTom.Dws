@@ -177,8 +177,8 @@ namespace JayTom.Dws.Client {
                         services.AddSingleton(container.Resolve<ITcpCommunication>());
                         services.AddSingleton(container.Resolve<ITcpCommunicationClient>());
 
-                        services.AddSingleton(container.Resolve<IDeviceService>());
-                        services.AddSingleton(container.Resolve<IDeviceService>());
+                        services.AddSingleton(container.Resolve<IDynamicScale>());
+                        services.AddSingleton(container.Resolve<IStaticScale>());
 
                         services.AddSingleton(container.Resolve<IDeviceService>());
                         services.AddSingleton(container.Resolve<IImageStorageService>());

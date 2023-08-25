@@ -188,6 +188,7 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
                             .OrderByDescending(g => g.Count())
                             .Select(g => g.Key)
                             .FirstOrDefault());
+                        _weightQueue.Clear();
                     }
 
                     if (WeightAdditionalProperties.IsUseMergedWeightTimeout) {
@@ -199,6 +200,7 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
                                 .OrderByDescending(g => g.Count())
                                 .Select(g => g.Key)
                                 .FirstOrDefault());
+                            _weightQueue.Clear();
                         }
                     }
 

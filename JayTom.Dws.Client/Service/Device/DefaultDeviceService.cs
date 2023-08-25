@@ -8,14 +8,18 @@ using System.Threading;
 using JayTom.Dws.Camera;
 using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
+using JayTom.Dws.Plugin.Scale;
 using JayTom.Dws.Client.Models;
 using System.Collections.Generic;
 using System.Windows.Media.Media3D;
 using JayTom.Dws.Client.Models.Cameras;
 using JayTom.Dws.Client.EventMediators;
+using JayTom.Dws.Plugin.Scale.StaticScale;
+using JayTom.Dws.Plugin.Scale.DynamicScale;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Data.LocalConf.CameraConfig;
 using CameraType = JayTom.Dws.Camera.CameraType;
+using JayTom.Dws.Plugin.Scale.ScaleValueParameters;
 using JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision;
 using JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision;
 
@@ -26,12 +30,16 @@ namespace JayTom.Dws.Client.Service.Device {
         private readonly IPanoramaCameraConfigRepository _panoramaCameraConfigRepository;
         private readonly IVolumeCameraConfigRepository _volumeCameraConfigRepository;
         private readonly IConfigRepository _configRepository;
+        private readonly IDynamicScale _dynamicScale;
+        private readonly IStaticScale _staticScale;
         private List<string> CameraInitializationException { get; set; } = new();
         private List<CameraInfo> _cameraInfos = new();
         private List<ICamera> _cameras = new();
         private readonly List<CameraParametersModifiedEventArgs> _cameraParameters = new();
         private BarcodeFilterSettingsDto? _barcodeFilterSettingsDto = new();
+        private WeightSettingsDto? _weightSettingsDto = new();
         public bool RunningStatus { get; private set; } = false;
+        public ScaleType ScaleType { get; private set; } = ScaleType.None;
 
         public event EventHandler<List<ICamera>>? CameraInitialized;
 
@@ -83,11 +91,64 @@ namespace JayTom.Dws.Client.Service.Device {
 
         public DefaultDeviceService(IBarcodeScannerCameraConfigRepository barcodeScannerCameraConfigRepository,
             IPanoramaCameraConfigRepository panoramaCameraConfigRepository,
-            IVolumeCameraConfigRepository volumeCameraConfigRepository, IConfigRepository configRepository) {
+            IVolumeCameraConfigRepository volumeCameraConfigRepository,
+            IConfigRepository configRepository, IDynamicScale dynamicScale,
+            IStaticScale staticScale) {
             _barcodeScannerCameraConfigRepository = barcodeScannerCameraConfigRepository;
             _panoramaCameraConfigRepository = panoramaCameraConfigRepository;
             _volumeCameraConfigRepository = volumeCameraConfigRepository;
             _configRepository = configRepository;
+            _dynamicScale = dynamicScale;
+            _staticScale = staticScale;
+            //注册磅秤事件
+            _dynamicScale.StabledWeight += delegate (object? sender, float f) {
+                OnStableWeight(new StableWeightEventArgs() {
+                    Scale = (IScale?)sender,
+                    Weight = f
+                });
+            };
+
+            _dynamicScale.Excepted += delegate (object? sender, Exception exception) {
+                OnDeviceException(new DeviceExceptionEventArgs() {
+                    ExceptionMessage = exception
+                });
+            };
+            _staticScale.StabledWeight += delegate (object? sender, float f) {
+                OnStableWeight(new StableWeightEventArgs() {
+                    Scale = (IScale?)sender,
+                    Weight = f
+                });
+            };
+            _staticScale.Excepted += delegate (object? sender, Exception exception) {
+                //异常的输出之后需要取消
+                OnDeviceException(new DeviceExceptionEventArgs() {
+                    ExceptionMessage = exception
+                });
+            };
+            _dynamicScale.Connected += delegate (object? sender, IScale scale) {
+                OnScaleConnected(new ScaleConnectedEventArgs() {
+                    ConnectionParameters = new BaseScaleConnectParam() {
+                        BaudRate = _weightSettingsDto?.Connection?.BaudRate ?? 0,
+                        DataBits = _weightSettingsDto?.Connection?.DataBits ?? 0,
+                        Parity = _weightSettingsDto?.Connection?.Parity ?? 0,
+                        PortName = _weightSettingsDto?.Connection?.PortName ?? string.Empty,
+                        StopBits = _weightSettingsDto?.Connection?.StopBits ?? 0
+                    },
+                    ScaleType = ScaleType.Dynamic
+                });
+            };
+            _staticScale.Connected += delegate (object? sender, IScale scale) {
+                OnScaleConnected(new ScaleConnectedEventArgs() {
+                    ConnectionParameters = new BaseScaleConnectParam() {
+                        BaudRate = _weightSettingsDto?.Connection?.BaudRate ?? 0,
+                        DataBits = _weightSettingsDto?.Connection?.DataBits ?? 0,
+                        Parity = _weightSettingsDto?.Connection?.Parity ?? 0,
+                        PortName = _weightSettingsDto?.Connection?.PortName ?? string.Empty,
+                        StopBits = _weightSettingsDto?.Connection?.StopBits ?? 0
+                    },
+                    ScaleType = ScaleType.Static
+                });
+            };
             EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async settings => {
                 if (settings is SettingsChangedEvent { SettingsName: "BarcodeFilterSettings" }) {
                     var configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("BarcodeFilterSettings"));
@@ -169,6 +230,14 @@ namespace JayTom.Dws.Client.Service.Device {
 
         public event EventHandler<string>? CameraReleased;
 
+        public event EventHandler<ScaleConnectedEventArgs>? ScaleConnected;
+
+        public event EventHandler<ScaleDisconnectedEventArgs>? ScaleDisconnected;
+
+        public event EventHandler<RealTimeWeightEventArgs>? RealTimeWeight;
+
+        public event EventHandler<StableWeightEventArgs>? StableWeight;
+
         public event EventHandler<DeviceExceptionEventArgs>? DeviceException;
 
         public async Task<KeyValuePair<bool, string>> Start(CancellationToken token = default) {
@@ -195,6 +264,32 @@ namespace JayTom.Dws.Client.Service.Device {
                 }
                 await camera.Start(string.Empty);
             }
+            //连接磅秤
+            if (_weightSettingsDto is not null) {
+                switch (_weightSettingsDto.Mode) {
+                    case WeightMode.Static:
+                        _staticScale.Connect(new BaseScaleConnectParam() {
+                            PortName = _weightSettingsDto.Connection.PortName,
+                            BaudRate = _weightSettingsDto.Connection.BaudRate,
+                            DataBits = _weightSettingsDto.Connection.DataBits,
+                            Parity = _weightSettingsDto.Connection.Parity,
+                            StopBits = _weightSettingsDto.Connection.StopBits
+                        });
+                        //连接静态称
+                        break;
+
+                    case WeightMode.Dynamic:
+                        _dynamicScale.Connect(new BaseScaleConnectParam() {
+                            PortName = _weightSettingsDto.Connection.PortName,
+                            BaudRate = _weightSettingsDto.Connection.BaudRate,
+                            DataBits = _weightSettingsDto.Connection.DataBits,
+                            Parity = _weightSettingsDto.Connection.Parity,
+                            StopBits = _weightSettingsDto.Connection.StopBits
+                        });
+                        break;
+                }
+            }
+
             return new KeyValuePair<bool, string>(false, string.Empty);
         }
 
@@ -212,6 +307,7 @@ namespace JayTom.Dws.Client.Service.Device {
             }
 
             await Task.Run(async () => {
+                //相机相关
                 //获取过滤配置
                 var configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("BarcodeFilterSettings"));
                 if (configInfoModel is not null) {
@@ -340,6 +436,71 @@ namespace JayTom.Dws.Client.Service.Device {
                 _cameras = cameras;
 
                 OnCameraInitialized(_cameras);
+                //磅秤相关
+                //获取磅秤配置
+                var infoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("WeightSettings"));
+                if (infoModel is not null) {
+                    try {
+                        _weightSettingsDto = JsonConvert.DeserializeObject<WeightSettingsDto>(infoModel.Value);
+                        if (_weightSettingsDto is not null) {
+                            //判断需要连接的磅秤
+                            var properties = new WeightAdditionalProperties() {
+                                IsUseActualWeightConversionRate =
+                       _weightSettingsDto.AdditionalWeight.IsUseActualWeightConversionRate,
+                                IsUseAppendedWeight = _weightSettingsDto.AdditionalWeight.IsUseAppendedWeight,
+                                IsUseFixedWeight = _weightSettingsDto.AdditionalWeight.IsUseFixedWeight,
+                                IsUseMergedWeightTimeout = _weightSettingsDto.AdditionalWeight.IsUseMergedWeightTimeout,
+                                WeightConversionRate = _weightSettingsDto.AdditionalWeight.WeightConversionRate,
+                                AppendedWeightValue = _weightSettingsDto.AdditionalWeight.AppendedWeightValue,
+                                FixedWeightValue = _weightSettingsDto.AdditionalWeight.FixedWeightValue,
+                                MergedWeightTimeout = _weightSettingsDto.AdditionalWeight.MergedWeightTimeout
+                            };
+                            switch (_weightSettingsDto.Mode) {
+                                //连接
+                                case WeightMode.Static:
+                                    ScaleType = ScaleType.Static;
+                                    _staticScale.WeightFormat = (ScaleWeightFormat)_weightSettingsDto.Connection.DataFormat;
+                                    _staticScale.WeightAdditionalProperties = properties;
+                                    _staticScale.SetWeightCalculationParameters(new DefaultStaticScaleValueParameters() {
+                                        AccessMode = (Plugin.Scale.StaticScale.WeightAccessMode)_weightSettingsDto.StaticWeight.AccessMode,
+                                        BalanceCount = _weightSettingsDto.StaticWeight.BalanceCount,
+                                        BalanceQty = _weightSettingsDto.StaticWeight.BalanceQty,
+                                        CharacterLength = _weightSettingsDto.StaticWeight.CharacterLength,
+                                        DataInterval = _weightSettingsDto.StaticWeight.DataInterval,
+                                        DecimalEndPosition = _weightSettingsDto.StaticWeight.DecimalEndPosition,
+                                        DecimalStartPosition = _weightSettingsDto.StaticWeight.DecimalStartPosition,
+                                        Identifier = _weightSettingsDto.StaticWeight.Identifier,
+                                        IdentifierPosition = _weightSettingsDto.StaticWeight.IdentifierPosition,
+                                        IntegerEndPosition = _weightSettingsDto.StaticWeight.IntegerEndPosition,
+                                        IntegerStartPosition = _weightSettingsDto.StaticWeight.IntegerStartPosition,
+                                        IsReversed = _weightSettingsDto.StaticWeight.IsReversed,
+                                        SendingContent = _weightSettingsDto.StaticWeight.SendingContent,
+                                        SendingFormat = (ScaleWeightFormat)_weightSettingsDto.StaticWeight.SendingFormat,
+                                        MaxWeight = _weightSettingsDto.CommonWeight.MaxWeight,
+                                        MinWeight = _weightSettingsDto.CommonWeight.MinWeight
+                                    });
+
+                                    break;
+
+                                case WeightMode.Dynamic:
+                                    //连接动态称
+                                    ScaleType = ScaleType.Dynamic;
+                                    _dynamicScale.WeightFormat = (ScaleWeightFormat)_weightSettingsDto.Connection.DataFormat;
+                                    _dynamicScale.WeightAdditionalProperties = properties;
+                                    _dynamicScale.SetWeightCalculationParameters(new DefaultDynamicScaleValueParameters() {
+                                        DecimalPlaces = _weightSettingsDto.DynamicWeight.DecimalPrecision
+                                    });
+
+                                    break;
+                            }
+                        }
+                    }
+                    catch (Exception e) {
+                        OnDeviceException(new DeviceExceptionEventArgs() {
+                            ExceptionMessage = new Exception($"加载磅秤设置失败:{e.Message}")
+                        });
+                    }
+                }
             });
         }
 
@@ -511,6 +672,26 @@ namespace JayTom.Dws.Client.Service.Device {
                     return null;
             }
             return null;
+        }
+
+        protected virtual async void OnScaleConnected(ScaleConnectedEventArgs e) {
+            await Task.Yield();
+            ScaleConnected?.Invoke(this, e);
+        }
+
+        protected virtual async void OnScaleDisconnected(ScaleDisconnectedEventArgs e) {
+            await Task.Yield();
+            ScaleDisconnected?.Invoke(this, e);
+        }
+
+        protected virtual async void OnRealTimeWeight(RealTimeWeightEventArgs e) {
+            await Task.Yield();
+            RealTimeWeight?.Invoke(this, e);
+        }
+
+        protected virtual async void OnStableWeight(StableWeightEventArgs e) {
+            await Task.Yield();
+            StableWeight?.Invoke(this, e);
         }
     }
 }

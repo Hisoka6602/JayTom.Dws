@@ -3,6 +3,7 @@ using System.Drawing;
 using System.Threading;
 using JayTom.Dws.Camera;
 using System.Threading.Tasks;
+using JayTom.Dws.Plugin.Scale;
 using System.Collections.Generic;
 using JayTom.Dws.Client.Models.Cameras;
 
@@ -14,6 +15,11 @@ namespace JayTom.Dws.Client.Service.Device {
         /// 设备运行状态
         /// </summary>
         public bool RunningStatus { get; }
+
+        /// <summary>
+        /// 磅秤类型
+        /// </summary>
+        public ScaleType ScaleType { get; }
 
         /// <summary>
         /// 当相机初始化完成时触发的事件，返回初始化的相机列表
@@ -111,7 +117,7 @@ namespace JayTom.Dws.Client.Service.Device {
         /// </summary>
         event EventHandler<string> CameraReleased;
 
-        /*/// <summary>
+        /// <summary>
         /// 当磅秤连接时触发的事件
         /// </summary>
         event EventHandler<ScaleConnectedEventArgs> ScaleConnected;
@@ -130,11 +136,6 @@ namespace JayTom.Dws.Client.Service.Device {
         /// 当稳定重量信息更新时触发的事件
         /// </summary>
         event EventHandler<StableWeightEventArgs> StableWeight;
-
-        /// <summary>
-        /// 当设备重新连接成功时触发的事件
-        /// </summary>
-        event EventHandler<DeviceReconnectedEventArgs> DeviceReconnected;*/
 
         /// <summary>
         /// 当设备发生异常时触发的事件
@@ -160,6 +161,76 @@ namespace JayTom.Dws.Client.Service.Device {
         /// 释放设备注册资源
         /// </summary>
         void Dispose();
+    }
+
+    public class StableWeightEventArgs : EventArgs {
+
+        /// <summary>
+        /// 磅秤
+        /// </summary>
+        public IScale? Scale { get; set; }
+
+        /// <summary>
+        /// 重量
+        /// </summary>
+        public float Weight { get; set; }
+    }
+
+    public class RealTimeWeightEventArgs : EventArgs {
+
+        /// <summary>
+        /// 磅秤
+        /// </summary>
+        public IScale? Scale { get; set; }
+
+        /// <summary>
+        /// 实时重量
+        /// </summary>
+        public float RealTimeWeight { get; set; }
+    }
+
+    public class ScaleDisconnectedEventArgs : EventArgs {
+
+        /// <summary>
+        /// 磅秤
+        /// </summary>
+        public IScale? Scale { get; set; }
+
+        /// <summary>
+        /// 断开异常内容
+        /// </summary>
+        public Exception? Exception { get; set; }
+    }
+
+    public class ScaleConnectedEventArgs : EventArgs {
+
+        /// <summary>
+        /// 磅秤类型
+        /// </summary>
+        public ScaleType ScaleType { get; set; } = ScaleType.None;
+
+        /// <summary>
+        /// 连接参数
+        /// </summary>
+        public BaseScaleConnectParam ConnectionParameters { get; set; } = new();
+    }
+
+    public enum ScaleType {
+
+        /// <summary>
+        /// 静态磅秤
+        /// </summary>
+        Static,
+
+        /// <summary>
+        /// 动态磅秤
+        /// </summary>
+        Dynamic,
+
+        /// <summary>
+        /// 无称重
+        /// </summary>
+        None
     }
 
     public class DeviceExceptionEventArgs {

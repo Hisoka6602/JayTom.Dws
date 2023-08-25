@@ -5,10 +5,12 @@ using System.Text;
 using System.Drawing;
 using Newtonsoft.Json;
 using System.Threading;
+using TouchSocket.Core;
 using JayTom.Dws.Camera;
 using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Service.ImageStorage;
@@ -21,13 +23,13 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private readonly IResultOutputService _resultOutputService;
         private readonly IImageStorageService _imageStorageService;
 
-        private readonly List<ScanBarCodeInfo> _scanBarCodeItems = new();
+        private readonly ConcurrentList<ScanBarCodeInfo> _scanBarCodeItems = new();
         private SemaphoreSlim _semaphore = new(1);
 
         private List<ICamera> _cameras = new();
-        private Queue<CameraImageInfo> _panoramicImageItems = new();
-        private Queue<CameraImageInfo> _volumeCameraImageItems = new();
-        private Queue<SavedImageInfo> _savedImageItems = new();
+        private ConcurrentQueue<CameraImageInfo> _panoramicImageItems = new();
+        private ConcurrentQueue<CameraImageInfo> _volumeCameraImageItems = new();
+        private ConcurrentQueue<SavedImageInfo> _savedImageItems = new();
         //private Queue<ScanBarCodeInfo> _scanBarCodeItems = new();
 
         public ScanProcessBackgroundService(IDeviceService deviceService,
@@ -55,7 +57,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     Image = args.Image,
                     ScanTime = args.ScanTime,
                     Timestamp = args.Timestamp,
-                    Weight = 0.5//先给一个默认重量，以后重量需要从传感器获取
                 });
                 _semaphore.Release();
                 EventAggregator.Instance.Publish(new TriggerPositionEvent() {
@@ -95,6 +96,12 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 }
                 _semaphore.Release();
             };
+            _deviceService.StableWeight += delegate (object? sender, StableWeightEventArgs args) {
+                var scanBarCodeInfo = _scanBarCodeItems.FirstOrDefault(f => !f.IsCompleted && f.Weight is null);
+                if (scanBarCodeInfo is not null) {
+                    scanBarCodeInfo.Weight = args.Weight;
+                }
+            };
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
@@ -127,24 +134,32 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 scanBarCodeInfo.Height = 0;
                             }
                         }
+                        //填充重量信息
+                        if (_deviceService.ScaleType == ScaleType.None) {
+                            scanBarCodeInfo.Weight = 0;
+                        }
                     }
                     //判断全景图
                     if (_panoramicImageItems.Count > 0) {
-                        var cameraImageInfo = _panoramicImageItems.Dequeue();
-                        var codeInfo = _scanBarCodeItems.FirstOrDefault(f => f.PanoramaImages?.Count <
-                                                                             _cameras.Count(c =>
-                                                                                 c.BindingType == CameraBindingType.PanoramicCamera)
-                        && !f.PanoramaImages.Any(a => a.CameraSerialNumber.Equals(cameraImageInfo.CameraSerialNumber)));
-                        codeInfo?.PanoramaImages?.Add(cameraImageInfo);
+                        _panoramicImageItems.TryDequeue(out var cameraImageInfo);
+                        if (cameraImageInfo is not null) {
+                            var codeInfo = _scanBarCodeItems.FirstOrDefault(f => f.PanoramaImages?.Count <
+                                _cameras.Count(c =>
+                                    c.BindingType == CameraBindingType.PanoramicCamera)
+                                && !f.PanoramaImages.Any(a => a.CameraSerialNumber.Equals(cameraImageInfo.CameraSerialNumber)));
+                            codeInfo?.PanoramaImages?.Add(cameraImageInfo);
+                        }
                     }
                     //判断体积图
                     if (_volumeCameraImageItems.Count > 0) {
-                        var cameraImageInfo = _volumeCameraImageItems.Dequeue();
-                        var codeInfo = _scanBarCodeItems.FirstOrDefault(f => f.VolumeImages?.Count <
-                                                                             _cameras.Count(c =>
-                                                                                 c.BindingType == CameraBindingType.VolumeCamera)
-                                                                             && !f.VolumeImages.Any(a => a.CameraSerialNumber.Equals(cameraImageInfo.CameraSerialNumber)));
-                        codeInfo?.VolumeImages?.Add(cameraImageInfo);
+                        _volumeCameraImageItems.TryDequeue(out var cameraImageInfo);
+                        if (cameraImageInfo is not null) {
+                            var codeInfo = _scanBarCodeItems.FirstOrDefault(f => f.VolumeImages?.Count <
+                                _cameras.Count(c =>
+                                    c.BindingType == CameraBindingType.VolumeCamera)
+                                && !f.VolumeImages.Any(a => a.CameraSerialNumber.Equals(cameraImageInfo.CameraSerialNumber)));
+                            codeInfo?.VolumeImages?.Add(cameraImageInfo);
+                        }
                     }
                     //存图判断
                     var barCodeInfo = _scanBarCodeItems.FirstOrDefault(f => !f.IsSavedImage &&
@@ -182,25 +197,27 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     }
 
                     if (_savedImageItems.Count > 0) {
-                        var savedImageInfo = _savedImageItems.Dequeue();
-                        var codeInfo = _scanBarCodeItems.FirstOrDefault(f =>
-                            f.BarCode.Equals(savedImageInfo.BarCode));
-                        if (codeInfo is not null) {
-                            if (savedImageInfo.ImageType == SaveImageType.BarcodeImage) {
-                                codeInfo.BarcodeImageFilePath = savedImageInfo.FilePath;
-                            }
-                            else if (savedImageInfo.ImageType == SaveImageType.PanoramaImage) {
-                                var imageInfo = codeInfo.PanoramaImages?.FirstOrDefault(f =>
-                                    f.CameraSerialNumber.Equals(savedImageInfo.CameraSerialNumber));
-                                if (imageInfo is not null) {
-                                    imageInfo.ImageFilePath = savedImageInfo.FilePath;
+                        _savedImageItems.TryDequeue(out var savedImageInfo);
+                        if (savedImageInfo is not null) {
+                            var codeInfo = _scanBarCodeItems.FirstOrDefault(f =>
+                                f.BarCode.Equals(savedImageInfo.BarCode));
+                            if (codeInfo is not null) {
+                                if (savedImageInfo.ImageType == SaveImageType.BarcodeImage) {
+                                    codeInfo.BarcodeImageFilePath = savedImageInfo.FilePath;
                                 }
-                            }
-                            else if (savedImageInfo.ImageType == SaveImageType.VolumeImage) {
-                                var imageInfo = codeInfo.VolumeImages?.FirstOrDefault(f =>
-                                    f.CameraSerialNumber.Equals(savedImageInfo.CameraSerialNumber));
-                                if (imageInfo is not null) {
-                                    imageInfo.ImageFilePath = savedImageInfo.FilePath;
+                                else if (savedImageInfo.ImageType == SaveImageType.PanoramaImage) {
+                                    var imageInfo = codeInfo.PanoramaImages?.FirstOrDefault(f =>
+                                        f.CameraSerialNumber.Equals(savedImageInfo.CameraSerialNumber));
+                                    if (imageInfo is not null) {
+                                        imageInfo.ImageFilePath = savedImageInfo.FilePath;
+                                    }
+                                }
+                                else if (savedImageInfo.ImageType == SaveImageType.VolumeImage) {
+                                    var imageInfo = codeInfo.VolumeImages?.FirstOrDefault(f =>
+                                        f.CameraSerialNumber.Equals(savedImageInfo.CameraSerialNumber));
+                                    if (imageInfo is not null) {
+                                        imageInfo.ImageFilePath = savedImageInfo.FilePath;
+                                    }
                                 }
                             }
                         }
