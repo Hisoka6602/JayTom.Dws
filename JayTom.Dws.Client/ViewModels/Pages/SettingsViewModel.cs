@@ -20,7 +20,6 @@ using JayTom.Dws.Client.Views.Dialog;
 using JayTom.Dws.Client.ViewModels.Dialog;
 
 namespace JayTom.Dws.Client.ViewModels.Pages {
-
     public class SettingsViewModel : BindableBase {
         private readonly IRegionManager _regionManager;
 
@@ -120,7 +119,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     Title = "称重设置",
                     Description = "磅秤和称重设置相关",
                     ClickCommand = ClickCommand,
-                    PageClassName = "WeightSettingPage"
+                    PageClassName = "WeightSettingPages"
                 },
                 new MenuItemInfoModel()
                 {

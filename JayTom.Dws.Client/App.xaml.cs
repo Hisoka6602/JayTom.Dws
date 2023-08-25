@@ -34,7 +34,9 @@ using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Client.ViewModels.Pages;
 using JayTom.Dws.Infrastructure.IComputer;
 using JayTom.Dws.Client.ViewModels.Dialog;
+using JayTom.Dws.Plugin.Scale.StaticScale;
 using JayTom.Dws.Client.ViewModels.Editors;
+using JayTom.Dws.Plugin.Scale.DynamicScale;
 using JayTom.Dws.Domain.Repository.LocalData;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Client.Service.ImageStorage;
@@ -72,7 +74,7 @@ namespace JayTom.Dws.Client {
                 containerRegistry.RegisterForNavigation<ResultOutputSettingsPage>();
                 containerRegistry.RegisterForNavigation<ContentInputSettingsPage>();
                 containerRegistry.RegisterForNavigation<CacheClearSettingsPage>();
-                containerRegistry.RegisterForNavigation<WeightSettingPage>();
+                containerRegistry.RegisterForNavigation<WeightSettingPages>();
                 //相机
                 containerRegistry.RegisterForNavigation<BarcodeScannerCameraConfigPage>();
                 containerRegistry.RegisterForNavigation<CameraFinderPage>();
@@ -119,6 +121,9 @@ namespace JayTom.Dws.Client {
                 services.AddScoped<IComputerInfoReporter, ComputerInfoReporter>();
                 //设备注册
                 services.AddScoped<ICamera, HikvisionSmartCamera>();
+                //磅秤
+                services.AddScoped<IDynamicScale, DefaultDynamicScale>();
+                services.AddScoped<IStaticScale, DefaultStaticScale>();
 
                 services.AddScoped<IDeviceService, DefaultDeviceService>();
                 services.AddScoped<IImageStorageService, DefaultImageStorageService>();
@@ -228,7 +233,7 @@ namespace JayTom.Dws.Client {
             ViewModelLocationProvider.Register<ContentInputSettingsPage, ContentInputSettingsPageViewModel>();
             ViewModelLocationProvider.Register<CacheClearSettingsPage, CacheClearSettingsPageViewModel>();
             ViewModelLocationProvider.Register<BarcodeFilterSettingsPage, BarcodeFilterSettingsPageViewModel>();
-            ViewModelLocationProvider.Register<WeightSettingPage, WeightSettingViewModel>();
+            ViewModelLocationProvider.Register<WeightSettingPages, WeightSettingViewModel>();
         }
     }
 }

@@ -23,7 +23,7 @@ internal class Program {
         };
         _scale.Connect(new BaseScaleConnectParam() {
             PortName = "COM3",
-            BaudRate = 9600,
+            BaudRate = 38400,
             DataBits = 8,
             Parity = Parity.None,
             StopBits = StopBits.One

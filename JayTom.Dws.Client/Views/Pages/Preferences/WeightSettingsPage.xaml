@@ -1,5 +1,5 @@
 ﻿<Page
-    x:Class="JayTom.Dws.Client.Views.Pages.Preferences.WeightSettingPage"
+    x:Class="JayTom.Dws.Client.Views.Pages.Preferences.WeightSettingPages"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
@@ -8,13 +8,24 @@
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:mvvm="http://prismlibrary.com/"
-    Title="WeightSettingPage"
+    xmlns:settingsConverter="clr-namespace:JayTom.Dws.Client.Converters.SettingsConverter"
+    Name="WeightSettingsView"
+    Title="WeightSettingsPage"
     d:DesignHeight="450"
     d:DesignWidth="800"
     mvvm:ViewModelLocator.AutoWireViewModel="True"
     Focusable="False"
     FontFamily="{StaticResource CustomFontFamily}"
     mc:Ignorable="d">
+    <b:Interaction.Triggers>
+        <b:EventTrigger EventName="Loaded" SourceName="WeightSettingsView">
+            <b:InvokeCommandAction Command="{Binding LoadedCommand, IsAsync=False}" CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Page}}}" />
+        </b:EventTrigger>
+    </b:Interaction.Triggers>
+    <Page.Resources>
+        <settingsConverter:WeightModeToVisibilityConverter x:Key="WeightModeToVisibilityConverter" />
+        <settingsConverter:WeightAccessToVisibilityConverter x:Key="WeightAccessToVisibilityConverter" />
+    </Page.Resources>
     <materialDesign:DialogHost
         Background="Transparent"
         DialogBackground="Transparent"
@@ -77,16 +88,21 @@
                                 materialDesign:ButtonAssist.CornerRadius="15"
                                 materialDesign:ColorZoneAssist.Mode="Dark"
                                 BorderThickness="0"
+                                DisplayMemberPath="Name"
                                 FontSize="12"
                                 FontWeight="Bold"
                                 Foreground="White"
-                                ItemsSource="{Binding PortItems, UpdateSourceTrigger=PropertyChanged}"
-                                SelectedItem="{Binding SelectedPort, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                ItemsSource="{Binding WeightModeItems, UpdateSourceTrigger=PropertyChanged}"
+                                SelectedItem="{Binding SelectWeightMode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                SelectedValuePath="Value"
                                 Style="{StaticResource MaterialDesignComboBox}" />
                         </Border>
                     </StackPanel>
                     <!--  连接参数  -->
-                    <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
+                    <StackPanel
+                        VerticalAlignment="Center"
+                        Orientation="Horizontal"
+                        Visibility="{Binding SelectWeightMode, Converter={StaticResource WeightModeToVisibilityConverter}, ConverterParameter=Static|Dynamic}">
                         <TextBlock
                             Margin="0,0,0,1"
                             VerticalAlignment="Center"
@@ -102,7 +118,10 @@
                             Foreground="DarkGray"
                             Text="常规连接参数:" />
                     </StackPanel>
-                    <StackPanel Margin="50,5,0,0" Orientation="Vertical">
+                    <StackPanel
+                        Margin="50,5,0,0"
+                        Orientation="Vertical"
+                        Visibility="{Binding SelectWeightMode, Converter={StaticResource WeightModeToVisibilityConverter}, ConverterParameter=Static|Dynamic}">
 
                         <!--  串口名、刷新按钮  -->
                         <StackPanel Orientation="Horizontal">
@@ -122,7 +141,7 @@
                                 CornerRadius="5">
                                 <ComboBox
                                     Height="30"
-                                    MinWidth="160"
+                                    MinWidth="130"
                                     Padding="5,0"
                                     HorizontalAlignment="Center"
                                     VerticalAlignment="Center"
@@ -135,9 +154,32 @@
                                     FontWeight="Bold"
                                     Foreground="White"
                                     ItemsSource="{Binding PortItems, UpdateSourceTrigger=PropertyChanged}"
-                                    SelectedItem="{Binding SelectedPort, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                    SelectedItem="{Binding WeightSettingsInfo.Connection.PortName, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                     Style="{StaticResource MaterialDesignComboBox}" />
                             </Border>
+                            <Button
+                                Width="50"
+                                MinHeight="30"
+                                Margin="5,0"
+                                Padding="0"
+                                HorizontalAlignment="Left"
+                                materialDesign:ButtonAssist.CornerRadius="5"
+                                Background="#2E2E2E"
+                                BorderThickness="0"
+                                Command="{Binding PortUpdateCommand}"
+                                FocusVisualStyle="{x:Null}"
+                                Style="{StaticResource MaterialDesignFlatAccentBgButton}">
+
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock
+                                        Margin="0,0,0,0"
+                                        VerticalAlignment="Center"
+                                        FontFamily="{StaticResource IconFontFamily}"
+                                        FontSize="18"
+                                        Foreground="DarkGray"
+                                        Text="&#xe69a;" />
+                                </StackPanel>
+                            </Button>
                         </StackPanel>
                         <!--  波特率  -->
                         <StackPanel Orientation="Horizontal">
@@ -170,7 +212,7 @@
                                     FontWeight="Bold"
                                     Foreground="White"
                                     ItemsSource="{Binding BaudRateItems, UpdateSourceTrigger=PropertyChanged}"
-                                    SelectedItem="{Binding SelectBaudRate, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                    SelectedItem="{Binding WeightSettingsInfo.Connection.BaudRate, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                     Style="{StaticResource MaterialDesignComboBox}" />
                             </Border>
                         </StackPanel>
@@ -205,7 +247,7 @@
                                     FontWeight="Bold"
                                     Foreground="White"
                                     ItemsSource="{Binding DataBitsItems, UpdateSourceTrigger=PropertyChanged}"
-                                    SelectedItem="{Binding SelectedDataBits, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                    SelectedItem="{Binding WeightSettingsInfo.Connection.DataBits, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                     Style="{StaticResource MaterialDesignComboBox}" />
                             </Border>
                         </StackPanel>
@@ -241,7 +283,7 @@
                                     FontWeight="Bold"
                                     Foreground="White"
                                     ItemsSource="{Binding ParityItems, UpdateSourceTrigger=PropertyChanged}"
-                                    SelectedItem="{Binding SelectedParity, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                    SelectedItem="{Binding SelectParity, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                     SelectedValuePath="Value"
                                     Style="{StaticResource MaterialDesignComboBox}" />
                             </Border>
@@ -278,7 +320,7 @@
                                     FontWeight="Bold"
                                     Foreground="White"
                                     ItemsSource="{Binding StopBitsItems, UpdateSourceTrigger=PropertyChanged}"
-                                    SelectedItem="{Binding SelectedStopBits, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                    SelectedItem="{Binding SelectStopBits, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                     SelectedValuePath="Value"
                                     Style="{StaticResource MaterialDesignComboBox}" />
                             </Border>
@@ -310,15 +352,16 @@
                                     materialDesign:ButtonAssist.CornerRadius="15"
                                     materialDesign:ColorZoneAssist.Mode="Dark"
                                     BorderThickness="0"
+                                    DisplayMemberPath="Name"
                                     FontSize="12"
                                     FontWeight="Bold"
                                     Foreground="White"
-                                    ItemsSource="{Binding PortItems, UpdateSourceTrigger=PropertyChanged}"
-                                    SelectedItem="{Binding SelectedPort, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                    ItemsSource="{Binding DataFormatTypeItems, UpdateSourceTrigger=PropertyChanged}"
+                                    SelectedItem="{Binding SelectDataFormat, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                    SelectedValuePath="Value"
                                     Style="{StaticResource MaterialDesignComboBox}" />
                             </Border>
                         </StackPanel>
-
                     </StackPanel>
                     <Rectangle
                         Height="1"
@@ -326,8 +369,13 @@
                         Opacity="0.15"
                         Stroke="DimGray"
                         StrokeDashArray="10 10"
-                        StrokeThickness="1" />
-                    <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
+                        StrokeThickness="1"
+                        Visibility="{Binding SelectWeightMode, Converter={StaticResource WeightModeToVisibilityConverter}, ConverterParameter=Static|Dynamic}" />
+                    <!--  重量设置参数  -->
+                    <StackPanel
+                        VerticalAlignment="Center"
+                        Orientation="Horizontal"
+                        Visibility="{Binding SelectWeightMode, Converter={StaticResource WeightModeToVisibilityConverter}, ConverterParameter=Static|Dynamic}">
                         <TextBlock
                             Margin="0,0,0,1"
                             VerticalAlignment="Center"
@@ -344,7 +392,10 @@
                             Text="重量设置参数:" />
                     </StackPanel>
                     <!--  最小最大重量  -->
-                    <StackPanel Margin="50,5,0,0" Orientation="Horizontal">
+                    <StackPanel
+                        Margin="50,5,0,0"
+                        Orientation="Horizontal"
+                        Visibility="{Binding SelectWeightMode, Converter={StaticResource WeightModeToVisibilityConverter}, ConverterParameter=Static|Dynamic}">
                         <StackPanel Orientation="Horizontal">
                             <StackPanel Orientation="Horizontal">
                                 <!--  图标  -->
@@ -374,13 +425,7 @@
                                         FontWeight="Bold"
                                         Foreground="White"
                                         InputMethod.IsInputMethodEnabled="False"
-                                        Text="{Binding MinimumLength, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
-                                        <b:Interaction.Triggers>
-                                            <b:EventTrigger EventName="TextChanged">
-                                                <mvvm:InvokeCommandAction Command="{Binding MinimumLengthChangedCommand}" />
-                                            </b:EventTrigger>
-                                        </b:Interaction.Triggers>
-                                    </TextBox>
+                                        Text="{Binding WeightSettingsInfo.CommonWeight.MinWeight, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                                 </Border>
                             </StackPanel>
                             <StackPanel Orientation="Horizontal">
@@ -411,25 +456,22 @@
                                         FontWeight="Bold"
                                         Foreground="White"
                                         InputMethod.IsInputMethodEnabled="False"
-                                        Text="{Binding MaximumLength, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
-                                        <b:Interaction.Triggers>
-                                            <b:EventTrigger EventName="TextChanged">
-                                                <mvvm:InvokeCommandAction Command="{Binding MaximumLengthChangedCommand}" />
-                                            </b:EventTrigger>
-                                        </b:Interaction.Triggers>
-                                    </TextBox>
+                                        Text="{Binding WeightSettingsInfo.CommonWeight.MaxWeight, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                                 </Border>
                             </StackPanel>
                         </StackPanel>
                     </StackPanel>
                     <!--  动态容器  -->
-                    <ScrollViewer MaxHeight="170" VerticalScrollBarVisibility="Auto">
+                    <ScrollViewer
+                        MaxHeight="170"
+                        VerticalScrollBarVisibility="Auto"
+                        Visibility="{Binding SelectWeightMode, Converter={StaticResource WeightModeToVisibilityConverter}, ConverterParameter=Static|Dynamic}">
                         <StackPanel>
                             <!--  静态称重参数  -->
                             <StackPanel
                                 Margin="50,5,0,0"
                                 Orientation="Vertical"
-                                Visibility="Visible">
+                                Visibility="{Binding SelectWeightMode, Converter={StaticResource WeightModeToVisibilityConverter}, ConverterParameter=Static}">
                                 <!--  反转、字符长度  -->
                                 <StackPanel Orientation="Horizontal">
                                     <StackPanel
@@ -447,7 +489,7 @@
                                             materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
                                             materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
                                             Focusable="False"
-                                            IsChecked="{Binding IsUseLocationOutput, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                            IsChecked="{Binding WeightSettingsInfo.StaticWeight.IsReversed, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                             Style="{StaticResource MaterialDesignSwitchToggleButton}" />
                                     </StackPanel>
                                     <StackPanel Margin="92,0,0,0" Orientation="Horizontal">
@@ -478,13 +520,7 @@
                                                 FontWeight="Bold"
                                                 Foreground="White"
                                                 InputMethod.IsInputMethodEnabled="False"
-                                                Text="{Binding MaximumLength, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
-                                                <b:Interaction.Triggers>
-                                                    <b:EventTrigger EventName="TextChanged">
-                                                        <mvvm:InvokeCommandAction Command="{Binding MaximumLengthChangedCommand}" />
-                                                    </b:EventTrigger>
-                                                </b:Interaction.Triggers>
-                                            </TextBox>
+                                                Text="{Binding WeightSettingsInfo.StaticWeight.CharacterLength, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                                         </Border>
                                     </StackPanel>
                                 </StackPanel>
@@ -518,13 +554,7 @@
                                                 FontWeight="Bold"
                                                 Foreground="White"
                                                 InputMethod.IsInputMethodEnabled="False"
-                                                Text="{Binding MinimumLength, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
-                                                <b:Interaction.Triggers>
-                                                    <b:EventTrigger EventName="TextChanged">
-                                                        <mvvm:InvokeCommandAction Command="{Binding MinimumLengthChangedCommand}" />
-                                                    </b:EventTrigger>
-                                                </b:Interaction.Triggers>
-                                            </TextBox>
+                                                Text="{Binding WeightSettingsInfo.StaticWeight.DataInterval, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                                         </Border>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal">
@@ -553,11 +583,13 @@
                                                 materialDesign:ButtonAssist.CornerRadius="15"
                                                 materialDesign:ColorZoneAssist.Mode="Dark"
                                                 BorderThickness="0"
+                                                DisplayMemberPath="Name"
                                                 FontSize="12"
                                                 FontWeight="Bold"
                                                 Foreground="White"
-                                                ItemsSource="{Binding PortItems, UpdateSourceTrigger=PropertyChanged}"
-                                                SelectedItem="{Binding SelectedPort, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                                ItemsSource="{Binding WeightAccessItems, UpdateSourceTrigger=PropertyChanged}"
+                                                SelectedItem="{Binding SelectedWeightAccess, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                                SelectedValuePath="Value"
                                                 Style="{StaticResource MaterialDesignComboBox}" />
                                         </Border>
                                     </StackPanel>
@@ -592,13 +624,7 @@
                                                 FontWeight="Bold"
                                                 Foreground="White"
                                                 InputMethod.IsInputMethodEnabled="False"
-                                                Text="{Binding MinimumLength, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
-                                                <b:Interaction.Triggers>
-                                                    <b:EventTrigger EventName="TextChanged">
-                                                        <mvvm:InvokeCommandAction Command="{Binding MinimumLengthChangedCommand}" />
-                                                    </b:EventTrigger>
-                                                </b:Interaction.Triggers>
-                                            </TextBox>
+                                                Text="{Binding WeightSettingsInfo.StaticWeight.BalanceCount, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                                         </Border>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal">
@@ -629,13 +655,7 @@
                                                 FontWeight="Bold"
                                                 Foreground="White"
                                                 InputMethod.IsInputMethodEnabled="False"
-                                                Text="{Binding MaximumLength, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
-                                                <b:Interaction.Triggers>
-                                                    <b:EventTrigger EventName="TextChanged">
-                                                        <mvvm:InvokeCommandAction Command="{Binding MaximumLengthChangedCommand}" />
-                                                    </b:EventTrigger>
-                                                </b:Interaction.Triggers>
-                                            </TextBox>
+                                                Text="{Binding WeightSettingsInfo.StaticWeight.BalanceQty, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                                         </Border>
                                     </StackPanel>
                                 </StackPanel>
@@ -669,13 +689,7 @@
                                                 FontWeight="Bold"
                                                 Foreground="White"
                                                 InputMethod.IsInputMethodEnabled="False"
-                                                Text="{Binding MinimumLength, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
-                                                <b:Interaction.Triggers>
-                                                    <b:EventTrigger EventName="TextChanged">
-                                                        <mvvm:InvokeCommandAction Command="{Binding MinimumLengthChangedCommand}" />
-                                                    </b:EventTrigger>
-                                                </b:Interaction.Triggers>
-                                            </TextBox>
+                                                Text="{Binding WeightSettingsInfo.StaticWeight.Identifier, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                                         </Border>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal">
@@ -706,13 +720,7 @@
                                                 FontWeight="Bold"
                                                 Foreground="White"
                                                 InputMethod.IsInputMethodEnabled="False"
-                                                Text="{Binding MaximumLength, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
-                                                <b:Interaction.Triggers>
-                                                    <b:EventTrigger EventName="TextChanged">
-                                                        <mvvm:InvokeCommandAction Command="{Binding MaximumLengthChangedCommand}" />
-                                                    </b:EventTrigger>
-                                                </b:Interaction.Triggers>
-                                            </TextBox>
+                                                Text="{Binding WeightSettingsInfo.StaticWeight.IdentifierPosition, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                                         </Border>
                                     </StackPanel>
                                 </StackPanel>
@@ -746,13 +754,7 @@
                                                 FontWeight="Bold"
                                                 Foreground="White"
                                                 InputMethod.IsInputMethodEnabled="False"
-                                                Text="{Binding MinimumLength, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
-                                                <b:Interaction.Triggers>
-                                                    <b:EventTrigger EventName="TextChanged">
-                                                        <mvvm:InvokeCommandAction Command="{Binding MinimumLengthChangedCommand}" />
-                                                    </b:EventTrigger>
-                                                </b:Interaction.Triggers>
-                                            </TextBox>
+                                                Text="{Binding WeightSettingsInfo.StaticWeight.IntegerStartPosition, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                                         </Border>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal">
@@ -783,13 +785,7 @@
                                                 FontWeight="Bold"
                                                 Foreground="White"
                                                 InputMethod.IsInputMethodEnabled="False"
-                                                Text="{Binding MaximumLength, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
-                                                <b:Interaction.Triggers>
-                                                    <b:EventTrigger EventName="TextChanged">
-                                                        <mvvm:InvokeCommandAction Command="{Binding MaximumLengthChangedCommand}" />
-                                                    </b:EventTrigger>
-                                                </b:Interaction.Triggers>
-                                            </TextBox>
+                                                Text="{Binding WeightSettingsInfo.StaticWeight.IntegerEndPosition, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                                         </Border>
                                     </StackPanel>
                                 </StackPanel>
@@ -823,13 +819,7 @@
                                                 FontWeight="Bold"
                                                 Foreground="White"
                                                 InputMethod.IsInputMethodEnabled="False"
-                                                Text="{Binding MinimumLength, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
-                                                <b:Interaction.Triggers>
-                                                    <b:EventTrigger EventName="TextChanged">
-                                                        <mvvm:InvokeCommandAction Command="{Binding MinimumLengthChangedCommand}" />
-                                                    </b:EventTrigger>
-                                                </b:Interaction.Triggers>
-                                            </TextBox>
+                                                Text="{Binding WeightSettingsInfo.StaticWeight.DecimalStartPosition, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                                         </Border>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal">
@@ -860,18 +850,12 @@
                                                 FontWeight="Bold"
                                                 Foreground="White"
                                                 InputMethod.IsInputMethodEnabled="False"
-                                                Text="{Binding MaximumLength, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
-                                                <b:Interaction.Triggers>
-                                                    <b:EventTrigger EventName="TextChanged">
-                                                        <mvvm:InvokeCommandAction Command="{Binding MaximumLengthChangedCommand}" />
-                                                    </b:EventTrigger>
-                                                </b:Interaction.Triggers>
-                                            </TextBox>
+                                                Text="{Binding WeightSettingsInfo.StaticWeight.DecimalEndPosition, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                                         </Border>
                                     </StackPanel>
                                 </StackPanel>
                                 <!--  发送内容、发送格式(问答式才可见)  -->
-                                <StackPanel Orientation="Horizontal">
+                                <StackPanel Orientation="Horizontal" Visibility="{Binding SelectedWeightAccess, Converter={StaticResource WeightAccessToVisibilityConverter}, ConverterParameter=QuestionAnswer}">
                                     <StackPanel Orientation="Horizontal">
                                         <!--  图标  -->
                                         <TextBlock
@@ -900,13 +884,7 @@
                                                 FontWeight="Bold"
                                                 Foreground="White"
                                                 InputMethod.IsInputMethodEnabled="False"
-                                                Text="{Binding MinimumLength, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
-                                                <b:Interaction.Triggers>
-                                                    <b:EventTrigger EventName="TextChanged">
-                                                        <mvvm:InvokeCommandAction Command="{Binding MinimumLengthChangedCommand}" />
-                                                    </b:EventTrigger>
-                                                </b:Interaction.Triggers>
-                                            </TextBox>
+                                                Text="{Binding WeightSettingsInfo.StaticWeight.SendingContent, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                                         </Border>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal">
@@ -935,11 +913,13 @@
                                                 materialDesign:ButtonAssist.CornerRadius="15"
                                                 materialDesign:ColorZoneAssist.Mode="Dark"
                                                 BorderThickness="0"
+                                                DisplayMemberPath="Name"
                                                 FontSize="12"
                                                 FontWeight="Bold"
                                                 Foreground="White"
-                                                ItemsSource="{Binding PortItems, UpdateSourceTrigger=PropertyChanged}"
-                                                SelectedItem="{Binding SelectedPort, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                                ItemsSource="{Binding DataFormatTypeItems, UpdateSourceTrigger=PropertyChanged}"
+                                                SelectedItem="{Binding SendDataFormat, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                                SelectedValuePath="Value"
                                                 Style="{StaticResource MaterialDesignComboBox}" />
                                         </Border>
                                     </StackPanel>
@@ -949,7 +929,7 @@
                             <StackPanel
                                 Margin="50,5,0,0"
                                 Orientation="Vertical"
-                                Visibility="Collapsed">
+                                Visibility="{Binding SelectWeightMode, Converter={StaticResource WeightModeToVisibilityConverter}, ConverterParameter=Dynamic}">
                                 <StackPanel Orientation="Horizontal">
                                     <!--  图标  -->
                                     <TextBlock
@@ -978,20 +958,17 @@
                                             FontWeight="Bold"
                                             Foreground="White"
                                             InputMethod.IsInputMethodEnabled="False"
-                                            Text="{Binding MinimumLength, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
-                                            <b:Interaction.Triggers>
-                                                <b:EventTrigger EventName="TextChanged">
-                                                    <mvvm:InvokeCommandAction Command="{Binding MinimumLengthChangedCommand}" />
-                                                </b:EventTrigger>
-                                            </b:Interaction.Triggers>
-                                        </TextBox>
+                                            Text="{Binding WeightSettingsInfo.DynamicWeight.DecimalPrecision, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                                     </Border>
                                 </StackPanel>
                             </StackPanel>
                         </StackPanel>
                     </ScrollViewer>
                     <!--  重量附加属性  -->
-                    <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
+                    <StackPanel
+                        VerticalAlignment="Center"
+                        Orientation="Horizontal"
+                        Visibility="{Binding SelectWeightMode, Converter={StaticResource WeightModeToVisibilityConverter}, ConverterParameter=Static|Dynamic}">
                         <TextBlock
                             Margin="0,0,0,1"
                             VerticalAlignment="Center"
@@ -1007,7 +984,10 @@
                             Foreground="DarkGray"
                             Text="附加重量属性:" />
                     </StackPanel>
-                    <StackPanel Margin="50,5,0,0" Orientation="Vertical">
+                    <StackPanel
+                        Margin="50,5,0,0"
+                        Orientation="Vertical"
+                        Visibility="{Binding SelectWeightMode, Converter={StaticResource WeightModeToVisibilityConverter}, ConverterParameter=Static|Dynamic}">
                         <!--  重量转换  -->
                         <StackPanel Orientation="Horizontal">
                             <StackPanel
@@ -1022,13 +1002,17 @@
                                     Foreground="DarkGray"
                                     Text="是否使用实际重量转换率:" />
                                 <ToggleButton
+                                    Name="IsUseActualWeightConversionRateToggleButton"
                                     materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
                                     materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
                                     Focusable="False"
-                                    IsChecked="{Binding IsUseLocationOutput, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                    IsChecked="{Binding WeightSettingsInfo.AdditionalWeight.IsUseActualWeightConversionRate, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                     Style="{StaticResource MaterialDesignSwitchToggleButton}" />
                             </StackPanel>
-                            <StackPanel Margin="10,0,0,0" Orientation="Horizontal">
+                            <StackPanel
+                                Margin="10,0,0,0"
+                                IsEnabled="{Binding ElementName=IsUseActualWeightConversionRateToggleButton, Path=IsChecked}"
+                                Orientation="Horizontal">
                                 <!--  图标  -->
                                 <TextBlock
                                     Margin="5,0"
@@ -1056,13 +1040,7 @@
                                         FontWeight="Bold"
                                         Foreground="White"
                                         InputMethod.IsInputMethodEnabled="False"
-                                        Text="{Binding MaximumLength, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
-                                        <b:Interaction.Triggers>
-                                            <b:EventTrigger EventName="TextChanged">
-                                                <mvvm:InvokeCommandAction Command="{Binding MaximumLengthChangedCommand}" />
-                                            </b:EventTrigger>
-                                        </b:Interaction.Triggers>
-                                    </TextBox>
+                                        Text="{Binding WeightSettingsInfo.AdditionalWeight.WeightConversionRate, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                                 </Border>
                                 <TextBlock
                                     Margin="5,0"
@@ -1087,13 +1065,17 @@
                                     Foreground="DarkGray"
                                     Text="是否使用追加重量:" />
                                 <ToggleButton
+                                    Name="IsUseAppendedWeightToggleButton"
                                     materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
                                     materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
                                     Focusable="False"
-                                    IsChecked="{Binding IsUseLocationOutput, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                    IsChecked="{Binding WeightSettingsInfo.AdditionalWeight.IsUseAppendedWeight, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                     Style="{StaticResource MaterialDesignSwitchToggleButton}" />
                             </StackPanel>
-                            <StackPanel Margin="20,0,0,0" Orientation="Horizontal">
+                            <StackPanel
+                                Margin="20,0,0,0"
+                                IsEnabled="{Binding ElementName=IsUseAppendedWeightToggleButton, Path=IsChecked}"
+                                Orientation="Horizontal">
                                 <!--  图标  -->
                                 <TextBlock
                                     Margin="5,0"
@@ -1121,13 +1103,7 @@
                                         FontWeight="Bold"
                                         Foreground="White"
                                         InputMethod.IsInputMethodEnabled="False"
-                                        Text="{Binding MaximumLength, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
-                                        <b:Interaction.Triggers>
-                                            <b:EventTrigger EventName="TextChanged">
-                                                <mvvm:InvokeCommandAction Command="{Binding MaximumLengthChangedCommand}" />
-                                            </b:EventTrigger>
-                                        </b:Interaction.Triggers>
-                                    </TextBox>
+                                        Text="{Binding WeightSettingsInfo.AdditionalWeight.AppendedWeightValue, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                                 </Border>
                             </StackPanel>
                         </StackPanel>
@@ -1145,13 +1121,17 @@
                                     Foreground="DarkGray"
                                     Text="是否使用固定重量:" />
                                 <ToggleButton
+                                    Name="IsUseFixedWeightToggleButton"
                                     materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
                                     materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
                                     Focusable="False"
-                                    IsChecked="{Binding IsUseLocationOutput, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                    IsChecked="{Binding WeightSettingsInfo.AdditionalWeight.IsUseFixedWeight, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                     Style="{StaticResource MaterialDesignSwitchToggleButton}" />
                             </StackPanel>
-                            <StackPanel Margin="20,0,0,0" Orientation="Horizontal">
+                            <StackPanel
+                                Margin="20,0,0,0"
+                                IsEnabled="{Binding ElementName=IsUseFixedWeightToggleButton, Path=IsChecked}"
+                                Orientation="Horizontal">
                                 <!--  图标  -->
                                 <TextBlock
                                     Margin="5,0"
@@ -1179,13 +1159,7 @@
                                         FontWeight="Bold"
                                         Foreground="White"
                                         InputMethod.IsInputMethodEnabled="False"
-                                        Text="{Binding MaximumLength, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
-                                        <b:Interaction.Triggers>
-                                            <b:EventTrigger EventName="TextChanged">
-                                                <mvvm:InvokeCommandAction Command="{Binding MaximumLengthChangedCommand}" />
-                                            </b:EventTrigger>
-                                        </b:Interaction.Triggers>
-                                    </TextBox>
+                                        Text="{Binding WeightSettingsInfo.AdditionalWeight.FixedWeightValue, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                                 </Border>
                             </StackPanel>
                         </StackPanel>
@@ -1203,13 +1177,17 @@
                                     Foreground="DarkGray"
                                     Text="是否使用融合重量超时:" />
                                 <ToggleButton
+                                    Name="IsUseMergedWeightTimeoutToggleButton"
                                     materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
                                     materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
                                     Focusable="False"
-                                    IsChecked="{Binding IsUseLocationOutput, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                    IsChecked="{Binding WeightSettingsInfo.AdditionalWeight.IsUseMergedWeightTimeout, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                     Style="{StaticResource MaterialDesignSwitchToggleButton}" />
                             </StackPanel>
-                            <StackPanel Margin="10,0,0,0" Orientation="Horizontal">
+                            <StackPanel
+                                Margin="10,0,0,0"
+                                IsEnabled="{Binding ElementName=IsUseMergedWeightTimeoutToggleButton, Path=IsChecked}"
+                                Orientation="Horizontal">
                                 <!--  图标  -->
                                 <TextBlock
                                     Margin="5,0"
@@ -1237,13 +1215,7 @@
                                         FontWeight="Bold"
                                         Foreground="White"
                                         InputMethod.IsInputMethodEnabled="False"
-                                        Text="{Binding MaximumLength, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
-                                        <b:Interaction.Triggers>
-                                            <b:EventTrigger EventName="TextChanged">
-                                                <mvvm:InvokeCommandAction Command="{Binding MaximumLengthChangedCommand}" />
-                                            </b:EventTrigger>
-                                        </b:Interaction.Triggers>
-                                    </TextBox>
+                                        Text="{Binding WeightSettingsInfo.AdditionalWeight.MergedWeightTimeout, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                                 </Border>
                             </StackPanel>
                         </StackPanel>
@@ -1271,7 +1243,7 @@
                             FontWeight="Bold"
                             Foreground="Gray"
                             Opacity="0.7">
-                            <Run Text="872.550" /><Run
+                            <Run Text="{Binding RealtimeWeight, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:F3}}" /><Run
                                 FontSize="16"
                                 FontWeight="Bold"
                                 Text="kg" />
@@ -1288,18 +1260,22 @@
                         Background="#1A696969"
                         CornerRadius="5">
                         <TextBox
-                            Width="500"
+                            Width="590"
                             MinWidth="500"
                             MinHeight="80"
+                            MaxHeight="700"
                             Margin="5,0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Top"
                             Background="Transparent"
                             BorderThickness="0"
                             FontSize="13"
                             FontWeight="Bold"
                             Foreground="White"
                             IsReadOnly="True"
+                            Opacity="0.8"
                             Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                            Text="{Binding RegularExpression, UpdateSourceTrigger=PropertyChanged}"
+                            Text="{Binding ReceivedData, UpdateSourceTrigger=PropertyChanged}"
                             TextWrapping="Wrap"
                             VerticalScrollBarVisibility="Auto" />
                     </Border>
@@ -1326,8 +1302,9 @@
                         <ToggleButton
                             materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
                             materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
+                            Command="{Binding IsRealtimeDataEnabledChangedCommand}"
                             Focusable="False"
-                            IsChecked="{Binding IsUseLocationOutput, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                            IsChecked="{Binding IsRealtimeDataEnabled, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                             Style="{StaticResource MaterialDesignSwitchToggleButton}" />
                     </StackPanel>
                 </StackPanel>
@@ -1416,7 +1393,7 @@
                 Background="BlueViolet"
                 FontFamily="LoadFiraCode"
                 FontWeight="Bold"
-                MessageQueue="{Binding ResultOutputSettingsMessageQueue}" />
+                MessageQueue="{Binding WeightSettingsMessageQueue}" />
         </Grid>
     </materialDesign:DialogHost>
 </Page>
