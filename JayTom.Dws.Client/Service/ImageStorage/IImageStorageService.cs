@@ -12,6 +12,11 @@ namespace JayTom.Dws.Client.Service.ImageStorage {
     public interface IImageStorageService {
 
         /// <summary>
+        /// 存图参数
+        /// </summary>
+        public ImageSettingsDto? ImageSettingsDto { get; }
+
+        /// <summary>
         /// 存图失败事件
         /// </summary>
         event EventHandler<Exception> ImageSaveFailed;

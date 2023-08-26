@@ -4,9 +4,11 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
-namespace JayTom.Dws.Domain.Dto {
+namespace JayTom.Dws.Domain.Dto.BaseInfoModels
+{
 
-    public class TcpSettingsInfo {
+    public class TcpSettingsInfo
+    {
 
         /// <summary>
         /// 连接模式(客户端、服务端)
@@ -24,7 +26,8 @@ namespace JayTom.Dws.Domain.Dto {
         public TcpInfo ServerConfig { get; set; } = new();
     }
 
-    public enum TcpConnectionMode {
+    public enum TcpConnectionMode
+    {
 
         /// <summary>
         /// 客户端

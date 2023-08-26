@@ -15,6 +15,7 @@ namespace JayTom.Dws.Plugin.Scale.DynamicScale {
         private System.IO.Ports.SerialPort? _serialPort { get; set; }
         private DefaultDynamicScaleValueParameters _defaultDynamicScaleValueParameters = new();
         private BaseScaleConnectParam _baseScaleConnectParam = new();
+        private SemaphoreSlim _semaphore = new(1);
 
         public void Dispose() {
             _serialPort?.Close();
@@ -63,14 +64,15 @@ namespace JayTom.Dws.Plugin.Scale.DynamicScale {
                     //注册事件
                     _serialPort.DataReceived += async delegate (object sender, SerialDataReceivedEventArgs args) {
                         //读数据
-                        await Task.Delay(150);
-                        if (_serialPort.BytesToRead > 0) {
-                            try {
-                                var port = (System.IO.Ports.SerialPort)sender;
+
+                        try {
+                            await Task.Delay(150);
+                            await _semaphore.WaitAsync();
+                            if (sender is System.IO.Ports.SerialPort { IsOpen: true, BytesToRead: > 0 } port && _serialPort.IsOpen) {
                                 string receivedData;
                                 if (WeightFormat == ScaleWeightFormat.Ascii) {
                                     // 读取接收到的数据
-                                    receivedData = port.ReadExisting()/*.Trim().Replace(" ", string.Empty)*/;
+                                    receivedData = port.ReadExisting() /*.Trim().Replace(" ", string.Empty)*/;
                                     // 定义匹配重量的正则表达式模式(不考虑负数)
                                     const string pattern = @"\b\d+\.\d+\b";
                                     var regex = new Regex(pattern);
@@ -89,9 +91,9 @@ namespace JayTom.Dws.Plugin.Scale.DynamicScale {
                                 else {
                                     //接收十六进制内容
                                     // 接收数据存储的字节数组
-                                    var buffer = new byte[_serialPort.BytesToRead];
+                                    var buffer = new byte[port.BytesToRead];
                                     // 读取数据到字节数组
-                                    _serialPort.Read(buffer, 0, buffer.Length);
+                                    port.Read(buffer, 0, buffer.Length);
                                     // 将字节数组转换为十六进制表示
                                     receivedData = BitConverter.ToString(buffer).Replace("-", " ");
                                     if (!string.IsNullOrEmpty(receivedData)) {
@@ -100,11 +102,15 @@ namespace JayTom.Dws.Plugin.Scale.DynamicScale {
                                         OnStabledWeight(weightFromHex);
                                     }
                                 }
+
                                 OnReceived(receivedData);
                             }
-                            catch (Exception e) {
-                                OnExcepted(e);
-                            }
+                        }
+                        catch (Exception e) {
+                            OnExcepted(e);
+                        }
+                        finally {
+                            _semaphore.Release();
                         }
                     };
                     _serialPort.Disposed += delegate {
@@ -155,7 +161,7 @@ namespace JayTom.Dws.Plugin.Scale.DynamicScale {
 
         protected virtual async void OnStabledWeight(float e) {
             await Task.Yield();
-            e = (float)Math.Round(e, _defaultDynamicScaleValueParameters.DecimalPlaces);
+
             //使用附加属性
             if (WeightAdditionalProperties.IsUseActualWeightConversionRate) {
                 //使用重量转换率
@@ -165,7 +171,7 @@ namespace JayTom.Dws.Plugin.Scale.DynamicScale {
                 //追加重量
                 e = (float)(e + WeightAdditionalProperties.AppendedWeightValue);
             }
-
+            e = (float)Math.Round(e, _defaultDynamicScaleValueParameters.DecimalPlaces);
             if (WeightAdditionalProperties.IsUseFixedWeight) {
                 //固定重量输出
                 e = (float)WeightAdditionalProperties.FixedWeightValue;

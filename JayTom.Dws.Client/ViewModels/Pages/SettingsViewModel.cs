@@ -20,6 +20,7 @@ using JayTom.Dws.Client.Views.Dialog;
 using JayTom.Dws.Client.ViewModels.Dialog;
 
 namespace JayTom.Dws.Client.ViewModels.Pages {
+
     public class SettingsViewModel : BindableBase {
         private readonly IRegionManager _regionManager;
 
@@ -126,6 +127,19 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     IconFont = new IconInfoModel()
                     {
                         IconFont = "pack://application:,,,/Fonts/#iconfont",
+                        IconCode = "\xe72f",
+                        IconSize = 28
+                    },
+                    Title = "体积设置",
+                    Description = "体积设置相关",
+                    ClickCommand = ClickCommand,
+                    PageClassName = "VolumeSettingsPage"
+                },
+                new MenuItemInfoModel()
+                {
+                    IconFont = new IconInfoModel()
+                    {
+                        IconFont = "pack://application:,,,/Fonts/#iconfont",
                         IconCode = "\xe641",
                         IconSize = 30
                     },
@@ -146,6 +160,19 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     Description = "内容输入相关设置",
                     ClickCommand = ClickCommand,
                     PageClassName = "ContentInputSettingsPage"
+                },
+                new MenuItemInfoModel()
+                {
+                    IconFont = new IconInfoModel()
+                    {
+                        IconFont = "pack://application:,,,/Fonts/#iconfont",
+                        IconCode = "\xeaad",
+                        IconSize = 25
+                    },
+                    Title = "日志管理",
+                    Description = "运行日志、设备日志、通讯日志管理",
+                    ClickCommand = ClickCommand,
+                    PageClassName = "LogManagerPage"
                 },
                 new MenuItemInfoModel()
                 {

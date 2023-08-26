@@ -2,13 +2,24 @@
 using JayTom.Dws.Plugin.Scale;
 using System.Text.RegularExpressions;
 using JayTom.Dws.Plugin.WeighingScale;
+using JayTom.Dws.PluginInterface.Utils;
+using JayTom.Dws.Plugin.Scale.StaticScale;
 using JayTom.Dws.Plugin.Scale.DynamicScale;
+using WeightAccessMode = JayTom.Dws.Plugin.WeighingScale.WeightAccessMode;
 
 internal class Program {
     private static IScale _scale;
 
     private static void Main(string[] args) {
-        _scale = new DefaultDynamicScale() {
+        Task.Factory.StartNew(() => Task.WhenAll(Enumerable.Range(1, 6).Select(it => DoAsync(it))),
+            CancellationToken.None, TaskCreationOptions.None, new DedicatedThreadTaskScheduler(2));
+
+        async Task DoAsync(int index) {
+            await Task.Yield(); Console.WriteLine($"[{DateTimeOffset.Now.ToString("hh:MM:ss")}]Task {index} is executed in thread {Environment.CurrentManagedThreadId}"); var endTime = DateTime.UtcNow.AddSeconds(4); SpinWait.SpinUntil(() => DateTime.UtcNow > endTime); await Task.Delay(1000);
+        }
+        Console.ReadLine();
+
+        _scale = new DefaultStaticScale() {
             WeightFormat = ScaleWeightFormat.Ascii
         };
         _scale.Excepted += delegate (object? sender, Exception exception) {
@@ -22,8 +33,8 @@ internal class Program {
             Console.WriteLine($"接收到的内容:{s}");
         };
         _scale.Connect(new BaseScaleConnectParam() {
-            PortName = "COM3",
-            BaudRate = 38400,
+            PortName = "COM4",
+            BaudRate = 9600,
             DataBits = 8,
             Parity = Parity.None,
             StopBits = StopBits.One

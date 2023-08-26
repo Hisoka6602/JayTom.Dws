@@ -23,6 +23,7 @@ using JayTom.Dws.Client.Views.Dialog;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.PluginInterface.Utils;
 using Color = System.Windows.Media.Color;
+using JayTom.Dws.Domain.Dto.BaseInfoModels;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Client.Models.ImageSettingModels;
 using OpenFileDialog = Microsoft.Win32.OpenFileDialog;

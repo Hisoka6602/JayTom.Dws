@@ -399,7 +399,7 @@ namespace JayTom.Dws.Camera {
         /// <summary>
         /// 扫码时间间隔
         /// </summary>
-        public int ScanInterval { get; set; }
+        public int ScanInterval { get; set; } = 500;
 
         /// <summary>
         /// 正则表达式

@@ -17,8 +17,10 @@ using JayTom.Dws.Client.EventMediators;
 using NetTopologySuite.GeometriesGraph;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Repository.LocalData;
+using JayTom.Dws.Domain.Dto.BaseInfoModels;
 
-namespace JayTom.Dws.Client.Service.ResultOutput {
+namespace JayTom.Dws.Client.Service.ResultOutput
+{
 
     public class DefaultResultOutputService : IResultOutputService {
         private readonly IConfigRepository _configRepository;

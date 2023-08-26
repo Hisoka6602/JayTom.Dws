@@ -4,6 +4,7 @@ using System.Text;
 using System.IO.Ports;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using JayTom.Dws.Domain.Dto.BaseInfoModels;
 
 namespace JayTom.Dws.Domain.Dto {
 
@@ -17,7 +18,7 @@ namespace JayTom.Dws.Domain.Dto {
         /// <summary>
         /// 连接参数
         /// </summary>
-        public ConnectionParams Connection { get; set; } = new();
+        public SerialPortSettingsInfo Connection { get; set; } = new();
 
         /// <summary>
         /// 公共参数
@@ -69,39 +70,6 @@ namespace JayTom.Dws.Domain.Dto {
         /// 最大重量
         /// </summary>
         public float MaxWeight { get; set; }
-    }
-
-    public class ConnectionParams {
-
-        /// <summary>
-        /// 串口
-        /// </summary>
-        public string PortName { get; set; } = string.Empty;
-
-        /// <summary>
-        /// 波特率
-        /// </summary>
-        public int BaudRate { get; set; }
-
-        /// <summary>
-        /// 数据位
-        /// </summary>
-        public int DataBits { get; set; }
-
-        /// <summary>
-        /// 效验位
-        /// </summary>
-        public Parity Parity { get; set; }
-
-        /// <summary>
-        /// 停止位
-        /// </summary>
-        public StopBits StopBits { get; set; }
-
-        /// <summary>
-        /// 数据格式
-        /// </summary>
-        public DataFormatType DataFormat { get; set; } = DataFormatType.Ascii;
     }
 
     public enum DataFormatType {

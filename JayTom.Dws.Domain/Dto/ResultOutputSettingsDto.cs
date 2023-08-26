@@ -6,6 +6,7 @@ using System.IO.Ports;
 using System.Windows.Input;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using JayTom.Dws.Domain.Dto.BaseInfoModels;
 
 namespace JayTom.Dws.Domain.Dto {
 
@@ -91,37 +92,6 @@ namespace JayTom.Dws.Domain.Dto {
         /// 是否程序重启后自动上传未成功数据
         /// </summary>
         public bool IsAutoUploadOnRestart { get; set; }
-    }
-
-    /// <summary>
-    /// 串口设置
-    /// </summary>
-    public class SerialPortSettingsInfo {
-
-        /// <summary>
-        /// 串口名称
-        /// </summary>
-        public string PortName { get; set; } = string.Empty;     // 串口名称
-
-        /// <summary>
-        /// 波特率
-        /// </summary>
-        public int BaudRate { get; set; }
-
-        /// <summary>
-        /// 效验位
-        /// </summary>
-        public Parity Parity { get; set; }
-
-        /// <summary>
-        /// 数据位
-        /// </summary>
-        public int DataBits { get; set; }
-
-        /// <summary>
-        /// 停止位
-        /// </summary>
-        public StopBits StopBits { get; set; }
     }
 
     /// <summary>

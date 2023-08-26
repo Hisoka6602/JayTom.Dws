@@ -4,7 +4,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
-namespace JayTom.Dws.Domain.Dto {
+namespace JayTom.Dws.Domain.Dto.BaseInfoModels {
 
     public class TcpInfo {
 

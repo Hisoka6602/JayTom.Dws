@@ -13,12 +13,14 @@ using JayTom.Dws.Data.LocalConf;
 using System.Collections.Generic;
 using NetTopologySuite.Algorithm;
 using JayTom.Dws.Client.EventMediators;
+using JayTom.Dws.Domain.Dto.BaseInfoModels;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Client.Models.ResultOutputSettingsModel;
 using JayTom.Dws.Client.Models.ContentInputSettingsModels;
 using static Microsoft.WindowsAPICodePack.Shell.PropertySystem.SystemProperties.System;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
+
     public class ContentInputSettingsPageViewModel : BindableBase {
         private readonly IConfigRepository _configRepository;
         private bool _isUseTcpInput;
@@ -28,9 +30,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         private SnackbarMessageQueue _contentInputSettingsMessageQueue = new(TimeSpan.FromSeconds(2));
         private bool _isSavingInProgress;
         private bool _isLoaded;
+
         public ContentInputSettingsPageViewModel(IConfigRepository configRepository) {
             _configRepository = configRepository;
         }
+
         public SnackbarMessageQueue ContentInputSettingsMessageQueue {
             get => _contentInputSettingsMessageQueue;
             set => SetProperty(ref _contentInputSettingsMessageQueue, value);
@@ -79,6 +83,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             get => _tcpSettingsInfo;
             set => SetProperty(ref _tcpSettingsInfo, value);
         }
+
         /// <summary>
         /// 是否保存中
         /// </summary>
@@ -86,6 +91,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             get => _isSavingInProgress;
             set => SetProperty(ref _isSavingInProgress, value);
         }
+
         /// <summary>
         /// 保存设置
         /// </summary>
@@ -131,9 +137,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     IsSavingInProgress = false;
                     ContentInputSettingsMessageQueue.Enqueue($"保存{(insertOrUpdate ? "成功" : "失败")}");
                 });
-
             }
-
         }
 
         /// <summary>
@@ -173,20 +177,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                                         Port = settingsDto.TcpSettingsInfo.ServerConfig.Port
                                     }
                                 };
-
-
                             }
-
                         }
                         catch (Exception e) {
-
                             ContentInputSettingsMessageQueue.Enqueue($"加载设置失败:{e.Message}");
                         }
-
                     }
                 });
             }
-
         }
     }
 }

@@ -250,7 +250,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                         Type = (CameraType)(s?.Info?.Type ?? JayTom.Dws.Camera.CameraType.IndustrialCamera),
                         Status = CameraStatus.Running,
                         CameraId = (s?.Info?.Id)?.ToString() ?? string.Empty,
-                        SerialNumber = s?.Info?.SerialNumber ?? string.Empty
+                        SerialNumber = s?.Info?.SerialNumber ?? string.Empty,
+                        Camera = s,
+                        StatusClickCommand = StatusClickCommand
                     })?.ToList();
                     CameraItems.AddRange(infoModels);
                 });
@@ -277,14 +279,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                                 model.Image = null;
                                 await Task.Delay(10);
                                 model.ImageTimestamp = args.Timestamp;
-                                var thumbnailWidth = (int)(args.Image.Width * 0.3);
-                                var thumbnailHeight = (int)(args.Image.Height * 0.3);
-                                using var thumbnail = args.Image.GetThumbnailImage(thumbnailWidth, thumbnailHeight,
-                                    null, IntPtr.Zero);
                                 // 将缩略图转换为BitmapSource
                                 await Application.Current.Dispatcher.InvokeAsync(() => {
                                     //更新图片
-                                    model.Image = ((Bitmap)thumbnail).ConvertBitmapToBitmapSource();
+                                    model.Image = args.ThumbImage.ConvertBitmapToBitmapSource();
                                     model.FrameRate = args?.FrameRate ?? 0;
                                     //更新右边信息
                                     BarCode = "未识别到条码";
@@ -350,14 +348,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                         model.Image = null;
                         await Task.Delay(5);
                         model.ImageTimestamp = args.Timestamp;
-                        /*var thumbnailWidth = (int)(args.ThumbImage.Width * 0.3);
-                        var thumbnailHeight = (int)(args.ThumbImage.Height * 0.3);
-                        using var thumbnail = args.ThumbImage.GetThumbnailImage(thumbnailWidth, thumbnailHeight,
-                            null, IntPtr.Zero);*/
-                        // 将缩略图转换为BitmapSource
-                        await Application.Current.Dispatcher.InvokeAsync(() => {
+                        await Application.Current.Dispatcher.BeginInvoke(() => {
                             //更新图片
-                            model.Image = ((Bitmap)args.ThumbImage).ConvertBitmapToBitmapSource();
+                            model.Image = args.ThumbImage.ConvertBitmapToBitmapSource();
                         });
                     }
                 }
@@ -377,19 +370,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                                                         f.Type is CameraType.IndustrialCamera or CameraType.SmartCamera);
             if (model is not null) {
                 //图片转换
-                if (args?.Image is not null) {
+                if (args?.ThumbImage is not null) {
                     if (args.Timestamp != model.ImageTimestamp) {
                         model.Image = null;
                         await Task.Delay(50);
                         model.ImageTimestamp = args.Timestamp;
-                        var thumbnailWidth = (int)(args.Image.Width * 0.3);
-                        var thumbnailHeight = (int)(args.Image.Height * 0.3);
-                        using var thumbnail = args.Image.GetThumbnailImage(thumbnailWidth, thumbnailHeight,
-                            null, IntPtr.Zero);
-                        // 将缩略图转换为BitmapSource
-                        await Application.Current.Dispatcher.InvokeAsync(() => {
+                        await Application.Current.Dispatcher.BeginInvoke(() => {
                             //更新图片
-                            model.Image = ((Bitmap)thumbnail).ConvertBitmapToBitmapSource();
+                            model.Image = args.ThumbImage.ConvertBitmapToBitmapSource();
                             model.FrameRate = args?.FrameRate ?? 0;
                             //更新右边信息
                             BarCode = args?.Barcode ?? "未识别到条码";
@@ -446,8 +434,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
 
         private async void StatusClickDelegate(CameraItemInfoModel obj) {
             //先加载进度条
+            //临时截图
+            if (obj.Camera is IIndustrialCamera industrialCamera) {
+                await industrialCamera.TakePhotoAsync();
+            }
 
-            if (!obj.IsSwitchingState) {
+            /*if (!obj.IsSwitchingState) {
                 try {
                     obj.IsSwitchingState = true;
                     await Task.Delay(TimeSpan.FromSeconds(5));
@@ -461,7 +453,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                 finally {
                     obj.IsSwitchingState = false;
                 }
-            }
+            }*/
         }
 
         /// <summary>

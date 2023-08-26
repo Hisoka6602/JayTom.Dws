@@ -5,6 +5,7 @@ using System.IO.Ports;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using JayTom.Dws.Plugin.SerialPort;
+using System.Runtime.Serialization;
 using System.Collections.Concurrent;
 using JayTom.Dws.Plugin.WeighingScale;
 using JayTom.Dws.Plugin.Scale.ScaleValueParameters;
@@ -20,9 +21,13 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
         private CancellationTokenSource _tokenSource = new();
         private DefaultStaticScaleValueParameters _defaultStaticScaleValueParameters = new();
         private BaseScaleConnectParam _baseScaleConnectParam = new();
+        private SemaphoreSlim _semaphore = new(1);
 
-        public void Dispose() {
+        public async void Dispose() {
             _tokenSource?.Cancel();
+            await Task.Delay(500);
+            _serialPort?.DiscardOutBuffer();
+            _serialPort?.DiscardInBuffer();
             _serialPort?.Close();
             _serialPort?.Dispose();
         }
@@ -66,36 +71,42 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
                     };
                     //注册事件
                     _serialPort.DataReceived += async delegate (object sender, SerialDataReceivedEventArgs args) {
-                        //读数据
-                        if (_serialPort.BytesToRead > 0) {
+                        try {
                             await Task.Delay(_defaultStaticScaleValueParameters.DataInterval);
-                            try {
-                                var port = (System.IO.Ports.SerialPort)sender;
-                                var receivedData = string.Empty;
-                                if (WeightFormat == ScaleWeightFormat.Ascii) {
-                                    // 读取接收到的数据
-                                    receivedData = port.ReadExisting()/*.Trim().Replace(" ", string.Empty)*/;
+                            await _semaphore.WaitAsync();
+                            if (_serialPort?.IsOpen == true) {
+                                if (sender is System.IO.Ports.SerialPort { IsOpen: true, BytesToRead: > 0 } port && !_tokenSource.IsCancellationRequested) {
+                                    string receivedData;
+                                    if (WeightFormat == ScaleWeightFormat.Ascii) {
+                                        // 读取接收到的数据
+                                        receivedData = port.ReadExisting() /*.Trim().Replace(" ", string.Empty)*/;
+                                    }
+                                    else {
+                                        //接收十六进制内容
+                                        // 接收数据存储的字节数组
+                                        var buffer = new byte[port.BytesToRead];
+
+                                        // 读取数据到字节数组
+                                        port.Read(buffer, 0, buffer.Length);
+
+                                        // 将字节数组转换为十六进制表示
+                                        receivedData = BitConverter.ToString(buffer).Replace("-", "");
+                                    }
+
+                                    _character.Enqueue(receivedData);
+                                    // 添加到接收数据缓冲区
+                                    //receivedDataBuffer += receivedData;
+
+                                    OnReceived(receivedData);
                                 }
-                                else {
-                                    //接收十六进制内容
-                                    // 接收数据存储的字节数组
-                                    var buffer = new byte[_serialPort.BytesToRead];
-
-                                    // 读取数据到字节数组
-                                    _serialPort.Read(buffer, 0, buffer.Length);
-
-                                    // 将字节数组转换为十六进制表示
-                                    var hexString = BitConverter.ToString(buffer).Replace("-", "");
-                                }
-                                _character.Enqueue(receivedData);
-                                // 添加到接收数据缓冲区
-                                //receivedDataBuffer += receivedData;
-
-                                OnReceived(receivedData);
                             }
-                            catch (Exception e) {
-                                OnExcepted(e);
-                            }
+                        }
+                        catch (TaskCanceledException) { }
+                        catch (Exception e) {
+                            OnExcepted(e);
+                        }
+                        finally {
+                            _semaphore.Release();
                         }
                     };
                     _serialPort.Disposed += delegate {
@@ -257,6 +268,11 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
                 //追加重量
                 e = (float)(e + WeightAdditionalProperties.AppendedWeightValue);
             }
+            //判断输出的小数位数
+            var position = _defaultStaticScaleValueParameters.DecimalEndPosition -
+                _defaultStaticScaleValueParameters.DecimalStartPosition + 1;
+            position = position > 3 ? 3 : position;
+            e = (float)Math.Round(e, position);
 
             if (WeightAdditionalProperties.IsUseFixedWeight) {
                 //固定重量输出

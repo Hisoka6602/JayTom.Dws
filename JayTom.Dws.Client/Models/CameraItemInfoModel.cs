@@ -2,6 +2,7 @@
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
+using JayTom.Dws.Camera;
 using System.Windows.Media;
 using System.Windows.Input;
 using System.Threading.Tasks;
@@ -19,6 +20,7 @@ namespace JayTom.Dws.Client.Models {
         private bool _isSwitchingState;
         private long _imageTimestamp;
         private string _serialNumber = string.Empty;
+        private ICamera? _camera;
 
         public string CameraId {
             get => _cameraId;
@@ -87,6 +89,14 @@ namespace JayTom.Dws.Client.Models {
         public bool IsSwitchingState {
             get => _isSwitchingState;
             set => SetProperty(ref _isSwitchingState, value);
+        }
+
+        /// <summary>
+        /// 相机
+        /// </summary>
+        public ICamera? Camera {
+            get => _camera;
+            set => SetProperty(ref _camera, value);
         }
 
         /// <summary>

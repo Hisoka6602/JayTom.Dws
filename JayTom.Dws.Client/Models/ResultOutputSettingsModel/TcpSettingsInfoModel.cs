@@ -2,11 +2,12 @@
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
-using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using JayTom.Dws.Domain.Dto.BaseInfoModels;
 
-namespace JayTom.Dws.Client.Models.ResultOutputSettingsModel {
+namespace JayTom.Dws.Client.Models.ResultOutputSettingsModel
+{
 
     public class TcpSettingsInfoModel : BindableBase {
         private TcpConnectionMode? _connectionMode;

@@ -244,7 +244,7 @@ namespace JayTom.Dws.Client.Service.Device {
             //在这里初始化
             await Initialization();
             //启动(逐个相机启动)
-            foreach (var camera in _cameras) {
+            foreach (var camera in _cameras.OrderByDescending(o => o.BindingType)) {
                 //设置过滤
                 if (camera.BindingType == CameraBindingType.ScannerCamera) {
                     if (camera is IIndustrialCamera industrialCamera) {
@@ -346,6 +346,7 @@ namespace JayTom.Dws.Client.Service.Device {
                         var camera = ConvertCamera(info.Brand, info.Model);
                         if (camera is not null) {
                             //注册事件
+
                             camera.CameraDisconnected += delegate (object? sender, CameraConnectionEventArgs args) {
                                 if (sender is ICamera mCamera) {
                                     OnCameraDisconnected(mCamera);
@@ -372,7 +373,7 @@ namespace JayTom.Dws.Client.Service.Device {
                                         Image = args.Image,
                                         PhotoTime = args.PhotoTime,
                                         Timestamp = args.Timestamp,
-                                        ThumbImage = (Bitmap?)args.Image?.GetThumbnailImage(1280, 960, () => false, IntPtr.Zero)
+                                        ThumbImage = args.ThumbImage
                                     });
                                 };
                             }
@@ -511,6 +512,8 @@ namespace JayTom.Dws.Client.Service.Device {
                     _cameras[i]?.Dispose();
                     OnCameraReleased(serialNumber);
                 }
+                _dynamicScale?.Dispose();
+                _staticScale?.Dispose();
             }
             catch (Exception e) {
                 OnDeviceException(new DeviceExceptionEventArgs() {

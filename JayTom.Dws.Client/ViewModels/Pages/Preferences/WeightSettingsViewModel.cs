@@ -17,6 +17,7 @@ using System.Collections.ObjectModel;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Plugin.Scale.StaticScale;
 using JayTom.Dws.Plugin.Scale.DynamicScale;
+using JayTom.Dws.Domain.Dto.BaseInfoModels;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Client.Models.WeightSettingsModel;
 using JayTom.Dws.Plugin.Scale.ScaleValueParameters;
@@ -376,12 +377,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             get => new DelegateCommand(IsRealtimeDataEnabledChangedDelegate);
         }
 
-        private async void IsRealtimeDataEnabledChangedDelegate() {
-            if (!IsRealtimeDataEnabled) {
+        private void IsRealtimeDataEnabledChangedDelegate() {
+            /*if (!IsRealtimeDataEnabled) {
                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
                     ReceivedData = string.Empty;
                 });
-            }
+            }*/
         }
 
         /// <summary>
@@ -462,7 +463,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                         ConfigName = "WeightSettings",
                         Value = JsonConvert.SerializeObject(new WeightSettingsDto {
                             Mode = SelectWeightMode.Value,
-                            Connection = new ConnectionParams {
+                            Connection = new SerialPortSettingsInfo {
                                 BaudRate = WeightSettingsInfo.Connection.BaudRate,
                                 DataBits = WeightSettingsInfo.Connection.DataBits,
                                 DataFormat = SelectDataFormat.Value,

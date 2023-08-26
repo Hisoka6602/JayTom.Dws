@@ -8,6 +8,7 @@ using Prism.DryIoc;
 using System.Windows;
 using System.Net.Http;
 using Newtonsoft.Json;
+using System.Threading;
 using JayTom.Dws.Plugin;
 using JayTom.Dws.Camera;
 using System.Configuration;
@@ -75,6 +76,9 @@ namespace JayTom.Dws.Client {
                 containerRegistry.RegisterForNavigation<ContentInputSettingsPage>();
                 containerRegistry.RegisterForNavigation<CacheClearSettingsPage>();
                 containerRegistry.RegisterForNavigation<WeightSettingPages>();
+                containerRegistry.RegisterForNavigation<VolumeSettingsPage>();
+                containerRegistry.RegisterForNavigation<LogManagerPage>();
+                //LogManagerPage
                 //相机
                 containerRegistry.RegisterForNavigation<BarcodeScannerCameraConfigPage>();
                 containerRegistry.RegisterForNavigation<CameraFinderPage>();
@@ -136,6 +140,7 @@ namespace JayTom.Dws.Client {
         }
 
         protected override void OnStartup(StartupEventArgs e) {
+            ThreadPool.SetMinThreads(300, 200);
             this.DispatcherUnhandledException += delegate (object sender, DispatcherUnhandledExceptionEventArgs args) {
                 //异常触发
                 NLog.LogManager.GetCurrentClassLogger().Error($"{JsonConvert.SerializeObject(args.Exception)}");
@@ -234,6 +239,8 @@ namespace JayTom.Dws.Client {
             ViewModelLocationProvider.Register<CacheClearSettingsPage, CacheClearSettingsPageViewModel>();
             ViewModelLocationProvider.Register<BarcodeFilterSettingsPage, BarcodeFilterSettingsPageViewModel>();
             ViewModelLocationProvider.Register<WeightSettingPages, WeightSettingViewModel>();
+            ViewModelLocationProvider.Register<VolumeSettingsPage, VolumeSettingsViewModel>();
+            ViewModelLocationProvider.Register<LogManagerPage, LogManagerViewModel>();
         }
     }
 }

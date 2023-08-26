@@ -14,7 +14,6 @@ namespace JayTom.Dws.Plugin.SaveImage {
 
         public async Task<KeyValuePair<bool, string>> SaveOriginalImage(Image? image, string imageName, string imagePath, WatermarkParams? watermarkParams = null,
             CancellationToken cancellationToken = default) {
-            await Task.Yield();
             if (image is null) return new KeyValuePair<bool, string>(false, "图片不能为空!");
 
             try {
@@ -67,13 +66,14 @@ namespace JayTom.Dws.Plugin.SaveImage {
                     Directory.CreateDirectory(imagePath);
                 }
 
-                image?.Save($"{imagePath}\\{imageName}.bmp", ImageFormat.Bmp);
+                image?.Save($"{imagePath}\\{imageName}.bmp", ImageFormat.Jpeg);
                 return new KeyValuePair<bool, string>(true, "原图保存成功"); // 返回保存成功的信息
             }
             catch (Exception ex) {
                 return new KeyValuePair<bool, string>(false, ex.Message); // 返回保存失败的信息
             }
             finally {
+                image?.Dispose();
                 _semaphore.Release();
             }
         }
@@ -152,6 +152,7 @@ namespace JayTom.Dws.Plugin.SaveImage {
                 return new KeyValuePair<bool, string>(false, ex.Message); // 返回保存失败的信息
             }
             finally {
+                image?.Dispose();
                 _semaphore.Release();
             }
         }

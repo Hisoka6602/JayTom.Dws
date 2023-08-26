@@ -3,11 +3,12 @@ using System.Linq;
 using System.Text;
 using System.Windows.Data;
 using System.Globalization;
-using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using JayTom.Dws.Domain.Dto.BaseInfoModels;
 
-namespace JayTom.Dws.Client.Converters.SettingsConverter {
+namespace JayTom.Dws.Client.Converters.SettingsConverter
+{
 
     public class TcpConnectionModeToBooleanConverter : IValueConverter {
 

@@ -58,13 +58,12 @@ namespace JayTom.Dws.PluginInterface.Utils {
             return !string.IsNullOrWhiteSpace(filePath) && File.Exists(filePath);
         }
 
-        public static BitmapSource ConvertBitmapToBitmapSource(this Image bitmap) {
-            BitmapSource bitmapSource;
+        public static BitmapSource ConvertBitmapToBitmapSource(this Image? bitmap) {
             using var memory = new System.IO.MemoryStream();
-            bitmap.Save(memory, ImageFormat.Bmp);
+            bitmap?.Save(memory, ImageFormat.Jpeg);
             memory.Position = 0;
             var bitmapDecoder = BitmapDecoder.Create(memory, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.OnLoad);
-            bitmapSource = bitmapDecoder.Frames[0];
+            BitmapSource bitmapSource = bitmapDecoder.Frames[0];
             return bitmapSource;
         }
 
