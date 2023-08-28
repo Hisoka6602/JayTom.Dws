@@ -279,21 +279,24 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                     });
                     return new KeyValuePair<bool, string>(false, $"停止识别失败:{_nRet:X}");
                 }
+
+                Status = CameraStatus.Paused;
             }
             System.GC.Collect();
             return new KeyValuePair<bool, string>(true, string.Empty);
         }
 
-        public void Dispose() {
+        public async void Dispose() {
             if (Status != CameraStatus.Uninitialized) {
-                _imageCallback = null;
-                _readImageCallback = null;
+                Status = CameraStatus.Paused;
                 var nRet = _myCodeReader?.MVID_CR_CAM_StopGrabbing_NET() ?? 0;
                 if (MVIDCodeReader.MVID_CR_OK != nRet) {
                     OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
                         Exception = new Exception($"停止相机失败:{_nRet:X}")
                     });
                 }
+
+                await Task.Delay(500);
                 nRet = _myCodeReader?.MVID_CR_DestroyHandle_NET() ?? 0;
                 if (MVIDCodeReader.MVID_CR_OK != nRet) {
                     OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
@@ -306,6 +309,8 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                 OnCameraUnregistered(new CameraUnregisteredEventArgs() {
                     CameraInfo = this.Info
                 });
+                _imageCallback = null;
+                _readImageCallback = null;
                 _myCodeReader = null;
 
                 this.Info = null;
@@ -331,36 +336,38 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
 
         public async Task TakePhotoAsync(string barcode, long barcodeTimestamp) {
             //提交拍照请求
-            try {
-                await _takePhotoSlim.WaitAsync();
-                var pFrameInfo = new MVIDCodeReader.MVID_IMAGE_INFO();
-                _nRet = _myCodeReader?.MVID_CR_CAM_GetImageBuffer_NET(ref pFrameInfo, 300) ?? -1;
-                if (_nRet != MVIDCodeReader.MVID_CR_OK) {
-                    OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
-                        Exception = new Exception($"截图失败:截取一帧图片失败,{_nRet:X}")
+            if (Status == CameraStatus.Running) {
+                try {
+                    await _takePhotoSlim.WaitAsync();
+                    var pFrameInfo = new MVIDCodeReader.MVID_IMAGE_INFO();
+                    _nRet = _myCodeReader?.MVID_CR_CAM_GetImageBuffer_NET(ref pFrameInfo, 300) ?? -1;
+                    if (_nRet != MVIDCodeReader.MVID_CR_OK) {
+                        OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
+                            Exception = new Exception($"截图失败:截取一帧图片失败,{_nRet:X}")
+                        });
+                        return;
+                    }
+                    var image = await ConvertPointerToImage(pFrameInfo);
+                    var thumbnailImage = image?.GetThumbnailImage(1024, 768, () => false, IntPtr.Zero);
+                    await Task.Delay(100);
+                    OnPhotoTaken(new PhotoTakenEventArgs {
+                        Timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds(),
+                        CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
+                        Image = image,
+                        PhotoTime = DateTime.Now,
+                        ThumbImage = (Bitmap?)thumbnailImage,
+                        Barcode = barcode,
+                        BarcodeTimestamp = barcodeTimestamp
                     });
-                    return;
                 }
-                var image = await ConvertPointerToImage(pFrameInfo);
-                var thumbnailImage = image?.GetThumbnailImage(1024, 768, () => false, IntPtr.Zero);
-                await Task.Delay(100);
-                OnPhotoTaken(new PhotoTakenEventArgs {
-                    Timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds(),
-                    CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
-                    Image = image,
-                    PhotoTime = DateTime.Now,
-                    ThumbImage = (Bitmap?)thumbnailImage,
-                    Barcode = barcode,
-                    BarcodeTimestamp = barcodeTimestamp
-                });
-            }
-            catch (Exception e) {
-                OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
-                    Exception = new Exception($"截图失败:截取一帧图片异常,{e}")
-                });
-            }
-            finally {
-                _takePhotoSlim.Release();
+                catch (Exception e) {
+                    OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
+                        Exception = new Exception($"截图失败:截取一帧图片异常,{e}")
+                    });
+                }
+                finally {
+                    _takePhotoSlim.Release();
+                }
             }
         }
 

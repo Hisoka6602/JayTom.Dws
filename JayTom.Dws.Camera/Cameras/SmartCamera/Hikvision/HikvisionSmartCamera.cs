@@ -17,7 +17,7 @@ using JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision;
 namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
 
     public class HikvisionSmartCamera : ISmartCamera {
-        private static MvCodeReader.MV_CODEREADER_DEVICE_INFO_LIST _mStDeviceList = new();
+        private static MvCodeReader.MV_CODEREADER_DEVICE_INFO_LIST _mStDeviceList;
         private MvCodeReader? _mvCodeReader;
         private byte[] _bufForDriver = new byte[1024 * 1024 * 20];
         private MvCodeReader.MV_CODEREADER_DEVICE_INFO Structure;
