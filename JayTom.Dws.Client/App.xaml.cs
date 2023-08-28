@@ -198,6 +198,7 @@ namespace JayTom.Dws.Client {
 
                         services.AddHostedService<ComputerInfoBackgroundService>(); // 注册后台服务
                         services.AddHostedService<ScanProcessBackgroundService>(); // 注册后扫码过程服务
+                        services.AddHostedService<SaveImageBackgroundService>();//注册存图服务
                     })
                     .Build();
                 _host.Start();

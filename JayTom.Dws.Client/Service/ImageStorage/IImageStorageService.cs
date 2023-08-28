@@ -40,7 +40,7 @@ namespace JayTom.Dws.Client.Service.ImageStorage {
         /// <param name="volume"></param>
         /// <param name="cameraSerialNumber"></param>
         /// <param name="cancellationToken"></param>
-        void SaveImage(Image image, SaveImageType type, string barCode, float weight,
+        Task SaveImage(Image image, SaveImageType type, string barCode, float weight,
            DateTime scanTime, float length, float width, float height, float volume,
            string cameraSerialNumber, CancellationToken cancellationToken = default);
     }

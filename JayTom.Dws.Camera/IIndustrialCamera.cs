@@ -4,6 +4,7 @@ using System.Text;
 using System.Drawing;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using Point = System.Drawing.Point;
 using System.Diagnostics.CodeAnalysis;
 using static System.Net.Mime.MediaTypeNames;
 
@@ -53,7 +54,7 @@ namespace JayTom.Dws.Camera {
         /// 拍照
         /// </summary>
         /// <returns></returns>
-        Task TakePhotoAsync();
+        Task TakePhotoAsync(string barcode, long barcodeTimestamp);
 
         /// <summary>
         /// 设置扫码过滤参数
@@ -156,5 +157,15 @@ namespace JayTom.Dws.Camera {
         /// 相机序列号
         /// </summary>
         public string CameraSerialNumber { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 条码
+        /// </summary>
+        public string Barcode { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 条码时间戳
+        /// </summary>
+        public long BarcodeTimestamp { get; set; }
     }
 }

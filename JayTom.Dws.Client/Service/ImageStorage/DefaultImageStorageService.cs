@@ -25,7 +25,7 @@ namespace JayTom.Dws.Client.Service.ImageStorage {
         private readonly IConfigRepository _configRepository;
         private readonly IFtp _ftp;
         private SemaphoreSlim _semaphore = new(1);
-        //private SemaphoreSlim _saveSemaphore = new(1);
+        private SemaphoreSlim _saveSemaphore = new(1);
 
         public DefaultImageStorageService(ISaveImage saveImage, IConfigRepository configRepository,
             IFtp ftp) {
@@ -36,13 +36,11 @@ namespace JayTom.Dws.Client.Service.ImageStorage {
                 if (settings is SettingsChangedEvent { SettingsName: "SaveImageSettings" }) {
                     await _semaphore.WaitAsync();
                     var configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("SaveImageSettings"));
-                    if (configInfoModel is not null) {
-                        try {
-                            ImageSettingsDto = JsonConvert.DeserializeObject<ImageSettingsDto>(configInfoModel.Value);
-                        }
-                        catch (Exception e) {
-                            OnImageSaveFailed(e);
-                        }
+                    try {
+                        ImageSettingsDto = JsonConvert.DeserializeObject<ImageSettingsDto>(configInfoModel.Value);
+                    }
+                    catch (Exception e) {
+                        OnImageSaveFailed(e);
                     }
                     ImageSettingsDto ??= new ImageSettingsDto();
                     if (ImageSettingsDto.IsFtpUploadEnabled) {
@@ -63,21 +61,18 @@ namespace JayTom.Dws.Client.Service.ImageStorage {
 
         public event EventHandler<ImageSavedEventArgs>? ImageSaved;
 
-        public async void SaveImage(Image? image, SaveImageType type, string barCode, float weight, DateTime scanTime, float length,
+        public async Task SaveImage(Image? image, SaveImageType type, string barCode, float weight, DateTime scanTime, float length,
             float width, float height, float volume, string cameraSerialNumber, CancellationToken cancellationToken = default) {
             if (image is null) return;
             if (ImageSettingsDto is null) {
                 await _semaphore.WaitAsync(cancellationToken);
                 var configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("SaveImageSettings"), cancellationToken);
-                if (configInfoModel is not null) {
-                    try {
-                        ImageSettingsDto = JsonConvert.DeserializeObject<ImageSettingsDto>(configInfoModel.Value);
-                    }
-                    catch (Exception e) {
-                        OnImageSaveFailed(e);
-                    }
+                try {
+                    ImageSettingsDto = JsonConvert.DeserializeObject<ImageSettingsDto>(configInfoModel.Value);
                 }
-
+                catch (Exception e) {
+                    OnImageSaveFailed(e);
+                }
                 ImageSettingsDto ??= new ImageSettingsDto();
                 if (ImageSettingsDto.IsFtpUploadEnabled) {
                     var (key, value) = await _ftp.Connect(ImageSettingsDto.FtpInfo.IpAddress, ImageSettingsDto.FtpInfo.Username,
@@ -89,17 +84,10 @@ namespace JayTom.Dws.Client.Service.ImageStorage {
                 _semaphore.Release();
             }
 
-            if ((type == SaveImageType.BarcodeImage && !ImageSettingsDto.IsSaveBarcodeImage) ||
-                (type == SaveImageType.PanoramaImage && !ImageSettingsDto.IsSavePanoramaImage) ||
-                (type == SaveImageType.VolumeImage && !ImageSettingsDto.IsSaveVolumeImage)) {
-                image?.Dispose();
-                return;
-            }
             //开始保存
             //获取存图目录(根目录+模板子目录)
             try {
-                NLog.LogManager.GetCurrentClassLogger().Error($"type:{type},barCode:{barCode},scanTime:{scanTime:yyyy-MM-dd HH:mm:ss.fff}");
-                //await _saveSemaphore.WaitAsync(cancellationToken);
+                await _saveSemaphore.WaitAsync(cancellationToken);
                 var pathList = ImageSettingsDto.SubDirectoryTemplate?
                     .Where(w => w is { ApplicationType: ItemApplicationType.SubDirectory, Type: 1 })?
                     .Select(s => ParseTemplate(s.Content, type, barCode, weight, scanTime, length, width, height,
@@ -200,7 +188,7 @@ namespace JayTom.Dws.Client.Service.ImageStorage {
                 OnImageSaveFailed(new Exception($"存图异常:{e.Message}"));
             }
             finally {
-                //_saveSemaphore.Release();
+                _saveSemaphore.Release();
             }
         }
 
@@ -216,7 +204,7 @@ namespace JayTom.Dws.Client.Service.ImageStorage {
                 "{ScanTime}" => $"{(isWatermark ? "ScanTime:" : string.Empty)}{(isWatermark ? $"{scanTime:yyyy-MM-dd HH:mm:ss.fff}" : $"{scanTime:yyyyMMddHHmmssfff}")}",
                 "{TimestampedGuid}" => $"{(isWatermark ? "TimestampedGuid:" : string.Empty)}{new DateTimeOffset(scanTime).ToUnixTimeMilliseconds().ToString()}",
                 "{CameraSerialNumber}" => $"{(isWatermark ? "CameraSerialNumber:" : string.Empty)}{cameraSerialNumber}",
-                "{ImageType}" => $"{(isWatermark ? "ImageType:" : string.Empty)}{type.ToString()}",
+                "{ImageType}" => $"{(isWatermark ? "ImageType:" : string.Empty)}{type}",
                 "{Year}" => $"{(isWatermark ? "Year:" : string.Empty)}{scanTime:yyyy}",
                 "{Month}" => $"{(isWatermark ? "Month:" : string.Empty)}{scanTime:MM}",
                 "{Day}" => $"{(isWatermark ? "Day:" : string.Empty)}{scanTime:dd}",

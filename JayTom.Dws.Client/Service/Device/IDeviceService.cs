@@ -302,6 +302,16 @@ namespace JayTom.Dws.Client.Service.Device {
         /// 相机序列号
         /// </summary>
         public string CameraSerialNumber { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 条码
+        /// </summary>
+        public string Barcode { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 条码时间戳
+        /// </summary>
+        public long BarcodeTimestamp { get; set; }
     }
 
     public class VolumeCapturedEventArgs : EventArgs {
@@ -335,5 +345,15 @@ namespace JayTom.Dws.Client.Service.Device {
         /// 体积
         /// </summary>
         public double Volume { get; set; }
+
+        /// <summary>
+        /// 条码
+        /// </summary>
+        public string Barcode { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 条码时间戳
+        /// </summary>
+        public long BarcodeTimestamp { get; set; }
     }
 }

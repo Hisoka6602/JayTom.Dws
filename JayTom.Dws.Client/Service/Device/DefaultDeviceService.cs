@@ -262,6 +262,8 @@ namespace JayTom.Dws.Client.Service.Device {
                         });
                     }
                 }
+
+                await Task.Delay(100, token);
                 await camera.Start(string.Empty);
             }
             //连接磅秤
@@ -310,15 +312,13 @@ namespace JayTom.Dws.Client.Service.Device {
                 //相机相关
                 //获取过滤配置
                 var configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("BarcodeFilterSettings"));
-                if (configInfoModel is not null) {
-                    try {
-                        _barcodeFilterSettingsDto = JsonConvert.DeserializeObject<BarcodeFilterSettingsDto>(configInfoModel.Value);
-                    }
-                    catch (Exception e) {
-                        OnDeviceException(new DeviceExceptionEventArgs() {
-                            ExceptionMessage = new Exception($"加载过滤设置失败:{e.Message}")
-                        });
-                    }
+                try {
+                    _barcodeFilterSettingsDto = JsonConvert.DeserializeObject<BarcodeFilterSettingsDto>(configInfoModel.Value);
+                }
+                catch (Exception e) {
+                    OnDeviceException(new DeviceExceptionEventArgs() {
+                        ExceptionMessage = new Exception($"加载过滤设置失败:{e.Message}")
+                    });
                 }
                 CameraInitializationException.Clear();
                 _cameras.Clear();
@@ -373,7 +373,9 @@ namespace JayTom.Dws.Client.Service.Device {
                                         Image = args.Image,
                                         PhotoTime = args.PhotoTime,
                                         Timestamp = args.Timestamp,
-                                        ThumbImage = args.ThumbImage
+                                        ThumbImage = args.ThumbImage,
+                                        Barcode = args.Barcode,
+                                        BarcodeTimestamp = args.BarcodeTimestamp
                                     });
                                 };
                             }
@@ -558,7 +560,7 @@ namespace JayTom.Dws.Client.Service.Device {
                                 ?.CaptureDelayTime ?? 500;
                             await Task.Delay(delayTime);
                             //等待
-                            await industrialCamera.TakePhotoAsync();
+                            await industrialCamera.TakePhotoAsync(e.Barcode, e.Timestamp);
                         });
                     }
                 }

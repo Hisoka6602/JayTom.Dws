@@ -19,68 +19,72 @@ namespace JayTom.Dws.Plugin.SaveImage {
             try {
                 await _semaphore.WaitAsync(cancellationToken);
                 if (image.PixelFormat == PixelFormat.Format8bppIndexed) {
-                    image = image?.GetThumbnailImage(image?.Width ?? 1280, image?.Height ?? 960,
-                        () => false, IntPtr.Zero);
+                    // 创建缩略图时使用原始的宽度和高度
+                    image = image.GetThumbnailImage(image.Width, image.Height, () => false, IntPtr.Zero);
                 }
-                if (watermarkParams is not null && image is not null) {
-                    //添加水印
-                    //组合水印
+
+                if (watermarkParams is not null) {
+                    // 添加水印
                     var watermarkTestText = string.Join("\n", watermarkParams.WatermarkContent ?? new List<string>());
-                    using var graphics = Graphics.FromImage(image);
-                    using var watermarkFont = new Font("Microsoft YaHei", watermarkParams.FontSize, FontStyle.Bold);
-                    using var watermarkBrush = new SolidBrush(watermarkParams.WatermarkColor);
+                    using var processedImage = new Bitmap(image);
+                    using (var graphics = Graphics.FromImage(processedImage)) {
+                        // 在此处进行水印绘制操作
+                        using var watermarkFont = new Font("Microsoft YaHei", watermarkParams.FontSize, FontStyle.Bold);
+                        using var watermarkBrush = new SolidBrush(watermarkParams.WatermarkColor);
 
-                    float x, y;
-                    switch (watermarkParams.WatermarkPosition) {
-                        case WatermarkPosition.TopLeft:
-                            x = 10;
-                            y = 10;
-                            break;
+                        float x, y;
+                        switch (watermarkParams.WatermarkPosition) {
+                            case WatermarkPosition.TopLeft:
+                                x = 10;
+                                y = 10;
+                                break;
 
-                        case WatermarkPosition.TopRight:
-                            x = image.Width - graphics.MeasureString(watermarkTestText, watermarkFont).Width - 10;
-                            y = 10;
-                            break;
+                            case WatermarkPosition.TopRight:
+                                x = processedImage.Width - graphics.MeasureString(watermarkTestText, watermarkFont).Width - 10;
+                                y = 10;
+                                break;
 
-                        case WatermarkPosition.BottomLeft:
-                            x = 10;
-                            y = image.Height - graphics.MeasureString(watermarkTestText, watermarkFont).Height - 10;
-                            break;
+                            case WatermarkPosition.BottomLeft:
+                                x = 10;
+                                y = processedImage.Height - graphics.MeasureString(watermarkTestText, watermarkFont).Height - 10;
+                                break;
 
-                        case WatermarkPosition.BottomRight:
-                            x = image.Width - graphics.MeasureString(watermarkTestText, watermarkFont).Width - 10;
-                            y = image.Height - graphics.MeasureString(watermarkTestText, watermarkFont).Height - 10;
-                            break;
+                            case WatermarkPosition.BottomRight:
+                                x = processedImage.Width - graphics.MeasureString(watermarkTestText, watermarkFont).Width - 10;
+                                y = processedImage.Height - graphics.MeasureString(watermarkTestText, watermarkFont).Height - 10;
+                                break;
 
-                        default:
-                            x = 10;
-                            y = 10;
-                            break;
+                            default:
+                                x = 10;
+                                y = 10;
+                                break;
+                        }
+
+                        graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+                        graphics.DrawString(watermarkTestText, watermarkFont, watermarkBrush, x, y);
                     }
 
-                    graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
-                    graphics.DrawString(watermarkTestText, watermarkFont, watermarkBrush, x, y);
+                    if (!Directory.Exists(imagePath)) {
+                        Directory.CreateDirectory(imagePath);
+                    }
+
+                    // 保存修改后的图像
+                    processedImage.Save($"{imagePath}\\{imageName}.jpg", ImageFormat.Jpeg);
                 }
 
-                if (!Directory.Exists(imagePath)) {
-                    Directory.CreateDirectory(imagePath);
-                }
-
-                image?.Save($"{imagePath}\\{imageName}.bmp", ImageFormat.Jpeg);
                 return new KeyValuePair<bool, string>(true, "原图保存成功"); // 返回保存成功的信息
             }
             catch (Exception ex) {
                 return new KeyValuePair<bool, string>(false, ex.Message); // 返回保存失败的信息
             }
             finally {
-                image?.Dispose();
                 _semaphore.Release();
+                image?.Dispose();
             }
         }
 
-        public async Task<KeyValuePair<bool, string>> SaveCompressedImage(Image image, string imageName, string imagePath, WatermarkParams? watermarkParams = null,
+        public async Task<KeyValuePair<bool, string>> SaveCompressedImage(Image? image, string imageName, string imagePath, WatermarkParams? watermarkParams = null,
             CancellationToken cancellationToken = default) {
-            await Task.Yield();
             if (image is null) return new KeyValuePair<bool, string>(false, "图片不能为空!");
             try {
                 await _semaphore.WaitAsync(cancellationToken);

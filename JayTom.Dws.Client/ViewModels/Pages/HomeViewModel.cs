@@ -436,7 +436,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             //先加载进度条
             //临时截图
             if (obj.Camera is IIndustrialCamera industrialCamera) {
-                await industrialCamera.TakePhotoAsync();
+                await industrialCamera.TakePhotoAsync(string.Empty, 0);
             }
 
             /*if (!obj.IsSwitchingState) {
