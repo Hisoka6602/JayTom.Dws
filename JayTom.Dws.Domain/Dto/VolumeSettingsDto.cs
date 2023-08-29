@@ -15,6 +15,11 @@ namespace JayTom.Dws.Domain.Dto {
         public List<ItemTemplateInfo> DataTemplate { get; set; } = new();
 
         /// <summary>
+        /// 分隔符
+        /// </summary>
+        public string Separator { get; set; } = string.Empty;
+
+        /// <summary>
         /// 是否使用Tcp输入
         /// </summary>
         public bool IsUseTcpInput { get; set; }
@@ -27,7 +32,12 @@ namespace JayTom.Dws.Domain.Dto {
         /// <summary>
         /// 是否主动触发体积获取
         /// </summary>
-        public bool TriggerVolumeRequest { get; set; }
+        public bool IsTriggerVolumeRequest { get; set; }
+
+        /// <summary>
+        /// 发送参数
+        /// </summary>
+        public VolumeInformationRequesterInfo VolumeInformationRequesterInfo { get; set; } = new();
     }
 
     public class VolumeInformationRequesterInfo {
@@ -38,19 +48,19 @@ namespace JayTom.Dws.Domain.Dto {
         public VolumeTriggerPosition VolumeTriggerPosition { get; set; } = VolumeTriggerPosition.None;
 
         /// <summary>
+        /// 发送延迟（单位：毫秒）
+        /// </summary>
+        public int SendDelay { get; set; }
+
+        /// <summary>
         /// 发送内容
         /// </summary>
         public string SendContent { get; set; } = string.Empty;
 
         /// <summary>
-        /// 是否使用Tcp发送
+        /// 发送模式
         /// </summary>
-        public bool IsUseTcpSend { get; set; }
-
-        /// <summary>
-        /// 是否使用串口发送
-        /// </summary>
-        public bool IsUseSerialPortSend { get; set; }
+        public VolumeRequesterType VolumeRequesterType { get; set; }
 
         /// <summary>
         /// Tcp设置
@@ -79,5 +89,10 @@ namespace JayTom.Dws.Domain.Dto {
         /// 无
         /// </summary>
         None
+    }
+
+    public enum VolumeRequesterType {
+        Tcp,
+        SerialPort
     }
 }

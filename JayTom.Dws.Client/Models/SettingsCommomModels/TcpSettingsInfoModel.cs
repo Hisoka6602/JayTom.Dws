@@ -6,8 +6,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
 
-namespace JayTom.Dws.Client.Models.ResultOutputSettingsModel
-{
+namespace JayTom.Dws.Client.Models.SettingsCommomModels {
 
     public class TcpSettingsInfoModel : BindableBase {
         private TcpConnectionMode? _connectionMode;

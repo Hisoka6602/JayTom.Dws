@@ -15,6 +15,7 @@ using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Service.ImageStorage;
 using JayTom.Dws.Client.Service.ResultOutput;
+using JayTom.Dws.Client.Service.ExternalDataService;
 using static JayTom.Dws.Client.Service.BackgroundService.ScanProcessBackgroundService;
 
 namespace JayTom.Dws.Client.Service.BackgroundService {
@@ -23,9 +24,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private readonly IDeviceService _deviceService;
         private readonly IResultOutputService _resultOutputService;
         private readonly IImageStorageService _imageStorageService;
-
+        private readonly IExternalDataService _externalDataService;
         private readonly ConcurrentQueue<ScanBarCodeInfo> _scanBarCodeItems = new();
+
         //private SemaphoreSlim _semaphore = new(1);
+        private ExternalDataSourceEventArgs _externalDataSource = new();
 
         private List<ICamera> _cameras = new();
         private ConcurrentQueue<CameraImageInfo> _panoramicImageItems = new();
@@ -35,10 +38,12 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
         public ScanProcessBackgroundService(IDeviceService deviceService,
             IResultOutputService resultOutputService,
-            IImageStorageService imageStorageService) {
+            IImageStorageService imageStorageService,
+            IExternalDataService externalDataService) {
             _deviceService = deviceService;
             _resultOutputService = resultOutputService;
             _imageStorageService = imageStorageService;
+            _externalDataService = externalDataService;
             _imageStorageService.ImageSaved += delegate (object? sender, ImageSavedEventArgs args) {
                 //保存后触发
                 _savedImageItems.Enqueue(new SavedImageInfo() {
@@ -65,6 +70,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     scanBarCodeInfo.Weight = 0;
                 }
                 _scanBarCodeItems.Enqueue(scanBarCodeInfo);
+                //获取外部数据
+                //体积
+                if (_externalDataSource.IsVolumeInput) {
+                    await _externalDataService.GetVolume(args.Barcode);
+                }
                 EventAggregator.Instance.Publish(new TriggerPositionEvent() {
                     IsSuccess = true,
                     TriggerPosition = TriggerPositionEnum.PackageTrigger
@@ -110,6 +120,20 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     scanBarCodeInfo.Weight = args.Weight;
                 }
             };
+            //外部数据源
+            _externalDataService.DataSourceEnabled += delegate (object? sender, ExternalDataSourceEventArgs args) {
+                _externalDataSource = args;
+            };
+            //输入体积
+            _externalDataService.VolumeReceived += delegate (object? sender, ExternalVolumeInputEventArgs args) {
+                var scanBarCodeInfo = _scanBarCodeItems.FirstOrDefault(f => f.BarCode.Equals(args.BarCode));
+                if (scanBarCodeInfo is not null) {
+                    scanBarCodeInfo.Length = args.Length;
+                    scanBarCodeInfo.Width = args.Width;
+                    scanBarCodeInfo.Height = args.Height;
+                    scanBarCodeInfo.Volume = args.Volume;
+                }
+            };
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
@@ -138,7 +162,9 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 EventAggregator.Instance.Publish(scanBarCodeInfo);
                             }
                             else {
-                                if (_cameras.All(a => a.BindingType != CameraBindingType.VolumeCamera)) {
+                                if (_cameras.All(a => a.BindingType != CameraBindingType.VolumeCamera)
+                                    && !_externalDataSource.IsVolumeInput) {
+                                    //判断是否开启Tcp体积输入
                                     scanBarCodeInfo.Length = 0;
                                     scanBarCodeInfo.Width = 0;
                                     scanBarCodeInfo.Height = 0;

@@ -9,7 +9,7 @@ namespace JayTom.Dws.Domain.Dto.BaseInfoModels {
     public class ItemTemplateInfo {
 
         /// <summary>
-        /// 类型(0=编辑框、1=按钮)
+        /// 类型(0=编辑框、1=按钮、2=分隔符)
         /// </summary>
         public int Type { get; set; }
 
@@ -44,6 +44,11 @@ namespace JayTom.Dws.Domain.Dto.BaseInfoModels {
         /// <summary>
         /// 结果数据
         /// </summary>
-        ResultData,
+        ResultData = 3,
+
+        /// <summary>
+        /// 体积输入
+        /// </summary>
+        VolumeInput = 4,
     }
 }

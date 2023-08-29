@@ -8,7 +8,6 @@ using System.Collections.Generic;
 using JayTom.Dws.Client.Models.ImageSettingModels;
 
 namespace JayTom.Dws.Client.DataTemplateSelectors {
-
     public class ImageSettingItemDataTemplateSelectors : DataTemplateSelector {
 
         /// <summary>
@@ -20,12 +19,16 @@ namespace JayTom.Dws.Client.DataTemplateSelectors {
         /// 输入框
         /// </summary>
         public DataTemplate? TextBoxTemplate { get; set; }
-
+        /// <summary>
+        /// 分隔符
+        /// </summary>
+        public DataTemplate? SeparatorTemplate { get; set; }
         public override DataTemplate? SelectTemplate(object item, DependencyObject container) {
             if (item is not ItemBaseTemplateModel itemTyeItem) return null;
             return itemTyeItem.Type switch {
                 0 => TextBoxTemplate,
                 1 => ButtonTemplate,
+                2 => SeparatorTemplate,
                 _ => null
             };
         }

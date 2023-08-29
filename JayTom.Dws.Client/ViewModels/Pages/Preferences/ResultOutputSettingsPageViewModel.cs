@@ -24,6 +24,7 @@ using JayTom.Dws.Domain.Dto.BaseInfoModels;
 using JayTom.Dws.Domain.Repository.LocalData;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Client.Models.ImageSettingModels;
+using JayTom.Dws.Client.Models.SettingsCommomModels;
 using JayTom.Dws.Client.Models.ResultOutputSettingsModel;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.StartPanel;
 
@@ -340,7 +341,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
                 obj = obj.Replace("'", string.Empty);
                 var count = OutputItems.Count;
-                OutputItems.Insert(count - 1, new ItemBaseTemplateModel() {
+                OutputItems.Insert(count - 1 < 0 ? 0 : count - 1, new ItemBaseTemplateModel() {
                     Content = obj,
                     Id = count,
                     Type = 1,

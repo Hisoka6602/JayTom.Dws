@@ -3,6 +3,7 @@ using JayTom.Dws.Domain.Dto;
 using System.Collections.Generic;
 
 namespace JayTom.Dws.Client.EventMediators {
+
     public class EventAggregator {
         private static readonly Lazy<EventAggregator> _instance = new(() => new EventAggregator());
 
@@ -43,14 +44,15 @@ namespace JayTom.Dws.Client.EventMediators {
     }
 
     public class TriggerPositionEvent {
+
         /// <summary>
         /// 触发位置
         /// </summary>
         public TriggerPositionEnum TriggerPosition { get; set; }
+
         /// <summary>
         /// 是否成功
         /// </summary>
         public bool IsSuccess { get; set; }
-        //结果
     }
 }

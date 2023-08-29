@@ -15,9 +15,9 @@ using NetTopologySuite.Algorithm;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
 using JayTom.Dws.Domain.Repository.LocalConf;
-using JayTom.Dws.Client.Models.ResultOutputSettingsModel;
 using JayTom.Dws.Client.Models.ContentInputSettingsModels;
 using static Microsoft.WindowsAPICodePack.Shell.PropertySystem.SystemProperties.System;
+using JayTom.Dws.Client.Models.SettingsCommomModels;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
 

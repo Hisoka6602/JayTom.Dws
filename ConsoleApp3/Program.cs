@@ -11,6 +11,17 @@ internal class Program {
     private static IScale _scale;
 
     private static void Main(string[] args) {
+        string input = "\u0002,591,581,508,174885808,103898496,\u0003";
+        string[] parts = input.Split(',');
+
+        foreach (string part in parts) {
+            Console.WriteLine(part);
+        }
+
+        Console.WriteLine(parts.Length);
+        Console.ReadLine();
+        return;
+
         Task.Factory.StartNew(() => Task.WhenAll(Enumerable.Range(1, 6).Select(it => DoAsync(it))),
             CancellationToken.None, TaskCreationOptions.None, new DedicatedThreadTaskScheduler(2));
 

@@ -21,6 +21,7 @@ using JayTom.Dws.Domain.Dto.BaseInfoModels;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Client.Models.WeightSettingsModel;
 using JayTom.Dws.Plugin.Scale.ScaleValueParameters;
+using JayTom.Dws.Client.Models.SettingsCommomModels;
 using WeightAccessMode = JayTom.Dws.Domain.Dto.WeightAccessMode;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
@@ -95,6 +96,20 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             5,6,7,8,
         };
 
+        private ObservableCollection<DataFormatTypeInfoModel> _dataFormatTypeItems = new()
+        {
+            new DataFormatTypeInfoModel()
+            {
+                Name = "Ascii",
+                Value = DataFormatType.Ascii
+            },
+            new DataFormatTypeInfoModel()
+            {
+                Name = "Hex",
+                Value = DataFormatType.Hex
+            },
+        };
+
         private ObservableCollection<WeightModeInfoModel> _weightModeItems = new()
         {
             new WeightModeInfoModel()
@@ -111,20 +126,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             {
                 Name = "不称重",
                 Value = WeightMode.None,
-            },
-        };
-
-        private ObservableCollection<DataFormatTypeInfoModel> _dataFormatTypeItems = new()
-        {
-            new DataFormatTypeInfoModel()
-            {
-                Name = "Ascii",
-                Value = DataFormatType.Ascii
-            },
-            new DataFormatTypeInfoModel()
-            {
-                Name = "Hex",
-                Value = DataFormatType.Hex
             },
         };
 
@@ -560,7 +561,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                                     new DataFormatTypeInfoModel();
                                 WeightSettingsInfo = new WeightSettingsInfoModel() {
                                     Mode = settingsDto.Mode,
-                                    Connection = new ConnectionParamsModel() {
+                                    Connection = new SerialPortSettingsInfoModel() {
                                         BaudRate = settingsDto.Connection.BaudRate,
                                         DataBits = settingsDto.Connection.DataBits,
                                         DataFormat = settingsDto.Connection.DataFormat,

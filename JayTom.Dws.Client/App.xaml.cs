@@ -45,6 +45,7 @@ using JayTom.Dws.Client.Service.ResultOutput;
 using Microsoft.Extensions.DependencyInjection;
 using JayTom.Dws.Client.Views.Pages.Preferences;
 using JayTom.Dws.Client.Service.BackgroundService;
+using JayTom.Dws.Client.Service.ExternalDataService;
 using JayTom.Dws.Client.ViewModels.Pages.Preferences;
 using DryIoc.Microsoft.DependencyInjection.Extension;
 using JayTom.Dws.Infrastructure.Repository.LocalConf;
@@ -132,6 +133,7 @@ namespace JayTom.Dws.Client {
                 services.AddScoped<IDeviceService, DefaultDeviceService>();
                 services.AddScoped<IImageStorageService, DefaultImageStorageService>();
                 services.AddScoped<IResultOutputService, DefaultResultOutputService>();
+                services.AddScoped<IExternalDataService, ExternalDataService>();
             });
         }
 
@@ -194,6 +196,7 @@ namespace JayTom.Dws.Client {
                         services.AddSingleton(container.Resolve<IVolumeCameraConfigRepository>());
                         services.AddSingleton(container.Resolve<ISoundRepository>());
                         services.AddSingleton(container.Resolve<IConfigRepository>());
+                        services.AddSingleton(container.Resolve<IExternalDataService>());
                         //补注册
 
                         services.AddHostedService<ComputerInfoBackgroundService>(); // 注册后台服务

@@ -26,6 +26,7 @@ using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Client.Service.ImageStorage;
 using JayTom.Dws.Domain.Repository.LocalData;
 using JayTom.Dws.Client.Service.ResultOutput;
+using JayTom.Dws.Client.Service.ExternalDataService;
 using CameraType = JayTom.Dws.Client.Models.CameraType;
 using CameraStatus = JayTom.Dws.Client.Models.CameraStatus;
 using ConnectionType = JayTom.Dws.Client.Models.ConnectionType;
@@ -40,6 +41,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         private readonly IDeviceService _deviceService;
         private readonly IImageStorageService _imageStorageService;
         private readonly IResultOutputService _resultOutputService;
+        private readonly IExternalDataService _externalDataService;
         private ObservableCollection<CameraItemInfoModel> _cameraItems = new();
         private ObservableCollection<BarCodeItemModel> _barCodeItems = new();
         private DataGrid? _dataGrid = null;
@@ -168,13 +170,16 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         public HomeViewModel(IDialogService dialogService,
             IComputerInfoReporter computerInfoReporter,
             IBarCodeRepository barCodeRepository, IDeviceService deviceService,
-            IImageStorageService imageStorageService, IResultOutputService resultOutputService) {
+            IImageStorageService imageStorageService,
+            IResultOutputService resultOutputService,
+            IExternalDataService externalDataService) {
             _dialogService = dialogService;
             _computerInfoReporter = computerInfoReporter;
             _barCodeRepository = barCodeRepository;
             _deviceService = deviceService;
             _imageStorageService = imageStorageService;
             _resultOutputService = resultOutputService;
+            _externalDataService = externalDataService;
             CameraItems = new()
             {
                 new CameraItemInfoModel()
@@ -285,6 +290,20 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             _resultOutputService.OutputFailed += async delegate (object? sender, Exception exception) {
                 await Application.Current.Dispatcher.InvokeAsync(() => {
                     HomeMessageQueue.Enqueue($"结果输出异常:{exception.Message}");
+                });
+            };
+            //外部数据
+            _externalDataService.ExternalDataException += async delegate (object? sender, Exception exception) {
+                await Application.Current.Dispatcher.InvokeAsync(() => {
+                    HomeMessageQueue.Enqueue($"外部输入异常:{exception.Message}");
+                });
+            };
+            _externalDataService.VolumeReceived += async delegate (object? sender, ExternalVolumeInputEventArgs args) {
+                await Application.Current.Dispatcher.InvokeAsync(() => {
+                    Length = (float)args.Length;
+                    Width = (float)args.Width;
+                    Height = (float)args.Height;
+                    Volume = (float)args.Volume;
                 });
             };
             EventAggregator.Instance.Subscribe<ScanBarCodeInfo>(async Info => {
@@ -437,12 +456,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                         IsSwitchingState = true;
                         if (!RunningStatus) {
                             //启动
+                            await _externalDataService.Start();
                             var (key, value) = await _deviceService.Start();
                             //提示
                         }
                         else {
                             //停止
                             HomeMessageQueue.Clear();
+                            await _externalDataService.Stop();
                             var (key, value) = await _deviceService.Stop();
                             //提示
                         }

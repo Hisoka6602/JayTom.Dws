@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
-namespace JayTom.Dws.Client.Models.ResultOutputSettingsModel {
+namespace JayTom.Dws.Client.Models.SettingsCommomModels {
 
     public class TcpInfoModel : BindableBase {
         private string _ipAddress = "127.0.0.1";

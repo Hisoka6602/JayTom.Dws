@@ -5,12 +5,13 @@ using System.Text;
 using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using JayTom.Dws.Client.Models.SettingsCommomModels;
 
 namespace JayTom.Dws.Client.Models.WeightSettingsModel {
 
     public class WeightSettingsInfoModel : BindableBase {
         private WeightMode _mode = WeightMode.None;
-        private ConnectionParamsModel _connection = new();
+        private SerialPortSettingsInfoModel _connection = new();
         private CommonWeightParamsModel _commonWeight = new();
         private StaticWeightParamsModel _staticWeight = new();
         private DynamicWeightParamsModel _dynamicWeight = new();
@@ -27,7 +28,7 @@ namespace JayTom.Dws.Client.Models.WeightSettingsModel {
         /// <summary>
         /// 连接参数
         /// </summary>
-        public ConnectionParamsModel Connection {
+        public SerialPortSettingsInfoModel Connection {
             get => _connection;
             set => SetProperty(ref _connection, value);
         }

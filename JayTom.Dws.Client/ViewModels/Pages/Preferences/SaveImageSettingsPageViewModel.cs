@@ -544,7 +544,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
                 obj = obj.Replace("'", string.Empty);
                 var count = WatermarkItems.Count;
-                WatermarkItems.Insert(count - 1, new ItemBaseTemplateModel() {
+                WatermarkItems.Insert(count - 1 < 0 ? 0 : count - 1, new ItemBaseTemplateModel() {
                     Content = obj,
                     Id = count,
                     Type = 1,
