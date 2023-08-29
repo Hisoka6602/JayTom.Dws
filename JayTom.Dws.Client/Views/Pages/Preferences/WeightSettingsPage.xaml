@@ -655,7 +655,7 @@
                                                 FontWeight="Bold"
                                                 Foreground="White"
                                                 InputMethod.IsInputMethodEnabled="False"
-                                                Text="{Binding WeightSettingsInfo.StaticWeight.BalanceQty, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                                                Text="{Binding WeightSettingsInfo.StaticWeight.BalanceQty, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, StringFormat={}{0:F3}}" />
                                         </Border>
                                     </StackPanel>
                                 </StackPanel>

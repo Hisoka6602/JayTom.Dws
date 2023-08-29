@@ -226,7 +226,7 @@
                                         FontWeight="Bold"
                                         Foreground="White"
                                         TextAlignment="Center">
-                                        <Run Text="{Binding Weight, UpdateSourceTrigger=PropertyChanged}" /><Run FontSize="12" Text="kg" />
+                                        <Run Text="{Binding Weight, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:F3}}" /><Run FontSize="12" Text="kg" />
                                     </TextBlock>
                                 </StackPanel>
                                 <!--  体积  -->

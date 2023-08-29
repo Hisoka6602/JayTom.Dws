@@ -58,7 +58,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 await _semaphore.WaitAsync(stoppingToken);
                 var configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("SaveImageSettings"), stoppingToken);
                 try {
-                    _imageSettingsDto = JsonConvert.DeserializeObject<ImageSettingsDto>(configInfoModel.Value);
+                    _imageSettingsDto = JsonConvert.DeserializeObject<ImageSettingsDto>(configInfoModel?.Value ?? string.Empty);
                 }
                 catch (Exception e) {
                     _imageSettingsDto ??= new ImageSettingsDto();

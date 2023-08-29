@@ -205,41 +205,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     StatusClickCommand = StatusClickCommand,
                 },
             };
-            BarCodeItems = new()
-            {
-                new BarCodeItemModel()
-                {
-                    Barcode = "621055654309412",
-                    BarcodeImagePath = "D:\\远程工具",
-                    Height = (float)1.6,
-                    Length = (float)1.8,
-                    Num = 1,
-                    RequestTime = DateTime.Now,
-                    RequestContent = "上传内容",
-                    RequestStatus = UploadStatus.Succeeded,
-                    ResponseContent = "接口响应内容",
-                    ResponseTime = DateTime.Now,
-                    ScanTime = DateTime.Now,
-                    Width = (float)1.3,
-                    Weight = (float)868.662,
-                },
-                new BarCodeItemModel()
-                {
-                    Barcode = "621055654309412",
-                    BarcodeImagePath = "D:\\远程工具",
-                    Height = (float)1.6,
-                    Length = (float)1.8,
-                    Num = 1,
-                    RequestTime = DateTime.Now,
-                    RequestContent = "上传内容",
-                    RequestStatus = UploadStatus.Succeeded,
-                    ResponseContent = "接口响应内容",
-                    ResponseTime = DateTime.Now,
-                    ScanTime = DateTime.Now,
-                    Width = (float)1.3,
-                    Weight = (float)8.6,
-                },
-            };
+            BarCodeItems = new();
             _deviceService.CameraInitialized += async delegate (object? sender, List<ICamera> list) {
                 await Application.Current.Dispatcher.InvokeAsync(() => {
                     CameraItems.Clear();

@@ -35,7 +35,7 @@ namespace JayTom.Dws.Domain.Dto {
         /// <summary>
         /// 触发位置
         /// </summary>
-        public string TriggerPosition { get; set; }
+        public VolumeTriggerPosition VolumeTriggerPosition { get; set; } = VolumeTriggerPosition.None;
 
         /// <summary>
         /// 发送内容
@@ -61,5 +61,23 @@ namespace JayTom.Dws.Domain.Dto {
         /// 串口设置
         /// </summary>
         public SerialPortSettingsInfo SerialPortSettingsInfo { get; set; } = new();
+    }
+
+    public enum VolumeTriggerPosition {
+
+        /// <summary>
+        /// 扫码后
+        /// </summary>
+        BarcodeDetected,
+
+        /// <summary>
+        /// 称重后
+        /// </summary>
+        WeightObtained,
+
+        /// <summary>
+        /// 无
+        /// </summary>
+        None
     }
 }

@@ -24,7 +24,6 @@ using JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision;
 using JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision;
 
 namespace JayTom.Dws.Client.Service.Device {
-
     public class DefaultDeviceService : IDeviceService {
         private readonly IBarcodeScannerCameraConfigRepository _barcodeScannerCameraConfigRepository;
         private readonly IPanoramaCameraConfigRepository _panoramaCameraConfigRepository;
@@ -313,7 +312,7 @@ namespace JayTom.Dws.Client.Service.Device {
                 //获取过滤配置
                 var configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("BarcodeFilterSettings"));
                 try {
-                    _barcodeFilterSettingsDto = JsonConvert.DeserializeObject<BarcodeFilterSettingsDto>(configInfoModel.Value);
+                    _barcodeFilterSettingsDto = JsonConvert.DeserializeObject<BarcodeFilterSettingsDto>(configInfoModel?.Value ?? string.Empty);
                 }
                 catch (Exception e) {
                     OnDeviceException(new DeviceExceptionEventArgs() {

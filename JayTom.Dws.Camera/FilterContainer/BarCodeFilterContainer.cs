@@ -80,19 +80,23 @@ namespace JayTom.Dws.Camera.FilterContainer {
         }
 
         private void CleanupContainer() {
-            //删除过期的
-            var pairs = Container.Where(w =>
-                DateTime.Now.Subtract(w.Value.ScanTime).TotalMilliseconds > w.Value?.ExpirationTime.Value.TotalMilliseconds);
-            foreach (var pair in pairs) {
-                Container.TryRemove(pair.Key, out _);
+            if (MaxSize > 0) {
+                if (Container.Count <= _maxSize) {
+                    return;
+                }
+                var oldestEntries = Container.OrderBy(kvp => kvp.Value.ScanTime)
+                    .Take(Container.Count - _maxSize);
+                foreach (var entry in oldestEntries) {
+                    Container.TryRemove(entry.Key, out _);
+                }
             }
-            if (Container.Count <= _maxSize) {
-                return;
-            }
-            var oldestEntries = Container.OrderBy(kvp => kvp.Value.ScanTime)
-                .Take(Container.Count - _maxSize);
-            foreach (var entry in oldestEntries) {
-                Container.TryRemove(entry.Key, out _);
+            else {
+                //删除过期的
+                var pairs = Container.Where(w =>
+                    DateTime.Now.Subtract(w.Value.ScanTime).TotalMilliseconds > w.Value?.ExpirationTime.Value.TotalMilliseconds);
+                foreach (var pair in pairs) {
+                    Container.TryRemove(pair.Key, out _);
+                }
             }
         }
 
