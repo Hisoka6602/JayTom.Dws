@@ -24,6 +24,7 @@ using JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision;
 using JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision;
 
 namespace JayTom.Dws.Client.Service.Device {
+
     public class DefaultDeviceService : IDeviceService {
         private readonly IBarcodeScannerCameraConfigRepository _barcodeScannerCameraConfigRepository;
         private readonly IPanoramaCameraConfigRepository _panoramaCameraConfigRepository;
@@ -31,6 +32,7 @@ namespace JayTom.Dws.Client.Service.Device {
         private readonly IConfigRepository _configRepository;
         private readonly IDynamicScale _dynamicScale;
         private readonly IStaticScale _staticScale;
+        private SemaphoreSlim _cameraSlim = new(1);
         private List<string> CameraInitializationException { get; set; } = new();
         private List<CameraInfo> _cameraInfos = new();
         private List<ICamera> _cameras = new();
@@ -435,14 +437,18 @@ namespace JayTom.Dws.Client.Service.Device {
                     ConnectionType = s.ConnectionType,
                     CameraType = s.CameraType,
                 })?.ToList() ?? new List<BaseCameraConfigInfoModel>(), "体积"));
+                await _cameraSlim.WaitAsync();
                 _cameras = cameras;
-
+                _cameraSlim.Release();
                 OnCameraInitialized(_cameras);
                 //磅秤相关
                 //获取磅秤配置
                 var infoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("WeightSettings"));
                 if (infoModel is not null) {
                     try {
+                        _staticScale.Dispose();
+                        _dynamicScale.Dispose();
+                        await Task.Delay(TimeSpan.FromSeconds(1));
                         _weightSettingsDto = JsonConvert.DeserializeObject<WeightSettingsDto>(infoModel.Value);
                         if (_weightSettingsDto is not null) {
                             //判断需要连接的磅秤
@@ -494,6 +500,10 @@ namespace JayTom.Dws.Client.Service.Device {
                                     });
 
                                     break;
+
+                                case WeightMode.None:
+                                    ScaleType = ScaleType.None;
+                                    break;
                             }
                         }
                     }
@@ -531,8 +541,9 @@ namespace JayTom.Dws.Client.Service.Device {
         }
 
         protected virtual async void OnCameraDisconnected(ICamera e) {
-            await Task.Yield();
+            await _cameraSlim.WaitAsync();
             _cameras.Remove(e);
+            _cameraSlim.Release();
             CameraDisconnected?.Invoke(this, _cameras);
         }
 

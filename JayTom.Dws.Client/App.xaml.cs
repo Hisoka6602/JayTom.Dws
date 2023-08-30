@@ -51,6 +51,8 @@ using DryIoc.Microsoft.DependencyInjection.Extension;
 using JayTom.Dws.Infrastructure.Repository.LocalConf;
 using JayTom.Dws.Infrastructure.Repository.LocalData;
 using JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision;
+using JayTom.Dws.Client.HomeToolPlugin.SunnenPlugin.Views;
+using JayTom.Dws.Client.HomeToolPlugin.SunnenPlugin.ViewModels;
 using JayTom.Dws.Client.Views.Pages.Preferences.CameraConfiguration;
 using JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration;
 
@@ -65,6 +67,10 @@ namespace JayTom.Dws.Client {
         protected override void RegisterTypes(IContainerRegistry containerRegistry) {
             //注册窗口
             containerRegistry.RegisterDialog<ApiAccessDialog>();
+            //插件窗口
+            {
+                containerRegistry.RegisterDialog<SunnenInputBarcodeControl>();
+            }
             //跳转注册
             {
                 containerRegistry.RegisterForNavigation<PluginMarketplacePage>();
@@ -245,6 +251,10 @@ namespace JayTom.Dws.Client {
             ViewModelLocationProvider.Register<WeightSettingPages, WeightSettingViewModel>();
             ViewModelLocationProvider.Register<VolumeSettingsPage, VolumeSettingsViewModel>();
             ViewModelLocationProvider.Register<LogManagerPage, LogManagerViewModel>();
+            //其他插件
+            {
+                ViewModelLocationProvider.Register<SunnenInputBarcodeControl, SunnenInputBarcodeViewModel>();
+            }
         }
     }
 }

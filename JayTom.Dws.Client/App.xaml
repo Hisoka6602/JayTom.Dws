@@ -171,6 +171,9 @@
                 <ResourceDictionary Source="Template/LanguageComboBoxTemplate.xaml" />
                 <!--  菜单模板  -->
                 <ResourceDictionary Source="Template/MenuTemplate.xaml" />
+                <!--  主页插件模板  -->
+                <ResourceDictionary Source="Template/HomeToolTemplate.xaml" />
+
                 <!--  相机菜单模板  -->
                 <ResourceDictionary Source="Template/CameraMenuTemplate.xaml" />
                 <!--  插件模板  -->

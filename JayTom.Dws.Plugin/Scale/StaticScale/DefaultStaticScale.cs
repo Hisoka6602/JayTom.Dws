@@ -26,9 +26,9 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
         public async void Dispose() {
             _tokenSource?.Cancel();
             await Task.Delay(500);
-            /*_serialPort?.DiscardOutBuffer();
-            _serialPort?.DiscardInBuffer();*/
-            _serialPort?.Close();
+            if (_serialPort?.IsOpen == true) {
+                _serialPort?.Close();
+            }
             _serialPort?.Dispose();
             _serialPort = null;
         }

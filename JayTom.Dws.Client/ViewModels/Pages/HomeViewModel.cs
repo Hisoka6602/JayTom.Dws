@@ -306,9 +306,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     Volume = (float)args.Volume;
                 });
             };
-            EventAggregator.Instance.Subscribe<ScanBarCodeInfo>(async Info => {
+            EventAggregator.Instance.Subscribe<ScanBarCodeInfo>(async info => {
                 //填充数据到列表
-                if (Info is ScanBarCodeInfo model) {
+                if (info is ScanBarCodeInfo model) {
                     AddNewRow(new BarCodeItemModel() {
                         Barcode = model.BarCode,
                         ScanTime = model.ScanTime,
@@ -316,6 +316,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                         Length = (float)(model.Length ?? 0),
                         Width = (float)(model.Width ?? 0),
                         Height = (float)(model.Height ?? 0)
+                    });
+                }
+            });
+            EventAggregator.Instance.Subscribe<BarcodeTypeProviderEvent>(async info => {
+                if (info is BarcodeTypeProviderEvent args) {
+                    await Application.Current.Dispatcher.BeginInvoke(() => {
+                        //更新右边信息
+                        BarCode = args?.Barcode ?? "未识别到条码";
                     });
                 }
             });

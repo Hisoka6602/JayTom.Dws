@@ -2,6 +2,7 @@
 using System.Windows;
 using System.Diagnostics;
 using System.Windows.Interop;
+using System.Windows.Controls;
 using System.Runtime.InteropServices;
 
 namespace JayTom.Dws.Client.Views {

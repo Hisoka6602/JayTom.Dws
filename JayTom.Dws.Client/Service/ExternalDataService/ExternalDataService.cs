@@ -145,8 +145,6 @@ namespace JayTom.Dws.Client.Service.ExternalDataService {
 
         private void TcpCommunicationOnCommunication(object? sender, CommunicationInfo e) {
             if (!string.IsNullOrEmpty(e.Content) && e.Type == CommunicationType.Receive) {
-                NLog.LogManager.GetCurrentClassLogger().Error($"{JsonConvert.SerializeObject(e)}");
-                NLog.LogManager.GetCurrentClassLogger().Error($"内容:{Regex.Escape(e.Content)}");
                 float length = 0, width = 0, height = 0, volume = 0;
                 var split = Regex.Escape(e.Content).Split(_volumeSettingsDto.Separator);
                 if (split.Length == _volumeSettingsDto.DataTemplate.Count(c => c.Type != 2)) {
@@ -154,18 +152,14 @@ namespace JayTom.Dws.Client.Service.ExternalDataService {
                     for (int i = 0; i < split.Length; i++) {
                         if (templateInfos[i].Content.ToLower().Contains("length")) {
                             float.TryParse(split[i], out length);
-                            NLog.LogManager.GetCurrentClassLogger().Error($"赋值长度:{length}--{Regex.Escape(e.Content)}");
                         }
                         else if (templateInfos[i].Content.ToLower().Contains("width")) {
                             float.TryParse(split[i], out width);
-                            NLog.LogManager.GetCurrentClassLogger().Error($"赋值宽度:{width}--{Regex.Escape(e.Content)}");
                         }
                         else if (templateInfos[i].Content.ToLower().Contains("height")) {
                             float.TryParse(split[i], out height);
-                            NLog.LogManager.GetCurrentClassLogger().Error($"赋值高度:{height}--{Regex.Escape(e.Content)}");
                         }
                         else if (templateInfos[i].Content.ToLower().Contains("volume")) {
-                            NLog.LogManager.GetCurrentClassLogger().Error($"赋值体积:{height}--{Regex.Escape(e.Content)}");
                             float.TryParse(split[i], out volume);
                         }
                     }

@@ -120,6 +120,39 @@
                                     Foreground="White"
                                     Text="JayTom.Dws" />
                                 <!--  工具  -->
+                                <ComboBox
+                                    Name="HomeToolComboBox"
+                                    MinWidth="50"
+                                    Margin="15,0"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    materialDesign:ColorZoneAssist.Mode="Dark"
+                                    BorderBrush="Transparent"
+                                    BorderThickness="0"
+                                    FontSize="18"
+                                    FontWeight="Bold"
+                                    IsReadOnly="True"
+                                    IsSelected="False"
+                                    IsTextSearchEnabled="True"
+                                    ItemTemplate="{StaticResource HomeToolTemplate}"
+                                    ItemsSource="{Binding HomeToolItems}"
+                                    MaxDropDownHeight="800"
+                                    SelectedIndex="0"
+                                    StaysOpenOnEdit="True"
+                                    Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                                    WindowChrome.IsHitTestVisibleInChrome="True">
+                                    <b:Interaction.Triggers>
+                                        <b:EventTrigger EventName="SelectionChanged">
+                                            <mvvm:InvokeCommandAction Command="{Binding HomeToolSelectionChangedCommand}" CommandParameter="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ComboBox}}}" />
+                                        </b:EventTrigger>
+                                    </b:Interaction.Triggers>
+                                    <ComboBox.ItemContainerStyle>
+                                        <Style BasedOn="{StaticResource MaterialDesignComboBoxItemStyle}" TargetType="ComboBoxItem">
+                                            <Setter Property="Focusable" Value="False" />
+                                            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                                        </Style>
+                                    </ComboBox.ItemContainerStyle>
+                                </ComboBox>
                                 <!--  语言切换  -->
                                 <ComboBox
                                     MinWidth="50"

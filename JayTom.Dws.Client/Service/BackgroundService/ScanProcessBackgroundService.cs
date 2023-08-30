@@ -1,5 +1,6 @@
 ﻿using System;
 using DryIoc;
+using NPOI.Util;
 using System.Linq;
 using System.Text;
 using System.Drawing;
@@ -9,6 +10,7 @@ using TouchSocket.Core;
 using JayTom.Dws.Camera;
 using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
+using System.Windows.Documents;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using JayTom.Dws.Client.Service.Device;
@@ -65,10 +67,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     ScanTime = args.ScanTime,
                     Timestamp = args.Timestamp,
                 };
-                //填充重量信息
-                if (_deviceService.ScaleType == ScaleType.None) {
-                    scanBarCodeInfo.Weight = 0;
-                }
                 _scanBarCodeItems.Enqueue(scanBarCodeInfo);
                 //获取外部数据
                 //体积
@@ -128,25 +126,57 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             _externalDataService.VolumeReceived += delegate (object? sender, ExternalVolumeInputEventArgs args) {
                 var scanBarCodeInfo = _scanBarCodeItems.FirstOrDefault(f => f.BarCode.Equals(args.BarCode));
                 if (scanBarCodeInfo is not null) {
-                    scanBarCodeInfo.Length = args.Length;
-                    scanBarCodeInfo.Width = args.Width;
-                    scanBarCodeInfo.Height = args.Height;
+                    scanBarCodeInfo.Length = args.Length - scanBarCodeInfo.LengthToDeduct;
+                    scanBarCodeInfo.Width = args.Width - scanBarCodeInfo.WidthToDeduct;
+                    scanBarCodeInfo.Height = args.Height - scanBarCodeInfo.HeightToDeduct;
                     scanBarCodeInfo.Volume = args.Volume;
                 }
             };
+            //手动输入条码
+            EventAggregator.Instance.Subscribe<BarcodeTypeProviderEvent>(async barcodeInfo => {
+                if (barcodeInfo is BarcodeTypeProviderEvent args) {
+                    var timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+                    var scanBarCodeInfo = new ScanBarCodeInfo() {
+                        BarCode = args.Barcode,
+                        ScanTime = DateTime.Now,
+                        Timestamp = timestamp,
+                        HeightToDeduct = args.HeightToDeduct,
+                        WidthToDeduct = args.WidthToDeduct,
+                        LengthToDeduct = args.LengthToDeduct,
+                    };
+                    _scanBarCodeItems.Enqueue(scanBarCodeInfo);
+                    //触发全景拍照
+                    var enumerable = _cameras.Where(w => w.BindingType == CameraBindingType.PanoramicCamera);
+                    foreach (var c in enumerable) {
+                        if (c is IIndustrialCamera camera) {
+                            await camera.TakePhotoAsync(args.Barcode, timestamp);
+                        }
+                    }
+                    //获取外部数据
+                    //体积
+                    if (_externalDataSource.IsVolumeInput) {
+                        await _externalDataService.GetVolume(args.Barcode);
+                    }
+                    EventAggregator.Instance.Publish(new TriggerPositionEvent() {
+                        IsSuccess = true,
+                        TriggerPosition = TriggerPositionEnum.PackageTrigger
+                    });
+                }
+            });
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
             while (!stoppingToken.IsCancellationRequested) {
                 try {
-                    if (_scanBarCodeItems.Count > 0) {
-                        var scanBarCodeInfo = _scanBarCodeItems.FirstOrDefault(f => !f.IsCompleted && !string.IsNullOrEmpty(f.BarCode) && f.Weight != null);
+                    if (_scanBarCodeItems.Count > 0 && _deviceService.RunningStatus) {
+                        var scanBarCodeInfo = _scanBarCodeItems.FirstOrDefault(f => !f.IsCompleted && !string.IsNullOrEmpty(f.BarCode));
                         //判断填充包裹信息
                         if (scanBarCodeInfo is not null) {
                             //判断是不是有体积相机、如果有则判断是否已经获取体积
                             if (scanBarCodeInfo.Length is not null &&
                                 scanBarCodeInfo.Width is not null &&
-                                scanBarCodeInfo.Height is not null) {
+                                scanBarCodeInfo.Height is not null &&
+                                scanBarCodeInfo.Weight is not null) {
                                 //创建另一个对象处理耗时长的内容
                                 //上传
                                 //条码回调(告诉界面这个条码完成)
@@ -162,6 +192,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 EventAggregator.Instance.Publish(scanBarCodeInfo);
                             }
                             else {
+                                //填充体积信息
                                 if (_cameras.All(a => a.BindingType != CameraBindingType.VolumeCamera)
                                     && !_externalDataSource.IsVolumeInput) {
                                     //判断是否开启Tcp体积输入
@@ -169,6 +200,10 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                     scanBarCodeInfo.Width = 0;
                                     scanBarCodeInfo.Height = 0;
                                     scanBarCodeInfo.Volume = 0;
+                                }
+                                //填充重量信息
+                                if (_deviceService.ScaleType == ScaleType.None) {
+                                    scanBarCodeInfo.Weight = 0;
                                 }
                             }
                         }
@@ -368,6 +403,26 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             /// 条码时间戳
             /// </summary>
             public long Timestamp { get; set; }
+
+            /// <summary>
+            /// 需要扣除的重量
+            /// </summary>
+            public float LengthToDeduct { get; set; }
+
+            /// <summary>
+            /// 需要扣除的宽度
+            /// </summary>
+            public float WidthToDeduct { get; set; }
+
+            /// <summary>
+            /// /需要扣除的重量
+            /// </summary>
+            public float WeightToDeduct { get; set; }
+
+            /// <summary>
+            /// 需要扣除的高度
+            /// </summary>
+            public float HeightToDeduct { get; set; }
 
             //上传内容
             //上传返回内容

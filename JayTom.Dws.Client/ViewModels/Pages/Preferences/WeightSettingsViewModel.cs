@@ -398,6 +398,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                 IsSavingInProgress = true;
                 _staticScale.Dispose();
                 _dynamicScale.Dispose();
+                await Task.Delay(TimeSpan.FromSeconds(1));
                 var properties = new WeightAdditionalProperties() {
                     IsUseActualWeightConversionRate =
                         WeightSettingsInfo.AdditionalWeight.IsUseActualWeightConversionRate,

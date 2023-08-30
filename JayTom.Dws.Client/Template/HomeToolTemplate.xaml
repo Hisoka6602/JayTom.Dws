@@ -1,0 +1,81 @@
+﻿<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+    xmlns:models="clr-namespace:JayTom.Dws.Client.Models">
+    <materialDesign:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+    <DataTemplate x:Key="HomeToolTemplate" DataType="{x:Type models:HomeToolInfoModel}">
+
+        <Grid Height="40" MaxWidth="260">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="60*" />
+                <RowDefinition Height="40*" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="30" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="30" />
+            </Grid.ColumnDefinitions>
+            <!--  图标  -->
+            <TextBlock
+                Grid.Row="0"
+                Grid.RowSpan="2"
+                Grid.Column="0"
+                VerticalAlignment="Center"
+                FontFamily="{StaticResource IconFontFamily}"
+                FontSize="28"
+                FontWeight="Bold"
+                Foreground="RoyalBlue"
+                Text="&#xe648;"
+                TextAlignment="Center" />
+            <!--  名称  -->
+            <TextBlock
+                Grid.Row="0"
+                Grid.Column="1"
+                Width="160"
+                Margin="5,0"
+                FontSize="16"
+                Foreground="White"
+                Text="{Binding Name}"
+                TextAlignment="Center"
+                TextTrimming="WordEllipsis" />
+            <!--  简介  -->
+            <TextBlock
+                Grid.Row="1"
+                Grid.Column="1"
+                Width="160"
+                Margin="5,0"
+                FontSize="12"
+                FontWeight="Light"
+                Foreground="White"
+                Text="{Binding Brief}"
+                TextAlignment="Center"
+                TextTrimming="WordEllipsis" />
+            <!--  启动按钮  -->
+            <Button
+                Grid.Row="0"
+                Grid.RowSpan="2"
+                Grid.Column="2"
+                Width="30"
+                Height="30"
+                materialDesign:RippleAssist.ClipToBounds="True"
+                Background="White"
+                Command="{Binding OpenCommand}"
+                CommandParameter="{Binding}"
+                Style="{StaticResource MaterialDesignIconButton}"
+                Visibility="{Binding IsRunnable, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <TextBlock
+                    Grid.Row="0"
+                    Grid.RowSpan="2"
+                    Grid.Column="0"
+                    VerticalAlignment="Center"
+                    FontFamily="{StaticResource IconFontFamily}"
+                    FontSize="15"
+                    FontWeight="Bold"
+                    Foreground="RoyalBlue"
+                    Text="&#xea82;"
+                    TextAlignment="Center" />
+            </Button>
+        </Grid>
+    </DataTemplate>
+</ResourceDictionary>

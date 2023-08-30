@@ -55,4 +55,32 @@ namespace JayTom.Dws.Client.EventMediators {
         /// </summary>
         public bool IsSuccess { get; set; }
     }
+
+    public class BarcodeTypeProviderEvent {
+
+        /// <summary>
+        /// 条码
+        /// </summary>
+        public string Barcode { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 需要扣除的重量
+        /// </summary>
+        public float LengthToDeduct { get; set; }
+
+        /// <summary>
+        /// 需要扣除的宽度
+        /// </summary>
+        public float WidthToDeduct { get; set; }
+
+        /// <summary>
+        /// /需要扣除的重量
+        /// </summary>
+        public float WeightToDeduct { get; set; }
+
+        /// <summary>
+        /// 需要扣除的高度
+        /// </summary>
+        public float HeightToDeduct { get; set; }
+    }
 }

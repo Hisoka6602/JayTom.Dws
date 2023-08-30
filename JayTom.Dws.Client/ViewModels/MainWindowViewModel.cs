@@ -8,9 +8,11 @@ using System.Threading;
 using System.Globalization;
 using System.Windows.Input;
 using System.Threading.Tasks;
+using Prism.Services.Dialogs;
 using System.Windows.Controls;
 using System.Windows.Threading;
 using MaterialDesignThemes.Wpf;
+using JayTom.Dws.Client.Models;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using JayTom.Dws.PluginInterface.Utils;
@@ -19,6 +21,7 @@ namespace JayTom.Dws.Client.ViewModels {
 
     public class MainWindowViewModel : BindableBase {
         private readonly IRegionManager _regionManager;
+        private readonly IDialogService _dialogService;
         private double _uniformCornerRadius = 5;
         private string _maxBtnIcon = "\xe600";
         private string _maxBtnToolTip = "Maximize";
@@ -28,9 +31,34 @@ namespace JayTom.Dws.Client.ViewModels {
         private Point _buttonTranslateTransform = new(0, 0);
         private Size _menuButtonSizeize = new(0, 0);
         private bool _isLoaded;
+        private ObservableCollection<HomeToolInfoModel> _homeToolItems = new();
 
-        public MainWindowViewModel(IRegionManager regionManager) {
+        public MainWindowViewModel(IRegionManager regionManager, IDialogService dialogService) {
             _regionManager = regionManager;
+            _dialogService = dialogService;
+            HomeToolItems = new ObservableCollection<HomeToolInfoModel>()
+            {
+                new()
+                {
+                    Name = "ToolPlugin",
+                    Brief = "ToolPlugin",
+                    IsRunnable = false
+                },
+                new()
+                {
+                    Name = "InputBarcodeControl",
+                    Brief = "InputBarcodeControl",
+                    ControlClassName = "SunnenInputBarcodeControl",
+                    IsRunnable = true,
+                    IsModal = true,
+                    OpenCommand = OpenHomeToolCommand
+                }
+            };
+        }
+
+        public ObservableCollection<HomeToolInfoModel> HomeToolItems {
+            get => _homeToolItems;
+            set => SetProperty(ref _homeToolItems, value);
         }
 
         public double UniformCornerRadius {
@@ -89,6 +117,30 @@ namespace JayTom.Dws.Client.ViewModels {
 
         public ICommand CloseWinCommand {
             get => new DelegateCommand<object>(CloseWinDelegate);
+        }
+
+        public ICommand HomeToolSelectionChangedCommand {
+            get => new DelegateCommand<ComboBox>(HomeToolSelectionChangedDelegate);
+        }
+
+        private void HomeToolSelectionChangedDelegate(ComboBox obj) {
+            obj.SelectedIndex = 0;
+        }
+
+        public ICommand OpenHomeToolCommand {
+            get => new DelegateCommand<HomeToolInfoModel>(OpenHomeToolDelegate);
+        }
+
+        private void OpenHomeToolDelegate(HomeToolInfoModel obj) {
+            //判断是否模态窗口
+            if (!string.IsNullOrEmpty(obj.ControlClassName)) {
+                if (obj.IsModal) {
+                    _dialogService.ShowDialog(obj.ControlClassName);
+                }
+                else {
+                    _dialogService.Show(obj.ControlClassName);
+                }
+            }
         }
 
         /// <summary>

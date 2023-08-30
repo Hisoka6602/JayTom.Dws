@@ -18,8 +18,11 @@ namespace JayTom.Dws.Plugin.Scale.DynamicScale {
         private SemaphoreSlim _semaphore = new(1);
 
         public void Dispose() {
-            _serialPort?.Close();
+            if (_serialPort?.IsOpen == true) {
+                _serialPort?.Close();
+            }
             _serialPort?.Dispose();
+            _serialPort = null;
         }
 
         public WeightAdditionalProperties WeightAdditionalProperties { get; set; } = new();
