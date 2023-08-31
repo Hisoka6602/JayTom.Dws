@@ -108,9 +108,11 @@ namespace JayTom.Dws.Client.HomeToolPlugin.SunnenPlugin.ViewModels {
                 if (!string.IsNullOrEmpty(BarCode)) {
                     EventAggregator.Instance.Publish(new BarcodeTypeProviderEvent {
                         Barcode = BarCode,
-                        LengthToDeduct = PackageType == PackageType.Pallet ? DeductedLength : 0,
+
+                        /*LengthToDeduct = PackageType == PackageType.Pallet ? DeductedLength : 0,
                         WidthToDeduct = PackageType == PackageType.Pallet ? DeductedWidth : 0,
-                        HeightToDeduct = PackageType == PackageType.Pallet ? DeductedHeight : 0,
+                        HeightToDeduct = PackageType == PackageType.Pallet ? DeductedHeight : 0,*/
+                        VolumeToDeduct = PackageType == PackageType.Pallet ? (DeductedLength * DeductedWidth * DeductedHeight) : 0,
                     });
                     BarCode = string.Empty;
                 }

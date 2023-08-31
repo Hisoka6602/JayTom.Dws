@@ -3,11 +3,17 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using JayTom.Dws.Domain.Converters;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
 
 namespace JayTom.Dws.Domain.Dto {
 
     public class VolumeSettingsDto {
+
+        /// <summary>
+        /// 单位
+        /// </summary>
+        public VolumeUnit Unit { get; set; } = VolumeUnit.Millimeter;
 
         /// <summary>
         /// 数据模板

@@ -13,6 +13,7 @@ using JayTom.Dws.Client.Models;
 using MaterialDesignThemes.Wpf;
 using JayTom.Dws.Data.LocalConf;
 using System.Collections.Generic;
+using JayTom.Dws.Domain.Converters;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
@@ -128,6 +129,30 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         private bool _isLoaded;
         private SnackbarMessageQueue _volumeSettingsMessageQueue = new(TimeSpan.FromSeconds(2));
 
+        private ObservableCollection<VolumeUnitInfoModel> _volumeUnitInfoItem = new()
+        {
+            new VolumeUnitInfoModel()
+            {
+                Name = "mm",
+                Value = VolumeUnit.Millimeter
+            },
+            new VolumeUnitInfoModel()
+            {
+                Name = "cm",
+                Value = VolumeUnit.Centimeter
+            },
+            new VolumeUnitInfoModel()
+            {
+                Name = "m",
+                Value = VolumeUnit.Meter
+            },
+        };
+
+        private VolumeUnitInfoModel _selectVolumeUnitInfo = new() {
+            Name = "mm",
+            Value = VolumeUnit.Millimeter
+        };
+
         public VolumeSettingsViewModel(IConfigRepository configRepository) {
             _configRepository = configRepository;
         }
@@ -153,6 +178,16 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         public DataFormatTypeInfoModel SendDataFormat {
             get => _sendDataFormat;
             set => SetProperty(ref _sendDataFormat, value);
+        }
+
+        public ObservableCollection<VolumeUnitInfoModel> VolumeUnitInfoItem {
+            get => _volumeUnitInfoItem;
+            set => SetProperty(ref _volumeUnitInfoItem, value);
+        }
+
+        public VolumeUnitInfoModel SelectVolumeUnitInfo {
+            get => _selectVolumeUnitInfo;
+            set => SetProperty(ref _selectVolumeUnitInfo, value);
         }
 
         /// <summary>
@@ -327,6 +362,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
                         ConfigName = "VolumeSettings",
                         Value = JsonConvert.SerializeObject(new VolumeSettingsDto {
+                            Unit = SelectVolumeUnitInfo.Value,
                             DataTemplate = VolumeSettingsInfo.DataTemplate.Select(s => new ItemTemplateInfo() {
                                 ApplicationType = s.ApplicationType,
                                 Content = s.Content,
@@ -410,6 +446,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                             })?.ToList();
 
                             VolumeSettingsInfo = new VolumeSettingsInfoModel() {
+                                Unit = settingsDto.Unit,
                                 Separator = settingsDto.Separator,
                                 IsUseTcpInput = settingsDto.IsUseTcpInput,
                                 IsTriggerVolumeRequest = settingsDto.IsTriggerVolumeRequest,
@@ -471,7 +508,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                             SelectStopBits = StopBitsItems.FirstOrDefault(f =>
                                 f.Value.Equals(settingsDto.VolumeInformationRequesterInfo.SerialPortSettingsInfo
                                     .StopBits)) ?? new StopBitsInfoModel();
-
+                            SelectVolumeUnitInfo =
+                                VolumeUnitInfoItem.FirstOrDefault(f => f.Value.Equals(settingsDto.Unit)) ??
+                                new VolumeUnitInfoModel();
                             VolumeSettingsInfo.DataTemplate.AddRange(templateModels);
                         }
                     }

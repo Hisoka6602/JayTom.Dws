@@ -11,6 +11,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:mvvm="http://prismlibrary.com/"
     xmlns:system="clr-namespace:System;assembly=System.Runtime"
+    xmlns:unitConverter="clr-namespace:JayTom.Dws.Client.Converters.UnitConverter"
     Name="DataManagementPageView"
     Title="DataManagementPage"
     d:DesignHeight="450"
@@ -28,6 +29,7 @@
     </b:Interaction.Triggers>
     <Page.Resources>
         <materialDesign:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+        <unitConverter:VolumeConverter x:Key="VolumeConverter" />
     </Page.Resources>
     <!--  外层-loading  -->
     <materialDesign:DialogHost
@@ -538,47 +540,79 @@
                         CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                         EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
                         <DataGridTextColumn.Header>
-                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="重量(kg)" />
+                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="重量" />
                         </DataGridTextColumn.Header>
                     </DataGridTextColumn>
                     <DataGridTextColumn
                         Width="70"
                         MinWidth="70"
-                        Binding="{Binding Length, UpdateSourceTrigger=PropertyChanged}"
                         CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                         EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
+                        <DataGridTextColumn.Binding>
+                            <MultiBinding Converter="{StaticResource VolumeConverter}" StringFormat="{}{0:0.#}">
+                                <Binding Path="Length" UpdateSourceTrigger="PropertyChanged" />
+                                <Binding
+                                    ElementName="DataManagementPageView"
+                                    Mode="OneWay"
+                                    Path="DataContext.VolumeUnit" />
+                            </MultiBinding>
+                        </DataGridTextColumn.Binding>
                         <DataGridTextColumn.Header>
-                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="长度(mm)" />
+                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="长度" />
                         </DataGridTextColumn.Header>
                     </DataGridTextColumn>
                     <DataGridTextColumn
                         Width="70"
                         MinWidth="70"
-                        Binding="{Binding Width, UpdateSourceTrigger=PropertyChanged}"
                         CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                         EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
+                        <DataGridTextColumn.Binding>
+                            <MultiBinding Converter="{StaticResource VolumeConverter}" StringFormat="{}{0:0.#}">
+                                <Binding Path="Width" UpdateSourceTrigger="PropertyChanged" />
+                                <Binding
+                                    ElementName="DataManagementPageView"
+                                    Mode="OneWay"
+                                    Path="DataContext.VolumeUnit" />
+                            </MultiBinding>
+                        </DataGridTextColumn.Binding>
                         <DataGridTextColumn.Header>
-                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="宽度(mm)" />
+                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="宽度" />
                         </DataGridTextColumn.Header>
                     </DataGridTextColumn>
                     <DataGridTextColumn
                         Width="70"
                         MinWidth="70"
-                        Binding="{Binding Height, UpdateSourceTrigger=PropertyChanged}"
                         CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                         EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
+                        <DataGridTextColumn.Binding>
+                            <MultiBinding Converter="{StaticResource VolumeConverter}" StringFormat="{}{0:0.#}">
+                                <Binding Path="Height" UpdateSourceTrigger="PropertyChanged" />
+                                <Binding
+                                    ElementName="DataManagementPageView"
+                                    Mode="OneWay"
+                                    Path="DataContext.VolumeUnit" />
+                            </MultiBinding>
+                        </DataGridTextColumn.Binding>
                         <DataGridTextColumn.Header>
-                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="高度(mm)" />
+                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="高度" />
                         </DataGridTextColumn.Header>
                     </DataGridTextColumn>
                     <DataGridTextColumn
                         Width="80"
                         MinWidth="70"
-                        Binding="{Binding Volume, UpdateSourceTrigger=PropertyChanged}"
                         CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                         EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
+                        <DataGridTextColumn.Binding>
+                            <MultiBinding Converter="{StaticResource VolumeConverter}" StringFormat="{}{0:0.#}">
+                                <Binding Path="Volume" UpdateSourceTrigger="PropertyChanged" />
+                                <Binding
+                                    ElementName="DataManagementPageView"
+                                    Mode="OneWay"
+                                    Path="DataContext.VolumeUnit" />
+                            </MultiBinding>
+                        </DataGridTextColumn.Binding>
                         <DataGridTextColumn.Header>
-                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="体积(mm³)" />
+                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="体积" />
                         </DataGridTextColumn.Header>
                     </DataGridTextColumn>
                     <DataGridTextColumn

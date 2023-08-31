@@ -12,11 +12,13 @@ using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
 using System.Windows.Documents;
 using System.Collections.Generic;
+using JayTom.Dws.Domain.Converters;
 using System.Collections.Concurrent;
 using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Service.ImageStorage;
 using JayTom.Dws.Client.Service.ResultOutput;
+using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Client.Service.ExternalDataService;
 using static JayTom.Dws.Client.Service.BackgroundService.ScanProcessBackgroundService;
 
@@ -105,11 +107,12 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 var scanBarCodeInfo = _scanBarCodeItems.FirstOrDefault(f => f.Length == null ||
                                                                             f.Width == null ||
                                                                             f.Height == null);
+                //增加体积单位转换
                 if (scanBarCodeInfo is not null) {
-                    scanBarCodeInfo.Length = args.Length;
-                    scanBarCodeInfo.Width = args.Width;
-                    scanBarCodeInfo.Height = args.Height;
-                    scanBarCodeInfo.Volume = args.Volume;
+                    scanBarCodeInfo.Length = args.Length - scanBarCodeInfo.LengthToDeduct;
+                    scanBarCodeInfo.Width = args.Width - scanBarCodeInfo.WidthToDeduct;
+                    scanBarCodeInfo.Height = args.Height - scanBarCodeInfo.HeightToDeduct;
+                    scanBarCodeInfo.Volume = args.Volume - scanBarCodeInfo.VolumeToDeduct;
                 }
             };
             _deviceService.StableWeight += delegate (object? sender, StableWeightEventArgs args) {
@@ -126,10 +129,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             _externalDataService.VolumeReceived += delegate (object? sender, ExternalVolumeInputEventArgs args) {
                 var scanBarCodeInfo = _scanBarCodeItems.FirstOrDefault(f => f.BarCode.Equals(args.BarCode));
                 if (scanBarCodeInfo is not null) {
+                    //增加体积单位转换
                     scanBarCodeInfo.Length = args.Length - scanBarCodeInfo.LengthToDeduct;
                     scanBarCodeInfo.Width = args.Width - scanBarCodeInfo.WidthToDeduct;
                     scanBarCodeInfo.Height = args.Height - scanBarCodeInfo.HeightToDeduct;
-                    scanBarCodeInfo.Volume = args.Volume;
+                    scanBarCodeInfo.Volume = args.Volume - scanBarCodeInfo.VolumeToDeduct;
                 }
             };
             //手动输入条码
@@ -143,6 +147,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         HeightToDeduct = args.HeightToDeduct,
                         WidthToDeduct = args.WidthToDeduct,
                         LengthToDeduct = args.LengthToDeduct,
+                        VolumeToDeduct = args.VolumeToDeduct,
                     };
                     _scanBarCodeItems.Enqueue(scanBarCodeInfo);
                     //触发全景拍照
@@ -423,6 +428,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             /// 需要扣除的高度
             /// </summary>
             public float HeightToDeduct { get; set; }
+
+            /// <summary>
+            /// 需要扣除的体积
+            /// </summary>
+            public float VolumeToDeduct { get; set; }
 
             //上传内容
             //上传返回内容

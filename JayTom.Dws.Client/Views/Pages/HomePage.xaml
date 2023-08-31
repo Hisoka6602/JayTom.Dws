@@ -9,6 +9,8 @@
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:mvvm="http://prismlibrary.com/"
+    xmlns:settingsConverter="clr-namespace:JayTom.Dws.Client.Converters.SettingsConverter"
+    xmlns:unitConverter="clr-namespace:JayTom.Dws.Client.Converters.UnitConverter"
     x:Name="HomePageView"
     d:DesignHeight="450"
     d:DesignWidth="800"
@@ -24,6 +26,9 @@
         <converters:CameraListBoxWidthConverter x:Key="CameraListBoxWidthConverter" />
         <converters:EllipseCenterConverter x:Key="EllipseCenterConverter" />
         <converters:RunningStatusConverter x:Key="RunningStatusConverter" />
+        <settingsConverter:VolumeUnitConverter x:Key="VolumeUnitConverter" />
+        <unitConverter:VolumeConverter x:Key="VolumeConverter" />
+        <unitConverter:WeightConverter x:Key="WeightConverter" />
         <Storyboard x:Key="ItemCountStoryboard">
             <DoubleAnimation
                 AutoReverse="True"
@@ -231,7 +236,7 @@
                                 </StackPanel>
                                 <!--  体积  -->
                                 <StackPanel
-                                    Margin="35,0,5,0"
+                                    Margin="5,0,5,0"
                                     HorizontalAlignment="Right"
                                     VerticalAlignment="Center"
                                     Orientation="Horizontal">
@@ -245,21 +250,31 @@
                                         Foreground="DimGray"
                                         Text="&#xe625;" />
                                     <TextBlock
+                                        MaxWidth="180"
                                         Margin="5,0"
                                         HorizontalAlignment="Center"
                                         VerticalAlignment="Center"
                                         FontFamily="{StaticResource CustomFontFamily}"
                                         FontSize="20"
                                         FontWeight="Bold"
-                                        Foreground="DimGray">
+                                        Foreground="DimGray"
+                                        TextTrimming="CharacterEllipsis"
+                                        TextWrapping="NoWrap">
                                         <Run Text="体积:" />
-                                        <Run
-                                            FontWeight="Bold"
-                                            Foreground="White"
-                                            Text="{Binding Volume, UpdateSourceTrigger=PropertyChanged}" /><Run
+                                        <Run FontWeight="Bold" Foreground="White">
+                                            <Run.Text>
+                                                <MultiBinding Converter="{StaticResource VolumeConverter}" StringFormat="{}{0:0.#}">
+                                                    <Binding Path="Volume" UpdateSourceTrigger="PropertyChanged" />
+                                                    <Binding Mode="OneWay" Path="VolumeUnit" />
+                                                </MultiBinding>
+                                            </Run.Text>
+                                        </Run><Run
                                             FontSize="13"
                                             Foreground="White"
-                                            Text="mm³" />
+                                            Text="{Binding VolumeUnit, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource VolumeUnitConverter}}" /><Run
+                                            FontSize="13"
+                                            Foreground="White"
+                                            Text="³" />
                                     </TextBlock>
                                 </StackPanel>
                             </StackPanel>
@@ -293,13 +308,17 @@
                                         FontWeight="Bold"
                                         Foreground="DimGray">
                                         <Run Text="长度:" />
-                                        <Run
-                                            FontWeight="Bold"
-                                            Foreground="White"
-                                            Text="{Binding Length, UpdateSourceTrigger=PropertyChanged}" /><Run
+                                        <Run FontWeight="Bold" Foreground="White">
+                                            <Run.Text>
+                                                <MultiBinding Converter="{StaticResource VolumeConverter}" StringFormat="{}{0:0.#}">
+                                                    <Binding Path="Length" UpdateSourceTrigger="PropertyChanged" />
+                                                    <Binding Mode="OneWay" Path="VolumeUnit" />
+                                                </MultiBinding>
+                                            </Run.Text>
+                                        </Run><Run
                                             FontSize="13"
                                             Foreground="White"
-                                            Text="mm" />
+                                            Text="{Binding VolumeUnit, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource VolumeUnitConverter}}" />
                                     </TextBlock>
                                 </StackPanel>
                                 <!--  宽  -->
@@ -326,13 +345,17 @@
                                         FontWeight="Bold"
                                         Foreground="DimGray">
                                         <Run Text="宽度:" />
-                                        <Run
-                                            FontWeight="Bold"
-                                            Foreground="White"
-                                            Text="{Binding Width, UpdateSourceTrigger=PropertyChanged}" /><Run
+                                        <Run FontWeight="Bold" Foreground="White">
+                                            <Run.Text>
+                                                <MultiBinding Converter="{StaticResource VolumeConverter}" StringFormat="{}{0:0.#}">
+                                                    <Binding Path="Width" UpdateSourceTrigger="PropertyChanged" />
+                                                    <Binding Mode="OneWay" Path="VolumeUnit" />
+                                                </MultiBinding>
+                                            </Run.Text>
+                                        </Run><Run
                                             FontSize="13"
                                             Foreground="White"
-                                            Text="mm" />
+                                            Text="{Binding VolumeUnit, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource VolumeUnitConverter}}" />
                                     </TextBlock>
                                 </StackPanel>
                                 <!--  高  -->
@@ -359,13 +382,17 @@
                                         FontWeight="Bold"
                                         Foreground="DimGray">
                                         <Run Text="高度:" />
-                                        <Run
-                                            FontWeight="Bold"
-                                            Foreground="White"
-                                            Text="{Binding Height, UpdateSourceTrigger=PropertyChanged}" /><Run
+                                        <Run FontWeight="Bold" Foreground="White">
+                                            <Run.Text>
+                                                <MultiBinding Converter="{StaticResource VolumeConverter}" StringFormat="{}{0:0.#}">
+                                                    <Binding Path="Height" UpdateSourceTrigger="PropertyChanged" />
+                                                    <Binding Mode="OneWay" Path="VolumeUnit" />
+                                                </MultiBinding>
+                                            </Run.Text>
+                                        </Run><Run
                                             FontSize="13"
                                             Foreground="White"
-                                            Text="mm" />
+                                            Text="{Binding VolumeUnit, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource VolumeUnitConverter}}" />
                                     </TextBlock>
                                 </StackPanel>
                             </StackPanel>
@@ -485,7 +512,7 @@
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
-                                <GridViewColumn Width="60" Header="重量(kg)">
+                                <GridViewColumn Width="60" Header="重量">
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBlock
@@ -496,48 +523,84 @@
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
-                                <GridViewColumn Width="60" Header="长(mm)">
+                                <GridViewColumn Width="60" Header="长度">
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBlock
                                                 Width="60"
                                                 MinWidth="60"
-                                                Style="{StaticResource CustomGridViewTextBlockCellStyle}"
-                                                Text="{Binding Length}" />
+                                                Style="{StaticResource CustomGridViewTextBlockCellStyle}">
+                                                <TextBlock.Text>
+                                                    <MultiBinding Converter="{StaticResource VolumeConverter}" StringFormat="{}{0:0.#}">
+                                                        <Binding Path="Length" UpdateSourceTrigger="PropertyChanged" />
+                                                        <Binding
+                                                            ElementName="HomePageView"
+                                                            Mode="OneWay"
+                                                            Path="DataContext.VolumeUnit" />
+                                                    </MultiBinding>
+                                                </TextBlock.Text>
+                                            </TextBlock>
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
 
-                                <GridViewColumn Width="60" Header="宽(mm)">
+                                <GridViewColumn Width="60" Header="宽度">
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBlock
                                                 Width="60"
                                                 MinWidth="60"
-                                                Style="{StaticResource CustomGridViewTextBlockCellStyle}"
-                                                Text="{Binding Width}" />
+                                                Style="{StaticResource CustomGridViewTextBlockCellStyle}">
+                                                <TextBlock.Text>
+                                                    <MultiBinding Converter="{StaticResource VolumeConverter}" StringFormat="{}{0:0.#}">
+                                                        <Binding Path="Width" UpdateSourceTrigger="PropertyChanged" />
+                                                        <Binding
+                                                            ElementName="HomePageView"
+                                                            Mode="OneWay"
+                                                            Path="DataContext.VolumeUnit" />
+                                                    </MultiBinding>
+                                                </TextBlock.Text>
+                                            </TextBlock>
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
-                                <GridViewColumn Width="60" Header="高(mm)">
+                                <GridViewColumn Width="60" Header="高度">
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBlock
                                                 Width="60"
                                                 MinWidth="60"
-                                                Style="{StaticResource CustomGridViewTextBlockCellStyle}"
-                                                Text="{Binding Height}" />
+                                                Style="{StaticResource CustomGridViewTextBlockCellStyle}">
+                                                <TextBlock.Text>
+                                                    <MultiBinding Converter="{StaticResource VolumeConverter}" StringFormat="{}{0:0.#}">
+                                                        <Binding Path="Height" UpdateSourceTrigger="PropertyChanged" />
+                                                        <Binding
+                                                            ElementName="HomePageView"
+                                                            Mode="OneWay"
+                                                            Path="DataContext.VolumeUnit" />
+                                                    </MultiBinding>
+                                                </TextBlock.Text>
+                                            </TextBlock>
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
-                                <GridViewColumn Width="90" Header="体积(mm³)">
+                                <GridViewColumn Width="90" Header="体积">
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBlock
                                                 Width="90"
                                                 MinWidth="90"
-                                                Style="{StaticResource CustomGridViewTextBlockCellStyle}"
-                                                Text="{Binding Volume}" />
+                                                Style="{StaticResource CustomGridViewTextBlockCellStyle}">
+                                                <TextBlock.Text>
+                                                    <MultiBinding Converter="{StaticResource VolumeConverter}" StringFormat="{}{0:0.#}">
+                                                        <Binding Path="Volume" UpdateSourceTrigger="PropertyChanged" />
+                                                        <Binding
+                                                            ElementName="HomePageView"
+                                                            Mode="OneWay"
+                                                            Path="DataContext.VolumeUnit" />
+                                                    </MultiBinding>
+                                                </TextBlock.Text>
+                                            </TextBlock>
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>

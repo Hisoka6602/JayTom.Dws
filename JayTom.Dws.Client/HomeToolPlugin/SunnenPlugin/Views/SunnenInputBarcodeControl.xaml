@@ -213,7 +213,7 @@
                                 FontSize="16"
                                 FontWeight="Bold"
                                 Foreground="White"
-                                Text="Length:" />
+                                Text="Length(mm):" />
                             <Border
                                 Margin="5"
                                 HorizontalAlignment="Center"
@@ -245,7 +245,7 @@
                                 FontSize="16"
                                 FontWeight="Bold"
                                 Foreground="White"
-                                Text="Width:" />
+                                Text="Width(mm):" />
                             <Border
                                 Margin="5"
                                 HorizontalAlignment="Center"
@@ -277,7 +277,7 @@
                                 FontSize="16"
                                 FontWeight="Bold"
                                 Foreground="White"
-                                Text="Height:" />
+                                Text="Height(mm):" />
                             <Border
                                 Margin="5"
                                 HorizontalAlignment="Center"

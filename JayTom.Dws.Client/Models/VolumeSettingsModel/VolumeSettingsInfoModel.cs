@@ -2,8 +2,10 @@
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
+using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using JayTom.Dws.Domain.Converters;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
 using JayTom.Dws.Client.Models.ImageSettingModels;
@@ -18,6 +20,15 @@ namespace JayTom.Dws.Client.Models.VolumeSettingsModel {
         private bool _triggerVolumeRequest;
         private VolumeInformationRequesterInfoModel _volumeInformationRequesterInfo = new();
         private string _separator = string.Empty;
+        private VolumeUnit _unit = VolumeUnit.Millimeter;
+
+        /// <summary>
+        /// 体积单位
+        /// </summary>
+        public VolumeUnit Unit {
+            get => _unit;
+            set => SetProperty(ref _unit, value);
+        }
 
         /// <summary>
         /// 数据模板

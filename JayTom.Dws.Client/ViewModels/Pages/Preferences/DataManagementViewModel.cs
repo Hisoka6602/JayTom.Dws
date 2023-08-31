@@ -5,10 +5,12 @@ using System.Linq;
 using System.Text;
 using Prism.Commands;
 using System.Windows;
+using Newtonsoft.Json;
 using System.Threading;
 using JayTom.Dws.Plugin;
 using System.Diagnostics;
 using System.Windows.Input;
+using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
 using Prism.Services.Dialogs;
 using System.Windows.Controls;
@@ -19,14 +21,17 @@ using JayTom.Dws.Client.Models;
 using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
 using NetTopologySuite.Algorithm;
+using JayTom.Dws.Domain.Converters;
 using System.Collections.ObjectModel;
 using System.Text.RegularExpressions;
 using JayTom.Dws.Client.Views.Dialog;
 using JayTom.Dws.Client.Views.Editors;
 using JayTom.Dws.PluginInterface.Utils;
+using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.ViewModels.Dialog;
 using JayTom.Dws.Client.ViewModels.Editors;
 using JayTom.Dws.Domain.Repository.LocalData;
+using JayTom.Dws.Domain.Repository.LocalConf;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
 
@@ -34,6 +39,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         private readonly IDialogService _dialogService;
         private readonly IExcel _excel;
         private readonly IBarCodeRepository _barCodeRepository;
+        private readonly IConfigRepository _configRepository;
         private DateTime _startTime = DateTime.Today;
         private DateTime _endTime = DateTime.Now;
         private int _pageCount;
@@ -94,11 +100,31 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         private UploadStatus? _selectedUploadStatus;
         private ObservableCollection<UploadStatus> _uploadStatusList = new(Enum.GetValues(typeof(UploadStatus)).Cast<UploadStatus>());
         private double _pageMaxHeight;
+        private VolumeUnit _volumeUnit;
 
-        public DataManagementViewModel(IDialogService dialogService, IExcel excel, IBarCodeRepository barCodeRepository) {
+        public DataManagementViewModel(IDialogService dialogService,
+            IExcel excel, IBarCodeRepository barCodeRepository,
+            IConfigRepository configRepository) {
             _dialogService = dialogService;
             _excel = excel;
             _barCodeRepository = barCodeRepository;
+            _configRepository = configRepository;
+            EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async info => {
+                if (info is SettingsChangedEvent model) {
+                    if (model.SettingsName.Equals("VolumeSettings")) {
+                        await Application.Current.Dispatcher.InvokeAsync(async () => {
+                            //临时写在这里加载配置，后续修改通过事件通知
+                            var configInfoModel = await _configRepository.FirstOrDefault(s => s.ConfigName.Equals("VolumeSettings"));
+                            if (configInfoModel is not null) {
+                                var volumeSettingsDto = JsonConvert.DeserializeObject<VolumeSettingsDto>(configInfoModel.Value);
+                                if (volumeSettingsDto is not null) {
+                                    VolumeUnit = volumeSettingsDto.Unit;
+                                }
+                            }
+                        });
+                    }
+                }
+            });
         }
 
         /// <summary>
@@ -107,6 +133,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         public SnackbarMessageQueue DataManagementMessageQueue {
             get => _dataManagementMessageQueue;
             set => SetProperty(ref _dataManagementMessageQueue, value);
+        }
+
+        /// <summary>
+        /// 体积单位
+        /// </summary>
+        public VolumeUnit VolumeUnit {
+            get => _volumeUnit;
+            set => SetProperty(ref _volumeUnit, value);
         }
 
         #region 搜索工具栏条件

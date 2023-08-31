@@ -7,9 +7,11 @@ using Prism.Regions;
 using Prism.Commands;
 using System.Windows;
 using System.Drawing;
+using Newtonsoft.Json;
 using System.Threading;
 using JayTom.Dws.Camera;
 using System.Windows.Input;
+using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
 using Prism.Services.Dialogs;
 using System.Windows.Controls;
@@ -19,6 +21,10 @@ using MaterialDesignThemes.Wpf;
 using JayTom.Dws.Data.LocalData;
 using JayTom.Dws.Client.Service;
 using System.Collections.Generic;
+using JayTom.Dws.Domain.Converters;
+
+using JayTom.Dws.Domain.Converters;
+
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.PluginInterface.Utils;
@@ -26,6 +32,7 @@ using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Client.Service.ImageStorage;
 using JayTom.Dws.Domain.Repository.LocalData;
 using JayTom.Dws.Client.Service.ResultOutput;
+using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Client.Service.ExternalDataService;
 using CameraType = JayTom.Dws.Client.Models.CameraType;
 using CameraStatus = JayTom.Dws.Client.Models.CameraStatus;
@@ -33,6 +40,7 @@ using ConnectionType = JayTom.Dws.Client.Models.ConnectionType;
 using static JayTom.Dws.Client.Service.BackgroundService.ScanProcessBackgroundService;
 
 namespace JayTom.Dws.Client.ViewModels.Pages {
+
     public class HomeViewModel : BindableBase {
         private readonly IDialogService _dialogService;
         private readonly IComputerInfoReporter _computerInfoReporter;
@@ -41,8 +49,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         private readonly IImageStorageService _imageStorageService;
         private readonly IResultOutputService _resultOutputService;
         private readonly IExternalDataService _externalDataService;
+        private readonly IConfigRepository _configRepository;
         private ObservableCollection<CameraItemInfoModel> _cameraItems = new();
+
         private ObservableCollection<BarCodeItemModel> _barCodeItems = new();
+
         private DataGrid? _dataGrid = null;
         private int _totalDataCount;
         private int _uploadedDataCount;
@@ -56,6 +67,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         private float _width;
         private float _height;
         private bool _isSwitchingState;
+        private VolumeUnit _volumeUnit;
         private static SemaphoreSlim _runningSemaphoreSlim = new(1, 1);
         private static SemaphoreSlim _imageSemaphoreSlim = new(1, 1);
 
@@ -72,6 +84,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         public ObservableCollection<BarCodeItemModel> BarCodeItems {
             get => _barCodeItems;
             set => SetProperty(ref _barCodeItems, value);
+        }
+
+        /// <summary>
+        /// 体积单位
+        /// </summary>
+        public VolumeUnit VolumeUnit {
+            get => _volumeUnit;
+            set => SetProperty(ref _volumeUnit, value);
         }
 
         /// <summary>
@@ -171,7 +191,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             IBarCodeRepository barCodeRepository, IDeviceService deviceService,
             IImageStorageService imageStorageService,
             IResultOutputService resultOutputService,
-            IExternalDataService externalDataService) {
+            IExternalDataService externalDataService,
+            IConfigRepository configRepository) {
             _dialogService = dialogService;
             _computerInfoReporter = computerInfoReporter;
             _barCodeRepository = barCodeRepository;
@@ -179,6 +200,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             _imageStorageService = imageStorageService;
             _resultOutputService = resultOutputService;
             _externalDataService = externalDataService;
+            _configRepository = configRepository;
             CameraItems = new()
             {
                 new CameraItemInfoModel()
@@ -327,6 +349,22 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     });
                 }
             });
+            EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async info => {
+                if (info is SettingsChangedEvent model) {
+                    if (model.SettingsName.Equals("VolumeSettings")) {
+                        await Application.Current.Dispatcher.InvokeAsync(async () => {
+                            //临时写在这里加载配置，后续修改通过事件通知
+                            var configInfoModel = await _configRepository.FirstOrDefault(s => s.ConfigName.Equals("VolumeSettings"));
+                            if (configInfoModel is not null) {
+                                var volumeSettingsDto = JsonConvert.DeserializeObject<VolumeSettingsDto>(configInfoModel.Value);
+                                if (volumeSettingsDto is not null) {
+                                    VolumeUnit = volumeSettingsDto.Unit;
+                                }
+                            }
+                        });
+                    }
+                }
+            });
         }
 
         private async void DeviceServiceOnPanoramaCaptured(object? sender, PanoramaCaptureEventArgs args) {
@@ -397,8 +435,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         }
 
         private async void LoadedDelegate(Page obj) {
-            await Application.Current.Dispatcher.InvokeAsync(() => {
+            await Application.Current.Dispatcher.InvokeAsync(async () => {
                 _dataGrid = Utils.GetVisualChild<DataGrid>(obj, b => b.Name.Equals("BarCodeDataGrid"));
+                //临时写在这里加载配置，后续修改通过事件通知
+                EventAggregator.Instance.Publish(new SettingsChangedEvent {
+                    SettingsName = "VolumeSettings"
+                });
             });
         }
 
@@ -499,6 +541,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     ScanTime = item.ScanTime,
                     PanoramaImagePath = item.PanoramaImagePath,
                     BarcodeImagePath = item.BarcodeImagePath,
+                    Volume = item.Volume,
+                    Length = item.Length,
+                    Width = item.Width,
+                    Height = item.Height,
                 });
                 item.Num = BarCodeItems.Count + 1;
                 BarCodeItems.Insert(0, item);

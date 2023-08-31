@@ -82,5 +82,10 @@ namespace JayTom.Dws.Client.EventMediators {
         /// 需要扣除的高度
         /// </summary>
         public float HeightToDeduct { get; set; }
+
+        /// <summary>
+        /// 需要扣除的体积
+        /// </summary>
+        public float VolumeToDeduct { get; set; }
     }
 }

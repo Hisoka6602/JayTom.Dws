@@ -182,7 +182,10 @@ namespace JayTom.Dws.Client.ViewModels {
                 }
             }
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
-                await Task.Delay(TimeSpan.FromSeconds(2));
+                await Task.Delay(TimeSpan.FromSeconds(5));
+                //加载配置需要有一个事件通知各个模块
+                //加载体积配置
+                //加载重量配置
                 IsLoaded = true;
             });
         }
