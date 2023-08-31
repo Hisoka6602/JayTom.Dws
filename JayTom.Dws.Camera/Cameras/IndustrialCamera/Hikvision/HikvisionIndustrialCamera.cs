@@ -327,6 +327,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
         public System.Drawing.Color BarcodeBorderColor { get; set; } = System.Drawing.Color.LawnGreen;
         public bool IsShowBarcodeBorder { get; set; } = true;
         public bool IsRealtimeImageEnabled { get; set; }
+        public int TakePhotoDelay { get; set; }
 
         public event EventHandler<BarcodeReadEventArgs>? BarcodeRead;
 
@@ -334,41 +335,54 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
 
         public event EventHandler<PhotoTakenEventArgs>? PhotoTaken;
 
-        public async Task TakePhotoAsync(string barcode, long barcodeTimestamp) {
+        public Task TakePhotoAsync(string barcode, long barcodeTimestamp, CancellationToken cancellation = default) {
             //提交拍照请求
-            if (Status == CameraStatus.Running) {
-                try {
-                    await _takePhotoSlim.WaitAsync();
-                    var pFrameInfo = new MVIDCodeReader.MVID_IMAGE_INFO();
-                    _nRet = _myCodeReader?.MVID_CR_CAM_GetImageBuffer_NET(ref pFrameInfo, 300) ?? -1;
-                    if (_nRet != MVIDCodeReader.MVID_CR_OK) {
-                        OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
-                            Exception = new Exception($"截图失败:截取一帧图片失败,{_nRet:X}")
+            Task.Run(async () => {
+                await Task.Delay(TakePhotoDelay, cancellation);
+                if (Status == CameraStatus.Running) {
+                    try {
+                        await _takePhotoSlim.WaitAsync(cancellation);
+                        var pFrameInfo = new MVIDCodeReader.MVID_IMAGE_INFO();
+                        _nRet = _myCodeReader?.MVID_CR_CAM_GetImageBuffer_NET(ref pFrameInfo, 300) ?? -1;
+                        if (_nRet != MVIDCodeReader.MVID_CR_OK) {
+                            OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
+                                Exception = new Exception($"截图失败:截取一帧图片失败,{_nRet:X}")
+                            });
+                            return;
+                        }
+
+                        var image = await ConvertPointerToImage(pFrameInfo);
+                        var thumbnailImage = image?.GetThumbnailImage(1024, 768, () => false, IntPtr.Zero);
+                        await Task.Delay(100, cancellation);
+                        OnPhotoTaken(new PhotoTakenEventArgs {
+                            Timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds(),
+                            CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
+                            Image = image,
+                            PhotoTime = DateTime.Now,
+                            ThumbImage = (Bitmap?)thumbnailImage,
+                            Barcode = barcode,
+                            BarcodeTimestamp = barcodeTimestamp
                         });
-                        return;
                     }
-                    var image = await ConvertPointerToImage(pFrameInfo);
-                    var thumbnailImage = image?.GetThumbnailImage(1024, 768, () => false, IntPtr.Zero);
-                    await Task.Delay(100);
-                    OnPhotoTaken(new PhotoTakenEventArgs {
-                        Timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds(),
-                        CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
-                        Image = image,
-                        PhotoTime = DateTime.Now,
-                        ThumbImage = (Bitmap?)thumbnailImage,
-                        Barcode = barcode,
-                        BarcodeTimestamp = barcodeTimestamp
-                    });
+                    catch (Exception e) {
+                        OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
+                            Exception = new Exception($"截图失败:截取一帧图片异常,{e}")
+                        });
+                    }
+                    finally {
+                        _takePhotoSlim.Release();
+                    }
                 }
-                catch (Exception e) {
-                    OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
-                        Exception = new Exception($"截图失败:截取一帧图片异常,{e}")
-                    });
-                }
-                finally {
-                    _takePhotoSlim.Release();
-                }
-            }
+            }, cancellation);
+            return Task.CompletedTask;
+        }
+
+        public Task TakePhotoAsync(string barcode, long barcodeTimestamp, TimeSpan delay, CancellationToken cancellation = default) {
+            Task.Run(async () => {
+                await Task.Delay(delay, cancellation);
+                await TakePhotoAsync(barcode, barcodeTimestamp, cancellation);
+            }, cancellation);
+            return Task.CompletedTask;
         }
 
         public void SetScanCodeFilterParams(ScanCodeFilterParams @params) {

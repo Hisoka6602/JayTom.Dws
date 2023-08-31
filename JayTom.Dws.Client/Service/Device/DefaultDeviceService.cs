@@ -365,6 +365,10 @@ namespace JayTom.Dws.Client.Service.Device {
                                 });
                             };
                             if (camera is IIndustrialCamera industrialCamera) {
+                                industrialCamera.TakePhotoDelay = panoramaCameraConfigInfoModels
+                                    ?.FirstOrDefault(f => f.SerialNumber.Equals(info.SerialNumber))
+                                    ?.CaptureDelayTime ?? 0;
+                                //填充其他信息
                                 industrialCamera.BarcodeRead += delegate (object? sender, BarcodeReadEventArgs args) {
                                     OnBarcodeScanned(args);
                                 };
@@ -561,7 +565,7 @@ namespace JayTom.Dws.Client.Service.Device {
             if (cameras?.Any() == true) {
                 foreach (var camera in cameras) {
                     if (camera is IIndustrialCamera industrialCamera) {
-                        Task.Run(async () => {
+                        /*Task.Run(async () => {
                             var delayTime = _cameraParameters
                                 .Where(w => w.Type == BoundCameraType.PanoramicCamera
                                            && w.Parameters is PanoramaCameraConfigInfoModel)
@@ -570,8 +574,8 @@ namespace JayTom.Dws.Client.Service.Device {
                                 ?.CaptureDelayTime ?? 500;
                             await Task.Delay(delayTime);
                             //等待
-                            await industrialCamera.TakePhotoAsync(e.Barcode, e.Timestamp);
-                        });
+                        });*/
+                        await industrialCamera.TakePhotoAsync(e.Barcode, e.Timestamp);
                     }
                 }
             }

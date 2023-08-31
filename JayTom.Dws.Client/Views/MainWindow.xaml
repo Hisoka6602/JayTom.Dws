@@ -127,13 +127,13 @@
                                     HorizontalAlignment="Center"
                                     VerticalAlignment="Center"
                                     materialDesign:ColorZoneAssist.Mode="Dark"
+                                    materialDesign:ComboBoxAssist.ShowSelectedItem="False"
                                     BorderBrush="Transparent"
                                     BorderThickness="0"
                                     FontSize="18"
                                     FontWeight="Bold"
                                     IsReadOnly="True"
                                     IsSelected="False"
-                                    IsTextSearchEnabled="True"
                                     ItemTemplate="{StaticResource HomeToolTemplate}"
                                     ItemsSource="{Binding HomeToolItems}"
                                     MaxDropDownHeight="800"
@@ -147,7 +147,7 @@
                                         </b:EventTrigger>
                                     </b:Interaction.Triggers>
                                     <ComboBox.ItemContainerStyle>
-                                        <Style BasedOn="{StaticResource MaterialDesignComboBoxItemStyle}" TargetType="ComboBoxItem">
+                                        <Style BasedOn="{StaticResource MaterialDesignComboBoxItemSelectedCollapsedStyle}" TargetType="ComboBoxItem">
                                             <Setter Property="Focusable" Value="False" />
                                             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
                                         </Style>

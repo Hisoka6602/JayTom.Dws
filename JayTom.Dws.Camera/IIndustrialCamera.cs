@@ -36,6 +36,11 @@ namespace JayTom.Dws.Camera {
         public bool IsRealtimeImageEnabled { get; set; }
 
         /// <summary>
+        /// 拍照延迟
+        /// </summary>
+        public int TakePhotoDelay { get; set; }
+
+        /// <summary>
         /// 读取到条码事件
         /// </summary>
         event EventHandler<BarcodeReadEventArgs> BarcodeRead;
@@ -54,7 +59,17 @@ namespace JayTom.Dws.Camera {
         /// 拍照
         /// </summary>
         /// <returns></returns>
-        Task TakePhotoAsync(string barcode, long barcodeTimestamp);
+        Task TakePhotoAsync(string barcode, long barcodeTimestamp, CancellationToken cancellation = default);
+
+        /// <summary>
+        /// 拍照
+        /// </summary>
+        /// <param name="barcode"></param>
+        /// <param name="barcodeTimestamp"></param>
+        /// <param name="delay"></param>
+        /// <param name="cancellation"></param>
+        /// <returns></returns>
+        Task TakePhotoAsync(string barcode, long barcodeTimestamp, TimeSpan delay, CancellationToken cancellation = default);
 
         /// <summary>
         /// 设置扫码过滤参数

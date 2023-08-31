@@ -12,6 +12,7 @@ using System.Windows.Controls;
 using System.Collections.Generic;
 using JayTom.Dws.PluginInterface;
 using JayTom.Dws.Client.EventMediators;
+using JayTom.Dws.PluginInterface.Utils;
 
 namespace JayTom.Dws.Client.HomeToolPlugin.SunnenPlugin.ViewModels {
 
@@ -112,6 +113,19 @@ namespace JayTom.Dws.Client.HomeToolPlugin.SunnenPlugin.ViewModels {
                         HeightToDeduct = PackageType == PackageType.Pallet ? DeductedHeight : 0,
                     });
                     BarCode = string.Empty;
+                }
+            });
+        }
+
+        public ICommand LoadedCommand {
+            get => new DelegateCommand<UserControl>(LoadedDelegate);
+        }
+
+        private async void LoadedDelegate(UserControl obj) {
+            await Application.Current.Dispatcher.InvokeAsync(() => {
+                var textBox = Utils.GetVisualChild<TextBox>(obj, b => b.Name.Equals("BarCodeTextBox"));
+                if (textBox is not null) {
+                    textBox.Focus();
                 }
             });
         }

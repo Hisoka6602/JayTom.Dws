@@ -33,7 +33,6 @@ using ConnectionType = JayTom.Dws.Client.Models.ConnectionType;
 using static JayTom.Dws.Client.Service.BackgroundService.ScanProcessBackgroundService;
 
 namespace JayTom.Dws.Client.ViewModels.Pages {
-
     public class HomeViewModel : BindableBase {
         private readonly IDialogService _dialogService;
         private readonly IComputerInfoReporter _computerInfoReporter;
@@ -315,7 +314,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                         Weight = (float)(model.Weight ?? 0),
                         Length = (float)(model.Length ?? 0),
                         Width = (float)(model.Width ?? 0),
-                        Height = (float)(model.Height ?? 0)
+                        Height = (float)(model.Height ?? 0),
+                        Volume = (float)(model.Volume ?? 0)
                     });
                 }
             });
