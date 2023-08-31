@@ -29,6 +29,8 @@
         <settingsConverter:VolumeUnitConverter x:Key="VolumeUnitConverter" />
         <unitConverter:VolumeConverter x:Key="VolumeConverter" />
         <unitConverter:WeightConverter x:Key="WeightConverter" />
+        <converters:NegativeNumberConverter x:Key="NegativeNumberConverter" />
+
         <Storyboard x:Key="ItemCountStoryboard">
             <DoubleAnimation
                 AutoReverse="True"
