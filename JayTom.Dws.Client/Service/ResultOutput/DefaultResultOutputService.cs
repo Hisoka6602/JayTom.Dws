@@ -15,12 +15,11 @@ using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
 using JayTom.Dws.Client.EventMediators;
 using NetTopologySuite.GeometriesGraph;
+using JayTom.Dws.Domain.Dto.BaseInfoModels;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Repository.LocalData;
-using JayTom.Dws.Domain.Dto.BaseInfoModels;
 
-namespace JayTom.Dws.Client.Service.ResultOutput
-{
+namespace JayTom.Dws.Client.Service.ResultOutput {
 
     public class DefaultResultOutputService : IResultOutputService {
         private readonly IConfigRepository _configRepository;
@@ -44,10 +43,15 @@ namespace JayTom.Dws.Client.Service.ResultOutput
             EventAggregator.Instance.Subscribe<TriggerPositionEvent>(position => {
                 //播放声音事件
                 if (position is TriggerPositionEvent trigger) {
+                    NLog.LogManager.GetCurrentClassLogger().Error($"触发声音事件");
                     if (_outputSettingsDto?.IsUseAudioOutput == true) {
                         if (_outputSettingsDto?.AudioOutputSettingsInfo?.TriggerPosition == trigger.TriggerPosition) {
+                            NLog.LogManager.GetCurrentClassLogger().Error($"播放声音");
                             SoundOutput(trigger.IsSuccess);
                         }
+                    }
+                    else {
+                        NLog.LogManager.GetCurrentClassLogger().Error($"未开启声音输出");
                     }
                 }
             });
@@ -97,81 +101,47 @@ namespace JayTom.Dws.Client.Service.ResultOutput
                     _semaphore.Release();
                 }
             });
+
+            EventAggregator.Instance.Publish(new SettingsChangedEvent() {
+                SettingsName = "ResultOutputSettings",
+            });
         }
 
         public event EventHandler<Exception>? OutputFailed;
 
-        public async void ExecuteOutput(string barCode, float weight, DateTime scanTime, float length, float width, float height,
+        public void ExecuteOutput(string barCode, float weight, DateTime scanTime, float length, float width, float height,
             float volume, string cameraSerialNumber, CancellationToken cancellationToken = default) {
-            if (_outputSettingsDto is null) {
-                await _semaphore.WaitAsync(cancellationToken);
-                var configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("ResultOutputSettings"), cancellationToken);
-                if (configInfoModel is not null) {
-                    try {
-                        _outputSettingsDto = JsonConvert.DeserializeObject<ResultOutputSettingsDto>(configInfoModel.Value);
+            if (_outputSettingsDto is not null) {
+                Task.Run(async () => {
+                    //获取数据格式
+                    var list = _outputSettingsDto.DataTemplate
+                        ?.Where(w => w.ApplicationType == ItemApplicationType.ResultData)?
+                        .Select(s => ParseTemplate(s.Content, barCode, weight, scanTime, length, width, height,
+                            volume, cameraSerialNumber, true))
+                        ?.ToList();
+                    if (list?.Any() != true) {
+                        OnOutputFailed(new Exception("输出数据格式错误,未找到模板内容!"));
+                        return;
                     }
-                    catch (Exception e) {
-                        OnOutputFailed(e);
-                    }
-                }
-                _outputSettingsDto ??= new ResultOutputSettingsDto();
-                if (_outputSettingsDto.IsUseTcpOutput) {
-                    //连接Tcp
-                    //判断使用客户端还是服务端
-                    //如果使用服务端，则一开始就有开启
-                    if (_outputSettingsDto.TcpSettingsInfo.ConnectionMode == TcpConnectionMode.Server) {
-                        if (_tcpCommunication.Status != ServerState.Running) {
-                            //创建连接
-                            _tcpCommunication.SetParameter(new TcpConnectParam {
-                                Address = _outputSettingsDto.TcpSettingsInfo.ServerConfig.IpAddress,
-                                Port = _outputSettingsDto.TcpSettingsInfo.ServerConfig.Port,
-                            });
-                            _tcpCommunication.Connect();
-                        }
-                    }
-                    else {
-                        if (_tcpCommunicationClient.IsConnected) {
-                            _tcpCommunicationClient.Close();
-                        }
-                        _tcpCommunicationClient.SetParameter(new TcpConnectParam {
-                            Address = _outputSettingsDto.TcpSettingsInfo.ClientConfig.IpAddress,
-                            Port = _outputSettingsDto.TcpSettingsInfo.ClientConfig.Port,
+                    var message = string.Join(",", list);
+                    //使用polly
+                    var retryPolicy = Policy.HandleResult<bool>(result => !result)
+                        .Or<TimeoutException>().RetryAsync(_outputSettingsDto.UploadSettingsInfo.RetryCount, (a, b) => {
                         });
-                        _tcpCommunicationClient?.Connect();
-                    }
-                }
-                _semaphore.Release();
-            }
 
-            Task.Run(async () => {
-                //获取数据格式
-                var list = _outputSettingsDto.DataTemplate
-                    ?.Where(w => w.ApplicationType == ItemApplicationType.ResultData)?
-                    .Select(s => ParseTemplate(s.Content, barCode, weight, scanTime, length, width, height,
-                        volume, cameraSerialNumber, true))
-                    ?.ToList();
-                if (list?.Any() != true) {
-                    OnOutputFailed(new Exception("输出数据格式错误,未找到模板内容!"));
-                    return;
-                }
-                var message = string.Join(",", list);
-                //使用polly
-                var retryPolicy = Policy.HandleResult<bool>(result => !result)
-                    .Or<TimeoutException>().RetryAsync(_outputSettingsDto.UploadSettingsInfo.RetryCount, (a, b) => {
+                    await retryPolicy.ExecuteAsync(async () => {
+                        await Task.Delay(_outputSettingsDto.UploadSettingsInfo.SendDelay, cancellationToken);
+                        //Tcp输出
+                        if (_outputSettingsDto.IsUseTcpOutput) {
+                            return await TcpOutput(message, cancellationToken);
+                        }
+                        //串口输出
+                        //Http输出
+                        //位置输出
+                        return true;
                     });
-
-                await retryPolicy.ExecuteAsync(async () => {
-                    await Task.Delay(_outputSettingsDto.UploadSettingsInfo.SendDelay, cancellationToken);
-                    //Tcp输出
-                    if (_outputSettingsDto.IsUseTcpOutput) {
-                        return await TcpOutput(message, cancellationToken);
-                    }
-                    //串口输出
-                    //Http输出
-                    //位置输出
-                    return true;
-                });
-            }, cancellationToken);
+                }, cancellationToken);
+            }
         }
 
         /// <summary>
@@ -215,6 +185,10 @@ namespace JayTom.Dws.Client.Service.ResultOutput
                             f.SoundName.Equals(_outputSettingsDto.AudioOutputSettingsInfo.SuccessAudio));
                         if (soundInfoModel is not null) {
                             _speech.PlayCacheByteFile(soundInfoModel.SoundName, soundInfoModel.SoundFile ?? Array.Empty<byte>());
+                            NLog.LogManager.GetCurrentClassLogger().Error("声音播放成功");
+                        }
+                        else {
+                            NLog.LogManager.GetCurrentClassLogger().Error("找不到声音信息对象");
                         }
                     }
                     else {
@@ -222,6 +196,10 @@ namespace JayTom.Dws.Client.Service.ResultOutput
                             f.SoundName.Equals(_outputSettingsDto.AudioOutputSettingsInfo.FailureAudio));
                         if (soundInfoModel is not null) {
                             _speech.PlayCacheByteFile(soundInfoModel.SoundName, soundInfoModel.SoundFile ?? Array.Empty<byte>());
+                            NLog.LogManager.GetCurrentClassLogger().Error("声音播放成功");
+                        }
+                        else {
+                            NLog.LogManager.GetCurrentClassLogger().Error("找不到声音信息对象");
                         }
                     }
                 }

@@ -24,6 +24,9 @@
       <HintPath>Cameras\IndustrialCamera\Hikvision\Dll\MVIDCodeReader.Net.dll</HintPath>
       <Private></Private>
     </Reference>
+    <Reference Include="NetSDKCS">
+      <HintPath>Cameras\SecurityCamera\DaHuatech\Dll\NetSDKCS.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
   <ItemGroup>

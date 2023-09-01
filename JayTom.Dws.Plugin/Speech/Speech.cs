@@ -36,7 +36,8 @@ namespace JayTom.Dws.Plugin.Speech {
                 using var player = new SoundPlayer(stream);
                 player?.PlaySync();
             }
-            catch {
+            catch (Exception e) {
+                NLog.LogManager.GetCurrentClassLogger().Error($"播放声音文件异常:{e}");
                 // ignored
             }
         }
@@ -46,6 +47,7 @@ namespace JayTom.Dws.Plugin.Speech {
             var valuePair = _soundDictionary?.FirstOrDefault(f => f.Key.Equals(name));
             if (valuePair is not null) {
                 PlayByteFile(valuePair.Value.Value);
+                NLog.LogManager.GetCurrentClassLogger().Error("播放声音文件");
             }
             else {
                 _soundDictionary?.Add(name, file);

@@ -337,6 +337,11 @@ namespace JayTom.Dws.Camera {
         VideoCameraSdk,
 
         /// <summary>
+        /// 安防相机SDK
+        /// </summary>
+        SecurityCamera,
+
+        /// <summary>
         /// 其他SDK
         /// </summary>
         OtherSdk
