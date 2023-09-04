@@ -473,6 +473,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             if (obj.Camera is IIndustrialCamera industrialCamera) {
                 await industrialCamera.TakePhotoAsync(string.Empty, 0);
             }
+            else if (obj.Camera is ISecurityCamera securityCamera) {
+                await securityCamera.TakePhotoAsync(string.Empty, 0);
+            }
 
             /*if (!obj.IsSwitchingState) {
                 try {

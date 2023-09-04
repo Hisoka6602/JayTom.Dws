@@ -9,6 +9,16 @@ namespace JayTom.Dws.Camera {
     public interface ISecurityCamera : ICamera {
 
         /// <summary>
+        /// 相机连接参数
+        /// </summary>
+        string CameraConnectionParameters { get; set; }
+
+        /// <summary>
+        /// 拍照延迟
+        /// </summary>
+        public int TakePhotoDelay { get; set; }
+
+        /// <summary>
         /// 实时预览事件
         /// </summary>
         event EventHandler<RealPreviewEventArgs> RealPreview;
@@ -76,8 +86,87 @@ namespace JayTom.Dws.Camera {
         /// </summary>
         /// <returns></returns>
         Task TakePhotoAsync(string barcode, long barcodeTimestamp, CancellationToken cancellation = default);
+
+        /// <summary>
+        /// 拍照
+        /// </summary>
+        /// <param name="barcode"></param>
+        /// <param name="barcodeTimestamp"></param>
+        /// <param name="delay"></param>
+        /// <param name="cancellation"></param>
+        /// <returns></returns>
+        Task TakePhotoAsync(string barcode, long barcodeTimestamp, TimeSpan delay, CancellationToken cancellation = default);
     }
 
     public class RealPreviewEventArgs {
+    }
+
+    /// <summary>
+    /// 安防相机连接参数
+    /// </summary>
+    public class SecurityCameraConnectionParameters {
+
+        /// <summary>
+        /// 用户名
+        /// </summary>
+        public string Username { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 密码
+        /// </summary>
+        public string Password { get; set; } = string.Empty;
+    }
+
+    public class SecurityCameraInfo : CameraInfo {
+
+        /// <summary>
+        /// 相机是否已初始化
+        /// </summary>
+        public bool IsInitialized { get; set; }
+
+        /// <summary>
+        /// Ip版本
+        /// </summary>
+        public string IpVersion { get; set; }
+
+        /// <summary>
+        /// Ip地址
+        /// </summary>
+        public string IPAddress { get; set; }
+
+        /// <summary>
+        /// 端口
+        /// </summary>
+        public int Port { get; set; }
+
+        /// <summary>
+        /// 子网掩码
+        /// </summary>
+        public string SubnetMask { get; set; }
+
+        /// <summary>
+        /// 网关
+        /// </summary>
+        public string Gateway { get; set; }
+
+        /// <summary>
+        /// Mac地址
+        /// </summary>
+        public string MacAddress { get; set; }
+
+        /// <summary>
+        /// 设备类型
+        /// </summary>
+        public string DeviceType { get; set; }
+
+        /// <summary>
+        /// 详细类型
+        /// </summary>
+        public string DetailedType { get; set; }
+
+        /// <summary>
+        /// Http端口
+        /// </summary>
+        public int HttpPort { get; set; }
     }
 }

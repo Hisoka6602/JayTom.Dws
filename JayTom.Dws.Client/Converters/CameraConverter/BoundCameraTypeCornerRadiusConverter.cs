@@ -14,14 +14,28 @@ namespace JayTom.Dws.Client.Converters.CameraConverter {
 
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
             if (value is CameraType cameraType) {
+
                 if (parameter?.ToString()?.Equals("PanoramicCamera") == true) {
-                    return new CornerRadius(5, 0, 0, 5);
+                    return cameraType switch {
+                        CameraType.PanoramicCamera => new CornerRadius(5),
+                        CameraType.IndustrialCamera => new CornerRadius(5, 0, 0, 5),
+                        CameraType.SmartCamera => new CornerRadius(5, 0, 0, 5),
+                        CameraType.VideoCamera => new CornerRadius(5),
+                        _ => new CornerRadius(5)
+                    };
                 }
                 else if (parameter?.ToString()?.Equals("BarcodeScannerCamera") == true) {
-                    return new CornerRadius(0, 5, 5, 0);
+                    return cameraType switch {
+                        CameraType.IndustrialCamera => new CornerRadius(0, 5, 5, 0),
+                        CameraType.SmartCamera => new CornerRadius(0, 5, 5, 0),
+                        _ => new CornerRadius(5)
+                    };
                 }
                 else if (parameter?.ToString()?.Equals("VolumeCamera") == true) {
-                    return new CornerRadius(5, 5, 5, 5);
+                    return cameraType switch {
+                        CameraType.ThreeDCamera => new CornerRadius(5),
+                        _ => new CornerRadius(5)
+                    };
                 }
             }
             return new CornerRadius(0, 0, 0, 0);

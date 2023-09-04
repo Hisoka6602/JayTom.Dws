@@ -158,7 +158,12 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 智能相机
         /// </summary>
-        SmartCamera = 3
+        SmartCamera = 3,
+
+        /// <summary>
+        /// 录像相机
+        /// </summary>
+        VideoCamera = 4,
     }
 
     public enum ConnectionType {

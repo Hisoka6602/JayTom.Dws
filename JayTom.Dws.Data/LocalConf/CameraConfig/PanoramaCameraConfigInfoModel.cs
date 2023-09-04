@@ -17,5 +17,11 @@ namespace JayTom.Dws.Data.LocalConf.CameraConfig {
         /// </summary>
         [Column("CaptureDelayTime"), Required, InsertOrUpdata]
         public int CaptureDelayTime { get; set; }
+
+        /// <summary>
+        /// 相机连接参数(部分相机使用)
+        /// </summary>
+        [Column("CameraConnectionParameters"), InsertOrUpdata]
+        public string CameraConnectionParameters { get; set; } = string.Empty;
     }
 }

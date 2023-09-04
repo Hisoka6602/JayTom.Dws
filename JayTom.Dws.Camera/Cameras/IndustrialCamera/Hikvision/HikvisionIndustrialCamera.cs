@@ -1,4 +1,5 @@
 ﻿using System;
+using NetSDKCS;
 using System.Net;
 using System.Linq;
 using System.Text;
@@ -14,6 +15,7 @@ using System.Drawing.Imaging;
 using System.Collections.Generic;
 using System.Reflection.Metadata;
 using Point = System.Drawing.Point;
+using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using JayTom.Dws.Camera.FilterContainer;
 using Rectangle = System.Drawing.Rectangle;
@@ -23,7 +25,12 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
 
     public class HikvisionIndustrialCamera : IIndustrialCamera {
         private int _nRet = MVIDCodeReader.MVID_CR_OK;
-        private MVIDCodeReader.MVID_CAMERA_INFO_LIST _stDevList = new();
+
+        /// <summary>
+        /// 设备列表(sdk)
+        /// </summary>
+        private static MVIDCodeReader.MVID_CAMERA_INFO_LIST _sdkDevList = new();
+
         private SemaphoreSlim _semaphoreSlim = new(1, 1);
 
         //private MVIDCodeReader.MVID_CAM_OUTPUT_INFO _stOutput = new();
@@ -42,6 +49,18 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
         private readonly BarCodeFilterContainer _barCodeFilterContainer = new();
 
         /// <summary>
+        /// 设备列表
+        /// </summary>
+        private static ConcurrentDictionary<string, CameraInfo> _devInfo = new();
+
+        public HikvisionIndustrialCamera(CameraInfo info) {
+            this.Info = info;
+        }
+
+        public HikvisionIndustrialCamera() {
+        }
+
+        /// <summary>
         /// 相机信息
         /// </summary>
         public MVIDCodeReader.MVID_CAMERA_INFO Structure;
@@ -53,33 +72,41 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
         public CameraStatus Status { get; private set; } = CameraStatus.Uninitialized;
         public CameraBindingType BindingType { get; set; } = CameraBindingType.ScannerCamera;
 
-        public List<CameraInfo>? EnumerateCameras() {
+        public async Task<List<CameraInfo>?> EnumerateCameras() {
+            await Task.Yield();
+            _devInfo.Clear();
             var cameraInfos = new List<CameraInfo>();
-            _nRet = MVIDCodeReader.MVID_CR_CAM_EnumDevices_NET(ref _stDevList);
-            if (MVIDCodeReader.MVID_CR_OK != _nRet) {
+            var nRet = MVIDCodeReader.MVID_CR_CAM_EnumDevices_NET(ref _sdkDevList);
+            if (MVIDCodeReader.MVID_CR_OK != nRet) {
                 OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
-                    Exception = new Exception($"相机枚举异常:{_nRet:X}")
+                    Exception = new Exception($"相机枚举异常:{nRet:X}")
                 });
                 return cameraInfos;
             }
 
-            for (int i = 0; i < _stDevList.nDeviceNum; i++) {
-                var stDevInfo = (MVIDCodeReader.MVID_CAMERA_INFO)(Marshal.PtrToStructure(_stDevList.pstCamInfo[i], typeof(MVIDCodeReader.MVID_CAMERA_INFO)) ?? new MVIDCodeReader.MVID_CAMERA_INFO());
-                cameraInfos.Add(new CameraInfo() {
-                    Brand = stDevInfo.chManufacturerName ?? string.Empty,
-                    IpAddress = ConvertUintToIpAddress(stDevInfo.nNetExport).ToString(),
-                    Model = stDevInfo.chModelName ?? string.Empty,
-                    Version = stDevInfo.chDeviceVersion ?? string.Empty,
-                    SerialNumber = stDevInfo.chSerialNumber ?? string.Empty,//还有一个设备序列号nDeviceNumber不想知道是干吗用的
-                    Name = stDevInfo.chUserDefinedName ?? string.Empty,
-                    Type = CameraType.IndustrialCamera,
-                    ConnectionType = stDevInfo.nCamType == MVIDCodeReader.MVID_GIGE_CAM ?
-                        CameraConnectionType.Ethernet :
-                        (stDevInfo.nCamType == MVIDCodeReader.MVID_USB_CAM ? CameraConnectionType.Usb : CameraConnectionType.Unknown),
-                    Id = i
-                });
+            for (var i = 0; i < _sdkDevList.nDeviceNum; i++) {
+                var stDevInfo = (MVIDCodeReader.MVID_CAMERA_INFO)(Marshal.PtrToStructure(_sdkDevList.pstCamInfo[i], typeof(MVIDCodeReader.MVID_CAMERA_INFO)) ?? new MVIDCodeReader.MVID_CAMERA_INFO());
+                //添加到队列
+                if (!string.IsNullOrEmpty(stDevInfo.chSerialNumber)) {
+                    var cameraInfo = new CameraInfo() {
+                        Brand = stDevInfo.chManufacturerName ?? string.Empty,
+                        IpAddress = ConvertUintToIpAddress(stDevInfo.nNetExport).ToString(),
+                        Model = stDevInfo.chModelName ?? string.Empty,
+                        Version = stDevInfo.chDeviceVersion ?? string.Empty,
+                        SerialNumber = stDevInfo.chSerialNumber ?? string.Empty, //还有一个设备序列号nDeviceNumber不想知道是干吗用的
+                        Name = stDevInfo.chUserDefinedName ?? string.Empty,
+                        Type = CameraType.IndustrialCamera,
+                        ConnectionType = stDevInfo.nCamType == MVIDCodeReader.MVID_GIGE_CAM
+                            ? CameraConnectionType.Ethernet
+                            : (stDevInfo.nCamType == MVIDCodeReader.MVID_USB_CAM
+                                ? CameraConnectionType.Usb
+                                : CameraConnectionType.Unknown),
+                        Id = i
+                    };
+                    _devInfo.AddOrUpdate(cameraInfo.SerialNumber, cameraInfo, (k, v) => cameraInfo);
+                    cameraInfos.Add(cameraInfo);
+                }
             }
-
             return cameraInfos;
         }
 
@@ -103,93 +130,103 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
             }
             if (param is CameraInfo cameraInfo) {
                 this.Info = cameraInfo;
-                if (cameraInfo.Id >= MVIDCodeReader.MVID_MAX_CAM_NUM) {
-                    OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
-                        Exception = new Exception("初始化失败:Id大于最大设备支持个数!")
-                    });
-                    return new KeyValuePair<bool, string>(false, "Id大于最大设备支持个数!");
-                }
+                //取出对应Id
+                var tryGetValue = _devInfo.TryGetValue(cameraInfo.SerialNumber, out var devInfo);
+                if (tryGetValue && devInfo is not null) {
+                    cameraInfo.Id = devInfo.Id;
+                    if (devInfo.Id >= MVIDCodeReader.MVID_MAX_CAM_NUM) {
+                        OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
+                            Exception = new Exception("初始化失败:Id大于最大设备支持个数!")
+                        });
+                        return new KeyValuePair<bool, string>(false, "Id大于最大设备支持个数!");
+                    }
+                    if (_sdkDevList.pstCamInfo[devInfo.Id] == nint.Zero) {
+                        OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
+                            Exception = new Exception("初始化失败:Id不存在或已断开!")
+                        });
+                        return new KeyValuePair<bool, string>(false, "Id不存在或已断开!");
+                    }
 
-                if (_stDevList.pstCamInfo[cameraInfo.Id] == nint.Zero) {
-                    OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
-                        Exception = new Exception("初始化失败:Id不存在或已断开!")
-                    });
-                    return new KeyValuePair<bool, string>(false, "Id不存在或已断开!");
-                }
+                    var pstCamInfo = _sdkDevList.pstCamInfo[devInfo.Id];
+                    Structure = (MVIDCodeReader.MVID_CAMERA_INFO)(Marshal.PtrToStructure(pstCamInfo, typeof(MVIDCodeReader.MVID_CAMERA_INFO)) ?? new MVIDCodeReader.MVID_CAMERA_INFO());
+                    _myCodeReader ??= new MVIDCodeReader();
+                    //创建句柄
+                    _nRet = _myCodeReader?.MVID_CR_CreateHandle_NET(MVIDCodeReader.MVID_BCR | MVIDCodeReader.MVID_TDCR) ?? 0;
+                    if (_nRet != MVIDCodeReader.MVID_CR_OK) {
+                        OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
+                            Exception = new Exception($"初始化失败:创建句柄失败,{_nRet:X}")
+                        });
+                        return new KeyValuePair<bool, string>(false, $"创建句柄失败,{_nRet:X}!");
+                    }
+                    //绑定设备
+                    _nRet = _myCodeReader?.MVID_CR_CAM_BindDevice_NET(pstCamInfo) ?? 0;
+                    if (_nRet != MVIDCodeReader.MVID_CR_OK) {
+                        OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
+                            Exception = new Exception($"初始化失败:绑定设备失败,{_nRet:X}")
+                        });
+                        return new KeyValuePair<bool, string>(false, $"绑定设备失败,{_nRet:X}!");
+                    }
 
-                var pstCamInfo = _stDevList.pstCamInfo[cameraInfo.Id];
-                Structure = (MVIDCodeReader.MVID_CAMERA_INFO)(Marshal.PtrToStructure(pstCamInfo, typeof(MVIDCodeReader.MVID_CAMERA_INFO)) ?? new MVIDCodeReader.MVID_CAMERA_INFO());
-                _myCodeReader ??= new MVIDCodeReader();
-                //创建句柄
-                _nRet = _myCodeReader?.MVID_CR_CreateHandle_NET(MVIDCodeReader.MVID_BCR | MVIDCodeReader.MVID_TDCR) ?? 0;
-                if (_nRet != MVIDCodeReader.MVID_CR_OK) {
-                    OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
-                        Exception = new Exception($"初始化失败:创建句柄失败,{_nRet:X}")
-                    });
-                    return new KeyValuePair<bool, string>(false, $"创建句柄失败,{_nRet:X}!");
-                }
-                //绑定设备
-                _nRet = _myCodeReader?.MVID_CR_CAM_BindDevice_NET(pstCamInfo) ?? 0;
-                if (_nRet != MVIDCodeReader.MVID_CR_OK) {
-                    OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
-                        Exception = new Exception($"初始化失败:绑定设备失败,{_nRet:X}")
-                    });
-                    return new KeyValuePair<bool, string>(false, $"绑定设备失败,{_nRet:X}!");
-                }
+                    //获取相机属性值
+                    var nIntValue = new MVIDCodeReader.MVID_CAM_INTVALUE_EX();
+                    _nRet = _myCodeReader?.MVID_CR_CAM_GetIntValue_NET("Width", ref nIntValue) ?? 0;
+                    if (_nRet != MVIDCodeReader.MVID_CR_OK) {
+                        OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
+                            Exception = new Exception($"初始化失败:获取相机属性值[Width]失败,{_nRet:X}")
+                        });
+                        return new KeyValuePair<bool, string>(false, $"获取相机属性值[Width]失败,{_nRet:X}!");
+                    }
+                    var nWidth = (int)nIntValue.nCurValue;
+                    _nRet = _myCodeReader?.MVID_CR_CAM_GetIntValue_NET("Height", ref nIntValue) ?? 0;
+                    if (_nRet != MVIDCodeReader.MVID_CR_OK) {
+                        OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
+                            Exception = new Exception($"初始化失败:获取相机属性值[Height]失败,{_nRet:X}")
+                        });
+                        return new KeyValuePair<bool, string>(false, $"获取相机属性值[Height]失败,{_nRet:X}!");
+                    }
+                    var nHeight = (int)nIntValue.nCurValue;
+                    _imageBuffer = new byte[nWidth * nHeight * 3 + 4096];
+                    //设置缓存节点
+                    _nRet = _myCodeReader?.MVID_CR_CAM_SetImageNodeNum_NET(10) ?? 0;
+                    if (_nRet != MVIDCodeReader.MVID_CR_OK) {
+                        OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
+                            Exception = new Exception($"初始化失败:设置缓存节点失败,{_nRet:X}")
+                        });
+                        return new KeyValuePair<bool, string>(false, $"设置缓存节点失败,{_nRet:X}!");
+                    }
+                    /// 仅二维码识别：MVID_TDCR | en:Recognize Two-Dimension code only: MVID_TDCR
+                    /// 一维码 + 二维码 识别：MVID_BCR | MVID_TDCR | en:Recognize Barcode + Two-Dimension code: MVID_BCR | MVID_TDCR
+                    _nRet = _myCodeReader?.MVID_CR_Algorithm_SetIntValue_NET("BCR_Ability", MVIDCodeReader.MVID_BCR | MVIDCodeReader.MVID_TDCR) ?? 0;
+                    if (MVIDCodeReader.MVID_CR_OK != _nRet) {
+                        OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
+                            Exception = new Exception($"初始化失败:设置读码类型失败,{_nRet:X}")
+                        });
+                        return new KeyValuePair<bool, string>(false, $"设置读码类型失败,{_nRet:X}!");
+                    }
 
-                //获取相机属性值
-                var nIntValue = new MVIDCodeReader.MVID_CAM_INTVALUE_EX();
-                _nRet = _myCodeReader?.MVID_CR_CAM_GetIntValue_NET("Width", ref nIntValue) ?? 0;
-                if (_nRet != MVIDCodeReader.MVID_CR_OK) {
-                    OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
-                        Exception = new Exception($"初始化失败:获取相机属性值[Width]失败,{_nRet:X}")
-                    });
-                    return new KeyValuePair<bool, string>(false, $"获取相机属性值[Width]失败,{_nRet:X}!");
-                }
-                var nWidth = (int)nIntValue.nCurValue;
-                _nRet = _myCodeReader?.MVID_CR_CAM_GetIntValue_NET("Height", ref nIntValue) ?? 0;
-                if (_nRet != MVIDCodeReader.MVID_CR_OK) {
-                    OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
-                        Exception = new Exception($"初始化失败:获取相机属性值[Height]失败,{_nRet:X}")
-                    });
-                    return new KeyValuePair<bool, string>(false, $"获取相机属性值[Height]失败,{_nRet:X}!");
-                }
-                var nHeight = (int)nIntValue.nCurValue;
-                _imageBuffer = new byte[nWidth * nHeight * 3 + 4096];
-                //设置缓存节点
-                _nRet = _myCodeReader?.MVID_CR_CAM_SetImageNodeNum_NET(10) ?? 0;
-                if (_nRet != MVIDCodeReader.MVID_CR_OK) {
-                    OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
-                        Exception = new Exception($"初始化失败:设置缓存节点失败,{_nRet:X}")
-                    });
-                    return new KeyValuePair<bool, string>(false, $"设置缓存节点失败,{_nRet:X}!");
-                }
-                /// 仅二维码识别：MVID_TDCR | en:Recognize Two-Dimension code only: MVID_TDCR
-                /// 一维码 + 二维码 识别：MVID_BCR | MVID_TDCR | en:Recognize Barcode + Two-Dimension code: MVID_BCR | MVID_TDCR
-                _nRet = _myCodeReader?.MVID_CR_Algorithm_SetIntValue_NET("BCR_Ability", MVIDCodeReader.MVID_BCR | MVIDCodeReader.MVID_TDCR) ?? 0;
-                if (MVIDCodeReader.MVID_CR_OK != _nRet) {
-                    OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
-                        Exception = new Exception($"初始化失败:设置读码类型失败,{_nRet:X}")
-                    });
-                    return new KeyValuePair<bool, string>(false, $"设置读码类型失败,{_nRet:X}!");
-                }
+                    /*//设置图像输出模式
+                    //MVIDCodeReader.MVID_IMAGE_OUTPUT_MODE.MVID_OUTPUT_RAW
+                    _myCodeReader?.MVID_CR_CAM_SetImageOutPutMode_NET(MVIDCodeReader.MVID_IMAGE_OUTPUT_MODE.MVID_OUTPUT_NORMAL);
+                    if (_nRet != MVIDCodeReader.MVID_CR_OK) {
+                        OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
+                            Exception = new Exception($"初始化失败:设置图像输出模式失败,{_nRet:X}")
+                        });
+                        return new KeyValuePair<bool, string>(false, $"设置图像输出模式失败,{_nRet:X}!");
+                    }*/
+                    //获取帧率
+                    //FrameRate
 
-                /*//设置图像输出模式
-                //MVIDCodeReader.MVID_IMAGE_OUTPUT_MODE.MVID_OUTPUT_RAW
-                _myCodeReader?.MVID_CR_CAM_SetImageOutPutMode_NET(MVIDCodeReader.MVID_IMAGE_OUTPUT_MODE.MVID_OUTPUT_NORMAL);
-                if (_nRet != MVIDCodeReader.MVID_CR_OK) {
-                    OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
-                        Exception = new Exception($"初始化失败:设置图像输出模式失败,{_nRet:X}")
+                    OnCameraInitialized(new CameraInitializedEventArgs() {
+                        CameraInfo = this.Info
                     });
-                    return new KeyValuePair<bool, string>(false, $"设置图像输出模式失败,{_nRet:X}!");
-                }*/
-                //获取帧率
-                //FrameRate
-
-                OnCameraInitialized(new CameraInitializedEventArgs() {
-                    CameraInfo = this.Info
-                });
-                return new KeyValuePair<bool, string>(true, "初始化成功");
+                    return new KeyValuePair<bool, string>(true, "初始化成功");
+                }
+                else {
+                    OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
+                        Exception = new Exception("设备不存在或已离线,请重新枚举!")
+                    });
+                    return new KeyValuePair<bool, string>(false, "设备不存在或已离线,请重新枚举!");
+                }
             }
             else {
                 OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
@@ -350,7 +387,6 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                             });
                             return;
                         }
-
                         var image = await ConvertPointerToImage(pFrameInfo);
                         var thumbnailImage = image?.GetThumbnailImage(1024, 768, () => false, IntPtr.Zero);
                         await Task.Delay(100, cancellation);

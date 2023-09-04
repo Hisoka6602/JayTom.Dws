@@ -71,6 +71,10 @@ namespace JayTom.Dws.Client {
             {
                 containerRegistry.RegisterDialog<SunnenInputBarcodeControl>();
             }
+            //设置窗口
+            {
+                containerRegistry.RegisterDialog<VideoCameraSettingsDialog>();
+            }
             //跳转注册
             {
                 containerRegistry.RegisterForNavigation<PluginMarketplacePage>();
@@ -251,6 +255,7 @@ namespace JayTom.Dws.Client {
             ViewModelLocationProvider.Register<WeightSettingPages, WeightSettingViewModel>();
             ViewModelLocationProvider.Register<VolumeSettingsPage, VolumeSettingsViewModel>();
             ViewModelLocationProvider.Register<LogManagerPage, LogManagerViewModel>();
+            ViewModelLocationProvider.Register<VideoCameraSettingsDialog, VideoCameraSettingsViewModel>();
             //其他插件
             {
                 ViewModelLocationProvider.Register<SunnenInputBarcodeControl, SunnenInputBarcodeViewModel>();

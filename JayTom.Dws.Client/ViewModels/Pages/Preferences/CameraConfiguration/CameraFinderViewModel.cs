@@ -4,10 +4,13 @@ using System.Linq;
 using System.Text;
 using Prism.Commands;
 using System.Windows;
+using Newtonsoft.Json;
 using System.Windows.Input;
 using System.Threading.Tasks;
+using Prism.Services.Dialogs;
 using JayTom.Dws.Client.Models;
 using MaterialDesignThemes.Wpf;
+using System.Windows.Threading;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Models.Cameras;
@@ -15,6 +18,7 @@ using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Data.LocalConf.CameraConfig;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Infrastructure.Repository.LocalConf;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.StartPanel;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
 
@@ -23,6 +27,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
         private readonly IBarcodeScannerCameraConfigRepository _barcodeScannerCameraConfigRepository;
         private readonly IPanoramaCameraConfigRepository _panoramaCameraConfigRepository;
         private readonly IVolumeCameraConfigRepository _volumeCameraConfigRepository;
+        private readonly IDialogService _dialogService;
         private bool _isExecuting;
         private static bool _isLoaded;
 
@@ -32,7 +37,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                 Num = 1,
                 Name = "增加一个转换、如果是工业相机、智能相机则不显示体积绑定",
                 ConnectionType = ConnectionType.Ethernet,
-                CameraType = CameraType.IndustrialCamera,
+                CameraType = CameraType.VideoCamera,
                 SerialNumber = "测试序列号1",
                 IpAddress = "192.168.888.888",
                 Model = "在WPF中我需要新建一个绑定相机类型显示的的转换器，请给我代码",
@@ -74,11 +79,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
         public CameraFinderViewModel(IDeviceService deviceService,
             IBarcodeScannerCameraConfigRepository barcodeScannerCameraConfigRepository,
             IPanoramaCameraConfigRepository panoramaCameraConfigRepository,
-            IVolumeCameraConfigRepository volumeCameraConfigRepository) {
+            IVolumeCameraConfigRepository volumeCameraConfigRepository,
+            IDialogService dialogService) {
             _deviceService = deviceService;
             _barcodeScannerCameraConfigRepository = barcodeScannerCameraConfigRepository;
             _panoramaCameraConfigRepository = panoramaCameraConfigRepository;
             _volumeCameraConfigRepository = volumeCameraConfigRepository;
+            _dialogService = dialogService;
             _deviceService.CameraUnbound += async delegate (object? sender, CameraFinderItemInfoModel model) {
                 await Application.Current.Dispatcher.InvokeAsync(() => {
                     var infoModel = CameraFinderItems.FirstOrDefault(f => f.SerialNumber.Equals(model.SerialNumber));
@@ -88,7 +95,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                 });
             };
             _deviceService.CameraEnumerationRefreshed += async delegate (object? sender, List<CameraFinderItemInfoModel> list) {
-                await Task.Run(async () => {
+                await Task.Delay(100);
+                Task.Run(async () => {
                     var infoModels = new List<CameraFinderItemInfoModel>();
                     var scannerCameraConfigInfoModels = await _barcodeScannerCameraConfigRepository.Select(s => s.Id > 0, o => o.Id);
                     var panoramaCameraConfigInfoModels = await _panoramaCameraConfigRepository.Select(s => s.Id > 0, o => o.Id);
@@ -138,7 +146,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                         }
                         CameraFinderItems.AddRange(list);
                     });
-                });
+                }).ConfigureAwait(false).GetAwaiter();
             };
         }
 
@@ -179,19 +187,18 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
             get => new DelegateCommand<object>(RefreshDelegate);
         }
 
-        private async void RefreshDelegate(object obj) {
+        private void RefreshDelegate(object obj) {
             if (IsRefreshing) {
                 return;
             }
             IsRefreshing = true;
-            await Task.Delay(100);
             Task.Run(async () => {
-                await Application.Current.Dispatcher.InvokeAsync(async () => {
-                    var (key, value) = await _deviceService.OnCameraEnumerationRefreshed();
+                var (key, value) = await _deviceService.OnCameraEnumerationRefreshed().ConfigureAwait(false);
+                await Application.Current.Dispatcher.BeginInvoke(() => {
                     CameraFinderMessageQueue.Enqueue(key ? $"已重新枚举连接相机" : value);
-
                     IsRefreshing = false;
-                });
+                    return Task.CompletedTask;
+                }, DispatcherPriority.Background);
             }).ConfigureAwait(false).GetAwaiter();
         }
 
@@ -206,9 +213,28 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
             if (_isExecuting) {
                 return;
             }
+
+            var cameraConnectionParameters = string.Empty;
+            if (obj.CameraType == CameraType.VideoCamera) {
+                //弹出账号密码录入框
+                _dialogService.ShowDialog($"VideoCameraSettingsDialog", callback => {
+                    if (callback.Result != ButtonResult.OK) {
+                        return;
+                    }
+                    var userName = callback.Parameters.GetValue<string>("UserName");
+                    var passWord = callback.Parameters.GetValue<string>("PassWord");
+                    cameraConnectionParameters = JsonConvert.SerializeObject(new {
+                        UserName = userName,
+                        PassWord = passWord,
+                    });
+                });
+            }
+
             await Application.Current.Dispatcher.InvokeAsync(async () => {
                 _isExecuting = true;
                 var isSuccess = false;
+                //判断是否安防相机
+
                 var insertOrUpdate = await _panoramaCameraConfigRepository.InsertOrUpdate(new PanoramaCameraConfigInfoModel() {
                     ConnectionType = (int)obj.ConnectionType,
                     CameraType = (int)obj.CameraType,
@@ -217,7 +243,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                     Model = obj.Model,
                     Name = obj.Name,
                     SerialNumber = obj.SerialNumber,
-                    Version = obj.Version
+                    Version = obj.Version,
+                    CameraConnectionParameters = cameraConnectionParameters
                 });
                 if (insertOrUpdate) {
                     //从数据库修改或增加

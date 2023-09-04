@@ -45,13 +45,13 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Resource Include="Image\Logo\logobw.png" />
     <Resource Include="Lotties\HbilMZjmmc.json" />
   </ItemGroup>
 
   <ItemGroup>
     <Resource Include="Fonts\sarasa-mono-sc-nerd-light.ttf" />
     <Resource Include="Image\14.jpg" />
-    <Resource Include="Image\Logo\logobw.png" />
     <Resource Include="Image\NationalFlag\Arabic national flag.png" />
     <Resource Include="Image\NationalFlag\Chinese national flag.png" />
     <Resource Include="Image\NationalFlag\English national flag.png" />

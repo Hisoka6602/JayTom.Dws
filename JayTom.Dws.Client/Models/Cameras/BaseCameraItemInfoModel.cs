@@ -19,6 +19,7 @@ namespace JayTom.Dws.Client.Models.Cameras {
         private CameraType _cameraType;
         private ConnectionType _connectionType = 0;
         private int _num;
+        private string _brand = string.Empty;
 
         /// <summary>
         /// 序号
@@ -80,6 +81,11 @@ namespace JayTom.Dws.Client.Models.Cameras {
         public CameraType CameraType {
             get => _cameraType;
             set => SetProperty(ref _cameraType, value);
+        }
+
+        public string Brand {
+            get => _brand;
+            set => SetProperty(ref _brand, value);
         }
 
         /// <summary>

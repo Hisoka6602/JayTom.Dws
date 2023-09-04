@@ -11,4 +11,10 @@
     <ProjectReference Include="..\JayTom.Dws.Camera\JayTom.Dws.Camera.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Reference Include="NetSDKCS">
+      <HintPath>..\JayTom.Dws.Camera\Cameras\SecurityCamera\DaHuatech\Dll\NetSDKCS.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
 </Project>

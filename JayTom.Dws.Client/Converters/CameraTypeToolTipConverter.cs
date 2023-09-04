@@ -17,6 +17,7 @@ namespace JayTom.Dws.Client.Converters {
                 CameraType.PanoramicCamera => "全景相机",
                 CameraType.SmartCamera => "智能相机",
                 CameraType.ThreeDCamera => "3D相机/体积相机",
+                CameraType.VideoCamera => "录像相机/安防相机",
                 _ => string.Empty,
             };
         }
@@ -27,6 +28,7 @@ namespace JayTom.Dws.Client.Converters {
                 CameraType.PanoramicCamera => "全景相机",
                 CameraType.SmartCamera => "智能相机",
                 CameraType.ThreeDCamera => "3D相机/体积相机",
+                CameraType.VideoCamera => "录像相机/安防相机",
                 _ => string.Empty,
             };
         }

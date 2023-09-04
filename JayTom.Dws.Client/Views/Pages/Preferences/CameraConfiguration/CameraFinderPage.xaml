@@ -3,6 +3,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
+    xmlns:cameraConverter="clr-namespace:JayTom.Dws.Client.Converters.CameraConverter"
     xmlns:converters="clr-namespace:JayTom.Dws.Client.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="clr-namespace:JayTom.Dws.Client.Views.Pages.Preferences.CameraConfiguration"
@@ -18,6 +19,11 @@
     mc:Ignorable="d">
     <Page.Resources>
         <converters:BooleanNegationConverter x:Key="BooleanNegationConverter" />
+
+        <cameraConverter:BoundCameraTypeLocationConverter x:Key="BoundCameraTypeLocationConverter" />
+        <cameraConverter:BoundCameraTypeCornerRadiusConverter x:Key="BoundCameraTypeCornerRadiusConverter" />
+        <cameraConverter:BoundCameraTypeVisibilityConverter x:Key="BoundCameraTypeVisibilityConverter" />
+        <cameraConverter:CameraHasBindingVisibilityConverter x:Key="CameraHasBindingVisibilityConverter" />
         <materialDesign:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
     </Page.Resources>
     <b:Interaction.Triggers>
@@ -200,6 +206,17 @@
                         <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="相机名称" />
                     </DataGridTextColumn.Header>
                 </DataGridTextColumn>
+                <!--  品牌  -->
+                <DataGridTextColumn
+                    Width="150"
+                    MinWidth="150"
+                    Binding="{Binding Brand, UpdateSourceTrigger=PropertyChanged}"
+                    CellStyle="{StaticResource CustomDataGridTextCellStyle}"
+                    EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
+                    <DataGridTextColumn.Header>
+                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="相机品牌" />
+                    </DataGridTextColumn.Header>
+                </DataGridTextColumn>
                 <!--  序列号  -->
                 <DataGridTextColumn
                     Width="180"
@@ -235,8 +252,8 @@
                 </DataGridTextColumn>
                 <!--  相机类型  -->
                 <DataGridTextColumn
-                    Width="100"
-                    MinWidth="100"
+                    Width="130"
+                    MinWidth="130"
                     Binding="{Binding CameraType, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource CameraTypeToolTipConverter}}"
                     CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                     EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
@@ -271,7 +288,8 @@
                                         </Grid.ColumnDefinitions>
                                         <!--  绑定到全景相机  -->
                                         <Button
-                                            Grid.Column="0"
+                                            Grid.Column="{Binding CameraType, Converter={StaticResource BoundCameraTypeLocationConverter}, ConverterParameter=PanoramicCamera}"
+                                            Width="Auto"
                                             Height="30"
                                             MinWidth="125"
                                             Margin="0"
@@ -296,7 +314,8 @@
                                         </Button>
                                         <!--  绑定到扫码相机  -->
                                         <Button
-                                            Grid.Column="1"
+                                            Grid.Column="{Binding CameraType, Converter={StaticResource BoundCameraTypeLocationConverter}, ConverterParameter=BarcodeScannerCamera}"
+                                            Width="Auto"
                                             Height="30"
                                             MinWidth="125"
                                             Margin="0"
@@ -321,7 +340,7 @@
                                         </Button>
                                         <!--  绑定到体积相机  -->
                                         <Button
-                                            Grid.Column="2"
+                                            Grid.Column="{Binding CameraType, Converter={StaticResource BoundCameraTypeLocationConverter}, ConverterParameter=VolumeCamera}"
                                             Width="Auto"
                                             Height="30"
                                             MinWidth="125"

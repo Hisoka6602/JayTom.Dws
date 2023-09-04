@@ -1,4 +1,5 @@
 ﻿using System;
+using NetSDKCS;
 using System.Linq;
 using System.Text;
 using System.ComponentModel;
@@ -45,7 +46,7 @@ namespace JayTom.Dws.Camera {
         /// <summary>
         /// 枚举相机
         /// </summary>
-        List<CameraInfo>? EnumerateCameras();
+        Task<List<CameraInfo>?> EnumerateCameras();
 
         /// <summary>
         /// 相机异常事件
@@ -97,6 +98,12 @@ namespace JayTom.Dws.Camera {
         /// </summary>
         /// <param name="parameters">参数集合</param>
         void SetParameters(Dictionary<string, object> parameters);
+
+        /*/// <summary>
+        /// 创建实例
+        /// </summary>
+        /// <returns></returns>
+        ICamera CreateInstance();*/
     }
 
     /// <summary>
@@ -140,6 +147,16 @@ namespace JayTom.Dws.Camera {
         public string Model { get; set; } = string.Empty;
 
         /// <summary>
+        /// 端口号
+        /// </summary>
+        public int Port { get; set; }
+
+        /// <summary>
+        /// 是否已激活并可以使用
+        /// </summary>
+        public bool IsAvailable { get; set; } = true;
+
+        /// <summary>
         /// 相机类型
         /// </summary>
         public CameraType Type { get; set; }
@@ -158,6 +175,7 @@ namespace JayTom.Dws.Camera {
                    Brand == otherInfo.Brand &&
                    SerialNumber == otherInfo.SerialNumber &&
                    IpAddress == otherInfo.IpAddress &&
+                   Port == otherInfo.Port &&
                    Version == otherInfo.Version &&
                    Model == otherInfo.Model;
         }
@@ -167,6 +185,7 @@ namespace JayTom.Dws.Camera {
                                     ^ Brand.GetHashCode()
                                     ^ SerialNumber.GetHashCode()
                                     ^ IpAddress.GetHashCode()
+                                    ^ Port.GetHashCode()
                                     ^ Version.GetHashCode()
                                     ^ Model.GetHashCode();
         }

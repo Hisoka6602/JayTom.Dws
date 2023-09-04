@@ -20,6 +20,7 @@ namespace JayTom.Dws.Client.Converters.CameraConverter {
                         CameraType.PanoramicCamera => Visibility.Visible,
                         CameraType.IndustrialCamera => Visibility.Visible,
                         CameraType.SmartCamera => Visibility.Visible,
+                        CameraType.VideoCamera => Visibility.Visible,
                         _ => Visibility.Collapsed
                     };
                 }
