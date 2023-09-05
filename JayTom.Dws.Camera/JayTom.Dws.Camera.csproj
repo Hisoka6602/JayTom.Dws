@@ -27,6 +27,9 @@
     <Reference Include="NetSDKCS">
       <HintPath>Cameras\SecurityCamera\DaHuatech\Dll\NetSDKCS.dll</HintPath>
     </Reference>
+    <Reference Include="ThridLibray">
+      <HintPath>Cameras\SmartCamera\Irayple\Dll\ThridLibray.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
   <ItemGroup>
@@ -39,10 +42,40 @@
     <None Update="Cameras\IndustrialCamera\Hikvision\Dll\RulerFilter.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="Cameras\SecurityCamera\DaHuatech\Dll\avnetsdk.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Cameras\SecurityCamera\DaHuatech\Dll\dhconfigsdk.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Cameras\SecurityCamera\DaHuatech\Dll\dhnetsdk.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Cameras\SecurityCamera\DaHuatech\Dll\dhplay.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Cameras\SecurityCamera\DaHuatech\Dll\Infra.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Cameras\SecurityCamera\DaHuatech\Dll\IvsDrawer.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Cameras\SecurityCamera\DaHuatech\Dll\NetSDKCS.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Cameras\SecurityCamera\DaHuatech\Dll\NetSDKCS.pdb">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="Cameras\SmartCamera\Hikvision\Dll\MvCodeReaderSDK.Net.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Cameras\SmartCamera\Hikvision\Dll\MvCodeReaderSDK.Net.XML">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Cameras\SmartCamera\Irayple\Dll\CLIDelegate.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Cameras\SmartCamera\Irayple\Dll\ThridLibray.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

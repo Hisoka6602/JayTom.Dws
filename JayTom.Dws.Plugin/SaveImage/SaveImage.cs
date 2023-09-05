@@ -75,11 +75,13 @@ namespace JayTom.Dws.Plugin.SaveImage {
                 return new KeyValuePair<bool, string>(true, "原图保存成功"); // 返回保存成功的信息
             }
             catch (Exception ex) {
+                NLog.LogManager.GetCurrentClassLogger().Error($"{ex}");
                 return new KeyValuePair<bool, string>(false, ex.Message); // 返回保存失败的信息
             }
             finally {
                 _semaphore.Release();
-                image?.Dispose();
+                //如果有两个条码则不能释放
+                //image?.Dispose();
             }
         }
 
@@ -156,7 +158,8 @@ namespace JayTom.Dws.Plugin.SaveImage {
                 return new KeyValuePair<bool, string>(false, ex.Message); // 返回保存失败的信息
             }
             finally {
-                image?.Dispose();
+                //如果一张图片包含两个条码则不能释放
+                // image?.Dispose();
                 _semaphore.Release();
             }
         }

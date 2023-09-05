@@ -21,6 +21,7 @@ using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Data.LocalConf.CameraConfig;
 using CameraType = JayTom.Dws.Camera.CameraType;
 using JayTom.Dws.Plugin.Scale.ScaleValueParameters;
+using JayTom.Dws.Camera.Cameras.SmartCamera.Irayple;
 using JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision;
 using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech;
 using JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision;
@@ -69,6 +70,7 @@ namespace JayTom.Dws.Client.Service.Device {
             await Task.Yield();
             _cameraInfos.Clear();
             try {
+                var cameras = await new DaHuaSmartCamera().EnumerateCameras();
                 var infos = await new HikvisionIndustrialCamera().EnumerateCameras();
                 var cameraInfos = await new HikvisionSmartCamera().EnumerateCameras();
                 var enumerateCameras = await new DaHuatechSecurityCamera().EnumerateCameras();
@@ -499,144 +501,6 @@ namespace JayTom.Dws.Client.Service.Device {
                         }
                     }
                     OnCameraInitialized(_cameras);
-                    //过滤绑定
-
-                    // //获取已经枚举的相机
-
-                    //相机相关
-                    //获取过滤配置
-
-                    /*
-                    var (key, value) = await OnCameraEnumerationRefreshed();
-                    NLog.LogManager.GetCurrentClassLogger().Error($"二次枚举完成:{JsonConvert.SerializeObject(_cameraInfos)}");
-                    if (key) {
-                        foreach (var info in _cameraInfos) {
-                            var camera = ConvertCamera(info.Brand, info.Model);
-                            if (camera is not null) {
-                                //注册事件
-
-                                camera.CameraDisconnected += delegate (object? sender, CameraConnectionEventArgs args) {
-                                    if (sender is ICamera mCamera) {
-                                        OnCameraDisconnected(mCamera);
-                                    }
-                                };
-                                camera.CameraExceptionOccurred += delegate (object? sender, CameraExceptionEventArgs args) {
-                                    string mCameraInfo = string.Empty;
-                                    if (sender is ICamera mCamera) {
-                                        mCameraInfo =
-                                            $"ID:{mCamera.Info?.Id},SerialNumber:{mCamera?.Info?.SerialNumber},SdkType:{mCamera?.SdkType}";
-                                    }
-                                    NLog.LogManager.GetCurrentClassLogger().Error($"{JsonConvert.SerializeObject(args.Exception)}");
-                                    OnDeviceException(new DeviceExceptionEventArgs() {
-                                        ExceptionMessage = new Exception($"{mCameraInfo}-{args.Exception?.Message}")
-                                    });
-                                };
-                                if (camera is IIndustrialCamera industrialCamera) {
-                                    industrialCamera.TakePhotoDelay = panoramaCameraConfigInfoModels
-                                        ?.FirstOrDefault(f => f.SerialNumber.Equals(info.SerialNumber))
-                                        ?.CaptureDelayTime ?? 0;
-                                    //填充其他信息
-                                    industrialCamera.BarcodeRead += delegate (object? sender, BarcodeReadEventArgs args) {
-                                        OnBarcodeScanned(args);
-                                    };
-                                    industrialCamera.PhotoTaken += delegate (object? sender, PhotoTakenEventArgs args) {
-                                        OnPanoramaCaptured(new PanoramaCaptureEventArgs() {
-                                            CameraSerialNumber = args.CameraSerialNumber,
-                                            Image = args.Image,
-                                            PhotoTime = args.PhotoTime,
-                                            Timestamp = args.Timestamp,
-                                            ThumbImage = args.ThumbImage,
-                                            Barcode = args.Barcode,
-                                            BarcodeTimestamp = args.BarcodeTimestamp
-                                        });
-                                    };
-                                }
-                                else if (camera is ISmartCamera smartCamera) {
-                                    smartCamera.BarcodeReadTriggered +=
-                                        delegate (object? sender, BarcodeTriggeredEventArgs args) {
-                                            OnBarcodeScanned(args);
-                                        };
-                                    smartCamera.NotBarcodeHitEvent += delegate (object? sender, BarcodeReadEventArgs args) {
-                                        OnNotBarcodeHitEvent(args);
-                                    };
-                                }
-                                else if (camera is ISecurityCamera securityCamera) {
-                                    var parameters = panoramaCameraConfigInfoModels
-                                        ?.FirstOrDefault(f => f.SerialNumber.Equals(info.SerialNumber))
-                                        ?.CameraConnectionParameters;
-                                    securityCamera.CameraConnectionParameters =
-                                        parameters ?? string.Empty;
-                                }
-
-                                //在这里还需要各自SDK枚举
-                                var cameraInfo = (await camera.EnumerateCameras())?.FirstOrDefault(f => f.SerialNumber.Equals(info.SerialNumber));
-
-                                if (cameraInfo is not null) {
-                                    //设置相机绑定模式
-                                    var (b, s) = await camera.Initialize(cameraInfo);
-                                    if (!b) {
-                                        OnDeviceException(new DeviceExceptionEventArgs() {
-                                            ExceptionMessage = new Exception(s)
-                                        });
-                                    }
-                                    else {
-                                        _cameras.Add(camera);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    NLog.LogManager.GetCurrentClassLogger().Error("过滤绑定正常!");
-                    //判断绑定
-                    var cameras = new List<ICamera>();
-                    cameras.AddRange(CheckAndAddCamera(_cameras, scannerCameraConfigInfoModels?.Select(s => new BaseCameraConfigInfoModel {
-                        Name = s.Name,
-                        SerialNumber = s.SerialNumber,
-                        Model = s.Model,
-                        Version = s.Version,
-                        IpAddress = s.IpAddress,
-                        ConnectionType = s.ConnectionType,
-                        CameraType = s.CameraType,
-                    })?.ToList() ?? new List<BaseCameraConfigInfoModel>(), "扫码"));
-                    cameras.AddRange(CheckAndAddCamera(_cameras, panoramaCameraConfigInfoModels?.Select(s => new BaseCameraConfigInfoModel {
-                        Name = s.Name,
-                        SerialNumber = s.SerialNumber,
-                        Model = s.Model,
-                        Version = s.Version,
-                        IpAddress = s.IpAddress,
-                        ConnectionType = s.ConnectionType,
-                        CameraType = s.CameraType,
-                    })?.ToList() ?? new List<BaseCameraConfigInfoModel>(), "全景"));
-                    cameras.AddRange(CheckAndAddCamera(_cameras, volumeCameraConfigInfoModels?.Select(s => new BaseCameraConfigInfoModel {
-                        Name = s.Name,
-                        SerialNumber = s.SerialNumber,
-                        Model = s.Model,
-                        Version = s.Version,
-                        IpAddress = s.IpAddress,
-                        ConnectionType = s.ConnectionType,
-                        CameraType = s.CameraType,
-                    })?.ToList() ?? new List<BaseCameraConfigInfoModel>(), "体积"));
-                    await _cameraSlim.WaitAsync();
-                    _cameras = cameras;
-                    //这里初始化
-                    /*foreach (var camera in _cameras) {
-                        if (camera.Info is not null) {
-                            var (b, s) = await camera.Initialize(camera.Info);
-                            //var (b, s) = await camera.Initialize(cameraInfo);
-                            if (!b) {
-                                OnDeviceException(new DeviceExceptionEventArgs() {
-                                    ExceptionMessage = new Exception(s)
-                                });
-                            }
-                            else {
-                                _cameras.Add(camera);
-                            }
-                        }
-                        NLog.LogManager.GetCurrentClassLogger().Error($"{camera.Info?.SerialNumber}初始化完成");
-                    }#1#
-                    _cameraSlim.Release();
-                    OnCameraInitialized(_cameras);
-                    NLog.LogManager.GetCurrentClassLogger().Error("初始化正常");*/
                     //磅秤相关
                     //获取磅秤配置
                     var infoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("WeightSettings"));
@@ -886,6 +750,8 @@ namespace JayTom.Dws.Client.Service.Device {
                 case not null when info.Brand.Contains("Dahua"):
                     if (info.Model.Contains("IPC"))
                         return new DaHuatechSecurityCamera(info);
+                    if (info.Model.Contains("DH-MV"))
+                        return new DaHuaSmartCamera(info);
                     break;
 
                 default:

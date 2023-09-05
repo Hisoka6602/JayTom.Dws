@@ -212,16 +212,16 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                 }
                 else {
                     OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
-                        Exception = new Exception("初始化传参类型错误!")
+                        Exception = new Exception("设备不存在或已离线,请重新枚举!")
                     });
-                    return new KeyValuePair<bool, string>(false, "初始化传参类型错误!");
+                    return new KeyValuePair<bool, string>(false, "设备不存在或已离线,请重新枚举!");
                 }
             }
             else {
                 OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
-                    Exception = new Exception("设备不存在或已离线,请重新枚举!")
+                    Exception = new Exception("初始化传参类型错误!")
                 });
-                return new KeyValuePair<bool, string>(false, "设备不存在或已离线,请重新枚举!");
+                return new KeyValuePair<bool, string>(false, "初始化传参类型错误!");
             }
         }
 

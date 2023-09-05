@@ -1,0 +1,460 @@
+﻿using System;
+using System.Linq;
+using System.Text;
+using ThridLibray;
+using System.Drawing;
+using Newtonsoft.Json;
+using MVIDCodeReaderNet;
+using System.Diagnostics;
+using MvCodeReaderSDKNet;
+using System.Threading.Tasks;
+using System.Drawing.Imaging;
+using System.Collections.Generic;
+using System.Collections.Concurrent;
+using System.Text.RegularExpressions;
+using JayTom.Dws.Camera.FilterContainer;
+
+namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
+
+    public class DaHuaSmartCamera : ISmartCamera {
+
+        /// <summary>
+        /// 设备列表
+        /// </summary>
+        private static ConcurrentDictionary<string, CameraInfo> _devInfo = new();
+
+        //过滤器
+        private readonly BarCodeFilterContainer _barCodeFilterContainer = new();
+
+        /// <summary>
+        /// 摄像头对象
+        /// </summary>
+        private IDevice? _device;
+
+        public DaHuaSmartCamera(CameraInfo info) {
+            this.Info = info;
+        }
+
+        public DaHuaSmartCamera() {
+        }
+
+        public async void Dispose() {
+            await Stop();
+            OnCameraUnregistered(new CameraUnregisteredEventArgs() {
+                CameraInfo = this.Info
+            });
+        }
+
+        public CameraInfo? Info { get; set; }
+        public SdkType SdkType { get; } = SdkType.SmartCameraSdk;
+        public string SdkName { get; } = "ThridLibray.dll";
+        public bool IsOriginalImageOut { get; set; }
+        public CameraStatus Status { get; } = CameraStatus.Uninitialized;
+        public CameraBindingType BindingType { get; set; }
+
+        public async Task<List<CameraInfo>?> EnumerateCameras() {
+            await Task.Yield();
+            _devInfo.Clear();
+            var devices = Enumerator.EnumerateDevices();
+            var cameraInfos = devices.Select(s => new CameraInfo() {
+                Id = s.Index,
+                Brand = s.Vendor,
+                SerialNumber = s.SerialNumber,
+                Name = s.Name,
+                Model = s.Model,
+                Version = s.Version,
+                ConnectionType = CameraConnectionType.Ethernet,
+            })?.ToList();
+            if (cameraInfos?.Any() == true) {
+                foreach (var cameraInfo in cameraInfos) {
+                    _devInfo.AddOrUpdate(cameraInfo.SerialNumber, cameraInfo, (k, v) => cameraInfo);
+                }
+            }
+            return cameraInfos;
+        }
+
+        public event EventHandler<CameraExceptionEventArgs>? CameraExceptionOccurred;
+
+        public event EventHandler<CameraConnectionEventArgs>? CameraDisconnected;
+
+        public event EventHandler<CameraInitializedEventArgs>? CameraInitialized;
+
+        public event EventHandler<CameraStartedEventArgs>? CameraStarted;
+
+        public event EventHandler<CameraStoppedEventArgs>? CameraStopped;
+
+        public event EventHandler<CameraUnregisteredEventArgs>? CameraUnregistered;
+
+        public async Task<KeyValuePair<bool, string>> Initialize(object param) {
+            await Task.Yield();
+            if (param is CameraInfo info) {
+                this.Info = info;
+                //实例化对象
+                var tryGetValue = _devInfo.TryGetValue(info.SerialNumber, out var devInfo);
+                if (tryGetValue && devInfo is not null) {
+                    _device = Enumerator.GetDeviceByIndex(devInfo.Id);
+                    if (_device != null) {
+                        //注册事件
+                        //相机打开事件
+                        _device.CameraOpened += delegate (object? sender, EventArgs args) {
+                            //设置参数
+                            //设置触发
+                            _device.TriggerSet.Open(TriggerSourceEnum.Line1);
+                            //设置图像格式
+                            using (IEnumParameter p = _device.ParameterCollection[ParametrizeNameSet.ImagePixelFormat]) {
+                                p.SetValue("Mono8");
+                            }
+                            //设置曝光
+                            using (IFloatParameter p = _device.ParameterCollection[ParametrizeNameSet.ExposureTime]) {
+                                //p.SetValue(1000);
+                            }
+                            //设置增益
+                            using (IFloatParameter p = _device.ParameterCollection[ParametrizeNameSet.GainRaw]) {
+                                //p.SetValue(1.0);
+                            }
+                            //设置缓存个数为8(默认值为16)
+                            _device.StreamGrabber.SetBufferCount(8);
+                            //开启码流
+                            var loopThread = _device.GrabUsingGrabLoopThread();
+                            if (!loopThread) {
+                                OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
+                                    Exception = new Exception("开启码流失败!")
+                                });
+                            }
+                        };
+                        //相机断连事件
+                        _device.ConnectionLost += delegate (object? sender, EventArgs args) {
+                            OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
+                                Exception = new Exception($"摄像头:{Info?.SerialNumber}丢失/断开")
+                            });
+                        };
+
+                        OnCameraInitialized(new CameraInitializedEventArgs() {
+                            CameraInfo = this.Info
+                        });
+                        return new KeyValuePair<bool, string>(true, "初始化成功");
+                    }
+                    else {
+                        OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
+                            Exception = new Exception("获取设备对象失败!")
+                        });
+                        return new KeyValuePair<bool, string>(false, "获取设备对象失败!");
+                    }
+                }
+                else {
+                    OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
+                        Exception = new Exception("设备不存在或已离线,请重新枚举!")
+                    });
+                    return new KeyValuePair<bool, string>(false, "设备不存在或已离线,请重新枚举!");
+                }
+            }
+            else {
+                OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
+                    Exception = new Exception("初始化传参类型错误!")
+                });
+                return new KeyValuePair<bool, string>(false, "初始化传参类型错误!");
+            }
+        }
+
+        public async Task<KeyValuePair<bool, string>> Start(object param) {
+            await Task.Yield();
+            //打开设备
+            if (_device is not null) {
+                if (_device.IsOpen) {
+                    return new KeyValuePair<bool, string>(true, "设备已在运行中!");
+                }
+
+                var open = _device.Open();
+                if (open) {
+                    //码流回调事件
+                    _device.StreamGrabber.ImageGrabbed += async delegate (object? sender, GrabbedEventArgs args) {
+                        await Task.Yield();
+                        //解码
+                        GrabResultDecode(args.GrabResult);
+                        //e.GrabResult.Clone()
+                    };
+                    OnCameraStarted(new CameraStartedEventArgs() {
+                        CameraInfo = this.Info
+                    });
+                    return new KeyValuePair<bool, string>(true, "设备启动成功!");
+                }
+                else {
+                    OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
+                        Exception = new Exception("设备启动失败!")
+                    });
+                    return new KeyValuePair<bool, string>(false, "设备启动失败!");
+                }
+            }
+            else {
+                OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
+                    Exception = new Exception("设备未初始化!")
+                });
+                return new KeyValuePair<bool, string>(false, "设备未初始化!");
+            }
+        }
+
+        public async Task<KeyValuePair<bool, string>> Stop() {
+            await Task.Yield();
+            if (_device is not null) {
+                _device?.ShutdownGrab();
+                _device?.Close();
+                //_device?.Dispose();
+                _device = null;
+                OnCameraDisconnected(new CameraConnectionEventArgs() {
+                    CameraInfo = this.Info
+                });
+            }
+            return new KeyValuePair<bool, string>(false, "设备停止成功!");
+        }
+
+        public void SetParameters(Dictionary<string, object> parameters) {
+            throw new NotImplementedException();
+        }
+
+        public int BarcodeBorderSize { get; set; } = 5;
+        public Color BarcodeBorderColor { get; set; } = Color.LawnGreen;
+        public bool IsShowBarcodeBorder { get; set; } = true;
+        public bool IsUseTriggerMode { get; set; } = true;
+        public TriggerMode TriggerMode { get; set; }
+
+        public async void SoftwareTriggerOnce() {
+            await Task.Yield();
+            _device?.TriggerSet?.ExecuteSoftwareTrigger();
+        }
+
+        public event EventHandler<BarcodeTriggeredEventArgs>? BarcodeReadTriggered;
+
+        public event EventHandler<BarcodeReadEventArgs>? NotBarcodeHitEvent;
+
+        public void SetScanCodeFilterParams(ScanCodeFilterParams @params) {
+            _barCodeFilterContainer.Pattern = @params.RegularExpression;
+            _barCodeFilterContainer.MaxSize = @params.DuplicateBarcodeFilterCount;
+            _barCodeFilterContainer.ExpirationTime = TimeSpan.FromMilliseconds(@params.ScanInterval);
+        }
+
+        /// <summary>
+        /// 解码
+        /// </summary>
+        /// <param name="grabbedRawData"></param>
+        private async void GrabResultDecode(IGrabbedRawData grabbedRawData) {
+            await Task.Yield();
+            try {
+                var localTime = DateTimeOffset.Now.ToLocalTime();
+                long timestamp = localTime.ToUnixTimeMilliseconds();
+                var barcodeInfo = new ConcurrentQueue<DaHuaBarcodeInfo>();
+                ConcurrentDictionary<uint, List<string>> chunkDataInfos = new();
+                var chunkData = grabbedRawData.ChunkData;
+                for (var i = 0; i < chunkData.ChunkCount; i++) {
+                    uint chunkId = 0;
+                    // 一维码 0x80000000 == chunkId || 二维码  0x80000001 == chunkId
+                    var vecChunkInfos = new List<string>();
+                    chunkData.GetChunkDataByIndex((uint)i, ref chunkId, ref vecChunkInfos);
+
+                    chunkDataInfos.TryAdd(chunkId, vecChunkInfos);
+                }
+                //图片
+                var bitmap = grabbedRawData.ToBitmap(true);
+                var thumbnailImage = bitmap?.GetThumbnailImage(1024, 768, () => false, IntPtr.Zero);
+                if (chunkDataInfos.Any()) {
+                    foreach (var dataInfo in chunkDataInfos) {
+                        // 一维码 0x80000000 == chunkId || 二维码  0x80000001 == chunkId
+
+                        int.TryParse(Regex.Match(dataInfo.Value.FirstOrDefault(v => Regex.IsMatch(v,
+                            @"CodeNum\s+Value:(\d+)")) ?? string.Empty, @"CodeNum\s+Value:(\d+)")?.Groups[1]?.Value, out var codeCount);
+
+                        var codeList = dataInfo.Value.Where(w =>
+                                Regex.IsMatch(w, @"Code(\d+)_CodeData\s+Value:(.+)") &&
+                                int.Parse(Regex.Match(w, @"\d+").Value) < codeCount)
+                            .Select(code =>
+                                Regex.Match(code, @"Code(\d+)_CodeData\s+Value:(.+)")?.Groups[0]?.Value)
+                            .ToList();
+
+                        var pointList = dataInfo.Value.Where(w =>
+                                Regex.IsMatch(w, @"Code\d+_Point\d+_(\w+)\s+Value:(\d+)") &&
+                                int.Parse(Regex.Match(w, @"\d+").Value) < codeCount)
+                            .ToList();
+
+                        /*for (int i = 0; i < codeCount; i++) {
+                            var daHuaBarcodeInfo = new DaHuaBarcodeInfo {
+                                BarcodeType = dataInfo.Key == 0x80000000 ? CodeType.BarCode : CodeType.QrCode,
+                                BarCode = codeList?.Select(input => Regex.Match(input ?? string.Empty,
+                                        @$"Code{i}_CodeData Value:(\w+)$"))
+                                    .FirstOrDefault(match => match.Success)
+                                    ?.Groups[1].Value ?? string.Empty
+                            };
+
+                            for (int j = 0; j < 4; j++) {
+                                var Xpattern = $"Code{i}_Point{j}_X\\s+Value:(\\d+)";
+                                var xStr = pointList
+                                    ?.Select(input => Regex.Match(input, Xpattern))
+                                    .FirstOrDefault(match => match.Success)
+                                    ?.Groups[1].Value;
+                                int.TryParse(xStr, out var x);
+                                var ypattern = $"Code{i}_Point{j}_Y\\s+Value:(\\d+)";
+                                var yStr = pointList
+                                    ?.Select(input => Regex.Match(input, ypattern))
+                                    .FirstOrDefault(match => match.Success)
+                                    ?.Groups[1].Value;
+                                int.TryParse(yStr, out var y);
+                                daHuaBarcodeInfo.BarcodeRegionCoordinates.Add(new Point(x, y));
+                            }
+                            barcodeInfo.Enqueue(daHuaBarcodeInfo);
+                        }*/
+
+                        foreach (int i in Enumerable.Range(0, codeCount)) {
+                            var daHuaBarcodeInfo = new DaHuaBarcodeInfo {
+                                BarcodeType = dataInfo.Key == 0x80000000 ? CodeType.BarCode : CodeType.QrCode,
+                                BarCode = codeList?
+                                    .Select(input => Regex.Match(input ?? string.Empty, @$"Code{i}_CodeData Value:(\w+)$"))
+                                    .FirstOrDefault(match => match.Success)?.Groups[1].Value ?? string.Empty
+                            };
+
+                            daHuaBarcodeInfo.BarcodeRegionCoordinates.AddRange(
+                                Enumerable.Range(0, 4)
+                                    .Select(j => {
+                                        int.TryParse(pointList?
+                                            .Select(input => Regex.Match(input, $"Code{i}_Point{j}_X\\s+Value:(\\d+)"))
+                                            .FirstOrDefault(match => match.Success)?.Groups[1].Value, out var x);
+
+                                        int.TryParse(pointList?
+                                            .Select(input => Regex.Match(input, $"Code{i}_Point{j}_Y\\s+Value:(\\d+)"))
+                                            .FirstOrDefault(match => match.Success)?.Groups[1].Value, out var y);
+
+                                        return new Point(x, y);
+                                    })
+                            );
+                            //过滤
+                            var validateData = _barCodeFilterContainer.ValidateData(new BarCodeFilterInfo() {
+                                BarCode = string.IsNullOrWhiteSpace(daHuaBarcodeInfo.BarCode) ? "NoRead" : daHuaBarcodeInfo.BarCode,
+                                ScanTime = DateTime.Now
+                            });
+                            if (validateData) {
+                                barcodeInfo.Enqueue(daHuaBarcodeInfo);
+                            }
+                        }
+                    }
+
+                    //画边框
+                    if (IsShowBarcodeBorder && thumbnailImage is not null && bitmap is not null &&
+                        thumbnailImage.PixelFormat != PixelFormat.Format8bppIndexed &&
+                        barcodeInfo?.Any() == true) {
+                        using var g = Graphics.FromImage(thumbnailImage);
+                        foreach (var huaBarcodeInfo in barcodeInfo) {
+                            var points = new Point[4];
+                            for (var j = 0; j < 4; ++j) {
+                                points[j].X = (int)(huaBarcodeInfo.BarcodeRegionCoordinates[j].X *
+                                    ((float)(thumbnailImage.Size.Width) / bitmap.Size.Width));
+                                points[j].Y = (int)(huaBarcodeInfo.BarcodeRegionCoordinates[j].Y *
+                                    ((float)(thumbnailImage.Size.Height) / bitmap.Size.Height));
+                            }
+                            g.DrawPolygon(new Pen(BarcodeBorderColor, BarcodeBorderSize), points);
+                        }
+                    }
+                }
+                if (barcodeInfo?.Any() != true) {
+                    //返回触发但没有条码
+                    OnNotBarcodeHitEvent(new BarcodeReadEventArgs() {
+                        Timestamp = timestamp,
+                        Barcode = "NoRead",
+                        Image = bitmap,
+                        ThumbImage = (Bitmap?)thumbnailImage,
+                        CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
+                        ScanTime = localTime.DateTime
+                    });
+                }
+                else {
+                    while (!barcodeInfo.IsEmpty) {
+                        //返回条码
+                        if (barcodeInfo.TryDequeue(out var barcode)) {
+                            OnBarcodeReadTriggered(new BarcodeTriggeredEventArgs() {
+                                Timestamp = timestamp,
+                                Barcode = string.IsNullOrWhiteSpace(barcode.BarCode) ? "NoRead" : barcode.BarCode,
+                                Image = bitmap,
+                                ThumbImage = (Bitmap?)thumbnailImage,
+                                CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
+                                ScanTime = localTime.DateTime,
+                                AreaCoords = barcode.BarcodeRegionCoordinates
+                            });
+                        }
+                    }
+                }
+            }
+            catch (Exception e) {
+                OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
+                    Exception = e
+                });
+            }
+        }
+
+        protected virtual async void OnCameraExceptionOccurred(CameraExceptionEventArgs e) {
+            await Task.Yield();
+            CameraExceptionOccurred?.Invoke(this, e);
+        }
+
+        protected virtual async void OnCameraDisconnected(CameraConnectionEventArgs e) {
+            await Task.Yield();
+            CameraDisconnected?.Invoke(this, e);
+        }
+
+        protected virtual async void OnCameraInitialized(CameraInitializedEventArgs e) {
+            await Task.Yield();
+            CameraInitialized?.Invoke(this, e);
+        }
+
+        protected virtual async void OnCameraStarted(CameraStartedEventArgs e) {
+            await Task.Yield();
+            CameraStarted?.Invoke(this, e);
+        }
+
+        protected virtual async void OnCameraStopped(CameraStoppedEventArgs e) {
+            await Task.Yield();
+            CameraStopped?.Invoke(this, e);
+        }
+
+        protected virtual async void OnCameraUnregistered(CameraUnregisteredEventArgs e) {
+            await Task.Yield();
+            CameraUnregistered?.Invoke(this, e);
+        }
+
+        public class DaHuaBarcodeInfo {
+
+            /// <summary>
+            /// 条码种类
+            /// </summary>
+            public CodeType BarcodeType { get; set; }
+
+            /// <summary>
+            /// 条码
+            /// </summary>
+            public string BarCode { get; set; } = string.Empty;
+
+            /// <summary>
+            /// 条码坐标
+            /// </summary>
+            public List<Point> BarcodeRegionCoordinates { get; set; } = new();
+        }
+
+        public enum CodeType {
+
+            /// <summary>
+            /// 条码
+            /// </summary>
+            BarCode,
+
+            /// <summary>
+            /// 二维码
+            /// </summary>
+            QrCode,
+        }
+
+        protected virtual async void OnNotBarcodeHitEvent(BarcodeReadEventArgs e) {
+            await Task.Yield();
+            NotBarcodeHitEvent?.Invoke(this, e);
+        }
+
+        protected virtual async void OnBarcodeReadTriggered(BarcodeTriggeredEventArgs e) {
+            await Task.Yield();
+            BarcodeReadTriggered?.Invoke(this, e);
+        }
+    }
+}

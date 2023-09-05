@@ -101,10 +101,6 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                     this.Info = devInfo;
                     //注册各种事件
                     _baseDaHuatech.RegisterImageCallback(devInfo.SerialNumber, async imageBitmap => {
-                        //返回图片
-                        OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
-                            Exception = new Exception("收到返回图片")
-                        });
                         try {
                             await _snapRevPhotoSlim.WaitAsync();
                             var tryDequeue = _imageMessageQueue.TryDequeue(out var imageMessageInfo);
