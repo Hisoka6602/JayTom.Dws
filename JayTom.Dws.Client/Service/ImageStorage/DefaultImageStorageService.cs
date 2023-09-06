@@ -145,7 +145,7 @@ namespace JayTom.Dws.Client.Service.ImageStorage {
                             BarCode = barCode,
                             CameraSerialNumber = cameraSerialNumber,
                             FilePath =
-                                $"{fullPath}\\{imageName}.{(ImageSettingsDto.IsSaveOriginalImage ? "bmp" : "jpg")}",
+                                $"{fullPath}\\{imageName}.{"jpg"}",
                             ImageType = type,
                             SaveDateTime = DateTime.Now
                         });
@@ -163,7 +163,7 @@ namespace JayTom.Dws.Client.Service.ImageStorage {
                             BarCode = barCode,
                             CameraSerialNumber = cameraSerialNumber,
                             FilePath =
-                                $"{fullPath}\\{imageName}.{(ImageSettingsDto.IsSaveOriginalImage ? "bmp" : "jpg")}",
+                                $"{fullPath}\\{imageName}.{"jpg"}",
                             ImageType = type,
                             SaveDateTime = DateTime.Now
                         });
@@ -172,7 +172,7 @@ namespace JayTom.Dws.Client.Service.ImageStorage {
 
                 //判断是否需要上传Ftp
                 if (ImageSettingsDto.IsFtpUploadEnabled) {
-                    var path = $"{fullPath}\\{imageName}.{(ImageSettingsDto.IsSaveOriginalImage ? "bmp" : "jpg")}";
+                    var path = $"{fullPath}\\{imageName}.{"jpg"}";
                     if (File.Exists(path)) {
                         var (key, value) = await _ftp.UploadFile(path,
                             path.Replace(ImageSettingsDto.ImageRootDirectory, string.Empty),
@@ -180,6 +180,9 @@ namespace JayTom.Dws.Client.Service.ImageStorage {
                         if (!key) {
                             OnImageSaveFailed(new Exception(value));
                         }
+                    }
+                    else {
+                        OnImageSaveFailed(new Exception("FTP上传:图片不存在"));
                     }
                 }
             }

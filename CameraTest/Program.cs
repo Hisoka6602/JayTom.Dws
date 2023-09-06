@@ -56,9 +56,6 @@ internal class Program {
         }*/
 
         var baseDaHuatech = BaseDaHuatech.CreateInstance();
-        for (int i = 0; i < 10; i++) {
-            baseDaHuatech = BaseDaHuatech.CreateInstance();
-        }
 
         var deviceNetInfoExes = await BaseDaHuatech.EnumDevices();
 

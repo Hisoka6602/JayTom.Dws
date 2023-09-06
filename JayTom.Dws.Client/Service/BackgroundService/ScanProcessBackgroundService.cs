@@ -20,6 +20,7 @@ using JayTom.Dws.Client.Service.ImageStorage;
 using JayTom.Dws.Client.Service.ResultOutput;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Client.Service.ExternalDataService;
+using static JayTom.Dws.Client.Service.BackgroundService.SubmitApiBackgroundService;
 using static JayTom.Dws.Client.Service.BackgroundService.ScanProcessBackgroundService;
 
 namespace JayTom.Dws.Client.Service.BackgroundService {
@@ -187,6 +188,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 //条码回调(告诉界面这个条码完成)
                                 //保存到数据库
                                 //输出
+
                                 _resultOutputService.ExecuteOutput(
                                     scanBarCodeInfo.BarCode, (float)(scanBarCodeInfo.Weight ?? 0),
                                     scanBarCodeInfo.ScanTime, (float)(scanBarCodeInfo.Length ?? 0),
@@ -274,12 +276,12 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 EventAggregator.Instance.Publish(new ImageMessageInfo {
                                     BarCode = codeInfo.BarCode,
                                     CameraSerialNumber = codeInfo.CameraSerialNumber,
-                                    Weight = (float)codeInfo.Weight,
-                                    Height = (float)codeInfo.Height,
+                                    Weight = (float)(codeInfo.Weight ?? 0),
+                                    Height = (float)(codeInfo.Height ?? 0),
                                     Image = codeInfo.Image,
-                                    Length = (float)codeInfo.Length,
-                                    Width = (float)codeInfo.Width,
-                                    Volume = (float)codeInfo.Volume,
+                                    Length = (float)(codeInfo.Length ?? 0),
+                                    Width = (float)(codeInfo.Width ?? 0),
+                                    Volume = (float)(codeInfo.Volume ?? 0),
                                     ScanTime = codeInfo.ScanTime,
                                     Type = SaveImageType.BarcodeImage
                                 });

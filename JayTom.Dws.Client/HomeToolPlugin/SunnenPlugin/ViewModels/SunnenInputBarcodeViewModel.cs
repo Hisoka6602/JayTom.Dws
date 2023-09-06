@@ -125,7 +125,7 @@ namespace JayTom.Dws.Client.HomeToolPlugin.SunnenPlugin.ViewModels {
 
         private async void LoadedDelegate(UserControl obj) {
             await Application.Current.Dispatcher.InvokeAsync(() => {
-                var textBox = Utils.GetVisualChild<TextBox>(obj, b => b.Name.Equals("BarCodeTextBox"));
+                var textBox = PluginInterface.Utils.Utils.GetVisualChild<TextBox>(obj, b => b.Name.Equals("BarCodeTextBox"));
                 if (textBox is not null) {
                     textBox.Focus();
                 }

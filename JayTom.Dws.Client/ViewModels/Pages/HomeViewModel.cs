@@ -436,7 +436,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
 
         private async void LoadedDelegate(Page obj) {
             await Application.Current.Dispatcher.InvokeAsync(async () => {
-                _dataGrid = Utils.GetVisualChild<DataGrid>(obj, b => b.Name.Equals("BarCodeDataGrid"));
+                _dataGrid = PluginInterface.Utils.Utils.GetVisualChild<DataGrid>(obj, b => b.Name.Equals("BarCodeDataGrid"));
                 //临时写在这里加载配置，后续修改通过事件通知
                 EventAggregator.Instance.Publish(new SettingsChangedEvent {
                     SettingsName = "VolumeSettings"
@@ -538,7 +538,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         /// </summary>
         private async void AddNewRow(BarCodeItemModel item) {
             await Application.Current.Dispatcher.InvokeAsync(() => {
-                _barCodeRepository.InsertAsync(new BarCodeInfoModel() {
+                /*_barCodeRepository.InsertAsync(new BarCodeInfoModel() {
                     Barcode = item.Barcode,
                     Weight = item.Weight,
                     ScanTime = item.ScanTime,
@@ -548,7 +548,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     Length = item.Length,
                     Width = item.Width,
                     Height = item.Height,
-                });
+                });*/
                 item.Num = BarCodeItems.Count + 1;
                 BarCodeItems.Insert(0, item);
                 item.IsInserting = true;

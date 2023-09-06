@@ -171,7 +171,6 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
                         await Task.Yield();
                         //解码
                         GrabResultDecode(args.GrabResult);
-                        //e.GrabResult.Clone()
                     };
                     OnCameraStarted(new CameraStartedEventArgs() {
                         CameraInfo = this.Info

@@ -13,6 +13,7 @@ using JayTom.Dws.Plugin;
 using JayTom.Dws.Camera;
 using System.Configuration;
 using System.Windows.Media;
+using JayTom.Dws.Interface;
 using JayTom.Dws.Plugin.Ftp;
 using JayTom.Dws.Plugin.Tcp;
 using System.Threading.Tasks;
@@ -181,6 +182,9 @@ namespace JayTom.Dws.Client {
 
                             return handler;
                         });
+                        //Api接口注册
+
+                        services.AddSingleton<IDataUploader, HttpBaseDataUploadApi>();
 
                         /*services.AddSingleton<IDataUploader, WeciMexicoDvApi>();
                         services.AddSingleton<ITcpCommunication, TcpCommunication>();
@@ -212,6 +216,8 @@ namespace JayTom.Dws.Client {
                         services.AddHostedService<ComputerInfoBackgroundService>(); // 注册后台服务
                         services.AddHostedService<ScanProcessBackgroundService>(); // 注册后扫码过程服务
                         services.AddHostedService<SaveImageBackgroundService>();//注册存图服务
+                        services.AddHostedService<SubmitApiBackgroundService>();//提交Api
+                        services.AddHostedService<DataProcessingBackgroundService>();//数据处理
                     })
                     .Build();
                 _host.Start();

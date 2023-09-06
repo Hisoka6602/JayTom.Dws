@@ -122,9 +122,12 @@
             <SolidColorBrush x:Key="PrimaryHueLightBrush" Color="DodgerBlue" />
             <SolidColorBrush x:Key="PrimaryHueLightForegroundBrush" Color="#333333" />
             <SolidColorBrush x:Key="PrimaryHueMidBrush" Color="FloralWhite" />
-            <SolidColorBrush x:Key="PrimaryHueMidForegroundBrush" Color="#333333" />
+            <SolidColorBrush x:Key="PrimaryHueMidForegroundBrush" Color="Red" />
             <SolidColorBrush x:Key="PrimaryHueDarkBrush" Color="#015f92" />
             <SolidColorBrush x:Key="PrimaryHueDarkForegroundBrush" Color="#333333" />
+
+            <!--<SolidColorBrush x:Key="SecondaryAccentBrush" Color="#689f38" />
+            <SolidColorBrush x:Key="SecondaryAccentForegroundBrush" Color="#FFFFFF" />-->
             <!--  全局样式  -->
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.Light.xaml" />

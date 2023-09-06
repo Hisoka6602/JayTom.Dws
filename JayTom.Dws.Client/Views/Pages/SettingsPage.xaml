@@ -37,10 +37,10 @@
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
                 <ListBox
-                Grid.Row="0"
-                MinHeight="100"
-                ItemTemplate="{StaticResource MenuTemplate}"
-                ItemsSource="{Binding MenuItems, UpdateSourceTrigger=PropertyChanged}">
+                    Grid.Row="0"
+                    MinHeight="100"
+                    ItemTemplate="{StaticResource MenuTemplate}"
+                    ItemsSource="{Binding MenuItems, UpdateSourceTrigger=PropertyChanged}">
                     <ListBox.ItemContainerStyle>
                         <Style TargetType="ListBoxItem">
                             <Setter Property="Height" Value="Auto" />
@@ -57,9 +57,9 @@
                                 <Setter.Value>
                                     <ControlTemplate TargetType="{x:Type ListBoxItem}">
                                         <ContentPresenter
-                                        Content="{TemplateBinding Content}"
-                                        ContentStringFormat="{TemplateBinding ContentStringFormat}"
-                                        ContentTemplate="{TemplateBinding ContentTemplate}" />
+                                            Content="{TemplateBinding Content}"
+                                            ContentStringFormat="{TemplateBinding ContentStringFormat}"
+                                            ContentTemplate="{TemplateBinding ContentTemplate}" />
                                     </ControlTemplate>
                                 </Setter.Value>
                             </Setter>
@@ -67,9 +67,9 @@
                     </ListBox.ItemContainerStyle>
                 </ListBox>
                 <Grid
-                Grid.Row="1"
-                MinWidth="1000"
-                Background="#2E2E2E" />
+                    Grid.Row="1"
+                    MinWidth="1000"
+                    Background="#2E2E2E" />
             </Grid>
 
             <!--  区域内容  -->
@@ -80,11 +80,11 @@
             VerticalScrollBarVisibility="Auto">
         </ScrollViewer>-->
             <Frame
-            Name="RegionFrame"
-            Grid.Column="1"
-            mvvm:RegionManager.RegionName="ContentRegion"
-            Focusable="False"
-            NavigationUIVisibility="Hidden" />
+                Name="RegionFrame"
+                Grid.Column="1"
+                mvvm:RegionManager.RegionName="ContentRegion"
+                Focusable="False"
+                NavigationUIVisibility="Hidden" />
         </Grid>
     </materialDesign:DialogHost>
 </Page>

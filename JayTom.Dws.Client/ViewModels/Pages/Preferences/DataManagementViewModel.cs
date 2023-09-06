@@ -326,7 +326,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
 
         private void LoadedDelegate(Page obj) {
             if (!_isLoaded) {
-                var parentContainer = Utils.GetParentContainer<Grid>(obj, f => f.Visibility == Visibility.Visible);
+                var parentContainer = PluginInterface.Utils.Utils.GetParentContainer<Grid>(obj, f => f.Visibility == Visibility.Visible);
                 if (parentContainer is not null) {
                     PageMaxHeight = parentContainer.ActualHeight;
                     parentContainer.SizeChanged += delegate (object sender, SizeChangedEventArgs args) {

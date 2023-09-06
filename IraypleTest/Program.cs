@@ -14,11 +14,9 @@ internal class Program {
         var (key, value) = await iraypleSmartCamera.Initialize(enumerateCameras?.FirstOrDefault() ?? new CameraInfo() {
             IpAddress = "192.168.31.63"
         });
-        Console.WriteLine(JsonConvert.SerializeObject(value));
         var (b, s) = await iraypleSmartCamera.Start(enumerateCameras?.FirstOrDefault() ?? new CameraInfo() {
             IpAddress = "192.168.31.63"
         });
-        Console.WriteLine(JsonConvert.SerializeObject(s));
         Console.ReadLine();
         Console.WriteLine("Hello, World!");
     }

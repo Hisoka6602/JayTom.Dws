@@ -133,6 +133,12 @@ namespace JayTom.Dws.Interface.WeciMexicoDv {
             return response;
         }
 
+        public Task<UploadResponse> UploadData(string barcode, double weight, DateTime scanTime, double length = default, double width = default,
+            double height = default, double volume = default, Image? image = default, Image? panoramaImage = default,
+            CancellationToken token = default) {
+            throw new NotImplementedException();
+        }
+
         public Task<KeyValuePair<bool, string>> SetParameters<T>(T parameters) {
             if (parameters is WeciMexicoDvApiParam param) {
                 this.Url = param.Url;

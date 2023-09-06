@@ -5,18 +5,126 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="clr-namespace:JayTom.Dws.Client.Views.Pages.Preferences"
+    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:mvvm="http://prismlibrary.com/"
     Title="APISettingsPage"
     d:DesignHeight="450"
     d:DesignWidth="800"
+    mvvm:ViewModelLocator.AutoWireViewModel="True"
+    FontFamily="{StaticResource CustomFontFamily}"
     mc:Ignorable="d">
-
-    <Grid>
-        <TextBlock
-            HorizontalAlignment="Center"
-            VerticalAlignment="Center"
-            FontSize="30"
-            Foreground="White"
-            Text="API接口设置 " />
-    </Grid>
+    <materialDesign:DialogHost
+        Background="Transparent"
+        DialogBackground="Transparent"
+        DialogMargin="5"
+        FocusVisualStyle="{x:Null}"
+        Focusable="False"
+        Identifier="BarcodeFilterSettingsDialog"
+        Style="{StaticResource MaterialDesignEmbeddedDialogHost}">
+        <Grid Margin="20,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="50" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <!--  当前使用接口  -->
+            <StackPanel
+                Grid.Row="0"
+                Margin="20,5,0,0"
+                Orientation="Horizontal">
+                <!--  图标  -->
+                <TextBlock
+                    Margin="0,0,0,1"
+                    VerticalAlignment="Center"
+                    FontFamily="{StaticResource IconFontFamily}"
+                    FontSize="20"
+                    Foreground="DarkGray"
+                    Text="&#xe664;" />
+                <TextBlock
+                    Margin="5,0"
+                    VerticalAlignment="Center"
+                    FontSize="13"
+                    FontWeight="Bold"
+                    Foreground="DarkGray"
+                    Text="使用的Api接口:" />
+                <Border
+                    Margin="5"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Background="#1A696969"
+                    CornerRadius="5">
+                    <ComboBox
+                        Height="30"
+                        MinWidth="160"
+                        Padding="5,0"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        HorizontalContentAlignment="Center"
+                        VerticalContentAlignment="Center"
+                        materialDesign:ButtonAssist.CornerRadius="15"
+                        materialDesign:ColorZoneAssist.Mode="Dark"
+                        BorderThickness="0"
+                        DisplayMemberPath="Name"
+                        FontSize="12"
+                        FontWeight="Bold"
+                        Foreground="White"
+                        ItemsSource="{Binding WeightModeItems, UpdateSourceTrigger=PropertyChanged}"
+                        SelectedItem="{Binding SelectWeightMode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                        SelectedValuePath="Value"
+                        Style="{StaticResource MaterialDesignComboBox}" />
+                </Border>
+            </StackPanel>
+            <!--  内容  -->
+            <TabControl
+                Grid.Row="1"
+                HorizontalContentAlignment="Left"
+                materialDesign:ColorZoneAssist.Foreground="White"
+                materialDesign:ColorZoneAssist.Mode="Custom"
+                materialDesign:TabAssist.HasFilledTab="True"
+                materialDesign:TabAssist.HasUniformTabWidth="True"
+                ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                ScrollViewer.VerticalScrollBarVisibility="Auto"
+                Style="{StaticResource MaterialDesignUniformTabControl}"
+                TabStripPlacement="Top">
+                <TabItem Foreground="White" Header="基础接口">
+                    <Frame
+                        Margin="0"
+                        Padding="0"
+                        Focusable="False"
+                        NavigationUIVisibility="Hidden"
+                        Source="ApiConfiguration/BaseApiPage.xaml" />
+                </TabItem>
+                <TabItem Header="旺店通WMS">
+                    <TextBlock
+                        Margin="8"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        FontSize="18"
+                        FontWeight="Bold"
+                        Foreground="White"
+                        Text="内容开发中..." />
+                </TabItem>
+                <TabItem Header="旺店通ERP">
+                    <TextBlock
+                        Margin="8"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        FontSize="18"
+                        FontWeight="Bold"
+                        Foreground="White"
+                        Text="内容开发中..." />
+                </TabItem>
+                <TabItem Header="旺店通ERP旗舰版">
+                    <TextBlock
+                        Margin="8"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        FontSize="18"
+                        FontWeight="Bold"
+                        Foreground="White"
+                        Text="内容开发中..." />
+                </TabItem>
+            </TabControl>
+        </Grid>
+    </materialDesign:DialogHost>
 </Page>

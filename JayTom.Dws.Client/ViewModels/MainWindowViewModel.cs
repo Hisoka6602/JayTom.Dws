@@ -171,7 +171,7 @@ namespace JayTom.Dws.Client.ViewModels {
             if (obj is Window window) {
                 window.SizeChanged += SizeChangeDelegate;
 
-                var visualChild = Utils.GetVisualChild<Button>(window, b => b.Name.Equals("MenuButton"));
+                var visualChild = PluginInterface.Utils.Utils.GetVisualChild<Button>(window, b => b.Name.Equals("MenuButton"));
                 if (visualChild is not null) {
                     //设置变化值
                     _menuButtonSizeize = new Size(visualChild.ActualWidth, visualChild.ActualHeight);
@@ -216,7 +216,7 @@ namespace JayTom.Dws.Client.ViewModels {
                 }
 
                 if (!IsLoaded) {
-                    var visualChild = Utils.GetVisualChild<Button>(window, b => b.Name.Equals("MenuButton"));
+                    var visualChild = PluginInterface.Utils.Utils.GetVisualChild<Button>(window, b => b.Name.Equals("MenuButton"));
                     if (visualChild is not null) {
                         //设置变化值
                         ButtonTranslateTransform =
