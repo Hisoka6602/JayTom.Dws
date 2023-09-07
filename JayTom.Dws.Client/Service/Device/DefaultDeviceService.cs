@@ -725,10 +725,10 @@ namespace JayTom.Dws.Client.Service.Device {
                         return CameraType.IndustrialCamera;
                     break;
 
-                case not null when brand.Contains("Dahua"):
+                case not null when (brand.Contains("Dahua") || brand.Contains("Huaray")):
                     if (modelName.Contains("IPC"))
                         return CameraType.VideoCamera;
-                    if (modelName.Contains("DH-MV"))
+                    if (modelName.Contains("DH-MV") || modelName.Contains("DH-SL") || modelName.StartsWith("R"))
                         return CameraType.SmartCamera;
                     break;
 
@@ -747,10 +747,10 @@ namespace JayTom.Dws.Client.Service.Device {
                         return new HikvisionIndustrialCamera(info);
                     break;
 
-                case not null when info.Brand.Contains("Dahua"):
+                case not null when (info.Brand.Contains("Dahua") || info.Brand.Contains("Huaray")):
                     if (info.Model.Contains("IPC"))
                         return new DaHuatechSecurityCamera(info);
-                    if (info.Model.Contains("DH-MV"))
+                    if (info.Model.Contains("DH-MV") || info.Model.Contains("DH-SL") || info.Model.StartsWith("R"))
                         return new DaHuaSmartCamera(info);
                     break;
 

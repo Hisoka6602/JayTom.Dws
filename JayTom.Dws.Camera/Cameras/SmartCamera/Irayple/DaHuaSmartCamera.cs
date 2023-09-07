@@ -213,7 +213,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
         public int BarcodeBorderSize { get; set; } = 5;
         public Color BarcodeBorderColor { get; set; } = Color.LawnGreen;
         public bool IsShowBarcodeBorder { get; set; } = true;
-        public bool IsUseTriggerMode { get; set; } = true;
+        public bool IsUseTriggerMode { get; set; } = false;
         public TriggerMode TriggerMode { get; set; }
 
         public async void SoftwareTriggerOnce() {
@@ -248,7 +248,6 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
                     // 一维码 0x80000000 == chunkId || 二维码  0x80000001 == chunkId
                     var vecChunkInfos = new List<string>();
                     chunkData.GetChunkDataByIndex((uint)i, ref chunkId, ref vecChunkInfos);
-
                     chunkDataInfos.TryAdd(chunkId, vecChunkInfos);
                 }
                 //图片
@@ -259,20 +258,19 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
                         // 一维码 0x80000000 == chunkId || 二维码  0x80000001 == chunkId
 
                         int.TryParse(Regex.Match(dataInfo.Value.FirstOrDefault(v => Regex.IsMatch(v,
-                            @"CodeNum\s+Value:(\d+)")) ?? string.Empty, @"CodeNum\s+Value:(\d+)")?.Groups[1]?.Value, out var codeCount);
+                            @"(?:BarCodeNum|QRNum)\s+Value:(\d+)")) ?? string.Empty, @"(?:BarCodeNum|QRNum)\s+Value:(\d+)")?.Groups[1]?.Value, out var codeCount);
 
                         var codeList = dataInfo.Value.Where(w =>
-                                Regex.IsMatch(w, @"Code(\d+)_CodeData\s+Value:(.+)") &&
+                                Regex.IsMatch(w, @"(?:Code|QR)(\d+)_CodeData\s+Value:(.+)") &&
                                 int.Parse(Regex.Match(w, @"\d+").Value) < codeCount)
                             .Select(code =>
-                                Regex.Match(code, @"Code(\d+)_CodeData\s+Value:(.+)")?.Groups[0]?.Value)
+                                Regex.Match(code, @"(?:Code|QR)(\d+)_CodeData\s+Value:(.+)")?.Groups[0]?.Value)
                             .ToList();
 
                         var pointList = dataInfo.Value.Where(w =>
-                                Regex.IsMatch(w, @"Code\d+_Point\d+_(\w+)\s+Value:(\d+)") &&
+                                Regex.IsMatch(w, @"(?:Code|QR)\d+_Point\d+_(\w+)\s+Value:(\d+)") &&
                                 int.Parse(Regex.Match(w, @"\d+").Value) < codeCount)
                             .ToList();
-
                         /*for (int i = 0; i < codeCount; i++) {
                             var daHuaBarcodeInfo = new DaHuaBarcodeInfo {
                                 BarcodeType = dataInfo.Key == 0x80000000 ? CodeType.BarCode : CodeType.QrCode,
@@ -304,19 +302,18 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
                             var daHuaBarcodeInfo = new DaHuaBarcodeInfo {
                                 BarcodeType = dataInfo.Key == 0x80000000 ? CodeType.BarCode : CodeType.QrCode,
                                 BarCode = codeList?
-                                    .Select(input => Regex.Match(input ?? string.Empty, @$"Code{i}_CodeData Value:(\w+)$"))
+                                    .Select(input => Regex.Match(input ?? string.Empty, @$"(?:Code|QR){i}_CodeData\s+Value:(.+)"))
                                     .FirstOrDefault(match => match.Success)?.Groups[1].Value ?? string.Empty
                             };
-
                             daHuaBarcodeInfo.BarcodeRegionCoordinates.AddRange(
                                 Enumerable.Range(0, 4)
                                     .Select(j => {
                                         int.TryParse(pointList?
-                                            .Select(input => Regex.Match(input, $"Code{i}_Point{j}_X\\s+Value:(\\d+)"))
+                                            .Select(input => Regex.Match(input, $"(?:Code|QR){i}_Point{j}_X\\s+Value:(\\d+)"))
                                             .FirstOrDefault(match => match.Success)?.Groups[1].Value, out var x);
 
                                         int.TryParse(pointList?
-                                            .Select(input => Regex.Match(input, $"Code{i}_Point{j}_Y\\s+Value:(\\d+)"))
+                                            .Select(input => Regex.Match(input, $"(?:Code|QR){i}_Point{j}_Y\\s+Value:(\\d+)"))
                                             .FirstOrDefault(match => match.Success)?.Groups[1].Value, out var y);
 
                                         return new Point(x, y);
@@ -352,14 +349,16 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
                 }
                 if (barcodeInfo?.Any() != true) {
                     //返回触发但没有条码
-                    OnNotBarcodeHitEvent(new BarcodeReadEventArgs() {
-                        Timestamp = timestamp,
-                        Barcode = "NoRead",
-                        Image = bitmap,
-                        ThumbImage = (Bitmap?)thumbnailImage,
-                        CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
-                        ScanTime = localTime.DateTime
-                    });
+                    if (IsUseTriggerMode) {
+                        OnNotBarcodeHitEvent(new BarcodeReadEventArgs() {
+                            Timestamp = timestamp,
+                            Barcode = "NoRead",
+                            Image = bitmap,
+                            ThumbImage = (Bitmap?)thumbnailImage,
+                            CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
+                            ScanTime = localTime.DateTime
+                        });
+                    }
                 }
                 else {
                     while (!barcodeInfo.IsEmpty) {

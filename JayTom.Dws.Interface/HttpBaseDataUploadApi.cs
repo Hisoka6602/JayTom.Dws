@@ -44,7 +44,7 @@ namespace JayTom.Dws.Interface {
             var isSuccess = false;
             UploadResponse response;
             //创建数据
-            var data = $"{barcode},{new DateTimeOffset(scanTime).ToUnixTimeMilliseconds()},节点3";
+            var data = $"{barcode},{new DateTimeOffset(scanTime).ToUnixTimeMilliseconds()},节点2";
             var requestTime = DateTime.Now;
             var stopwatch = new Stopwatch();
             stopwatch.Start();
@@ -53,7 +53,7 @@ namespace JayTom.Dws.Interface {
                 httpClient.Timeout = TimeSpan.FromMilliseconds(TimeOut);
                 HttpResponseMessage message;
                 await using (Stream dataStream =
-                             new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data)))) {
+                             new MemoryStream(Encoding.UTF8.GetBytes(data))) {
                     using HttpContent content = new StreamContent(dataStream);
                     content.Headers.Add("Content-Type", "application/json");
                     message = await httpClient.PostAsync(Url, content, token)
