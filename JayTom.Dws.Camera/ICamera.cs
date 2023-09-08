@@ -79,6 +79,11 @@ namespace JayTom.Dws.Camera {
         event EventHandler<CameraUnregisteredEventArgs> CameraUnregistered;
 
         /// <summary>
+        /// 实时图像事件
+        /// </summary>
+        event EventHandler<RealtimeImageEventArgs> RealtimeImage;
+
+        /// <summary>
         /// 初始化方法
         /// </summary>
         Task<KeyValuePair<bool, string>> Initialize(object param);
@@ -99,11 +104,46 @@ namespace JayTom.Dws.Camera {
         /// <param name="parameters">参数集合</param>
         void SetParameters(Dictionary<string, object> parameters);
 
-        /*/// <summary>
-        /// 创建实例
+        /// <summary>
+        /// 是否开启实时图像
+        /// </summary>
+        public bool IsRealtimeImageEnabled { get; }
+
+        /// <summary>
+        /// 开启实时图像
+        /// </summary>
+        void StartRealTimeImage();
+
+        /// <summary>
+        /// 停止实时录像
+        /// </summary>
+        void StopRealTimeImage();
+
+        /// <summary>
+        /// 拍照回调事件
+        /// </summary>
+        public event EventHandler<PhotoTakenEventArgs> PhotoTaken;
+
+        /// <summary>
+        /// 拍照
         /// </summary>
         /// <returns></returns>
-        ICamera CreateInstance();*/
+        Task TakePhotoAsync(string barcode, long barcodeTimestamp, CancellationToken cancellation = default);
+
+        /// <summary>
+        /// 拍照
+        /// </summary>
+        /// <param name="barcode"></param>
+        /// <param name="barcodeTimestamp"></param>
+        /// <param name="delay"></param>
+        /// <param name="cancellation"></param>
+        /// <returns></returns>
+        Task TakePhotoAsync(string barcode, long barcodeTimestamp, TimeSpan delay, CancellationToken cancellation = default);
+
+        /// <summary>
+        /// 拍照延迟
+        /// </summary>
+        public int TakePhotoDelay { get; set; }
     }
 
     /// <summary>

@@ -28,9 +28,14 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
         private static ConcurrentDictionary<string, IntPtr> _loginDev = new();
         private static ConcurrentQueue<ImageMessageInfo> _imageMessageQueue = new();
         private static ConcurrentDictionary<string, Action<Bitmap?>> _imageEvent = new();
+        private static ConcurrentDictionary<string, Action<Bitmap?>> _realtimeFrameEvent = new();
+        private static ConcurrentDictionary<string, IntPtr> _realPlayInfo = new();
         private static SemaphoreSlim _snapRevPhotoSlim = new(1);
+        private static SemaphoreSlim _realtimeFrameSlim = new(1);
         private static byte[] _imageBytes = Array.Empty<byte>();
+        private static byte[] _realtimeFrameBytes = Array.Empty<byte>();
         private static SemaphoreSlim _takePhotoSlim = new(1);
+        private static SemaphoreSlim _switchRealtimeFrameSlim = new(1);
 
         private BaseDaHuatech() {
         }
@@ -61,7 +66,34 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                     };
                     _mReConnectCallBack += delegate (IntPtr id, IntPtr dvrip, int port, IntPtr user) {
                     };
-                    _mRealDataCallBackEx2 += delegate (IntPtr handle, uint type, IntPtr buffer, uint size, IntPtr nint, IntPtr user) { };
+                    _mRealDataCallBackEx2 += async delegate (IntPtr handle, uint type, IntPtr buffer, uint size, IntPtr nint,
+                        IntPtr user) {
+                            try {
+                                await _realtimeFrameSlim.WaitAsync();
+                                //取出登录id
+                                var (key, value) = _realPlayInfo.FirstOrDefault(f => f.Value == handle);
+                                if (key != null) {
+                                    var tryGetValue = _realtimeFrameEvent.TryGetValue(key, out var callback);
+                                    if (tryGetValue) {
+                                        Image? imageBitmap = null;
+                                        _realtimeFrameBytes = new byte[size];
+                                        Marshal.Copy(buffer, _realtimeFrameBytes, 0, (int)size);
+                                        using var stream = new MemoryStream(_realtimeFrameBytes);
+                                        imageBitmap = Image.FromStream(stream);
+
+                                        var image = imageBitmap?.GetThumbnailImage(imageBitmap.Width, imageBitmap.Height,
+                                            () => false, IntPtr.Zero);
+
+                                        if (image != null) callback?.Invoke((Bitmap)image);
+
+                                        imageBitmap?.Dispose();
+                                    }
+                                }
+                            }
+                            finally {
+                                _realtimeFrameSlim.Release();
+                            }
+                        };
                     _mSnapRevCallBack += async delegate (IntPtr id, IntPtr buf, uint len, uint type, uint serial, IntPtr user) {
                         try {
                             await _snapRevPhotoSlim.WaitAsync();
@@ -262,6 +294,15 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
         }
 
         /// <summary>
+        /// 注册实时录像回调
+        /// </summary>
+        /// <param name="serialNo"></param>
+        /// <param name="callback"></param>
+        public void RegisterRealtimeFrameCallback(string serialNo, [NotNull] Action<Bitmap> callback) {
+            _realtimeFrameEvent.AddOrUpdate(serialNo, callback, (k, v) => callback);
+        }
+
+        /// <summary>
         /// 获取远程实时图片
         /// </summary>
         /// <param name="serialNo"></param>
@@ -300,6 +341,90 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
             finally {
                 _takePhotoSlim.Release();
             }
+        }
+
+        /// <summary>
+        /// 开始实时画面预览
+        /// </summary>
+        /// <param name="serialNo"></param>
+        /// <returns></returns>
+        public async Task<KeyValuePair<bool, string>> StartRealtimePlay(string serialNo) {
+            try {
+                return new KeyValuePair<bool, string>(false, "暂时不支持实时画面");
+                await _switchRealtimeFrameSlim.WaitAsync();
+                var tryGetValue = _loginDev.TryGetValue(serialNo, out var mLoginId);
+                if (tryGetValue) {
+                    var indexOf = _loginDev.Keys.OrderBy(o => o).ToList().IndexOf(serialNo);
+                    //判断是否已经开启
+                    var isRealPlay = _realPlayInfo.TryGetValue(serialNo, out var mRealPlayId);
+                    if (isRealPlay && mRealPlayId != IntPtr.Zero) {
+                        return new KeyValuePair<bool, string>(true, "已经开启了预览");
+                    }
+                    var ret = NETClient.RealPlay(mLoginId, indexOf, IntPtr.Zero);
+                    if (ret == IntPtr.Zero) {
+                        var lastError = NETClient.GetLastError();
+                        return new KeyValuePair<bool, string>(false, $"开始预览失败:{lastError}");
+                    }
+
+                    var back = NETClient.SetRealDataCallBack(ret, _mRealDataCallBackEx2, IntPtr.Zero,
+                        EM_REALDATA_FLAG.RAW_DATA);
+                    if (!back) {
+                        var lastError = NETClient.GetLastError();
+                        return new KeyValuePair<bool, string>(false, lastError);
+                    }
+                    _realPlayInfo.TryAdd(serialNo, ret);
+                    return new KeyValuePair<bool, string>(true, string.Empty);
+                }
+                else {
+                    return new KeyValuePair<bool, string>(false, "设备未登录");
+                }
+            }
+            catch (Exception e) {
+                return new KeyValuePair<bool, string>(false, e.Message);
+            }
+            finally {
+                _switchRealtimeFrameSlim.Release();
+            }
+        }
+
+        /// <summary>
+        /// 停止实时画面预览
+        /// </summary>
+        /// <param name="serialNo"></param>
+        /// <returns></returns>
+        public async Task<KeyValuePair<bool, string>> StopRealtimePlay(string serialNo) {
+            try {
+                await _switchRealtimeFrameSlim.WaitAsync();
+                var tryGetValue = _loginDev.TryGetValue(serialNo, out var mLoginId);
+                if (tryGetValue) {
+                    var indexOf = _loginDev.Keys.OrderBy(o => o).ToList().IndexOf(serialNo);
+                    //判断是否已经开启
+                    var isRealPlay = _realPlayInfo.TryGetValue(serialNo, out var mRealPlayId);
+                    if (isRealPlay && mRealPlayId != IntPtr.Zero) {
+                        var ret = NETClient.StopRealPlay(mRealPlayId);
+                        if (!ret) {
+                            var lastError = NETClient.GetLastError();
+                            return new KeyValuePair<bool, string>(false, lastError);
+                        }
+                        _realPlayInfo.Remove(serialNo, out _);
+                        return new KeyValuePair<bool, string>(true, string.Empty);
+                    }
+                    else {
+                        return new KeyValuePair<bool, string>(true, $"未开启预览:{mRealPlayId}");
+                    }
+                }
+                else {
+                    return new KeyValuePair<bool, string>(false, "设备未登录");
+                }
+            }
+            catch (Exception e) {
+                return new KeyValuePair<bool, string>(false, e.Message);
+            }
+            finally {
+                _switchRealtimeFrameSlim.Release();
+            }
+
+            //RealPlay
         }
     }
 }

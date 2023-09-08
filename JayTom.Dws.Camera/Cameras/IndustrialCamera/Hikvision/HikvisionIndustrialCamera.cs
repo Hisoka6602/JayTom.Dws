@@ -363,12 +363,20 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
         public int BarcodeBorderSize { get; set; } = 5;
         public System.Drawing.Color BarcodeBorderColor { get; set; } = System.Drawing.Color.LawnGreen;
         public bool IsShowBarcodeBorder { get; set; } = true;
-        public bool IsRealtimeImageEnabled { get; set; }
+        public bool IsRealtimeImageEnabled { get; private set; }
         public int TakePhotoDelay { get; set; }
 
         public event EventHandler<BarcodeReadEventArgs>? BarcodeRead;
 
         public event EventHandler<RealtimeImageEventArgs>? RealtimeImage;
+
+        public void StartRealTimeImage() {
+            IsRealtimeImageEnabled = true;
+        }
+
+        public void StopRealTimeImage() {
+            IsRealtimeImageEnabled = false;
+        }
 
         public event EventHandler<PhotoTakenEventArgs>? PhotoTaken;
 
@@ -388,7 +396,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                             return;
                         }
                         var image = await ConvertPointerToImage(pFrameInfo);
-                        var thumbnailImage = image?.GetThumbnailImage(1024, 768, () => false, IntPtr.Zero);
+                        var thumbnailImage = image?.GetThumbnailImage(800, 600, () => false, IntPtr.Zero);
                         await Task.Delay(100, cancellation);
                         OnPhotoTaken(new PhotoTakenEventArgs {
                             Timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds(),
@@ -434,7 +442,8 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                 stOutput = (MVIDCodeReader.MVID_CAM_OUTPUT_INFO)(Marshal.PtrToStructure(ptr,
                     typeof(MVIDCodeReader.MVID_CAM_OUTPUT_INFO)) ?? new MVIDCodeReader.MVID_CAM_OUTPUT_INFO());
                 var bitmap = await GetBitmapAsync(stOutput, ptr);
-                var thumbnailImage = bitmap?.GetThumbnailImage(1024, 768, () => false, IntPtr.Zero);
+                //1024*768
+                var thumbnailImage = bitmap?.GetThumbnailImage(800, 600, () => false, IntPtr.Zero);
                 if (0 != stOutput.stCodeList.nCodeNum && BindingType != CameraBindingType.PanoramicCamera) {
                     if (IsShowBarcodeBorder && thumbnailImage is not null && thumbnailImage.PixelFormat != PixelFormat.Format8bppIndexed &&
                         stOutput.stCodeList.stCodeInfo?.Any() == true) {
@@ -493,10 +502,8 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                 }
                 if (IsRealtimeImageEnabled) {
                     OnRealtimeImage(new RealtimeImageEventArgs() {
-                        Image = bitmap,
                         Timestamp = timestamp,
-                        ThumbImage = bitmap?.Clone(new Rectangle(0, 0, bitmap.Width, bitmap.Height),
-                            PixelFormat.Format32bppArgb),
+                        ThumbImage = (Bitmap?)thumbnailImage,
                     });
                 }
                 //显示图像
@@ -513,7 +520,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                         () => false, IntPtr.Zero);
                 }
 
-                return (Bitmap?)bitmap?.GetThumbnailImage(1024, 768, () => false, IntPtr.Zero);
+                return (Bitmap?)bitmap?.GetThumbnailImage(800, 600, () => false, IntPtr.Zero);
             }
             finally {
                 bitmap?.Dispose();

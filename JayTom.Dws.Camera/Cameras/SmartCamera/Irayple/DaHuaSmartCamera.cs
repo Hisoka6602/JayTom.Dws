@@ -31,6 +31,16 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
         /// </summary>
         private IDevice? _device;
 
+        /// <summary>
+        /// 原图宽度
+        /// </summary>
+        private int _originalWidth = 1;
+
+        /// <summary>
+        /// 原图高度
+        /// </summary>
+        private int _originalHeight = 1;
+
         public DaHuaSmartCamera(CameraInfo info) {
             this.Info = info;
         }
@@ -85,6 +95,8 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
 
         public event EventHandler<CameraUnregisteredEventArgs>? CameraUnregistered;
 
+        public event EventHandler<RealtimeImageEventArgs>? RealtimeImage;
+
         public async Task<KeyValuePair<bool, string>> Initialize(object param) {
             await Task.Yield();
             if (param is CameraInfo info) {
@@ -101,8 +113,14 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
                             //设置触发
                             _device.TriggerSet.Open(TriggerSourceEnum.Line1);
                             //设置图像格式
-                            using (IEnumParameter p = _device.ParameterCollection[ParametrizeNameSet.ImagePixelFormat]) {
+                            using (var p = _device.ParameterCollection[ParametrizeNameSet.ImagePixelFormat]) {
                                 p.SetValue("Mono8");
+                            }
+                            using (var p = _device.ParameterCollection[ParametrizeNameSet.ImageHeight]) {
+                                int.TryParse(p.GetValue().ToString(), out _originalHeight);
+                            }
+                            using (var p = _device.ParameterCollection[ParametrizeNameSet.ImageWidth]) {
+                                int.TryParse(p.GetValue().ToString(), out _originalWidth);
                             }
                             //设置曝光
                             using (IFloatParameter p = _device.ParameterCollection[ParametrizeNameSet.ExposureTime]) {
@@ -210,6 +228,35 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
             throw new NotImplementedException();
         }
 
+        public bool IsRealtimeImageEnabled { get; private set; }
+
+        public void StartRealTimeImage() {
+            IsRealtimeImageEnabled = true;
+        }
+
+        public void StopRealTimeImage() {
+            IsRealtimeImageEnabled = false;
+        }
+
+        public event EventHandler<PhotoTakenEventArgs>? PhotoTaken;
+
+        public Task TakePhotoAsync(string barcode, long barcodeTimestamp, CancellationToken cancellation = default) {
+            Task.Run(() => {
+                _device?.TriggerSet?.ExecuteSoftwareTrigger();
+            }, cancellation);
+            return Task.CompletedTask;
+        }
+
+        public Task TakePhotoAsync(string barcode, long barcodeTimestamp, TimeSpan delay, CancellationToken cancellation = default) {
+            Task.Run(async () => {
+                await Task.Delay(delay, cancellation);
+                await TakePhotoAsync(barcode, barcodeTimestamp, cancellation);
+            }, cancellation);
+            return Task.CompletedTask;
+        }
+
+        public int TakePhotoDelay { get; set; }
+
         public int BarcodeBorderSize { get; set; } = 5;
         public Color BarcodeBorderColor { get; set; } = Color.LawnGreen;
         public bool IsShowBarcodeBorder { get; set; } = true;
@@ -252,7 +299,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
                 }
                 //图片
                 var bitmap = grabbedRawData.ToBitmap(true);
-                var thumbnailImage = bitmap?.GetThumbnailImage(1024, 768, () => false, IntPtr.Zero);
+                var thumbnailImage = bitmap?.GetThumbnailImage(800, 600, () => false, IntPtr.Zero);
                 if (chunkDataInfos.Any()) {
                     foreach (var dataInfo in chunkDataInfos) {
                         // 一维码 0x80000000 == chunkId || 二维码  0x80000001 == chunkId
@@ -271,33 +318,6 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
                                 Regex.IsMatch(w, @"(?:Code|QR)\d+_Point\d+_(\w+)\s+Value:(\d+)") &&
                                 int.Parse(Regex.Match(w, @"\d+").Value) < codeCount)
                             .ToList();
-                        /*for (int i = 0; i < codeCount; i++) {
-                            var daHuaBarcodeInfo = new DaHuaBarcodeInfo {
-                                BarcodeType = dataInfo.Key == 0x80000000 ? CodeType.BarCode : CodeType.QrCode,
-                                BarCode = codeList?.Select(input => Regex.Match(input ?? string.Empty,
-                                        @$"Code{i}_CodeData Value:(\w+)$"))
-                                    .FirstOrDefault(match => match.Success)
-                                    ?.Groups[1].Value ?? string.Empty
-                            };
-
-                            for (int j = 0; j < 4; j++) {
-                                var Xpattern = $"Code{i}_Point{j}_X\\s+Value:(\\d+)";
-                                var xStr = pointList
-                                    ?.Select(input => Regex.Match(input, Xpattern))
-                                    .FirstOrDefault(match => match.Success)
-                                    ?.Groups[1].Value;
-                                int.TryParse(xStr, out var x);
-                                var ypattern = $"Code{i}_Point{j}_Y\\s+Value:(\\d+)";
-                                var yStr = pointList
-                                    ?.Select(input => Regex.Match(input, ypattern))
-                                    .FirstOrDefault(match => match.Success)
-                                    ?.Groups[1].Value;
-                                int.TryParse(yStr, out var y);
-                                daHuaBarcodeInfo.BarcodeRegionCoordinates.Add(new Point(x, y));
-                            }
-                            barcodeInfo.Enqueue(daHuaBarcodeInfo);
-                        }*/
-
                         foreach (int i in Enumerable.Range(0, codeCount)) {
                             var daHuaBarcodeInfo = new DaHuaBarcodeInfo {
                                 BarcodeType = dataInfo.Key == 0x80000000 ? CodeType.BarCode : CodeType.QrCode,
@@ -339,9 +359,9 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
                             var points = new Point[4];
                             for (var j = 0; j < 4; ++j) {
                                 points[j].X = (int)(huaBarcodeInfo.BarcodeRegionCoordinates[j].X *
-                                    ((float)(thumbnailImage.Size.Width) / bitmap.Size.Width));
+                                    ((float)(thumbnailImage.Size.Width) / (_originalWidth <= 0 ? 1 : _originalWidth)));
                                 points[j].Y = (int)(huaBarcodeInfo.BarcodeRegionCoordinates[j].Y *
-                                    ((float)(thumbnailImage.Size.Height) / bitmap.Size.Height));
+                                    ((float)(thumbnailImage.Size.Height) / (_originalHeight <= 0 ? 1 : _originalHeight)));
                             }
                             g.DrawPolygon(new Pen(BarcodeBorderColor, BarcodeBorderSize), points);
                         }
@@ -375,6 +395,13 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
                             });
                         }
                     }
+                }
+
+                if (IsRealtimeImageEnabled) {
+                    OnRealtimeImage(new RealtimeImageEventArgs() {
+                        ThumbImage = (Bitmap?)thumbnailImage,
+                        Timestamp = timestamp
+                    });
                 }
             }
             catch (Exception e) {
@@ -453,6 +480,11 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
         protected virtual async void OnBarcodeReadTriggered(BarcodeTriggeredEventArgs e) {
             await Task.Yield();
             BarcodeReadTriggered?.Invoke(this, e);
+        }
+
+        protected virtual async void OnRealtimeImage(RealtimeImageEventArgs e) {
+            await Task.Yield();
+            RealtimeImage?.Invoke(this, e);
         }
     }
 }

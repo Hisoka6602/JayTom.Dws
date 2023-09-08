@@ -434,6 +434,23 @@ namespace JayTom.Dws.Client.Service.Device {
                                     ExceptionMessage = new Exception($"{mCameraInfo}-{args.Exception?.Message}")
                                 });
                             };
+                            camera.PhotoTaken += delegate (object? sender, PhotoTakenEventArgs args) {
+                                OnPanoramaCaptured(new PanoramaCaptureEventArgs() {
+                                    CameraSerialNumber = args.CameraSerialNumber,
+                                    Image = args.Image,
+                                    PhotoTime = args.PhotoTime,
+                                    Timestamp = args.Timestamp,
+                                    ThumbImage = args.ThumbImage,
+                                    Barcode = args.Barcode,
+                                    BarcodeTimestamp = args.BarcodeTimestamp
+                                });
+                            };
+                            camera.RealtimeImage += delegate (object? sender, RealtimeImageEventArgs args) {
+                                OnRealTimeImage(new RealTimeImageEventArgs() {
+                                    Camera = camera,
+                                    Image = args.ThumbImage,
+                                });
+                            };
                             //判断相机类型(各自注册事件)
 
                             switch (camera) {
@@ -445,17 +462,7 @@ namespace JayTom.Dws.Client.Service.Device {
                                     industrialCamera.BarcodeRead += delegate (object? sender, BarcodeReadEventArgs args) {
                                         OnBarcodeScanned(args);
                                     };
-                                    industrialCamera.PhotoTaken += delegate (object? sender, PhotoTakenEventArgs args) {
-                                        OnPanoramaCaptured(new PanoramaCaptureEventArgs() {
-                                            CameraSerialNumber = args.CameraSerialNumber,
-                                            Image = args.Image,
-                                            PhotoTime = args.PhotoTime,
-                                            Timestamp = args.Timestamp,
-                                            ThumbImage = args.ThumbImage,
-                                            Barcode = args.Barcode,
-                                            BarcodeTimestamp = args.BarcodeTimestamp
-                                        });
-                                    };
+
                                     break;
 
                                 case ISmartCamera smartCamera:
@@ -474,17 +481,6 @@ namespace JayTom.Dws.Client.Service.Device {
                                             ?.CameraConnectionParameters;
                                         securityCamera.CameraConnectionParameters =
                                             parameters ?? string.Empty;
-                                        securityCamera.PhotoTaken += delegate (object? sender, PhotoTakenEventArgs args) {
-                                            OnPanoramaCaptured(new PanoramaCaptureEventArgs() {
-                                                CameraSerialNumber = args.CameraSerialNumber,
-                                                Image = args.Image,
-                                                PhotoTime = args.PhotoTime,
-                                                Timestamp = args.Timestamp,
-                                                ThumbImage = args.ThumbImage,
-                                                Barcode = args.Barcode,
-                                                BarcodeTimestamp = args.BarcodeTimestamp
-                                            });
-                                        };
                                         break;
                                     }
                             }

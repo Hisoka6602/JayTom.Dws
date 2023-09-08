@@ -31,45 +31,9 @@ namespace JayTom.Dws.Camera {
         public bool IsShowBarcodeBorder { get; set; }
 
         /// <summary>
-        /// 是否开启实时图像
-        /// </summary>
-        public bool IsRealtimeImageEnabled { get; set; }
-
-        /// <summary>
-        /// 拍照延迟
-        /// </summary>
-        public int TakePhotoDelay { get; set; }
-
-        /// <summary>
         /// 读取到条码事件
         /// </summary>
         event EventHandler<BarcodeReadEventArgs> BarcodeRead;
-
-        /// <summary>
-        /// 实时图像事件
-        /// </summary>
-        event EventHandler<RealtimeImageEventArgs> RealtimeImage;
-
-        /// <summary>
-        /// 拍照回调事件
-        /// </summary>
-        public event EventHandler<PhotoTakenEventArgs> PhotoTaken;
-
-        /// <summary>
-        /// 拍照
-        /// </summary>
-        /// <returns></returns>
-        Task TakePhotoAsync(string barcode, long barcodeTimestamp, CancellationToken cancellation = default);
-
-        /// <summary>
-        /// 拍照
-        /// </summary>
-        /// <param name="barcode"></param>
-        /// <param name="barcodeTimestamp"></param>
-        /// <param name="delay"></param>
-        /// <param name="cancellation"></param>
-        /// <returns></returns>
-        Task TakePhotoAsync(string barcode, long barcodeTimestamp, TimeSpan delay, CancellationToken cancellation = default);
 
         /// <summary>
         /// 设置扫码过滤参数
@@ -134,11 +98,6 @@ namespace JayTom.Dws.Camera {
         /// 图像帧时间戳
         /// </summary>
         public long Timestamp { get; set; }
-
-        /// <summary>
-        /// 图片
-        /// </summary>
-        public Bitmap? Image { get; set; }
 
         /// <summary>
         /// 缩略图

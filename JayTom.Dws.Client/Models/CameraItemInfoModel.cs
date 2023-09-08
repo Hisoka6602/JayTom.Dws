@@ -6,6 +6,7 @@ using JayTom.Dws.Camera;
 using System.Windows.Media;
 using System.Windows.Input;
 using System.Threading.Tasks;
+using System.Windows.Controls;
 using System.Collections.Generic;
 
 namespace JayTom.Dws.Client.Models {
@@ -21,6 +22,8 @@ namespace JayTom.Dws.Client.Models {
         private long _imageTimestamp;
         private string _serialNumber = string.Empty;
         private ICamera? _camera;
+        private bool _isRealtimeImageEnabled;
+        private Image? _imageControl;
 
         public string CameraId {
             get => _cameraId;
@@ -100,6 +103,22 @@ namespace JayTom.Dws.Client.Models {
         }
 
         /// <summary>
+        /// 是否开启实时图像
+        /// </summary>
+        public bool IsRealtimeImageEnabled {
+            get => _isRealtimeImageEnabled;
+            set => SetProperty(ref _isRealtimeImageEnabled, value);
+        }
+
+        /// <summary>
+        /// 图像控件
+        /// </summary>
+        public Image? ImageControl {
+            get => _imageControl;
+            set => SetProperty(ref _imageControl, value);
+        }
+
+        /// <summary>
         /// 相机连接类型
         /// </summary>
         public ConnectionType ConnectionType { get; set; }
@@ -113,6 +132,16 @@ namespace JayTom.Dws.Client.Models {
         /// 状态点击事件
         /// </summary>
         public ICommand? StatusClickCommand { get; set; }
+
+        /// <summary>
+        /// 开关实时图像
+        /// </summary>
+        public ICommand? SwitchRealtimeImageCommand { get; set; }
+
+        /// <summary>
+        /// 拍照
+        /// </summary>
+        public ICommand? TakePhotoCommand { get; set; }
     }
 
     public enum CameraStatus {

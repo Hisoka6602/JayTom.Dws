@@ -18,6 +18,7 @@ using System.Windows.Controls;
 using JayTom.Dws.Client.Models;
 using System.Windows.Documents;
 using MaterialDesignThemes.Wpf;
+using System.Windows.Threading;
 using JayTom.Dws.Data.LocalData;
 using JayTom.Dws.Client.Service;
 using System.Collections.Generic;
@@ -244,7 +245,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                         CameraId = (s?.Info?.Id)?.ToString() ?? string.Empty,
                         SerialNumber = s?.Info?.SerialNumber ?? string.Empty,
                         Camera = s,
-                        StatusClickCommand = StatusClickCommand
+                        StatusClickCommand = StatusClickCommand,
+                        TakePhotoCommand = TakePhotoCommand,
+                        SwitchRealtimeImageCommand = SwitchRealtimeImageCommand
                     })?.ToList();
                     CameraItems.AddRange(infoModels);
                 });
@@ -381,8 +384,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                         model.ImageTimestamp = args.Timestamp;
                         await Application.Current.Dispatcher.BeginInvoke(() => {
                             //更新图片
-                            model.Image = args.ThumbImage.ConvertBitmapToBitmapSource();
-                        });
+                            if (!model.IsRealtimeImageEnabled) {
+                                model.Image = args.ThumbImage.ConvertBitmapToBitmapSource();
+                            }
+                        }, DispatcherPriority.Background);
                     }
                 }
             }
@@ -391,6 +396,16 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
 
         private async void DeviceServiceOnRealTimeImage(object? sender, RealTimeImageEventArgs args) {
             //实时画面
+            var model = CameraItems.FirstOrDefault(f => f.SerialNumber.Equals(args.Camera?.Info?.SerialNumber));
+            if (model is not null) {
+                //图片转换
+                await Application.Current.Dispatcher.BeginInvoke(() => {
+                    //更新图片
+                    if (model.IsRealtimeImageEnabled) {
+                        model.Image = args.Image.ConvertBitmapToBitmapSource();
+                    }
+                }, DispatcherPriority.Background);
+            }
         }
 
         private async void DeviceServiceOnBarcodeScanned(object? sender, BarcodeReadEventArgs args) {
@@ -408,7 +423,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                         model.ImageTimestamp = args.Timestamp;
                         await Application.Current.Dispatcher.BeginInvoke(() => {
                             //更新图片
-                            model.Image = args.ThumbImage.ConvertBitmapToBitmapSource();
+                            if (!model.IsRealtimeImageEnabled) {
+                                model.Image = args.ThumbImage.ConvertBitmapToBitmapSource();
+                            }
                             model.FrameRate = args?.FrameRate ?? 0;
                             //更新右边信息
                             BarCode = args?.Barcode ?? "未识别到条码";
@@ -458,6 +475,40 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     Barcode = new Random().Next(100000000, 999999999).ToString()
                 });
             });*/
+        }
+
+        /// <summary>
+        /// 开关实时图像
+        /// </summary>
+        public ICommand? SwitchRealtimeImageCommand {
+            get => new DelegateCommand<CameraItemInfoModel>(SwitchRealtimeImageDelegate);
+        }
+
+        private void SwitchRealtimeImageDelegate(CameraItemInfoModel obj) {
+            if (obj.Camera is { } camera) {
+                if (camera.IsRealtimeImageEnabled) {
+                    camera.StopRealTimeImage();
+                }
+                else {
+                    camera.StartRealTimeImage();
+                }
+                obj.IsRealtimeImageEnabled = camera.IsRealtimeImageEnabled;
+            }
+        }
+
+        /// <summary>
+        /// 拍照
+        /// </summary>
+        public ICommand? TakePhotoCommand {
+            get => new DelegateCommand<CameraItemInfoModel>(TakePhotoDelegate);
+        }
+
+        private async void TakePhotoDelegate(CameraItemInfoModel obj) {
+            if (obj.Camera is { } camera) {
+                camera.StopRealTimeImage();
+                obj.IsRealtimeImageEnabled = camera.IsRealtimeImageEnabled;
+                await camera.TakePhotoAsync(string.Empty, 0);
+            }
         }
 
         /// <summary>

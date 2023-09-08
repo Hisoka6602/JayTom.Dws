@@ -93,6 +93,8 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
 
         public event EventHandler<CameraUnregisteredEventArgs>? CameraUnregistered;
 
+        public event EventHandler<RealtimeImageEventArgs>? RealtimeImage;
+
         public async Task<KeyValuePair<bool, string>> Initialize(object param) {
             await Task.Yield();
             if (param is CameraInfo cameraInfo) {
@@ -105,7 +107,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                             await _snapRevPhotoSlim.WaitAsync();
                             var tryDequeue = _imageMessageQueue.TryDequeue(out var imageMessageInfo);
                             if (tryDequeue && imageMessageInfo is not null) {
-                                var thumbnailImage = imageBitmap?.GetThumbnailImage(1024, 768, () => false, IntPtr.Zero);
+                                var thumbnailImage = imageBitmap?.GetThumbnailImage(800, 600, () => false, IntPtr.Zero);
                                 OnPhotoTaken(new PhotoTakenEventArgs() {
                                     Timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds(),
                                     Barcode = imageMessageInfo.Barcode,
@@ -124,6 +126,17 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                         }
                         finally {
                             _snapRevPhotoSlim.Release();
+                        }
+                    });
+
+                    _baseDaHuatech.RegisterRealtimeFrameCallback(devInfo.SerialNumber, imageBitmap => {
+                        try {
+                            var thumbnailImage = imageBitmap?.GetThumbnailImage(800, 600, () => false, IntPtr.Zero);
+                            OnRealtimeImage(new RealtimeImageEventArgs() {
+                                ThumbImage = (Bitmap?)thumbnailImage
+                            });
+                        }
+                        catch (Exception e) {
                         }
                     });
                     OnCameraInitialized(new CameraInitializedEventArgs() {
@@ -196,6 +209,36 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
 
         public void SetParameters(Dictionary<string, object> parameters) {
             throw new NotImplementedException();
+        }
+
+        public bool IsRealtimeImageEnabled { get; private set; }
+
+        public async void StartRealTimeImage() {
+            if (Info is not null) {
+                var (key, value) = await _baseDaHuatech.StartRealtimePlay(Info.SerialNumber);
+                if (key) {
+                    IsRealtimeImageEnabled = true;
+                }
+                else {
+                    OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
+                        Exception = new Exception(value)
+                    });
+                }
+            }
+        }
+
+        public async void StopRealTimeImage() {
+            if (Info is not null) {
+                var (key, value) = await _baseDaHuatech.StopRealtimePlay(Info.SerialNumber);
+                if (key) {
+                    IsRealtimeImageEnabled = false;
+                }
+                else {
+                    OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
+                        Exception = new Exception(value)
+                    });
+                }
+            }
         }
 
         protected virtual async void OnCameraExceptionOccurred(CameraExceptionEventArgs e) {
@@ -338,6 +381,11 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
         protected virtual async void OnCameraUnregistered(CameraUnregisteredEventArgs e) {
             await Task.Yield();
             CameraUnregistered?.Invoke(this, e);
+        }
+
+        protected virtual async void OnRealtimeImage(RealtimeImageEventArgs e) {
+            await Task.Yield();
+            RealtimeImage?.Invoke(this, e);
         }
     }
 }

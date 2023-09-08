@@ -108,7 +108,7 @@
                         </Grid.RowDefinitions>
 
                         <!--  相机操作  -->
-                        <Button
+                        <!--<Button
                             Grid.Row="0"
                             Margin="10,2"
                             HorizontalAlignment="Left"
@@ -139,7 +139,67 @@
                                     Visibility="Hidden"
                                     Value="0" />
                             </Grid>
-                        </Button>
+                        </Button>-->
+                        <!--  相机操作-开关实时流、拍照  -->
+                        <StackPanel
+                            Grid.Row="0"
+                            Margin="10,5,10,0"
+                            Orientation="Horizontal">
+                            <Button
+                                Width="40"
+                                Height="30"
+                                Margin="0"
+                                Padding="0"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                materialDesign:ButtonAssist.CornerRadius="15,0,0,15"
+                                materialDesign:ShadowAssist.ShadowEdges="Right"
+                                Background="#3C3C3C"
+                                Command="{Binding SwitchRealtimeImageCommand}"
+                                CommandParameter="{Binding}"
+                                Style="{StaticResource ButtonFocusEnlargeStyle}"
+                                ToolTip="开关实时画面">
+                                <TextBlock
+                                    Name="SwitchRealtimeImageBlock"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    FontFamily="pack://application:,,,/Fonts/#iconfont"
+                                    FontSize="20"
+                                    Foreground="FloralWhite"
+                                    Opacity="0.6"
+                                    Text="&#xea82;"
+                                    Visibility="Visible" />
+                            </Button>
+                            <Border
+                                Width="1"
+                                Height="20"
+                                BorderBrush="Transparent"
+                                BorderThickness="1" />
+                            <Button
+                                Width="40"
+                                Height="30"
+                                Margin="0"
+                                Padding="0"
+                                materialDesign:ButtonAssist.CornerRadius="0,15,15,0"
+                                materialDesign:ShadowAssist.ShadowEdges="Right"
+                                Background="#3C3C3C"
+                                Command="{Binding TakePhotoCommand}"
+                                CommandParameter="{Binding}"
+                                Style="{StaticResource ButtonFocusEnlargeStyle}"
+                                ToolTip="拍照">
+                                <TextBlock
+                                    Margin="2"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    FontFamily="pack://application:,,,/Fonts/#IconFont"
+                                    FontSize="20"
+                                    FontWeight="UltraLight"
+                                    Foreground="White"
+                                    Opacity="0.6"
+                                    RenderTransformOrigin=".5,.5"
+                                    Text="&#xe772;" />
+                            </Button>
+                        </StackPanel>
                         <!--  帧率  -->
                         <StackPanel
                             Grid.Row="0"
@@ -217,13 +277,19 @@
             </Grid>
         </materialDesign:Card>
         <DataTemplate.Triggers>
+            <DataTrigger Binding="{Binding IsRealtimeImageEnabled}" Value="True">
+                <Setter TargetName="SwitchRealtimeImageBlock" Property="Text" Value="&#xe774;" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding IsRealtimeImageEnabled}" Value="False">
+                <Setter TargetName="SwitchRealtimeImageBlock" Property="Text" Value="&#xea82;" />
+            </DataTrigger>
             <DataTrigger Binding="{Binding IsSwitchingState}" Value="True">
-                <Setter TargetName="StatusBlock" Property="Visibility" Value="Hidden" />
-                <Setter TargetName="StatusProgressBar" Property="Visibility" Value="Visible" />
+                <!--<Setter TargetName="StatusBlock" Property="Visibility" Value="Hidden" />
+                <Setter TargetName="StatusProgressBar" Property="Visibility" Value="Visible" />-->
             </DataTrigger>
             <DataTrigger Binding="{Binding IsSwitchingState}" Value="False">
-                <Setter TargetName="StatusBlock" Property="Visibility" Value="Visible" />
-                <Setter TargetName="StatusProgressBar" Property="Visibility" Value="Hidden" />
+                <!--<Setter TargetName="StatusBlock" Property="Visibility" Value="Visible" />
+                <Setter TargetName="StatusProgressBar" Property="Visibility" Value="Hidden" />-->
             </DataTrigger>
             <DataTrigger Binding="{Binding Status}" Value="Disconnected">
                 <Setter TargetName="PackImage" Property="Visibility" Value="Hidden" />

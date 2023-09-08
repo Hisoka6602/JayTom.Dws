@@ -107,6 +107,8 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
 
         public event EventHandler<CameraUnregisteredEventArgs>? CameraUnregistered;
 
+        public event EventHandler<RealtimeImageEventArgs>? RealtimeImage;
+
         public async Task<KeyValuePair<bool, string>> Initialize(object param) {
             await Task.Yield();
             if (_mvCodeReader != null) {
@@ -271,6 +273,28 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
             throw new NotImplementedException();
         }
 
+        public bool IsRealtimeImageEnabled { get; private set; }
+
+        public void StartRealTimeImage() {
+            IsRealtimeImageEnabled = true;
+        }
+
+        public void StopRealTimeImage() {
+            IsRealtimeImageEnabled = false;
+        }
+
+        public event EventHandler<PhotoTakenEventArgs>? PhotoTaken;
+
+        public Task TakePhotoAsync(string barcode, long barcodeTimestamp, CancellationToken cancellation = default) {
+            throw new NotImplementedException();
+        }
+
+        public Task TakePhotoAsync(string barcode, long barcodeTimestamp, TimeSpan delay, CancellationToken cancellation = default) {
+            throw new NotImplementedException();
+        }
+
+        public int TakePhotoDelay { get; set; }
+
         public int BarcodeBorderSize { get; set; } = 5;
         public Color BarcodeBorderColor { get; set; } = Color.LawnGreen;
         public bool IsShowBarcodeBorder { get; set; } = true;
@@ -340,10 +364,10 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                         }
 
                         //锁半秒
-                        if (DateTime.Now.Subtract(_lockDateTime).TotalMilliseconds >= 500) {
+                        if (DateTime.Now.Subtract(_lockDateTime).TotalMilliseconds >= 100) {
                             _lockDateTime = DateTime.Now;
                             var bmp = await GetBitmapAsync(pData, _bufForDriver, stFrameInfoEx2);
-                            var thumbnailImage = bmp?.GetThumbnailImage(1024, 768, () => false, IntPtr.Zero);
+                            var thumbnailImage = bmp?.GetThumbnailImage(800, 600, () => false, IntPtr.Zero);
                             var stBcrResultEx2 =
                                 (MvCodeReader.MV_CODEREADER_RESULT_BCR_EX2)(Marshal.PtrToStructure(
                                                                                 stFrameInfoEx2.UnparsedBcrList
@@ -429,6 +453,13 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                                     ScanTime = localTime.DateTime
                                 });
                             }
+
+                            if (IsRealtimeImageEnabled) {
+                                OnRealtimeImage(new RealtimeImageEventArgs() {
+                                    ThumbImage = (Bitmap?)thumbnailImage,
+                                    Timestamp = timestamp
+                                });
+                            }
                         }
                     }
 
@@ -477,7 +508,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                     }
             }
             if (!IsOriginalImageOut) {
-                bmp = (Bitmap?)bmp?.GetThumbnailImage(1024, 768, () => false, IntPtr.Zero);
+                bmp = (Bitmap?)bmp?.GetThumbnailImage(800, 600, () => false, IntPtr.Zero);
             }
 
             return bmp;
@@ -552,6 +583,11 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
             await Task.Yield();
             Status = CameraStatus.Disconnected;
             CameraDisconnected?.Invoke(this, e);
+        }
+
+        protected virtual async void OnRealtimeImage(RealtimeImageEventArgs e) {
+            await Task.Yield();
+            RealtimeImage?.Invoke(this, e);
         }
     }
 }
