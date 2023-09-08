@@ -231,6 +231,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
         public bool IsRealtimeImageEnabled { get; private set; }
 
         public void StartRealTimeImage() {
+            //先设置自由拉流模式,再开放实时
             IsRealtimeImageEnabled = true;
         }
 
