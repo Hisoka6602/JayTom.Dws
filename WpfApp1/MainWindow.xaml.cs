@@ -97,7 +97,9 @@ namespace WpfApp1 {
 
             _camera = new HuaraytechSmartCamera();
             _camera.Connected += async delegate (object? o, IDevice device) {
-                await Application.Current.Dispatcher.InvokeAsync(() => { CodeInfoListView.Items.Add("设备已连接"); });
+                await Application.Current.Dispatcher.InvokeAsync(() => {
+                    CodeInfoListView.Items.Add("设备已连接");
+                });
             };
             _camera.Excepted += async delegate (object? o, Exception exception) {
                 await Application.Current.Dispatcher.InvokeAsync(() => { CodeInfoListView.Items.Add(exception.Message); });
@@ -125,6 +127,13 @@ namespace WpfApp1 {
                         // 使用缩略图更新CameraImage.Source
                         CameraImage.Source = bitmapSource;
                     }, DispatcherPriority.Background);
+                    HwndSource? hwndSource = PresentationSource.FromVisual(CameraImage) as HwndSource;
+
+                    // 获取控件的句柄
+                    IntPtr controlHandle = hwndSource.Handle;
+
+                    // 在控制台输出句柄值
+                    Console.WriteLine($"控件句柄值：{controlHandle}");
                 }
                 finally {
                     semaphoreSlim.Release();
