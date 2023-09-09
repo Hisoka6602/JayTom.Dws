@@ -54,7 +54,9 @@ using JayTom.Dws.Infrastructure.Repository.LocalData;
 using JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision;
 using JayTom.Dws.Client.HomeToolPlugin.SunnenPlugin.Views;
 using JayTom.Dws.Client.HomeToolPlugin.SunnenPlugin.ViewModels;
+using JayTom.Dws.Client.Views.Pages.Preferences.ApiConfiguration;
 using JayTom.Dws.Client.Views.Pages.Preferences.CameraConfiguration;
+using JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration;
 using JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration;
 
 namespace JayTom.Dws.Client {
@@ -184,7 +186,7 @@ namespace JayTom.Dws.Client {
                         });
                         //Api接口注册
 
-                        services.AddSingleton<IDataUploader, HttpBaseDataUploadApi>();
+                        services.AddSingleton<IDataUploader, DefaultApi>();
 
                         /*services.AddSingleton<IDataUploader, WeciMexicoDvApi>();
                         services.AddSingleton<ITcpCommunication, TcpCommunication>();
@@ -262,6 +264,9 @@ namespace JayTom.Dws.Client {
             ViewModelLocationProvider.Register<VolumeSettingsPage, VolumeSettingsViewModel>();
             ViewModelLocationProvider.Register<LogManagerPage, LogManagerViewModel>();
             ViewModelLocationProvider.Register<VideoCameraSettingsDialog, VideoCameraSettingsViewModel>();
+
+            //接口
+            ViewModelLocationProvider.Register<DefaultApiPage, DefaultApiPageViewModel>();
             //其他插件
             {
                 ViewModelLocationProvider.Register<SunnenInputBarcodeControl, SunnenInputBarcodeViewModel>();

@@ -23,12 +23,17 @@ namespace JayTom.Dws.Client.DataTemplateSelectors {
         /// 分隔符
         /// </summary>
         public DataTemplate? SeparatorTemplate { get; set; }
+        /// <summary>
+        /// 自定义内容
+        /// </summary>
+        public DataTemplate? CustomTemplate { get; set; }
         public override DataTemplate? SelectTemplate(object item, DependencyObject container) {
             if (item is not ItemBaseTemplateModel itemTyeItem) return null;
             return itemTyeItem.Type switch {
                 0 => TextBoxTemplate,
                 1 => ButtonTemplate,
                 2 => SeparatorTemplate,
+                3 => CustomTemplate,
                 _ => null
             };
         }

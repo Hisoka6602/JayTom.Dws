@@ -50,5 +50,10 @@ namespace JayTom.Dws.Domain.Dto.BaseInfoModels {
         /// 体积输入
         /// </summary>
         VolumeInput = 4,
+
+        /// <summary>
+        /// Api数据
+        /// </summary>
+        ApiData = 5,
     }
 }

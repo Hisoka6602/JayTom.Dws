@@ -6,8 +6,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
 
-namespace JayTom.Dws.Client.Models.ImageSettingModels
-{
+namespace JayTom.Dws.Client.Models.ImageSettingModels {
     public class ItemBaseTemplateModel : BindableBase {
         private int _id;
         private int _type;
@@ -23,7 +22,7 @@ namespace JayTom.Dws.Client.Models.ImageSettingModels
         }
 
         /// <summary>
-        /// 类型(0=编辑框、1=按钮)
+        /// 类型(0=编辑框、1=按钮、2=分隔符、3=自定义)
         /// </summary>
         public int Type {
             get => _type;

@@ -1,25 +1,95 @@
 ﻿<Page
-    x:Class="JayTom.Dws.Client.Views.Pages.Preferences.ApiConfiguration.BaseApiPage"
+    x:Class="JayTom.Dws.Client.Views.Pages.Preferences.ApiConfiguration.DefaultApiPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:apiConverter="clr-namespace:JayTom.Dws.Client.Converters.ApiConverter"
+    xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:dataTemplateSelectors="clr-namespace:JayTom.Dws.Client.DataTemplateSelectors"
+    xmlns:imageSettingModels="clr-namespace:JayTom.Dws.Client.Models.ImageSettingModels"
     xmlns:local="clr-namespace:JayTom.Dws.Client.Views.Pages.Preferences.ApiConfiguration"
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:mvvm="http://prismlibrary.com/"
+    xmlns:settingsConverter="clr-namespace:JayTom.Dws.Client.Converters.SettingsConverter"
+    Name="DefaultApiView"
     Title="BaseApiPage"
     d:DesignHeight="450"
     d:DesignWidth="800"
     mvvm:ViewModelLocator.AutoWireViewModel="True"
     FontFamily="{StaticResource CustomFontFamily}"
     mc:Ignorable="d">
-
+    <Page.Resources>
+        <settingsConverter:ShortcutMacroConverter x:Key="ShortcutMacroConverter" />
+        <apiConverter:ResponseValidationModeToBooleanConverter x:Key="ResponseValidationModeToBooleanConverter" />
+        <DataTemplate x:Key="ImageSettingButtonTemplate" DataType="{x:Type imageSettingModels:ItemBaseTemplateModel}">
+            <Button
+                Height="25"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                VerticalContentAlignment="Center"
+                materialDesign:ButtonAssist.CornerRadius="12"
+                Background="DodgerBlue"
+                BorderThickness="0"
+                Command="{Binding DataContext.RemoveTemplateItemCommand, ElementName=DefaultApiView}"
+                CommandParameter="{Binding}"
+                Focusable="False"
+                Style="{StaticResource MaterialDesignRaisedDarkButton}">
+                <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{Binding Content, Converter={StaticResource ShortcutMacroConverter}}" />
+            </Button>
+        </DataTemplate>
+        <DataTemplate x:Key="SeparatorTemplate" DataType="{x:Type imageSettingModels:ItemBaseTemplateModel}">
+            <Button
+                Height="25"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                VerticalContentAlignment="Center"
+                materialDesign:ButtonAssist.CornerRadius="12"
+                Background="BlueViolet"
+                BorderThickness="0"
+                Command="{Binding DataContext.RemoveTemplateItemCommand, ElementName=DefaultApiView}"
+                CommandParameter="{Binding}"
+                Focusable="False"
+                Foreground="White"
+                Style="{StaticResource MaterialDesignRaisedDarkButton}">
+                <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{Binding Content}" />
+            </Button>
+        </DataTemplate>
+        <DataTemplate x:Key="CustomTemplate" DataType="{x:Type imageSettingModels:ItemBaseTemplateModel}">
+            <Button
+                Height="25"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                VerticalContentAlignment="Center"
+                materialDesign:ButtonAssist.CornerRadius="12"
+                Background="ForestGreen"
+                BorderThickness="0"
+                Command="{Binding DataContext.RemoveTemplateItemCommand, ElementName=DefaultApiView}"
+                CommandParameter="{Binding}"
+                Focusable="False"
+                Foreground="White"
+                Style="{StaticResource MaterialDesignRaisedDarkButton}">
+                <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{Binding Content}" />
+            </Button>
+        </DataTemplate>
+        <dataTemplateSelectors:ImageSettingItemDataTemplateSelectors
+            x:Key="DefaultApiDataTemplateSelectors"
+            ButtonTemplate="{StaticResource ImageSettingButtonTemplate}"
+            CustomTemplate="{StaticResource CustomTemplate}"
+            SeparatorTemplate="{StaticResource SeparatorTemplate}" />
+    </Page.Resources>
+    <b:Interaction.Triggers>
+        <b:EventTrigger EventName="Loaded" SourceName="DefaultApiView">
+            <b:InvokeCommandAction Command="{Binding LoadedCommand, IsAsync=False}" CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Page}}}" />
+        </b:EventTrigger>
+    </b:Interaction.Triggers>
     <Grid Margin="10,10">
         <Grid.RowDefinitions>
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
+        <!--  内容  -->
         <StackPanel
             Grid.Row="0"
             VerticalAlignment="Top"
@@ -62,7 +132,7 @@
                             materialDesign:ButtonAssist.CornerRadius="15"
                             Background="DarkGray"
                             BorderThickness="0"
-                            Command="{Binding AddOutputItemCommand}"
+                            Command="{Binding AddDataItemCommand}"
                             CommandParameter="'{BarCode}'"
                             Focusable="False"
                             Style="{StaticResource MaterialDesignRaisedDarkButton}">
@@ -74,7 +144,7 @@
                             materialDesign:ButtonAssist.CornerRadius="15"
                             Background="DarkGray"
                             BorderThickness="0"
-                            Command="{Binding AddOutputItemCommand}"
+                            Command="{Binding AddDataItemCommand}"
                             CommandParameter="'{Weight}'"
                             Focusable="False"
                             Style="{StaticResource MaterialDesignRaisedDarkButton}">
@@ -86,7 +156,7 @@
                             materialDesign:ButtonAssist.CornerRadius="15"
                             Background="DarkGray"
                             BorderThickness="0"
-                            Command="{Binding AddOutputItemCommand}"
+                            Command="{Binding AddDataItemCommand}"
                             CommandParameter="'{ScanTime}'"
                             Focusable="False"
                             Style="{StaticResource MaterialDesignRaisedDarkButton}">
@@ -98,7 +168,7 @@
                             materialDesign:ButtonAssist.CornerRadius="15"
                             Background="DarkGray"
                             BorderThickness="0"
-                            Command="{Binding AddOutputItemCommand}"
+                            Command="{Binding AddDataItemCommand}"
                             CommandParameter="'{TimestampedGuid}'"
                             Focusable="False"
                             Style="{StaticResource MaterialDesignRaisedDarkButton}">
@@ -110,7 +180,7 @@
                             materialDesign:ButtonAssist.CornerRadius="15"
                             Background="DarkGray"
                             BorderThickness="0"
-                            Command="{Binding AddOutputItemCommand}"
+                            Command="{Binding AddDataItemCommand}"
                             CommandParameter="'{Length}'"
                             Focusable="False"
                             Style="{StaticResource MaterialDesignRaisedDarkButton}">
@@ -122,7 +192,7 @@
                             materialDesign:ButtonAssist.CornerRadius="15"
                             Background="DarkGray"
                             BorderThickness="0"
-                            Command="{Binding AddOutputItemCommand}"
+                            Command="{Binding AddDataItemCommand}"
                             CommandParameter="'{Width}'"
                             Focusable="False"
                             Style="{StaticResource MaterialDesignRaisedDarkButton}">
@@ -134,7 +204,7 @@
                             materialDesign:ButtonAssist.CornerRadius="15"
                             Background="DarkGray"
                             BorderThickness="0"
-                            Command="{Binding AddOutputItemCommand}"
+                            Command="{Binding AddDataItemCommand}"
                             CommandParameter="'{Height}'"
                             Focusable="False"
                             Style="{StaticResource MaterialDesignRaisedDarkButton}">
@@ -146,27 +216,19 @@
                             materialDesign:ButtonAssist.CornerRadius="15"
                             Background="DarkGray"
                             BorderThickness="0"
-                            Command="{Binding AddOutputItemCommand}"
+                            Command="{Binding AddDataItemCommand}"
                             CommandParameter="'{Volume}'"
                             Focusable="False"
                             Style="{StaticResource MaterialDesignRaisedDarkButton}">
                             <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="体积" />
                         </Button>
-                        <Button
-                            Height="30"
+                        <Border
                             Margin="5,0"
-                            materialDesign:ButtonAssist.CornerRadius="15"
-                            Background="DarkGray"
-                            BorderThickness="0"
-                            Command="{Binding AddOutputItemCommand}"
-                            CommandParameter="'{CameraSerialNumber}'"
-                            Focusable="False"
-                            Style="{StaticResource MaterialDesignRaisedDarkButton}">
-                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="相机序列号" />
-                        </Button>
-                        <Border Background="BlueViolet" CornerRadius="15">
+                            Background="ForestGreen"
+                            CornerRadius="15">
                             <StackPanel Orientation="Horizontal">
                                 <TextBox
+                                    Name="CustomContentTextBox"
                                     Width="40"
                                     Height="30"
                                     MaxWidth="40"
@@ -178,8 +240,6 @@
                                     FontSize="13"
                                     FontWeight="Bold"
                                     Foreground="White"
-                                    InputMethod.IsInputMethodEnabled="False"
-                                    Text="{Binding VolumeSettingsInfo.Separator, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                     TextAlignment="Center" />
                                 <Border
                                     Width="1"
@@ -194,12 +254,12 @@
                                     materialDesign:ButtonAssist.CornerRadius="0,15,15,0"
                                     Background="Transparent"
                                     BorderThickness="0"
-                                    Command="{Binding AddSeparatorItemCommand}"
-                                    CommandParameter="{Binding VolumeSettingsInfo.Separator}"
+                                    Command="{Binding AddCustomItemCommand}"
+                                    CommandParameter="{Binding ElementName=CustomContentTextBox, Path=Text}"
                                     Focusable="False"
                                     Foreground="White"
                                     Style="{StaticResource MaterialDesignRaisedDarkButton}">
-                                    <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="分隔符" />
+                                    <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="自定义" />
                                 </Button>
                             </StackPanel>
                         </Border>
@@ -228,12 +288,13 @@
                                 Text="内容" />
                         </Border>
                         <ListView
-                            Width="845"
+                            Width="740"
                             Height="30"
-                            MaxWidth="900"
+                            MaxWidth="990"
                             Margin="50,0,0,0"
                             Focusable="False"
-                            ItemsSource="{Binding VolumeSettingsInfo.DataTemplate, UpdateSourceTrigger=PropertyChanged}"
+                            ItemTemplateSelector="{StaticResource DefaultApiDataTemplateSelectors}"
+                            ItemsSource="{Binding DefaultApiInfo.DataTemplate, UpdateSourceTrigger=PropertyChanged}"
                             ScrollViewer.HorizontalScrollBarVisibility="Hidden"
                             ScrollViewer.VerticalScrollBarVisibility="Hidden"
                             SelectionMode="Extended">
@@ -292,15 +353,18 @@
                         Foreground="DarkGray"
                         Text="是否使用Json格式上传:" />
                     <ToggleButton
-                        Name="TcpToggleButton"
+                        Name="IsUseJsonUploadToggleButton"
                         materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
                         materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
                         Focusable="False"
-                        IsChecked="{Binding IsUseTcpInput, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                        IsChecked="{Binding DefaultApiInfo.IsUseJsonUpload, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                         Style="{StaticResource MaterialDesignSwitchToggleButton}" />
                 </StackPanel>
                 <!--  支持的内容格式  -->
-                <StackPanel Margin="50,10,0,0" Orientation="Vertical">
+                <StackPanel
+                    Margin="50,10,0,0"
+                    Orientation="Vertical"
+                    Visibility="{Binding ElementName=IsUseJsonUploadToggleButton, Path=IsChecked, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <TextBlock
                         Margin="5,0"
                         VerticalAlignment="Center"
@@ -330,7 +394,7 @@
                             Foreground="White"
                             IsReadOnly="True"
                             Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                            Text="{Binding ExampleJson, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
+                            Text="{Binding JsonContent, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
                             TextWrapping="Wrap"
                             VerticalScrollBarVisibility="Auto" />
                     </Border>
@@ -383,7 +447,7 @@
                                 FontWeight="Bold"
                                 Foreground="White"
                                 InputMethod.IsInputMethodEnabled="False"
-                                Text="{Binding HttpUploadSettingsInfo.Url, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                                Text="{Binding DefaultApiInfo.Url, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                         </Border>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal">
@@ -415,7 +479,7 @@
                                 FontWeight="Bold"
                                 Foreground="White"
                                 InputMethod.IsInputMethodEnabled="False"
-                                Text="{Binding HttpUploadSettingsInfo.Timeout, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                                Text="{Binding DefaultApiInfo.Timeout, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                         </Border>
                     </StackPanel>
                 </StackPanel>
@@ -439,12 +503,227 @@
                         Foreground="DarkGray"
                         Text="返回成功验证:" />
                 </StackPanel>
-                <!--  包含内容  -->
-                <StackPanel Orientation="Vertical" />
-
-                <!--  完全匹配  -->
-                <!--  正则验证  -->
+                <StackPanel Margin="50,5,0,0" Orientation="Horizontal">
+                    <StackPanel Orientation="Vertical">
+                        <!--  完全匹配  -->
+                        <RadioButton
+                            Name="ExactMatchRadioButton"
+                            Content="完全匹配"
+                            Focusable="False"
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="DarkGray"
+                            IsChecked="{Binding DefaultApiInfo.ValidationMode, Converter={StaticResource ResponseValidationModeToBooleanConverter}, ConverterParameter=CompleteMatch}"
+                            Style="{StaticResource MaterialDesignRadioButton}" />
+                        <StackPanel
+                            Margin="50,0,0,0"
+                            IsEnabled="{Binding ElementName=ExactMatchRadioButton, Path=IsChecked}"
+                            Orientation="Horizontal">
+                            <StackPanel Orientation="Horizontal">
+                                <!--  图标  -->
+                                <TextBlock
+                                    Margin="5,0"
+                                    VerticalAlignment="Center"
+                                    FontSize="13"
+                                    FontWeight="Bold"
+                                    Foreground="DarkGray"
+                                    Text="响应的内容:" />
+                                <Border
+                                    Margin="5"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Background="#1A696969"
+                                    CornerRadius="5">
+                                    <TextBox
+                                        Width="360"
+                                        Height="30"
+                                        MaxWidth="500"
+                                        Margin="5,0"
+                                        materialDesign:TextFieldAssist.HasClearButton="True"
+                                        materialDesign:TextFieldAssist.HasFilledTextField="True"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        FontSize="13"
+                                        FontWeight="Bold"
+                                        Foreground="White"
+                                        Text="{Binding DefaultApiInfo.CompleteMatch, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                                </Border>
+                            </StackPanel>
+                        </StackPanel>
+                        <!--  包含字符串  -->
+                        <RadioButton
+                            Name="ContainsStringRadioButton"
+                            Content="包含字符串"
+                            Focusable="False"
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="DarkGray"
+                            IsChecked="{Binding DefaultApiInfo.ValidationMode, Converter={StaticResource ResponseValidationModeToBooleanConverter}, ConverterParameter=StringContains}"
+                            Style="{StaticResource MaterialDesignRadioButton}" />
+                        <StackPanel
+                            Margin="50,0,0,0"
+                            IsEnabled="{Binding ElementName=ContainsStringRadioButton, Path=IsChecked}"
+                            Orientation="Horizontal">
+                            <StackPanel Orientation="Horizontal">
+                                <!--  图标  -->
+                                <TextBlock
+                                    Margin="5,0"
+                                    VerticalAlignment="Center"
+                                    FontSize="13"
+                                    FontWeight="Bold"
+                                    Foreground="DarkGray"
+                                    Text="包含的内容:" />
+                                <Border
+                                    Margin="5"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Background="#1A696969"
+                                    CornerRadius="5">
+                                    <TextBox
+                                        Width="360"
+                                        Height="30"
+                                        MaxWidth="500"
+                                        Margin="5,0"
+                                        materialDesign:TextFieldAssist.HasClearButton="True"
+                                        materialDesign:TextFieldAssist.HasFilledTextField="True"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        FontSize="13"
+                                        FontWeight="Bold"
+                                        Foreground="White"
+                                        Text="{Binding DefaultApiInfo.StringContains, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                                </Border>
+                            </StackPanel>
+                        </StackPanel>
+                        <!--  正则匹配  -->
+                        <RadioButton
+                            Name="RegularExpressionRadioButton"
+                            Content="正则匹配"
+                            Focusable="False"
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="DarkGray"
+                            IsChecked="{Binding DefaultApiInfo.ValidationMode, Converter={StaticResource ResponseValidationModeToBooleanConverter}, ConverterParameter=RegularExpression}"
+                            Style="{StaticResource MaterialDesignRadioButton}" />
+                        <StackPanel
+                            Margin="50,0,0,0"
+                            IsEnabled="{Binding ElementName=RegularExpressionRadioButton, Path=IsChecked}"
+                            Orientation="Horizontal">
+                            <StackPanel Orientation="Horizontal">
+                                <!--  图标  -->
+                                <TextBlock
+                                    Margin="5,0"
+                                    VerticalAlignment="Center"
+                                    FontSize="13"
+                                    FontWeight="Bold"
+                                    Foreground="DarkGray"
+                                    Text="正则表达式:" />
+                                <Border
+                                    Margin="5"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Background="#1A696969"
+                                    CornerRadius="5">
+                                    <TextBox
+                                        Width="360"
+                                        Height="30"
+                                        MaxWidth="500"
+                                        Margin="5,0"
+                                        materialDesign:TextFieldAssist.HasClearButton="True"
+                                        materialDesign:TextFieldAssist.HasFilledTextField="True"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        FontSize="13"
+                                        FontWeight="Bold"
+                                        Foreground="White"
+                                        Text="{Binding DefaultApiInfo.RegularExpression, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                                </Border>
+                            </StackPanel>
+                        </StackPanel>
+                    </StackPanel>
+                </StackPanel>
             </StackPanel>
         </StackPanel>
+        <!--  保存按钮  -->
+        <Button
+            Grid.Row="1"
+            Grid.Column="0"
+            Width="110"
+            MinHeight="30"
+            Margin="30,10"
+            HorizontalAlignment="Left"
+            materialDesign:ButtonAssist.CornerRadius="5"
+            Background="#2E2E2E"
+            BorderThickness="0"
+            Command="{Binding SaveSettingsCommand}"
+            FocusVisualStyle="{x:Null}"
+            Style="{StaticResource MaterialDesignFlatAccentBgButton}">
+
+            <Grid>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock
+                        Margin="0,0,0,0"
+                        VerticalAlignment="Center"
+                        FontFamily="{StaticResource IconFontFamily}"
+                        FontSize="18"
+                        Foreground="DarkGray"
+                        Text="&#xe66e;" />
+                    <TextBlock
+                        Margin="2,1,0,0"
+                        VerticalAlignment="Center"
+                        FontFamily="{StaticResource CustomFontFamily}"
+                        FontSize="14"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="保存设置" />
+                    <StackPanel.Style>
+                        <Style TargetType="StackPanel">
+                            <Setter Property="Visibility" Value="Visible" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsSavingInProgress}" Value="True">
+                                    <Setter Property="Visibility" Value="Hidden" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding IsSavingInProgress}" Value="False">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </StackPanel.Style>
+                </StackPanel>
+                <ProgressBar
+                    Name="StatusProgressBar"
+                    Width="25"
+                    Height="25"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    IsIndeterminate="True"
+                    Value="0">
+                    <ProgressBar.Style>
+                        <Style BasedOn="{StaticResource MaterialDesignCircularProgressBar}" TargetType="ProgressBar">
+                            <Setter Property="Visibility" Value="Hidden" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsSavingInProgress}" Value="True">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding IsSavingInProgress}" Value="False">
+                                    <Setter Property="Visibility" Value="Hidden" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ProgressBar.Style>
+                </ProgressBar>
+            </Grid>
+        </Button>
+        <!--  提示框  -->
+        <materialDesign:Snackbar
+            Grid.Row="1"
+            Grid.RowSpan="2"
+            Width="Auto"
+            Height="Auto"
+            VerticalAlignment="Bottom"
+            Background="BlueViolet"
+            FontFamily="LoadFiraCode"
+            FontWeight="Bold"
+            MessageQueue="{Binding DefaultApiMessageQueue}" />
     </Grid>
 </Page>

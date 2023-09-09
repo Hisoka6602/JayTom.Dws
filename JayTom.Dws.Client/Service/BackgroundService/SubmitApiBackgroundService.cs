@@ -1,13 +1,19 @@
 ﻿using System;
+using DryIoc;
 using System.Linq;
 using System.Text;
 using System.Drawing;
+using Newtonsoft.Json;
+using System.Net.Http;
 using System.Threading;
 using JayTom.Dws.Interface;
+using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using JayTom.Dws.Domain.Dto.ApiDto;
 using System.Collections.Concurrent;
 using JayTom.Dws.Client.EventMediators;
+using JayTom.Dws.Domain.Repository.LocalConf;
 using static JayTom.Dws.Client.Service.BackgroundService.ScanProcessBackgroundService;
 
 namespace JayTom.Dws.Client.Service.BackgroundService {
@@ -16,12 +22,15 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
     /// Api提交处理器
     /// </summary>
     public class SubmitApiBackgroundService : Microsoft.Extensions.Hosting.BackgroundService {
-        private readonly IDataUploader _dataUploader;
+        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly IConfigRepository _configRepository;
         private ConcurrentQueue<SubmitItemInfo> _submitItems = new();
+        private ApiSettingsDto? _apiSettingsDto;
+        private static DefaultApi.DefaultApiParameters _defaultApiParameters = new();
 
-        public SubmitApiBackgroundService(IDataUploader dataUploader) {
-            _dataUploader = dataUploader;
-            //ScanBarCodeInfo
+        public SubmitApiBackgroundService(IHttpClientFactory httpClientFactory, IConfigRepository configRepository) {
+            _httpClientFactory = httpClientFactory;
+            _configRepository = configRepository;
             EventAggregator.Instance.Subscribe<ScanBarCodeInfo>(item => {
                 if (item is ScanBarCodeInfo model) {
                     _submitItems.Enqueue(new SubmitItemInfo() {
@@ -36,30 +45,135 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     });
                 }
             });
+            EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async item => {
+                if (item is SettingsChangedEvent model) {
+                    if (model.SettingsName.Equals("ApiSettings")) {
+                        var configInfoModel = await _configRepository.FirstOrDefault(f => f.ConfigName.Equals("ApiSettings"));
+                        if (configInfoModel is not null) {
+                            try {
+                                _apiSettingsDto = JsonConvert.DeserializeObject<ApiSettingsDto>(configInfoModel.Value);
+                            }
+                            catch (Exception e) {
+                                //抛出异常事件
+                                Console.WriteLine(e);
+                            }
+                        }
+                    }
+                    else if (model.SettingsName.Equals("DefaultApiParameters")) {
+                        //默认上传接口改参数
+                        var configInfoModel = await _configRepository.FirstOrDefault(f => f.ConfigName.Equals("DefaultApiParameters"));
+                        if (configInfoModel is not null) {
+                            try {
+                                var defaultApiDto = JsonConvert.DeserializeObject<DefaultApiDto>(configInfoModel.Value);
+                                if (defaultApiDto != null) {
+                                    _defaultApiParameters = new DefaultApi.DefaultApiParameters() {
+                                        CompleteMatch = defaultApiDto.CompleteMatch,
+                                        IsUseJsonUpload = defaultApiDto.IsUseJsonUpload,
+                                        JsonTemplate = defaultApiDto.JsonTemplate,
+                                        RegularExpression = defaultApiDto.RegularExpression,
+                                        StringContains = defaultApiDto.StringContains,
+                                        Timeout = defaultApiDto.Timeout,
+                                        StringTemplate = defaultApiDto.StringTemplate,
+                                        Url = defaultApiDto.Url,
+                                        ValidationMode = (int)defaultApiDto.ValidationMode,
+                                    };
+                                }
+                            }
+                            catch (Exception e) {
+                                //抛出异常事件
+                                Console.WriteLine(e);
+                            }
+                        }
+                    }
+                }
+            });
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
+            //读参数
+            await ReadDefaultConfig();
             while (!stoppingToken.IsCancellationRequested) {
                 //取出
                 //需要判断用户选择的接口和参数设置
                 var tryDequeue = _submitItems.TryDequeue(out var info);
+
                 if (tryDequeue && info is not null) {
                     //上传
-                    var uploadResponse = await _dataUploader.UploadData(info.Barcode ?? string.Empty,
-                        info.Weight, info.ScanTime,
-                        info.Length, info.Width,
-                        info.Height, info.Volume,
-                        info.Image, info.PanoramaImage,
-                        stoppingToken);
-                    //临时单线程
-                    EventAggregator.Instance.Publish(new ApiResponseReceived {
-                        Barcode = info.Barcode,
-                        ScanTime = info.ScanTime,
-                        UploadResponse = uploadResponse
+                    //判断上传接口
+                    Task.Run(async () => {
+                        IDataUploader uploader;
+                        switch (_apiSettingsDto?.Type) {
+                            case ApiType.None:
+                                return;
+
+                            case ApiType.DefaultApi: {
+                                    //基础接口
+                                    uploader = new DefaultApi(_httpClientFactory);
+                                    //设置参数
+                                    var (key, value) = await uploader.SetParameters(_defaultApiParameters);
+                                    if (key) {
+                                        var uploadResponse = await uploader.UploadData(info.Barcode ?? string.Empty,
+                                            info.Weight, info.ScanTime,
+                                            info.Length, info.Width,
+                                            info.Height, info.Volume,
+                                            info.Image, info.PanoramaImage,
+                                            stoppingToken);
+                                        //临时单线程
+                                        EventAggregator.Instance.Publish(new ApiResponseReceived {
+                                            Barcode = info.Barcode,
+                                            ScanTime = info.ScanTime,
+                                            UploadResponse = uploadResponse
+                                        });
+                                    }
+                                    else {
+                                        Console.WriteLine("设置参数失败!");
+                                    }
+
+                                    break;
+                                }
+                        }
                     });
                 }
 
                 await Task.Delay(10, stoppingToken);
+            }
+        }
+
+        private async Task ReadDefaultConfig() {
+            //上传类型
+            var configInfoModel = await _configRepository.FirstOrDefault(f => f.ConfigName.Equals("ApiSettings"));
+            if (configInfoModel is not null) {
+                try {
+                    _apiSettingsDto = JsonConvert.DeserializeObject<ApiSettingsDto>(configInfoModel.Value);
+                }
+                catch (Exception e) {
+                    //抛出异常事件
+                    Console.WriteLine(e);
+                }
+            }
+            //默认接口
+            configInfoModel = await _configRepository.FirstOrDefault(f => f.ConfigName.Equals("DefaultApiParameters"));
+            if (configInfoModel is not null) {
+                try {
+                    var defaultApiDto = JsonConvert.DeserializeObject<DefaultApiDto>(configInfoModel.Value);
+                    if (defaultApiDto != null) {
+                        _defaultApiParameters = new DefaultApi.DefaultApiParameters() {
+                            CompleteMatch = defaultApiDto.CompleteMatch,
+                            IsUseJsonUpload = defaultApiDto.IsUseJsonUpload,
+                            JsonTemplate = defaultApiDto.JsonTemplate,
+                            RegularExpression = defaultApiDto.RegularExpression,
+                            StringContains = defaultApiDto.StringContains,
+                            Timeout = defaultApiDto.Timeout,
+                            StringTemplate = defaultApiDto.StringTemplate,
+                            Url = defaultApiDto.Url,
+                            ValidationMode = (int)defaultApiDto.ValidationMode,
+                        };
+                    }
+                }
+                catch (Exception e) {
+                    //抛出异常事件
+                    Console.WriteLine(e);
+                }
             }
         }
 
