@@ -43,6 +43,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
 
         public DaHuaSmartCamera(CameraInfo info) {
             this.Info = info;
+            this.Info.Type = CameraType.SmartCamera;
         }
 
         public DaHuaSmartCamera() {

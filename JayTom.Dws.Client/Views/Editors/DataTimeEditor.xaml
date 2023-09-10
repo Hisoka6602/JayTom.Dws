@@ -59,7 +59,7 @@
                         Foreground="DodgerBlue"
                         materialDesign:CalendarAssist.HeaderBackground="DodgerBlue"
                         materialDesign:CalendarAssist.SelectionColor="DodgerBlue"
-                        
+
                         materialDesign:CalendarAssist.SelectionForegroundColor="DodgerBlue"
                     -->
                 </Calendar>
@@ -83,6 +83,13 @@
                 HorizontalAlignment="Right"
                 Background="{x:Null}"
                 Orientation="Horizontal">
+                <Button
+                    Command="{Binding NowCommand}"
+                    CommandParameter="2"
+                    Foreground="DimGray"
+                    Style="{DynamicResource MaterialDesignFlatButton}">
+                    Now
+                </Button>
                 <Button
                     Command="{Binding TodayCommand}"
                     CommandParameter="2"

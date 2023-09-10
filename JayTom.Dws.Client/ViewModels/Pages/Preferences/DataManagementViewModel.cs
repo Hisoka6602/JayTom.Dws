@@ -51,9 +51,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         private float _maxWeight;
         private bool _isLoaded;
 
-        private ObservableCollection<BarCodeItemModel> _barCodeItems = new()
-        {
-            new BarCodeItemModel()
+        private ObservableCollection<BarCodeItemModel> _barCodeItems = new() {
+            /*new BarCodeItemModel()
             {
                 Num = 1,
                 TimestampedGuid=13800138000,
@@ -94,7 +93,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                 PanoramaImagePath=@"C:\Users\77051\Desktop\16.jpg",
                 IsBarcodeImageExists = @"C:\Users\77051\Desktop\15.jpg".IsFileExists(),
                 IsPanoramaImageExists = @"C:\Users\77051\Desktop\166.jpg".IsFileExists()
-            },
+            },*/
         };
 
         private UploadStatus? _selectedUploadStatus;
@@ -333,8 +332,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                         PageMaxHeight = parentContainer.ActualHeight;
                     };
                 }
-
                 _isLoaded = true;
+                //加载数据
+                FirstPageDelegate(obj);
             }
         }
 

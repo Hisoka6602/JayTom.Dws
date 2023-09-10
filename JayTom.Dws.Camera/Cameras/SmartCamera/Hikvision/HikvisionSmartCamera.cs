@@ -39,6 +39,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
 
         public HikvisionSmartCamera(CameraInfo info) {
             this.Info = info;
+            this.Info.Type = CameraType.SmartCamera;
         }
 
         public HikvisionSmartCamera() {

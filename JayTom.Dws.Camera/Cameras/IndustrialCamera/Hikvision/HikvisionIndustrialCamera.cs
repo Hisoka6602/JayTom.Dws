@@ -55,6 +55,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
 
         public HikvisionIndustrialCamera(CameraInfo info) {
             this.Info = info;
+            this.Info.Type = CameraType.IndustrialCamera;
         }
 
         public HikvisionIndustrialCamera() {

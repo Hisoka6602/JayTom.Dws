@@ -31,9 +31,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
         private bool _isExecuting;
         private static bool _isLoaded;
 
-        private ObservableCollection<CameraFinderItemInfoModel> _cameraFinderItems = new()
-        {
-            new CameraFinderItemInfoModel() {
+        private ObservableCollection<CameraFinderItemInfoModel> _cameraFinderItems = new() {
+            /*new CameraFinderItemInfoModel() {
                 Num = 1,
                 Name = "增加一个转换、如果是工业相机、智能相机则不显示体积绑定",
                 ConnectionType = ConnectionType.Ethernet,
@@ -70,7 +69,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                 IpAddress = "192.168.0.1",
                 Model = "HK-6565",
                 BoundType = BoundCameraType.BarcodeScannerCamera
-            },
+            },*/
         };
 
         private SnackbarMessageQueue _cameraFinderMessageQueue = new(TimeSpan.FromSeconds(2));

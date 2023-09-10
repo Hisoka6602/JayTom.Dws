@@ -5,6 +5,7 @@ using System.Windows.Input;
 using MaterialDesignThemes.Wpf;
 
 namespace JayTom.Dws.Client.ViewModels.Editors {
+
     public class DataTimeEditorViewModel : BindableBase {
         private DateTime? _selectedDate = DateTime.Now;
         private DateTime? _selectedTime = DateTime.Now;
@@ -63,6 +64,11 @@ namespace JayTom.Dws.Client.ViewModels.Editors {
         private void TodayDelegate(object obj) {
             SelectedDate = DateTime.Today;
             SelectedTime = DateTime.Today;
+            SelectedDataTime = Convert.ToDateTime($"{SelectedDate.Value:yyyy-MM-dd} {SelectedTime:HH:mm:ss}");
+            IsOk = true;
+            if (DialogHost.IsDialogOpen(Identifier)) {
+                DialogHost.Close(Identifier);
+            }
         }
 
         private void OkDelegate(object obj) {
@@ -72,6 +78,20 @@ namespace JayTom.Dws.Client.ViewModels.Editors {
                 IsOk = true;
             }
 
+            if (DialogHost.IsDialogOpen(Identifier)) {
+                DialogHost.Close(Identifier);
+            }
+        }
+
+        public ICommand NowCommand {
+            get => new DelegateCommand<object>(NowDelegate);
+        }
+
+        private void NowDelegate(object obj) {
+            SelectedDate = DateTime.Now;
+            SelectedTime = DateTime.Now;
+            SelectedDataTime = Convert.ToDateTime($"{SelectedDate.Value:yyyy-MM-dd} {SelectedTime:HH:mm:ss}");
+            IsOk = true;
             if (DialogHost.IsDialogOpen(Identifier)) {
                 DialogHost.Close(Identifier);
             }

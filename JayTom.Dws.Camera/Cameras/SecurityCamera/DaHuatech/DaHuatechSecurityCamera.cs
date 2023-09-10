@@ -31,6 +31,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
 
         public DaHuatechSecurityCamera(CameraInfo info) {
             this.Info = info;
+            this.Info.Type = CameraType.VideoCamera;
         }
 
         public DaHuatechSecurityCamera() {

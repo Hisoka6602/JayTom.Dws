@@ -488,11 +488,19 @@
                                                 </Storyboard>
                                             </BeginStoryboard>
                                         </DataTrigger.EnterActions>
+                                        <DataTrigger.ExitActions>
+                                            <BeginStoryboard>
+                                                <Storyboard>
+                                                    <BooleanAnimationUsingKeyFrames Storyboard.TargetProperty="IsInserting">
+                                                        <DiscreteBooleanKeyFrame KeyTime="0:0:0" Value="False" />
+                                                    </BooleanAnimationUsingKeyFrames>
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </DataTrigger.ExitActions>
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>
                         </ListView.ItemContainerStyle>
-
                         <ListView.View>
                             <GridView ColumnHeaderContainerStyle="{StaticResource ModernGridViewColumnHeaderStyle}">
                                 <!--  这里定义每列的标题和绑定的数据  -->

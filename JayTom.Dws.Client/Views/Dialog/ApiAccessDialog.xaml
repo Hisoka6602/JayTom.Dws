@@ -160,7 +160,7 @@
                         FontWeight="Bold"
                         Foreground="White"
                         IsEnabled="False"
-                        Text="{Binding RequestTime, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:yyyy-MM-dd HH:mm:ss}}" />
+                        Text="{Binding RequestTime, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:yyyy-MM-dd HH:mm:ss.fff}}" />
                 </StackPanel>
                 <!--  提交信息  -->
                 <StackPanel
@@ -217,7 +217,7 @@
                         FontWeight="Bold"
                         Foreground="White"
                         IsEnabled="False"
-                        Text="{Binding ResponseTime, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:yyyy-MM-dd HH:mm:ss}}" />
+                        Text="{Binding ResponseTime, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:yyyy-MM-dd HH:mm:ss.fff}}" />
                 </StackPanel>
                 <!--  响应信息  -->
                 <StackPanel

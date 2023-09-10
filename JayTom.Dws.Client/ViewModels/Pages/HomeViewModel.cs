@@ -38,6 +38,7 @@ using JayTom.Dws.Client.Service.ExternalDataService;
 using CameraType = JayTom.Dws.Client.Models.CameraType;
 using CameraStatus = JayTom.Dws.Client.Models.CameraStatus;
 using ConnectionType = JayTom.Dws.Client.Models.ConnectionType;
+using static JayTom.Dws.Client.Service.BackgroundService.SubmitApiBackgroundService;
 using static JayTom.Dws.Client.Service.BackgroundService.ScanProcessBackgroundService;
 
 namespace JayTom.Dws.Client.ViewModels.Pages {
@@ -202,9 +203,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             _resultOutputService = resultOutputService;
             _externalDataService = externalDataService;
             _configRepository = configRepository;
-            CameraItems = new()
-            {
-                new CameraItemInfoModel()
+            CameraItems = new() {
+                /*new CameraItemInfoModel()
                 {
                     CameraName = "海康工业相机.1",
                     Status = CameraStatus.Running,
@@ -230,7 +230,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     ConnectionType = ConnectionType.Ethernet,
                     ImageClickCommand = ImageClickCommand,
                     StatusClickCommand = StatusClickCommand,
-                },
+                },*/
             };
             BarCodeItems = new();
             _deviceService.CameraInitialized += async delegate (object? sender, List<ICamera> list) {
@@ -365,6 +365,23 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                                 }
                             }
                         });
+                    }
+                }
+            });
+            //更新上传状态
+            EventAggregator.Instance.Subscribe<ApiResponseReceived>(async item => {
+                if (item is ApiResponseReceived model) {
+                    var barCodeItemModel = BarCodeItems.FirstOrDefault(f => f.Barcode.Equals(model.Barcode) &&
+                                                                            f.ScanTime.Equals(model.ScanTime));
+                    if (barCodeItemModel is not null) {
+                        await Application.Current.Dispatcher.BeginInvoke(() => {
+                            //更新图片
+                            barCodeItemModel.RequestContent = model.UploadResponse?.RequestContent ?? string.Empty;
+                            barCodeItemModel.RequestStatus = model.UploadResponse?.IsSuccess == true ? UploadStatus.Succeeded : UploadStatus.Failed;
+                            barCodeItemModel.RequestTime = model.UploadResponse?.RequestTime ?? DateTime.Today;
+                            barCodeItemModel.ResponseContent = model.UploadResponse?.ResponseContent ?? string.Empty;
+                            barCodeItemModel.ResponseTime = model.UploadResponse?.ResponseTime ?? DateTime.Today;
+                        }, DispatcherPriority.Background);
                     }
                 }
             });
@@ -589,17 +606,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         /// </summary>
         private async void AddNewRow(BarCodeItemModel item) {
             await Application.Current.Dispatcher.InvokeAsync(() => {
-                /*_barCodeRepository.InsertAsync(new BarCodeInfoModel() {
-                    Barcode = item.Barcode,
-                    Weight = item.Weight,
-                    ScanTime = item.ScanTime,
-                    PanoramaImagePath = item.PanoramaImagePath,
-                    BarcodeImagePath = item.BarcodeImagePath,
-                    Volume = item.Volume,
-                    Length = item.Length,
-                    Width = item.Width,
-                    Height = item.Height,
-                });*/
                 item.Num = BarCodeItems.Count + 1;
                 BarCodeItems.Insert(0, item);
                 item.IsInserting = true;
@@ -607,7 +613,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                 if (item.RequestStatus == UploadStatus.Succeeded) {
                     UploadedDataCount += 1;
                 }
-
                 if (item.RequestStatus == UploadStatus.Failed) {
                     AbnormalDataCount += 1;
                 }
