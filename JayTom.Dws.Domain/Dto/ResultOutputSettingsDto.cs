@@ -33,16 +33,6 @@ namespace JayTom.Dws.Domain.Dto {
         public TcpSettingsInfo TcpSettingsInfo { get; set; } = new();
 
         /// <summary>
-        /// 是否使用Http输出
-        /// </summary>
-        public bool IsUseHttpOutput { get; set; }
-
-        /// <summary>
-        /// Http输出配置
-        /// </summary>
-        public HttpUploadSettingsInfo HttpUploadSettingsInfo { get; set; } = new();
-
-        /// <summary>
         /// 是否使用串口输出
         /// </summary>
         public bool IsUseSerialOutput { get; set; }
@@ -92,27 +82,6 @@ namespace JayTom.Dws.Domain.Dto {
         /// 是否程序重启后自动上传未成功数据
         /// </summary>
         public bool IsAutoUploadOnRestart { get; set; }
-    }
-
-    /// <summary>
-    /// http上传设置
-    /// </summary>
-    public class HttpUploadSettingsInfo {
-
-        /// <summary>
-        /// Url地址
-        /// </summary>
-        public string Url { get; set; } = string.Empty;
-
-        /// <summary>
-        /// 成功回调内容
-        /// </summary>
-        public string SuccessResponseContent { get; set; } = string.Empty;
-
-        /// <summary>
-        /// 请求超时时间
-        /// </summary>
-        public int Timeout { get; set; } = 2000;
     }
 
     /// <summary>

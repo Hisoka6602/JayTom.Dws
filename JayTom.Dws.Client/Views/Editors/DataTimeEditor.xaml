@@ -6,20 +6,38 @@
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:mvvm="http://prismlibrary.com/"
+    MaxWidth="700"
+    MaxHeight="648"
     d:DesignHeight="450"
     d:DesignWidth="648"
     mvvm:ViewModelLocator.AutoWireViewModel="True"
     FontFamily="{StaticResource CustomFontFamily}"
     mc:Ignorable="d">
     <!--  CornerRadius="20"  -->
-    <Border Background="WhiteSmoke">
-        <Grid Margin="-1">
-            <!--<Grid.Clip>
+    <Border Background="FloralWhite" CornerRadius="20">
+        <Grid Margin="0">
+            <Grid.Resources>
+                <Style
+                    x:Key="SecondaryCalendarDayButton"
+                    BasedOn="{StaticResource MaterialDesignCalendarDayButton}"
+                    TargetType="CalendarDayButton">
+                    <Setter Property="materialDesign:CalendarAssist.SelectionColor" Value="#1E90FF" />
+                    <Setter Property="materialDesign:CalendarAssist.SelectionForegroundColor" Value="{DynamicResource SecondaryHueMidForegroundBrush}" />
+                </Style>
+                <Style
+                    x:Key="SecondaryCalendarButton"
+                    BasedOn="{StaticResource MaterialDesignCalendarButton}"
+                    TargetType="CalendarButton">
+                    <Setter Property="materialDesign:CalendarAssist.SelectionColor" Value="#1E90FF" />
+                    <Setter Property="materialDesign:CalendarAssist.SelectionForegroundColor" Value="{DynamicResource SecondaryHueMidForegroundBrush}" />
+                </Style>
+            </Grid.Resources>
+            <Grid.Clip>
                 <RectangleGeometry
                     RadiusX="20"
                     RadiusY="20"
-                    Rect="0,0,648,700" />
-            </Grid.Clip>-->
+                    Rect="0,0,627,700" />
+            </Grid.Clip>
             <Grid.RowDefinitions>
                 <RowDefinition Height="*" />
                 <RowDefinition Height="Auto" />
@@ -29,18 +47,23 @@
                 <Calendar
                     MinWidth="249"
                     Margin="-1,-4,-1,0"
-                    materialDesign:CalendarAssist.SelectionForegroundColor="BlueViolet"
+                    materialDesign:CalendarAssist.HeaderBackground="FloralWhite"
+                    Background="FloralWhite"
+                    CalendarButtonStyle="{StaticResource SecondaryCalendarButton}"
+                    CalendarDayButtonStyle="{StaticResource SecondaryCalendarDayButton}"
                     Focusable="False"
+                    IsTodayHighlighted="True"
                     SelectedDate="{Binding SelectedDate, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                     SelectionMode="SingleDate">
                     <!--
                         Foreground="DodgerBlue"
                         materialDesign:CalendarAssist.HeaderBackground="DodgerBlue"
                         materialDesign:CalendarAssist.SelectionColor="DodgerBlue"
-
+                        
                         materialDesign:CalendarAssist.SelectionForegroundColor="DodgerBlue"
                     -->
                 </Calendar>
+
                 <materialDesign:Clock
                     Margin="-1,-4,-1,0"
                     Background="{x:Null}"
@@ -48,6 +71,7 @@
                     FocusVisualStyle="{x:Null}"
                     Focusable="False"
                     Is24Hours="True"
+                    IsPostMeridiem="True"
                     Time="{Binding SelectedTime, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
                     <!--  没有颜色可设置,只能设置主题  -->
                 </materialDesign:Clock>

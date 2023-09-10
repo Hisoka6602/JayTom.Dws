@@ -28,7 +28,6 @@ using JsonSerializer = System.Text.Json.JsonSerializer;
 using JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
-
     public class DefaultApiPageViewModel : BindableBase {
         private readonly IConfigRepository _configRepository;
         private DefaultApiModel _defaultApiInfo = new();

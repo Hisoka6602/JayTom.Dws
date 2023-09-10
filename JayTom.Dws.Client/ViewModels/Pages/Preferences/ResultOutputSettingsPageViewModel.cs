@@ -61,13 +61,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
 
         private bool _isLoaded;
         private bool _isUseTcpOutput;
-        private bool _isUseHttpOutput;
         private bool _isUseSerialOutput;
         private bool _isUseAudioOutput;
         private bool _isUseLocationOutput;
         private UploadSettingsInfoModel _uploadSettingsInfo = new();
         private TcpSettingsInfoModel _tcpSettingsInfo = new();
-        private HttpUploadSettingsInfoModel _httpUploadSettingsInfo = new();
         private LocationOutputSettingsInfoModel _locationOutputSettingsInfo = new();
         private ObservableCollection<string> _portItems = new();
         private string _portName = string.Empty;
@@ -367,14 +365,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         }
 
         /// <summary>
-        /// 是否使用Http输出
-        /// </summary>
-        public bool IsUseHttpOutput {
-            get => _isUseHttpOutput;
-            set => SetProperty(ref _isUseHttpOutput, value);
-        }
-
-        /// <summary>
         /// 是否使用串口输出
         /// </summary>
         public bool IsUseSerialOutput {
@@ -412,14 +402,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         public TcpSettingsInfoModel TcpSettingsInfo {
             get => _tcpSettingsInfo;
             set => SetProperty(ref _tcpSettingsInfo, value);
-        }
-
-        /// <summary>
-        /// Http输出设置
-        /// </summary>
-        public HttpUploadSettingsInfoModel HttpUploadSettingsInfo {
-            get => _httpUploadSettingsInfo;
-            set => SetProperty(ref _httpUploadSettingsInfo, value);
         }
 
         /// <summary>
@@ -565,12 +547,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                                 },
                                 ConnectionMode = TcpSettingsInfo.ConnectionMode
                             },
-                            IsUseHttpOutput = IsUseHttpOutput,
-                            HttpUploadSettingsInfo = new HttpUploadSettingsInfo() {
-                                SuccessResponseContent = HttpUploadSettingsInfo.SuccessResponseContent,
-                                Timeout = HttpUploadSettingsInfo.Timeout,
-                                Url = HttpUploadSettingsInfo.Url,
-                            },
                             IsUseSerialOutput = IsUseSerialOutput,
                             SerialPortSettingsInfo = new SerialPortSettingsInfo() {
                                 BaudRate = SelectBaudRate,
@@ -678,12 +654,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                                         Port = settingsDto.TcpSettingsInfo.ServerConfig.Port,
                                     },
                                     ConnectionMode = settingsDto.TcpSettingsInfo.ConnectionMode,
-                                };
-                                IsUseHttpOutput = settingsDto.IsUseHttpOutput;
-                                HttpUploadSettingsInfo = new HttpUploadSettingsInfoModel() {
-                                    SuccessResponseContent = settingsDto.HttpUploadSettingsInfo.SuccessResponseContent,
-                                    Timeout = settingsDto.HttpUploadSettingsInfo.Timeout,
-                                    Url = settingsDto.HttpUploadSettingsInfo.Url
                                 };
                                 IsUseSerialOutput = settingsDto.IsUseSerialOutput;
                                 SerialPortSettingsInfo = new SerialPortSettingsInfoModel() {

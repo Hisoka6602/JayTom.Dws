@@ -16,6 +16,11 @@
     mvvm:ViewModelLocator.AutoWireViewModel="True"
     FontFamily="{StaticResource CustomFontFamily}"
     mc:Ignorable="d">
+    <b:Interaction.Triggers>
+        <b:EventTrigger EventName="Loaded" SourceName="ApiSettingsView">
+            <b:InvokeCommandAction Command="{Binding LoadedCommand, IsAsync=False}" CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Page}}}" />
+        </b:EventTrigger>
+    </b:Interaction.Triggers>
     <materialDesign:DialogHost
         Background="Transparent"
         DialogBackground="Transparent"
