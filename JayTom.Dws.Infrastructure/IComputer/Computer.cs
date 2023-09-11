@@ -42,7 +42,7 @@ namespace JayTom.Dws.Infrastructure.IComputer {
             string[] sizes = { "B", "KB", "MB", "GB", "TB" };
             try {
                 diskInfoList = DriveInfo.GetDrives()
-                    .Where(drive => drive.IsReady && drive.DriveType == DriveType.Fixed)
+                    .Where(drive => drive is { IsReady: true, DriveType: DriveType.Fixed })
                     .Select(drive => {
                         var availableSpace = drive.AvailableFreeSpace;
                         var usedSpace = drive.TotalSize - drive.AvailableFreeSpace;

@@ -3,6 +3,8 @@ using FluentFTP;
 using System.Net;
 using System.Linq;
 using System.Text;
+using FluentFTP.Helpers;
+using TouchSocket.Sockets;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
@@ -11,6 +13,7 @@ namespace JayTom.Dws.Plugin.Ftp {
     public class FluentFtpClient : IFtp {
         private readonly FtpClient _ftpClient;
         private SemaphoreSlim _semaphore = new(1);
+        private SemaphoreSlim _connectSlim = new(1);
 
         public FluentFtpClient() {
             _ftpClient = new FtpClient() {
@@ -18,12 +21,15 @@ namespace JayTom.Dws.Plugin.Ftp {
             };
         }
 
+        public bool IsConnected => _ftpClient.IsConnected;
+
         public async Task<KeyValuePair<bool, string>> Connect(string server, string username, string password, CancellationToken cancellationToken = default) {
             try {
-                await Task.Yield();
+                await _connectSlim.WaitAsync(cancellationToken);
                 if (_ftpClient.IsConnected) {
                     return new KeyValuePair<bool, string>(true, "连接成功!");
                 }
+
                 _ftpClient.Host = server;
                 _ftpClient.Config.DataConnectionConnectTimeout = 60 * 1000;
                 _ftpClient.Config.ConnectTimeout = 60 * 1000;
@@ -37,6 +43,9 @@ namespace JayTom.Dws.Plugin.Ftp {
             catch (Exception ex) {
                 NLog.LogManager.GetCurrentClassLogger().Error($"{ex}");
                 return new KeyValuePair<bool, string>(false, ex.Message);
+            }
+            finally {
+                _connectSlim.Release();
             }
         }
 
@@ -87,6 +96,72 @@ namespace JayTom.Dws.Plugin.Ftp {
             }
         }
 
+        public async Task<long> GetDirectorySize(string directoryPath) {
+            Task.Yield();
+            long totalSize = 0;
+            foreach (var item in _ftpClient.GetListing(directoryPath)) {
+                switch (item.Type) {
+                    case FtpObjectType.File:
+                        totalSize += item.Size;
+                        break;
+
+                    case FtpObjectType.Directory:
+                        totalSize += await GetDirectorySize(item.FullName);
+                        break;
+                }
+            }
+
+            return totalSize;
+        }
+
+        public async Task<bool> DirectoryExists(string directoryPath) {
+            await Task.Yield();
+            return _ftpClient.DirectoryExists(directoryPath);
+        }
+
+        public async Task<List<FtpFileInfo>?> GetFileInfoList(string directoryPath, CancellationToken cancellationToken = default) {
+            await Task.Yield();
+            try {
+                return EnumerateDirectoryFileInfo(_ftpClient, string.IsNullOrEmpty(directoryPath) ? _ftpClient.GetWorkingDirectory() : directoryPath);
+            }
+            catch (Exception) {
+            }
+
+            return null;
+        }
+
+        public async Task<FtpDiskInfo?> GetDiskUsage() {
+            await Task.Yield();
+            try {
+                if (IsConnected) {
+                    var ftpDiskInfo = new FtpDiskInfo();
+
+                    // 发送STAT命令以获取当前工作目录的磁盘使用情况
+                    var response = _ftpClient.Execute("STAT");
+
+                    if (response.Success && response.Message.StartsWith("211- Disk information:", StringComparison.OrdinalIgnoreCase)) {
+                        var diskInfoLine = response.Message;
+
+                        var parts = diskInfoLine.Split('/');
+                        if (parts.Length == 2 && long.TryParse(parts[0], out var totalSize) && long.TryParse(parts[1], out var usedSize)) {
+                            ftpDiskInfo.TotalSize = totalSize * 1024 * 1024; // 将单位转换为字节
+                            ftpDiskInfo.UsedSize = usedSize * 1024 * 1024; // 将单位转换为字节
+
+                            // 计算已使用容量百分比
+                            ftpDiskInfo.UsedPercentage = (double)ftpDiskInfo.UsedSize / ftpDiskInfo.TotalSize * 100;
+                        }
+                    }
+
+                    return ftpDiskInfo;
+                }
+            }
+            catch (Exception) {
+                // ignored
+            }
+
+            return null;
+        }
+
         private List<string> EnumerateDirectory(IFtpClient client, string directory) {
             // 获取目录中的文件和文件夹列表
             var fileNames = new List<string>();
@@ -100,6 +175,30 @@ namespace JayTom.Dws.Plugin.Ftp {
                 }
                 else if (item.Type == FtpObjectType.File) {
                     fileNames.Add(item.FullName);
+                }
+            }
+            return fileNames;
+        }
+
+        private List<FtpFileInfo> EnumerateDirectoryFileInfo(IFtpClient client, string directory) {
+            // 获取目录中的文件和文件夹列表
+            var fileNames = new List<FtpFileInfo>();
+            var items = client.GetListing(directory);
+            // 遍历列表并处理每个项
+            foreach (var item in items) {
+                if (item.Type == FtpObjectType.Directory) {
+                    // 递归遍历子文件夹
+                    var list = EnumerateDirectoryFileInfo(client, item.FullName);
+                    fileNames.AddRange(list);
+                }
+                else if (item.Type == FtpObjectType.File) {
+                    fileNames.Add(new FtpFileInfo {
+                        FileName = item.Name,
+                        CreatedTime = item.Created,
+                        FileSize = item.Size,
+                        FullPath = item.FullName,
+                        LastModifiedTime = item.Modified
+                    });
                 }
             }
             return fileNames;

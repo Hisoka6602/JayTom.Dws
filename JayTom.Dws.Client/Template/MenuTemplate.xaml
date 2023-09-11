@@ -66,18 +66,17 @@
                         Foreground="DarkGray"
                         Text="{Binding Title, UpdateSourceTrigger=PropertyChanged}" />
                 </StackPanel>
-
             </Button>
             <!--  绿条  -->
             <Border
                 Name="SelectedFlag"
-                Width="3"
+                Width="4"
                 HorizontalAlignment="Left"
                 VerticalAlignment="Stretch"
                 Background="LawnGreen"
+                CornerRadius="2,2,2,2"
                 Visibility="Collapsed" />
         </Grid>
-
         <DataTemplate.Triggers>
             <DataTrigger Binding="{Binding IsSelected}" Value="True">
                 <Setter TargetName="IconBlock" Property="Foreground" Value="White" />
