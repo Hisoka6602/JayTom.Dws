@@ -243,6 +243,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                             LogFileUsagePercentage = progress += localDiskUsageInfo.LogFileUsagePercentage,
                             OtherUsagePercentage = progress += localDiskUsageInfo.OtherUsagePercentage,
                         };
+                        NLog.LogManager.GetCurrentClassLogger().Error(JsonConvert.SerializeObject(LocalDiskUsageInfo));
                     }
                     //判断FTP是否连接
                     if (IsShowingFtpSpaceInfo) {
@@ -255,7 +256,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                             PanoramaImageUsagePercentage = progress += ftpUsageInfo.PanoramaImageUsagePercentage,
                             OtherUsagePercentage = progress += ftpUsageInfo.OtherUsagePercentage,
                         };
-                        NLog.LogManager.GetCurrentClassLogger().Error(JsonConvert.SerializeObject(FtpUsageInfo));
+                        //NLog.LogManager.GetCurrentClassLogger().Error(JsonConvert.SerializeObject(FtpUsageInfo));
                     }
                 });
                 var configInfoModel = await _configRepository.
@@ -299,35 +300,35 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                 if (File.Exists(dbFileName)) {
                     var length = new FileInfo(dbFileName).Length;
                     var space = (double)length / firstOrDefault.UsedDiskSpace;
-                    localDiskUsageInfo.DataUsagePercentage = Math.Round(space, 2);
+                    localDiskUsageInfo.DataUsagePercentage = space;
                 }
                 //获取扫码文件夹数据总大小
 
                 var barcodeImageDirectory = $"{_imageSettingsDto?.ImageRootDirectory}\\BarcodeImage";
                 if (Directory.Exists(barcodeImageDirectory)) {
-                    var totalSizeInBytes = Directory.EnumerateFiles(barcodeImageDirectory)
+                    var totalSizeInBytes = Directory.GetFiles(barcodeImageDirectory, "*", SearchOption.AllDirectories)
                         .AsParallel()
-                        .Select(filePath => new FileInfo(filePath).Length)
+                        .Select(file => new FileInfo(file).Length)
                         .Sum();
                     var space = (double)totalSizeInBytes / firstOrDefault.UsedDiskSpace;
-                    localDiskUsageInfo.ScanImageUsagePercentage = Math.Round(space, 2);
+                    localDiskUsageInfo.ScanImageUsagePercentage = space;
                 }
                 //获取全景图片文件夹数据总大小
                 var panoramaImageDirectory = $"{_imageSettingsDto?.ImageRootDirectory}\\PanoramaImage";
-                if (Directory.Exists(barcodeImageDirectory)) {
-                    var totalSizeInBytes = Directory.EnumerateFiles(panoramaImageDirectory)
+                if (Directory.Exists(panoramaImageDirectory)) {
+                    var totalSizeInBytes = Directory.GetFiles(panoramaImageDirectory, "*", SearchOption.AllDirectories)
                         .AsParallel()
-                        .Select(filePath => new FileInfo(filePath).Length)
+                        .Select(file => new FileInfo(file).Length)
                         .Sum();
                     var space = (double)totalSizeInBytes / firstOrDefault.UsedDiskSpace;
-                    localDiskUsageInfo.PanoramaImageUsagePercentage = Math.Round(space, 2);
+                    localDiskUsageInfo.PanoramaImageUsagePercentage = space;
                 }
                 //获取日志文件(log.db文件大小,目前没有填0)
                 var logFileName = $"{AppDomain.CurrentDomain.BaseDirectory}\\log.db";
-                if (File.Exists(dbFileName)) {
-                    var length = new FileInfo(dbFileName).Length;
+                if (File.Exists(logFileName)) {
+                    var length = new FileInfo(logFileName).Length;
                     var space = (double)length / firstOrDefault.UsedDiskSpace;
-                    localDiskUsageInfo.LogFileUsagePercentage = Math.Round(space, 2);
+                    localDiskUsageInfo.LogFileUsagePercentage = space;
                 }
 
                 var otherUsage = (double)firstOrDefault.UsedDiskSpacePercentage / 100 - (localDiskUsageInfo.LogFileUsagePercentage +
@@ -350,10 +351,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             if (ftpDiskInfo is not null) {
                 info.UsedBytes = ftpDiskInfo.UsedSize;
                 var directorySize = await _ftp.GetDirectorySize("PanoramaImage");
-                info.PanoramaImageUsagePercentage = Math.Round((double)directorySize / info.UsedBytes, 2);
+                info.PanoramaImageUsagePercentage = (double)directorySize / info.UsedBytes;
                 var size = await _ftp.GetDirectorySize("BarcodeImage");
-                info.ScanImageUsagePercentage = Math.Round((double)size / info.UsedBytes, 2);
-                info.DataUsagePercentage = Math.Round((double)(ftpDiskInfo.UsedSize / (ftpDiskInfo.TotalSize > 0 ? ftpDiskInfo.TotalSize : 1)), 2);
+                info.ScanImageUsagePercentage = (double)size / info.UsedBytes;
+                info.DataUsagePercentage = (double)(ftpDiskInfo.UsedSize / (ftpDiskInfo.TotalSize > 0 ? ftpDiskInfo.TotalSize : 1));
             }
 
             return info;
