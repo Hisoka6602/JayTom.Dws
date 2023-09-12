@@ -1,12 +1,15 @@
 ﻿using System.Media;
 using System.Reflection;
 using System.Speech.Synthesis;
+using System.Collections.Concurrent;
 
 namespace JayTom.Dws.Plugin.Speech {
 
     public class Speech : ISpeech {
         private static SpeechSynthesizer? _synthesizer;
-        private static Dictionary<string, byte[]>? _soundDictionary = new();
+        private static ConcurrentDictionary<string, byte[]>? _soundDictionary = new();
+        private SemaphoreSlim _playSlim = new(1);
+        private SemaphoreSlim _takeSlim = new(1);
 
         public Speech() {
             _synthesizer ??= new() {
@@ -15,60 +18,86 @@ namespace JayTom.Dws.Plugin.Speech {
             };
         }
 
-        public void Speak(string speechText, CancellationToken token = default) {
-            _synthesizer?.SpeakAsyncCancelAll();
-            _synthesizer?.SpeakAsync(speechText);
+        public async void Speak(string speechText, CancellationToken token = default) {
+            try {
+                await _playSlim.WaitAsync(token);
+                _synthesizer?.SpeakAsyncCancelAll();
+                _synthesizer?.SpeakAsync(speechText);
+            }
+            finally {
+                _playSlim.Release();
+            }
         }
 
         public async void PlayStream(Stream stream) {
             try {
-                await Task.Yield();
+                await _playSlim.WaitAsync();
                 new System.Media.SoundPlayer(stream)?.PlaySync();
             }
-            catch (Exception) {
+            finally {
+                _playSlim.Release();
             }
         }
 
         public async void PlayByteFile(byte[] file) {
             try {
-                await Task.Yield();
-                using var stream = new MemoryStream(file);
-                using var player = new SoundPlayer(stream);
-                player?.PlaySync();
+                await _playSlim.WaitAsync();
+                using (var stream = new MemoryStream(file)) {
+                    using (var player = new SoundPlayer(stream)) {
+                        player?.PlaySync();
+                    }
+                }
+
+                await Task.Delay(100);
             }
             catch (Exception e) {
                 NLog.LogManager.GetCurrentClassLogger().Error($"播放声音文件异常:{e}");
                 // ignored
             }
+            finally {
+                _playSlim.Release();
+            }
         }
 
         public async void PlayCacheByteFile(string name, byte[] file) {
-            await Task.Yield();
-            var valuePair = _soundDictionary?.FirstOrDefault(f => f.Key.Equals(name));
-            if (valuePair is not null) {
-                PlayByteFile(valuePair.Value.Value);
-                NLog.LogManager.GetCurrentClassLogger().Error("播放声音文件");
+            try {
+                await _takeSlim.WaitAsync();
+                if (_soundDictionary != null) {
+                    _soundDictionary.TryGetValue(name, out var sound);
+                    if (sound is not null) {
+                        PlayByteFile(sound);
+                    }
+                    else {
+                        _soundDictionary?.TryAdd(name, file);
+                        PlayByteFile(file);
+                    }
+                }
             }
-            else {
-                _soundDictionary?.Add(name, file);
-                PlayByteFile(file);
+            catch (Exception e) {
+                NLog.LogManager.GetCurrentClassLogger().Error($"播放声音文件异常:{e}");
+            }
+            finally {
+                _takeSlim.Release();
             }
         }
 
         public async void PlayFile(string path) {
             try {
+                await _playSlim.WaitAsync();
                 if (File.Exists(path)) {
                     await Task.Yield();
                     using var player = new SoundPlayer(path);
                     player.PlaySync(); // 同步播放
                 }
             }
-            catch (Exception) {
+            finally {
+                _playSlim.Release();
             }
         }
 
         public async void PlaySuccess() {
             try {
+                await _playSlim.WaitAsync();
                 var assembly = Assembly.GetExecutingAssembly();
 
                 // 获取嵌入资源的流
@@ -82,12 +111,14 @@ namespace JayTom.Dws.Plugin.Speech {
                 using var player = new SoundPlayer(stream);
                 player.PlaySync(); // 同步播放
             }
-            catch (Exception) {
+            finally {
+                _playSlim.Release();
             }
         }
 
         public async void PlayFail() {
             try {
+                await _playSlim.WaitAsync();
                 var assembly = Assembly.GetExecutingAssembly();
 
                 // 获取嵌入资源的流
@@ -101,7 +132,8 @@ namespace JayTom.Dws.Plugin.Speech {
                 using var player = new SoundPlayer(stream);
                 player.PlaySync(); // 同步播放
             }
-            catch (Exception) {
+            finally {
+                _playSlim.Release();
             }
         }
     }

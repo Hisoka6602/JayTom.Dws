@@ -43,15 +43,10 @@ namespace JayTom.Dws.Client.Service.ResultOutput {
             EventAggregator.Instance.Subscribe<TriggerPositionEvent>(position => {
                 //播放声音事件
                 if (position is TriggerPositionEvent trigger) {
-                    NLog.LogManager.GetCurrentClassLogger().Error($"触发声音事件");
                     if (_outputSettingsDto?.IsUseAudioOutput == true) {
                         if (_outputSettingsDto?.AudioOutputSettingsInfo?.TriggerPosition == trigger.TriggerPosition) {
-                            NLog.LogManager.GetCurrentClassLogger().Error($"播放声音");
                             SoundOutput(trigger.IsSuccess);
                         }
-                    }
-                    else {
-                        NLog.LogManager.GetCurrentClassLogger().Error($"未开启声音输出");
                     }
                 }
             });
@@ -185,7 +180,6 @@ namespace JayTom.Dws.Client.Service.ResultOutput {
                             f.SoundName.Equals(_outputSettingsDto.AudioOutputSettingsInfo.SuccessAudio));
                         if (soundInfoModel is not null) {
                             _speech.PlayCacheByteFile(soundInfoModel.SoundName, soundInfoModel.SoundFile ?? Array.Empty<byte>());
-                            NLog.LogManager.GetCurrentClassLogger().Error("声音播放成功");
                         }
                         else {
                             NLog.LogManager.GetCurrentClassLogger().Error("找不到声音信息对象");
@@ -196,7 +190,6 @@ namespace JayTom.Dws.Client.Service.ResultOutput {
                             f.SoundName.Equals(_outputSettingsDto.AudioOutputSettingsInfo.FailureAudio));
                         if (soundInfoModel is not null) {
                             _speech.PlayCacheByteFile(soundInfoModel.SoundName, soundInfoModel.SoundFile ?? Array.Empty<byte>());
-                            NLog.LogManager.GetCurrentClassLogger().Error("声音播放成功");
                         }
                         else {
                             NLog.LogManager.GetCurrentClassLogger().Error("找不到声音信息对象");

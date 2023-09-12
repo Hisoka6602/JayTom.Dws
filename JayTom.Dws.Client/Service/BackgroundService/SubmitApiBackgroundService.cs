@@ -124,6 +124,10 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                             ScanTime = info.ScanTime,
                                             UploadResponse = uploadResponse
                                         });
+                                        EventAggregator.Instance.Publish(new TriggerPositionEvent() {
+                                            IsSuccess = uploadResponse.IsSuccess,
+                                            TriggerPosition = TriggerPositionEnum.HttpOutput
+                                        });
                                     }
                                     else {
                                         Console.WriteLine("设置参数失败!");

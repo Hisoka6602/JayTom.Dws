@@ -256,7 +256,6 @@ namespace JayTom.Dws.Client.Service.Device {
         public async Task<KeyValuePair<bool, string>> Start(CancellationToken token = default) {
             //在这里初始化
             await Initialization();
-            NLog.LogManager.GetCurrentClassLogger().Error("开始启动");
             //启动(逐个相机启动)
             foreach (var camera in _cameras.OrderByDescending(o => o.BindingType)) {
                 //设置过滤
@@ -280,7 +279,6 @@ namespace JayTom.Dws.Client.Service.Device {
                 await Task.Delay(100, token);
                 await camera.Start(string.Empty);
             }
-            NLog.LogManager.GetCurrentClassLogger().Error("相机启动完成!");
             //连接磅秤
             if (_weightSettingsDto is not null) {
                 switch (_weightSettingsDto.Mode) {
@@ -327,7 +325,6 @@ namespace JayTom.Dws.Client.Service.Device {
                 await OnCameraEnumerationRefreshed();
             }
             await Task.Run(async () => {
-                NLog.LogManager.GetCurrentClassLogger().Error("初始化开始");
                 try {
                     var configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("BarcodeFilterSettings"));
                     try {
@@ -569,7 +566,6 @@ namespace JayTom.Dws.Client.Service.Device {
                             });
                         }
                     }
-                    NLog.LogManager.GetCurrentClassLogger().Error("初始化方法跳出");
                 }
                 catch (Exception e) {
                     NLog.LogManager.GetCurrentClassLogger().Error($"{e}");

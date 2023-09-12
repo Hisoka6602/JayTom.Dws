@@ -139,7 +139,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                 case "BarcodeData":
                     //删除指定天数之前的条码数据
                     Task.Run(async () => {
-                        if (!IsDeletingInProgress) {
+                        if (!IsDeletingInProgress && ManualCleanupParams.BarcodeDataAgoDays > 0) {
                             IsDeletingInProgress = true;
                             var (key, value) =
                                 await _cacheCleanupService.DeleteBarcodeDataOlderThanDays(
@@ -156,7 +156,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                 case "ScanImage":
                     //删除指定天数之前的扫码图片
                     Task.Run(async () => {
-                        if (!IsDeletingInProgress) {
+                        if (!IsDeletingInProgress && ManualCleanupParams.ScanImageAgoDays > 0) {
                             IsDeletingInProgress = true;
                             var (key, value) =
                                 await _cacheCleanupService.DeleteScanImagesOlderThanDays(ManualCleanupParams
@@ -173,7 +173,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                 case "PanoramaImage":
                     //删除指定天数之前的全景图片
                     Task.Run(async () => {
-                        if (!IsDeletingInProgress) {
+                        if (!IsDeletingInProgress && ManualCleanupParams.PanoramaImageAgoDays > 0) {
                             IsDeletingInProgress = true;
                             var (key, value) =
                                 await _cacheCleanupService.DeletePanoramaImagesOlderThanDays(ManualCleanupParams.PanoramaImageAgoDays);
@@ -188,7 +188,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                 case "FtpImage":
                     //删除指定天数之前的FTP
                     Task.Run(async () => {
-                        if (!IsDeletingInProgress) {
+                        if (!IsDeletingInProgress && ManualCleanupParams.FtpImageAgoDays > 0) {
                             IsDeletingInProgress = true;
                             var (key, value) =
                                 await _cacheCleanupService.DeleteFtpImagesOlderThanDays(ManualCleanupParams.FtpImageAgoDays);
@@ -203,7 +203,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                 case "LogData":
                     //删除指定天数之前的日志
                     Task.Run(async () => {
-                        if (!IsDeletingInProgress) {
+                        if (!IsDeletingInProgress && ManualCleanupParams.LogDataAgoDays > 0) {
                             IsDeletingInProgress = true;
                             var (key, value) =
                                 await _cacheCleanupService.DeleteLogDataOlderThanDays(ManualCleanupParams.LogDataAgoDays);
