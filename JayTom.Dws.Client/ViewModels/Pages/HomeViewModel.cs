@@ -72,6 +72,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         private VolumeUnit _volumeUnit;
         private static SemaphoreSlim _runningSemaphoreSlim = new(1, 1);
         private static SemaphoreSlim _imageSemaphoreSlim = new(1, 1);
+        private static SemaphoreSlim _updateSlim = new(1, 1);
 
         public SnackbarMessageQueue HomeMessageQueue {
             get => _homeMessageQueue;
@@ -371,17 +372,23 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             //更新上传状态
             EventAggregator.Instance.Subscribe<ApiResponseReceived>(async item => {
                 if (item is ApiResponseReceived model) {
-                    var barCodeItemModel = BarCodeItems.FirstOrDefault(f => f.Barcode.Equals(model.Barcode) &&
-                                                                            f.ScanTime.Equals(model.ScanTime));
-                    if (barCodeItemModel is not null) {
-                        await Application.Current.Dispatcher.BeginInvoke(() => {
-                            //更新图片
-                            barCodeItemModel.RequestContent = model.UploadResponse?.RequestContent ?? string.Empty;
-                            barCodeItemModel.RequestStatus = model.UploadResponse?.IsSuccess == true ? UploadStatus.Succeeded : UploadStatus.Failed;
-                            barCodeItemModel.RequestTime = model.UploadResponse?.RequestTime ?? DateTime.Today;
-                            barCodeItemModel.ResponseContent = model.UploadResponse?.ResponseContent ?? string.Empty;
-                            barCodeItemModel.ResponseTime = model.UploadResponse?.ResponseTime ?? DateTime.Today;
-                        }, DispatcherPriority.Background);
+                    try {
+                        await _updateSlim.WaitAsync();
+                        var barCodeItemModel = BarCodeItems.FirstOrDefault(f => f.Barcode.Equals(model.Barcode) &&
+                            f.ScanTime.Equals(model.ScanTime));
+                        if (barCodeItemModel is not null) {
+                            await Application.Current.Dispatcher.BeginInvoke(() => {
+                                //更新数据
+                                barCodeItemModel.RequestContent = model.UploadResponse?.RequestContent ?? string.Empty;
+                                barCodeItemModel.RequestStatus = model.UploadResponse?.IsSuccess == true ? UploadStatus.Succeeded : UploadStatus.Failed;
+                                barCodeItemModel.RequestTime = model.UploadResponse?.RequestTime ?? DateTime.Today;
+                                barCodeItemModel.ResponseContent = model.UploadResponse?.ResponseContent ?? string.Empty;
+                                barCodeItemModel.ResponseTime = model.UploadResponse?.ResponseTime ?? DateTime.Today;
+                            }, DispatcherPriority.Background);
+                        }
+                    }
+                    finally {
+                        _updateSlim.Release();
                     }
                 }
             });
@@ -605,9 +612,16 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         /// 添加一行
         /// </summary>
         private async void AddNewRow(BarCodeItemModel item) {
-            await Application.Current.Dispatcher.InvokeAsync(() => {
+            await Application.Current.Dispatcher.InvokeAsync(async () => {
                 item.Num = BarCodeItems.Count + 1;
-                BarCodeItems.Insert(0, item);
+                try {
+                    await _updateSlim.WaitAsync();
+                    BarCodeItems.Insert(0, item);
+                }
+                finally {
+                    _updateSlim.Release();
+                }
+
                 item.IsInserting = true;
                 TotalDataCount += 1;
                 if (item.RequestStatus == UploadStatus.Succeeded) {

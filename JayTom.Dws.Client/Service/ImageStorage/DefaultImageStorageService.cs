@@ -44,7 +44,9 @@ namespace JayTom.Dws.Client.Service.ImageStorage {
                     }
                     ImageSettingsDto ??= new ImageSettingsDto();
                     if (ImageSettingsDto.IsFtpUploadEnabled) {
-                        var (key, value) = await _ftp.Connect(ImageSettingsDto.FtpInfo.IpAddress, ImageSettingsDto.FtpInfo.Username,
+                        var (key, value) = await _ftp.Connect(ImageSettingsDto.FtpInfo.IpAddress,
+                            ImageSettingsDto.FtpInfo.Port,
+                            ImageSettingsDto.FtpInfo.Username,
                             ImageSettingsDto.FtpInfo.Password);
                         if (!key) {
                             OnImageSaveFailed(new Exception(value));
@@ -75,7 +77,9 @@ namespace JayTom.Dws.Client.Service.ImageStorage {
                 }
                 ImageSettingsDto ??= new ImageSettingsDto();
                 if (ImageSettingsDto.IsFtpUploadEnabled) {
-                    var (key, value) = await _ftp.Connect(ImageSettingsDto.FtpInfo.IpAddress, ImageSettingsDto.FtpInfo.Username,
+                    var (key, value) = await _ftp.Connect(ImageSettingsDto.FtpInfo.IpAddress,
+                        ImageSettingsDto.FtpInfo.Port,
+                        ImageSettingsDto.FtpInfo.Username,
                         ImageSettingsDto.FtpInfo.Password, cancellationToken);
                     if (!key) {
                         OnImageSaveFailed(new Exception(value));

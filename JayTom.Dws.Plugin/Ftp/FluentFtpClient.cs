@@ -23,14 +23,14 @@ namespace JayTom.Dws.Plugin.Ftp {
 
         public bool IsConnected => _ftpClient.IsConnected;
 
-        public async Task<KeyValuePair<bool, string>> Connect(string server, string username, string password, CancellationToken cancellationToken = default) {
+        public async Task<KeyValuePair<bool, string>> Connect(string server, int port, string username, string password, CancellationToken cancellationToken = default) {
             try {
                 await _connectSlim.WaitAsync(cancellationToken);
                 if (_ftpClient.IsConnected) {
                     return new KeyValuePair<bool, string>(true, "连接成功!");
                 }
-
                 _ftpClient.Host = server;
+                _ftpClient.Port = port;
                 _ftpClient.Config.DataConnectionConnectTimeout = 60 * 1000;
                 _ftpClient.Config.ConnectTimeout = 60 * 1000;
                 _ftpClient.Config.SocketKeepAlive = true;

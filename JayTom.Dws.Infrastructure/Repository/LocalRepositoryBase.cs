@@ -615,7 +615,12 @@ namespace JayTom.Dws.Infrastructure.Repository {
                     var dbSet = concardContext?.Set<T>();
                     if (dbSet is null) return 0;
 
-                    return await dbSet.Where(where).Take(count).BatchDeleteAsync(cancellationToken: token);
+                    var itemsToDelete = await dbSet.Where(where).Take(count).ToListAsync(cancellationToken: token);
+                    dbSet.RemoveRange(itemsToDelete);
+                    return await concardContext?.SaveChangesAsync(cancellationToken: token);
+
+                    //return await dbSet.Where(where).Where((item, index) => index < count).BatchDeleteAsync(cancellationToken: token);
+                    // return await dbSet.Where(where).Take(count).BatchDeleteAsync(cancellationToken: token);
                 }
             }
             catch (Exception e) {

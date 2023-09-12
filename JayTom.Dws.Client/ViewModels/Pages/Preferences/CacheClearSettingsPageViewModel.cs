@@ -20,6 +20,7 @@ using System.Collections.ObjectModel;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Infrastructure.IComputer;
 using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Domain.Service.CacheCleanup;
 using JayTom.Dws.Client.Models.CacheClearSettings;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
@@ -28,6 +29,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         private readonly IConfigRepository _configRepository;
         private readonly IComputer _computer;
         private readonly IFtp _ftp;
+        private readonly ICacheCleanupService _cacheCleanupService;
         private bool _isSameDiskStorage;
         private FtpUsageInfo _ftpUsageInfo = new();
         private LocalDiskUsageInfo _localDiskUsageInfo = new();
@@ -41,10 +43,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         private bool _isShowingFtpSpaceInfo;
 
         public CacheClearSettingsPageViewModel(IConfigRepository configRepository,
-            IComputer computer, IFtp ftp) {
+            IComputer computer, IFtp ftp, ICacheCleanupService cacheCleanupService) {
             _configRepository = configRepository;
             _computer = computer;
             _ftp = ftp;
+            _cacheCleanupService = cacheCleanupService;
         }
 
         public SnackbarMessageQueue CacheClearSettingsMessageQueue {
@@ -132,22 +135,85 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         }
 
         private void ManualCleanupDelegate(string obj) {
-            Debug.WriteLine(obj);
+            switch (obj) {
+                case "BarcodeData":
+                    //删除指定天数之前的条码数据
+                    Task.Run(async () => {
+                        if (!IsDeletingInProgress) {
+                            IsDeletingInProgress = true;
+                            var (key, value) =
+                                await _cacheCleanupService.DeleteBarcodeDataOlderThanDays(
+                                    ManualCleanupParams.BarcodeDataAgoDays);
 
-            if (obj.Equals("BarcodeData")) {
-                //删除指定天数之前的条码数据
-            }
-            else if (obj.Equals("ScanImage")) {
-                //删除指定天数之前的扫码图片
-            }
-            else if (obj.Equals("PanoramaImage")) {
-                //删除指定天数之前的全景图片
-            }
-            else if (obj.Equals("FtpImage")) {
-                //删除指定天数之前的FTP
-            }
-            else if (obj.Equals("LogData")) {
-                //删除指定天数之前的日志
+                            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                                CacheClearSettingsMessageQueue.Enqueue(key ? "删除成功" : $"删除失败,{value}");
+                            });
+                            IsDeletingInProgress = false;
+                        }
+                    });
+                    break;
+
+                case "ScanImage":
+                    //删除指定天数之前的扫码图片
+                    Task.Run(async () => {
+                        if (!IsDeletingInProgress) {
+                            IsDeletingInProgress = true;
+                            var (key, value) =
+                                await _cacheCleanupService.DeleteScanImagesOlderThanDays(ManualCleanupParams
+                                    .ScanImageAgoDays);
+
+                            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                                CacheClearSettingsMessageQueue.Enqueue(key ? "删除成功" : $"删除失败,{value}");
+                            });
+                            IsDeletingInProgress = false;
+                        }
+                    });
+                    break;
+
+                case "PanoramaImage":
+                    //删除指定天数之前的全景图片
+                    Task.Run(async () => {
+                        if (!IsDeletingInProgress) {
+                            IsDeletingInProgress = true;
+                            var (key, value) =
+                                await _cacheCleanupService.DeletePanoramaImagesOlderThanDays(ManualCleanupParams.PanoramaImageAgoDays);
+                            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                                CacheClearSettingsMessageQueue.Enqueue(key ? "删除成功" : $"删除失败,{value}");
+                            });
+                            IsDeletingInProgress = false;
+                        }
+                    });
+                    break;
+
+                case "FtpImage":
+                    //删除指定天数之前的FTP
+                    Task.Run(async () => {
+                        if (!IsDeletingInProgress) {
+                            IsDeletingInProgress = true;
+                            var (key, value) =
+                                await _cacheCleanupService.DeleteFtpImagesOlderThanDays(ManualCleanupParams.FtpImageAgoDays);
+                            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                                CacheClearSettingsMessageQueue.Enqueue(key ? "删除成功" : $"删除失败,{value}");
+                            });
+                            IsDeletingInProgress = false;
+                        }
+                    });
+                    break;
+
+                case "LogData":
+                    //删除指定天数之前的日志
+                    Task.Run(async () => {
+                        if (!IsDeletingInProgress) {
+                            IsDeletingInProgress = true;
+                            var (key, value) =
+                                await _cacheCleanupService.DeleteLogDataOlderThanDays(ManualCleanupParams.LogDataAgoDays);
+                            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                                CacheClearSettingsMessageQueue.Enqueue(key ? "删除成功" : $"删除失败,{value}");
+                            });
+                            IsDeletingInProgress = false;
+                        }
+                    });
+                    break;
             }
         }
 
@@ -211,7 +277,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                             }
 
                             if (!_ftp.IsConnected) {
-                                var (key, value) = await _ftp.Connect(_imageSettingsDto.FtpInfo.IpAddress, _imageSettingsDto.FtpInfo.Username,
+                                var (key, value) = await _ftp.Connect(_imageSettingsDto.FtpInfo.IpAddress, _imageSettingsDto.FtpInfo.Port, _imageSettingsDto.FtpInfo.Username,
                                     _imageSettingsDto.FtpInfo.Password);
                                 IsShowingFtpSpaceInfo = (key && await _ftp.DirectoryExists("BarcodeImage") &&
                                                          await _ftp.DirectoryExists("PanoramaImage"));
@@ -243,7 +309,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                             LogFileUsagePercentage = progress += localDiskUsageInfo.LogFileUsagePercentage,
                             OtherUsagePercentage = progress += localDiskUsageInfo.OtherUsagePercentage,
                         };
-                        NLog.LogManager.GetCurrentClassLogger().Error(JsonConvert.SerializeObject(LocalDiskUsageInfo));
                     }
                     //判断FTP是否连接
                     if (IsShowingFtpSpaceInfo) {
@@ -275,6 +340,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                                     PanoramaImageAgoDays = cacheClearSettingsDto.PanoramaImageAgoDays,
                                     ScanImageAgoDays = cacheClearSettingsDto.ScanImageAgoDays
                                 };
+                                MinimumSpaceRetention = cacheClearSettingsDto.MinimumSpaceRetention;
                             });
                         }
                     }

@@ -18,10 +18,11 @@ namespace JayTom.Dws.Plugin.Ftp {
         /// 连接
         /// </summary>
         /// <param name="server"></param>
+        /// <param name="port"></param>
         /// <param name="username"></param>
         /// <param name="password"></param>
         /// <param name="cancellationToken"></param>
-        Task<KeyValuePair<bool, string>> Connect(string server, string username, string password, CancellationToken cancellationToken = default);
+        Task<KeyValuePair<bool, string>> Connect(string server, int port, string username, string password, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// 获取文件列表

@@ -33,6 +33,7 @@ using Microsoft.EntityFrameworkCore;
 using JayTom.Dws.Client.Views.Dialog;
 using JayTom.Dws.Client.Views.Editors;
 using JayTom.Dws.Client.Service.Device;
+using JayTom.Dws.Infrastructure.Service;
 using JayTom.Dws.Client.ViewModels.Pages;
 using JayTom.Dws.Infrastructure.IComputer;
 using JayTom.Dws.Client.ViewModels.Dialog;
@@ -43,6 +44,7 @@ using JayTom.Dws.Domain.Repository.LocalData;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Client.Service.ImageStorage;
 using JayTom.Dws.Client.Service.ResultOutput;
+using JayTom.Dws.Domain.Service.CacheCleanup;
 using Microsoft.Extensions.DependencyInjection;
 using JayTom.Dws.Client.Views.Pages.Preferences;
 using JayTom.Dws.Client.Service.BackgroundService;
@@ -147,6 +149,8 @@ namespace JayTom.Dws.Client {
                 services.AddScoped<IImageStorageService, DefaultImageStorageService>();
                 services.AddScoped<IResultOutputService, DefaultResultOutputService>();
                 services.AddScoped<IExternalDataService, ExternalDataService>();
+                //基础服务注册
+                services.AddScoped<ICacheCleanupService, CacheCleanupService>();
             });
         }
 
@@ -213,6 +217,7 @@ namespace JayTom.Dws.Client {
                         services.AddSingleton(container.Resolve<ISoundRepository>());
                         services.AddSingleton(container.Resolve<IConfigRepository>());
                         services.AddSingleton(container.Resolve<IExternalDataService>());
+                        services.AddSingleton(container.Resolve<ICacheCleanupService>());
                         //补注册
 
                         services.AddHostedService<ComputerInfoBackgroundService>(); // 注册后台服务
@@ -220,6 +225,7 @@ namespace JayTom.Dws.Client {
                         services.AddHostedService<SaveImageBackgroundService>();//注册存图服务
                         services.AddHostedService<SubmitApiBackgroundService>();//提交Api
                         services.AddHostedService<DataProcessingBackgroundService>();//数据处理
+                        services.AddHostedService<CleanupService>();//清理
                     })
                     .Build();
                 _host.Start();

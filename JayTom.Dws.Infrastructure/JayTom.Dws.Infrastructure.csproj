@@ -36,6 +36,7 @@
   <ItemGroup>
     <ProjectReference Include="..\JayTom.Dws.Data\JayTom.Dws.Data.csproj" />
     <ProjectReference Include="..\JayTom.Dws.Domain\JayTom.Dws.Domain.csproj" />
+    <ProjectReference Include="..\JayTom.Dws.Plugin\JayTom.Dws.Plugin.csproj" />
   </ItemGroup>
 
 </Project>
