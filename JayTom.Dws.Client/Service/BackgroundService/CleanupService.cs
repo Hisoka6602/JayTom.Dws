@@ -21,8 +21,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private ImageSettingsDto? _imageSettingsDto;
         private CacheClearSettingsDto? _cacheClearSettingsDto;
         private SemaphoreSlim _semaphore = new(1);
-        private static string _imagePathRoot = string.Empty;
-        private static DateTime _lastCleanupTime = DateTime.Today;
+        private string _imagePathRoot = string.Empty;
+        private DateTime _lastCleanupTime = DateTime.Today;
 
         //获取设置
         public CleanupService(ICacheCleanupService cacheCleanupService,
@@ -49,7 +49,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 }
                 else if (settings is SettingsChangedEvent { SettingsName: "CacheClearSettings" }) {
                     await _semaphore.WaitAsync();
-                    var configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("SaveImageSettings"));
+                    var configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("CacheClearSettings"));
                     try {
                         _cacheClearSettingsDto = JsonConvert.DeserializeObject<CacheClearSettingsDto>(configInfoModel.Value);
                     }
@@ -103,7 +103,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         await _cacheCleanupService.DeleteEarliestBarcodeData();
                         await _cacheCleanupService.DeleteEarliestLogData();
                     }
-
                     //图片盘
                     var imagediskinfo = (await _computer.GetDiskInfoAsync())
                         ?.FirstOrDefault(w =>

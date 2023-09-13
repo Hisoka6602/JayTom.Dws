@@ -246,10 +246,11 @@ namespace JayTom.Dws.Infrastructure.Service {
                                     .Where(w => w.Contains("\\BarcodeImage\\"))
                                     .Select(file => new FileInfo(file))
                                     .Where(w => w.CreationTime.CompareTo(firstOrDefault.CreationTime.Date.AddDays(1)) < 0).
+                                    OrderBy(o => o.CreationTime).
                                     Select(s => s.FullName)?.ToList();
                                 if (list?.Any() == true) {
-                                    for (var i = list.Count - 1; i >= 0; i--) {
-                                        File.Delete(list[i]);
+                                    foreach (var variable in list) {
+                                        File.Delete(variable);
                                     }
                                 }
                                 return new KeyValuePair<bool, string>(true, string.Empty);
@@ -299,10 +300,11 @@ namespace JayTom.Dws.Infrastructure.Service {
                                     .Where(w => w.Contains("\\PanoramaImage\\"))
                                     .Select(file => new FileInfo(file))
                                     .Where(w => w.CreationTime.CompareTo(firstOrDefault.CreationTime.Date.AddDays(1)) < 0).
+                                    OrderBy(o => o.CreationTime).
                                     Select(s => s.FullName)?.ToList();
                                 if (list?.Any() == true) {
-                                    for (var i = list.Count - 1; i >= 0; i--) {
-                                        File.Delete(list[i]);
+                                    foreach (var variable in list) {
+                                        File.Delete(variable);
                                     }
                                 }
                                 return new KeyValuePair<bool, string>(true, string.Empty);
