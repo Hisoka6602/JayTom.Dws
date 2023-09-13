@@ -1,15 +1,17 @@
 ﻿using System.Media;
 using System.Reflection;
 using System.Speech.Synthesis;
+using System.Reflection.Metadata;
 using System.Collections.Concurrent;
+using System.Runtime.InteropServices;
 
 namespace JayTom.Dws.Plugin.Speech {
 
     public class Speech : ISpeech {
         private static SpeechSynthesizer? _synthesizer;
         private static ConcurrentDictionary<string, byte[]>? _soundDictionary = new();
-        private SemaphoreSlim _playSlim = new(1);
-        private SemaphoreSlim _takeSlim = new(1);
+        private static SemaphoreSlim _playSlim = new(1);
+        private static SemaphoreSlim _takeSlim = new(1);
 
         public Speech() {
             _synthesizer ??= new() {
@@ -32,7 +34,7 @@ namespace JayTom.Dws.Plugin.Speech {
         public async void PlayStream(Stream stream) {
             try {
                 await _playSlim.WaitAsync();
-                new System.Media.SoundPlayer(stream)?.PlaySync();
+                new SoundPlayer(stream)?.PlaySync();
             }
             finally {
                 _playSlim.Release();
@@ -47,19 +49,33 @@ namespace JayTom.Dws.Plugin.Speech {
                         player?.PlaySync();
                     }
                 }
-
-                await Task.Delay(100);
             }
             catch (Exception e) {
                 NLog.LogManager.GetCurrentClassLogger().Error($"播放声音文件异常:{e}");
-                // ignored
             }
             finally {
                 _playSlim.Release();
             }
         }
 
-        public async void PlayCacheByteFile(string name, byte[] file) {
+        public unsafe void PlaySoundFromMemory(MemoryLocation memoryLocation) {
+            try {
+                if (!memoryLocation.Handle.IsAllocated || memoryLocation.MemoryPtr == IntPtr.Zero) {
+                    throw new Exception("内存未锁定或指针为空");
+                }
+                NLog.LogManager.GetCurrentClassLogger().Error($"{memoryLocation.MemoryPtr:x8}");
+                using (var stream = new UnmanagedMemoryStream((byte*)memoryLocation.MemoryPtr.ToPointer(), memoryLocation.Data.Length)) {
+                    using (var player = new SoundPlayer(stream)) {
+                        player?.PlaySync();
+                    }
+                }
+            }
+            catch (Exception e) {
+                NLog.LogManager.GetCurrentClassLogger().Error($"播放声音文件异常:{e}");
+            }
+        }
+
+        public async Task PlayCacheByteFile(string name, byte[] file) {
             try {
                 await _takeSlim.WaitAsync();
                 if (_soundDictionary != null) {
@@ -68,6 +84,11 @@ namespace JayTom.Dws.Plugin.Speech {
                         PlayByteFile(sound);
                     }
                     else {
+                        /*var location = new MemoryLocation() {
+                            Data = file,
+                            Handle = GCHandle.Alloc(file, GCHandleType.Pinned),
+                        };
+                        location.MemoryPtr = location.Handle.AddrOfPinnedObject();*/
                         _soundDictionary?.TryAdd(name, file);
                         PlayByteFile(file);
                     }
@@ -135,6 +156,12 @@ namespace JayTom.Dws.Plugin.Speech {
             finally {
                 _playSlim.Release();
             }
+        }
+
+        public class MemoryLocation {
+            public GCHandle Handle { get; set; }
+            public IntPtr MemoryPtr { get; set; }
+            public byte[] Data { get; set; }
         }
     }
 }

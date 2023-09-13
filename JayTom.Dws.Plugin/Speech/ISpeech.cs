@@ -26,7 +26,7 @@
         /// </summary>
         /// <param name="name"></param>
         /// <param name="file"></param>
-        void PlayCacheByteFile(string name, byte[] file);
+        Task PlayCacheByteFile(string name, byte[] file);
 
         /// <summary>
         /// 播放文件

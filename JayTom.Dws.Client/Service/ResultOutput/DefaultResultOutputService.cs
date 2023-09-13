@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using JayTom.Dws.Plugin.Speech;
 using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using JayTom.Dws.Client.EventMediators;
 using NetTopologySuite.GeometriesGraph;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
@@ -29,7 +30,7 @@ namespace JayTom.Dws.Client.Service.ResultOutput {
         private readonly ISoundRepository _soundRepository;
         private SemaphoreSlim _semaphore = new(1);
         private ResultOutputSettingsDto? _outputSettingsDto;
-        private List<SoundInfoModel>? _soundInfoModels = new();
+        private ConcurrentDictionary<string, byte[]>? _sounds = new();
 
         public DefaultResultOutputService(IConfigRepository configRepository,
             ISpeech speech, ITcpCommunicationClient tcpCommunicationClient,
@@ -40,7 +41,7 @@ namespace JayTom.Dws.Client.Service.ResultOutput {
             _tcpCommunication = tcpCommunication;
             _soundRepository = soundRepository;
             //定义事件
-            EventAggregator.Instance.Subscribe<TriggerPositionEvent>(position => {
+            EventAggregator.Instance.Subscribe<TriggerPositionEvent>(async position => {
                 //播放声音事件
                 if (position is TriggerPositionEvent trigger) {
                     if (_outputSettingsDto?.IsUseAudioOutput == true) {
@@ -90,8 +91,12 @@ namespace JayTom.Dws.Client.Service.ResultOutput {
                     }
 
                     if (_outputSettingsDto.IsUseAudioOutput) {
-                        _soundInfoModels = await _soundRepository.
+                        var soundInfoModels = await _soundRepository.
                             Select(s => s.Id > 0, o => o.Id);
+                        foreach (var soundInfoModel in soundInfoModels.Where(soundInfoModel => soundInfoModel.SoundFile is not null)) {
+                            _sounds?.AddOrUpdate(soundInfoModel.SoundName,
+                                soundInfoModel.SoundFile, (a, b) => b);
+                        }
                     }
                     _semaphore.Release();
                 }
@@ -172,30 +177,37 @@ namespace JayTom.Dws.Client.Service.ResultOutput {
         /// </summary>
         /// <param name="isSuccess"></param>
         /// <param name="cancellationToken"></param>
-        private void SoundOutput(bool isSuccess, CancellationToken cancellationToken = default) {
-            if (_outputSettingsDto is not null) {
-                if (_outputSettingsDto.IsUseAudioOutput) {
-                    if (isSuccess) {
-                        var soundInfoModel = _soundInfoModels?.FirstOrDefault(f =>
-                            f.SoundName.Equals(_outputSettingsDto.AudioOutputSettingsInfo.SuccessAudio));
-                        if (soundInfoModel is not null) {
-                            _speech.PlayCacheByteFile(soundInfoModel.SoundName, soundInfoModel.SoundFile ?? Array.Empty<byte>());
+        private async void SoundOutput(bool isSuccess, CancellationToken cancellationToken = default) {
+            try {
+                if (_outputSettingsDto is not null) {
+                    if (_outputSettingsDto.IsUseAudioOutput) {
+                        if (isSuccess) {
+                            var tryGetValue = _sounds.TryGetValue(
+                                _outputSettingsDto.AudioOutputSettingsInfo.SuccessAudio ?? string.Empty, out var file);
+                            if (tryGetValue && file is not null) {
+                                await _speech.PlayCacheByteFile(
+                                    _outputSettingsDto.AudioOutputSettingsInfo.SuccessAudio ?? string.Empty, file);
+                            }
+                            else {
+                                NLog.LogManager.GetCurrentClassLogger().Error("找不到声音信息对象");
+                            }
                         }
                         else {
-                            NLog.LogManager.GetCurrentClassLogger().Error("找不到声音信息对象");
-                        }
-                    }
-                    else {
-                        var soundInfoModel = _soundInfoModels?.FirstOrDefault(f =>
-                            f.SoundName.Equals(_outputSettingsDto.AudioOutputSettingsInfo.FailureAudio));
-                        if (soundInfoModel is not null) {
-                            _speech.PlayCacheByteFile(soundInfoModel.SoundName, soundInfoModel.SoundFile ?? Array.Empty<byte>());
-                        }
-                        else {
-                            NLog.LogManager.GetCurrentClassLogger().Error("找不到声音信息对象");
+                            var tryGetValue = _sounds.TryGetValue(
+                                _outputSettingsDto.AudioOutputSettingsInfo.FailureAudio ?? string.Empty, out var file);
+                            if (tryGetValue && file is not null) {
+                                await _speech.PlayCacheByteFile(
+                                    _outputSettingsDto.AudioOutputSettingsInfo.FailureAudio ?? string.Empty, file);
+                            }
+                            else {
+                                NLog.LogManager.GetCurrentClassLogger().Error("找不到声音信息对象");
+                            }
                         }
                     }
                 }
+            }
+            catch (Exception e) {
+                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
             }
         }
 
