@@ -244,6 +244,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
 
         protected virtual async void OnCameraExceptionOccurred(CameraExceptionEventArgs e) {
             await Task.Yield();
+            Status = CameraStatus.Disconnected;
             CameraExceptionOccurred?.Invoke(this, e);
         }
 

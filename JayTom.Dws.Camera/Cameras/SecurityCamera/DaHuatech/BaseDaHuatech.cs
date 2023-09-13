@@ -109,6 +109,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                                         _imageBytes = new byte[len];
                                         Marshal.Copy(buf, _imageBytes, 0, (int)len);
                                         using var stream = new MemoryStream(_imageBytes);
+                                        stream.Seek(0, SeekOrigin.Begin);
                                         imageBitmap = Image.FromStream(stream);
                                     }
 
