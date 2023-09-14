@@ -51,7 +51,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                         IconCode = "\xe6da",
                         IconSize = 22
                     },
-                    Title = "数据管理",
+                    Title = Languages.Language.ResourceManager.GetString("DataManagement")??string.Empty,
                     Description = "数据信息管理",
                     ClickCommand = ClickCommand,
                     PageClassName = "DataManagementPage",
@@ -65,7 +65,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                         IconCode = "\xe63a",
                         IconSize = 25
                     },
-                    Title = "相机配置",
+                    Title = Languages.Language.ResourceManager.GetString("CameraConfiguration")??string.Empty,
                     Description = "相机管理配置",
                     ClickCommand = ClickCommand,
                     PageClassName = "CameraConfigurationPage"
@@ -78,7 +78,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                         IconCode = "\xe664",
                         IconSize = 25
                     },
-                    Title = "Api接口",
+                    Title = Languages.Language.ResourceManager.GetString("ApiInterface")??string.Empty,
                     Description = "Api上传接口设置",
                     ClickCommand = ClickCommand,
                     PageClassName = "APISettingsPage"
@@ -91,7 +91,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                         IconCode = "\xe6b1",
                         IconSize = 23
                     },
-                    Title = "存图设置",
+                    Title = Languages.Language.ResourceManager.GetString("ImageStorageSettings")??string.Empty,
                     Description = "存图相关设置",
                     ClickCommand = ClickCommand,
                     PageClassName = "SaveImageSettingsPage"
@@ -104,7 +104,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                         IconCode = "\xe6af",
                         IconSize = 30
                     },
-                    Title = "条码过滤",
+                    Title = Languages.Language.ResourceManager.GetString("FilteringSettings")??string.Empty,
                     Description = "条码过滤相关设置",
                     ClickCommand = ClickCommand,
                     PageClassName = "BarcodeFilterSettingsPage"
@@ -117,7 +117,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                         IconCode = "\xe71e",
                         IconSize = 26
                     },
-                    Title = "称重设置",
+                    Title = Languages.Language.ResourceManager.GetString("WeightSettings")??string.Empty,
                     Description = "磅秤和称重设置相关",
                     ClickCommand = ClickCommand,
                     PageClassName = "WeightSettingPages"
@@ -130,7 +130,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                         IconCode = "\xe72f",
                         IconSize = 28
                     },
-                    Title = "体积设置",
+                    Title = Languages.Language.ResourceManager.GetString("VolumeSettings")??string.Empty,
                     Description = "体积设置相关",
                     ClickCommand = ClickCommand,
                     PageClassName = "VolumeSettingsPage"
@@ -143,7 +143,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                         IconCode = "\xe641",
                         IconSize = 30
                     },
-                    Title = "结果输出",
+                    Title = Languages.Language.ResourceManager.GetString("OutputResults")??string.Empty,
                     Description = "结果输出相关设置",
                     ClickCommand = ClickCommand,
                     PageClassName = "ResultOutputSettingsPage"
@@ -156,7 +156,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                         IconCode = "\xe6b5",
                         IconSize = 30
                     },
-                    Title = "内容输入",
+                    Title = Languages.Language.ResourceManager.GetString("InputContent")??string.Empty,
                     Description = "内容输入相关设置",
                     ClickCommand = ClickCommand,
                     PageClassName = "ContentInputSettingsPage"
@@ -169,7 +169,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                         IconCode = "\xeaad",
                         IconSize = 25
                     },
-                    Title = "日志管理",
+                    Title = Languages.Language.ResourceManager.GetString("LogManagement")??string.Empty,
                     Description = "运行日志、设备日志、通讯日志管理",
                     ClickCommand = ClickCommand,
                     PageClassName = "LogManagerPage"
@@ -182,7 +182,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                         IconCode = "\xe74a",
                         IconSize = 25
                     },
-                    Title = "空间清理",
+                    Title = Languages.Language.ResourceManager.GetString("CacheCearing")??string.Empty,
                     Description = "释放缓存/空间的方案",
                     ClickCommand = ClickCommand,
                     PageClassName = "CacheClearSettingsPage"

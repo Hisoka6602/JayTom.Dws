@@ -4,11 +4,16 @@
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     xmlns:models="clr-namespace:JayTom.Dws.Client.Models">
     <DataTemplate x:Key="MenuTemplate" DataType="{x:Type models:MenuItemInfoModel}">
-        <Grid>
+        <Grid Width="210">
 
             <Button
                 x:Name="MenuButton"
+                Width="210"
                 MinHeight="60"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                HorizontalContentAlignment="Center"
+                VerticalContentAlignment="Center"
                 materialDesign:ButtonAssist.CornerRadius="{Binding RadiusRight, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                 Command="{Binding ClickCommand}"
                 CommandParameter="{Binding}"
@@ -33,7 +38,7 @@
                 </Button.Style>
 
                 <StackPanel
-                    HorizontalAlignment="Left"
+                    HorizontalAlignment="Center"
                     VerticalAlignment="Center"
                     Orientation="Horizontal">
                     <!--  图标  -->
@@ -60,6 +65,7 @@
                     <TextBlock
                         x:Name="DescriptionBlock"
                         Margin="2,2,0,0"
+                        HorizontalAlignment="Center"
                         VerticalAlignment="Center"
                         FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
                         FontSize="16"

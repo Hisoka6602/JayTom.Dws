@@ -62,7 +62,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         private int _abnormalDataCount;
         private bool _runningStatus;
         private SnackbarMessageQueue _homeMessageQueue = new(TimeSpan.FromSeconds(2));
-        private string _barCode = "包裹条码";
+        private string _barCode = Languages.Language.ResourceManager.GetString("BarCode") ?? string.Empty;
         private float _weight;
         private float _volume;
         private float _length;

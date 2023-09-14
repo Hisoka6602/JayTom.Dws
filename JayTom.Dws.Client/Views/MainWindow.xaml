@@ -418,7 +418,7 @@
                         <!--  返回按钮  -->
                         <Border
                             Grid.Row="0"
-                            Width="180"
+                            Width="210"
                             HorizontalAlignment="Left"
                             Background="#2E2E2E">
                             <Button

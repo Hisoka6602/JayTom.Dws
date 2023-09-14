@@ -512,7 +512,7 @@
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
-                                <GridViewColumn Width="150" Header="条码">
+                                <GridViewColumn Width="150" Header="{x:Static languages:Language.TableHeaderBarCode}">
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBlock
@@ -523,7 +523,7 @@
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
-                                <GridViewColumn Width="60" Header="重量">
+                                <GridViewColumn Width="60" Header="{x:Static languages:Language.TableHeaderWeight}">
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBlock
@@ -534,7 +534,7 @@
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
-                                <GridViewColumn Width="60" Header="长度">
+                                <GridViewColumn Width="60" Header="{x:Static languages:Language.TableHeaderLength}">
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBlock
@@ -555,7 +555,7 @@
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
 
-                                <GridViewColumn Width="60" Header="宽度">
+                                <GridViewColumn Width="60" Header="{x:Static languages:Language.TableHeaderWidth}">
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBlock
@@ -575,7 +575,7 @@
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
-                                <GridViewColumn Width="60" Header="高度">
+                                <GridViewColumn Width="60" Header="{x:Static languages:Language.TableHeaderHeight}">
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBlock
@@ -595,7 +595,7 @@
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
-                                <GridViewColumn Width="90" Header="体积">
+                                <GridViewColumn Width="90" Header="{x:Static languages:Language.TableHeaderVolume}">
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBlock
@@ -615,7 +615,7 @@
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
-                                <GridViewColumn Width="180" Header="扫描时间">
+                                <GridViewColumn Width="180" Header="{x:Static languages:Language.TableHeaderScanTime}">
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBlock
@@ -626,7 +626,7 @@
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
-                                <GridViewColumn Width="100" Header="上传状态">
+                                <GridViewColumn Width="100" Header="{x:Static languages:Language.TableHeaderAPIResponseStatus}">
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <Button
@@ -882,7 +882,7 @@
                                             FontSize="12"
                                             FontWeight="Light"
                                             Foreground="White"
-                                            Text="扫描数量"
+                                            Text="{x:Static languages:Language.ScanCount}"
                                             TextAlignment="Center" />
                                     </StackPanel>
                                     <TextBlock Text="{Binding TotalDataCount, UpdateSourceTrigger=PropertyChanged, NotifyOnTargetUpdated=True}">
@@ -941,7 +941,7 @@
                                             FontSize="12"
                                             FontWeight="Light"
                                             Foreground="White"
-                                            Text="上传数量"
+                                            Text="{x:Static languages:Language.UploadCount}"
                                             TextAlignment="Center" />
                                     </StackPanel>
                                     <TextBlock Text="{Binding UploadedDataCount, UpdateSourceTrigger=PropertyChanged, NotifyOnTargetUpdated=True}">
@@ -1000,7 +1000,7 @@
                                             FontSize="12"
                                             FontWeight="Light"
                                             Foreground="White"
-                                            Text="异常数量"
+                                            Text="{x:Static languages:Language.ExceptionCount}"
                                             TextAlignment="Center" />
                                     </StackPanel>
                                     <TextBlock Text="{Binding AbnormalDataCount, UpdateSourceTrigger=PropertyChanged, NotifyOnTargetUpdated=True}">

@@ -5,6 +5,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:languages="clr-namespace:JayTom.Dws.Client.Languages"
     xmlns:local="clr-namespace:JayTom.Dws.Client.Views.Pages.Preferences"
     xmlns:localData="clr-namespace:JayTom.Dws.Data.LocalData;assembly=JayTom.Dws.Data"
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
@@ -66,7 +67,7 @@
                             FontSize="16"
                             FontWeight="Bold"
                             Foreground="WhiteSmoke"
-                            Text="扫码时间:" />
+                            Text="{x:Static languages:Language.ScanTime}" />
                         <!--  时间选择器  -->
                         <Border
                             Margin="5"
@@ -176,7 +177,7 @@
                             FontSize="16"
                             FontWeight="Bold"
                             Foreground="WhiteSmoke"
-                            Text="时间戳Guid:" />
+                            Text="{x:Static languages:Language.TimestampGuid}" />
                         <Border
                             Margin="5"
                             HorizontalAlignment="Center"
@@ -184,7 +185,7 @@
                             Background="#1A696969"
                             CornerRadius="5">
                             <TextBox
-                                Width="150"
+                                Width="100"
                                 Height="30"
                                 MaxWidth="170"
                                 Margin="5,0"
@@ -209,7 +210,7 @@
                             FontSize="16"
                             FontWeight="Bold"
                             Foreground="WhiteSmoke"
-                            Text="条码:" />
+                            Text="{x:Static languages:Language.BarcodeCondition}" />
                         <Border
                             Margin="5"
                             HorizontalAlignment="Center"
@@ -242,7 +243,7 @@
                             FontSize="16"
                             FontWeight="Bold"
                             Foreground="WhiteSmoke"
-                            Text="重量:" />
+                            Text="{x:Static languages:Language.Weight}" />
                         <!--  最小重量  -->
                         <Border
                             Margin="5"
@@ -251,7 +252,7 @@
                             Background="#1A696969"
                             CornerRadius="5">
                             <TextBox
-                                Width="80"
+                                Width="60"
                                 Height="30"
                                 MaxWidth="170"
                                 Margin="5,0"
@@ -280,7 +281,7 @@
                             Background="#1A696969"
                             CornerRadius="5">
                             <TextBox
-                                Width="80"
+                                Width="60"
                                 Height="30"
                                 MaxWidth="170"
                                 Margin="5,0"
@@ -306,7 +307,7 @@
                             FontSize="16"
                             FontWeight="Bold"
                             Foreground="WhiteSmoke"
-                            Text="上传状态:" />
+                            Text="{x:Static languages:Language.APIResponseStatus}" />
                         <Border
                             Margin="5"
                             HorizontalAlignment="Center"
@@ -394,7 +395,7 @@
                             Background="#3C3C3C"
                             Command="{Binding ClearSearchCriteriaCommand}"
                             Style="{StaticResource ButtonFocusEnlargeStyle}"
-                            ToolTip="清空条件">
+                            ToolTip="{x:Static languages:Language.Clear}">
                             <TextBlock
                                 Margin="2"
                                 HorizontalAlignment="Center"
@@ -428,7 +429,7 @@
                             Background="#3C3C3C"
                             Command="{Binding SearchDataCommand}"
                             Style="{StaticResource ButtonFocusEnlargeStyle}"
-                            ToolTip="查找">
+                            ToolTip="{x:Static languages:Language.Search}">
                             <TextBlock
                                 Margin="2"
                                 HorizontalAlignment="Center"
@@ -459,7 +460,7 @@
                             Command="{Binding ExportDataCommand}"
                             Cursor="Hand"
                             Style="{StaticResource ButtonFocusEnlargeStyle}"
-                            ToolTip="导出">
+                            ToolTip="{x:Static languages:Language.Export}">
                             <TextBlock
                                 Margin="2"
                                 HorizontalAlignment="Center"
@@ -519,7 +520,7 @@
                         CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                         EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
                         <DataGridTextColumn.Header>
-                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="时间戳Guid" />
+                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="{x:Static languages:Language.TableHeaderTimestampGuid}" />
                         </DataGridTextColumn.Header>
                     </DataGridTextColumn>
 
@@ -530,7 +531,7 @@
                         CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                         EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
                         <DataGridTextColumn.Header>
-                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="条码" />
+                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="{x:Static languages:Language.TableHeaderBarCode}" />
                         </DataGridTextColumn.Header>
                     </DataGridTextColumn>
                     <DataGridTextColumn
@@ -540,7 +541,7 @@
                         CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                         EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
                         <DataGridTextColumn.Header>
-                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="重量" />
+                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="{x:Static languages:Language.TableHeaderWeight}" />
                         </DataGridTextColumn.Header>
                     </DataGridTextColumn>
                     <DataGridTextColumn
@@ -558,7 +559,7 @@
                             </MultiBinding>
                         </DataGridTextColumn.Binding>
                         <DataGridTextColumn.Header>
-                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="长度" />
+                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="{x:Static languages:Language.TableHeaderLength}" />
                         </DataGridTextColumn.Header>
                     </DataGridTextColumn>
                     <DataGridTextColumn
@@ -576,7 +577,7 @@
                             </MultiBinding>
                         </DataGridTextColumn.Binding>
                         <DataGridTextColumn.Header>
-                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="宽度" />
+                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="{x:Static languages:Language.TableHeaderWidth}" />
                         </DataGridTextColumn.Header>
                     </DataGridTextColumn>
                     <DataGridTextColumn
@@ -594,7 +595,7 @@
                             </MultiBinding>
                         </DataGridTextColumn.Binding>
                         <DataGridTextColumn.Header>
-                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="高度" />
+                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="{x:Static languages:Language.TableHeaderHeight}" />
                         </DataGridTextColumn.Header>
                     </DataGridTextColumn>
                     <DataGridTextColumn
@@ -612,7 +613,7 @@
                             </MultiBinding>
                         </DataGridTextColumn.Binding>
                         <DataGridTextColumn.Header>
-                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="体积" />
+                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="{x:Static languages:Language.TableHeaderVolume}" />
                         </DataGridTextColumn.Header>
                     </DataGridTextColumn>
                     <DataGridTextColumn
@@ -622,7 +623,7 @@
                         CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                         EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
                         <DataGridTextColumn.Header>
-                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="扫码时间" />
+                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="{x:Static languages:Language.TableHeaderScanTime}" />
                         </DataGridTextColumn.Header>
                     </DataGridTextColumn>
                     <DataGridTemplateColumn
@@ -633,7 +634,7 @@
                             <TextBlock
                                 HorizontalAlignment="Stretch"
                                 Style="{StaticResource DataGridTextColumnTitleStyle}"
-                                Text="上传状态" />
+                                Text="{x:Static languages:Language.TableHeaderAPIResponseStatus}" />
                         </DataGridTemplateColumn.Header>
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
@@ -692,7 +693,7 @@
                         MaxWidth="600"
                         CellStyle="{StaticResource CustomDataGridTextCellStyle}">
                         <DataGridTemplateColumn.Header>
-                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="图片" />
+                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="{x:Static languages:Language.TableHeaderBarcodeImage}" />
                         </DataGridTemplateColumn.Header>
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
@@ -781,7 +782,7 @@
                         MaxWidth="600"
                         CellStyle="{StaticResource CustomDataGridTextCellStyle}">
                         <DataGridTemplateColumn.Header>
-                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="全景图片" />
+                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="{x:Static languages:Language.TableHeaderPanoramicImage}" />
                         </DataGridTemplateColumn.Header>
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
@@ -895,7 +896,7 @@
                         Background="#3C3C3C"
                         Command="{Binding FirstPageCommand}"
                         Style="{StaticResource ButtonFocusEnlargeStyle}"
-                        ToolTip="FirstPage">
+                        ToolTip="{x:Static languages:Language.FirstPage}">
                         <TextBlock
                             Margin="2"
                             HorizontalAlignment="Center"
@@ -922,7 +923,7 @@
                         Background="#3C3C3C"
                         Command="{Binding PreviousPageCommand}"
                         Style="{StaticResource ButtonFocusEnlargeStyle}"
-                        ToolTip="PreviousPage">
+                        ToolTip="{x:Static languages:Language.PreviousPage}">
                         <TextBlock
                             Margin="2"
                             HorizontalAlignment="Center"
@@ -973,7 +974,7 @@
                         Background="#3C3C3C"
                         Command="{Binding NextPageCommand}"
                         Style="{StaticResource ButtonFocusEnlargeStyle}"
-                        ToolTip="NextPage">
+                        ToolTip="{x:Static languages:Language.NextPage}">
                         <TextBlock
                             Margin="2"
                             HorizontalAlignment="Center"
@@ -996,7 +997,7 @@
                         Background="#3C3C3C"
                         Command="{Binding LastPageCommand}"
                         Style="{StaticResource ButtonFocusEnlargeStyle}"
-                        ToolTip="LastPage">
+                        ToolTip="{x:Static languages:Language.LastPage}">
                         <TextBlock
                             Margin="2"
                             HorizontalAlignment="Center"

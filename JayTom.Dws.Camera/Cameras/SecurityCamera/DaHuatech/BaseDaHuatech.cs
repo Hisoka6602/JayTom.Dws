@@ -98,6 +98,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                         if (len > 0) {
                             try {
                                 await _snapRevPhotoSlim.WaitAsync();
+                                await Task.Delay(50);
 
                                 // 取出登录id
                                 var (key, value) = _loginDev.FirstOrDefault(f => f.Value == id);
@@ -117,7 +118,10 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
 
                                                     using var stream = new UnmanagedMemoryStream(pBuffer, len);
                                                     stream.Seek(0, SeekOrigin.Begin);
-                                                    imageBitmap = Image.FromStream(stream);
+                                                    var valid = IsImageDataValid(stream);
+                                                    if (valid) {
+                                                        imageBitmap = Image.FromStream(stream);
+                                                    }
                                                 }
                                             }
                                         }
@@ -436,6 +440,24 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
             }
 
             //RealPlay
+        }
+
+        private static bool IsImageDataValid(Stream stream) {
+            var header = new byte[8]; // 读取文件头的字节数
+            if (stream.Read(header, 0, 8) != 8) {
+                return false;
+            }
+
+            // 判断图像文件头是否匹配有效的图像格式
+            // 这里以JPEG格式为例
+            var jpegHeader = new byte[] { 0xFF, 0xD8, 0xFF };
+            for (var i = 0; i < 3; i++) {
+                if (header[i] != jpegHeader[i]) {
+                    return false;
+                }
+            }
+
+            return true;
         }
     }
 }

@@ -117,36 +117,280 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="ApiFailure" xml:space="preserve">
+    <value>Failure</value>
+    <comment>5-Api上传失败</comment>
+  </data>
+  <data name="ApiInterface" xml:space="preserve">
+    <value>ApiInterface</value>
+    <comment>0-Api接口(菜单)</comment>
+  </data>
+  <data name="ApiNotUploaded" xml:space="preserve">
+    <value>NotUploaded</value>
+    <comment>5-Api未上传</comment>
+  </data>
+  <data name="APIResponseStatus" xml:space="preserve">
+    <value>APIStatus:</value>
+    <comment>6-上传状态条件</comment>
+  </data>
+  <data name="ApiSuccess" xml:space="preserve">
+    <value>Success</value>
+    <comment>5-Api上传成功</comment>
+  </data>
+  <data name="AvailableMemory" xml:space="preserve">
+    <value>AvailableMemory:</value>
+    <comment>4-可用内存</comment>
+  </data>
   <data name="BarCode" xml:space="preserve">
     <value>BarCode</value>
-    <comment>包裹条码(主页)</comment>
+    <comment>1-包裹条码(主页)</comment>
+  </data>
+  <data name="BarcodeCondition" xml:space="preserve">
+    <value>Barcode:</value>
+    <comment>6-条码条件</comment>
+  </data>
+  <data name="CacheCearing" xml:space="preserve">
+    <value>CacheCearing</value>
+    <comment>0-空间清理(菜单)</comment>
+  </data>
+  <data name="CameraConfiguration" xml:space="preserve">
+    <value>CameraConfig</value>
+    <comment>0-相机配置(菜单)</comment>
+  </data>
+  <data name="Clear" xml:space="preserve">
+    <value>Clear</value>
+    <comment>6-清空条件</comment>
+  </data>
+  <data name="CpuFanSpeed" xml:space="preserve">
+    <value>CpuFanSpeed:</value>
+    <comment>4-Cpu风扇转速</comment>
+  </data>
+  <data name="CpuSpeed" xml:space="preserve">
+    <value>CpuSpeed:</value>
+    <comment>4-Cpu速度</comment>
+  </data>
+  <data name="CpuTemperature" xml:space="preserve">
+    <value>CpuTemperature:</value>
+    <comment>4-Cpu温度</comment>
+  </data>
+  <data name="CpuUsageRate" xml:space="preserve">
+    <value>CpuUsageRate:</value>
+    <comment>4-Cpu使用率</comment>
+  </data>
+  <data name="DataManagement" xml:space="preserve">
+    <value>DataManagement</value>
+    <comment>0-数据管理(菜单)</comment>
+  </data>
+  <data name="ExceptionCount" xml:space="preserve">
+    <value>ExceptionCount</value>
+    <comment>1-异常数量(主页)</comment>
+  </data>
+  <data name="Export" xml:space="preserve">
+    <value>Export</value>
+    <comment>6-导出</comment>
+  </data>
+  <data name="FilteringSettings" xml:space="preserve">
+    <value>FilteringSettings</value>
+    <comment>0-过滤设置(菜单)</comment>
+  </data>
+  <data name="FirstPage" xml:space="preserve">
+    <value>FirstPage</value>
+    <comment>6-首页</comment>
+  </data>
+  <data name="GpuUsageRate" xml:space="preserve">
+    <value>GpuUsageRate:</value>
+    <comment>4-Gpu使用率</comment>
+  </data>
+  <data name="HardDisk" xml:space="preserve">
+    <value>HardDisk</value>
+    <comment>4-硬盘</comment>
   </data>
   <data name="Height" xml:space="preserve">
     <value>Height:</value>
-    <comment>高度(主页)</comment>
+    <comment>1-高度(主页)</comment>
+  </data>
+  <data name="ImageStorageSettings" xml:space="preserve">
+    <value>ImgStorageSettings</value>
+    <comment>0-存图设置(菜单)</comment>
+  </data>
+  <data name="InputContent" xml:space="preserve">
+    <value>InputContent</value>
+    <comment>0-内容输入(菜单)</comment>
+  </data>
+  <data name="LastPage" xml:space="preserve">
+    <value>LastPage</value>
+    <comment>6-末页</comment>
   </data>
   <data name="Length" xml:space="preserve">
     <value>Length:</value>
-    <comment>长度(主页)</comment>
+    <comment>1-长度(主页)</comment>
+  </data>
+  <data name="LogManagement" xml:space="preserve">
+    <value>LogManagement</value>
+    <comment>0-日志管理(菜单)</comment>
+  </data>
+  <data name="MemoryInformation" xml:space="preserve">
+    <value>MemoryInformation</value>
+    <comment>4-内存信息</comment>
+  </data>
+  <data name="MemoryUsageRate" xml:space="preserve">
+    <value>MemoryUsageRate:</value>
+    <comment>4-内存使用率</comment>
+  </data>
+  <data name="NetworkInformation" xml:space="preserve">
+    <value>NetworkInformation</value>
+    <comment>4-网络信息</comment>
+  </data>
+  <data name="NetworkNotConnected" xml:space="preserve">
+    <value>NC</value>
+    <comment>4-网络未连接</comment>
+  </data>
+  <data name="NetworkSpeed" xml:space="preserve">
+    <value>Speed:</value>
+    <comment>4-网络速度</comment>
+  </data>
+  <data name="NextPage" xml:space="preserve">
+    <value>NextPage</value>
+    <comment>6-下一页</comment>
+  </data>
+  <data name="NoData" xml:space="preserve">
+    <value>NoData</value>
+    <comment>4-异常状态条-没有数据</comment>
+  </data>
+  <data name="OutputResults" xml:space="preserve">
+    <value>OutputResults</value>
+    <comment>0-结果输出(菜单)</comment>
+  </data>
+  <data name="PreviousPage" xml:space="preserve">
+    <value>PreviousPage</value>
+    <comment>6-上一页</comment>
+  </data>
+  <data name="ScanCount" xml:space="preserve">
+    <value>ScanCount</value>
+    <comment>1-扫描数量(主页)</comment>
+  </data>
+  <data name="ScanTime" xml:space="preserve">
+    <value>ScanTime:</value>
+    <comment>6-扫码时间</comment>
+  </data>
+  <data name="Search" xml:space="preserve">
+    <value>Search</value>
+    <comment>6-查找</comment>
+  </data>
+  <data name="Start" xml:space="preserve">
+    <value>Start</value>
+    <comment>1-开始(主页-按钮)</comment>
+  </data>
+  <data name="StatusBarCamera" xml:space="preserve">
+    <value>Camera</value>
+    <comment>3-相机(状态条)</comment>
+  </data>
+  <data name="StatusBarException" xml:space="preserve">
+    <value>Exception</value>
+    <comment>3-异常(状态条)</comment>
+  </data>
+  <data name="StatusBarMemory" xml:space="preserve">
+    <value>Memory:</value>
+    <comment>3-内存(状态条)</comment>
+  </data>
+  <data name="StatusBarSerialPort" xml:space="preserve">
+    <value>COM</value>
+    <comment>3-串口(状态条)</comment>
+  </data>
+  <data name="StatusBarStatus" xml:space="preserve">
+    <value>Computer</value>
+    <comment>3-监控(状态条)</comment>
+  </data>
+  <data name="StatusBarTemperature" xml:space="preserve">
+    <value>Temp:</value>
+    <comment>3-温度(状态条)</comment>
+  </data>
+  <data name="Stop" xml:space="preserve">
+    <value>Stop</value>
+    <comment>1-停止(主页-按钮)</comment>
+  </data>
+  <data name="TableHeaderAPIResponseStatus" xml:space="preserve">
+    <value>APIStatus</value>
+    <comment>2-上传状态(主页-表头)</comment>
+  </data>
+  <data name="TableHeaderBarCode" xml:space="preserve">
+    <value>BarCode</value>
+    <comment>2-条码(主页-表头)</comment>
+  </data>
+  <data name="TableHeaderBarcodeImage" xml:space="preserve">
+    <value>BarcodeImage</value>
+    <comment>2-扫码图片</comment>
+  </data>
+  <data name="TableHeaderHeight" xml:space="preserve">
+    <value>Height</value>
+    <comment>2-高度(主页-表头)</comment>
+  </data>
+  <data name="TableHeaderLength" xml:space="preserve">
+    <value>Length</value>
+    <comment>2-长度(主页-表头)</comment>
+  </data>
+  <data name="TableHeaderPanoramicImage" xml:space="preserve">
+    <value>PanoramicImage</value>
+    <comment>2-全景图片</comment>
+  </data>
+  <data name="TableHeaderScanTime" xml:space="preserve">
+    <value>ScanTime</value>
+    <comment>2-扫描时间(主页-表头)</comment>
+  </data>
+  <data name="TableHeaderTimestampGuid" xml:space="preserve">
+    <value>TimestampGuid</value>
+    <comment>6-时间戳唯一标识</comment>
+  </data>
+  <data name="TableHeaderVolume" xml:space="preserve">
+    <value>Volume</value>
+    <comment>2-体积(主页-表头)</comment>
+  </data>
+  <data name="TableHeaderWeight" xml:space="preserve">
+    <value>Weight</value>
+    <comment>2-重量(主页-表头)</comment>
+  </data>
+  <data name="TableHeaderWidth" xml:space="preserve">
+    <value>Width</value>
+    <comment>2-宽度(主页-表头)</comment>
+  </data>
+  <data name="TimestampGuid" xml:space="preserve">
+    <value>TimestampGuid:</value>
+    <comment>6-时间戳Guid</comment>
+  </data>
+  <data name="TotalMemory" xml:space="preserve">
+    <value>TotalMemory:</value>
+    <comment>4-总内存</comment>
+  </data>
+  <data name="UploadCount" xml:space="preserve">
+    <value>APIRequestCount</value>
+    <comment>1-上传数量(主页)</comment>
   </data>
   <data name="Volume" xml:space="preserve">
     <value>Volume:</value>
-    <comment>体积(主页)</comment>
+    <comment>1-体积(主页)</comment>
+  </data>
+  <data name="VolumeSettings" xml:space="preserve">
+    <value>VolumeSettings</value>
+    <comment>0-体积设置(菜单)</comment>
   </data>
   <data name="Weight" xml:space="preserve">
     <value>Weight:</value>
-    <comment>重量(主页)</comment>
+    <comment>1-重量(主页)</comment>
+  </data>
+  <data name="WeightSettings" xml:space="preserve">
+    <value>WeightSettings</value>
+    <comment>0-称重设置(菜单)</comment>
   </data>
   <data name="Width" xml:space="preserve">
     <value>Width:</value>
-    <comment>宽度(主页)</comment>
+    <comment>1-宽度(主页)</comment>
   </data>
   <data name="切换语言失败提示" xml:space="preserve">
     <value>Failed to switch language</value>
-    <comment>语言设置失败(主页-提示)</comment>
+    <comment>1-语言设置失败(主页-提示)</comment>
   </data>
   <data name="切换语言成功提示" xml:space="preserve">
     <value>Language settings applied successfully. Restart the program for changes to take effect.</value>
-    <comment>语言设置成功(主页-提示)</comment>
+    <comment>1-语言设置成功(主页-提示)</comment>
   </data>
 </root>

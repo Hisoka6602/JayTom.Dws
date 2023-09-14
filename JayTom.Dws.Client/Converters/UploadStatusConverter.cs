@@ -33,9 +33,9 @@ namespace JayTom.Dws.Client.Converters {
                 }
                 if (parameter?.ToString()?.Equals("Text") == true) {
                     return status switch {
-                        UploadStatus.Succeeded => "成功",
-                        UploadStatus.Failed => "失败",
-                        _ => "未上传"
+                        UploadStatus.Succeeded => Languages.Language.ResourceManager.GetString("ApiSuccess") ?? string.Empty,
+                        UploadStatus.Failed => Languages.Language.ResourceManager.GetString("ApiFailure") ?? string.Empty,
+                        _ => Languages.Language.ResourceManager.GetString("ApiNotUploaded") ?? string.Empty
                     };
                 }
             }

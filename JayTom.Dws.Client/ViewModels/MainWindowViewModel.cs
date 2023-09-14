@@ -4,6 +4,7 @@ using System.Linq;
 using Prism.Regions;
 using System.Windows;
 using Prism.Commands;
+using Newtonsoft.Json;
 using System.Threading;
 using System.Globalization;
 using System.Windows.Input;
@@ -202,11 +203,22 @@ namespace JayTom.Dws.Client.ViewModels {
                     visualChild.Visibility = Visibility.Visible;
                 }
             }
+            //加载语言选择
+
+            var language = (await _configRepository.
+                FirstOrDefault(f => f.ConfigName.Equals("SelectedLanguage")))
+                ?.Value;
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
                 await Task.Delay(TimeSpan.FromSeconds(5));
                 //加载配置需要有一个事件通知各个模块
                 //加载体积配置
                 //加载重量配置
+                var models = (LanguageInfoModel[])Application.Current.Resources["LanguageInfoArray"];
+                var languageInfoModel = models.FirstOrDefault(f => f.DisplayName.Equals(language));
+                if (languageInfoModel is not null) {
+                    SelectedLanguage = languageInfoModel;
+                }
+
                 IsLoaded = true;
             });
         }
@@ -262,7 +274,7 @@ namespace JayTom.Dws.Client.ViewModels {
             CultureInfo? culture = null;
             /*在代码中引用资源文件中的翻译文本。使用资源绑定来访问文本值，或者直接通过代码访问。
             示例：string translatedText = Strings.ResourceManager.GetString("Hello");*/
-            if (obj is LanguageInfoModel model) {
+            if (obj is LanguageInfoModel model && IsLoaded) {
                 if (model.DisplayName.Equals("中文")) {
                     culture = new CultureInfo("zh-CN");
                 }
@@ -278,7 +290,12 @@ namespace JayTom.Dws.Client.ViewModels {
                         ConfigName = "Language",
                         Value = culture.Name,
                     });
-
+                    if (insertOrUpdate) {
+                        await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
+                            ConfigName = "SelectedLanguage",
+                            Value = SelectedLanguage?.DisplayName ?? string.Empty,
+                        });
+                    }
                     MainMessageQueue.Enqueue(insertOrUpdate ? Languages.Language.ResourceManager.GetString("切换语言成功提示") : Languages.Language.ResourceManager.GetString("切换语言失败提示"));
                 }
             }

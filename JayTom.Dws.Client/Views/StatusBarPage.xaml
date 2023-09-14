@@ -4,6 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:converters="clr-namespace:JayTom.Dws.Client.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:languages="clr-namespace:JayTom.Dws.Client.Languages"
     xmlns:local="clr-namespace:JayTom.Dws.Client.Views"
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -57,7 +58,7 @@
                         FontSize="14"
                         FontWeight="Bold"
                         Foreground="DimGray"
-                        Text="异常" />
+                        Text="{x:Static languages:Language.StatusBarException}" />
                     <TextBlock
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
@@ -136,7 +137,7 @@
                                                 VerticalAlignment="Center"
                                                 FontFamily="{StaticResource CustomFontFamily}"
                                                 FontSize="16"
-                                                Text="没有数据" />
+                                                Text="{x:Static languages:Language.NoData}" />
                                         </StackPanel>
                                     </Border>
                                 </Grid>
@@ -170,7 +171,7 @@
                         FontSize="14"
                         FontWeight="Bold"
                         Foreground="DimGray"
-                        Text="相机" />
+                        Text="{x:Static languages:Language.StatusBarCamera}" />
                     <TextBlock
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
@@ -259,7 +260,7 @@
                         FontSize="14"
                         FontWeight="Bold"
                         Foreground="DimGray"
-                        Text="串口" />
+                        Text="{x:Static languages:Language.StatusBarSerialPort}" />
                     <TextBlock
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
@@ -350,7 +351,7 @@
                         FontSize="14"
                         FontWeight="Bold"
                         Foreground="DimGray"
-                        Text="监控" />
+                        Text="{x:Static languages:Language.StatusBarStatus}" />
                     <TextBlock
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
@@ -419,7 +420,7 @@
                         FontSize="14"
                         FontWeight="Bold"
                         Foreground="DimGray">
-                        <Run Text="温度:" /><Run Text="{Binding ComputerInfo.CpuInfo.CpuTemperature, StringFormat={}{0:F1}}" /><Run Text="°" />
+                        <Run Text="{x:Static languages:Language.StatusBarTemperature}" /><Run Text="{Binding ComputerInfo.CpuInfo.CpuTemperature, StringFormat={}{0:F1}}" /><Run Text="°" />
                     </TextBlock>
                     <TextBlock
                         HorizontalAlignment="Center"
@@ -454,7 +455,7 @@
                         FontSize="14"
                         FontWeight="Bold"
                         Foreground="DimGray">
-                        <Run Text="内存:" /><Run Text="{Binding ComputerInfo.MemoryInfo.UsedPercentage, StringFormat={}{0:F1}}" /><Run Text="%" />
+                        <Run Text="{x:Static languages:Language.StatusBarMemory}" /><Run Text="{Binding ComputerInfo.MemoryInfo.UsedPercentage, StringFormat={}{0:F1}}" /><Run Text="%" />
                     </TextBlock>
                     <TextBlock
                         HorizontalAlignment="Center"

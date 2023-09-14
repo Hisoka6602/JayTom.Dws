@@ -2,6 +2,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:converters="clr-namespace:JayTom.Dws.Client.Converters"
+    xmlns:languages="clr-namespace:JayTom.Dws.Client.Languages"
     xmlns:models="clr-namespace:JayTom.Dws.Client.Models"
     xmlns:viewModels="clr-namespace:JayTom.Dws.Client.ViewModels">
     <DataTemplate x:Key="ComputerInfoDataTemplate" DataType="{x:Type models:ComputerInfoModel}" />
@@ -131,7 +132,7 @@
                                     IsEnabled="False"
                                     TextAlignment="Center"
                                     TextTrimming="WordEllipsis">
-                                    <Run Text="Cpu使用率:" /><Run Text="{Binding ComputerInfo.CpuInfo.UsagePercentage, StringFormat={}{0:F1}, UpdateSourceTrigger=PropertyChanged}" /><Run Text="%" />
+                                    <Run Text="{x:Static languages:Language.CpuUsageRate}" /><Run Text="{Binding ComputerInfo.CpuInfo.UsagePercentage, StringFormat={}{0:F1}, UpdateSourceTrigger=PropertyChanged}" /><Run Text="%" />
                                 </TextBlock>
                                 <!--  标记  -->
                                 <TextBlock
@@ -175,7 +176,7 @@
                                     IsEnabled="False"
                                     TextAlignment="Left"
                                     TextTrimming="WordEllipsis">
-                                    <Run Text="Cpu速度:" /><Run Text="{Binding ComputerInfo.CpuInfo.ClockSpeed, StringFormat={}{0:F2}}" /><Run FontSize="13" Text=" GHz" />
+                                    <Run Text="{x:Static languages:Language.CpuSpeed}" /><Run Text="{Binding ComputerInfo.CpuInfo.ClockSpeed, StringFormat={}{0:F2}}" /><Run FontSize="13" Text=" GHz" />
                                 </TextBlock>
                             </Grid>
                             <!--  Cpu温度  -->
@@ -211,7 +212,7 @@
                                     IsEnabled="False"
                                     TextAlignment="Center"
                                     TextTrimming="WordEllipsis">
-                                    <Run Text="Cpu温度:" /><Run Text="{Binding ComputerInfo.CpuInfo.CpuTemperature, StringFormat={}{0:F1}}" /><Run Text="°" />
+                                    <Run Text="{x:Static languages:Language.CpuTemperature}" /><Run Text="{Binding ComputerInfo.CpuInfo.CpuTemperature, StringFormat={}{0:F1}}" /><Run Text="°" />
                                 </TextBlock>
                                 <!--  标记  -->
                                 <TextBlock
@@ -255,7 +256,7 @@
                                     IsEnabled="False"
                                     TextAlignment="Justify"
                                     TextTrimming="WordEllipsis">
-                                    <Run Text="Cpu风扇转速:" /><Run Text="{Binding ComputerInfo.CpuInfo.FanSpeed, StringFormat={}{0:F2}}" /><Run FontSize="13" Text=" RPM" />
+                                    <Run Text="{x:Static languages:Language.CpuFanSpeed}" /><Run Text="{Binding ComputerInfo.CpuInfo.FanSpeed, StringFormat={}{0:F2}}" /><Run FontSize="13" Text=" RPM" />
                                 </TextBlock>
                             </Grid>
                         </Grid>
@@ -291,7 +292,7 @@
                                 FontWeight="Bold"
                                 Foreground="DimGray"
                                 IsEnabled="False"
-                                Text="内存"
+                                Text="{x:Static languages:Language.MemoryInformation}"
                                 TextAlignment="Center"
                                 TextTrimming="WordEllipsis" />
                         </StackPanel>
@@ -337,7 +338,7 @@
                                     IsEnabled="False"
                                     TextAlignment="Center"
                                     TextTrimming="WordEllipsis">
-                                    <Run Text="内存使用率:" /><Run Text="{Binding ComputerInfo.MemoryInfo.UsedPercentage, StringFormat={}{0:F1}}" /><Run Text="%" />
+                                    <Run Text="{x:Static languages:Language.MemoryUsageRate}" /><Run Text="{Binding ComputerInfo.MemoryInfo.UsedPercentage, StringFormat={}{0:F1}}" /><Run Text="%" />
                                 </TextBlock>
                                 <!--  标记  -->
                                 <TextBlock
@@ -381,7 +382,7 @@
                                     IsEnabled="False"
                                     TextAlignment="Left"
                                     TextTrimming="WordEllipsis">
-                                    <Run Text="总内存:" /><Run Text="{Binding ComputerInfo.MemoryInfo.TotalSizeBytes, StringFormat={}{0:F2}, Converter={StaticResource ByteSizeConverter}}" /> <Run FontSize="13" Text="{Binding ComputerInfo.MemoryInfo.TotalSizeBytes, Converter={StaticResource ByteSizeUnitConverter}}" />
+                                    <Run Text="{x:Static languages:Language.TotalMemory}" /><Run Text="{Binding ComputerInfo.MemoryInfo.TotalSizeBytes, StringFormat={}{0:F2}, Converter={StaticResource ByteSizeConverter}}" /> <Run FontSize="13" Text="{Binding ComputerInfo.MemoryInfo.TotalSizeBytes, Converter={StaticResource ByteSizeUnitConverter}}" />
                                 </TextBlock>
                             </Grid>
                             <!--  可用内存大小  -->
@@ -416,7 +417,7 @@
                                     IsEnabled="False"
                                     TextAlignment="Center"
                                     TextTrimming="WordEllipsis">
-                                    <Run Text="可用内存:" /><Run Text="{Binding ComputerInfo.MemoryInfo.AvailableSizeBytes, Converter={StaticResource ByteSizeConverter}, StringFormat={}{0:F1}}" /> <Run FontSize="13" Text="{Binding ComputerInfo.MemoryInfo.AvailableSizeBytes, Converter={StaticResource ByteSizeUnitConverter}}" />
+                                    <Run Text="{x:Static languages:Language.AvailableMemory}" /><Run Text="{Binding ComputerInfo.MemoryInfo.AvailableSizeBytes, Converter={StaticResource ByteSizeConverter}, StringFormat={}{0:F1}}" /> <Run FontSize="13" Text="{Binding ComputerInfo.MemoryInfo.AvailableSizeBytes, Converter={StaticResource ByteSizeUnitConverter}}" />
                                 </TextBlock>
                             </Grid>
                             <!--  内存类型  -->
@@ -528,7 +529,7 @@
                                     IsEnabled="False"
                                     TextAlignment="Center"
                                     TextTrimming="WordEllipsis">
-                                    <Run Text="Gpu使用率:" /><Run Text="{Binding ComputerInfo.GpuInfo.UsagePercentage, StringFormat={}{0:F1}}" /><Run Text="%" />
+                                    <Run Text="{x:Static languages:Language.GpuUsageRate}" /><Run Text="{Binding ComputerInfo.GpuInfo.UsagePercentage, StringFormat={}{0:F1}}" /><Run Text="%" />
                                 </TextBlock>
                                 <!--  标记  -->
                                 <TextBlock
@@ -574,7 +575,7 @@
                                 FontWeight="Bold"
                                 Foreground="DimGray"
                                 IsEnabled="False"
-                                Text="硬盘"
+                                Text="{x:Static languages:Language.HardDisk}"
                                 TextAlignment="Center"
                                 TextTrimming="WordEllipsis" />
                         </StackPanel>
@@ -647,7 +648,7 @@
                                 FontWeight="Bold"
                                 Foreground="DimGray"
                                 IsEnabled="False"
-                                Text="网络信息"
+                                Text="{x:Static languages:Language.NetworkInformation}"
                                 TextAlignment="Center"
                                 TextTrimming="WordEllipsis" />
                         </StackPanel>
