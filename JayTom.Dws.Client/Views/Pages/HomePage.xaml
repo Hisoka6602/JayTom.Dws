@@ -5,6 +5,7 @@
     xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
     xmlns:converters="clr-namespace:JayTom.Dws.Client.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:languages="clr-namespace:JayTom.Dws.Client.Languages"
     xmlns:local="clr-namespace:JayTom.Dws.Client.Views.Pages"
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -223,7 +224,7 @@
                                         FontSize="22"
                                         FontWeight="Bold"
                                         Foreground="DimGray"
-                                        Text="重量:"
+                                        Text="{x:Static languages:Language.Weight}"
                                         TextAlignment="Center" />
                                     <TextBlock
                                         HorizontalAlignment="Center"
@@ -262,7 +263,7 @@
                                         Foreground="DimGray"
                                         TextTrimming="CharacterEllipsis"
                                         TextWrapping="NoWrap">
-                                        <Run Text="体积:" />
+                                        <Run Text="{x:Static languages:Language.Volume}" />
                                         <Run FontWeight="Bold" Foreground="White">
                                             <Run.Text>
                                                 <MultiBinding Converter="{StaticResource VolumeConverter}" StringFormat="{}{0:0.#}">
@@ -309,7 +310,7 @@
                                         FontSize="16"
                                         FontWeight="Bold"
                                         Foreground="DimGray">
-                                        <Run Text="长度:" />
+                                        <Run Text="{x:Static languages:Language.Length}" />
                                         <Run FontWeight="Bold" Foreground="White">
                                             <Run.Text>
                                                 <MultiBinding Converter="{StaticResource VolumeConverter}" StringFormat="{}{0:0.#}">
@@ -346,7 +347,7 @@
                                         FontSize="16"
                                         FontWeight="Bold"
                                         Foreground="DimGray">
-                                        <Run Text="宽度:" />
+                                        <Run Text="{x:Static languages:Language.Width}" />
                                         <Run FontWeight="Bold" Foreground="White">
                                             <Run.Text>
                                                 <MultiBinding Converter="{StaticResource VolumeConverter}" StringFormat="{}{0:0.#}">
@@ -383,7 +384,7 @@
                                         FontSize="16"
                                         FontWeight="Bold"
                                         Foreground="DimGray">
-                                        <Run Text="高度:" />
+                                        <Run Text="{x:Static languages:Language.Height}" />
                                         <Run FontWeight="Bold" Foreground="White">
                                             <Run.Text>
                                                 <MultiBinding Converter="{StaticResource VolumeConverter}" StringFormat="{}{0:0.#}">

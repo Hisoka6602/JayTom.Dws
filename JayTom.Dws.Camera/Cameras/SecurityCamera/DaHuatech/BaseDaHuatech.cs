@@ -95,35 +95,45 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                             }
                         };
                     _mSnapRevCallBack += async delegate (IntPtr id, IntPtr buf, uint len, uint type, uint serial, IntPtr user) {
-                        try {
-                            await _snapRevPhotoSlim.WaitAsync();
-                            //取出登录id
-                            var (key, value) = _loginDev.FirstOrDefault(f => f.Value == id);
-                            if (key != null) {
-                                //取出绑定事件
-                                var tryGetValue = _imageEvent.TryGetValue(key, out var callback);
-                                if (tryGetValue) {
-                                    Image? imageBitmap = null;
-                                    if (type == 10) //.jpg
-                                    {
-                                        _imageBytes = new byte[len];
-                                        Marshal.Copy(buf, _imageBytes, 0, (int)len);
-                                        using var stream = new MemoryStream(_imageBytes);
-                                        stream.Seek(0, SeekOrigin.Begin);
-                                        imageBitmap = Image.FromStream(stream);
+                        if (len > 0) {
+                            try {
+                                await _snapRevPhotoSlim.WaitAsync();
+
+                                // 取出登录id
+                                var (key, value) = _loginDev.FirstOrDefault(f => f.Value == id);
+                                if (key != null) {
+                                    // 取出绑定事件
+                                    var tryGetValue = _imageEvent.TryGetValue(key, out var callback);
+                                    if (tryGetValue) {
+                                        Image? imageBitmap = null;
+                                        if (type == 10) //.jpg
+                                        {
+                                            unsafe {
+                                                byte[] fixedBuffer = new byte[len];  // 固定内存缓冲区
+
+                                                fixed (byte* pBuffer = fixedBuffer) {
+                                                    var ptr = new IntPtr(pBuffer);
+                                                    Marshal.Copy(buf, fixedBuffer, 0, (int)len);
+
+                                                    using var stream = new UnmanagedMemoryStream(pBuffer, len);
+                                                    stream.Seek(0, SeekOrigin.Begin);
+                                                    imageBitmap = Image.FromStream(stream);
+                                                }
+                                            }
+                                        }
+
+                                        var image = imageBitmap?.GetThumbnailImage(imageBitmap.Width, imageBitmap.Height,
+                                            () => false, IntPtr.Zero);
+
+                                        if (image != null) callback?.Invoke((Bitmap)image);
+
+                                        imageBitmap?.Dispose();
                                     }
-
-                                    var image = imageBitmap?.GetThumbnailImage(imageBitmap.Width, imageBitmap.Height,
-                                        () => false, IntPtr.Zero);
-
-                                    if (image != null) callback?.Invoke((Bitmap)image);
-
-                                    imageBitmap?.Dispose();
                                 }
                             }
-                        }
-                        finally {
-                            _snapRevPhotoSlim.Release();
+                            finally {
+                                _snapRevPhotoSlim.Release();
+                            }
                         }
                     };
                     NETClient.SetNetworkParam(new NET_PARAM() {

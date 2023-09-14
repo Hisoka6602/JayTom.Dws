@@ -9,7 +9,7 @@ namespace JayTom.Dws.Plugin.Speech {
 
     public class Speech : ISpeech {
         private static SpeechSynthesizer? _synthesizer;
-        private static ConcurrentDictionary<string, byte[]>? _soundDictionary = new();
+        private static ConcurrentDictionary<string, MemoryLocation>? _soundDictionary = new();
         private static SemaphoreSlim _playSlim = new(1);
         private static SemaphoreSlim _takeSlim = new(1);
 
@@ -63,7 +63,6 @@ namespace JayTom.Dws.Plugin.Speech {
                 if (!memoryLocation.Handle.IsAllocated || memoryLocation.MemoryPtr == IntPtr.Zero) {
                     throw new Exception("内存未锁定或指针为空");
                 }
-                NLog.LogManager.GetCurrentClassLogger().Error($"{memoryLocation.MemoryPtr:x8}");
                 using (var stream = new UnmanagedMemoryStream((byte*)memoryLocation.MemoryPtr.ToPointer(), memoryLocation.Data.Length)) {
                     using (var player = new SoundPlayer(stream)) {
                         player?.PlaySync();
@@ -81,16 +80,16 @@ namespace JayTom.Dws.Plugin.Speech {
                 if (_soundDictionary != null) {
                     _soundDictionary.TryGetValue(name, out var sound);
                     if (sound is not null) {
-                        PlayByteFile(sound);
+                        PlaySoundFromMemory(sound);
                     }
                     else {
-                        /*var location = new MemoryLocation() {
+                        var location = new MemoryLocation() {
                             Data = file,
                             Handle = GCHandle.Alloc(file, GCHandleType.Pinned),
                         };
-                        location.MemoryPtr = location.Handle.AddrOfPinnedObject();*/
-                        _soundDictionary?.TryAdd(name, file);
-                        PlayByteFile(file);
+                        location.MemoryPtr = location.Handle.AddrOfPinnedObject();
+                        _soundDictionary?.TryAdd(name, location);
+                        PlaySoundFromMemory(location);
                     }
                 }
             }

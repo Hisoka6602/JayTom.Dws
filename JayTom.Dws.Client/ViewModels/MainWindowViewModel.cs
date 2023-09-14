@@ -13,15 +13,19 @@ using System.Windows.Controls;
 using System.Windows.Threading;
 using MaterialDesignThemes.Wpf;
 using JayTom.Dws.Client.Models;
+using JayTom.Dws.Data.LocalConf;
 using System.Collections.Generic;
+using System.Windows.Media.Imaging;
 using System.Collections.ObjectModel;
 using JayTom.Dws.PluginInterface.Utils;
+using JayTom.Dws.Domain.Repository.LocalConf;
 
 namespace JayTom.Dws.Client.ViewModels {
 
     public class MainWindowViewModel : BindableBase {
         private readonly IRegionManager _regionManager;
         private readonly IDialogService _dialogService;
+        private readonly IConfigRepository _configRepository;
         private double _uniformCornerRadius = 5;
         private string _maxBtnIcon = "\xe600";
         private string _maxBtnToolTip = "Maximize";
@@ -33,9 +37,21 @@ namespace JayTom.Dws.Client.ViewModels {
         private bool _isLoaded;
         private ObservableCollection<HomeToolInfoModel> _homeToolItems = new();
 
-        public MainWindowViewModel(IRegionManager regionManager, IDialogService dialogService) {
+        private LanguageInfoModel? _selectedLanguage = new() {
+            DisplayName = "中文",
+            NationalFlag = new BitmapImage() {
+                UriSource = new Uri("pack://application:,,,/Image/NationalFlag/Chinese national flag.png"),
+                DecodePixelHeight = 25,
+                DecodePixelWidth = 25,
+            }
+        };
+
+        public MainWindowViewModel(IRegionManager regionManager,
+            IDialogService dialogService,
+            IConfigRepository configRepository) {
             _regionManager = regionManager;
             _dialogService = dialogService;
+            _configRepository = configRepository;
             HomeToolItems = new ObservableCollection<HomeToolInfoModel>()
             {
                 new()
@@ -59,6 +75,11 @@ namespace JayTom.Dws.Client.ViewModels {
         public ObservableCollection<HomeToolInfoModel> HomeToolItems {
             get => _homeToolItems;
             set => SetProperty(ref _homeToolItems, value);
+        }
+
+        public LanguageInfoModel? SelectedLanguage {
+            get => _selectedLanguage;
+            set => SetProperty(ref _selectedLanguage, value);
         }
 
         public double UniformCornerRadius {
@@ -230,6 +251,36 @@ namespace JayTom.Dws.Client.ViewModels {
         private void MinWinDelegate(object obj) {
             if (obj is Window window) {
                 window.WindowState = WindowState.Minimized;
+            }
+        }
+
+        public ICommand LanguageSwitchCommand {
+            get => new DelegateCommand<object>(LanguageSwitchDelegate);
+        }
+
+        private async void LanguageSwitchDelegate(object obj) {
+            CultureInfo? culture = null;
+            /*在代码中引用资源文件中的翻译文本。使用资源绑定来访问文本值，或者直接通过代码访问。
+            示例：string translatedText = Strings.ResourceManager.GetString("Hello");*/
+            if (obj is LanguageInfoModel model) {
+                if (model.DisplayName.Equals("中文")) {
+                    culture = new CultureInfo("zh-CN");
+                }
+                else if (model.DisplayName.Equals("English")) {
+                    culture = new CultureInfo("en-US");
+                }
+
+                if (culture is not null) {
+                    Thread.CurrentThread.CurrentCulture = culture;
+                    Thread.CurrentThread.CurrentUICulture = culture;
+
+                    var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
+                        ConfigName = "Language",
+                        Value = culture.Name,
+                    });
+
+                    MainMessageQueue.Enqueue(insertOrUpdate ? Languages.Language.ResourceManager.GetString("切换语言成功提示") : Languages.Language.ResourceManager.GetString("切换语言失败提示"));
+                }
             }
         }
     }

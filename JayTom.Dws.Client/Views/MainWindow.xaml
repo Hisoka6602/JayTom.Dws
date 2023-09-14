@@ -169,8 +169,14 @@
                                     ItemsSource="{StaticResource LanguageInfoArray}"
                                     MaxDropDownHeight="800"
                                     SelectedIndex="0"
+                                    SelectedItem="{Binding SelectedLanguage, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                     Style="{StaticResource MaterialDesignOutlinedComboBox}"
                                     WindowChrome.IsHitTestVisibleInChrome="True">
+                                    <b:Interaction.Triggers>
+                                        <b:EventTrigger EventName="SelectionChanged">
+                                            <mvvm:InvokeCommandAction Command="{Binding LanguageSwitchCommand}" CommandParameter="{Binding SelectedLanguage}" />
+                                        </b:EventTrigger>
+                                    </b:Interaction.Triggers>
                                     <ComboBox.ItemContainerStyle>
                                         <Style BasedOn="{StaticResource MaterialDesignComboBoxItemStyle}" TargetType="ComboBoxItem">
                                             <Setter Property="Focusable" Value="False" />
@@ -383,6 +389,17 @@
                             Focusable="False"
                             NavigationUIVisibility="Hidden"
                             Source="StatusBarPage.xaml" />
+                        <!--  提示框  -->
+                        <materialDesign:Snackbar
+                            Grid.Row="1"
+                            Grid.RowSpan="2"
+                            Width="Auto"
+                            Height="Auto"
+                            VerticalAlignment="Bottom"
+                            Background="BlueViolet"
+                            FontFamily="{StaticResource CustomFontFamily}"
+                            FontWeight="Bold"
+                            MessageQueue="{Binding MainMessageQueue}" />
                     </Grid>
                 </materialDesign:TransitionerSlide>
                 <!--  内页  -->

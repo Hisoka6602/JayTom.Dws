@@ -14,6 +14,7 @@ using JayTom.Dws.Camera;
 using System.Configuration;
 using System.Windows.Media;
 using JayTom.Dws.Interface;
+using System.Globalization;
 using JayTom.Dws.Plugin.Ftp;
 using JayTom.Dws.Plugin.Tcp;
 using System.Threading.Tasks;
@@ -22,6 +23,7 @@ using JayTom.Dws.Client.Views;
 using JayTom.Dws.Plugin.Excel;
 using System.Windows.Threading;
 using JayTom.Dws.Plugin.Speech;
+using JayTom.Dws.Client.Models;
 using JayTom.Dws.Infrastructure;
 using JayTom.Dws.Client.Service;
 using System.Collections.Generic;
@@ -168,7 +170,24 @@ namespace JayTom.Dws.Client {
                 //异常触发
                 NLog.LogManager.GetCurrentClassLogger().Error($"{JsonConvert.SerializeObject(args.ExceptionObject)}");
             };
+
             base.OnStartup(e);
+
+            //加载语言
+
+            var container = Container.GetContainer();
+
+            var configRepository = container.Resolve<IConfigRepository>();
+            if (configRepository is not null) {
+                var configInfoModel = configRepository.FirstOrDefault(f =>
+                    f.ConfigName.Equals("Language")).GetAwaiter().GetResult();
+                if (configInfoModel is not null) {
+                    var culture = new CultureInfo(configInfoModel.Value);
+                    Thread.CurrentThread.CurrentCulture = culture;
+                    Thread.CurrentThread.CurrentUICulture = culture;
+                }
+            }
+
             // 创建主机并注册后台服务
             Task.Run(() => {
                 // 启用硬件加速
