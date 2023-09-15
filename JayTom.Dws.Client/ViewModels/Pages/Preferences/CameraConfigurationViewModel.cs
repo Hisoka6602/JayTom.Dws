@@ -26,7 +26,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         {
             new MenuItemInfoModel()
             {
-                Title = "相机搜索",
+                Title = Languages.Language.ResourceManager.GetString("CameraSearch")??string.Empty,
                 IconFont = new IconInfoModel()
                 {
                     IconFont = "pack://application:,,,/Fonts/#iconfont",
@@ -40,7 +40,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             },
             new MenuItemInfoModel()
             {
-                Title = "全景相机",
+                Title = Languages.Language.ResourceManager.GetString("PanoramicCamera")??string.Empty,
                 IconFont = new IconInfoModel()
                 {
                     IconFont = "pack://application:,,,/Fonts/#iconfont",
@@ -53,7 +53,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             },
             new MenuItemInfoModel()
             {
-                Title = "扫码相机",
+                Title = Languages.Language.ResourceManager.GetString("ScannerCamera")??string.Empty,
                 IconFont = new IconInfoModel()
                 {
                     IconFont = "pack://application:,,,/Fonts/#iconfont",
@@ -66,7 +66,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             },
             new MenuItemInfoModel()
             {
-                Title = "体积相机",
+                Title = Languages.Language.ResourceManager.GetString("CompactCamera")??string.Empty,
                 IconFont = new IconInfoModel()
                 {
                     IconFont = "pack://application:,,,/Fonts/#iconfont",

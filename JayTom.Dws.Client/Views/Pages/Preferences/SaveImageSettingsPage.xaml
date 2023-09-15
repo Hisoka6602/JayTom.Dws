@@ -6,6 +6,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:dataTemplateSelectors="clr-namespace:JayTom.Dws.Client.DataTemplateSelectors"
     xmlns:imageSettingModels="clr-namespace:JayTom.Dws.Client.Models.ImageSettingModels"
+    xmlns:languages="clr-namespace:JayTom.Dws.Client.Languages"
     xmlns:local="clr-namespace:JayTom.Dws.Client.Views.Pages.Preferences"
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -92,7 +93,7 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="900" />
+                <ColumnDefinition Width="1050" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
             <!--  图片存储根目录  -->
@@ -116,7 +117,7 @@
                     FontSize="16"
                     FontWeight="Bold"
                     Foreground="DarkGray"
-                    Text="存图根目录:" />
+                    Text="{x:Static languages:Language.ImageRootDirectory}" />
                 <Border
                     Margin="5"
                     HorizontalAlignment="Center"
@@ -139,7 +140,6 @@
                         Text="{Binding ImageRootDirectory, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                 </Border>
                 <Button
-                    Width="90"
                     MinHeight="30"
                     Margin="30,0"
                     HorizontalAlignment="Left"
@@ -156,7 +156,7 @@
                         FontSize="14"
                         FontWeight="Bold"
                         Foreground="DarkGray"
-                        Text="浏览目录" />
+                        Text="{x:Static languages:Language.BrowseDirectory}" />
                 </Button>
             </StackPanel>
             <!--  存图选项(扫码图、全景图、体积图)  -->
@@ -180,7 +180,7 @@
                     FontSize="16"
                     FontWeight="Bold"
                     Foreground="DarkGray"
-                    Text="存图类型:" />
+                    Text="{x:Static languages:Language.ImageType}" />
                 <ListBox SelectionMode="Multiple" Style="{StaticResource MaterialDesignFilterChipPrimaryListBox}">
                     <ListBoxItem IsSelected="{Binding IsSaveBarcodeImage, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
                         <TextBlock
@@ -189,7 +189,7 @@
                             FontSize="12"
                             FontWeight="Bold"
                             Foreground="WhiteSmoke"
-                            Text="扫码图" />
+                            Text="{x:Static languages:Language.ScannerImage}" />
                     </ListBoxItem>
                     <ListBoxItem IsSelected="{Binding IsSavePanoramaImage, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
                         <TextBlock
@@ -198,7 +198,7 @@
                             FontSize="12"
                             FontWeight="Bold"
                             Foreground="WhiteSmoke"
-                            Text="全景图" />
+                            Text="{x:Static languages:Language.PanoramicImage}" />
                     </ListBoxItem>
                     <ListBoxItem IsSelected="{Binding IsSaveVolumeImage, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
                         <TextBlock
@@ -207,7 +207,7 @@
                             FontSize="12"
                             FontWeight="Bold"
                             Foreground="WhiteSmoke"
-                            Text="体积图" />
+                            Text="{x:Static languages:Language.VolumeImage}" />
                     </ListBoxItem>
                 </ListBox>
             </StackPanel>
@@ -232,7 +232,7 @@
                         FontSize="16"
                         FontWeight="Bold"
                         Foreground="DarkGray"
-                        Text="是否存原图:" />
+                        Text="{x:Static languages:Language.IsUserOriginalImage}" />
                     <CheckBox materialDesign:CheckBoxAssist.CheckBoxSize="20" IsChecked="{Binding IsSaveOriginalImage, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                 </StackPanel>
             </StackPanel>
@@ -258,7 +258,7 @@
                         FontSize="16"
                         FontWeight="Bold"
                         Foreground="DarkGray"
-                        Text="水印:" />
+                        Text="{x:Static languages:Language.Watermark}" />
                 </StackPanel>
                 <StackPanel Margin="50,10,0,0" Orientation="Horizontal">
                     <TextBlock
@@ -267,7 +267,7 @@
                         FontSize="13"
                         FontWeight="Bold"
                         Foreground="DarkGray"
-                        Text="是否使用水印:" />
+                        Text="{x:Static languages:Language.IsUseWatermark}" />
                     <CheckBox materialDesign:CheckBoxAssist.CheckBoxSize="20" IsChecked="{Binding IsUseWatermark, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
                         <b:Interaction.Triggers>
                             <b:EventTrigger EventName="PreviewMouseUp">
@@ -283,7 +283,7 @@
                         FontSize="13"
                         FontWeight="Bold"
                         Foreground="DarkGray"
-                        Text="水印内容:" />
+                        Text="{x:Static languages:Language.WatermarkContent}" />
                     <StackPanel Orientation="Horizontal">
                         <Button
                             Height="30"
@@ -295,7 +295,7 @@
                             CommandParameter="'{BarCode}'"
                             Focusable="False"
                             Style="{StaticResource MaterialDesignRaisedDarkButton}">
-                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="条码" />
+                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.TableHeaderBarCode}" />
                         </Button>
                         <Button
                             Height="30"
@@ -307,7 +307,7 @@
                             CommandParameter="'{Weight}'"
                             Focusable="False"
                             Style="{StaticResource MaterialDesignRaisedDarkButton}">
-                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="重量" />
+                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.TableHeaderWeight}" />
                         </Button>
                         <Button
                             Height="30"
@@ -319,7 +319,7 @@
                             CommandParameter="'{ScanTime}'"
                             Focusable="False"
                             Style="{StaticResource MaterialDesignRaisedDarkButton}">
-                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="扫码时间" />
+                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.TableHeaderScanTime}" />
                         </Button>
                         <Button
                             Height="30"
@@ -331,7 +331,7 @@
                             CommandParameter="'{TimestampedGuid}'"
                             Focusable="False"
                             Style="{StaticResource MaterialDesignRaisedDarkButton}">
-                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="扫码时间戳" />
+                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.TableHeaderTimestampGuid}" />
                         </Button>
                         <Button
                             Height="30"
@@ -343,7 +343,7 @@
                             CommandParameter="'{Length}'"
                             Focusable="False"
                             Style="{StaticResource MaterialDesignRaisedDarkButton}">
-                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="长" />
+                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.TableHeaderLength}" />
                         </Button>
                         <Button
                             Height="30"
@@ -355,7 +355,7 @@
                             CommandParameter="'{Width}'"
                             Focusable="False"
                             Style="{StaticResource MaterialDesignRaisedDarkButton}">
-                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="宽" />
+                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.TableHeaderWidth}" />
                         </Button>
                         <Button
                             Height="30"
@@ -367,7 +367,7 @@
                             CommandParameter="'{Height}'"
                             Focusable="False"
                             Style="{StaticResource MaterialDesignRaisedDarkButton}">
-                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="高" />
+                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.TableHeaderHeight}" />
                         </Button>
                         <Button
                             Height="30"
@@ -379,7 +379,7 @@
                             CommandParameter="'{Volume}'"
                             Focusable="False"
                             Style="{StaticResource MaterialDesignRaisedDarkButton}">
-                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="体积" />
+                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.TableHeaderVolume}" />
                         </Button>
                         <Button
                             Height="30"
@@ -391,7 +391,7 @@
                             CommandParameter="'{CameraSerialNumber}'"
                             Focusable="False"
                             Style="{StaticResource MaterialDesignRaisedDarkButton}">
-                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="相机序列号" />
+                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.TableHeaderSerialNumber}" />
                         </Button>
                     </StackPanel>
                 </StackPanel>
@@ -403,7 +403,7 @@
                     CornerRadius="5">
                     <Grid>
                         <Border
-                            Width="40"
+                            Width="50"
                             Margin="2"
                             HorizontalAlignment="Left"
                             Background="DarkGray"
@@ -415,13 +415,13 @@
                                 FontSize="12"
                                 FontWeight="Bold"
                                 Foreground="#2E2E2E"
-                                Text="内容" />
+                                Text="{x:Static languages:Language.Content}" />
                         </Border>
                         <ListView
                             Width="680"
                             Height="30"
                             MaxWidth="900"
-                            Margin="50,0,0,0"
+                            Margin="60,0,0,0"
                             Focusable="False"
                             ItemTemplateSelector="{StaticResource ImageSettingItemDataTemplateSelectors}"
                             ItemsSource="{Binding WatermarkItems, UpdateSourceTrigger=PropertyChanged}"
@@ -490,7 +490,7 @@
                         FontSize="13"
                         FontWeight="Bold"
                         Foreground="DarkGray"
-                        Text="水印颜色:" />
+                        Text="{x:Static languages:Language.WatermarkColor}" />
                     <Border CornerRadius="15">
                         <materialDesign:ColorPicker
                             Width="300"
@@ -517,7 +517,7 @@
                         FontSize="13"
                         FontWeight="Bold"
                         Foreground="DarkGray"
-                        Text="水印大小:" />
+                        Text="{x:Static languages:Language.WatermarkSize}" />
                     <Slider
                         Width="300"
                         Focusable="False"
@@ -551,7 +551,7 @@
                         FontSize="13"
                         FontWeight="Bold"
                         Foreground="DarkGray"
-                        Text="水印位置:" />
+                        Text="{x:Static languages:Language.WatermarkPosition}" />
                     <ToolBarTray Height="60" Background="Transparent">
                         <ToolBar Background="Transparent">
                             <ListBox SelectedIndex="{Binding WatermarkPosition, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
@@ -560,7 +560,7 @@
                                         <mvvm:InvokeCommandAction Command="{Binding WatermarkPositionCommand}" />
                                     </b:EventTrigger>
                                 </b:Interaction.Triggers>
-                                <ListBoxItem ToolTip="左上角">
+                                <ListBoxItem ToolTip="{x:Static languages:Language.TopLeftCorner}">
                                     <TextBlock
                                         VerticalAlignment="Center"
                                         FontFamily="{StaticResource IconFontFamily}"
@@ -568,7 +568,7 @@
                                         Foreground="#2E2E2E"
                                         Text="&#xe74e;" />
                                 </ListBoxItem>
-                                <ListBoxItem ToolTip="左下角">
+                                <ListBoxItem ToolTip="{x:Static languages:Language.BottomLeftCorner}">
                                     <TextBlock
                                         VerticalAlignment="Center"
                                         FontFamily="{StaticResource IconFontFamily}"
@@ -576,7 +576,7 @@
                                         Foreground="#2E2E2E"
                                         Text="&#xe750;" />
                                 </ListBoxItem>
-                                <ListBoxItem ToolTip="右上角">
+                                <ListBoxItem ToolTip="{x:Static languages:Language.TopRightCorner}">
                                     <TextBlock
                                         VerticalAlignment="Center"
                                         FontFamily="{StaticResource IconFontFamily}"
@@ -584,7 +584,7 @@
                                         Foreground="#2E2E2E"
                                         Text="&#xe74d;" />
                                 </ListBoxItem>
-                                <ListBoxItem ToolTip="右下角">
+                                <ListBoxItem ToolTip="{x:Static languages:Language.BottomRightCorner}">
                                     <TextBlock
                                         VerticalAlignment="Center"
                                         FontFamily="{StaticResource IconFontFamily}"
@@ -618,7 +618,7 @@
                         FontSize="16"
                         FontWeight="Bold"
                         Foreground="DarkGray"
-                        Text="子路径:" />
+                        Text="{x:Static languages:Language.SubDirectory}" />
                 </StackPanel>
                 <StackPanel Margin="50,10,0,0" Orientation="Horizontal">
                     <TextBlock
@@ -627,7 +627,7 @@
                         FontSize="13"
                         FontWeight="Bold"
                         Foreground="DarkGray"
-                        Text="子路径:" />
+                        Text="{x:Static languages:Language.SubDirectory}" />
                     <StackPanel Orientation="Horizontal">
                         <Button
                             Height="30"
@@ -639,7 +639,7 @@
                             CommandParameter="'{ImageType}'"
                             Focusable="False"
                             Style="{StaticResource MaterialDesignRaisedDarkButton}">
-                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="存图类型" />
+                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.TableHeaderImageType}" />
                         </Button>
                         <Button
                             Height="30"
@@ -649,9 +649,10 @@
                             BorderThickness="0"
                             Command="{Binding AddSubDirectoryItemCommand}"
                             CommandParameter="'{Year}'"
+                            Cursor=""
                             Focusable="False"
                             Style="{StaticResource MaterialDesignRaisedDarkButton}">
-                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="年份" />
+                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.Year}" />
                         </Button>
                         <Button
                             Height="30"
@@ -663,7 +664,7 @@
                             CommandParameter="'{Month}'"
                             Focusable="False"
                             Style="{StaticResource MaterialDesignRaisedDarkButton}">
-                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="月份" />
+                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.Month}" />
                         </Button>
                         <Button
                             Height="30"
@@ -675,7 +676,7 @@
                             CommandParameter="'{Day}'"
                             Focusable="False"
                             Style="{StaticResource MaterialDesignRaisedDarkButton}">
-                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="日期" />
+                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.Day}" />
                         </Button>
                         <Button
                             Height="30"
@@ -687,7 +688,7 @@
                             CommandParameter="'{Hour}'"
                             Focusable="False"
                             Style="{StaticResource MaterialDesignRaisedDarkButton}">
-                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="小时" />
+                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.Hour}" />
                         </Button>
                         <Button
                             Height="30"
@@ -699,7 +700,7 @@
                             CommandParameter="'{CameraSerialNumber}'"
                             Focusable="False"
                             Style="{StaticResource MaterialDesignRaisedDarkButton}">
-                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="相机序列号" />
+                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.TableHeaderSerialNumber}" />
                         </Button>
                     </StackPanel>
                 </StackPanel>
@@ -723,7 +724,7 @@
                                 FontSize="12"
                                 FontWeight="Bold"
                                 Foreground="#2E2E2E"
-                                Text="根目录" />
+                                Text="{x:Static languages:Language.RootDirectory}" />
                         </Border>
                         <ListView
                             Width="680"
@@ -794,7 +795,7 @@
                         FontSize="16"
                         FontWeight="Bold"
                         Foreground="DarkGray"
-                        Text="图片命名:" />
+                        Text="{x:Static languages:Language.ImageNaming}" />
                 </StackPanel>
                 <StackPanel Margin="50,10,0,0" Orientation="Horizontal">
                     <TextBlock
@@ -803,7 +804,7 @@
                         FontSize="13"
                         FontWeight="Bold"
                         Foreground="DarkGray"
-                        Text="命名包含:" />
+                        Text="{x:Static languages:Language.NamingIncludes}" />
                     <StackPanel Orientation="Horizontal">
                         <Button
                             Height="30"
@@ -815,7 +816,7 @@
                             CommandParameter="'{BarCode}'"
                             Focusable="False"
                             Style="{StaticResource MaterialDesignRaisedDarkButton}">
-                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="条码" />
+                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.TableHeaderBarCode}" />
                         </Button>
                         <Button
                             Height="30"
@@ -827,7 +828,7 @@
                             CommandParameter="'{Weight}'"
                             Focusable="False"
                             Style="{StaticResource MaterialDesignRaisedDarkButton}">
-                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="重量" />
+                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.TableHeaderWeight}" />
                         </Button>
                         <Button
                             Height="30"
@@ -839,7 +840,7 @@
                             CommandParameter="'{ScanTime}'"
                             Focusable="False"
                             Style="{StaticResource MaterialDesignRaisedDarkButton}">
-                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="扫码时间" />
+                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.TableHeaderScanTime}" />
                         </Button>
                         <Button
                             Height="30"
@@ -851,7 +852,7 @@
                             CommandParameter="'{TimestampedGuid}'"
                             Focusable="False"
                             Style="{StaticResource MaterialDesignRaisedDarkButton}">
-                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="扫码时间戳" />
+                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.TableHeaderTimestampGuid}" />
                         </Button>
                         <Button
                             Height="30"
@@ -863,7 +864,7 @@
                             CommandParameter="'{Length}'"
                             Focusable="False"
                             Style="{StaticResource MaterialDesignRaisedDarkButton}">
-                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="长" />
+                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.TableHeaderLength}" />
                         </Button>
                         <Button
                             Height="30"
@@ -875,7 +876,7 @@
                             CommandParameter="'{Width}'"
                             Focusable="False"
                             Style="{StaticResource MaterialDesignRaisedDarkButton}">
-                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="宽" />
+                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.TableHeaderWidth}" />
                         </Button>
                         <Button
                             Height="30"
@@ -887,7 +888,7 @@
                             CommandParameter="'{Height}'"
                             Focusable="False"
                             Style="{StaticResource MaterialDesignRaisedDarkButton}">
-                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="高" />
+                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.TableHeaderHeight}" />
                         </Button>
                         <Button
                             Height="30"
@@ -899,7 +900,7 @@
                             CommandParameter="'{Volume}'"
                             Focusable="False"
                             Style="{StaticResource MaterialDesignRaisedDarkButton}">
-                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="体积" />
+                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.TableHeaderVolume}" />
                         </Button>
                         <Button
                             Height="30"
@@ -911,7 +912,7 @@
                             CommandParameter="'{CameraSerialNumber}'"
                             Focusable="False"
                             Style="{StaticResource MaterialDesignRaisedDarkButton}">
-                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="相机序列号" />
+                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.TableHeaderSerialNumber}" />
                         </Button>
                     </StackPanel>
                 </StackPanel>
@@ -923,7 +924,7 @@
                     CornerRadius="5">
                     <Grid>
                         <Border
-                            Width="40"
+                            Width="60"
                             Margin="2"
                             HorizontalAlignment="Left"
                             Background="DarkGray"
@@ -935,13 +936,13 @@
                                 FontSize="12"
                                 FontWeight="Bold"
                                 Foreground="#2E2E2E"
-                                Text="图片名" />
+                                Text="{x:Static languages:Language.ImageName}" />
                         </Border>
                         <ListView
                             Width="680"
                             Height="30"
                             MaxWidth="900"
-                            Margin="50,0,0,0"
+                            Margin="70,0,0,0"
                             Focusable="False"
                             ItemTemplateSelector="{StaticResource ImageSettingItemDataTemplateSelectors}"
                             ItemsSource="{Binding ImageNamingItems, UpdateSourceTrigger=PropertyChanged}"
@@ -1006,7 +1007,7 @@
                         FontSize="16"
                         FontWeight="Bold"
                         Foreground="DarkGray"
-                        Text="FTP上传:" />
+                        Text="{x:Static languages:Language.FTPUpload}" />
                 </StackPanel>
                 <StackPanel Margin="50,10,0,0" Orientation="Horizontal">
                     <TextBlock
@@ -1015,7 +1016,7 @@
                         FontSize="13"
                         FontWeight="Bold"
                         Foreground="DarkGray"
-                        Text="是否开启上传:" />
+                        Text="{x:Static languages:Language.IsUseFTPUpload}" />
                     <CheckBox materialDesign:CheckBoxAssist.CheckBoxSize="20" IsChecked="{Binding IsFtpUploadEnabled, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                 </StackPanel>
                 <StackPanel Margin="50,10,0,0" Orientation="Horizontal">
@@ -1028,7 +1029,7 @@
                             FontSize="13"
                             FontWeight="Bold"
                             Foreground="DarkGray"
-                            Text="IP地址:" />
+                            Text="{x:Static languages:Language.IPAddress}" />
                         <Border
                             Margin="5"
                             HorizontalAlignment="Center"
@@ -1060,7 +1061,7 @@
                             FontSize="13"
                             FontWeight="Bold"
                             Foreground="DarkGray"
-                            Text="端口号:" />
+                            Text="{x:Static languages:Language.Port}" />
                         <Border
                             Margin="5"
                             HorizontalAlignment="Center"
@@ -1092,7 +1093,7 @@
                             FontSize="13"
                             FontWeight="Bold"
                             Foreground="DarkGray"
-                            Text="用户名:" />
+                            Text="{x:Static languages:Language.Username}" />
                         <Border
                             Margin="5"
                             HorizontalAlignment="Center"
@@ -1124,7 +1125,7 @@
                             FontSize="13"
                             FontWeight="Bold"
                             Foreground="DarkGray"
-                            Text="密码:" />
+                            Text="{x:Static languages:Language.Password}" />
                         <Border
                             Margin="5"
                             HorizontalAlignment="Center"
@@ -1156,7 +1157,7 @@
                             FontSize="13"
                             FontWeight="Bold"
                             Foreground="DarkGray"
-                            Text="超时时间:" />
+                            Text="{x:Static languages:Language.Timeout}" />
                         <Border
                             Margin="5"
                             HorizontalAlignment="Center"
@@ -1186,7 +1187,6 @@
             <Button
                 Grid.Row="7"
                 Grid.Column="0"
-                Width="110"
                 MinHeight="30"
                 Margin="30,0"
                 HorizontalAlignment="Left"
@@ -1213,7 +1213,7 @@
                             FontSize="14"
                             FontWeight="Bold"
                             Foreground="DarkGray"
-                            Text="保存设置" />
+                            Text="{x:Static languages:Language.SaveSettings}" />
                         <StackPanel.Style>
                             <Style TargetType="StackPanel">
                                 <Setter Property="Visibility" Value="Visible" />
@@ -1300,7 +1300,7 @@
                     FontSize="16"
                     FontWeight="Bold"
                     Foreground="DarkGray"
-                    Text="测试图片路径:" />
+                    Text="{x:Static languages:Language.TestImagePath}" />
                 <Border
                     Margin="5"
                     HorizontalAlignment="Center"
@@ -1323,7 +1323,6 @@
                         Text="{Binding LoadImagePath, UpdateSourceTrigger=PropertyChanged}" />
                 </Border>
                 <Button
-                    Width="90"
                     MinHeight="30"
                     Margin="5,0"
                     HorizontalAlignment="Left"
@@ -1340,7 +1339,7 @@
                         FontSize="14"
                         FontWeight="Bold"
                         Foreground="DarkGray"
-                        Text="加载图片" />
+                        Text="{x:Static languages:Language.LoadImage}" />
                 </Button>
             </StackPanel>
             <!--  预览水印  -->

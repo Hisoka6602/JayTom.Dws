@@ -117,12 +117,20 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="AdditionalContent" xml:space="preserve">
+    <value>AdditionalContent</value>
+    <comment>8-附加内容</comment>
+  </data>
+  <data name="AdditionalWeightAttributes" xml:space="preserve">
+    <value>AdditionalWeightAttributes:</value>
+    <comment>9-附加重量属性</comment>
+  </data>
   <data name="ApiFailure" xml:space="preserve">
     <value>Failure</value>
     <comment>5-Api上传失败</comment>
   </data>
   <data name="ApiInterface" xml:space="preserve">
-    <value>ApiInterface</value>
+    <value>ApiSettings</value>
     <comment>0-Api接口(菜单)</comment>
   </data>
   <data name="ApiNotUploaded" xml:space="preserve">
@@ -137,6 +145,10 @@
     <value>Success</value>
     <comment>5-Api上传成功</comment>
   </data>
+  <data name="ApplyAll" xml:space="preserve">
+    <value>Apply All Item</value>
+    <comment>7-应用全部</comment>
+  </data>
   <data name="AvailableMemory" xml:space="preserve">
     <value>AvailableMemory:</value>
     <comment>4-可用内存</comment>
@@ -149,6 +161,46 @@
     <value>Barcode:</value>
     <comment>6-条码条件</comment>
   </data>
+  <data name="BarcodeIntervalLimit" xml:space="preserve">
+    <value>BarcodeIntervalLimit:</value>
+    <comment>8-允许条码间隔数量</comment>
+  </data>
+  <data name="BarcodeLength" xml:space="preserve">
+    <value>BarcodeLength:</value>
+    <comment>8-条码长度</comment>
+  </data>
+  <data name="BarcodeValidation" xml:space="preserve">
+    <value>BarcodeValidation:</value>
+    <comment>8-条码验证</comment>
+  </data>
+  <data name="BaudRate" xml:space="preserve">
+    <value>BaudRate:</value>
+    <comment>9-波特率</comment>
+  </data>
+  <data name="BindToCompactCamera" xml:space="preserve">
+    <value>Bind To CompactCamera</value>
+    <comment>7-绑定到体积相机</comment>
+  </data>
+  <data name="BindToPanoramicCamera" xml:space="preserve">
+    <value>Bind ToPanoramicCamer</value>
+    <comment>7-绑定到全景相机</comment>
+  </data>
+  <data name="BindToScannerCamera" xml:space="preserve">
+    <value>Bind To ScannerCamera</value>
+    <comment>7-绑定到扫码相机</comment>
+  </data>
+  <data name="BottomLeftCorner" xml:space="preserve">
+    <value>BottomLeftCorner</value>
+    <comment>8-左下角</comment>
+  </data>
+  <data name="BottomRightCorner" xml:space="preserve">
+    <value>BottomRightCorner</value>
+    <comment>8-右下角</comment>
+  </data>
+  <data name="BrowseDirectory" xml:space="preserve">
+    <value>BrowseDirectory</value>
+    <comment>8-浏览目录</comment>
+  </data>
   <data name="CacheCearing" xml:space="preserve">
     <value>CacheCearing</value>
     <comment>0-空间清理(菜单)</comment>
@@ -157,9 +209,37 @@
     <value>CameraConfig</value>
     <comment>0-相机配置(菜单)</comment>
   </data>
+  <data name="CameraSearch" xml:space="preserve">
+    <value>CameraSearch</value>
+    <comment>7-相机查找</comment>
+  </data>
+  <data name="CannotContain" xml:space="preserve">
+    <value>CannotContain:</value>
+    <comment>8-不能包含</comment>
+  </data>
+  <data name="CharacterLength" xml:space="preserve">
+    <value>CharacterLength:</value>
+    <comment>9-字符长度</comment>
+  </data>
+  <data name="CharacterLimitation" xml:space="preserve">
+    <value>CharacterLimitation:</value>
+    <comment>8-字符限制</comment>
+  </data>
   <data name="Clear" xml:space="preserve">
     <value>Clear</value>
     <comment>6-清空条件</comment>
+  </data>
+  <data name="CompactCamera" xml:space="preserve">
+    <value>CompactCamera</value>
+    <comment>7-体积相机</comment>
+  </data>
+  <data name="ConditionSeparationInstruction" xml:space="preserve">
+    <value>Use (;) for multiple condition separation.</value>
+    <comment>8-多条件分割说明</comment>
+  </data>
+  <data name="Content" xml:space="preserve">
+    <value>Content</value>
+    <comment>8-内容</comment>
   </data>
   <data name="CpuFanSpeed" xml:space="preserve">
     <value>CpuFanSpeed:</value>
@@ -177,9 +257,49 @@
     <value>CpuUsageRate:</value>
     <comment>4-Cpu使用率</comment>
   </data>
+  <data name="DataBits" xml:space="preserve">
+    <value>DataBits:</value>
+    <comment>9-数据位</comment>
+  </data>
+  <data name="DataFormat" xml:space="preserve">
+    <value>DataFormat:</value>
+    <comment>9-格  式</comment>
+  </data>
   <data name="DataManagement" xml:space="preserve">
     <value>DataManagement</value>
     <comment>0-数据管理(菜单)</comment>
+  </data>
+  <data name="DataRetrievalMode" xml:space="preserve">
+    <value>DataRetrievalMode:</value>
+    <comment>9-获取方式</comment>
+  </data>
+  <data name="Day" xml:space="preserve">
+    <value>Day</value>
+    <comment>8-日期</comment>
+  </data>
+  <data name="DecimalPlaces" xml:space="preserve">
+    <value>DecimalPlaces:</value>
+    <comment>9-小数保留位数</comment>
+  </data>
+  <data name="DelayTriggerTime" xml:space="preserve">
+    <value>DelayTriggerTime(ms):</value>
+    <comment>7-延迟触发时间</comment>
+  </data>
+  <data name="DynamicWeighing" xml:space="preserve">
+    <value>DynamicWeighing</value>
+    <comment>9-动态称重</comment>
+  </data>
+  <data name="EndCharacter" xml:space="preserve">
+    <value>EndCharacter:</value>
+    <comment>8-结尾字符</comment>
+  </data>
+  <data name="EndPositionOfDecimal" xml:space="preserve">
+    <value>EndPositionOfDecimal:</value>
+    <comment>9-小数结束位置</comment>
+  </data>
+  <data name="EndPositionOfInteger" xml:space="preserve">
+    <value>EndPositionOfInteger:</value>
+    <comment>9-整数结束位置</comment>
   </data>
   <data name="ExceptionCount" xml:space="preserve">
     <value>ExceptionCount</value>
@@ -197,6 +317,10 @@
     <value>FirstPage</value>
     <comment>6-首页</comment>
   </data>
+  <data name="FTPUpload" xml:space="preserve">
+    <value>FTPUpload:</value>
+    <comment>8-FTP上传</comment>
+  </data>
   <data name="GpuUsageRate" xml:space="preserve">
     <value>GpuUsageRate:</value>
     <comment>4-Gpu使用率</comment>
@@ -209,13 +333,81 @@
     <value>Height:</value>
     <comment>1-高度(主页)</comment>
   </data>
+  <data name="Hour" xml:space="preserve">
+    <value>Hour</value>
+    <comment>8-小时</comment>
+  </data>
+  <data name="Identifier" xml:space="preserve">
+    <value>Identifier:</value>
+    <comment>9-标 识 符</comment>
+  </data>
+  <data name="IdentifierPosition" xml:space="preserve">
+    <value>IdentifierPosition:</value>
+    <comment>9-标识符位置</comment>
+  </data>
+  <data name="ImageName" xml:space="preserve">
+    <value>ImageName</value>
+    <comment>8-图片名</comment>
+  </data>
+  <data name="ImageNaming" xml:space="preserve">
+    <value>ImageNaming:</value>
+    <comment>8-图片命名</comment>
+  </data>
+  <data name="ImageRootDirectory" xml:space="preserve">
+    <value>ImageRootDirectory:</value>
+    <comment>8-存图根目录</comment>
+  </data>
   <data name="ImageStorageSettings" xml:space="preserve">
     <value>ImgStorageSettings</value>
     <comment>0-存图设置(菜单)</comment>
   </data>
+  <data name="ImageType" xml:space="preserve">
+    <value>ImageType:</value>
+    <comment>8-存图类型</comment>
+  </data>
   <data name="InputContent" xml:space="preserve">
     <value>InputContent</value>
     <comment>0-内容输入(菜单)</comment>
+  </data>
+  <data name="IPAddress" xml:space="preserve">
+    <value>IPAddress:</value>
+    <comment>8-IP地址</comment>
+  </data>
+  <data name="IsEnableRealTimeImage" xml:space="preserve">
+    <value>IsEnableRealTimeImage:</value>
+    <comment>7-是否开启实时图像</comment>
+  </data>
+  <data name="IsReverse" xml:space="preserve">
+    <value>IsReverse:</value>
+    <comment>9-是否反转</comment>
+  </data>
+  <data name="IsUseActualWeightConversionRate" xml:space="preserve">
+    <value>IsUseActualWeightConversionRate:</value>
+    <comment>9-是否使用实际重量转换率</comment>
+  </data>
+  <data name="IsUseAdditionalWeight" xml:space="preserve">
+    <value>IsUseAdditionalWeight:</value>
+    <comment>9-是否使用追加重量</comment>
+  </data>
+  <data name="IsUseFixedWeight" xml:space="preserve">
+    <value>IsUseFixedWeight:</value>
+    <comment>9-是否使用固定重量</comment>
+  </data>
+  <data name="IsUseFTPUpload" xml:space="preserve">
+    <value>IsUseFTPUpload:</value>
+    <comment>8-是否使用FTP上传</comment>
+  </data>
+  <data name="IsUseFusedWeightTimeout" xml:space="preserve">
+    <value>IsUseFusedWeightTimeout:</value>
+    <comment>9-是否使用融合重量超时</comment>
+  </data>
+  <data name="IsUserOriginalImage" xml:space="preserve">
+    <value>IsUserOriginalImage:</value>
+    <comment>8-是否存原图</comment>
+  </data>
+  <data name="IsUseWatermark" xml:space="preserve">
+    <value>IsUseWatermark:</value>
+    <comment>8-是否使用水印</comment>
   </data>
   <data name="LastPage" xml:space="preserve">
     <value>LastPage</value>
@@ -225,9 +417,41 @@
     <value>Length:</value>
     <comment>1-长度(主页)</comment>
   </data>
+  <data name="Letters" xml:space="preserve">
+    <value>Letters</value>
+    <comment>8-字母</comment>
+  </data>
+  <data name="LettersOrNumbers" xml:space="preserve">
+    <value>LettersOrNumbers</value>
+    <comment>8-字母或数字</comment>
+  </data>
+  <data name="LoadImage" xml:space="preserve">
+    <value>LoadImage</value>
+    <comment>8-加载图片</comment>
+  </data>
   <data name="LogManagement" xml:space="preserve">
     <value>LogManagement</value>
     <comment>0-日志管理(菜单)</comment>
+  </data>
+  <data name="MaxBarcodeLength" xml:space="preserve">
+    <value>MaxbarcodeLength:</value>
+    <comment>8-最大条码位数</comment>
+  </data>
+  <data name="MaximumLength" xml:space="preserve">
+    <value>MaximumLength:</value>
+    <comment>7-最大测量长度</comment>
+  </data>
+  <data name="MaximumSynchronizationTime" xml:space="preserve">
+    <value>MaximumSyncTime:</value>
+    <comment>7-最大同步时间</comment>
+  </data>
+  <data name="MaxUsableWeight" xml:space="preserve">
+    <value>MaxUsableWeight:</value>
+    <comment>9-最大可用重量:</comment>
+  </data>
+  <data name="MeasurementMode" xml:space="preserve">
+    <value>MeasurementMode:</value>
+    <comment>7-体积测量模式</comment>
   </data>
   <data name="MemoryInformation" xml:space="preserve">
     <value>MemoryInformation</value>
@@ -236,6 +460,34 @@
   <data name="MemoryUsageRate" xml:space="preserve">
     <value>MemoryUsageRate:</value>
     <comment>4-内存使用率</comment>
+  </data>
+  <data name="MinBarcodeLength" xml:space="preserve">
+    <value>MinBarcodeLength:</value>
+    <comment>8-最小条码位数</comment>
+  </data>
+  <data name="MinimumLength" xml:space="preserve">
+    <value>MinimumLength:</value>
+    <comment>7-最小测量长度</comment>
+  </data>
+  <data name="MinimumSynchronizationTime" xml:space="preserve">
+    <value>MinimumSyncTime：</value>
+    <comment>7-最小同步时间</comment>
+  </data>
+  <data name="MinUsableWeight" xml:space="preserve">
+    <value>MinUsableWeight:</value>
+    <comment>9-最小可用重量:</comment>
+  </data>
+  <data name="Month" xml:space="preserve">
+    <value>Month</value>
+    <comment>8-月份</comment>
+  </data>
+  <data name="MustContain" xml:space="preserve">
+    <value>Must Contain:</value>
+    <comment>8-必须包含</comment>
+  </data>
+  <data name="NamingIncludes" xml:space="preserve">
+    <value>NamingIncludes:</value>
+    <comment>8-命名包含</comment>
   </data>
   <data name="NetworkInformation" xml:space="preserve">
     <value>NetworkInformation</value>
@@ -257,17 +509,101 @@
     <value>NoData</value>
     <comment>4-异常状态条-没有数据</comment>
   </data>
+  <data name="NoWeighing" xml:space="preserve">
+    <value>NoWeighing</value>
+    <comment>9-不称重</comment>
+  </data>
+  <data name="Numbers" xml:space="preserve">
+    <value>Numbers</value>
+    <comment>8-数字</comment>
+  </data>
   <data name="OutputResults" xml:space="preserve">
     <value>OutputResults</value>
     <comment>0-结果输出(菜单)</comment>
+  </data>
+  <data name="PanoramicCamera" xml:space="preserve">
+    <value>PanoramicCamera</value>
+    <comment>7-全景相机</comment>
+  </data>
+  <data name="PanoramicImage" xml:space="preserve">
+    <value>PanoramicImage</value>
+    <comment>8-全景图</comment>
+  </data>
+  <data name="ParityBit" xml:space="preserve">
+    <value>ParityBit:</value>
+    <comment>9-效验位</comment>
+  </data>
+  <data name="Password" xml:space="preserve">
+    <value>Password:</value>
+    <comment>8-密码</comment>
+  </data>
+  <data name="Port" xml:space="preserve">
+    <value>Port:</value>
+    <comment>8-端口</comment>
   </data>
   <data name="PreviousPage" xml:space="preserve">
     <value>PreviousPage</value>
     <comment>6-上一页</comment>
   </data>
+  <data name="ReadOnly" xml:space="preserve">
+    <value>ReadOnly</value>
+    <comment>9-只读式</comment>
+  </data>
+  <data name="RealTimeWeightData" xml:space="preserve">
+    <value>RealTimeWeightData:</value>
+    <comment>9-实时重量数据</comment>
+  </data>
+  <data name="Refresh" xml:space="preserve">
+    <value>Refresh</value>
+    <comment>7-刷新</comment>
+  </data>
+  <data name="RegularExpression" xml:space="preserve">
+    <value>RegularExpression:</value>
+    <comment>8-正则表达式</comment>
+  </data>
+  <data name="Request" xml:space="preserve">
+    <value>Request</value>
+    <comment>9-问答式</comment>
+  </data>
+  <data name="RequestedOfContent" xml:space="preserve">
+    <value>RequestedOfContent:</value>
+    <comment>9-发送内容</comment>
+  </data>
+  <data name="RequestedOfFormat" xml:space="preserve">
+    <value>RequestedOfFormat:</value>
+    <comment>9-发送格式</comment>
+  </data>
+  <data name="RootDirectory" xml:space="preserve">
+    <value>Root</value>
+    <comment>8-根目录</comment>
+  </data>
+  <data name="SamplingFrequency" xml:space="preserve">
+    <value>SamplingFrequency:</value>
+    <comment>9-采样频率</comment>
+  </data>
+  <data name="Save" xml:space="preserve">
+    <value>Save</value>
+    <comment>7-保存</comment>
+  </data>
+  <data name="SaveSettings" xml:space="preserve">
+    <value>Save</value>
+    <comment>8-保存设置</comment>
+  </data>
   <data name="ScanCount" xml:space="preserve">
     <value>ScanCount</value>
     <comment>1-扫描数量(主页)</comment>
+  </data>
+  <data name="ScanInterval" xml:space="preserve">
+    <value>ScanInterval:</value>
+    <comment>8-扫码间隔</comment>
+  </data>
+  <data name="ScannerCamera" xml:space="preserve">
+    <value>ScannerCamera</value>
+    <comment>7-扫码相机</comment>
+  </data>
+  <data name="ScannerImage" xml:space="preserve">
+    <value>ScannerImage</value>
+    <comment>8-扫码图</comment>
   </data>
   <data name="ScanTime" xml:space="preserve">
     <value>ScanTime:</value>
@@ -277,9 +613,45 @@
     <value>Search</value>
     <comment>6-查找</comment>
   </data>
+  <data name="SerialPortName" xml:space="preserve">
+    <value>SerialPort:</value>
+    <comment>9-串口名</comment>
+  </data>
+  <data name="SingleCodeScanInterval" xml:space="preserve">
+    <value>SingleCodeScanInterval:</value>
+    <comment>8-单码扫描间隔时间</comment>
+  </data>
+  <data name="StabilityAccuracy" xml:space="preserve">
+    <value>StabilityAccuracy:</value>
+    <comment>9-稳定精度</comment>
+  </data>
+  <data name="StabilityCount" xml:space="preserve">
+    <value>StabilityCount:</value>
+    <comment>9-稳定个数</comment>
+  </data>
+  <data name="StandardConnectionParameters" xml:space="preserve">
+    <value>StandardConnectionParameters:</value>
+    <comment>9-常规连接参数</comment>
+  </data>
   <data name="Start" xml:space="preserve">
     <value>Start</value>
     <comment>1-开始(主页-按钮)</comment>
+  </data>
+  <data name="StartCharacter" xml:space="preserve">
+    <value>StartCharacter:</value>
+    <comment>8-开头字符</comment>
+  </data>
+  <data name="StartPositionOfDecimal" xml:space="preserve">
+    <value>StartPositionOfDecimal:</value>
+    <comment>9-小数起始位置</comment>
+  </data>
+  <data name="StartPositionOfInteger" xml:space="preserve">
+    <value>StartPositionOfInteger:</value>
+    <comment>9-整数起始位置</comment>
+  </data>
+  <data name="StaticWeighing" xml:space="preserve">
+    <value>StaticWeighing</value>
+    <comment>9-静态称重</comment>
   </data>
   <data name="StatusBarCamera" xml:space="preserve">
     <value>Camera</value>
@@ -309,6 +681,14 @@
     <value>Stop</value>
     <comment>1-停止(主页-按钮)</comment>
   </data>
+  <data name="StopBits" xml:space="preserve">
+    <value>StopBits:</value>
+    <comment>9-停止位</comment>
+  </data>
+  <data name="SubDirectory" xml:space="preserve">
+    <value>Subdirectory:</value>
+    <comment>8-子路径</comment>
+  </data>
   <data name="TableHeaderAPIResponseStatus" xml:space="preserve">
     <value>APIStatus</value>
     <comment>2-上传状态(主页-表头)</comment>
@@ -321,13 +701,69 @@
     <value>BarcodeImage</value>
     <comment>2-扫码图片</comment>
   </data>
+  <data name="TableHeaderCameraBrand" xml:space="preserve">
+    <value>CameraBrand</value>
+    <comment>7-相机品牌</comment>
+  </data>
+  <data name="TableHeaderCameraModel" xml:space="preserve">
+    <value>CameraModel</value>
+    <comment>7-相机型号</comment>
+  </data>
+  <data name="TableHeaderCameraName" xml:space="preserve">
+    <value>CameraName</value>
+    <comment>7-相机名称</comment>
+  </data>
+  <data name="TableHeaderCameraType" xml:space="preserve">
+    <value>CameraType</value>
+    <comment>7-相机类型</comment>
+  </data>
+  <data name="TableHeaderDelayTriggerTime" xml:space="preserve">
+    <value>DelayTriggerTime</value>
+    <comment>7-延迟触发时间</comment>
+  </data>
+  <data name="TableHeaderEnableRealTimeImage" xml:space="preserve">
+    <value>IsEnableRealTimeImage</value>
+    <comment>7-是否开启实时图像</comment>
+  </data>
   <data name="TableHeaderHeight" xml:space="preserve">
     <value>Height</value>
     <comment>2-高度(主页-表头)</comment>
   </data>
+  <data name="TableHeaderImageType" xml:space="preserve">
+    <value>ImageType</value>
+    <comment>2-图片类型(表头)</comment>
+  </data>
+  <data name="TableHeaderIPAddress" xml:space="preserve">
+    <value>IPAddress</value>
+    <comment>7-IP地址</comment>
+  </data>
   <data name="TableHeaderLength" xml:space="preserve">
     <value>Length</value>
     <comment>2-长度(主页-表头)</comment>
+  </data>
+  <data name="TableHeaderMaximumLength" xml:space="preserve">
+    <value>MaximumLength</value>
+    <comment>7-最大长度</comment>
+  </data>
+  <data name="TableHeaderMaximumSynchronizationTime" xml:space="preserve">
+    <value>MaxSyncTime(ms)</value>
+    <comment>7-最大同步时间</comment>
+  </data>
+  <data name="TableHeaderMeasurementMode" xml:space="preserve">
+    <value>MeasurementMode</value>
+    <comment>7-测量模式</comment>
+  </data>
+  <data name="TableHeaderMinimumLength" xml:space="preserve">
+    <value>MinimumLength</value>
+    <comment>7-最小长度</comment>
+  </data>
+  <data name="TableHeaderMinimumSynchronizationTime" xml:space="preserve">
+    <value>MinSyncTime(ms)</value>
+    <comment>7-最小同步时间</comment>
+  </data>
+  <data name="TableHeaderOperation" xml:space="preserve">
+    <value>Operation</value>
+    <comment>7-操作</comment>
   </data>
   <data name="TableHeaderPanoramicImage" xml:space="preserve">
     <value>PanoramicImage</value>
@@ -337,9 +773,21 @@
     <value>ScanTime</value>
     <comment>2-扫描时间(主页-表头)</comment>
   </data>
+  <data name="TableHeaderSerialNumber" xml:space="preserve">
+    <value>SerialNumber</value>
+    <comment>7-序列号</comment>
+  </data>
   <data name="TableHeaderTimestampGuid" xml:space="preserve">
     <value>TimestampGuid</value>
-    <comment>6-时间戳唯一标识</comment>
+    <comment>2-时间戳唯一标识</comment>
+  </data>
+  <data name="TableHeaderTriggerMode" xml:space="preserve">
+    <value>TriggerMode</value>
+    <comment>7-触发模式</comment>
+  </data>
+  <data name="TableHeaderVersionNumber" xml:space="preserve">
+    <value>VersionNumber</value>
+    <comment>7-版本号</comment>
   </data>
   <data name="TableHeaderVolume" xml:space="preserve">
     <value>Volume</value>
@@ -353,29 +801,105 @@
     <value>Width</value>
     <comment>2-宽度(主页-表头)</comment>
   </data>
+  <data name="TestImagePath" xml:space="preserve">
+    <value>TestImagePath:</value>
+    <comment>8-测试图片路径</comment>
+  </data>
+  <data name="Timeout" xml:space="preserve">
+    <value>Timeout:</value>
+    <comment>8-超时时间</comment>
+  </data>
   <data name="TimestampGuid" xml:space="preserve">
     <value>TimestampGuid:</value>
     <comment>6-时间戳Guid</comment>
+  </data>
+  <data name="TopLeftCorner" xml:space="preserve">
+    <value>TopLeftCorner</value>
+    <comment>8-左上角</comment>
+  </data>
+  <data name="TopRightCorner" xml:space="preserve">
+    <value>TopRightCorner</value>
+    <comment>8-右上角</comment>
   </data>
   <data name="TotalMemory" xml:space="preserve">
     <value>TotalMemory:</value>
     <comment>4-总内存</comment>
   </data>
+  <data name="TriggerMode" xml:space="preserve">
+    <value>TriggerMode:</value>
+    <comment>7-测量触发模式</comment>
+  </data>
+  <data name="Unbind" xml:space="preserve">
+    <value>Unbind</value>
+    <comment>7-解绑</comment>
+  </data>
   <data name="UploadCount" xml:space="preserve">
     <value>APIRequestCount</value>
     <comment>1-上传数量(主页)</comment>
+  </data>
+  <data name="Username" xml:space="preserve">
+    <value>Username:</value>
+    <comment>8-用户名</comment>
+  </data>
+  <data name="Validate" xml:space="preserve">
+    <value>Validate</value>
+    <comment>8-测试</comment>
+  </data>
+  <data name="ValueOfAdditionalWeight" xml:space="preserve">
+    <value>Value:</value>
+    <comment>9-追加重量的值</comment>
+  </data>
+  <data name="ValueOfFixedWeight" xml:space="preserve">
+    <value>Value:</value>
+    <comment>9-固定重量的值</comment>
   </data>
   <data name="Volume" xml:space="preserve">
     <value>Volume:</value>
     <comment>1-体积(主页)</comment>
   </data>
+  <data name="VolumeImage" xml:space="preserve">
+    <value>VolumeImage</value>
+    <comment>8-体积图</comment>
+  </data>
   <data name="VolumeSettings" xml:space="preserve">
     <value>VolumeSettings</value>
     <comment>0-体积设置(菜单)</comment>
   </data>
+  <data name="Watermark" xml:space="preserve">
+    <value>Watermark:</value>
+    <comment>8-水印</comment>
+  </data>
+  <data name="WatermarkColor" xml:space="preserve">
+    <value>WatermarkColor:</value>
+    <comment>8-水印颜色</comment>
+  </data>
+  <data name="WatermarkContent" xml:space="preserve">
+    <value>WatermarkContent:</value>
+    <comment>8-水印内容</comment>
+  </data>
+  <data name="WatermarkPosition" xml:space="preserve">
+    <value>WatermarkPosition:</value>
+    <comment>8-水印位置</comment>
+  </data>
+  <data name="WatermarkSize" xml:space="preserve">
+    <value>WatermarkSize:</value>
+    <comment>8-水印大小</comment>
+  </data>
+  <data name="WeighingMode" xml:space="preserve">
+    <value>WeighingMode:</value>
+    <comment>9-称重模式</comment>
+  </data>
   <data name="Weight" xml:space="preserve">
     <value>Weight:</value>
     <comment>1-重量(主页)</comment>
+  </data>
+  <data name="WeightConversionRate" xml:space="preserve">
+    <value>Rate:</value>
+    <comment>9-重量转换率</comment>
+  </data>
+  <data name="WeightSettingParameters" xml:space="preserve">
+    <value>WeightSettingParameters:</value>
+    <comment>9-重量设置参数</comment>
   </data>
   <data name="WeightSettings" xml:space="preserve">
     <value>WeightSettings</value>
@@ -384,6 +908,10 @@
   <data name="Width" xml:space="preserve">
     <value>Width:</value>
     <comment>1-宽度(主页)</comment>
+  </data>
+  <data name="Year" xml:space="preserve">
+    <value>Year</value>
+    <comment>8-年份</comment>
   </data>
   <data name="切换语言失败提示" xml:space="preserve">
     <value>Failed to switch language</value>

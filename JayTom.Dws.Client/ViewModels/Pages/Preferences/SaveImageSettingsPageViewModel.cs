@@ -59,7 +59,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             new ItemBaseTemplateModel()
             {
                 Id = 2,
-                Content = "附加内容",
+                Content = Languages.Language.ResourceManager.GetString("AdditionalContent")??string.Empty,
                 Type = 0,
                 ApplicationType = ItemApplicationType.Watermark
             },

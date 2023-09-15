@@ -5,6 +5,7 @@
     xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
+    xmlns:languages="clr-namespace:JayTom.Dws.Client.Languages"
     xmlns:local="clr-namespace:JayTom.Dws.Client.Views.Pages.Preferences.CameraConfiguration"
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -27,7 +28,7 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <Grid Grid.Row="0">
+        <Grid Grid.Row="0" Cursor="">
             <Grid.RowDefinitions>
                 <RowDefinition Height="40" />
                 <RowDefinition Height="40" />
@@ -61,7 +62,7 @@
                         FontSize="14"
                         FontWeight="Bold"
                         Foreground="DarkGray"
-                        Text="体积测量模式:" />
+                        Text="{x:Static languages:Language.MeasurementMode}" />
                     <!--  输入框  -->
                     <Border
                         Margin="5"
@@ -112,7 +113,7 @@
                         FontSize="14"
                         FontWeight="Bold"
                         Foreground="DarkGray"
-                        Text="最小同步时间:" />
+                        Text="{x:Static languages:Language.MinimumSynchronizationTime}" />
                     <!--  输入框  -->
                     <Border
                         Margin="5,0"
@@ -154,7 +155,7 @@
                         FontSize="14"
                         FontWeight="Bold"
                         Foreground="DarkGray"
-                        Text="最大同步时间:" />
+                        Text="{x:Static languages:Language.MaximumSynchronizationTime}" />
                     <!--  输入框  -->
                     <Border
                         Margin="5,0"
@@ -201,7 +202,7 @@
                         FontSize="14"
                         FontWeight="Bold"
                         Foreground="DarkGray"
-                        Text="测量触发模式:" />
+                        Text="{x:Static languages:Language.TriggerMode}" />
                     <!--  输入框  -->
                     <Border
                         Margin="5"
@@ -252,7 +253,7 @@
                         FontSize="14"
                         FontWeight="Bold"
                         Foreground="DarkGray"
-                        Text="最小测量长度:" />
+                        Text="{x:Static languages:Language.MinimumLength}" />
                     <!--  输入框  -->
                     <Border
                         Margin="5,0"
@@ -294,7 +295,7 @@
                         FontSize="14"
                         FontWeight="Bold"
                         Foreground="DarkGray"
-                        Text="最大测量长度:" />
+                        Text="{x:Static languages:Language.MaximumLength}" />
                     <!--  输入框  -->
                     <Border
                         Margin="5,0"
@@ -322,7 +323,6 @@
                 Grid.Row="0"
                 Grid.RowSpan="2"
                 Grid.Column="1"
-                Width="120"
                 MinHeight="30"
                 Margin="15,0"
                 materialDesign:ButtonAssist.CornerRadius="5"
@@ -364,7 +364,7 @@
                             FontSize="14"
                             FontWeight="Bold"
                             Foreground="DarkGray"
-                            Text="应用全部" />
+                            Text="{x:Static languages:Language.ApplyAll}" />
                     </StackPanel>
                 </StackPanel>
             </Button>
@@ -416,7 +416,7 @@
                     CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                     EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
                     <DataGridTextColumn.Header>
-                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="名称" />
+                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="{x:Static languages:Language.TableHeaderCameraName}" />
                     </DataGridTextColumn.Header>
                 </DataGridTextColumn>
                 <!--  序列号  -->
@@ -427,7 +427,7 @@
                     CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                     EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
                     <DataGridTextColumn.Header>
-                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="序列号" />
+                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="{x:Static languages:Language.TableHeaderSerialNumber}" />
                     </DataGridTextColumn.Header>
                 </DataGridTextColumn>
                 <!--  型号  -->
@@ -438,7 +438,7 @@
                     CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                     EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
                     <DataGridTextColumn.Header>
-                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="型号" />
+                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="{x:Static languages:Language.TableHeaderCameraModel}" />
                     </DataGridTextColumn.Header>
                 </DataGridTextColumn>
                 <!--  IP地址  -->
@@ -449,12 +449,12 @@
                     CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                     EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
                     <DataGridTextColumn.Header>
-                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="IP地址" />
+                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="{x:Static languages:Language.TableHeaderIPAddress}" />
                     </DataGridTextColumn.Header>
                 </DataGridTextColumn>
                 <!--  体积测量模式  -->
                 <materialDesign:DataGridComboBoxColumn
-                    Width="80"
+                    Width="120"
                     MinWidth="80"
                     CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                     DisplayMemberPath="Display"
@@ -462,7 +462,7 @@
                     SelectedValueBinding="{Binding VolumeMeasurementMode, UpdateSourceTrigger=PropertyChanged, NotifyOnSourceUpdated=True}"
                     SelectedValuePath="VolumeMeasurementMode">
                     <materialDesign:DataGridComboBoxColumn.Header>
-                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="测量模式" />
+                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="{x:Static languages:Language.TableHeaderMeasurementMode}" />
                     </materialDesign:DataGridComboBoxColumn.Header>
                     <materialDesign:DataGridComboBoxColumn.EditingElementStyle>
                         <Style BasedOn="{StaticResource MaterialDesignOutlinedComboBox}" TargetType="ComboBox">
@@ -480,7 +480,7 @@
                     EditingElementStyle="{StaticResource MaterialDesignDataGridTextColumnEditingStyle}"
                     ElementStyle="{StaticResource MaterialDesignDataGridTextColumnStyle}">
                     <materialDesign:DataGridTextColumn.Header>
-                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="最小同步时间(ms)" />
+                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="{x:Static languages:Language.TableHeaderMinimumSynchronizationTime}" />
                     </materialDesign:DataGridTextColumn.Header>
                 </materialDesign:DataGridTextColumn>
                 <!--  最大同步时间(ms)  -->
@@ -492,7 +492,7 @@
                     EditingElementStyle="{StaticResource MaterialDesignDataGridTextColumnEditingStyle}"
                     ElementStyle="{StaticResource MaterialDesignDataGridTextColumnStyle}">
                     <materialDesign:DataGridTextColumn.Header>
-                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="最大同步时间(ms)" />
+                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="{x:Static languages:Language.TableHeaderMaximumSynchronizationTime}" />
                     </materialDesign:DataGridTextColumn.Header>
                 </materialDesign:DataGridTextColumn>
                 <!--  最小长度(mm)  -->
@@ -504,7 +504,7 @@
                     EditingElementStyle="{StaticResource MaterialDesignDataGridTextColumnEditingStyle}"
                     ElementStyle="{StaticResource MaterialDesignDataGridTextColumnStyle}">
                     <materialDesign:DataGridTextColumn.Header>
-                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="最小长度(mm)" />
+                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="{x:Static languages:Language.TableHeaderMinimumLength}" />
                     </materialDesign:DataGridTextColumn.Header>
                 </materialDesign:DataGridTextColumn>
                 <!--  最大长度(mm)  -->
@@ -516,12 +516,12 @@
                     EditingElementStyle="{StaticResource MaterialDesignDataGridTextColumnEditingStyle}"
                     ElementStyle="{StaticResource MaterialDesignDataGridTextColumnStyle}">
                     <materialDesign:DataGridTextColumn.Header>
-                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="最大长度(mm)" />
+                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="{x:Static languages:Language.TableHeaderMaximumLength}" />
                     </materialDesign:DataGridTextColumn.Header>
                 </materialDesign:DataGridTextColumn>
                 <!--  触发模式  -->
                 <materialDesign:DataGridComboBoxColumn
-                    Width="80"
+                    Width="100"
                     MinWidth="80"
                     CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                     DisplayMemberPath="Display"
@@ -529,7 +529,7 @@
                     SelectedValueBinding="{Binding TriggerMode, UpdateSourceTrigger=PropertyChanged, NotifyOnSourceUpdated=True}"
                     SelectedValuePath="TriggerMode">
                     <materialDesign:DataGridComboBoxColumn.Header>
-                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="触发模式" />
+                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="{x:Static languages:Language.TableHeaderTriggerMode}" />
                     </materialDesign:DataGridComboBoxColumn.Header>
                     <materialDesign:DataGridComboBoxColumn.EditingElementStyle>
 
@@ -546,7 +546,7 @@
                     MaxWidth="600"
                     CellStyle="{StaticResource CustomDataGridTextCellStyle}">
                     <DataGridTemplateColumn.Header>
-                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="操作" />
+                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="{x:Static languages:Language.TableHeaderOperation}" />
                     </DataGridTemplateColumn.Header>
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
@@ -581,7 +581,7 @@
                                             FontWeight="Light"
                                             Foreground="White"
                                             IsEnabled="True"
-                                            Text="保存"
+                                            Text="{x:Static languages:Language.Save}"
                                             TextAlignment="Justify" />
                                     </StackPanel>
                                 </Button>
@@ -615,7 +615,7 @@
                                             FontWeight="Light"
                                             Foreground="White"
                                             IsEnabled="True"
-                                            Text="解绑"
+                                            Text="{x:Static languages:Language.Unbind}"
                                             TextAlignment="Justify" />
                                     </StackPanel>
                                 </Button>

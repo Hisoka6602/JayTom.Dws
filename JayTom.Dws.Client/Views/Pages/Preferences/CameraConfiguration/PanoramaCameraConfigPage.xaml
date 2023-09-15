@@ -5,6 +5,7 @@
     xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
     xmlns:converters="clr-namespace:JayTom.Dws.Client.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:languages="clr-namespace:JayTom.Dws.Client.Languages"
     xmlns:local="clr-namespace:JayTom.Dws.Client.Views.Pages.Preferences.CameraConfiguration"
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -53,7 +54,7 @@
                 FontSize="14"
                 FontWeight="Bold"
                 Foreground="DarkGray"
-                Text="延迟触发时间:" />
+                Text="{x:Static languages:Language.DelayTriggerTime}" />
             <!--  输入框  -->
             <Border
                 Margin="5,0"
@@ -78,7 +79,6 @@
             <!--  应用全部按钮  -->
             <Button
                 x:Name="MenuButton"
-                Width="120"
                 MinHeight="30"
                 Margin="15,0"
                 materialDesign:ButtonAssist.CornerRadius="5"
@@ -120,7 +120,7 @@
                             FontSize="14"
                             FontWeight="Bold"
                             Foreground="DarkGray"
-                            Text="应用全部" />
+                            Text="{x:Static languages:Language.ApplyAll}" />
                     </StackPanel>
                 </StackPanel>
             </Button>
@@ -171,7 +171,7 @@
                     CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                     EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
                     <DataGridTextColumn.Header>
-                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="名称" />
+                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="{x:Static languages:Language.TableHeaderCameraName}" />
                     </DataGridTextColumn.Header>
                 </DataGridTextColumn>
                 <!--  序列号  -->
@@ -182,7 +182,7 @@
                     CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                     EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
                     <DataGridTextColumn.Header>
-                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="序列号" />
+                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="{x:Static languages:Language.TableHeaderSerialNumber}" />
                     </DataGridTextColumn.Header>
                 </DataGridTextColumn>
                 <!--  型号  -->
@@ -193,7 +193,7 @@
                     CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                     EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
                     <DataGridTextColumn.Header>
-                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="型号" />
+                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="{x:Static languages:Language.TableHeaderCameraModel}" />
                     </DataGridTextColumn.Header>
                 </DataGridTextColumn>
                 <!--  版本  -->
@@ -204,7 +204,7 @@
                     CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                     EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
                     <DataGridTextColumn.Header>
-                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="版本" />
+                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="{x:Static languages:Language.TableHeaderVersionNumber}" />
                     </DataGridTextColumn.Header>
                 </DataGridTextColumn>
                 <!--  IP地址  -->
@@ -215,7 +215,7 @@
                     CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                     EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
                     <DataGridTextColumn.Header>
-                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="IP地址" />
+                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="{x:Static languages:Language.TableHeaderIPAddress}" />
                     </DataGridTextColumn.Header>
                 </DataGridTextColumn>
                 <!--  相机类型  -->
@@ -226,7 +226,7 @@
                     CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                     EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
                     <DataGridTextColumn.Header>
-                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="相机类型" />
+                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="{x:Static languages:Language.TableHeaderCameraType}" />
                     </DataGridTextColumn.Header>
                 </DataGridTextColumn>
                 <!--  延迟时间  -->
@@ -237,7 +237,7 @@
                     EditingElementStyle="{StaticResource MaterialDesignDataGridTextColumnEditingStyle}"
                     ElementStyle="{StaticResource MaterialDesignDataGridTextColumnStyle}">
                     <DataGridTextColumn.Header>
-                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="延迟触发时间(毫秒)" />
+                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="{x:Static languages:Language.TableHeaderDelayTriggerTime}" />
                     </DataGridTextColumn.Header>
                 </materialDesign:DataGridTextColumn>
                 <!--  操作  -->
@@ -247,7 +247,7 @@
                     MaxWidth="600"
                     CellStyle="{StaticResource CustomDataGridTextCellStyle}">
                     <DataGridTemplateColumn.Header>
-                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="操作" />
+                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="{x:Static languages:Language.TableHeaderOperation}" />
                     </DataGridTemplateColumn.Header>
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
@@ -282,7 +282,7 @@
                                             FontWeight="Light"
                                             Foreground="White"
                                             IsEnabled="True"
-                                            Text="保存"
+                                            Text="{x:Static languages:Language.Save}"
                                             TextAlignment="Justify" />
                                     </StackPanel>
                                 </Button>
@@ -316,7 +316,7 @@
                                             FontWeight="Light"
                                             Foreground="White"
                                             IsEnabled="True"
-                                            Text="解绑"
+                                            Text="{x:Static languages:Language.Unbind}"
                                             TextAlignment="Justify" />
                                     </StackPanel>
                                 </Button>

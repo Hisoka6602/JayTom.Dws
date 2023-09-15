@@ -6,6 +6,7 @@
     xmlns:cameraConverter="clr-namespace:JayTom.Dws.Client.Converters.CameraConverter"
     xmlns:converters="clr-namespace:JayTom.Dws.Client.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:languages="clr-namespace:JayTom.Dws.Client.Languages"
     xmlns:local="clr-namespace:JayTom.Dws.Client.Views.Pages.Preferences.CameraConfiguration"
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -39,7 +40,6 @@
         <!--  刷新按钮  -->
         <Button
             Grid.Row="0"
-            Width="90"
             MinHeight="30"
             Margin="30,0"
             HorizontalAlignment="Left"
@@ -83,7 +83,7 @@
                             FontSize="14"
                             FontWeight="Bold"
                             Foreground="DarkGray"
-                            Text="刷新" />
+                            Text="{x:Static languages:Language.Refresh}" />
                     </StackPanel>
                     <TextBlock
                         Margin="5,0"
@@ -203,7 +203,7 @@
                     CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                     EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
                     <DataGridTextColumn.Header>
-                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="相机名称" />
+                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="{x:Static languages:Language.TableHeaderCameraName}" />
                     </DataGridTextColumn.Header>
                 </DataGridTextColumn>
                 <!--  品牌  -->
@@ -214,7 +214,7 @@
                     CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                     EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
                     <DataGridTextColumn.Header>
-                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="相机品牌" />
+                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="{x:Static languages:Language.TableHeaderCameraBrand}" />
                     </DataGridTextColumn.Header>
                 </DataGridTextColumn>
                 <!--  序列号  -->
@@ -225,7 +225,7 @@
                     CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                     EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
                     <DataGridTextColumn.Header>
-                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="序列号" />
+                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="{x:Static languages:Language.TableHeaderSerialNumber}" />
                     </DataGridTextColumn.Header>
                 </DataGridTextColumn>
                 <!--  型号  -->
@@ -236,7 +236,7 @@
                     CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                     EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
                     <DataGridTextColumn.Header>
-                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="相机型号" />
+                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="{x:Static languages:Language.TableHeaderCameraModel}" />
                     </DataGridTextColumn.Header>
                 </DataGridTextColumn>
                 <!--  IP地址  -->
@@ -247,7 +247,7 @@
                     CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                     EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
                     <DataGridTextColumn.Header>
-                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="IP地址" />
+                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="{x:Static languages:Language.TableHeaderIPAddress}" />
                     </DataGridTextColumn.Header>
                 </DataGridTextColumn>
                 <!--  相机类型  -->
@@ -258,7 +258,7 @@
                     CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                     EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
                     <DataGridTextColumn.Header>
-                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="相机类型" />
+                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="{x:Static languages:Language.TableHeaderCameraType}" />
                     </DataGridTextColumn.Header>
                 </DataGridTextColumn>
                 <!--  操作  -->
@@ -268,7 +268,7 @@
                     MaxWidth="600"
                     CellStyle="{StaticResource CustomDataGridTextCellStyle}">
                     <DataGridTemplateColumn.Header>
-                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="操作" />
+                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="{x:Static languages:Language.TableHeaderOperation}" />
                     </DataGridTemplateColumn.Header>
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
@@ -310,7 +310,7 @@
                                                 FontWeight="Bold"
                                                 Foreground="White"
                                                 RenderTransformOrigin=".5,.5"
-                                                Text="绑定全景相机" />
+                                                Text="{x:Static languages:Language.BindToPanoramicCamera}" />
                                         </Button>
                                         <!--  绑定到扫码相机  -->
                                         <Button
@@ -336,7 +336,7 @@
                                                 FontWeight="Bold"
                                                 Foreground="White"
                                                 RenderTransformOrigin=".5,.5"
-                                                Text="绑定扫码相机" />
+                                                Text="{x:Static languages:Language.BindToScannerCamera}" />
                                         </Button>
                                         <!--  绑定到体积相机  -->
                                         <Button
@@ -363,7 +363,7 @@
                                                 FontWeight="Bold"
                                                 Foreground="White"
                                                 RenderTransformOrigin=".5,.5"
-                                                Text="绑定体积相机" />
+                                                Text="{x:Static languages:Language.BindToCompactCamera}" />
                                         </Button>
                                     </Grid>
                                 </StackPanel>
@@ -393,7 +393,7 @@
                                             FontWeight="Bold"
                                             Foreground="White"
                                             RenderTransformOrigin=".5,.5">
-                                            <Run Text="已绑定" /><Run Text="{Binding BoundType, Converter={StaticResource BoundCameraTypeConverter}, ConverterParameter=Text}" />
+                                            <Run Text="{Binding BoundType, Converter={StaticResource BoundCameraTypeConverter}, ConverterParameter=Text}" />
                                         </TextBlock>
                                     </Button>
                                     <!--  绑定到体积相机  -->
@@ -418,7 +418,7 @@
                                             FontWeight="Bold"
                                             Foreground="White"
                                             RenderTransformOrigin=".5,.5"
-                                            Text="解绑" />
+                                            Text="{x:Static languages:Language.Unbind}" />
                                     </Button>
                                 </StackPanel>
                             </StackPanel>

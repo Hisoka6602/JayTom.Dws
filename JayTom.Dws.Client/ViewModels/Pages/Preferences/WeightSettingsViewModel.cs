@@ -114,17 +114,17 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         {
             new WeightModeInfoModel()
             {
-                Name = "静态称重",
+                Name =Languages.Language.ResourceManager.GetString("StaticWeighing")??string.Empty,
                 Value = WeightMode.Static,
             },
             new WeightModeInfoModel()
             {
-                Name = "动态称重",
+                Name =Languages.Language.ResourceManager.GetString("DynamicWeighing")??string.Empty,
                 Value = WeightMode.Dynamic,
             },
             new WeightModeInfoModel()
             {
-                Name = "不称重",
+                Name =Languages.Language.ResourceManager.GetString("NoWeighing")??string.Empty,
                 Value = WeightMode.None,
             },
         };
@@ -138,12 +138,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         {
             new WeightAccessInfoMode()
             {
-                Name = "只读式",
+                Name =Languages.Language.ResourceManager.GetString("ReadOnly")??string.Empty,
                 Value = WeightAccessMode.Readonly
             },
             new WeightAccessInfoMode()
             {
-                Name = "问答式",
+                Name =Languages.Language.ResourceManager.GetString("Request")??string.Empty,
                 Value = WeightAccessMode.QuestionAnswer
             },
         };

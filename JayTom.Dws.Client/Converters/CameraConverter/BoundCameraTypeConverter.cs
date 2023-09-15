@@ -46,9 +46,9 @@ namespace JayTom.Dws.Client.Converters.CameraConverter {
             if (value is BoundCameraType cameraType) {
                 if (parameter?.ToString()?.Equals("Text") == true) {
                     return cameraType switch {
-                        BoundCameraType.PanoramicCamera => "全景相机",
-                        BoundCameraType.BarcodeScannerCamera => "扫码相机",
-                        BoundCameraType.VolumeCamera => "体积相机",
+                        BoundCameraType.PanoramicCamera => Languages.Language.ResourceManager.GetString("PanoramicCamera") ?? string.Empty,
+                        BoundCameraType.BarcodeScannerCamera => Languages.Language.ResourceManager.GetString("ScannerCamera") ?? string.Empty,
+                        BoundCameraType.VolumeCamera => Languages.Language.ResourceManager.GetString("CompactCamera") ?? string.Empty,
                         _ => string.Empty
                     };
                 }

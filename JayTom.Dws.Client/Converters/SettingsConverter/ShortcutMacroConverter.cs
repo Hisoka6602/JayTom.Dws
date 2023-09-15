@@ -7,47 +7,54 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 
 namespace JayTom.Dws.Client.Converters.SettingsConverter {
+
     public class ShortcutMacroConverter : IValueConverter {
 
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
             if (value is string content) {
                 switch (content) {
                     case "{BarCode}":
-                        return "条码";
+                        return Languages.Language.ResourceManager.GetString("TableHeaderBarCode") ?? string.Empty;
 
                     case "{Weight}":
-                        return "重量";
+                        return Languages.Language.ResourceManager.GetString("TableHeaderWeight") ?? string.Empty;
 
                     case "{Volume}":
-                        return "体积";
+                        return Languages.Language.ResourceManager.GetString("TableHeaderVolume") ?? string.Empty;
 
                     case "{Length}":
-                        return "长";
+                        return Languages.Language.ResourceManager.GetString("TableHeaderLength") ?? string.Empty;
 
                     case "{Width}":
-                        return "宽";
+                        return Languages.Language.ResourceManager.GetString("TableHeaderWidth") ?? string.Empty;
 
                     case "{Height}":
-                        return "高";
+                        return Languages.Language.ResourceManager.GetString("TableHeaderHeight") ?? string.Empty;
 
                     case "{ScanTime}":
-                        return "扫码时间";
+                        return Languages.Language.ResourceManager.GetString("TableHeaderScanTime") ?? string.Empty;
 
                     case "{TimestampedGuid}":
-                        return "扫码时间戳";
+                        return Languages.Language.ResourceManager.GetString("TableHeaderTimestampGuid") ?? string.Empty;
 
                     case "{CameraSerialNumber}":
-                        return "相机序列号";
+                        return Languages.Language.ResourceManager.GetString("TableHeaderSerialNumber") ?? string.Empty;
+
                     case "{ImageType}":
-                        return "存图类型";
+                        return Languages.Language.ResourceManager.GetString("TableHeaderImageType") ?? string.Empty;
+
                     case "{Year}":
-                        return "年份";
+                        return Languages.Language.ResourceManager.GetString("Year") ?? string.Empty;
+
                     case "{Month}":
-                        return "月份";
+                        return Languages.Language.ResourceManager.GetString("Month") ?? string.Empty;
+
                     case "{Day}":
-                        return "日期";
+                        return Languages.Language.ResourceManager.GetString("Day") ?? string.Empty;
+
                     case "{Hour}":
-                        return "小时";
+                        return Languages.Language.ResourceManager.GetString("Hour") ?? string.Empty;
+
                     default:
                         return "null";
                 }

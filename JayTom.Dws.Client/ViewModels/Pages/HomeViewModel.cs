@@ -421,7 +421,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         private async void DeviceServiceOnRealTimeImage(object? sender, RealTimeImageEventArgs args) {
             //实时画面
             var model = CameraItems.FirstOrDefault(f => f.SerialNumber.Equals(args.Camera?.Info?.SerialNumber));
-            if (model is not null) {
+            if (model is not null && args.Image is not null) {
                 //图片转换
                 await Application.Current.Dispatcher.BeginInvoke(() => {
                     //更新图片
