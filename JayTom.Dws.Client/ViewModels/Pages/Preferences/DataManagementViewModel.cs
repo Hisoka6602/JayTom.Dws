@@ -502,7 +502,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
 
         private async void ExportDataDelegate(object obj) {
             if (BarCodeItems?.Any() != true) {
-                DataManagementMessageQueue?.Enqueue(Languages.Language.ResourceManager.GetString("列表中没有数据") ?? string.Empty,);
+                DataManagementMessageQueue?.Enqueue(Languages.Language.ResourceManager.GetString("列表中没有数据") ?? string.Empty);
                 return;
             }
 

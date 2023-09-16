@@ -181,7 +181,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                             }
                         }
                         catch (Exception e) {
-                            ContentInputSettingsMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("加载设置失败") ?? string.Empty,}:{e.Message}");
+                            ContentInputSettingsMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("加载设置失败") ?? string.Empty}:{e.Message}");
                         }
                     }
                 });
