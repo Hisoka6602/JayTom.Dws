@@ -120,7 +120,7 @@ namespace JayTom.Dws.Client.Service.ResultOutput {
                             volume, cameraSerialNumber, true))
                         ?.ToList();
                     if (list?.Any() != true) {
-                        OnOutputFailed(new Exception("输出数据格式错误,未找到模板内容!"));
+                        OnOutputFailed(new Exception($"{Languages.Language.ResourceManager.GetString("输出数据格式错误,未找到模板内容") ?? string.Empty}"));
                         return;
                     }
                     var message = string.Join(",", list);

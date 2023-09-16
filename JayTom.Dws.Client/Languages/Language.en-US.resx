@@ -237,6 +237,10 @@
     <value>BaudRate:</value>
     <comment>9-波特率</comment>
   </data>
+  <data name="Bind" xml:space="preserve">
+    <value>Bind </value>
+    <comment>12-绑定</comment>
+  </data>
   <data name="BindToCompactCamera" xml:space="preserve">
     <value>Bind To CompactCamera</value>
     <comment>7-绑定到体积相机</comment>
@@ -268,6 +272,10 @@
   <data name="CacheCearing" xml:space="preserve">
     <value>CacheCearing</value>
     <comment>0-空间清理(菜单)</comment>
+  </data>
+  <data name="Camera" xml:space="preserve">
+    <value>Camera</value>
+    <comment>12-相机</comment>
   </data>
   <data name="CameraConfiguration" xml:space="preserve">
     <value>CameraConfig</value>
@@ -408,6 +416,10 @@
   <data name="EthernetConnection" xml:space="preserve">
     <value>Ethernet Connection</value>
     <comment>12-网口连接</comment>
+  </data>
+  <data name="Excel文件" xml:space="preserve">
+    <value>Excel File</value>
+    <comment>12-Excel文件</comment>
   </data>
   <data name="ExceptionCount" xml:space="preserve">
     <value>ExceptionCount</value>
@@ -829,6 +841,10 @@
     <value>Request</value>
     <comment>9-问答式</comment>
   </data>
+  <data name="RequestContent" xml:space="preserve">
+    <value>RequestContent:</value>
+    <comment>12-请求内容</comment>
+  </data>
   <data name="RequestedOfContent" xml:space="preserve">
     <value>RequestedOfContent:</value>
     <comment>9-发送内容</comment>
@@ -837,6 +853,10 @@
     <value>RequestedOfFormat:</value>
     <comment>9-发送格式</comment>
   </data>
+  <data name="RequestTime" xml:space="preserve">
+    <value>RequestTime:</value>
+    <comment>12-请求时间</comment>
+  </data>
   <data name="RequestTimeout" xml:space="preserve">
     <value>RequestTimeout:</value>
     <comment>10-请求超时时间</comment>
@@ -844,6 +864,10 @@
   <data name="ResponseContent" xml:space="preserve">
     <value>ResponseContent:</value>
     <comment>10-响应的内容</comment>
+  </data>
+  <data name="ResponseTime" xml:space="preserve">
+    <value>ResponseTime:</value>
+    <comment>12-响应时间</comment>
   </data>
   <data name="ResultEvaluation" xml:space="preserve">
     <value>ResultEvaluation</value>
@@ -1265,9 +1289,25 @@
     <value>Year</value>
     <comment>8-年份</comment>
   </data>
+  <data name="不是正确的正则表达式" xml:space="preserve">
+    <value>Not a valid regular expression!</value>
+    <comment>12-不是正确的正则表达式</comment>
+  </data>
+  <data name="位图文件" xml:space="preserve">
+    <value>Bitmap File</value>
+    <comment>12-位图文件</comment>
+  </data>
+  <data name="体积相机配置" xml:space="preserve">
+    <value>Volume camera configuration.</value>
+    <comment>12-体积相机配置</comment>
+  </data>
   <data name="体积设置相关" xml:space="preserve">
     <value>Volume settings related</value>
     <comment>12-体积设置相关</comment>
+  </data>
+  <data name="全景相机配置" xml:space="preserve">
+    <value>Panoramic camera configuration.</value>
+    <comment>12-全景相机配置</comment>
   </data>
   <data name="内容输入相关设置" xml:space="preserve">
     <value>Content input related settings</value>
@@ -1285,9 +1325,93 @@
     <value>Language settings applied successfully. Restart the program for changes to take effect.</value>
     <comment>1-语言设置成功(主页-提示)</comment>
   </data>
+  <data name="列表中没有数据" xml:space="preserve">
+    <value>No data in the list.</value>
+    <comment>12-列表中没有数据</comment>
+  </data>
+  <data name="删除失败" xml:space="preserve">
+    <value>Deletion failed.</value>
+    <comment>12-删除失败</comment>
+  </data>
+  <data name="删除成功" xml:space="preserve">
+    <value>Deletion successful.</value>
+    <comment>12-删除成功</comment>
+  </data>
+  <data name="加载磅秤设置失败" xml:space="preserve">
+    <value>Failed to load scale settings.</value>
+    <comment>12-加载磅秤设置失败</comment>
+  </data>
+  <data name="加载设置失败" xml:space="preserve">
+    <value>Loading settings failed.</value>
+    <comment>12-加载设置失败</comment>
+  </data>
+  <data name="加载过滤设置失败" xml:space="preserve">
+    <value>Failed to load filter settings.</value>
+    <comment>12-加载过滤设置失败</comment>
+  </data>
+  <data name="动态称异常" xml:space="preserve">
+    <value>Dynamic scale exception.</value>
+    <comment>12-动态称异常</comment>
+  </data>
+  <data name="动态称连接成功" xml:space="preserve">
+    <value>Dynamic scale connection successful.</value>
+    <comment>12-动态称连接成功</comment>
+  </data>
+  <data name="发现所有相机" xml:space="preserve">
+    <value>Discover all cameras.</value>
+    <comment>12-发现所有相机</comment>
+  </data>
+  <data name="发送失败" xml:space="preserve">
+    <value>Failed to send.</value>
+    <comment>12-发送失败</comment>
+  </data>
+  <data name="发送成功" xml:space="preserve">
+    <value>Sent successfully.</value>
+    <comment>12-发送成功</comment>
+  </data>
+  <data name="图片不存在" xml:space="preserve">
+    <value>Image does not exist.</value>
+    <comment>12-图片不存在</comment>
+  </data>
+  <data name="图片保存异常" xml:space="preserve">
+    <value>Error saving the image.</value>
+    <comment>12-图片保存异常</comment>
+  </data>
+  <data name="图片命名解析错误,未找到模板内容" xml:space="preserve">
+    <value>Error parsing image naming, template content not found!</value>
+    <comment>12-图片命名解析错误,未找到模板内容!</comment>
+  </data>
+  <data name="声音文件" xml:space="preserve">
+    <value>Sound File</value>
+    <comment>12-声音文件</comment>
+  </data>
+  <data name="外部输入异常" xml:space="preserve">
+    <value>External input exception.</value>
+    <comment>12-外部输入异常</comment>
+  </data>
+  <data name="存图异常" xml:space="preserve">
+    <value>Error saving the image.</value>
+    <comment>12-存图异常</comment>
+  </data>
   <data name="存图相关设置" xml:space="preserve">
     <value>Image saving related settings</value>
     <comment>12-存图相关设置</comment>
+  </data>
+  <data name="存图路径解析错误,未找到模板内容" xml:space="preserve">
+    <value>Error parsing image save path, template content not found!</value>
+    <comment>12-存图路径解析错误,未找到模板内容!</comment>
+  </data>
+  <data name="已重新枚举相机" xml:space="preserve">
+    <value>Cameras have been re-enumerated.</value>
+    <comment>12-已重新枚举相机</comment>
+  </data>
+  <data name="必须先停止运行再设置条码过滤才能生效" xml:space="preserve">
+    <value>You must stop running first before setting barcode filtering can take effect.</value>
+    <comment>12-必须先停止运行再设置条码过滤才能生效</comment>
+  </data>
+  <data name="扫码相机配置" xml:space="preserve">
+    <value>Barcode scanner camera configuration.</value>
+    <comment>12-扫码相机配置</comment>
   </data>
   <data name="数据信息管理" xml:space="preserve">
     <value>Data information management</value>
@@ -1296,6 +1420,18 @@
   <data name="条码过滤相关设置" xml:space="preserve">
     <value>Barcode filtering related settings</value>
     <comment>12-条码过滤相关设置</comment>
+  </data>
+  <data name="测试水印" xml:space="preserve">
+    <value>Test watermark</value>
+    <comment>12-测试水印</comment>
+  </data>
+  <data name="添加失败" xml:space="preserve">
+    <value>Failed to add.</value>
+    <comment>12-添加失败</comment>
+  </data>
+  <data name="添加成功" xml:space="preserve">
+    <value>Successfully added.</value>
+    <comment>12-添加成功</comment>
   </data>
   <data name="相机检索成功" xml:space="preserve">
     <value>Camera retrieval successful.</value>
@@ -1309,13 +1445,33 @@
     <value>Scale and weighing settings related</value>
     <comment>12-磅秤和称重设置相关</comment>
   </data>
+  <data name="结果输出异常" xml:space="preserve">
+    <value>Error in result output.</value>
+    <comment>12-结果输出异常</comment>
+  </data>
   <data name="结果输出相关设置" xml:space="preserve">
     <value>Result output related settings</value>
     <comment>12-结果输出相关设置</comment>
   </data>
+  <data name="设备运行中则不能解绑或者绑定" xml:space="preserve">
+    <value>Binding or unbinding is not allowed while the device is running!</value>
+    <comment>12-设备运行中则不能解绑或者绑定!</comment>
+  </data>
   <data name="设置参数失败" xml:space="preserve">
     <value>Failed to set parameters!</value>
     <comment>12-设置参数失败</comment>
+  </data>
+  <data name="请选择声音文件" xml:space="preserve">
+    <value>Please select a sound file.</value>
+    <comment>12-请选择声音文件</comment>
+  </data>
+  <data name="请选择需要打开的图片" xml:space="preserve">
+    <value>Please select the image to open.</value>
+    <comment>12-请选择需要打开的图片</comment>
+  </data>
+  <data name="输出数据格式错误,未找到模板内容" xml:space="preserve">
+    <value>Output data format error, template content not found!</value>
+    <comment>12-输出数据格式错误,未找到模板内容</comment>
   </data>
   <data name="运行日志\设备日志\通讯日志管理" xml:space="preserve">
     <value>Management of running logs, device logs, communication logs</value>
@@ -1324,5 +1480,25 @@
   <data name="释放缓存/空间的方案" xml:space="preserve">
     <value>Solutions for releasing cache/space</value>
     <comment>12-释放缓存/空间的方案</comment>
+  </data>
+  <data name="释放设备异常" xml:space="preserve">
+    <value>Error releasing the device.</value>
+    <comment>12-释放设备异常</comment>
+  </data>
+  <data name="静态称异常" xml:space="preserve">
+    <value>Static scale exception.</value>
+    <comment>12-静态称异常</comment>
+  </data>
+  <data name="静态称连接成功" xml:space="preserve">
+    <value>Static scale connection successful.</value>
+    <comment>12-静态称连接成功</comment>
+  </data>
+  <data name="验证不通过" xml:space="preserve">
+    <value>Verification failed.</value>
+    <comment>12-验证不通过</comment>
+  </data>
+  <data name="验证通过" xml:space="preserve">
+    <value>Verification passed.</value>
+    <comment>12-验证通过</comment>
   </data>
 </root>

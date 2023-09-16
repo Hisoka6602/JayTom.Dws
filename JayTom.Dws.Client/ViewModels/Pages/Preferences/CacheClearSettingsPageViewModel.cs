@@ -146,7 +146,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                                     ManualCleanupParams.BarcodeDataAgoDays);
 
                             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                                CacheClearSettingsMessageQueue.Enqueue(key ? "删除成功" : $"删除失败,{value}");
+                                CacheClearSettingsMessageQueue.Enqueue(key ? Languages.Language.ResourceManager.GetString("删除成功") ?? string.Empty
+                                    : $"{Languages.Language.ResourceManager.GetString("删除失败") ?? string.Empty},{value}");
                             });
                             IsDeletingInProgress = false;
                         }
@@ -163,7 +164,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                                     .ScanImageAgoDays);
 
                             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                                CacheClearSettingsMessageQueue.Enqueue(key ? "删除成功" : $"删除失败,{value}");
+                                CacheClearSettingsMessageQueue.Enqueue(key ? Languages.Language.ResourceManager.GetString("删除成功") ?? string.Empty
+                                    : $"{Languages.Language.ResourceManager.GetString("删除失败") ?? string.Empty},{value}");
                             });
                             IsDeletingInProgress = false;
                         }
@@ -178,7 +180,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                             var (key, value) =
                                 await _cacheCleanupService.DeletePanoramaImagesOlderThanDays(ManualCleanupParams.PanoramaImageAgoDays);
                             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                                CacheClearSettingsMessageQueue.Enqueue(key ? "删除成功" : $"删除失败,{value}");
+                                CacheClearSettingsMessageQueue.Enqueue(key ? Languages.Language.ResourceManager.GetString("删除成功") ?? string.Empty
+                                    : $"{Languages.Language.ResourceManager.GetString("删除失败") ?? string.Empty},{value}");
                             });
                             IsDeletingInProgress = false;
                         }
@@ -193,7 +196,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                             var (key, value) =
                                 await _cacheCleanupService.DeleteFtpImagesOlderThanDays(ManualCleanupParams.FtpImageAgoDays);
                             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                                CacheClearSettingsMessageQueue.Enqueue(key ? "删除成功" : $"删除失败,{value}");
+                                CacheClearSettingsMessageQueue.Enqueue(key ? Languages.Language.ResourceManager.GetString("删除成功") ?? string.Empty
+                                    : $"{Languages.Language.ResourceManager.GetString("删除失败") ?? string.Empty},{value}");
                             });
                             IsDeletingInProgress = false;
                         }
@@ -208,7 +212,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                             var (key, value) =
                                 await _cacheCleanupService.DeleteLogDataOlderThanDays(ManualCleanupParams.LogDataAgoDays);
                             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                                CacheClearSettingsMessageQueue.Enqueue(key ? "删除成功" : $"删除失败,{value}");
+                                CacheClearSettingsMessageQueue.Enqueue(key ? Languages.Language.ResourceManager.GetString("删除成功") ?? string.Empty
+                                    : $"{Languages.Language.ResourceManager.GetString("删除失败") ?? string.Empty},{value}");
                             });
                             IsDeletingInProgress = false;
                         }

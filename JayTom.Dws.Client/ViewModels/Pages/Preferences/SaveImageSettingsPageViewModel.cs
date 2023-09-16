@@ -33,7 +33,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
     public class SaveImageSettingsPageViewModel : BindableBase {
         private readonly IConfigRepository _configRepository;
         private bool _isUseWatermark;
-        private string _watermarkText = "测试水印";
+        private string _watermarkText = Languages.Language.ResourceManager.GetString("测试水印") ?? string.Empty;
         private System.Windows.Media.Color _watermarkColor = Color.FromRgb(System.Drawing.Color.DodgerBlue.R, System.Drawing.Color.DodgerBlue.G, System.Drawing.Color.DodgerBlue.B);
         private int _watermarkFontSize = 10;
         private WatermarkPosition _watermarkPosition = WatermarkPosition.TopLeft;
@@ -411,7 +411,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                             }
                         }
                         catch (Exception e) {
-                            SaveImageSettingsMessageQueue.Enqueue($"加载设置失败:{e.Message}");
+                            SaveImageSettingsMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("加载设置失败") ?? string.Empty}:{e.Message}");
                         }
                     }
                 });
@@ -611,10 +611,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
 
         private async void LoadImageDelegate(object obj) {
             var openFileDialog = new OpenFileDialog() {
-                Title = "请选择需要打开的图片",
+                Title = Languages.Language.ResourceManager.GetString("请选择需要打开的图片") ?? string.Empty,
                 InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory),
                 Filter =
-                    "位图文件 (*.bmp; *.gif; *.jpg; *.jpeg; *.png; *.tif; *.tiff)|*.bmp; *.gif; *.jpg; *.jpeg; *.png; *.tif; *.tiff",
+                    $"{Languages.Language.ResourceManager.GetString("位图文件") ?? string.Empty} (*.bmp; *.gif; *.jpg; *.jpeg; *.png; *.tif; *.tiff)|*.bmp; *.gif; *.jpg; *.jpeg; *.png; *.tif; *.tiff",
                 DefaultExt = ".jpg",
                 RestoreDirectory = true,
             };

@@ -55,15 +55,15 @@ namespace JayTom.Dws.Client.Service.ExternalDataService {
                 if (_volumeSettingsDto.TcpSettingsInfo.ConnectionMode == TcpConnectionMode.Server) {
                     var sendMessage = await _tcpCommunication.SendMessage(_volumeSettingsDto.VolumeInformationRequesterInfo.SendContent);
                     if (!sendMessage) {
-                        OnExternalDataException(new Exception("发送失败!"));
-                        return new KeyValuePair<bool, string>(false, "发送失败");
+                        OnExternalDataException(new Exception($"{Languages.Language.ResourceManager.GetString("发送失败") ?? string.Empty}"));
+                        return new KeyValuePair<bool, string>(false, $"{Languages.Language.ResourceManager.GetString("发送失败") ?? string.Empty}");
                     }
                 }
                 else {
                     var sendMessage = await _tcpCommunicationClient.SendMessage(_volumeSettingsDto.VolumeInformationRequesterInfo.SendContent);
                     if (!sendMessage) {
-                        OnExternalDataException(new Exception("发送失败!"));
-                        return new KeyValuePair<bool, string>(false, "发送失败");
+                        OnExternalDataException(new Exception($"{Languages.Language.ResourceManager.GetString("发送失败") ?? string.Empty}"));
+                        return new KeyValuePair<bool, string>(false, $"{Languages.Language.ResourceManager.GetString("发送失败") ?? string.Empty}");
                     }
                 }
                 _volumeBarCodeItems.Enqueue(barcode);
@@ -75,7 +75,7 @@ namespace JayTom.Dws.Client.Service.ExternalDataService {
             //判断等待时间
             //发送消息
             //条码加入队列
-            return new KeyValuePair<bool, string>(false, "发送成功");
+            return new KeyValuePair<bool, string>(false, $"{Languages.Language.ResourceManager.GetString("发送成功") ?? string.Empty}");
         }
 
         public Task<KeyValuePair<bool, string>> GetWeight(string barcode, CancellationToken token = default) {

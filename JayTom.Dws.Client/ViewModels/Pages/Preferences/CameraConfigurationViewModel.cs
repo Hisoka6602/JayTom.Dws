@@ -33,7 +33,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     IconCode = "\xe684",
                     IconSize = 25
                 },
-                Description = "发现所有相机",
+                Description = Languages.Language.ResourceManager.GetString("发现所有相机")??string.Empty,
                 IsSelected = true,
                 PageClassName = "CameraFinderPage",
                 ClickCommand = ClickCommand,
@@ -47,7 +47,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     IconCode = "\xe6bc",
                     IconSize = 25
                 },
-                Description = "全景相机配置",
+                Description = Languages.Language.ResourceManager.GetString("全景相机配置")??string.Empty,
                 PageClassName = "PanoramaCameraConfigPage",
                 ClickCommand = ClickCommand,
             },
@@ -60,7 +60,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     IconCode = "\xe662",
                     IconSize = 22
                 },
-                Description = "扫码相机配置",
+                Description = Languages.Language.ResourceManager.GetString("扫码相机配置") ?? string.Empty,
                 PageClassName = "BarcodeScannerCameraConfigPage",
                 ClickCommand = ClickCommand,
             },
@@ -73,7 +73,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     IconCode = "\xe665",
                     IconSize = 25
                 },
-                Description = "体积相机配置",
+                Description = Languages.Language.ResourceManager.GetString("体积相机配置") ?? string.Empty,
                 PageClassName = "VolumeCameraConfigPage",
                 ClickCommand = ClickCommand,
             },

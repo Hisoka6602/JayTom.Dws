@@ -199,23 +199,23 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             _dynamicScale.Excepted += async delegate (object? sender, Exception exception) {
                 //异常的输出之后需要取消
                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                    WeightSettingsMessageQueue.Enqueue($"动态称异常:{exception.Message}");
+                    WeightSettingsMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("动态称异常") ?? string.Empty}:{exception.Message}");
                 });
             };
             _staticScale.Excepted += async delegate (object? sender, Exception exception) {
                 //异常的输出之后需要取消
                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                    WeightSettingsMessageQueue.Enqueue($"静态称异常:{exception.Message}");
+                    WeightSettingsMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("静态称异常")}:{exception.Message}");
                 });
             };
             _dynamicScale.Connected += async delegate (object? sender, IScale scale) {
                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                    WeightSettingsMessageQueue.Enqueue($"动态称连接成功!");
+                    WeightSettingsMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("动态称连接成功")}");
                 });
             };
             _staticScale.Connected += async delegate (object? sender, IScale scale) {
                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                    WeightSettingsMessageQueue.Enqueue($"静态称连接成功!");
+                    WeightSettingsMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("静态称连接成功")}");
                 });
             };
         }
@@ -607,7 +607,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                             }
                         }
                         catch (Exception e) {
-                            WeightSettingsMessageQueue.Enqueue($"加载设置失败:{e.Message}");
+                            WeightSettingsMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("加载设置失败")}:{e.Message}");
                         }
                     }
                 });

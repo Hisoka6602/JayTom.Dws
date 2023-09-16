@@ -9,7 +9,7 @@ using System.Collections.Generic;
 namespace JayTom.Dws.Client.Models.VolumeSettingsModel {
 
     public class VolumeTriggerPositionModel : BindableBase {
-        private string _name = "扫码结束后";
+        private string _name = Languages.Language.ResourceManager.GetString("AfterScanning") ?? string.Empty;
         private VolumeTriggerPosition _value = VolumeTriggerPosition.BarcodeDetected;
 
         /// <summary>

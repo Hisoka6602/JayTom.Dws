@@ -470,8 +470,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
 
         private async void BrowseSoundFileDelegate(object obj) {
             var openFileDialog = new OpenFileDialog() {
-                Filter = "声音文件|*.wav;*.mp3",
-                Title = "选择声音文件",
+                Filter = $"{Languages.Language.ResourceManager.GetString("声音文件") ?? string.Empty}|*.wav;*.mp3",
+                Title = Languages.Language.ResourceManager.GetString("请选择声音文件"),
                 InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop)
             };
             if (openFileDialog.ShowDialog() == DialogResult.OK) {
@@ -501,10 +501,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                         if (soundInfoModels?.Any() == true) {
                             Sounds.AddRange(soundInfoModels.Select(s => s.SoundName));
                         }
-                        ResultOutputSettingsMessageQueue.Enqueue("添加成功");
+                        ResultOutputSettingsMessageQueue.Enqueue(Languages.Language.ResourceManager.GetString("添加成功") ?? string.Empty);
                     }
                     else {
-                        ResultOutputSettingsMessageQueue.Enqueue("添加失败!");
+                        ResultOutputSettingsMessageQueue.Enqueue(Languages.Language.ResourceManager.GetString("添加失败") ?? string.Empty);
                         //提示失败
                     }
                 });
@@ -686,7 +686,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                             }
                         }
                         catch (Exception e) {
-                            ResultOutputSettingsMessageQueue.Enqueue($"加载设置失败:{e.Message}");
+                            ResultOutputSettingsMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("加载设置失败") ?? string.Empty}:{e.Message}");
                         }
                     }
                 });

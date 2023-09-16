@@ -194,7 +194,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
             Task.Run(async () => {
                 var (key, value) = await _deviceService.OnCameraEnumerationRefreshed().ConfigureAwait(false);
                 await Application.Current.Dispatcher.BeginInvoke(() => {
-                    CameraFinderMessageQueue.Enqueue(key ? $"已重新枚举连接相机" : value);
+                    CameraFinderMessageQueue.Enqueue(key ? $"{Languages.Language.ResourceManager.GetString("已重新枚举相机")}" : value);
                     IsRefreshing = false;
                     return Task.CompletedTask;
                 }, DispatcherPriority.Background);
@@ -257,7 +257,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                     isSuccess = key;
                 }
 
-                CameraFinderMessageQueue.Enqueue($"相机:{obj.Name},绑定{(isSuccess ?
+                CameraFinderMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("Camera")}:{obj.Name},{Languages.Language.ResourceManager.GetString("Bind")}{(isSuccess ?
                     Languages.Language.ResourceManager.GetString("Success") :
                     Languages.Language.ResourceManager.GetString("Failure"))}");
                 _isExecuting = false;
@@ -300,7 +300,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                     isSuccess = key;
                 }
 
-                CameraFinderMessageQueue.Enqueue($"相机:{obj.Name},绑定{(isSuccess ?
+                CameraFinderMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("Camera")}:{obj.Name}, {Languages.Language.ResourceManager.GetString("Bind")}{(isSuccess ?
                     Languages.Language.ResourceManager.GetString("Success") : Languages.Language.ResourceManager.GetString("Failure"))}");
                 _isExecuting = false;
             });
@@ -347,7 +347,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                     isSuccess = key;
                 }
 
-                CameraFinderMessageQueue.Enqueue($"相机:{obj.Name},绑定{(isSuccess ?
+                CameraFinderMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("Camera")}:{obj.Name},{Languages.Language.ResourceManager.GetString("Bind")}{(isSuccess ?
                     Languages.Language.ResourceManager.GetString("Success") : Languages.Language.ResourceManager.GetString("Failure"))}");
                 _isExecuting = false;
             });
@@ -397,7 +397,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                     isSuccess = key;
                 }
 
-                CameraFinderMessageQueue.Enqueue($"相机:{obj.Name},解绑{(isSuccess ?
+                CameraFinderMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("Camera")}:{obj.Name},{Languages.Language.ResourceManager.GetString("Unbind")}{(isSuccess ?
                     Languages.Language.ResourceManager.GetString("Success") : Languages.Language.ResourceManager.GetString("Failure"))}");
                 _isExecuting = false;
             });

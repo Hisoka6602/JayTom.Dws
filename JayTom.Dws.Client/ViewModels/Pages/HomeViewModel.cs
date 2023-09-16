@@ -309,18 +309,18 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             };
             _imageStorageService.ImageSaveFailed += async delegate (object? sender, Exception exception) {
                 await Application.Current.Dispatcher.InvokeAsync(() => {
-                    HomeMessageQueue.Enqueue($"图片保存异常:{exception.Message}");
+                    HomeMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("图片保存异常") ?? string.Empty}:{exception.Message}");
                 });
             };
             _resultOutputService.OutputFailed += async delegate (object? sender, Exception exception) {
                 await Application.Current.Dispatcher.InvokeAsync(() => {
-                    HomeMessageQueue.Enqueue($"结果输出异常:{exception.Message}");
+                    HomeMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("结果输出异常") ?? string.Empty}:{exception.Message}");
                 });
             };
             //外部数据
             _externalDataService.ExternalDataException += async delegate (object? sender, Exception exception) {
                 await Application.Current.Dispatcher.InvokeAsync(() => {
-                    HomeMessageQueue.Enqueue($"外部输入异常:{exception.Message}");
+                    HomeMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("外部输入异常") ?? string.Empty}:{exception.Message}");
                 });
             };
             _externalDataService.VolumeReceived += async delegate (object? sender, ExternalVolumeInputEventArgs args) {

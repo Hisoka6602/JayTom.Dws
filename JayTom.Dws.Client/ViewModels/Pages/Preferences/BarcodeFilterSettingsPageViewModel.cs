@@ -169,10 +169,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
                 try {
                     var isMatch = Regex.IsMatch(TestBarcode, RegularExpression);
-                    BarcodeFilterSettingsMessageQueue.Enqueue(isMatch ? "验证通过" : "验证不通过!");
+                    BarcodeFilterSettingsMessageQueue.Enqueue(isMatch ? Languages.Language.ResourceManager.GetString("验证通过") ?? string.Empty
+                        : Languages.Language.ResourceManager.GetString("验证不通过") ?? string.Empty);
                 }
                 catch (Exception e) {
-                    BarcodeFilterSettingsMessageQueue.Enqueue("不是正确的正则表达式!");
+                    BarcodeFilterSettingsMessageQueue.Enqueue(Languages.Language.ResourceManager.GetString("不是正确的正则表达式") ?? string.Empty);
                 }
             });
         }
@@ -244,7 +245,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                             }
                         }
                         catch (Exception e) {
-                            BarcodeFilterSettingsMessageQueue.Enqueue($"加载设置失败:{e.Message}");
+                            BarcodeFilterSettingsMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("加载设置失败") ?? string.Empty}:{e.Message}");
                         }
                     }
                 });

@@ -93,7 +93,7 @@ namespace JayTom.Dws.Client.Service.Device {
                     Brand = s.Brand
                 })?.ToList();
                 CameraEnumerationRefreshed?.Invoke(null, itemInfoModels ?? new List<CameraFinderItemInfoModel>());
-                return new KeyValuePair<bool, string>(true, "相机检索成功");
+                return new KeyValuePair<bool, string>(true, Languages.Language.ResourceManager.GetString("相机检索成功") ?? string.Empty);
             }
             catch (Exception e) {
                 return new KeyValuePair<bool, string>(false, e.Message);
@@ -171,14 +171,14 @@ namespace JayTom.Dws.Client.Service.Device {
                         }
                         catch (Exception e) {
                             OnDeviceException(new DeviceExceptionEventArgs() {
-                                ExceptionMessage = new Exception($"加载过滤设置失败:{e.Message}")
+                                ExceptionMessage = new Exception($"{Languages.Language.ResourceManager.GetString("加载过滤设置失败") ?? string.Empty}:{e.Message}")
                             });
                         }
                     }
 
                     if (RunningStatus) {
                         OnDeviceException(new DeviceExceptionEventArgs() {
-                            ExceptionMessage = new Exception($"必须先停止运行再设置条码过滤才能生效")
+                            ExceptionMessage = new Exception($"{Languages.Language.ResourceManager.GetString("必须先停止运行再设置条码过滤才能生效") ?? string.Empty}")
                         });
                     }
                 }
@@ -188,7 +188,7 @@ namespace JayTom.Dws.Client.Service.Device {
         public async Task<KeyValuePair<bool, string>> OnCameraBound(CameraFinderItemInfoModel camera, CancellationToken token = default) {
             await Task.Yield();
             if (RunningStatus) {
-                return new KeyValuePair<bool, string>(false, $"设备运行中则不能解绑或者绑定!");
+                return new KeyValuePair<bool, string>(false, $"{Languages.Language.ResourceManager.GetString("设备运行中则不能解绑或者绑定") ?? string.Empty}");
             }
             else {
                 CameraBound?.Invoke(null, camera);
@@ -201,7 +201,7 @@ namespace JayTom.Dws.Client.Service.Device {
         public async Task<KeyValuePair<bool, string>> OnCameraUnbound(CameraFinderItemInfoModel camera, CancellationToken token = default) {
             await Task.Yield();
             if (RunningStatus) {
-                return new KeyValuePair<bool, string>(false, $"设备运行中则不能解绑或者绑定!");
+                return new KeyValuePair<bool, string>(false, $"{Languages.Language.ResourceManager.GetString("设备运行中则不能解绑或者绑定") ?? string.Empty}");
             }
             else {
                 CameraUnbound?.Invoke(null, camera);
@@ -214,7 +214,7 @@ namespace JayTom.Dws.Client.Service.Device {
         public async Task<KeyValuePair<bool, string>> OnCameraParametersModified(List<CameraParametersModifiedEventArgs> camera, CancellationToken token = default) {
             await Task.Yield();
             if (RunningStatus) {
-                return new KeyValuePair<bool, string>(false, $"设备运行中则不能解绑或者绑定!");
+                return new KeyValuePair<bool, string>(false, $"{Languages.Language.ResourceManager.GetString("设备运行中则不能解绑或者绑定") ?? string.Empty}");
             }
             else {
                 _cameras.Clear();
@@ -332,7 +332,7 @@ namespace JayTom.Dws.Client.Service.Device {
                     }
                     catch (Exception e) {
                         OnDeviceException(new DeviceExceptionEventArgs() {
-                            ExceptionMessage = new Exception($"加载过滤设置失败:{e.Message}")
+                            ExceptionMessage = new Exception($"{Languages.Language.ResourceManager.GetString("加载过滤设置失败") ?? string.Empty}:{e.Message}")
                         });
                     }
 
@@ -562,7 +562,7 @@ namespace JayTom.Dws.Client.Service.Device {
                         }
                         catch (Exception e) {
                             OnDeviceException(new DeviceExceptionEventArgs() {
-                                ExceptionMessage = new Exception($"加载磅秤设置失败:{e.Message}")
+                                ExceptionMessage = new Exception($"{Languages.Language.ResourceManager.GetString("加载磅秤设置失败") ?? string.Empty}:{e.Message}")
                             });
                         }
                     }
@@ -585,7 +585,7 @@ namespace JayTom.Dws.Client.Service.Device {
             }
             catch (Exception e) {
                 OnDeviceException(new DeviceExceptionEventArgs() {
-                    ExceptionMessage = new Exception($"释放设备异常:{e.Message}")
+                    ExceptionMessage = new Exception($"{Languages.Language.ResourceManager.GetString("释放设备异常") ?? string.Empty}:{e.Message}")
                 });
                 NLog.LogManager.GetCurrentClassLogger().Error(JsonConvert.SerializeObject(e));
             }

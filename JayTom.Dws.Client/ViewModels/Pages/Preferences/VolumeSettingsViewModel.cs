@@ -114,12 +114,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         {
             new VolumeTriggerPositionModel()
             {
-                Name = "扫码结束后",
+                Name = Languages.Language.ResourceManager.GetString("AfterScanning")??string.Empty,
                 Value = VolumeTriggerPosition.BarcodeDetected,
             },
             new VolumeTriggerPositionModel()
             {
-                Name = "称重结束后",
+                Name = Languages.Language.ResourceManager.GetString("AfterWeighing")??string.Empty,
                 Value = VolumeTriggerPosition.WeightObtained,
             },
         };

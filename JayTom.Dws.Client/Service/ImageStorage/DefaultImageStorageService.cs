@@ -98,7 +98,7 @@ namespace JayTom.Dws.Client.Service.ImageStorage {
                         volume, cameraSerialNumber))?
                     .ToList();
                 if (pathList?.Any() != true) {
-                    OnImageSaveFailed(new Exception("存图路径解析错误,未找到模板内容!"));
+                    OnImageSaveFailed(new Exception(Languages.Language.ResourceManager.GetString("存图路径解析错误,未找到模板内容") ?? string.Empty));
                     return;
                 }
 
@@ -110,7 +110,7 @@ namespace JayTom.Dws.Client.Service.ImageStorage {
                         volume, cameraSerialNumber))
                     ?.ToList();
                 if (imageNaminglist?.Any() != true) {
-                    OnImageSaveFailed(new Exception("图片命名解析错误,未找到模板内容!"));
+                    OnImageSaveFailed(new Exception(Languages.Language.ResourceManager.GetString("图片命名解析错误,未找到模板内容") ?? string.Empty));
                     return;
                 }
 
@@ -125,7 +125,7 @@ namespace JayTom.Dws.Client.Service.ImageStorage {
                             volume, cameraSerialNumber, true))
                         ?.ToList();
                     if (watermarkList?.Any() != true) {
-                        OnImageSaveFailed(new Exception("图片命名解析错误,未找到模板内容!"));
+                        OnImageSaveFailed(new Exception(Languages.Language.ResourceManager.GetString("图片命名解析错误,未找到模板内容") ?? string.Empty));
                         return;
                     }
 
@@ -186,13 +186,13 @@ namespace JayTom.Dws.Client.Service.ImageStorage {
                         }
                     }
                     else {
-                        OnImageSaveFailed(new Exception("FTP上传:图片不存在"));
+                        OnImageSaveFailed(new Exception($"{Languages.Language.ResourceManager.GetString("FTPUpload") ?? string.Empty}{Languages.Language.ResourceManager.GetString("图片不存在") ?? string.Empty}"));
                     }
                 }
             }
             catch (Exception e) {
                 NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
-                OnImageSaveFailed(new Exception($"存图异常:{e.Message}"));
+                OnImageSaveFailed(new Exception($"{Languages.Language.ResourceManager.GetString("存图异常") ?? string.Empty}:{e.Message}"));
             }
             finally {
                 _saveSemaphore.Release();

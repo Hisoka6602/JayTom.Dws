@@ -235,7 +235,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                         isSuccess = key;
                     }
                 }
-                VolumeCameraMessageQueue.Enqueue($"相机:{obj.Name},解绑{(isSuccess
+                VolumeCameraMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("Camera")} : {obj.Name} , {Languages.Language.ResourceManager.GetString("Unbind")}{(isSuccess
                     ? Languages.Language.ResourceManager.GetString("Success") : Languages.Language.ResourceManager.GetString("Failure"))}");
             });
         }
@@ -274,7 +274,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                         isSuccess = key;
                     }
                 }
-                VolumeCameraMessageQueue.Enqueue($"相机:{obj.Name}, {Languages.Language.ResourceManager.GetString("Save") ?? string.Empty}{(isSuccess ?
+                VolumeCameraMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("Camera")}:{obj.Name}, {Languages.Language.ResourceManager.GetString("Save") ?? string.Empty}{(isSuccess ?
                     Languages.Language.ResourceManager.GetString("Success") : Languages.Language.ResourceManager.GetString("Failure"))}");
             });
         }

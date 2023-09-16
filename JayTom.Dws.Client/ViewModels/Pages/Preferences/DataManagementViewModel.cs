@@ -502,14 +502,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
 
         private async void ExportDataDelegate(object obj) {
             if (BarCodeItems?.Any() != true) {
-                DataManagementMessageQueue?.Enqueue("列表中没有数据");
+                DataManagementMessageQueue?.Enqueue(Languages.Language.ResourceManager.GetString("列表中没有数据") ?? string.Empty,);
                 return;
             }
 
             //导出
             var saveFileDialog = new Microsoft.Win32.SaveFileDialog() {
                 Title = "Please select the location to save the file.",
-                Filter = "Excel文件(xlsx)|*.xlsx",
+                Filter = $"{Languages.Language.ResourceManager.GetString("Excel文件") ?? string.Empty}(xlsx)|*.xlsx",
                 DefaultExt = "xlsx",
                 InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
             };
