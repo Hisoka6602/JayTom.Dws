@@ -6,6 +6,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:dataTemplateSelectors="clr-namespace:JayTom.Dws.Client.DataTemplateSelectors"
     xmlns:imageSettingModels="clr-namespace:JayTom.Dws.Client.Models.ImageSettingModels"
+    xmlns:languages="clr-namespace:JayTom.Dws.Client.Languages"
     xmlns:local="clr-namespace:JayTom.Dws.Client.Views.Pages.Preferences"
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -114,7 +115,7 @@
                         FontSize="16"
                         FontWeight="Bold"
                         Foreground="DarkGray"
-                        Text="数据模板:" />
+                        Text="{x:Static languages:Language.DataTemplate}" />
                 </StackPanel>
                 <StackPanel Margin="50,10,0,0" Orientation="Horizontal">
                     <TextBlock
@@ -123,7 +124,7 @@
                         FontSize="13"
                         FontWeight="Bold"
                         Foreground="DarkGray"
-                        Text="输出数据:" />
+                        Text="{x:Static languages:Language.OutputData}" />
                     <StackPanel Orientation="Horizontal">
                         <Button
                             Height="30"
@@ -135,7 +136,7 @@
                             CommandParameter="'{BarCode}'"
                             Focusable="False"
                             Style="{StaticResource MaterialDesignRaisedDarkButton}">
-                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="条码" />
+                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.TableHeaderBarCode}" />
                         </Button>
                         <Button
                             Height="30"
@@ -147,7 +148,7 @@
                             CommandParameter="'{Weight}'"
                             Focusable="False"
                             Style="{StaticResource MaterialDesignRaisedDarkButton}">
-                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="重量" />
+                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.TableHeaderWeight}" />
                         </Button>
                         <Button
                             Height="30"
@@ -159,7 +160,7 @@
                             CommandParameter="'{ScanTime}'"
                             Focusable="False"
                             Style="{StaticResource MaterialDesignRaisedDarkButton}">
-                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="扫码时间" />
+                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.TableHeaderScanTime}" />
                         </Button>
                         <Button
                             Height="30"
@@ -171,7 +172,7 @@
                             CommandParameter="'{TimestampedGuid}'"
                             Focusable="False"
                             Style="{StaticResource MaterialDesignRaisedDarkButton}">
-                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="扫码时间戳" />
+                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.TableHeaderTimestampGuid}" />
                         </Button>
                         <Button
                             Height="30"
@@ -183,7 +184,7 @@
                             CommandParameter="'{Length}'"
                             Focusable="False"
                             Style="{StaticResource MaterialDesignRaisedDarkButton}">
-                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="长" />
+                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.TableHeaderLength}" />
                         </Button>
                         <Button
                             Height="30"
@@ -195,7 +196,7 @@
                             CommandParameter="'{Width}'"
                             Focusable="False"
                             Style="{StaticResource MaterialDesignRaisedDarkButton}">
-                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="宽" />
+                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.TableHeaderWidth}" />
                         </Button>
                         <Button
                             Height="30"
@@ -207,7 +208,7 @@
                             CommandParameter="'{Height}'"
                             Focusable="False"
                             Style="{StaticResource MaterialDesignRaisedDarkButton}">
-                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="高" />
+                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.TableHeaderHeight}" />
                         </Button>
                         <Button
                             Height="30"
@@ -219,7 +220,7 @@
                             CommandParameter="'{Volume}'"
                             Focusable="False"
                             Style="{StaticResource MaterialDesignRaisedDarkButton}">
-                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="体积" />
+                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.TableHeaderVolume}" />
                         </Button>
                         <Button
                             Height="30"
@@ -231,7 +232,7 @@
                             CommandParameter="'{CameraSerialNumber}'"
                             Focusable="False"
                             Style="{StaticResource MaterialDesignRaisedDarkButton}">
-                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="相机序列号" />
+                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.TableHeaderSerialNumber}" />
                         </Button>
                     </StackPanel>
                 </StackPanel>
@@ -243,7 +244,7 @@
                     CornerRadius="5">
                     <Grid>
                         <Border
-                            Width="40"
+                            Width="50"
                             Margin="2"
                             HorizontalAlignment="Left"
                             Background="DarkGray"
@@ -255,13 +256,13 @@
                                 FontSize="12"
                                 FontWeight="Bold"
                                 Foreground="#2E2E2E"
-                                Text="内容" />
+                                Text="{x:Static languages:Language.Content}" />
                         </Border>
                         <ListView
-                            Width="710"
+                            Width="820"
                             Height="30"
                             MaxWidth="900"
-                            Margin="50,0,0,0"
+                            Margin="60,0,0,0"
                             Focusable="False"
                             ItemTemplateSelector="{StaticResource ImageSettingItemDataTemplateSelectors}"
                             ItemsSource="{Binding OutputItems, UpdateSourceTrigger=PropertyChanged}"
@@ -325,7 +326,7 @@
                         FontSize="16"
                         FontWeight="Bold"
                         Foreground="DarkGray"
-                        Text="上传配置:" />
+                        Text="{x:Static languages:Language.OutputConfiguration}" />
                 </StackPanel>
                 <StackPanel Margin="50,5,0,0" Orientation="Horizontal">
                     <StackPanel Orientation="Horizontal">
@@ -337,7 +338,7 @@
                                 FontSize="13"
                                 FontWeight="Bold"
                                 Foreground="DarkGray"
-                                Text="重试次数:" />
+                                Text="{x:Static languages:Language.RetryCount}" />
                             <Border
                                 Margin="5"
                                 HorizontalAlignment="Center"
@@ -368,7 +369,7 @@
                                 FontSize="13"
                                 FontWeight="Bold"
                                 Foreground="DarkGray"
-                                Text="发送延迟:" />
+                                Text="{x:Static languages:Language.OutputDelay}" />
                             <Border
                                 Margin="5"
                                 HorizontalAlignment="Center"
@@ -400,7 +401,7 @@
                                 FontSize="13"
                                 FontWeight="Bold"
                                 Foreground="DarkGray"
-                                Text="程序重启重新上传未成功数据:" />
+                                Text="{x:Static languages:Language.IsRetryOutput}" />
                             <ToggleButton
                                 materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
                                 materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
@@ -431,7 +432,7 @@
                         FontSize="16"
                         FontWeight="Bold"
                         Foreground="DarkGray"
-                        Text="Tcp输出:" />
+                        Text="{x:Static languages:Language.IsUseTCPOutput}" />
                     <ToggleButton
                         Name="TcpToggleButton"
                         materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
@@ -449,7 +450,7 @@
                     <StackPanel Orientation="Vertical">
                         <!--  使用Tcp服务端  -->
                         <RadioButton
-                            Content="使用Tcp服务端"
+                            Content="{x:Static languages:Language.IsUseTCPServer}"
                             Focusable="False"
                             FontSize="13"
                             FontWeight="Bold"
@@ -465,7 +466,7 @@
                                     FontSize="13"
                                     FontWeight="Bold"
                                     Foreground="DarkGray"
-                                    Text="IP地址:" />
+                                    Text="{x:Static languages:Language.IPAddress}" />
                                 <Border
                                     Margin="5"
                                     HorizontalAlignment="Center"
@@ -497,7 +498,7 @@
                                     FontSize="13"
                                     FontWeight="Bold"
                                     Foreground="DarkGray"
-                                    Text="端口:" />
+                                    Text="{x:Static languages:Language.Port}" />
                                 <Border
                                     Margin="5"
                                     HorizontalAlignment="Center"
@@ -523,7 +524,7 @@
                         </StackPanel>
                         <!--  使用Tcp客户端  -->
                         <RadioButton
-                            Content="使用Tcp客户端"
+                            Content="{x:Static languages:Language.IsUseTCPClient}"
                             Focusable="False"
                             FontSize="13"
                             FontWeight="Bold"
@@ -539,7 +540,7 @@
                                     FontSize="13"
                                     FontWeight="Bold"
                                     Foreground="DarkGray"
-                                    Text="IP地址:" />
+                                    Text="{x:Static languages:Language.IPAddress}" />
                                 <Border
                                     Margin="5"
                                     HorizontalAlignment="Center"
@@ -580,7 +581,7 @@
                                     FontSize="13"
                                     FontWeight="Bold"
                                     Foreground="DarkGray"
-                                    Text="端口:" />
+                                    Text="{x:Static languages:Language.Port}" />
                                 <Border
                                     Margin="5"
                                     HorizontalAlignment="Center"
@@ -627,7 +628,7 @@
                         FontSize="16"
                         FontWeight="Bold"
                         Foreground="DarkGray"
-                        Text="串口输出:" />
+                        Text="{x:Static languages:Language.IsUseSerialPortOutput}" />
                     <ToggleButton
                         Name="SerialOutputToggleButton"
                         materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
@@ -650,7 +651,7 @@
                                 FontSize="13"
                                 FontWeight="Bold"
                                 Foreground="DarkGray"
-                                Text="串口名称:" />
+                                Text="{x:Static languages:Language.SerialPortName}" />
                             <Border
                                 Margin="5"
                                 HorizontalAlignment="Center"
@@ -684,7 +685,7 @@
                                 FontSize="13"
                                 FontWeight="Bold"
                                 Foreground="DarkGray"
-                                Text="波特率:" />
+                                Text="{x:Static languages:Language.BaudRate}" />
                             <Border
                                 Margin="5"
                                 HorizontalAlignment="Center"
@@ -718,7 +719,7 @@
                                 FontSize="13"
                                 FontWeight="Bold"
                                 Foreground="DarkGray"
-                                Text="数据位:" />
+                                Text="{x:Static languages:Language.DataBits}" />
                             <Border
                                 Margin="5"
                                 HorizontalAlignment="Center"
@@ -752,7 +753,7 @@
                                 FontSize="13"
                                 FontWeight="Bold"
                                 Foreground="DarkGray"
-                                Text="效验位:" />
+                                Text="{x:Static languages:Language.ParityBit}" />
                             <Border
                                 Margin="5"
                                 HorizontalAlignment="Center"
@@ -788,7 +789,7 @@
                                 FontSize="13"
                                 FontWeight="Bold"
                                 Foreground="DarkGray"
-                                Text="停止位:" />
+                                Text="{x:Static languages:Language.StopBits}" />
                             <Border
                                 Margin="5"
                                 HorizontalAlignment="Center"
@@ -839,7 +840,7 @@
                         FontSize="16"
                         FontWeight="Bold"
                         Foreground="DarkGray"
-                        Text="音频输出:" />
+                        Text="{x:Static languages:Language.IsUseAudioOutput}" />
                     <ToggleButton
                         Name="AudioOutputToggleButton"
                         materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
@@ -863,7 +864,7 @@
                                     FontSize="13"
                                     FontWeight="Bold"
                                     Foreground="DarkGray"
-                                    Text="成功音频:" />
+                                    Text="{x:Static languages:Language.SuccessAudio}" />
                                 <Border
                                     Margin="5"
                                     HorizontalAlignment="Center"
@@ -897,7 +898,7 @@
                                     FontSize="13"
                                     FontWeight="Bold"
                                     Foreground="DarkGray"
-                                    Text="失败音频:" />
+                                    Text="{x:Static languages:Language.FailureAudio}" />
                                 <Border
                                     Margin="5"
                                     HorizontalAlignment="Center"
@@ -931,7 +932,7 @@
                                     FontSize="13"
                                     FontWeight="Bold"
                                     Foreground="DarkGray"
-                                    Text="触发位置:" />
+                                    Text="{x:Static languages:Language.TriggerPosition}" />
                                 <Border
                                     Margin="5"
                                     HorizontalAlignment="Center"
@@ -967,7 +968,7 @@
                                     FontSize="13"
                                     FontWeight="Bold"
                                     Foreground="DarkGray"
-                                    Text="结果判断:" />
+                                    Text="{x:Static languages:Language.ResultEvaluation}" />
                                 <Border
                                     Margin="5"
                                     HorizontalAlignment="Center"
@@ -1003,7 +1004,7 @@
                                 FontSize="13"
                                 FontWeight="Bold"
                                 Foreground="DarkGray"
-                                Text="添加音频:" />
+                                Text="{x:Static languages:Language.AddAudio}" />
                             <Border
                                 Margin="5"
                                 HorizontalAlignment="Center"
@@ -1065,7 +1066,7 @@
                                     FontSize="14"
                                     FontWeight="Bold"
                                     Foreground="DarkGray"
-                                    Text="添加" />
+                                    Text="{x:Static languages:Language.Add}" />
                             </Button>
                         </StackPanel>
                     </StackPanel>
@@ -1091,7 +1092,7 @@
                         FontSize="16"
                         FontWeight="Bold"
                         Foreground="DarkGray"
-                        Text="位置输出:" />
+                        Text="{x:Static languages:Language.IsUsePositionOutput}" />
                     <ToggleButton
                         Name="LocationOutputToggleButton"
                         materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
@@ -1110,7 +1111,7 @@
                         <!--  输出条码  -->
                         <CheckBox
                             materialDesign:CheckBoxAssist.CheckBoxSize="20"
-                            Content="输出条码"
+                            Content="{x:Static languages:Language.IsOutputBarcode}"
                             Focusable="False"
                             FontSize="13"
                             FontWeight="Bold"
@@ -1125,7 +1126,7 @@
                                     FontSize="13"
                                     FontWeight="Bold"
                                     Foreground="DarkGray"
-                                    Text="条码坐标:" />
+                                    Text="{x:Static languages:Language.BarcodePoints}" />
                                 <Border
                                     Margin="5"
                                     HorizontalAlignment="Center"
@@ -1178,7 +1179,7 @@
                                     FontSize="13"
                                     FontWeight="Bold"
                                     Foreground="DarkGray"
-                                    Text="输出条码后按键:" />
+                                    Text="{x:Static languages:Language.KeyPressAfterOutputtingBarcode}" />
                                 <Border
                                     Margin="5"
                                     HorizontalAlignment="Center"
@@ -1211,7 +1212,7 @@
                         <!--  输出重量  -->
                         <CheckBox
                             materialDesign:CheckBoxAssist.CheckBoxSize="20"
-                            Content="输出重量"
+                            Content="{x:Static languages:Language.IsOutputWeight}"
                             Focusable="False"
                             FontSize="13"
                             FontWeight="Bold"
@@ -1226,7 +1227,7 @@
                                     FontSize="13"
                                     FontWeight="Bold"
                                     Foreground="DarkGray"
-                                    Text="重量坐标:" />
+                                    Text="{x:Static languages:Language.WeightPoints}" />
                                 <Border
                                     Margin="5"
                                     HorizontalAlignment="Center"
@@ -1279,7 +1280,7 @@
                                     FontSize="13"
                                     FontWeight="Bold"
                                     Foreground="DarkGray"
-                                    Text="输出重量后按键:" />
+                                    Text="{x:Static languages:Language.KeyPressAfterOutputtingWeight}" />
                                 <Border
                                     Margin="5"
                                     HorizontalAlignment="Center"
@@ -1319,7 +1320,7 @@
                     <!--  是否先输出重量  -->
                     <CheckBox
                         materialDesign:CheckBoxAssist.CheckBoxSize="20"
-                        Content="是否先输出重量"
+                        Content="{x:Static languages:Language.IsPrioritizeWeightOutput}"
                         Focusable="False"
                         FontSize="13"
                         FontWeight="Bold"
@@ -1333,7 +1334,7 @@
                             FontSize="13"
                             FontWeight="Bold"
                             Foreground="DarkGray"
-                            Text="操作延时:" />
+                            Text="{x:Static languages:Language.OutputDelay}" />
                         <Border
                             Margin="5"
                             HorizontalAlignment="Center"
@@ -1363,7 +1364,6 @@
             <Button
                 Grid.Row="7"
                 Grid.Column="0"
-                Width="110"
                 MinHeight="30"
                 Margin="30,10"
                 HorizontalAlignment="Left"
@@ -1390,7 +1390,7 @@
                             FontSize="14"
                             FontWeight="Bold"
                             Foreground="DarkGray"
-                            Text="保存设置" />
+                            Text="{x:Static languages:Language.SaveSettings}" />
                         <StackPanel.Style>
                             <Style TargetType="StackPanel">
                                 <Setter Property="Visibility" Value="Visible" />

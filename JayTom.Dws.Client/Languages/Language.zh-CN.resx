@@ -117,6 +117,14 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="Add" xml:space="preserve">
+    <value>添加</value>
+    <comment>10-添加</comment>
+  </data>
+  <data name="AddAudio" xml:space="preserve">
+    <value>添加音频:</value>
+    <comment>10-添加音频</comment>
+  </data>
   <data name="AdditionalContent" xml:space="preserve">
     <value>附加内容</value>
     <comment>8-附加内容</comment>
@@ -125,6 +133,30 @@
     <value>附加重量属性:</value>
     <comment>9-附加重量属性</comment>
   </data>
+  <data name="AfterPackageDeparture" xml:space="preserve">
+    <value>包裹出发后</value>
+    <comment>10-包裹出发后</comment>
+  </data>
+  <data name="AfterPositionOutput" xml:space="preserve">
+    <value>位置输出后</value>
+    <comment>10-位置输出后</comment>
+  </data>
+  <data name="AfterScanning" xml:space="preserve">
+    <value>扫码结束后</value>
+    <comment>10-扫码结束后</comment>
+  </data>
+  <data name="AfterSerialPortOutput" xml:space="preserve">
+    <value>串口输出后</value>
+    <comment>10-串口输出后</comment>
+  </data>
+  <data name="AfterTCPOutput" xml:space="preserve">
+    <value>Tcp输出后</value>
+    <comment>10-Tcp输出后</comment>
+  </data>
+  <data name="AfterWeighing" xml:space="preserve">
+    <value>称重结束后</value>
+    <comment>10-称重结束后</comment>
+  </data>
   <data name="ApiFailure" xml:space="preserve">
     <value>失败</value>
     <comment>5-Api上传失败</comment>
@@ -132,6 +164,10 @@
   <data name="ApiInterface" xml:space="preserve">
     <value>Api接口</value>
     <comment>0-Api接口(菜单)</comment>
+  </data>
+  <data name="APIInterfaceResponse" xml:space="preserve">
+    <value>Api接口响应</value>
+    <comment>10-Api接口响应</comment>
   </data>
   <data name="ApiNotUploaded" xml:space="preserve">
     <value>未上传</value>
@@ -168,6 +204,10 @@
   <data name="BarcodeLength" xml:space="preserve">
     <value>条码长度:</value>
     <comment>8-条码长度</comment>
+  </data>
+  <data name="BarcodePoints" xml:space="preserve">
+    <value>条码坐标:</value>
+    <comment>10-条码坐标</comment>
   </data>
   <data name="BarcodeValidation" xml:space="preserve">
     <value>条码验证:</value>
@@ -241,6 +281,10 @@
     <value>内容</value>
     <comment>8-内容</comment>
   </data>
+  <data name="ContentFormat" xml:space="preserve">
+    <value>内容格式(Json)</value>
+    <comment>10-内容格式(Json)</comment>
+  </data>
   <data name="CpuFanSpeed" xml:space="preserve">
     <value>Cpu风扇转速:</value>
     <comment>4-Cpu风扇转速</comment>
@@ -272,6 +316,10 @@
   <data name="DataRetrievalMode" xml:space="preserve">
     <value>获取方式:</value>
     <comment>9-获取方式</comment>
+  </data>
+  <data name="DataTemplate" xml:space="preserve">
+    <value>数据模板:</value>
+    <comment>10-数据模板</comment>
   </data>
   <data name="Day" xml:space="preserve">
     <value>日期</value>
@@ -308,6 +356,10 @@
   <data name="Export" xml:space="preserve">
     <value>导出</value>
     <comment>6-导出</comment>
+  </data>
+  <data name="FailureAudio" xml:space="preserve">
+    <value>失败音频:</value>
+    <comment>10-失败音频</comment>
   </data>
   <data name="FilteringSettings" xml:space="preserve">
     <value>过滤设置</value>
@@ -369,6 +421,14 @@
     <value>内容输入</value>
     <comment>0-内容输入(菜单)</comment>
   </data>
+  <data name="InputData" xml:space="preserve">
+    <value>输入数据:</value>
+    <comment>10-输入数据</comment>
+  </data>
+  <data name="InputTemplate" xml:space="preserve">
+    <value>输入模板:</value>
+    <comment>10-输入模板</comment>
+  </data>
   <data name="IPAddress" xml:space="preserve">
     <value>IP地址:</value>
     <comment>8-IP地址</comment>
@@ -376,6 +436,22 @@
   <data name="IsEnableRealTimeImage" xml:space="preserve">
     <value>是否开启实时图像:</value>
     <comment>7-是否开启实时图像</comment>
+  </data>
+  <data name="IsOutputBarcode" xml:space="preserve">
+    <value>是否输出条码</value>
+    <comment>10-是否输出条码</comment>
+  </data>
+  <data name="IsOutputWeight" xml:space="preserve">
+    <value>是否输出重量:</value>
+    <comment>10-是否输出重量</comment>
+  </data>
+  <data name="IsPrioritizeWeightOutput" xml:space="preserve">
+    <value>是否优先输出重量:</value>
+    <comment>10-是否优先输出重量</comment>
+  </data>
+  <data name="IsRetryOutput" xml:space="preserve">
+    <value>程序重启重新上传未成功数据:</value>
+    <comment>10-程序重启重新上传未成功数据</comment>
   </data>
   <data name="IsReverse" xml:space="preserve">
     <value>是否反转:</value>
@@ -389,6 +465,14 @@
     <value>是否使用追加重量:</value>
     <comment>9-是否使用追加重量</comment>
   </data>
+  <data name="IsUseAudioOutput" xml:space="preserve">
+    <value>使用音频输出:</value>
+    <comment>10-使用音频输出</comment>
+  </data>
+  <data name="IsUseControlInput" xml:space="preserve">
+    <value>是否使用控件输入</value>
+    <comment>10-是否使用控件输入</comment>
+  </data>
   <data name="IsUseFixedWeight" xml:space="preserve">
     <value>是否使用固定重量:</value>
     <comment>9-是否使用固定重量</comment>
@@ -401,13 +485,49 @@
     <value>是否使用融合重量超时:</value>
     <comment>9-是否使用融合重量超时</comment>
   </data>
+  <data name="IsUsePositionOutput" xml:space="preserve">
+    <value>使用位置输出</value>
+    <comment>10-使用位置输出</comment>
+  </data>
   <data name="IsUserOriginalImage" xml:space="preserve">
     <value>是否使用原图:</value>
     <comment>8-是否存原图</comment>
   </data>
+  <data name="IsUseSerialInput" xml:space="preserve">
+    <value>是否使用串口输入:</value>
+    <comment>10-是否使用串口输入</comment>
+  </data>
+  <data name="IsUseSerialPortOutput" xml:space="preserve">
+    <value>使用串口输出:</value>
+    <comment>10-使用串口输出</comment>
+  </data>
+  <data name="IsUseTCPClient" xml:space="preserve">
+    <value>使用TCP客户端</value>
+    <comment>10-使用TCP客户端</comment>
+  </data>
+  <data name="IsUseTCPInput" xml:space="preserve">
+    <value>是否使用TCP输入:</value>
+    <comment>10-是否使用TCP输入</comment>
+  </data>
+  <data name="IsUseTCPOutput" xml:space="preserve">
+    <value>使用TCP输出:</value>
+    <comment>10-使用TCP输出</comment>
+  </data>
+  <data name="IsUseTCPServer" xml:space="preserve">
+    <value>使用TCP服务端</value>
+    <comment>10-使用TCP服务端</comment>
+  </data>
   <data name="IsUseWatermark" xml:space="preserve">
     <value>是否使用水印:</value>
     <comment>8-是否使用水印</comment>
+  </data>
+  <data name="KeyPressAfterOutputtingBarcode" xml:space="preserve">
+    <value>输出条码后按键:</value>
+    <comment>10-输出条码后按键</comment>
+  </data>
+  <data name="KeyPressAfterOutputtingWeight" xml:space="preserve">
+    <value>输出重量后按键:</value>
+    <comment>10-输出重量后按键</comment>
   </data>
   <data name="LastPage" xml:space="preserve">
     <value>末页</value>
@@ -517,9 +637,29 @@
     <value>数字</value>
     <comment>8-数字</comment>
   </data>
+  <data name="OutputConfiguration" xml:space="preserve">
+    <value>输出配置:</value>
+    <comment>10-输出配置</comment>
+  </data>
+  <data name="OutputData" xml:space="preserve">
+    <value>输出数据:</value>
+    <comment>10-输出数据</comment>
+  </data>
+  <data name="OutputDelay" xml:space="preserve">
+    <value>操作延时:</value>
+    <comment>10-操作延时</comment>
+  </data>
   <data name="OutputResults" xml:space="preserve">
     <value>结果输出</value>
     <comment>0-结果输出(菜单)</comment>
+  </data>
+  <data name="PackgeRecognition" xml:space="preserve">
+    <value>包裹识别</value>
+    <comment>10-包裹识别</comment>
+  </data>
+  <data name="PaddingVariable" xml:space="preserve">
+    <value>补位变量</value>
+    <comment>10-补位变量</comment>
   </data>
   <data name="PanoramicCamera" xml:space="preserve">
     <value>全景相机</value>
@@ -573,6 +713,14 @@
     <value>发送格式:</value>
     <comment>9-发送格式</comment>
   </data>
+  <data name="ResultEvaluation" xml:space="preserve">
+    <value>结果判断</value>
+    <comment>10-结果判断</comment>
+  </data>
+  <data name="RetryCount" xml:space="preserve">
+    <value>重试次数:</value>
+    <comment>10-重试次数</comment>
+  </data>
   <data name="RootDirectory" xml:space="preserve">
     <value>根目录</value>
     <comment>8-根目录</comment>
@@ -612,6 +760,18 @@
   <data name="Search" xml:space="preserve">
     <value>查找</value>
     <comment>6-查找</comment>
+  </data>
+  <data name="SendDelay" xml:space="preserve">
+    <value>发送延迟:</value>
+    <comment>10-发送延迟</comment>
+  </data>
+  <data name="SentContent" xml:space="preserve">
+    <value>发送内容:</value>
+    <comment>10-发送内容</comment>
+  </data>
+  <data name="Separator" xml:space="preserve">
+    <value>分隔符</value>
+    <comment>10-分隔符</comment>
   </data>
   <data name="SerialPortName" xml:space="preserve">
     <value>串口名:</value>
@@ -688,6 +848,10 @@
   <data name="SubDirectory" xml:space="preserve">
     <value>子路径:</value>
     <comment>8-子路径</comment>
+  </data>
+  <data name="SuccessAudio" xml:space="preserve">
+    <value>成功音频:</value>
+    <comment>10-成功音频</comment>
   </data>
   <data name="TableHeaderAPIResponseStatus" xml:space="preserve">
     <value>上传状态</value>
@@ -829,6 +993,10 @@
     <value>测量触发模式:</value>
     <comment>7-测量触发模式</comment>
   </data>
+  <data name="TriggerPosition" xml:space="preserve">
+    <value>触发位置:</value>
+    <comment>10-触发位置</comment>
+  </data>
   <data name="Unbind" xml:space="preserve">
     <value>解绑</value>
     <comment>7-解绑</comment>
@@ -865,6 +1033,10 @@
     <value>体积设置</value>
     <comment>0-体积设置(菜单)</comment>
   </data>
+  <data name="VolumeUnit" xml:space="preserve">
+    <value>体积单位:</value>
+    <comment>10-体积单位</comment>
+  </data>
   <data name="Watermark" xml:space="preserve">
     <value>水印:</value>
     <comment>8-水印</comment>
@@ -896,6 +1068,10 @@
   <data name="WeightConversionRate" xml:space="preserve">
     <value>重量转换率:</value>
     <comment>9-重量转换率</comment>
+  </data>
+  <data name="WeightPoints" xml:space="preserve">
+    <value>重量坐标:</value>
+    <comment>10-重量坐标</comment>
   </data>
   <data name="WeightSettingParameters" xml:space="preserve">
     <value>重量设置参数:</value>
