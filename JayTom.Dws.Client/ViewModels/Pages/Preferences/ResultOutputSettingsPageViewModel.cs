@@ -582,7 +582,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     }
 
                     IsSavingInProgress = false;
-                    ResultOutputSettingsMessageQueue.Enqueue($"保存{(insertOrUpdate ? "成功" : "失败")}");
+                    ResultOutputSettingsMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("Save") ?? string.Empty}{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("Success") :
+                        Languages.Language.ResourceManager.GetString("Failure"))}");
                 });
             }
 

@@ -13,22 +13,22 @@ namespace JayTom.Dws.Client.Converters {
 
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
             return value switch {
-                CameraType.IndustrialCamera => "工业相机",
-                CameraType.PanoramicCamera => "全景相机",
-                CameraType.SmartCamera => "智能相机",
-                CameraType.ThreeDCamera => "3D相机/体积相机",
-                CameraType.VideoCamera => "录像相机/安防相机",
+                CameraType.IndustrialCamera => Languages.Language.ResourceManager.GetString("IndustrialCamera") ?? string.Empty,
+                CameraType.PanoramicCamera => Languages.Language.ResourceManager.GetString("PanoramicCamera") ?? string.Empty,
+                CameraType.SmartCamera => Languages.Language.ResourceManager.GetString("SmartCamera") ?? string.Empty,
+                CameraType.ThreeDCamera => Languages.Language.ResourceManager.GetString("3DCamera/VolumeCamera") ?? string.Empty,
+                CameraType.VideoCamera => Languages.Language.ResourceManager.GetString("VideoCameraSecurityCamera") ?? string.Empty,
                 _ => string.Empty,
             };
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
             return value switch {
-                CameraType.IndustrialCamera => "工业相机",
-                CameraType.PanoramicCamera => "全景相机",
-                CameraType.SmartCamera => "智能相机",
-                CameraType.ThreeDCamera => "3D相机/体积相机",
-                CameraType.VideoCamera => "录像相机/安防相机",
+                CameraType.IndustrialCamera => Languages.Language.ResourceManager.GetString("IndustrialCamera") ?? string.Empty,
+                CameraType.PanoramicCamera => Languages.Language.ResourceManager.GetString("PanoramicCamera") ?? string.Empty,
+                CameraType.SmartCamera => Languages.Language.ResourceManager.GetString("SmartCamera") ?? string.Empty,
+                CameraType.ThreeDCamera => Languages.Language.ResourceManager.GetString("3DCamera/VolumeCamera") ?? string.Empty,
+                CameraType.VideoCamera => Languages.Language.ResourceManager.GetString("VideoCameraSecurityCamera") ?? string.Empty,
                 _ => string.Empty,
             };
         }

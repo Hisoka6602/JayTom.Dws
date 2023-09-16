@@ -15,9 +15,9 @@ using NetTopologySuite.Algorithm;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
 using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Client.Models.SettingsCommomModels;
 using JayTom.Dws.Client.Models.ContentInputSettingsModels;
 using static Microsoft.WindowsAPICodePack.Shell.PropertySystem.SystemProperties.System;
-using JayTom.Dws.Client.Models.SettingsCommomModels;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
 
@@ -135,7 +135,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                         });
                     }
                     IsSavingInProgress = false;
-                    ContentInputSettingsMessageQueue.Enqueue($"保存{(insertOrUpdate ? "成功" : "失败")}");
+                    ContentInputSettingsMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("Save") ?? string.Empty}{(insertOrUpdate ?
+                        Languages.Language.ResourceManager.GetString("Success") : Languages.Language.ResourceManager.GetString("Failure"))}");
                 });
             }
         }

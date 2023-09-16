@@ -5,6 +5,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:languages="clr-namespace:JayTom.Dws.Client.Languages"
     xmlns:local="clr-namespace:JayTom.Dws.Client.Views.Pages.Preferences"
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -53,7 +54,7 @@
                     FontSize="13"
                     FontWeight="Bold"
                     Foreground="DarkGray"
-                    Text="使用的Api接口:" />
+                    Text="{x:Static languages:Language.SelectedApi}" />
                 <Border
                     Margin="5"
                     HorizontalAlignment="Center"
@@ -99,7 +100,7 @@
                 ScrollViewer.VerticalScrollBarVisibility="Auto"
                 Style="{StaticResource MaterialDesignUniformTabControl}"
                 TabStripPlacement="Top">
-                <TabItem Foreground="White" Header="基础接口">
+                <TabItem Foreground="White" Header="{x:Static languages:Language.DefaultApi}">
                     <Frame
                         Margin="0"
                         Padding="0"

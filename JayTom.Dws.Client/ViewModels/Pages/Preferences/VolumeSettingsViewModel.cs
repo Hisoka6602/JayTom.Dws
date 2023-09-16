@@ -23,6 +23,7 @@ using JayTom.Dws.Client.Models.VolumeSettingsModel;
 using JayTom.Dws.Client.Models.SettingsCommomModels;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
+
     public class VolumeSettingsViewModel : BindableBase {
         private readonly IConfigRepository _configRepository;
         private VolumeSettingsInfoModel _volumeSettingsInfo = new();
@@ -414,7 +415,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                         });
                     }
                     IsSavingInProgress = false;
-                    VolumeSettingsMessageQueue.Enqueue($"保存{(insertOrUpdate ? "成功" : "失败")}");
+                    VolumeSettingsMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("Save") ?? string.Empty}{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("Success") : Languages.Language.ResourceManager.GetString("Failure"))}");
                 });
             }
         }

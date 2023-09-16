@@ -21,6 +21,7 @@ using JayTom.Dws.Client.Models.ImageSettingModels;
 using JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
+
     public class ApiSettingsPageViewModel : BindableBase {
         private readonly IConfigRepository _configRepository;
 
@@ -28,12 +29,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         {
             new ApiTypeInfoModel()
             {
-                Name = "不上传",
+                Name = Languages.Language.ResourceManager.GetString("NoneApi")??string.Empty,
                 Value = ApiType.None
             },
             new ApiTypeInfoModel()
             {
-                Name = "基础接口",
+                Name = Languages.Language.ResourceManager.GetString("DefaultApi")??string.Empty,
                 Value = ApiType.DefaultApi
             },
         };
@@ -41,13 +42,16 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         private ApiTypeInfoModel? _selectApiType = new();
         private SnackbarMessageQueue _apiSettingsMessageQueue = new(TimeSpan.FromSeconds(2));
         private bool _isLoaded;
+
         public ApiSettingsPageViewModel(IConfigRepository configRepository) {
             _configRepository = configRepository;
         }
+
         public SnackbarMessageQueue ApiSettingsMessageQueue {
             get => _apiSettingsMessageQueue;
             set => SetProperty(ref _apiSettingsMessageQueue, value);
         }
+
         public ObservableCollection<ApiTypeInfoModel> ApiTypeItems {
             get => _apiTypeItems;
             set => SetProperty(ref _apiTypeItems, value);
@@ -71,15 +75,15 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             });
             if (!insertOrUpdate) {
                 SelectApiType = ApiTypeItems.FirstOrDefault(f => f.Value == ApiType.None);
-                ApiSettingsMessageQueue.Enqueue("切换Api接口失败!");
+                ApiSettingsMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("切换Api接口失败") ?? string.Empty}");
             }
             else {
                 EventAggregator.Instance.Publish(new SettingsChangedEvent {
                     SettingsName = "ApiSettings"
                 });
             }
-
         }
+
         /// <summary>
         /// 页面加载完成
         /// </summary>

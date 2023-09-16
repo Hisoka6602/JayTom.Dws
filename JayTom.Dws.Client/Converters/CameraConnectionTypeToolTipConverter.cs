@@ -13,22 +13,22 @@ namespace JayTom.Dws.Client.Converters {
 
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
             return value switch {
-                ConnectionType.Ethernet => "网口连接",
-                ConnectionType.SerialPort => "串口连接",
-                ConnectionType.Tcp => "Tcp连接",
-                ConnectionType.Usb => "Usb连接",
-                ConnectionType.Bluetooth => "蓝牙连接",
+                ConnectionType.Ethernet => Languages.Language.ResourceManager.GetString("EthernetConnection") ?? string.Empty,
+                ConnectionType.SerialPort => Languages.Language.ResourceManager.GetString("SerialPortConnection") ?? string.Empty,
+                ConnectionType.Tcp => Languages.Language.ResourceManager.GetString("TCPConnection") ?? string.Empty,
+                ConnectionType.Usb => Languages.Language.ResourceManager.GetString("USBConnection") ?? string.Empty,
+                ConnectionType.Bluetooth => Languages.Language.ResourceManager.GetString("BluetoothConnection") ?? string.Empty,
                 _ => string.Empty,
             };
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
             return value switch {
-                ConnectionType.Ethernet => "网口连接",
-                ConnectionType.SerialPort => "串口连接",
-                ConnectionType.Tcp => "Tcp连接",
-                ConnectionType.Usb => "Usb连接",
-                ConnectionType.Bluetooth => "蓝牙连接",
+                ConnectionType.Ethernet => Languages.Language.ResourceManager.GetString("EthernetConnection") ?? string.Empty,
+                ConnectionType.SerialPort => Languages.Language.ResourceManager.GetString("SerialPortConnection") ?? string.Empty,
+                ConnectionType.Tcp => Languages.Language.ResourceManager.GetString("TCPConnection") ?? string.Empty,
+                ConnectionType.Usb => Languages.Language.ResourceManager.GetString("USBConnection") ?? string.Empty,
+                ConnectionType.Bluetooth => Languages.Language.ResourceManager.GetString("BluetoothConnection") ?? string.Empty,
                 _ => string.Empty,
             };
         }

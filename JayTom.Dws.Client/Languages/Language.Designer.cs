@@ -61,6 +61,15 @@ namespace JayTom.Dws.Client.Languages {
         }
         
         /// <summary>
+        ///   查找类似 3D相机/体积相机 的本地化字符串。
+        /// </summary>
+        public static string _3DCamera_VolumeCamera {
+            get {
+                return ResourceManager.GetString("3DCamera/VolumeCamera", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查找类似 添加 的本地化字符串。
         /// </summary>
         public static string Add {
@@ -205,6 +214,15 @@ namespace JayTom.Dws.Client.Languages {
         }
         
         /// <summary>
+        ///   查找类似 Api上传接口设置 的本地化字符串。
+        /// </summary>
+        public static string Api上传接口设置 {
+            get {
+                return ResourceManager.GetString("Api上传接口设置", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查找类似 应用全部 的本地化字符串。
         /// </summary>
         public static string ApplyAll {
@@ -214,11 +232,29 @@ namespace JayTom.Dws.Client.Languages {
         }
         
         /// <summary>
+        ///   查找类似 自动清理: 的本地化字符串。
+        /// </summary>
+        public static string AutomaticCleanup {
+            get {
+                return ResourceManager.GetString("AutomaticCleanup", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查找类似 可用内存: 的本地化字符串。
         /// </summary>
         public static string AvailableMemory {
             get {
                 return ResourceManager.GetString("AvailableMemory", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 MB空间(清理等级最高) 的本地化字符串。
+        /// </summary>
+        public static string AvailableSpace {
+            get {
+                return ResourceManager.GetString("AvailableSpace", resourceCulture);
             }
         }
         
@@ -237,6 +273,15 @@ namespace JayTom.Dws.Client.Languages {
         public static string BarcodeCondition {
             get {
                 return ResourceManager.GetString("BarcodeCondition", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 天之前的条码数据 的本地化字符串。
+        /// </summary>
+        public static string BarcodeDataDaysAgo {
+            get {
+                return ResourceManager.GetString("BarcodeDataDaysAgo", resourceCulture);
             }
         }
         
@@ -309,6 +354,15 @@ namespace JayTom.Dws.Client.Languages {
         public static string BindToScannerCamera {
             get {
                 return ResourceManager.GetString("BindToScannerCamera", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 蓝牙连接 的本地化字符串。
+        /// </summary>
+        public static string BluetoothConnection {
+            get {
+                return ResourceManager.GetString("BluetoothConnection", resourceCulture);
             }
         }
         
@@ -412,6 +466,15 @@ namespace JayTom.Dws.Client.Languages {
         }
         
         /// <summary>
+        ///   查找类似 完全匹配: 的本地化字符串。
+        /// </summary>
+        public static string CompleteMatch {
+            get {
+                return ResourceManager.GetString("CompleteMatch", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查找类似 多个条件请使用英文;号分割 的本地化字符串。
         /// </summary>
         public static string ConditionSeparationInstruction {
@@ -421,11 +484,29 @@ namespace JayTom.Dws.Client.Languages {
         }
         
         /// <summary>
+        ///   查找类似 包含字符串: 的本地化字符串。
+        /// </summary>
+        public static string ContainString {
+            get {
+                return ResourceManager.GetString("ContainString", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查找类似 内容 的本地化字符串。
         /// </summary>
         public static string Content {
             get {
                 return ResourceManager.GetString("Content", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 包含的内容: 的本地化字符串。
+        /// </summary>
+        public static string ContentContained {
+            get {
+                return ResourceManager.GetString("ContentContained", resourceCulture);
             }
         }
         
@@ -471,6 +552,24 @@ namespace JayTom.Dws.Client.Languages {
         public static string CpuUsageRate {
             get {
                 return ResourceManager.GetString("CpuUsageRate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 自定义 的本地化字符串。
+        /// </summary>
+        public static string Custom {
+            get {
+                return ResourceManager.GetString("Custom", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 数据 的本地化字符串。
+        /// </summary>
+        public static string Data {
+            get {
+                return ResourceManager.GetString("Data", resourceCulture);
             }
         }
         
@@ -538,11 +637,38 @@ namespace JayTom.Dws.Client.Languages {
         }
         
         /// <summary>
+        ///   查找类似 默认Api接口 的本地化字符串。
+        /// </summary>
+        public static string DefaultApi {
+            get {
+                return ResourceManager.GetString("DefaultApi", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查找类似 延迟触发时间(毫秒): 的本地化字符串。
         /// </summary>
         public static string DelayTriggerTime {
             get {
                 return ResourceManager.GetString("DelayTriggerTime", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 删除 的本地化字符串。
+        /// </summary>
+        public static string Delete {
+            get {
+                return ResourceManager.GetString("Delete", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 磁盘空间: 的本地化字符串。
+        /// </summary>
+        public static string DiskSpace {
+            get {
+                return ResourceManager.GetString("DiskSpace", resourceCulture);
             }
         }
         
@@ -583,6 +709,15 @@ namespace JayTom.Dws.Client.Languages {
         }
         
         /// <summary>
+        ///   查找类似 网口连接 的本地化字符串。
+        /// </summary>
+        public static string EthernetConnection {
+            get {
+                return ResourceManager.GetString("EthernetConnection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查找类似 异常数量 的本地化字符串。
         /// </summary>
         public static string ExceptionCount {
@@ -597,6 +732,15 @@ namespace JayTom.Dws.Client.Languages {
         public static string Export {
             get {
                 return ResourceManager.GetString("Export", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 失败 的本地化字符串。
+        /// </summary>
+        public static string Failure {
+            get {
+                return ResourceManager.GetString("Failure", resourceCulture);
             }
         }
         
@@ -624,6 +768,24 @@ namespace JayTom.Dws.Client.Languages {
         public static string FirstPage {
             get {
                 return ResourceManager.GetString("FirstPage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 天之前的FTP图片  的本地化字符串。
+        /// </summary>
+        public static string FTPImageDaysAgo {
+            get {
+                return ResourceManager.GetString("FTPImageDaysAgo", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 FTP空间: 的本地化字符串。
+        /// </summary>
+        public static string FTPSpace {
+            get {
+                return ResourceManager.GetString("FTPSpace", resourceCulture);
             }
         }
         
@@ -736,6 +898,15 @@ namespace JayTom.Dws.Client.Languages {
         }
         
         /// <summary>
+        ///   查找类似 工业相机 的本地化字符串。
+        /// </summary>
+        public static string IndustrialCamera {
+            get {
+                return ResourceManager.GetString("IndustrialCamera", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查找类似 内容输入 的本地化字符串。
         /// </summary>
         public static string InputContent {
@@ -759,6 +930,15 @@ namespace JayTom.Dws.Client.Languages {
         public static string InputTemplate {
             get {
                 return ResourceManager.GetString("InputTemplate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 接口参数: 的本地化字符串。
+        /// </summary>
+        public static string InterfaceParameters {
+            get {
+                return ResourceManager.GetString("InterfaceParameters", resourceCulture);
             }
         }
         
@@ -885,6 +1065,15 @@ namespace JayTom.Dws.Client.Languages {
         public static string IsUseFusedWeightTimeout {
             get {
                 return ResourceManager.GetString("IsUseFusedWeightTimeout", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 是否使用Json格式: 的本地化字符串。
+        /// </summary>
+        public static string IsUseJSONFormat {
+            get {
+                return ResourceManager.GetString("IsUseJSONFormat", resourceCulture);
             }
         }
         
@@ -1033,11 +1222,38 @@ namespace JayTom.Dws.Client.Languages {
         }
         
         /// <summary>
+        ///   查找类似 天之前的日志图片 的本地化字符串。
+        /// </summary>
+        public static string LogDataDaysAgo {
+            get {
+                return ResourceManager.GetString("LogDataDaysAgo", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 日志信息 的本地化字符串。
+        /// </summary>
+        public static string LogInformation {
+            get {
+                return ResourceManager.GetString("LogInformation", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查找类似 日志管理 的本地化字符串。
         /// </summary>
         public static string LogManagement {
             get {
                 return ResourceManager.GetString("LogManagement", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 手动清理: 的本地化字符串。
+        /// </summary>
+        public static string ManualCleanup {
+            get {
+                return ResourceManager.GetString("ManualCleanup", resourceCulture);
             }
         }
         
@@ -1105,6 +1321,15 @@ namespace JayTom.Dws.Client.Languages {
         }
         
         /// <summary>
+        ///   查找类似 磁盘最小可用空间保障 的本地化字符串。
+        /// </summary>
+        public static string MinAvailable {
+            get {
+                return ResourceManager.GetString("MinAvailable", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查找类似 最小条码位数: 的本地化字符串。
         /// </summary>
         public static string MinBarcodeLength {
@@ -1119,6 +1344,15 @@ namespace JayTom.Dws.Client.Languages {
         public static string MinimumLength {
             get {
                 return ResourceManager.GetString("MinimumLength", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 磁盘最少保留 的本地化字符串。
+        /// </summary>
+        public static string MinimumRetention {
+            get {
+                return ResourceManager.GetString("MinimumRetention", resourceCulture);
             }
         }
         
@@ -1213,6 +1447,24 @@ namespace JayTom.Dws.Client.Languages {
         }
         
         /// <summary>
+        ///   查找类似 非程序占用 的本地化字符串。
+        /// </summary>
+        public static string Non_ProgramUsage {
+            get {
+                return ResourceManager.GetString("Non-ProgramUsage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 不使用接口 的本地化字符串。
+        /// </summary>
+        public static string NoneApi {
+            get {
+                return ResourceManager.GetString("NoneApi", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查找类似 不称重 的本地化字符串。
         /// </summary>
         public static string NoWeighing {
@@ -1303,6 +1555,24 @@ namespace JayTom.Dws.Client.Languages {
         }
         
         /// <summary>
+        ///   查找类似 天之前的全景图片 的本地化字符串。
+        /// </summary>
+        public static string PanoramicImageDaysAgo {
+            get {
+                return ResourceManager.GetString("PanoramicImageDaysAgo", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 全景图片 的本地化字符串。
+        /// </summary>
+        public static string PanoramicImages {
+            get {
+                return ResourceManager.GetString("PanoramicImages", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查找类似 效验位: 的本地化字符串。
         /// </summary>
         public static string ParityBit {
@@ -1375,6 +1645,15 @@ namespace JayTom.Dws.Client.Languages {
         }
         
         /// <summary>
+        ///   查找类似 正则匹配: 的本地化字符串。
+        /// </summary>
+        public static string RegularMatching {
+            get {
+                return ResourceManager.GetString("RegularMatching", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查找类似 问答式 的本地化字符串。
         /// </summary>
         public static string Request {
@@ -1402,6 +1681,24 @@ namespace JayTom.Dws.Client.Languages {
         }
         
         /// <summary>
+        ///   查找类似 请求超时时间: 的本地化字符串。
+        /// </summary>
+        public static string RequestTimeout {
+            get {
+                return ResourceManager.GetString("RequestTimeout", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 响应的内容: 的本地化字符串。
+        /// </summary>
+        public static string ResponseContent {
+            get {
+                return ResourceManager.GetString("ResponseContent", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查找类似 结果判断 的本地化字符串。
         /// </summary>
         public static string ResultEvaluation {
@@ -1416,6 +1713,15 @@ namespace JayTom.Dws.Client.Languages {
         public static string RetryCount {
             get {
                 return ResourceManager.GetString("RetryCount", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 返回成功验证: 的本地化字符串。
+        /// </summary>
+        public static string ReturnSuccessValidation {
+            get {
+                return ResourceManager.GetString("ReturnSuccessValidation", resourceCulture);
             }
         }
         
@@ -1474,6 +1780,24 @@ namespace JayTom.Dws.Client.Languages {
         }
         
         /// <summary>
+        ///   查找类似 天之前的扫码图片 的本地化字符串。
+        /// </summary>
+        public static string ScannedImageDaysAgo {
+            get {
+                return ResourceManager.GetString("ScannedImageDaysAgo", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 扫码图片 的本地化字符串。
+        /// </summary>
+        public static string ScannedImages {
+            get {
+                return ResourceManager.GetString("ScannedImages", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查找类似 扫码相机 的本地化字符串。
         /// </summary>
         public static string ScannerCamera {
@@ -1510,6 +1834,15 @@ namespace JayTom.Dws.Client.Languages {
         }
         
         /// <summary>
+        ///   查找类似 使用的Api接口: 的本地化字符串。
+        /// </summary>
+        public static string SelectedApi {
+            get {
+                return ResourceManager.GetString("SelectedApi", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查找类似 发送延迟: 的本地化字符串。
         /// </summary>
         public static string SendDelay {
@@ -1537,6 +1870,15 @@ namespace JayTom.Dws.Client.Languages {
         }
         
         /// <summary>
+        ///   查找类似 串口连接 的本地化字符串。
+        /// </summary>
+        public static string SerialPortConnection {
+            get {
+                return ResourceManager.GetString("SerialPortConnection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查找类似 串口名: 的本地化字符串。
         /// </summary>
         public static string SerialPortName {
@@ -1551,6 +1893,15 @@ namespace JayTom.Dws.Client.Languages {
         public static string SingleCodeScanInterval {
             get {
                 return ResourceManager.GetString("SingleCodeScanInterval", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 智能相机 的本地化字符串。
+        /// </summary>
+        public static string SmartCamera {
+            get {
+                return ResourceManager.GetString("SmartCamera", resourceCulture);
             }
         }
         
@@ -1704,6 +2055,15 @@ namespace JayTom.Dws.Client.Languages {
         public static string SubDirectory {
             get {
                 return ResourceManager.GetString("SubDirectory", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 成功 的本地化字符串。
+        /// </summary>
+        public static string Success {
+            get {
+                return ResourceManager.GetString("Success", resourceCulture);
             }
         }
         
@@ -1969,6 +2329,15 @@ namespace JayTom.Dws.Client.Languages {
         }
         
         /// <summary>
+        ///   查找类似 Tcp连接 的本地化字符串。
+        /// </summary>
+        public static string TCPConnection {
+            get {
+                return ResourceManager.GetString("TCPConnection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查找类似 测试图片路径: 的本地化字符串。
         /// </summary>
         public static string TestImagePath {
@@ -2059,6 +2428,15 @@ namespace JayTom.Dws.Client.Languages {
         }
         
         /// <summary>
+        ///   查找类似 Usb连接 的本地化字符串。
+        /// </summary>
+        public static string USBConnection {
+            get {
+                return ResourceManager.GetString("USBConnection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查找类似 用户名: 的本地化字符串。
         /// </summary>
         public static string Username {
@@ -2095,11 +2473,29 @@ namespace JayTom.Dws.Client.Languages {
         }
         
         /// <summary>
+        ///   查找类似 录像相机/安防相机 的本地化字符串。
+        /// </summary>
+        public static string VideoCameraSecurityCamera {
+            get {
+                return ResourceManager.GetString("VideoCameraSecurityCamera", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查找类似 体积: 的本地化字符串。
         /// </summary>
         public static string Volume {
             get {
                 return ResourceManager.GetString("Volume", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 体积相机 的本地化字符串。
+        /// </summary>
+        public static string VolumeCamera {
+            get {
+                return ResourceManager.GetString("VolumeCamera", resourceCulture);
             }
         }
         
@@ -2248,6 +2644,33 @@ namespace JayTom.Dws.Client.Languages {
         }
         
         /// <summary>
+        ///   查找类似 体积设置相关 的本地化字符串。
+        /// </summary>
+        public static string 体积设置相关 {
+            get {
+                return ResourceManager.GetString("体积设置相关", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 内容输入相关设置 的本地化字符串。
+        /// </summary>
+        public static string 内容输入相关设置 {
+            get {
+                return ResourceManager.GetString("内容输入相关设置", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 切换Api接口失败! 的本地化字符串。
+        /// </summary>
+        public static string 切换Api接口失败 {
+            get {
+                return ResourceManager.GetString("切换Api接口失败", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查找类似 语言设置失败 的本地化字符串。
         /// </summary>
         public static string 切换语言失败提示 {
@@ -2262,6 +2685,96 @@ namespace JayTom.Dws.Client.Languages {
         public static string 切换语言成功提示 {
             get {
                 return ResourceManager.GetString("切换语言成功提示", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 存图相关设置 的本地化字符串。
+        /// </summary>
+        public static string 存图相关设置 {
+            get {
+                return ResourceManager.GetString("存图相关设置", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 数据信息管理 的本地化字符串。
+        /// </summary>
+        public static string 数据信息管理 {
+            get {
+                return ResourceManager.GetString("数据信息管理", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 条码过滤相关设置 的本地化字符串。
+        /// </summary>
+        public static string 条码过滤相关设置 {
+            get {
+                return ResourceManager.GetString("条码过滤相关设置", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 相机检索成功 的本地化字符串。
+        /// </summary>
+        public static string 相机检索成功 {
+            get {
+                return ResourceManager.GetString("相机检索成功", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 相机管理配置 的本地化字符串。
+        /// </summary>
+        public static string 相机管理配置 {
+            get {
+                return ResourceManager.GetString("相机管理配置", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 磅秤和称重设置相关 的本地化字符串。
+        /// </summary>
+        public static string 磅秤和称重设置相关 {
+            get {
+                return ResourceManager.GetString("磅秤和称重设置相关", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 结果输出相关设置 的本地化字符串。
+        /// </summary>
+        public static string 结果输出相关设置 {
+            get {
+                return ResourceManager.GetString("结果输出相关设置", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 设置参数失败! 的本地化字符串。
+        /// </summary>
+        public static string 设置参数失败 {
+            get {
+                return ResourceManager.GetString("设置参数失败", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 运行日志、设备日志、通讯日志管理 的本地化字符串。
+        /// </summary>
+        public static string 运行日志_设备日志_通讯日志管理 {
+            get {
+                return ResourceManager.GetString("运行日志\\设备日志\\通讯日志管理", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 释放缓存/空间的方案 的本地化字符串。
+        /// </summary>
+        public static string 释放缓存_空间的方案 {
+            get {
+                return ResourceManager.GetString("释放缓存/空间的方案", resourceCulture);
             }
         }
     }

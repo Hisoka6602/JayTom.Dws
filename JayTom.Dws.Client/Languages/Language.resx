@@ -117,6 +117,10 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="3DCamera/VolumeCamera" xml:space="preserve">
+    <value>3D相机/体积相机</value>
+    <comment>12-3D相机/体积相机</comment>
+  </data>
   <data name="Add" xml:space="preserve">
     <value>添加</value>
     <comment>10-添加</comment>
@@ -181,13 +185,25 @@
     <value>成功</value>
     <comment>5-Api上传成功</comment>
   </data>
+  <data name="Api上传接口设置" xml:space="preserve">
+    <value>Api上传接口设置</value>
+    <comment>12-Api上传接口设置</comment>
+  </data>
   <data name="ApplyAll" xml:space="preserve">
     <value>应用全部</value>
     <comment>7-应用全部</comment>
   </data>
+  <data name="AutomaticCleanup" xml:space="preserve">
+    <value>自动清理:</value>
+    <comment>10-自动清理</comment>
+  </data>
   <data name="AvailableMemory" xml:space="preserve">
     <value>可用内存:</value>
     <comment>4-可用内存</comment>
+  </data>
+  <data name="AvailableSpace" xml:space="preserve">
+    <value>MB空间(清理等级最高)</value>
+    <comment>10-可用空间</comment>
   </data>
   <data name="BarCode" xml:space="preserve">
     <value>包裹条码</value>
@@ -196,6 +212,10 @@
   <data name="BarcodeCondition" xml:space="preserve">
     <value>条码:</value>
     <comment>6-条码条件</comment>
+  </data>
+  <data name="BarcodeDataDaysAgo" xml:space="preserve">
+    <value>天之前的条码数据</value>
+    <comment>10-多少天之前的条码数据</comment>
   </data>
   <data name="BarcodeIntervalLimit" xml:space="preserve">
     <value>允许条码间隔数量:</value>
@@ -228,6 +248,10 @@
   <data name="BindToScannerCamera" xml:space="preserve">
     <value>绑定到扫码相机</value>
     <comment>7-绑定到扫码相机</comment>
+  </data>
+  <data name="BluetoothConnection" xml:space="preserve">
+    <value>蓝牙连接</value>
+    <comment>12-蓝牙连接</comment>
   </data>
   <data name="BottomLeftCorner" xml:space="preserve">
     <value>左下角</value>
@@ -273,13 +297,25 @@
     <value>体积相机</value>
     <comment>7-体积相机</comment>
   </data>
+  <data name="CompleteMatch" xml:space="preserve">
+    <value>完全匹配:</value>
+    <comment>10-完全匹配</comment>
+  </data>
   <data name="ConditionSeparationInstruction" xml:space="preserve">
     <value>多个条件请使用英文;号分割</value>
     <comment>8-多条件分割说明</comment>
   </data>
+  <data name="ContainString" xml:space="preserve">
+    <value>包含字符串:</value>
+    <comment>10-包含字符串</comment>
+  </data>
   <data name="Content" xml:space="preserve">
     <value>内容</value>
     <comment>8-内容</comment>
+  </data>
+  <data name="ContentContained" xml:space="preserve">
+    <value>包含的内容:</value>
+    <comment>10-包含的内容</comment>
   </data>
   <data name="ContentFormat" xml:space="preserve">
     <value>内容格式(Json)</value>
@@ -300,6 +336,14 @@
   <data name="CpuUsageRate" xml:space="preserve">
     <value>Cpu使用率:</value>
     <comment>4-Cpu使用率</comment>
+  </data>
+  <data name="Custom" xml:space="preserve">
+    <value>自定义</value>
+    <comment>10-自定义</comment>
+  </data>
+  <data name="Data" xml:space="preserve">
+    <value>数据</value>
+    <comment>10-数据</comment>
   </data>
   <data name="DataBits" xml:space="preserve">
     <value>数据位:</value>
@@ -329,9 +373,21 @@
     <value>小数保留位数:</value>
     <comment>9-小数保留位数</comment>
   </data>
+  <data name="DefaultApi" xml:space="preserve">
+    <value>默认Api接口</value>
+    <comment>10-默认Api接口</comment>
+  </data>
   <data name="DelayTriggerTime" xml:space="preserve">
     <value>延迟触发时间(毫秒):</value>
     <comment>7-延迟触发时间</comment>
+  </data>
+  <data name="Delete" xml:space="preserve">
+    <value>删除</value>
+    <comment>10-删除</comment>
+  </data>
+  <data name="DiskSpace" xml:space="preserve">
+    <value>磁盘空间:</value>
+    <comment>10-磁盘空间</comment>
   </data>
   <data name="DynamicWeighing" xml:space="preserve">
     <value>动态称重</value>
@@ -349,6 +405,10 @@
     <value>整数结束位置:</value>
     <comment>9-整数结束位置</comment>
   </data>
+  <data name="EthernetConnection" xml:space="preserve">
+    <value>网口连接</value>
+    <comment>12-网口连接</comment>
+  </data>
   <data name="ExceptionCount" xml:space="preserve">
     <value>异常数量</value>
     <comment>1-异常数量(主页)</comment>
@@ -356,6 +416,10 @@
   <data name="Export" xml:space="preserve">
     <value>导出</value>
     <comment>6-导出</comment>
+  </data>
+  <data name="Failure" xml:space="preserve">
+    <value>失败</value>
+    <comment>12-失败</comment>
   </data>
   <data name="FailureAudio" xml:space="preserve">
     <value>失败音频:</value>
@@ -368,6 +432,14 @@
   <data name="FirstPage" xml:space="preserve">
     <value>首页</value>
     <comment>6-首页</comment>
+  </data>
+  <data name="FTPImageDaysAgo" xml:space="preserve">
+    <value>天之前的FTP图片 </value>
+    <comment>10-多少天之前的FTP图片</comment>
+  </data>
+  <data name="FTPSpace" xml:space="preserve">
+    <value>FTP空间:</value>
+    <comment>10-FTP空间</comment>
   </data>
   <data name="FTPUpload" xml:space="preserve">
     <value>FTP上传:</value>
@@ -417,6 +489,10 @@
     <value>存图类型:</value>
     <comment>8-存图类型</comment>
   </data>
+  <data name="IndustrialCamera" xml:space="preserve">
+    <value>工业相机</value>
+    <comment>12-工业相机</comment>
+  </data>
   <data name="InputContent" xml:space="preserve">
     <value>内容输入</value>
     <comment>0-内容输入(菜单)</comment>
@@ -428,6 +504,10 @@
   <data name="InputTemplate" xml:space="preserve">
     <value>输入模板:</value>
     <comment>10-输入模板</comment>
+  </data>
+  <data name="InterfaceParameters" xml:space="preserve">
+    <value>接口参数:</value>
+    <comment>10-接口参数</comment>
   </data>
   <data name="IPAddress" xml:space="preserve">
     <value>IP地址:</value>
@@ -484,6 +564,10 @@
   <data name="IsUseFusedWeightTimeout" xml:space="preserve">
     <value>是否使用融合重量超时:</value>
     <comment>9-是否使用融合重量超时</comment>
+  </data>
+  <data name="IsUseJSONFormat" xml:space="preserve">
+    <value>是否使用Json格式:</value>
+    <comment>10-是否使用Json格式</comment>
   </data>
   <data name="IsUsePositionOutput" xml:space="preserve">
     <value>使用位置输出</value>
@@ -549,9 +633,21 @@
     <value>加载图片</value>
     <comment>8-加载图片</comment>
   </data>
+  <data name="LogDataDaysAgo" xml:space="preserve">
+    <value>天之前的日志图片</value>
+    <comment>10-多少天之前的日志图片</comment>
+  </data>
+  <data name="LogInformation" xml:space="preserve">
+    <value>日志信息</value>
+    <comment>10-日志信息</comment>
+  </data>
   <data name="LogManagement" xml:space="preserve">
     <value>日志管理</value>
     <comment>0-日志管理(菜单)</comment>
+  </data>
+  <data name="ManualCleanup" xml:space="preserve">
+    <value>手动清理:</value>
+    <comment>10-手动清理</comment>
   </data>
   <data name="MaxBarcodeLength" xml:space="preserve">
     <value>最大条码位数:</value>
@@ -581,6 +677,10 @@
     <value>内存使用率:</value>
     <comment>4-内存使用率</comment>
   </data>
+  <data name="MinAvailable" xml:space="preserve">
+    <value>磁盘最小可用空间保障</value>
+    <comment>10-磁盘最小可用空间保障</comment>
+  </data>
   <data name="MinBarcodeLength" xml:space="preserve">
     <value>最小条码位数:</value>
     <comment>8-最小条码位数</comment>
@@ -588,6 +688,10 @@
   <data name="MinimumLength" xml:space="preserve">
     <value>最小测量长度:</value>
     <comment>7-最小测量长度</comment>
+  </data>
+  <data name="MinimumRetention" xml:space="preserve">
+    <value>磁盘最少保留</value>
+    <comment>10-磁盘最少保留</comment>
   </data>
   <data name="MinimumSynchronizationTime" xml:space="preserve">
     <value>最小同步时间：</value>
@@ -629,6 +733,14 @@
     <value>没有数据</value>
     <comment>4-异常状态条-没有数据</comment>
   </data>
+  <data name="Non-ProgramUsage" xml:space="preserve">
+    <value>非程序占用</value>
+    <comment>10-非程序占用</comment>
+  </data>
+  <data name="NoneApi" xml:space="preserve">
+    <value>不使用接口</value>
+    <comment>10-不使用接口</comment>
+  </data>
   <data name="NoWeighing" xml:space="preserve">
     <value>不称重</value>
     <comment>9-不称重</comment>
@@ -669,6 +781,14 @@
     <value>全景图</value>
     <comment>8-全景图</comment>
   </data>
+  <data name="PanoramicImageDaysAgo" xml:space="preserve">
+    <value>天之前的全景图片</value>
+    <comment>10-多少天之前的全景图片</comment>
+  </data>
+  <data name="PanoramicImages" xml:space="preserve">
+    <value>全景图片</value>
+    <comment>10-全景图片</comment>
+  </data>
   <data name="ParityBit" xml:space="preserve">
     <value>效验位:</value>
     <comment>9-效验位</comment>
@@ -701,6 +821,10 @@
     <value>正则表达式:</value>
     <comment>8-正则表达式</comment>
   </data>
+  <data name="RegularMatching" xml:space="preserve">
+    <value>正则匹配:</value>
+    <comment>10-正则匹配</comment>
+  </data>
   <data name="Request" xml:space="preserve">
     <value>问答式</value>
     <comment>9-问答式</comment>
@@ -713,6 +837,14 @@
     <value>发送格式:</value>
     <comment>9-发送格式</comment>
   </data>
+  <data name="RequestTimeout" xml:space="preserve">
+    <value>请求超时时间:</value>
+    <comment>10-请求超时时间</comment>
+  </data>
+  <data name="ResponseContent" xml:space="preserve">
+    <value>响应的内容:</value>
+    <comment>10-响应的内容</comment>
+  </data>
   <data name="ResultEvaluation" xml:space="preserve">
     <value>结果判断</value>
     <comment>10-结果判断</comment>
@@ -720,6 +852,10 @@
   <data name="RetryCount" xml:space="preserve">
     <value>重试次数:</value>
     <comment>10-重试次数</comment>
+  </data>
+  <data name="ReturnSuccessValidation" xml:space="preserve">
+    <value>返回成功验证:</value>
+    <comment>10-返回成功验证</comment>
   </data>
   <data name="RootDirectory" xml:space="preserve">
     <value>根目录</value>
@@ -745,6 +881,14 @@
     <value>扫码间隔:</value>
     <comment>8-扫码间隔</comment>
   </data>
+  <data name="ScannedImageDaysAgo" xml:space="preserve">
+    <value>天之前的扫码图片</value>
+    <comment>10-多少天之前的图片数据</comment>
+  </data>
+  <data name="ScannedImages" xml:space="preserve">
+    <value>扫码图片</value>
+    <comment>10-扫码图片</comment>
+  </data>
   <data name="ScannerCamera" xml:space="preserve">
     <value>扫码相机</value>
     <comment>7-扫码相机</comment>
@@ -761,6 +905,10 @@
     <value>查找</value>
     <comment>6-查找</comment>
   </data>
+  <data name="SelectedApi" xml:space="preserve">
+    <value>使用的Api接口:</value>
+    <comment>10-使用的Api接口</comment>
+  </data>
   <data name="SendDelay" xml:space="preserve">
     <value>发送延迟:</value>
     <comment>10-发送延迟</comment>
@@ -773,6 +921,10 @@
     <value>分隔符</value>
     <comment>10-分隔符</comment>
   </data>
+  <data name="SerialPortConnection" xml:space="preserve">
+    <value>串口连接</value>
+    <comment>12-串口连接</comment>
+  </data>
   <data name="SerialPortName" xml:space="preserve">
     <value>串口名:</value>
     <comment>9-串口名</comment>
@@ -780,6 +932,10 @@
   <data name="SingleCodeScanInterval" xml:space="preserve">
     <value>单码扫描间隔时间:</value>
     <comment>8-单码扫描间隔时间</comment>
+  </data>
+  <data name="SmartCamera" xml:space="preserve">
+    <value>智能相机</value>
+    <comment>12-智能相机</comment>
   </data>
   <data name="StabilityAccuracy" xml:space="preserve">
     <value>稳定精度:</value>
@@ -848,6 +1004,10 @@
   <data name="SubDirectory" xml:space="preserve">
     <value>子路径:</value>
     <comment>8-子路径</comment>
+  </data>
+  <data name="Success" xml:space="preserve">
+    <value>成功</value>
+    <comment>12-成功</comment>
   </data>
   <data name="SuccessAudio" xml:space="preserve">
     <value>成功音频:</value>
@@ -965,6 +1125,10 @@
     <value>宽度</value>
     <comment>2-宽度(主页-表头)</comment>
   </data>
+  <data name="TCPConnection" xml:space="preserve">
+    <value>Tcp连接</value>
+    <comment>12-Tcp连接</comment>
+  </data>
   <data name="TestImagePath" xml:space="preserve">
     <value>测试图片路径:</value>
     <comment>8-测试图片路径</comment>
@@ -1005,6 +1169,10 @@
     <value>上传数量</value>
     <comment>1-上传数量(主页)</comment>
   </data>
+  <data name="USBConnection" xml:space="preserve">
+    <value>Usb连接</value>
+    <comment>12-Usb连接</comment>
+  </data>
   <data name="Username" xml:space="preserve">
     <value>用户名:</value>
     <comment>8-用户名</comment>
@@ -1021,9 +1189,17 @@
     <value>固定重量的值:</value>
     <comment>9-固定重量的值</comment>
   </data>
+  <data name="VideoCameraSecurityCamera" xml:space="preserve">
+    <value>录像相机/安防相机</value>
+    <comment>12-录像相机/安防相机</comment>
+  </data>
   <data name="Volume" xml:space="preserve">
     <value>体积:</value>
     <comment>1-体积(主页)</comment>
+  </data>
+  <data name="VolumeCamera" xml:space="preserve">
+    <value>体积相机</value>
+    <comment>12-体积相机</comment>
   </data>
   <data name="VolumeImage" xml:space="preserve">
     <value>体积图</value>
@@ -1089,6 +1265,18 @@
     <value>年份</value>
     <comment>8-年份</comment>
   </data>
+  <data name="体积设置相关" xml:space="preserve">
+    <value>体积设置相关</value>
+    <comment>12-体积设置相关</comment>
+  </data>
+  <data name="内容输入相关设置" xml:space="preserve">
+    <value>内容输入相关设置</value>
+    <comment>12-内容输入相关设置</comment>
+  </data>
+  <data name="切换Api接口失败" xml:space="preserve">
+    <value>切换Api接口失败!</value>
+    <comment>12-提示内容</comment>
+  </data>
   <data name="切换语言失败提示" xml:space="preserve">
     <value>语言设置失败</value>
     <comment>1-语言设置失败(主页-提示)</comment>
@@ -1096,5 +1284,45 @@
   <data name="切换语言成功提示" xml:space="preserve">
     <value>语言设置成功,重启程序生效</value>
     <comment>1-语言设置成功(主页-提示)</comment>
+  </data>
+  <data name="存图相关设置" xml:space="preserve">
+    <value>存图相关设置</value>
+    <comment>12-存图相关设置</comment>
+  </data>
+  <data name="数据信息管理" xml:space="preserve">
+    <value>数据信息管理</value>
+    <comment>12-数据信息管理</comment>
+  </data>
+  <data name="条码过滤相关设置" xml:space="preserve">
+    <value>条码过滤相关设置</value>
+    <comment>12-条码过滤相关设置</comment>
+  </data>
+  <data name="相机检索成功" xml:space="preserve">
+    <value>相机检索成功</value>
+    <comment>12-相机检索成功</comment>
+  </data>
+  <data name="相机管理配置" xml:space="preserve">
+    <value>相机管理配置</value>
+    <comment>12-相机管理配置</comment>
+  </data>
+  <data name="磅秤和称重设置相关" xml:space="preserve">
+    <value>磅秤和称重设置相关</value>
+    <comment>12-磅秤和称重设置相关</comment>
+  </data>
+  <data name="结果输出相关设置" xml:space="preserve">
+    <value>结果输出相关设置</value>
+    <comment>12-结果输出相关设置</comment>
+  </data>
+  <data name="设置参数失败" xml:space="preserve">
+    <value>设置参数失败!</value>
+    <comment>12-设置参数失败</comment>
+  </data>
+  <data name="运行日志\设备日志\通讯日志管理" xml:space="preserve">
+    <value>运行日志、设备日志、通讯日志管理</value>
+    <comment>12-运行日志\设备日志\通讯日志管理</comment>
+  </data>
+  <data name="释放缓存/空间的方案" xml:space="preserve">
+    <value>释放缓存/空间的方案</value>
+    <comment>12-释放缓存/空间的方案</comment>
   </data>
 </root>

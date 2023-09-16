@@ -19,6 +19,7 @@ using JayTom.Dws.Domain.Repository.LocalConf;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.StartPanel;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
+
     public class BarcodeFilterSettingsPageViewModel : BindableBase {
         private readonly IConfigRepository _configRepository;
         private int _minimumLength = 10;
@@ -102,6 +103,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             get => _scanInterval;
             set => SetProperty(ref _scanInterval, value);
         }
+
         /// <summary>
         /// 重复条码过滤数量
         /// </summary>
@@ -205,7 +207,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     }
 
                     IsSavingInProgress = false;
-                    BarcodeFilterSettingsMessageQueue.Enqueue($"保存{(insertOrUpdate ? "成功" : "失败")}");
+                    BarcodeFilterSettingsMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("Save") ?? string.Empty}{(insertOrUpdate ?
+                        Languages.Language.ResourceManager.GetString("Success") :
+                        Languages.Language.ResourceManager.GetString("Failure"))}");
                 });
             }
         }

@@ -665,44 +665,6 @@ namespace JayTom.Dws.Client.Service.Device {
             DeviceException?.Invoke(this, e);
         }
 
-        /// <summary>
-        /// 判断绑定
-        /// </summary>
-        /// <param name="sdkCameras"></param>
-        /// <param name="configInfoModels"></param>
-        /// <param name="cameraType"></param>
-        /// <returns></returns>
-        private List<ICamera> CheckAndAddCamera(List<ICamera> sdkCameras, List<BaseCameraConfigInfoModel> configInfoModels, string cameraType) {
-            var cameras = new List<ICamera>();
-            foreach (var infoModel in configInfoModels) {
-                var camera = sdkCameras.FirstOrDefault(f => f?.Info?.SerialNumber?.Equals(infoModel.SerialNumber) == true);
-
-                if (camera is not null && cameras?.Any(a => a?.Info?.SerialNumber == camera?.Info?.SerialNumber) != true) {
-                    switch (cameraType) {
-                        case "扫码":
-                            camera.BindingType = CameraBindingType.ScannerCamera;
-                            break;
-
-                        case "全景":
-                            camera.BindingType = CameraBindingType.PanoramicCamera;
-                            if (camera.Info != null) camera.Info.Type = CameraType.PanoramicCamera;
-                            break;
-
-                        case "体积":
-                            camera.BindingType = CameraBindingType.VolumeCamera;
-                            break;
-                    }
-                    cameras?.Add(camera);
-                }
-                else {
-                    OnDeviceException(new DeviceExceptionEventArgs() {
-                        ExceptionMessage = new Exception($"{cameraType}相机:[名称:{infoModel.Name},序列号:{infoModel.SerialNumber}]未连接!")
-                    });
-                }
-            }
-            return cameras ?? new List<ICamera>();
-        }
-
         protected virtual async void OnCameraReleased(string e) {
             await Task.Yield();
             CameraReleased?.Invoke(this, e);

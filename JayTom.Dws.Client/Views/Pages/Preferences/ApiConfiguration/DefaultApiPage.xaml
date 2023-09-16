@@ -7,6 +7,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:dataTemplateSelectors="clr-namespace:JayTom.Dws.Client.DataTemplateSelectors"
     xmlns:imageSettingModels="clr-namespace:JayTom.Dws.Client.Models.ImageSettingModels"
+    xmlns:languages="clr-namespace:JayTom.Dws.Client.Languages"
     xmlns:local="clr-namespace:JayTom.Dws.Client.Views.Pages.Preferences.ApiConfiguration"
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -115,7 +116,7 @@
                         FontSize="16"
                         FontWeight="Bold"
                         Foreground="DarkGray"
-                        Text="数据模板:" />
+                        Text="{x:Static languages:Language.DataTemplate}" />
                 </StackPanel>
                 <StackPanel Margin="50,10,0,0" Orientation="Horizontal">
                     <TextBlock
@@ -124,7 +125,7 @@
                         FontSize="13"
                         FontWeight="Bold"
                         Foreground="DarkGray"
-                        Text="输出数据:" />
+                        Text="{x:Static languages:Language.OutputData}" />
                     <StackPanel Orientation="Horizontal">
                         <Button
                             Height="30"
@@ -136,7 +137,7 @@
                             CommandParameter="'{BarCode}'"
                             Focusable="False"
                             Style="{StaticResource MaterialDesignRaisedDarkButton}">
-                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="条码" />
+                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.TableHeaderBarCode}" />
                         </Button>
                         <Button
                             Height="30"
@@ -148,7 +149,7 @@
                             CommandParameter="'{Weight}'"
                             Focusable="False"
                             Style="{StaticResource MaterialDesignRaisedDarkButton}">
-                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="重量" />
+                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.TableHeaderWeight}" />
                         </Button>
                         <Button
                             Height="30"
@@ -160,7 +161,7 @@
                             CommandParameter="'{ScanTime}'"
                             Focusable="False"
                             Style="{StaticResource MaterialDesignRaisedDarkButton}">
-                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="扫码时间" />
+                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.TableHeaderScanTime}" />
                         </Button>
                         <Button
                             Height="30"
@@ -172,7 +173,7 @@
                             CommandParameter="'{TimestampedGuid}'"
                             Focusable="False"
                             Style="{StaticResource MaterialDesignRaisedDarkButton}">
-                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="扫码时间戳" />
+                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.TableHeaderTimestampGuid}" />
                         </Button>
                         <Button
                             Height="30"
@@ -184,7 +185,7 @@
                             CommandParameter="'{Length}'"
                             Focusable="False"
                             Style="{StaticResource MaterialDesignRaisedDarkButton}">
-                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="长" />
+                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.TableHeaderLength}" />
                         </Button>
                         <Button
                             Height="30"
@@ -196,7 +197,7 @@
                             CommandParameter="'{Width}'"
                             Focusable="False"
                             Style="{StaticResource MaterialDesignRaisedDarkButton}">
-                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="宽" />
+                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.TableHeaderWidth}" />
                         </Button>
                         <Button
                             Height="30"
@@ -208,7 +209,7 @@
                             CommandParameter="'{Height}'"
                             Focusable="False"
                             Style="{StaticResource MaterialDesignRaisedDarkButton}">
-                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="高" />
+                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.TableHeaderHeight}" />
                         </Button>
                         <Button
                             Height="30"
@@ -220,7 +221,7 @@
                             CommandParameter="'{Volume}'"
                             Focusable="False"
                             Style="{StaticResource MaterialDesignRaisedDarkButton}">
-                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="体积" />
+                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.TableHeaderVolume}" />
                         </Button>
                         <Border
                             Margin="5,0"
@@ -259,7 +260,7 @@
                                     Focusable="False"
                                     Foreground="White"
                                     Style="{StaticResource MaterialDesignRaisedDarkButton}">
-                                    <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="自定义" />
+                                    <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.Custom}" />
                                 </Button>
                             </StackPanel>
                         </Border>
@@ -273,7 +274,7 @@
                     CornerRadius="5">
                     <Grid>
                         <Border
-                            Width="40"
+                            Width="50"
                             Margin="2"
                             HorizontalAlignment="Left"
                             Background="DarkGray"
@@ -285,13 +286,13 @@
                                 FontSize="12"
                                 FontWeight="Bold"
                                 Foreground="#2E2E2E"
-                                Text="内容" />
+                                Text="{x:Static languages:Language.Content}" />
                         </Border>
                         <ListView
                             Width="740"
                             Height="30"
                             MaxWidth="990"
-                            Margin="50,0,0,0"
+                            Margin="60,0,0,0"
                             Focusable="False"
                             ItemTemplateSelector="{StaticResource DefaultApiDataTemplateSelectors}"
                             ItemsSource="{Binding DefaultApiInfo.DataTemplate, UpdateSourceTrigger=PropertyChanged}"
@@ -351,7 +352,7 @@
                         FontSize="16"
                         FontWeight="Bold"
                         Foreground="DarkGray"
-                        Text="是否使用Json格式上传:" />
+                        Text="{x:Static languages:Language.IsUseJSONFormat}" />
                     <ToggleButton
                         Name="IsUseJsonUploadToggleButton"
                         materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
@@ -371,7 +372,7 @@
                         FontSize="13"
                         FontWeight="Bold"
                         Foreground="DarkGray"
-                        Text="Json模板内容:" />
+                        Text="{x:Static languages:Language.DataTemplate}" />
                     <Border
                         Height="170"
                         MinHeight="80"
@@ -416,7 +417,7 @@
                         FontSize="16"
                         FontWeight="Bold"
                         Foreground="DarkGray"
-                        Text="接口参数:" />
+                        Text="{x:Static languages:Language.InterfaceParameters}" />
                 </StackPanel>
                 <StackPanel Margin="50,0,0,0" Orientation="Horizontal">
                     <StackPanel Orientation="Horizontal">
@@ -458,7 +459,7 @@
                             FontSize="13"
                             FontWeight="Bold"
                             Foreground="DarkGray"
-                            Text="请求超时时间:" />
+                            Text="{x:Static languages:Language.RequestTimeout}" />
                         <Border
                             Margin="5"
                             HorizontalAlignment="Center"
@@ -501,14 +502,14 @@
                         FontSize="16"
                         FontWeight="Bold"
                         Foreground="DarkGray"
-                        Text="返回成功验证:" />
+                        Text="{x:Static languages:Language.ReturnSuccessValidation}" />
                 </StackPanel>
                 <StackPanel Margin="50,5,0,0" Orientation="Horizontal">
                     <StackPanel Orientation="Vertical">
                         <!--  完全匹配  -->
                         <RadioButton
                             Name="ExactMatchRadioButton"
-                            Content="完全匹配"
+                            Content="{x:Static languages:Language.CompleteMatch}"
                             Focusable="False"
                             FontSize="13"
                             FontWeight="Bold"
@@ -527,7 +528,7 @@
                                     FontSize="13"
                                     FontWeight="Bold"
                                     Foreground="DarkGray"
-                                    Text="响应的内容:" />
+                                    Text="{x:Static languages:Language.ResponseContent}" />
                                 <Border
                                     Margin="5"
                                     HorizontalAlignment="Center"
@@ -553,7 +554,7 @@
                         <!--  包含字符串  -->
                         <RadioButton
                             Name="ContainsStringRadioButton"
-                            Content="包含字符串"
+                            Content="{x:Static languages:Language.ContainString}"
                             Focusable="False"
                             FontSize="13"
                             FontWeight="Bold"
@@ -572,7 +573,7 @@
                                     FontSize="13"
                                     FontWeight="Bold"
                                     Foreground="DarkGray"
-                                    Text="包含的内容:" />
+                                    Text="{x:Static languages:Language.ContentContained}" />
                                 <Border
                                     Margin="5"
                                     HorizontalAlignment="Center"
@@ -598,7 +599,7 @@
                         <!--  正则匹配  -->
                         <RadioButton
                             Name="RegularExpressionRadioButton"
-                            Content="正则匹配"
+                            Content="{x:Static languages:Language.RegularMatching}"
                             Focusable="False"
                             FontSize="13"
                             FontWeight="Bold"
@@ -617,7 +618,7 @@
                                     FontSize="13"
                                     FontWeight="Bold"
                                     Foreground="DarkGray"
-                                    Text="正则表达式:" />
+                                    Text="{x:Static languages:Language.RegularExpression}" />
                                 <Border
                                     Margin="5"
                                     HorizontalAlignment="Center"
@@ -648,7 +649,6 @@
         <Button
             Grid.Row="1"
             Grid.Column="0"
-            Width="110"
             MinHeight="30"
             Margin="30,10"
             HorizontalAlignment="Left"
@@ -675,7 +675,7 @@
                         FontSize="14"
                         FontWeight="Bold"
                         Foreground="DarkGray"
-                        Text="保存设置" />
+                        Text="{x:Static languages:Language.SaveSettings}" />
                     <StackPanel.Style>
                         <Style TargetType="StackPanel">
                             <Setter Property="Visibility" Value="Visible" />

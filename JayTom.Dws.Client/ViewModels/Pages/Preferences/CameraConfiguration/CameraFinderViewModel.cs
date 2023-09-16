@@ -257,7 +257,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                     isSuccess = key;
                 }
 
-                CameraFinderMessageQueue.Enqueue($"相机:{obj.Name},绑定{(isSuccess ? "成功" : "失败")}");
+                CameraFinderMessageQueue.Enqueue($"相机:{obj.Name},绑定{(isSuccess ?
+                    Languages.Language.ResourceManager.GetString("Success") :
+                    Languages.Language.ResourceManager.GetString("Failure"))}");
                 _isExecuting = false;
             });
         }
@@ -298,7 +300,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                     isSuccess = key;
                 }
 
-                CameraFinderMessageQueue.Enqueue($"相机:{obj.Name},绑定{(isSuccess ? "成功" : "失败")}");
+                CameraFinderMessageQueue.Enqueue($"相机:{obj.Name},绑定{(isSuccess ?
+                    Languages.Language.ResourceManager.GetString("Success") : Languages.Language.ResourceManager.GetString("Failure"))}");
                 _isExecuting = false;
             });
         }
@@ -344,7 +347,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                     isSuccess = key;
                 }
 
-                CameraFinderMessageQueue.Enqueue($"相机:{obj.Name},绑定{(isSuccess ? "成功" : "失败")}");
+                CameraFinderMessageQueue.Enqueue($"相机:{obj.Name},绑定{(isSuccess ?
+                    Languages.Language.ResourceManager.GetString("Success") : Languages.Language.ResourceManager.GetString("Failure"))}");
                 _isExecuting = false;
             });
         }
@@ -393,7 +397,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                     isSuccess = key;
                 }
 
-                CameraFinderMessageQueue.Enqueue($"相机:{obj.Name},解绑{(isSuccess ? "成功" : "失败")}");
+                CameraFinderMessageQueue.Enqueue($"相机:{obj.Name},解绑{(isSuccess ?
+                    Languages.Language.ResourceManager.GetString("Success") : Languages.Language.ResourceManager.GetString("Failure"))}");
                 _isExecuting = false;
             });
         }

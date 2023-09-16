@@ -235,7 +235,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                         isSuccess = key;
                     }
                 }
-                VolumeCameraMessageQueue.Enqueue($"相机:{obj.Name},解绑{(isSuccess ? "成功" : "失败")}");
+                VolumeCameraMessageQueue.Enqueue($"相机:{obj.Name},解绑{(isSuccess
+                    ? Languages.Language.ResourceManager.GetString("Success") : Languages.Language.ResourceManager.GetString("Failure"))}");
             });
         }
 
@@ -273,7 +274,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                         isSuccess = key;
                     }
                 }
-                VolumeCameraMessageQueue.Enqueue($"相机:{obj.Name},保存{(isSuccess ? "成功" : "失败")}");
+                VolumeCameraMessageQueue.Enqueue($"相机:{obj.Name}, {Languages.Language.ResourceManager.GetString("Save") ?? string.Empty}{(isSuccess ?
+                    Languages.Language.ResourceManager.GetString("Success") : Languages.Language.ResourceManager.GetString("Failure"))}");
             });
         }
 
@@ -315,7 +317,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
 
                 //从数据库修改
                 //触发修改事件
-                VolumeCameraMessageQueue.Enqueue($"保存{(isSuccess ? "成功" : "失败")}");
+                VolumeCameraMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("Save") ?? string.Empty}{(isSuccess ?
+                    Languages.Language.ResourceManager.GetString("Success") : Languages.Language.ResourceManager.GetString("Failure"))}");
             });
         }
 
