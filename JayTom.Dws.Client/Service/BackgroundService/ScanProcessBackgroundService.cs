@@ -55,7 +55,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     BarCode = args.BarCode,
                     FilePath = args.FilePath,
                     ImageType = args.ImageType,
-                    CameraSerialNumber = args.CameraSerialNumber ?? string.Empty
+                    CameraSerialNumber = args.CameraSerialNumber ?? string.Empty,
+                    ScanTime = args.ScanTime,
                 });
             };
             _deviceService.CameraInitialized += delegate (object? sender, List<ICamera> list) {
@@ -492,6 +493,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             /// 相机序列号
             /// </summary>
             public string CameraSerialNumber { get; set; } = string.Empty;
+
+            /// <summary>
+            /// 扫码时间
+            /// </summary>
+            public DateTime ScanTime { get; set; }
         }
 
         /// <summary>

@@ -151,7 +151,8 @@ namespace JayTom.Dws.Client.Service.ImageStorage {
                             FilePath =
                                 $"{fullPath}\\{imageName}.{"jpg"}",
                             ImageType = type,
-                            SaveDateTime = DateTime.Now
+                            SaveDateTime = DateTime.Now,
+                            ScanTime = scanTime
                         });
                     }
                 }
@@ -169,7 +170,8 @@ namespace JayTom.Dws.Client.Service.ImageStorage {
                             FilePath =
                                 $"{fullPath}\\{imageName}.{"jpg"}",
                             ImageType = type,
-                            SaveDateTime = DateTime.Now
+                            SaveDateTime = DateTime.Now,
+                            ScanTime = scanTime
                         });
                     }
                 }

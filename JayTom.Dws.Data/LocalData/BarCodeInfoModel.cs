@@ -21,7 +21,7 @@ namespace JayTom.Dws.Data.LocalData {
         /// <summary>
         /// 条码
         /// </summary>
-        [Column("Barcode")]
+        [Column("Barcode"), Required]
         public string Barcode { get; set; } = string.Empty;
 
         /// <summary>
@@ -57,7 +57,7 @@ namespace JayTom.Dws.Data.LocalData {
         /// <summary>
         /// 扫码时间
         /// </summary>
-        [Column("ScanTime")]
+        [Column("ScanTime"), Required]
         public DateTime ScanTime { get; set; } = DateTime.MinValue;
 
         /// <summary>
@@ -96,11 +96,16 @@ namespace JayTom.Dws.Data.LocalData {
         [Column("BarcodeImagePath")]
         public string? BarcodeImagePath { get; set; }
 
-        /// <summary>
+        /*/// <summary>
         /// 全景图片保存路径
         /// </summary>
         [Column("PanoramaImagePath")]
-        public string? PanoramaImagePath { get; set; }
+        public string? PanoramaImagePath { get; set; }*/
+
+        /// <summary>
+        /// 全景图片保存路径
+        /// </summary>
+        public virtual ICollection<PanoramaImageInfoModel>? PanoramaImagePaths { get; set; }
 
         /// <summary>
         /// 下位机指令内容

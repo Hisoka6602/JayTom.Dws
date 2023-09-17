@@ -378,7 +378,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
                             Image = bitmap,
                             ThumbImage = (Bitmap?)thumbnailImage,
                             CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
-                            ScanTime = localTime.DateTime
+                            ScanTime = DateTime.Now
                         });
                     }
                 }
@@ -392,10 +392,11 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
                                 Image = bitmap,
                                 ThumbImage = (Bitmap?)thumbnailImage,
                                 CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
-                                ScanTime = localTime.DateTime,
+                                ScanTime = DateTime.Now,
                                 AreaCoords = barcode.BarcodeRegionCoordinates
                             });
                         }
+                        await Task.Delay(1);
                     }
                 }
 

@@ -27,9 +27,11 @@ namespace JayTom.Dws.Infrastructure {
         protected override void OnModelCreating(ModelBuilder modelBuilder) {
             //data
             {
-                modelBuilder.Entity<BarCodeInfoModel>().HasKey(c => new {
-                    c.Id
-                });
+                modelBuilder.Entity<BarCodeInfoModel>()
+                    .HasKey(c => new {
+                        c.Id
+                    });
+
                 modelBuilder.Entity<BarCodeInfoModel>()
                     .HasIndex(b => b.Barcode)
                     .IsUnique(false);
@@ -40,13 +42,22 @@ namespace JayTom.Dws.Infrastructure {
                     .HasIndex(b => b.ScanTime)
                     .IsUnique(false)
                     .HasAnnotation("IndexSortOrder", "Descending");
+
+                modelBuilder.Entity<BarCodeInfoModel>()
+                    .HasMany(b => b.PanoramaImagePaths)
+                    .WithOne(n => n.BarcodeInfo)
+                    .HasForeignKey(n => new { n.BarcodeInfoId })
+                    .OnDelete(DeleteBehavior.Cascade);
+                modelBuilder.Entity<PanoramaImageInfoModel>().HasKey(c => new {
+                    c.Id
+                });
+
                 modelBuilder.Entity<SoundInfoModel>().HasKey(c => new {
                     c.Id
                 });
                 modelBuilder.Entity<SoundInfoModel>()
                     .HasIndex(b => b.SoundName)
                     .IsUnique();
-                //
             }
             //conf
             {
@@ -100,6 +111,7 @@ namespace JayTom.Dws.Infrastructure {
                     .IsUnique(false)
                     .HasAnnotation("IndexSortOrder", "Descending");
             }
+
             base.OnModelCreating(modelBuilder);
         }
     }

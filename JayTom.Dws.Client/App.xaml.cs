@@ -120,6 +120,7 @@ namespace JayTom.Dws.Client {
                 services.AddScoped<IBarCodeRepository, BarCodeRepository>();
                 services.AddScoped<ISoundRepository, SoundRepository>();
                 services.AddScoped<IConfigRepository, ConfigRepository>();
+                services.AddScoped<IPanoramaImageRepository, PanoramaImageRepository>();
 
                 /*services.AddScoped<IConfigRepository, ConfigRepository>();
 
@@ -235,6 +236,7 @@ namespace JayTom.Dws.Client {
                         services.AddSingleton(container.Resolve<IVolumeCameraConfigRepository>());
                         services.AddSingleton(container.Resolve<ISoundRepository>());
                         services.AddSingleton(container.Resolve<IConfigRepository>());
+                        services.AddSingleton(container.Resolve<IPanoramaImageRepository>());
                         services.AddSingleton(container.Resolve<IExternalDataService>());
                         services.AddSingleton(container.Resolve<ICacheCleanupService>());
                         //补注册

@@ -71,5 +71,10 @@ namespace JayTom.Dws.Client.Service.ImageStorage {
         /// 存图的时间
         /// </summary>
         public DateTime SaveDateTime { get; set; }
+
+        /// <summary>
+        /// 扫码时间
+        /// </summary>
+        public DateTime ScanTime { get; set; }
     }
 }

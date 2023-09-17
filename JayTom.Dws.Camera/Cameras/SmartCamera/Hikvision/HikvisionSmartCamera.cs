@@ -427,7 +427,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                                             CodeId = stBcrResultEx2.stBcrInfoEx2[i].nSubPackageId.ToString(),
                                             Len = (int)stBcrResultEx2.stBcrInfoEx2[i].nLen,
                                             CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
-                                            ScanTime = localTime.DateTime,
+                                            ScanTime = DateTime.Now,
                                             AreaCoords = Enumerable.Range(0, 4).Select(s => {
                                                 if (bmp != null)
                                                     return new Point {
@@ -441,6 +441,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                                             })?.ToList()
                                         });
                                     }
+                                    await Task.Delay(1, token);
                                 }
                             }
                             else {
@@ -451,7 +452,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                                     Image = bmp,
                                     ThumbImage = bmp,
                                     CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
-                                    ScanTime = localTime.DateTime
+                                    ScanTime = DateTime.Now
                                 });
                             }
 
