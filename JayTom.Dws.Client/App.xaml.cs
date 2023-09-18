@@ -34,6 +34,8 @@ using JayTom.Dws.Client.Views.Pages;
 using Microsoft.EntityFrameworkCore;
 using JayTom.Dws.Client.Views.Dialog;
 using JayTom.Dws.Client.Views.Editors;
+using JayTom.Dws.Plugin.Tcp.TcpClient;
+using JayTom.Dws.Plugin.Tcp.TcpServer;
 using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Infrastructure.Service;
 using JayTom.Dws.Client.ViewModels.Pages;
@@ -59,9 +61,11 @@ using JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision;
 using JayTom.Dws.Client.HomeToolPlugin.SunnenPlugin.Views;
 using JayTom.Dws.Client.HomeToolPlugin.SunnenPlugin.ViewModels;
 using JayTom.Dws.Client.Views.Pages.Preferences.ApiConfiguration;
+using JayTom.Dws.Client.Service.ResultOutput.Communication.TcpComm;
 using JayTom.Dws.Client.Views.Pages.Preferences.CameraConfiguration;
 using JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration;
 using JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration;
+using JayTom.Dws.Client.Service.ExternalDataService.Communication.TcpComm;
 
 namespace JayTom.Dws.Client {
 
@@ -136,8 +140,10 @@ namespace JayTom.Dws.Client {
                 services.AddScoped<IFtp, FluentFtpClient>();
                 services.AddScoped<ISaveImage, SaveImage>();
                 services.AddScoped<ISpeech, Speech>();
-                services.AddScoped<ITcpCommunication, TcpCommunication>();
-                services.AddScoped<ITcpCommunicationClient, TcpCommunicationClient>();
+                services.AddScoped<ITcpCommClient, TouchSocketTcpClient>();
+                services.AddScoped<ITcpCommServer, TouchSocketTcpServer>();
+                services.AddScoped<ITcpContentOutput, TcpContentOutput>();
+                services.AddScoped<ITcpVolumeInput, TcpVolumeInput>();
                 //电脑注册
                 services.AddScoped<IComputer, Computer>();
                 //电脑信息上报
@@ -221,8 +227,11 @@ namespace JayTom.Dws.Client {
                         services.AddSingleton(container.Resolve<IFtp>());
                         services.AddSingleton(container.Resolve<ISaveImage>());
                         services.AddSingleton(container.Resolve<ISpeech>());
-                        services.AddSingleton(container.Resolve<ITcpCommunication>());
-                        services.AddSingleton(container.Resolve<ITcpCommunicationClient>());
+                        services.AddSingleton(container.Resolve<ITcpCommClient>());
+                        services.AddSingleton(container.Resolve<ITcpCommServer>());
+
+                        services.AddSingleton(container.Resolve<ITcpContentOutput>());
+                        services.AddSingleton(container.Resolve<ITcpVolumeInput>());
 
                         services.AddSingleton(container.Resolve<IDynamicScale>());
                         services.AddSingleton(container.Resolve<IStaticScale>());

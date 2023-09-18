@@ -1807,11 +1807,29 @@ namespace JayTom.Dws.Client.Languages {
         }
         
         /// <summary>
+        ///   查找类似 保存失败 的本地化字符串。
+        /// </summary>
+        public static string SaveFailed {
+            get {
+                return ResourceManager.GetString("SaveFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查找类似 保存设置 的本地化字符串。
         /// </summary>
         public static string SaveSettings {
             get {
                 return ResourceManager.GetString("SaveSettings", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 保存成功 的本地化字符串。
+        /// </summary>
+        public static string SaveSuccessful {
+            get {
+                return ResourceManager.GetString("SaveSuccessful", resourceCulture);
             }
         }
         
@@ -2311,6 +2329,24 @@ namespace JayTom.Dws.Client.Languages {
         }
         
         /// <summary>
+        ///   查找类似 请求内容 的本地化字符串。
+        /// </summary>
+        public static string TableHeaderRequestContent {
+            get {
+                return ResourceManager.GetString("TableHeaderRequestContent", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 响应内容 的本地化字符串。
+        /// </summary>
+        public static string TableHeaderResponseContent {
+            get {
+                return ResourceManager.GetString("TableHeaderResponseContent", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查找类似 扫描时间 的本地化字符串。
         /// </summary>
         public static string TableHeaderScanTime {
@@ -2532,6 +2568,24 @@ namespace JayTom.Dws.Client.Languages {
         public static string VideoCameraSecurityCamera {
             get {
                 return ResourceManager.GetString("VideoCameraSecurityCamera", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 查看图像 的本地化字符串。
+        /// </summary>
+        public static string ViewImage {
+            get {
+                return ResourceManager.GetString("ViewImage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 查看全景图 的本地化字符串。
+        /// </summary>
+        public static string ViewPanoramaImage {
+            get {
+                return ResourceManager.GetString("ViewPanoramaImage", resourceCulture);
             }
         }
         

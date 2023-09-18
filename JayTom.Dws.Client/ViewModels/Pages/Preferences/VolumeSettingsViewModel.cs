@@ -369,19 +369,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                                 Type = s.Type
                             })?.ToList() ?? new List<ItemTemplateInfo>(),
                             Separator = VolumeSettingsInfo.Separator,
-                            IsUseTcpInput = VolumeSettingsInfo.IsUseTcpInput,
+                            IsUseExternalVolumeInput = VolumeSettingsInfo.IsUseExternalVolumeInput,
                             IsTriggerVolumeRequest = VolumeSettingsInfo.IsTriggerVolumeRequest,
-                            TcpSettingsInfo = new TcpSettingsInfo() {
-                                ConnectionMode = VolumeSettingsInfo.TcpSettingsInfo.ConnectionMode,
-                                ServerConfig = new TcpInfo() {
-                                    IpAddress = VolumeSettingsInfo.TcpSettingsInfo.ServerConfig.IpAddress,
-                                    Port = VolumeSettingsInfo.TcpSettingsInfo.ServerConfig.Port
-                                },
-                                ClientConfig = new TcpInfo() {
-                                    IpAddress = VolumeSettingsInfo.TcpSettingsInfo.ClientConfig.IpAddress,
-                                    Port = VolumeSettingsInfo.TcpSettingsInfo.ClientConfig.Port
-                                }
-                            },
                             VolumeInformationRequesterInfo = new VolumeInformationRequesterInfo() {
                                 VolumeTriggerPosition = SelectTriggerPosition.Value,
                                 SendContent = VolumeSettingsInfo.VolumeInformationRequesterInfo.SendContent,
@@ -415,7 +404,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                         });
                     }
                     IsSavingInProgress = false;
-                    VolumeSettingsMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("Save") ?? string.Empty}{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("Success") : Languages.Language.ResourceManager.GetString("Failure"))}");
+                    VolumeSettingsMessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
+                        Languages.Language.ResourceManager.GetString("SaveFailed"))}");
                 });
             }
         }
@@ -448,19 +438,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                             VolumeSettingsInfo = new VolumeSettingsInfoModel() {
                                 Unit = settingsDto.Unit,
                                 Separator = settingsDto.Separator,
-                                IsUseTcpInput = settingsDto.IsUseTcpInput,
+                                IsUseExternalVolumeInput = settingsDto.IsUseExternalVolumeInput,
                                 IsTriggerVolumeRequest = settingsDto.IsTriggerVolumeRequest,
-                                TcpSettingsInfo = new TcpSettingsInfoModel() {
-                                    ConnectionMode = settingsDto.TcpSettingsInfo.ConnectionMode,
-                                    ServerConfig = new TcpInfoModel() {
-                                        IpAddress = settingsDto.TcpSettingsInfo.ServerConfig.IpAddress,
-                                        Port = settingsDto.TcpSettingsInfo.ServerConfig.Port
-                                    },
-                                    ClientConfig = new TcpInfoModel() {
-                                        IpAddress = settingsDto.TcpSettingsInfo.ClientConfig.IpAddress,
-                                        Port = settingsDto.TcpSettingsInfo.ClientConfig.Port
-                                    }
-                                },
+
                                 VolumeInformationRequesterInfo = new VolumeInformationRequesterInfoModel() {
                                     VolumeTriggerPosition = settingsDto.VolumeInformationRequesterInfo.VolumeTriggerPosition,
                                     SendContent = settingsDto.VolumeInformationRequesterInfo.SendContent,

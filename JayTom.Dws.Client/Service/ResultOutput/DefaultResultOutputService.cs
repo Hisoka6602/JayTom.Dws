@@ -19,27 +19,35 @@ using NetTopologySuite.GeometriesGraph;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Repository.LocalData;
+using JayTom.Dws.Client.Service.ResultOutput.Communication.TcpComm;
+using JayTom.Dws.Client.Service.ExternalDataService.Communication.TcpComm;
 
 namespace JayTom.Dws.Client.Service.ResultOutput {
 
     public class DefaultResultOutputService : IResultOutputService {
         private readonly IConfigRepository _configRepository;
         private readonly ISpeech _speech;
-        private readonly ITcpCommunicationClient _tcpCommunicationClient;
-        private readonly ITcpCommunication _tcpCommunication;
+        private readonly ITcpContentOutput _tcpContentOutput;
+
         private readonly ISoundRepository _soundRepository;
         private SemaphoreSlim _semaphore = new(1);
         private ResultOutputSettingsDto? _outputSettingsDto;
         private ConcurrentDictionary<string, byte[]>? _sounds = new();
 
         public DefaultResultOutputService(IConfigRepository configRepository,
-            ISpeech speech, ITcpCommunicationClient tcpCommunicationClient,
-            ITcpCommunication tcpCommunication, ISoundRepository soundRepository) {
+            ISpeech speech, ITcpContentOutput tcpContentOutput, ISoundRepository soundRepository) {
             _configRepository = configRepository;
             _speech = speech;
-            _tcpCommunicationClient = tcpCommunicationClient;
-            _tcpCommunication = tcpCommunication;
+            _tcpContentOutput = tcpContentOutput;
+            //tcp事件
+            _tcpContentOutput.Exception += delegate (object? sender, Exception exception) {
+                OnOutputFailed(exception);
+            };
+            _tcpContentOutput.ConnectionException += delegate (object? sender, string s) {
+                OnOutputFailed(new Exception(s));
+            };
             _soundRepository = soundRepository;
+
             //定义事件
             EventAggregator.Instance.Subscribe<TriggerPositionEvent>(async position => {
                 //播放声音事件
@@ -69,24 +77,20 @@ namespace JayTom.Dws.Client.Service.ResultOutput {
                         //判断使用客户端还是服务端
                         //如果使用服务端，则一开始就有开启
                         if (_outputSettingsDto.TcpSettingsInfo.ConnectionMode == TcpConnectionMode.Server) {
-                            if (_tcpCommunication.Status != ServerState.Running) {
+                            if (_tcpContentOutput.ConnectionStatus == ConnectionStatus.Connected) {
                                 //创建连接
-                                _tcpCommunication.SetParameter(new TcpConnectParam {
-                                    Address = _outputSettingsDto.TcpSettingsInfo.ServerConfig.IpAddress,
-                                    Port = _outputSettingsDto.TcpSettingsInfo.ServerConfig.Port,
-                                });
-                                _tcpCommunication.Connect();
+                                _tcpContentOutput.Close();
                             }
+                            await _tcpContentOutput.Connect(_outputSettingsDto.TcpSettingsInfo.ServerConfig.IpAddress,
+                                _outputSettingsDto.TcpSettingsInfo.ServerConfig.Port, ConnectionType.Server);
                         }
                         else {
-                            if (_tcpCommunicationClient.IsConnected) {
-                                _tcpCommunicationClient.Close();
+                            if (_tcpContentOutput.ConnectionStatus == ConnectionStatus.Connected) {
+                                //创建连接
+                                _tcpContentOutput.Close();
                             }
-                            _tcpCommunicationClient.SetParameter(new TcpConnectParam {
-                                Address = _outputSettingsDto.TcpSettingsInfo.ClientConfig.IpAddress,
-                                Port = _outputSettingsDto.TcpSettingsInfo.ClientConfig.Port,
-                            });
-                            _tcpCommunicationClient?.Connect();
+                            await _tcpContentOutput.Connect(_outputSettingsDto.TcpSettingsInfo.ClientConfig.IpAddress,
+                                _outputSettingsDto.TcpSettingsInfo.ClientConfig.Port, ConnectionType.Client);
                         }
                     }
 
@@ -111,7 +115,9 @@ namespace JayTom.Dws.Client.Service.ResultOutput {
 
         public void ExecuteOutput(string barCode, float weight, DateTime scanTime, float length, float width, float height,
             float volume, string cameraSerialNumber, CancellationToken cancellationToken = default) {
-            if (_outputSettingsDto is not null) {
+            if (_outputSettingsDto is not null &&
+                (_outputSettingsDto.IsUseLocationOutput || _outputSettingsDto.IsUseSerialOutput
+                || _outputSettingsDto.IsUseTcpOutput)) {
                 Task.Run(async () => {
                     //获取数据格式
                     var list = _outputSettingsDto.DataTemplate
@@ -154,12 +160,7 @@ namespace JayTom.Dws.Client.Service.ResultOutput {
             var isSend = false;
             if (_outputSettingsDto is not null) {
                 if (_outputSettingsDto.IsUseTcpOutput) {
-                    if (_outputSettingsDto.TcpSettingsInfo.ConnectionMode == TcpConnectionMode.Server) {
-                        isSend = await _tcpCommunication.SendMessage(message);
-                    }
-                    if (_outputSettingsDto.TcpSettingsInfo.ConnectionMode == TcpConnectionMode.Client) {
-                        isSend = await _tcpCommunicationClient.SendMessage(message);
-                    }
+                    isSend = await _tcpContentOutput.SendMessage(message, cancellationToken);
                     if (isSend) {
                         EventAggregator.Instance.Publish(new TriggerPositionEvent() {
                             IsSuccess = isSend,

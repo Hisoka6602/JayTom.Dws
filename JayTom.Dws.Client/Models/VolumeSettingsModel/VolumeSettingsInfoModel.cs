@@ -15,7 +15,7 @@ namespace JayTom.Dws.Client.Models.VolumeSettingsModel {
 
     public class VolumeSettingsInfoModel : BindableBase {
         private ObservableCollection<ItemBaseTemplateModel> _dataTemplate = new();
-        private bool _isUseTcpInput;
+        private bool _isUseExternalVolumeInput;
         private TcpSettingsInfoModel _tcpSettingsInfo = new();
         private bool _triggerVolumeRequest;
         private VolumeInformationRequesterInfoModel _volumeInformationRequesterInfo = new();
@@ -47,19 +47,11 @@ namespace JayTom.Dws.Client.Models.VolumeSettingsModel {
         }
 
         /// <summary>
-        /// 是否使用Tcp输入
+        /// 是否使用外部体积输入
         /// </summary>
-        public bool IsUseTcpInput {
-            get => _isUseTcpInput;
-            set => SetProperty(ref _isUseTcpInput, value);
-        }
-
-        /// <summary>
-        /// Tcp设置
-        /// </summary>
-        public TcpSettingsInfoModel TcpSettingsInfo {
-            get => _tcpSettingsInfo;
-            set => SetProperty(ref _tcpSettingsInfo, value);
+        public bool IsUseExternalVolumeInput {
+            get => _isUseExternalVolumeInput;
+            set => SetProperty(ref _isUseExternalVolumeInput, value);
         }
 
         /// <summary>

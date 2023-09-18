@@ -6,6 +6,7 @@ using System.ComponentModel;
 using System.Threading.Tasks;
 using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using JayTom.Dws.Plugin.Excel.Attributes;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -29,8 +30,8 @@ namespace JayTom.Dws.Client.Models {
         private DateTime _responseTime;
         private string _responseContent = string.Empty;
         private string? _barcodeImagePath = string.Empty;
-        private bool _isPanoramaImageExists;
         private bool _isBarcodeImageExists;
+        private List<PanoramaImageItemModel> _panoramaImageItems = new();
 
         [DisplayName("No."), ExcelInfo(Width = 3000)]
         public int Num {
@@ -165,10 +166,12 @@ namespace JayTom.Dws.Client.Models {
         }
 
         /// <summary>
-        /// 全景图片保存路径
+        /// 全景图信息
         /// </summary>
-        [DisplayName("PanoramaImagePath"), ExcelInfo(Width = 8000)]
-        public string? PanoramaImagePath { get; set; }
+        public List<PanoramaImageItemModel> PanoramaImageItems {
+            get => _panoramaImageItems;
+            set => SetProperty(ref _panoramaImageItems, value);
+        }
 
         /// <summary>
         /// 下位机指令内容
@@ -211,19 +214,28 @@ namespace JayTom.Dws.Client.Models {
         }
 
         /// <summary>
-        /// 全景图片是否存在
-        /// </summary>
-        public bool IsPanoramaImageExists {
-            get => _isPanoramaImageExists;
-            set => SetProperty(ref _isPanoramaImageExists, value);
-        }
-
-        /// <summary>
         /// 条码图片是否存在
         /// </summary>
         public bool IsBarcodeImageExists {
             get => _isBarcodeImageExists;
             set => SetProperty(ref _isBarcodeImageExists, value);
+        }
+    }
+
+    public class PanoramaImageItemModel : BindableBase {
+        private bool _isPanoramaImageExists;
+
+        /// <summary>
+        /// 全景图片保存路径
+        /// </summary>
+        public string? PanoramaImagePath { get; set; }
+
+        /// <summary>
+        /// 全景图片是否存在
+        /// </summary>
+        public bool IsPanoramaImageExists {
+            get => _isPanoramaImageExists;
+            set => SetProperty(ref _isPanoramaImageExists, value);
         }
     }
 }

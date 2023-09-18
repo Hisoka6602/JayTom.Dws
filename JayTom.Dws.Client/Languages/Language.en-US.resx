@@ -246,7 +246,7 @@
     <comment>7-绑定到体积相机</comment>
   </data>
   <data name="BindToPanoramicCamera" xml:space="preserve">
-    <value>Bind ToPanoramicCamer</value>
+    <value>Bind To PanoramicCamer</value>
     <comment>7-绑定到全景相机</comment>
   </data>
   <data name="BindToScannerCamera" xml:space="preserve">
@@ -893,9 +893,17 @@
     <value>Save</value>
     <comment>7-保存</comment>
   </data>
+  <data name="SaveFailed" xml:space="preserve">
+    <value>Save failed</value>
+    <comment>14-保存失败</comment>
+  </data>
   <data name="SaveSettings" xml:space="preserve">
     <value>Save</value>
     <comment>8-保存设置</comment>
+  </data>
+  <data name="SaveSuccessful" xml:space="preserve">
+    <value>Save successful</value>
+    <comment>13-保存成功</comment>
   </data>
   <data name="ScanCount" xml:space="preserve">
     <value>ScanCount</value>
@@ -1117,6 +1125,14 @@
     <value>PanoramicImage</value>
     <comment>2-全景图片</comment>
   </data>
+  <data name="TableHeaderRequestContent" xml:space="preserve">
+    <value>RequestContent</value>
+    <comment>2-请求内容</comment>
+  </data>
+  <data name="TableHeaderResponseContent" xml:space="preserve">
+    <value>ResponseContent</value>
+    <comment>2-响应内容</comment>
+  </data>
   <data name="TableHeaderScanTime" xml:space="preserve">
     <value>ScanTime</value>
     <comment>2-扫描时间(主页-表头)</comment>
@@ -1216,6 +1232,14 @@
   <data name="VideoCameraSecurityCamera" xml:space="preserve">
     <value>VideoCameraSecurityCamera</value>
     <comment>12-录像相机/安防相机</comment>
+  </data>
+  <data name="ViewImage" xml:space="preserve">
+    <value>ViewImage</value>
+    <comment>13-查看图像</comment>
+  </data>
+  <data name="ViewPanoramaImage" xml:space="preserve">
+    <value>ViewPanoramaImage</value>
+    <comment>13-查看全景图</comment>
   </data>
   <data name="Volume" xml:space="preserve">
     <value>Volume:</value>

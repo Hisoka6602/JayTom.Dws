@@ -403,7 +403,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     Process.Start(new ProcessStartInfo(obj.BarcodeImagePath) { UseShellExecute = true });
                 }
                 catch (Exception ex) {
-                    Console.WriteLine($"Failed to open the image: {ex.Message}");
+                    Console.WriteLine($@"Failed to open the image: {ex.Message}");
                 }
             }
         }
@@ -421,7 +421,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     Process.Start("explorer.exe", $"/select,\"{obj.BarcodeImagePath}\"");
                 }
                 catch (Exception ex) {
-                    Console.WriteLine($"Failed to open the image: {ex.Message}");
+                    Console.WriteLine($@"Failed to open the image: {ex.Message}");
                 }
             }
         }
@@ -431,28 +431,28 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// </summary>
 
         public ICommand OpenPanoramicImageCommand {
-            get => new DelegateCommand<BarCodeItemModel>(OpenPanoramicImageDelegate);
+            get => new DelegateCommand<PanoramaImageItemModel>(OpenPanoramicImageDelegate);
         }
 
-        private void OpenPanoramicImageDelegate(BarCodeItemModel obj) {
+        private void OpenPanoramicImageDelegate(PanoramaImageItemModel obj) {
             if (File.Exists(obj?.PanoramaImagePath)) {
                 try {
                     Process.Start(new ProcessStartInfo(obj.PanoramaImagePath) { UseShellExecute = true });
                 }
                 catch (Exception ex) {
-                    Console.WriteLine($"Failed to open the image: {ex.Message}");
+                    Console.WriteLine($@"Failed to open the image: {ex.Message}");
                 }
             }
         }
 
-        /// <summary>
+        /*/// <summary>
         /// 定位全景图片位置
         /// </summary>
         public ICommand OpenPanoramicImageFolderCommand {
-            get => new DelegateCommand<BarCodeItemModel>(OpenPanoramicImageFolderDelegate);
+            get => new DelegateCommand<PanoramaImageItemModel>(OpenPanoramicImageFolderDelegate);
         }
 
-        private void OpenPanoramicImageFolderDelegate(BarCodeItemModel obj) {
+        private void OpenPanoramicImageFolderDelegate(PanoramaImageItemModel obj) {
             if (File.Exists(obj?.PanoramaImagePath)) {
                 try {
                     Process.Start("explorer.exe", $"/select,\"{obj.PanoramaImagePath}\"");
@@ -461,7 +461,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     Console.WriteLine($"Failed to open the image: {ex.Message}");
                 }
             }
-        }
+        }*/
 
         /// <summary>
         /// 清空查询条件
@@ -554,6 +554,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <param name="pageIndex"></param>
         private void LoadData(int pageIndex) {
             const int pageSize = 500;
+            //这里的查询要分开锁，不然显示有卡顿
             System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
                 var loadingDialog = new LoadingDialog();
                 if (loadingDialog.DataContext is LoadingDialogViewModel model) {
@@ -573,7 +574,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                         new CancellationToken(false));
                     if (total > 0) {
                         PageCount = total / pageSize + (total % pageSize > 0 ? 1 : 0);
-                        var infoModels = await _barCodeRepository.SelectOrderByDescending(s =>
+                        var (key, infoModels) = await _barCodeRepository.SelectBarCodeOrderByDescending(s =>
                                 (s.ScanTime.CompareTo(StartTime) >= 0) &&
                                 s.ScanTime.CompareTo(EndTime) <= 0 &&
                                 (string.IsNullOrWhiteSpace(BarCode) || s.Barcode.Contains(BarCode)) &&
@@ -582,6 +583,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                                 (MaxWeight <= 0 || s.Weight <= MaxWeight) &&
                                 (SelectedUploadStatus == null || s.RequestStatus.Equals(SelectedUploadStatus)),
                             o => o.ScanTime, pageIndex - 1, pageSize, new CancellationToken(false));
+
                         if (infoModels?.Any() == true) {
                             var itemModels = infoModels?.Select((s, i) => new BarCodeItemModel {
                                 Num = i + 1,
@@ -599,13 +601,16 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                                 ResponseTime = s.ResponseTime,
                                 ResponseContent = s.ResponseContent,
                                 BarcodeImagePath = s.BarcodeImagePath ?? string.Empty,
-                                //PanoramaImagePath = s.PanoramaImagePath ?? string.Empty,
                                 IsBarcodeImageExists = s.BarcodeImagePath?.IsFileExists() ?? false,
-                                //IsPanoramaImageExists = s.PanoramaImagePath?.IsFileExists() ?? false,
                                 InstructionContent = s.InstructionContent ?? string.Empty,
                                 InstructionSentTime = s.InstructionSentTime,
                                 DestinationAddress = s.DestinationAddress ?? string.Empty,
                                 Other = s.Other ?? string.Empty,
+                                PanoramaImageItems = s.PanoramaImagePaths?.Select(ps =>
+                                    new PanoramaImageItemModel() {
+                                        IsPanoramaImageExists = ps.PanoramaImagePath?.IsFileExists() ?? false,
+                                        PanoramaImagePath = ps.PanoramaImagePath
+                                    })?.ToList() ?? new List<PanoramaImageItemModel>()
                             })?.ToList();
                             await Task.Delay(100);
                             BarCodeItems.AddRange(itemModels);

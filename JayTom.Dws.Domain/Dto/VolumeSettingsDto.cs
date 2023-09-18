@@ -26,14 +26,9 @@ namespace JayTom.Dws.Domain.Dto {
         public string Separator { get; set; } = string.Empty;
 
         /// <summary>
-        /// 是否使用Tcp输入
+        /// 是否使用外部体积输入
         /// </summary>
-        public bool IsUseTcpInput { get; set; }
-
-        /// <summary>
-        /// Tcp设置
-        /// </summary>
-        public TcpSettingsInfo TcpSettingsInfo { get; set; } = new();
+        public bool IsUseExternalVolumeInput { get; set; }
 
         /// <summary>
         /// 是否主动触发体积获取

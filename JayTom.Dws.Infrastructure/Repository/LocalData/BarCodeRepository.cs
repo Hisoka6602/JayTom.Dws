@@ -1,4 +1,5 @@
-﻿using JayTom.Dws.Data.LocalConf;
+﻿using System.Linq.Expressions;
+using JayTom.Dws.Data.LocalConf;
 using JayTom.Dws.Data.LocalData;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
@@ -10,6 +11,29 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalData {
     public class BarCodeRepository : LocalRepositoryBase<BarCodeInfoModel>, IBarCodeRepository {
 
         public BarCodeRepository(IDbContextFactory<SqliteContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
+        }
+
+        public async Task<KeyValuePair<bool, List<BarCodeInfoModel>>> SelectBarCodeOrderByDescending<TOrder>(Expression<Func<BarCodeInfoModel, bool>> where,
+            Expression<Func<BarCodeInfoModel, TOrder>> order,
+            int pageIndex, int pageSize,
+            CancellationToken token = default) {
+            try {
+                await using var concardContext = _contextFactory.CreateDbContext();
+                var dbSet = concardContext?.Set<BarCodeInfoModel>();
+                if (dbSet is null) return new KeyValuePair<bool, List<BarCodeInfoModel>>(false, new List<BarCodeInfoModel>());
+                var barCodeInfoModels = await dbSet.AsNoTracking()
+                    .Where(where)
+                    .OrderByDescending(order)
+                    .Include(b => b.PanoramaImagePaths)
+                    .Skip(pageIndex * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync(cancellationToken: token);
+                return new KeyValuePair<bool, List<BarCodeInfoModel>>(true, barCodeInfoModels);
+            }
+            catch (Exception e) {
+                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
+                return new KeyValuePair<bool, List<BarCodeInfoModel>>(false, new List<BarCodeInfoModel>());
+            }
         }
     }
 }

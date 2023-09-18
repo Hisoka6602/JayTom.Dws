@@ -1,18 +1,17 @@
 ﻿using System;
 using System.Linq;
 using System.Text;
-using TouchSocket.Sockets;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
 namespace JayTom.Dws.Plugin.Tcp {
 
-    public interface ITcpCommunication {
+    public interface ITcpBase {
 
         /// <summary>
-        /// 是否已连接
+        /// 连接状态
         /// </summary>
-        ServerState Status { get; }
+        public ConnectionStatus ConnectionStatus { get; }
 
         /// <summary>
         /// 连接异常事件(直接返回异常信息的Json)
@@ -30,47 +29,42 @@ namespace JayTom.Dws.Plugin.Tcp {
         event EventHandler<string> Disconnected;
 
         /// <summary>
-        /// 用户完成连接事件
-        /// </summary>
-        event EventHandler<string> Connected;
-
-        /// <summary>
         /// 通讯消息事件
         /// </summary>
         event EventHandler<CommunicationInfo> Communication;
 
         /// <summary>
+        /// 完成连接事件
+        /// </summary>
+        event EventHandler<string> Connected;
+
+        /// <summary>
         /// 连接
         /// </summary>
         /// <returns></returns>
-        bool Connect();
-
-        /// <summary>
-        /// 发送信息
-        /// </summary>
-        /// <param name="message"></param>
-        /// <returns></returns>
-        Task<bool> SendMessage(string message);
-
-        /// <summary>
-        /// 发送消息
-        /// </summary>
-        /// <param name="message"></param>
-        /// <returns></returns>
-        Task<bool> SendMessage(byte[] message);
+        Task<bool> Connect(string ipAddress, int port, int timeOut = 1000, CancellationToken token = default);
 
         /// <summary>
         /// 重新连接
         /// </summary>
         /// <returns></returns>
-        bool Reconnect(int count);
+        Task<bool> Reconnect(int count, CancellationToken token = default);
 
         /// <summary>
-        /// 设置参数
+        /// 发送信息
         /// </summary>
-        /// <param name="par"></param>
+        /// <param name="message"></param>
+        /// <param name="token"></param>
         /// <returns></returns>
-        bool SetParameter(object par);
+        Task<bool> SendMessage(string message, CancellationToken token = default);
+
+        /// <summary>
+        /// 发送消息
+        /// </summary>
+        /// <param name="message"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        Task<bool> SendMessage(byte[] message, CancellationToken token = default);
 
         /// <summary>
         /// 关闭
@@ -83,6 +77,19 @@ namespace JayTom.Dws.Plugin.Tcp {
         public DateTime Time { get; set; }
         public string Content { get; set; } = string.Empty;
         public CommunicationType Type { get; set; }
+    }
+
+    public class TcpConnectParam {
+
+        /// <summary>
+        /// 地址
+        /// </summary>
+        public string? Address { get; set; } = "127.0.0.1";
+
+        /// <summary>
+        /// 端口
+        /// </summary>
+        public int Port { get; set; }
     }
 
     public enum CommunicationType {

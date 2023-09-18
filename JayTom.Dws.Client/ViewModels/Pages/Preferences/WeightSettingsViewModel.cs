@@ -515,7 +515,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     }
 
                     IsSavingInProgress = false;
-                    WeightSettingsMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("Save") ?? string.Empty}{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("Success") : Languages.Language.ResourceManager.GetString("Failure"))}");
+                    WeightSettingsMessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
+                        Languages.Language.ResourceManager.GetString("SaveFailed"))}");
                 });
             }
         }

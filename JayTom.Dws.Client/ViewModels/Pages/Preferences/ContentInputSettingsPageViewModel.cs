@@ -135,8 +135,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                         });
                     }
                     IsSavingInProgress = false;
-                    ContentInputSettingsMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("Save") ?? string.Empty}{(insertOrUpdate ?
-                        Languages.Language.ResourceManager.GetString("Success") : Languages.Language.ResourceManager.GetString("Failure"))}");
+                    ContentInputSettingsMessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
+                        Languages.Language.ResourceManager.GetString("SaveFailed"))}");
                 });
             }
         }

@@ -263,8 +263,8 @@
                 </DataGridTextColumn>
                 <!--  操作  -->
                 <DataGridTemplateColumn
-                    Width="190"
-                    MinWidth="280"
+                    Width="320"
+                    MinWidth="320"
                     MaxWidth="600"
                     CellStyle="{StaticResource CustomDataGridTextCellStyle}">
                     <DataGridTemplateColumn.Header>
@@ -276,15 +276,15 @@
                             <StackPanel Orientation="Horizontal">
                                 <StackPanel
                                     Margin="10,0,0,0"
-                                    HorizontalAlignment="Right"
+                                    HorizontalAlignment="Center"
                                     VerticalAlignment="Center"
                                     Orientation="Horizontal"
                                     Visibility="{Binding HasBinding, Converter={StaticResource CameraHasBindingVisibilityConverter}, ConverterParameter=BindButton, UpdateSourceTrigger=PropertyChanged}">
-                                    <Grid Width="250">
+                                    <Grid Width="290" HorizontalAlignment="Center">
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto" />
-                                            <ColumnDefinition Width="Auto" />
-                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" MaxWidth="265" />
+                                            <ColumnDefinition Width="Auto" MaxWidth="265" />
+                                            <ColumnDefinition Width="*" MaxWidth="265" />
                                         </Grid.ColumnDefinitions>
                                         <!--  绑定到全景相机  -->
                                         <Button

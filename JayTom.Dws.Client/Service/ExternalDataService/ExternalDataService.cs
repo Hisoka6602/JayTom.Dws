@@ -15,22 +15,27 @@ using System.Text.RegularExpressions;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
 using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Client.Service.ExternalDataService.Communication.TcpComm;
 using static JayTom.Dws.Client.Service.BackgroundService.ScanProcessBackgroundService;
 
 namespace JayTom.Dws.Client.Service.ExternalDataService {
 
     public class ExternalDataService : IExternalDataService {
         private readonly IConfigRepository _configRepository;
-        private readonly ITcpCommunication _tcpCommunication;
-        private readonly ITcpCommunicationClient _tcpCommunicationClient;
+        private readonly ITcpVolumeInput _tcpVolumeInput;
         private VolumeSettingsDto _volumeSettingsDto = new();
         private ConcurrentQueue<string> _volumeBarCodeItems = new();
 
         public ExternalDataService(IConfigRepository configRepository,
-            ITcpCommunication tcpCommunication, ITcpCommunicationClient tcpCommunicationClient) {
+            ITcpVolumeInput tcpVolumeInput) {
             _configRepository = configRepository;
-            _tcpCommunication = tcpCommunication;
-            _tcpCommunicationClient = tcpCommunicationClient;
+            _tcpVolumeInput = tcpVolumeInput;
+            _tcpVolumeInput.Exception += delegate (object? sender, Exception exception) {
+                OnExternalDataException(exception);
+            };
+            _tcpVolumeInput.ConnectionException += delegate (object? sender, string s) {
+                OnExternalDataException(new Exception(s));
+            };
         }
 
         public void Dispose() {
@@ -52,20 +57,12 @@ namespace JayTom.Dws.Client.Service.ExternalDataService {
         public async Task<KeyValuePair<bool, string>> GetVolume(string barcode, CancellationToken token = default) {
             await Task.Delay(_volumeSettingsDto.VolumeInformationRequesterInfo.SendDelay, token);
             if (_volumeSettingsDto.VolumeInformationRequesterInfo.VolumeRequesterType == VolumeRequesterType.Tcp) {
-                if (_volumeSettingsDto.TcpSettingsInfo.ConnectionMode == TcpConnectionMode.Server) {
-                    var sendMessage = await _tcpCommunication.SendMessage(_volumeSettingsDto.VolumeInformationRequesterInfo.SendContent);
-                    if (!sendMessage) {
-                        OnExternalDataException(new Exception($"{Languages.Language.ResourceManager.GetString("发送失败") ?? string.Empty}"));
-                        return new KeyValuePair<bool, string>(false, $"{Languages.Language.ResourceManager.GetString("发送失败") ?? string.Empty}");
-                    }
+                var sendMessage = await _tcpVolumeInput.SendMessage(_volumeSettingsDto.VolumeInformationRequesterInfo.SendContent, token);
+                if (!sendMessage) {
+                    OnExternalDataException(new Exception($"{Languages.Language.ResourceManager.GetString("发送失败") ?? string.Empty}"));
+                    return new KeyValuePair<bool, string>(false, $"{Languages.Language.ResourceManager.GetString("发送失败") ?? string.Empty}");
                 }
-                else {
-                    var sendMessage = await _tcpCommunicationClient.SendMessage(_volumeSettingsDto.VolumeInformationRequesterInfo.SendContent);
-                    if (!sendMessage) {
-                        OnExternalDataException(new Exception($"{Languages.Language.ResourceManager.GetString("发送失败") ?? string.Empty}"));
-                        return new KeyValuePair<bool, string>(false, $"{Languages.Language.ResourceManager.GetString("发送失败") ?? string.Empty}");
-                    }
-                }
+
                 _volumeBarCodeItems.Enqueue(barcode);
             }
             else {
@@ -97,41 +94,42 @@ namespace JayTom.Dws.Client.Service.ExternalDataService {
                 if (configInfoModel is not null) {
                     _volumeSettingsDto = JsonConvert.DeserializeObject<VolumeSettingsDto>(configInfoModel.Value) ?? new VolumeSettingsDto();
 
-                    if (_volumeSettingsDto.IsUseTcpInput) {
-                        if (_volumeSettingsDto.TcpSettingsInfo.ConnectionMode == TcpConnectionMode.Server) {
-                            //创建服务端
-                            if (_tcpCommunication.Status != ServerState.Running) {
-                                //创建连接
-                                _tcpCommunication.SetParameter(new TcpConnectParam {
-                                    Address = _volumeSettingsDto.TcpSettingsInfo.ServerConfig.IpAddress,
-                                    Port = _volumeSettingsDto.TcpSettingsInfo.ServerConfig.Port,
-                                });
-                                _tcpCommunication.Exception += delegate (object? sender, Exception exception) {
-                                    OnExternalDataException(exception);
-                                };
-                                _tcpCommunication.Communication += TcpCommunicationOnCommunication;
-                                _tcpCommunication.Connect();
+                    if (_volumeSettingsDto.IsUseExternalVolumeInput) {
+                        if (_volumeSettingsDto.VolumeInformationRequesterInfo.VolumeRequesterType == VolumeRequesterType.Tcp) {
+                            if (_volumeSettingsDto.VolumeInformationRequesterInfo.TcpSettingsInfo.ConnectionMode == TcpConnectionMode.Server) {
+                                //创建服务端
+
+                                if (_tcpVolumeInput.ConnectionStatus == ConnectionStatus.Connected) {
+                                    _tcpVolumeInput.Close();
+                                }
+                                _tcpVolumeInput.Communication += TcpCommunicationOnCommunication;
+                                var connect = await _tcpVolumeInput.Connect(_volumeSettingsDto.VolumeInformationRequesterInfo.TcpSettingsInfo.ServerConfig.IpAddress,
+                                    _volumeSettingsDto.VolumeInformationRequesterInfo.TcpSettingsInfo.ServerConfig.Port, ConnectionType.Server, token: token);
+                                if (!connect) {
+                                    OnExternalDataException(new Exception("TCP server creation failed"));
+                                }
+                            }
+                            else {
+                                if (_tcpVolumeInput.ConnectionStatus == ConnectionStatus.Connected) {
+                                    _tcpVolumeInput.Close();
+                                }
+                                _tcpVolumeInput.Communication += TcpCommunicationOnCommunication;
+                                var connect = await _tcpVolumeInput.Connect(_volumeSettingsDto.VolumeInformationRequesterInfo.TcpSettingsInfo.ClientConfig.IpAddress,
+                                    _volumeSettingsDto.VolumeInformationRequesterInfo.TcpSettingsInfo.ClientConfig.Port, ConnectionType.Client, token: token);
+                                if (!connect) {
+                                    OnExternalDataException(new Exception("TCP client creation failed"));
+                                }
+                                //创建客户端
                             }
                         }
-                        else {
-                            if (_tcpCommunicationClient.IsConnected) {
-                                _tcpCommunicationClient.Close();
-                            }
-                            _tcpCommunicationClient.SetParameter(new TcpConnectParam {
-                                Address = _volumeSettingsDto.TcpSettingsInfo.ClientConfig.IpAddress,
-                                Port = _volumeSettingsDto.TcpSettingsInfo.ClientConfig.Port,
-                            });
-                            _tcpCommunicationClient.Exception += delegate (object? sender, Exception exception) {
-                                OnExternalDataException(exception);
-                            };
-                            _tcpCommunicationClient.Communication += TcpCommunicationOnCommunication;
-                            _tcpCommunicationClient?.Connect();
-                            //创建客户端
+                        else if (_volumeSettingsDto.VolumeInformationRequesterInfo.VolumeRequesterType ==
+                                 VolumeRequesterType.SerialPort) {
+                            //先不管串口
                         }
                     }
 
                     OnDataSourceEnabled(new ExternalDataSourceEventArgs() {
-                        IsVolumeInput = _volumeSettingsDto.IsUseTcpInput
+                        IsVolumeInput = _volumeSettingsDto.IsUseExternalVolumeInput
                     });
                 }
             }
@@ -191,21 +189,17 @@ namespace JayTom.Dws.Client.Service.ExternalDataService {
 
         public async Task<KeyValuePair<bool, string>> Stop(CancellationToken token = default) {
             await Task.Yield();
+            _volumeBarCodeItems.Clear();
             try {
-                if (_volumeSettingsDto.IsUseTcpInput) {
-                    if (_volumeSettingsDto.TcpSettingsInfo.ConnectionMode == TcpConnectionMode.Server) {
-                        //关闭服务端
-                        if (_tcpCommunication.Status == ServerState.Running) {
-                            _tcpCommunication.Communication -= TcpCommunicationOnCommunication;
-                            _tcpCommunication.Close();
+                if (_volumeSettingsDto.IsUseExternalVolumeInput) {
+                    if (_volumeSettingsDto.VolumeInformationRequesterInfo.VolumeRequesterType == VolumeRequesterType.Tcp) {
+                        if (_tcpVolumeInput.ConnectionStatus == ConnectionStatus.Connected) {
+                            _tcpVolumeInput.Close();
+                            _tcpVolumeInput.Communication -= TcpCommunicationOnCommunication;
                         }
                     }
-                    else {
-                        //关闭客户端
-                        if (_tcpCommunicationClient.IsConnected) {
-                            _tcpCommunicationClient.Communication -= TcpCommunicationOnCommunication;
-                            _tcpCommunicationClient.Close();
-                        }
+                    else if (_volumeSettingsDto.VolumeInformationRequesterInfo.VolumeRequesterType ==
+                             VolumeRequesterType.SerialPort) {
                     }
                 }
 
