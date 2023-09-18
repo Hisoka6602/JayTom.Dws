@@ -368,7 +368,7 @@
                             FontSize="16"
                             FontWeight="Bold"
                             Foreground="DarkGray"
-                            Text="是否使用外部体积输入:" />
+                            Text="{x:Static languages:Language.IsUseExternalVolumeInput}" />
                         <ToggleButton
                             Name="IsUseExternalVolumeInputButton"
                             materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"

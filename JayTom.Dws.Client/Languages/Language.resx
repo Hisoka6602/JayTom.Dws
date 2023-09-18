@@ -565,6 +565,10 @@
     <value>是否使用控件输入</value>
     <comment>10-是否使用控件输入</comment>
   </data>
+  <data name="IsUseExternalVolumeInput" xml:space="preserve">
+    <value>是否使用外部体积输入:</value>
+    <comment>13-是否使用外部体积输入</comment>
+  </data>
   <data name="IsUseFixedWeight" xml:space="preserve">
     <value>是否使用固定重量:</value>
     <comment>9-是否使用固定重量</comment>

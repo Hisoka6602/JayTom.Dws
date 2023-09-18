@@ -1069,6 +1069,15 @@ namespace JayTom.Dws.Client.Languages {
         }
         
         /// <summary>
+        ///   查找类似 是否使用外部体积输入: 的本地化字符串。
+        /// </summary>
+        public static string IsUseExternalVolumeInput {
+            get {
+                return ResourceManager.GetString("IsUseExternalVolumeInput", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查找类似 是否使用固定重量: 的本地化字符串。
         /// </summary>
         public static string IsUseFixedWeight {
