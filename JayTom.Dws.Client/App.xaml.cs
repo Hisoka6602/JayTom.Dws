@@ -267,6 +267,7 @@ namespace JayTom.Dws.Client {
                 await _host.StopAsync();
                 _host.Dispose();
             }
+            await Task.Delay(500);
             base.OnExit(e);
         }
 

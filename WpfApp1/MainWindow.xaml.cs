@@ -59,12 +59,6 @@ namespace WpfApp1 {
         }
 
         private void OnLoaded(object sender, RoutedEventArgs e) {
-            var startNew = new TaskFactory().StartNew(() => {
-                while (true) {
-                    GC.Collect();
-                    Thread.Sleep(1000);
-                }
-            }, TaskCreationOptions.LongRunning);
             /*_smartCamera ??= new HuaraytechSmartCamera();
             _smartCamera.Excepted += delegate (object? o, Exception exception) {
                 Application.Current.Dispatcher.Invoke(() => {
@@ -104,7 +98,7 @@ namespace WpfApp1 {
             _camera.Excepted += async delegate (object? o, Exception exception) {
                 await Application.Current.Dispatcher.InvokeAsync(() => { CodeInfoListView.Items.Add(exception.Message); });
             };
-            //_camera.BarcodeHitEvent += CameraOnBarcodeHitEvent;
+            _camera.BarcodeHitEvent += CameraOnBarcodeHitEvent;
             _camera.RealtimeImageEvent += CameraOnRealtimeImageEvent;
             /*_camera.DeviceWarning += delegate (object? o, string s) {
                 Application.Current.Dispatcher.Invoke(() => { CodeInfoListView.Items.Add($"警告:{s}"); });

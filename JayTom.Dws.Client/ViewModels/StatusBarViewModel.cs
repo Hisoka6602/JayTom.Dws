@@ -4,6 +4,7 @@ using Prism.Commands;
 using System.Windows.Input;
 using System.Threading.Tasks;
 using JayTom.Dws.Client.Models;
+using System.Windows.Threading;
 using JayTom.Dws.Client.Service;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -107,11 +108,18 @@ namespace JayTom.Dws.Client.ViewModels {
             _computerInfoReporter = computerInfoReporter;
             _computerInfoReporter.ComputerInfoReceived += async delegate (object? sender, ComputerInfoModel model) {
                 await Task.Run(async () => {
-                    if (System.Windows.Application.Current?.Dispatcher is not null) {
-                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                            //加载到界面内容
-                            ComputerInfo = model;
-                        });
+                    try {
+                        if (System.Windows.Application.Current?.Dispatcher is not null) {
+                            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                                //加载到界面内容
+                                ComputerInfo = model;
+                            }, DispatcherPriority.Background);
+                        }
+                    }
+                    catch (TaskCanceledException) {
+                        //
+                    }
+                    catch (Exception e) {
                     }
                 });
             };
