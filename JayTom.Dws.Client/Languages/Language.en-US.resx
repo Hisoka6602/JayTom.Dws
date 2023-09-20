@@ -118,7 +118,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="3DCamera/VolumeCamera" xml:space="preserve">
-    <value>3DCamera/VolumeCamera</value>
+    <value>3DCamera/DimensionCamera</value>
     <comment>12-3D相机/体积相机</comment>
   </data>
   <data name="Add" xml:space="preserve">
@@ -242,15 +242,15 @@
     <comment>12-绑定</comment>
   </data>
   <data name="BindToCompactCamera" xml:space="preserve">
-    <value>Bind To CompactCamera</value>
+    <value>BindToDimensionCamera</value>
     <comment>7-绑定到体积相机</comment>
   </data>
   <data name="BindToPanoramicCamera" xml:space="preserve">
-    <value>Bind To PanoramicCamer</value>
+    <value>BindToPanoramicCamer</value>
     <comment>7-绑定到全景相机</comment>
   </data>
   <data name="BindToScannerCamera" xml:space="preserve">
-    <value>Bind To ScannerCamera</value>
+    <value>BindToBarcodeCamera</value>
     <comment>7-绑定到扫码相机</comment>
   </data>
   <data name="BluetoothConnection" xml:space="preserve">
@@ -302,7 +302,7 @@
     <comment>6-清空条件</comment>
   </data>
   <data name="CompactCamera" xml:space="preserve">
-    <value>CompactCamera</value>
+    <value>DimensionCamera</value>
     <comment>7-体积相机</comment>
   </data>
   <data name="CompleteMatch" xml:space="preserve">
@@ -926,11 +926,11 @@
     <comment>10-扫码图片</comment>
   </data>
   <data name="ScannerCamera" xml:space="preserve">
-    <value>ScannerCamera</value>
+    <value>BarcodeCamera</value>
     <comment>7-扫码相机</comment>
   </data>
   <data name="ScannerImage" xml:space="preserve">
-    <value>ScannerImage</value>
+    <value>ScanningImage</value>
     <comment>8-扫码图</comment>
   </data>
   <data name="ScanTime" xml:space="preserve">
@@ -1326,7 +1326,7 @@
     <comment>12-位图文件</comment>
   </data>
   <data name="体积相机配置" xml:space="preserve">
-    <value>Volume camera configuration.</value>
+    <value>Dimension camera configuration.</value>
     <comment>12-体积相机配置</comment>
   </data>
   <data name="体积设置相关" xml:space="preserve">
@@ -1418,7 +1418,7 @@
     <comment>12-外部输入异常</comment>
   </data>
   <data name="存图异常" xml:space="preserve">
-    <value>Error saving the image.</value>
+    <value>Error saving</value>
     <comment>12-存图异常</comment>
   </data>
   <data name="存图相关设置" xml:space="preserve">
@@ -1434,7 +1434,7 @@
     <comment>12-已重新枚举相机</comment>
   </data>
   <data name="必须先停止运行再设置条码过滤才能生效" xml:space="preserve">
-    <value>You must stop running first before setting barcode filtering can take effect.</value>
+    <value>StopAndRunningBeforeSettingBarcodeFiltering</value>
     <comment>12-必须先停止运行再设置条码过滤才能生效</comment>
   </data>
   <data name="扫码相机配置" xml:space="preserve">
@@ -1470,7 +1470,7 @@
     <comment>12-相机管理配置</comment>
   </data>
   <data name="磅秤和称重设置相关" xml:space="preserve">
-    <value>Scale and weighing settings related</value>
+    <value>Scale&amp;WeighingSettings</value>
     <comment>12-磅秤和称重设置相关</comment>
   </data>
   <data name="结果输出异常" xml:space="preserve">
