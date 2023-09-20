@@ -17,6 +17,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Reference Include="GWCamera">
+      <HintPath>Cameras\SmartCamera\Wayzim\Dll\GWCamera.dll</HintPath>
+    </Reference>
     <Reference Include="MvCodeReaderSDK.Net">
       <HintPath>Cameras\SmartCamera\Hikvision\Dll\MvCodeReaderSDK.Net.dll</HintPath>
       <Private></Private>
