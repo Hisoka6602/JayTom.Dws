@@ -21,6 +21,7 @@ using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Data.LocalConf.CameraConfig;
 using CameraType = JayTom.Dws.Camera.CameraType;
 using JayTom.Dws.Plugin.Scale.ScaleValueParameters;
+using JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim;
 using JayTom.Dws.Camera.Cameras.SmartCamera.Irayple;
 using JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision;
 using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech;
@@ -74,9 +75,12 @@ namespace JayTom.Dws.Client.Service.Device {
                 var infos = await new HikvisionIndustrialCamera().EnumerateCameras();
                 var cameraInfos = await new HikvisionSmartCamera().EnumerateCameras();
                 var enumerateCameras = await new DaHuatechSecurityCamera().EnumerateCameras();
+                var wayzimSmartCameras = await new WayzimSmartCamera().EnumerateCameras();
+
                 var cameraList = infos?.Union(cameraInfos
                                               ?? new List<CameraInfo>())?.ToList()?
-                                     .Union(enumerateCameras ?? new List<CameraInfo>())?.ToList()
+                                     .Union(enumerateCameras ?? new List<CameraInfo>())?.ToList()?
+                                     .Union(wayzimSmartCameras ?? new List<CameraInfo>())?.ToList()
                                  ?? new List<CameraInfo>();
 
                 var list = cameraList.Select(s =>
@@ -686,6 +690,11 @@ namespace JayTom.Dws.Client.Service.Device {
                         return CameraType.SmartCamera;
                     break;
 
+                case not null when (brand.Contains("Wayzim") /*|| info.Brand.Contains("Huaray")*/):
+                    if (modelName.Contains("SmartCamera"))
+                        return CameraType.SmartCamera;
+                    break;
+
                 default:
                     return CameraType.IndustrialCamera;
             }
@@ -693,7 +702,7 @@ namespace JayTom.Dws.Client.Service.Device {
         }
 
         private ICamera? ConvertCamera(CameraInfo info) {
-            switch (info.Brand) {
+            switch (info.Brand) { //WayzimSmartCamera
                 case not null when (info.Brand.Contains("Hikrobot") || info.Brand.Contains("Hikvision")):
                     if (info.Model.Contains("MV-ID"))
                         return new HikvisionSmartCamera(info);
@@ -706,6 +715,11 @@ namespace JayTom.Dws.Client.Service.Device {
                         return new DaHuatechSecurityCamera(info);
                     if (info.Model.Contains("DH-MV") || info.Model.Contains("DH-SL") || info.Model.StartsWith("R"))
                         return new DaHuaSmartCamera(info);
+                    break;
+
+                case not null when (info.Brand.Contains("Wayzim") /*|| info.Brand.Contains("Huaray")*/):
+                    if (info.Model.Contains("SmartCamera"))
+                        return new WayzimSmartCamera(info);
                     break;
 
                 default:

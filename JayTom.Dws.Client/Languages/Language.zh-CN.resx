@@ -1086,7 +1086,7 @@
     <comment>7-是否开启实时图像</comment>
   </data>
   <data name="TableHeaderHeight" xml:space="preserve">
-    <value>条码</value>
+    <value>高度</value>
     <comment>2-条码(主页-表头)</comment>
   </data>
   <data name="TableHeaderImageType" xml:space="preserve">

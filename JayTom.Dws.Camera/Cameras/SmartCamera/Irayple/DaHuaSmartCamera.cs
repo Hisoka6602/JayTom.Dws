@@ -60,7 +60,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
         public SdkType SdkType { get; } = SdkType.SmartCameraSdk;
         public string SdkName { get; } = "ThridLibray.dll";
         public bool IsOriginalImageOut { get; set; }
-        public CameraStatus Status { get; } = CameraStatus.Uninitialized;
+        public CameraStatus Status { get; private set; } = CameraStatus.Uninitialized;
         public CameraBindingType BindingType { get; set; }
 
         public async Task<List<CameraInfo>?> EnumerateCameras() {
@@ -421,21 +421,25 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
 
         protected virtual async void OnCameraDisconnected(CameraConnectionEventArgs e) {
             await Task.Yield();
+            Status = CameraStatus.Disconnected;
             CameraDisconnected?.Invoke(this, e);
         }
 
         protected virtual async void OnCameraInitialized(CameraInitializedEventArgs e) {
             await Task.Yield();
+            Status = CameraStatus.Initialized;
             CameraInitialized?.Invoke(this, e);
         }
 
         protected virtual async void OnCameraStarted(CameraStartedEventArgs e) {
             await Task.Yield();
+            Status = CameraStatus.Running;
             CameraStarted?.Invoke(this, e);
         }
 
         protected virtual async void OnCameraStopped(CameraStoppedEventArgs e) {
             await Task.Yield();
+            Status = CameraStatus.Disconnected;
             CameraStopped?.Invoke(this, e);
         }
 

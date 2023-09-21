@@ -74,7 +74,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                     var stGigEDeviceInfo = (MvCodeReader.MV_CODEREADER_GIGE_DEVICE_INFO)(Marshal.PtrToStructure(buffer, typeof(MvCodeReader.MV_CODEREADER_GIGE_DEVICE_INFO)) ?? new MvCodeReader.MV_CODEREADER_GIGE_DEVICE_INFO());
                     var cameraInfo = new CameraInfo() {
                         Brand = stGigEDeviceInfo.chManufacturerName ?? string.Empty,
-                        IpAddress = ConvertUintToIpAddress(stGigEDeviceInfo.nNetExport).ToString(),
+                        IpAddress = ConvertUintToIpAddress(stGigEDeviceInfo.nCurrentIp).ToString(),
                         Model = stGigEDeviceInfo.chModelName ?? string.Empty,
                         Version = stGigEDeviceInfo.chDeviceVersion ?? string.Empty,
                         SerialNumber =
@@ -246,7 +246,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
         }
 
         public Task<KeyValuePair<bool, string>> Stop() {
-            throw new NotImplementedException();
+            return Task.FromResult(new KeyValuePair<bool, string>(true, string.Empty));
         }
 
         public void Dispose() {

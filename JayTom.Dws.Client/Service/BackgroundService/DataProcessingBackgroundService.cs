@@ -136,6 +136,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         }
                     }
                 }
+
+                await Task.Delay(50, stoppingToken);
             }
         }
     }

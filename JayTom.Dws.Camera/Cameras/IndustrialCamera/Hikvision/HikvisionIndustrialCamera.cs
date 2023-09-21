@@ -91,7 +91,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                 if (!string.IsNullOrEmpty(stDevInfo.chSerialNumber)) {
                     var cameraInfo = new CameraInfo() {
                         Brand = stDevInfo.chManufacturerName ?? string.Empty,
-                        IpAddress = ConvertUintToIpAddress(stDevInfo.nNetExport).ToString(),
+                        IpAddress = ConvertUintToIpAddress(stDevInfo.nCurrentIp).ToString(),
                         Model = stDevInfo.chModelName ?? string.Empty,
                         Version = stDevInfo.chDeviceVersion ?? string.Empty,
                         SerialNumber = stDevInfo.chSerialNumber ?? string.Empty, //还有一个设备序列号nDeviceNumber不想知道是干吗用的

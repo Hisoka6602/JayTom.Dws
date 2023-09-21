@@ -43,8 +43,8 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
         public static BaseDaHuatech CreateInstance() {
             //定义事件
             //判断初始化
-            if (_instance is null) {
-                lock (_initLock) {
+            lock (_initLock) {
+                if (_instance is null) {
                     _instance ??= new BaseDaHuatech();
 
                     _mSearchDevicesCbEx += async delegate (IntPtr handle, IntPtr intPtr, IntPtr user) {
