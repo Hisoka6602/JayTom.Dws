@@ -116,6 +116,78 @@
                 </Grid>
             </StackPanel>
         </Button>
+
+        <!--  Sdk选择  -->
+        <StackPanel
+            Grid.Row="0"
+            Grid.Column="0"
+            Margin="50,0"
+            HorizontalAlignment="Right"
+            VerticalAlignment="Center"
+            Orientation="Horizontal">
+            <!--  类型图标  -->
+            <TextBlock
+                Margin="0,0,0,1"
+                VerticalAlignment="Center"
+                FontFamily="{StaticResource IconFontFamily}"
+                FontSize="25"
+                Foreground="DarkGray"
+                Text="&#xe882;" />
+            <TextBlock
+                Margin="5,0"
+                VerticalAlignment="Center"
+                FontSize="13"
+                FontWeight="Bold"
+                Foreground="DarkGray"
+                Text="SDK选择:" />
+            <ListBox SelectionMode="Multiple" Style="{StaticResource MaterialDesignFilterChipPrimaryListBox}">
+                <ListBoxItem IsSelected="{Binding IsSaveBarcodeImage, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                    <TextBlock
+                        VerticalAlignment="Center"
+                        FontFamily="{StaticResource CustomFontFamily}"
+                        FontSize="12"
+                        FontWeight="Bold"
+                        Foreground="WhiteSmoke"
+                        Text="海康智能相机" />
+                </ListBoxItem>
+                <ListBoxItem IsSelected="{Binding IsSavePanoramaImage, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                    <TextBlock
+                        VerticalAlignment="Center"
+                        FontFamily="{StaticResource CustomFontFamily}"
+                        FontSize="12"
+                        FontWeight="Bold"
+                        Foreground="WhiteSmoke"
+                        Text="海康工业相机" />
+                </ListBoxItem>
+                <ListBoxItem IsSelected="{Binding IsSaveVolumeImage, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                    <TextBlock
+                        VerticalAlignment="Center"
+                        FontFamily="{StaticResource CustomFontFamily}"
+                        FontSize="12"
+                        FontWeight="Bold"
+                        Foreground="WhiteSmoke"
+                        Text="大华智能相机" />
+                </ListBoxItem>
+                <ListBoxItem IsSelected="{Binding IsSaveVolumeImage, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                    <TextBlock
+                        VerticalAlignment="Center"
+                        FontFamily="{StaticResource CustomFontFamily}"
+                        FontSize="12"
+                        FontWeight="Bold"
+                        Foreground="WhiteSmoke"
+                        Text="大华安防相机" />
+                </ListBoxItem>
+                <ListBoxItem IsSelected="{Binding IsSaveVolumeImage, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                    <TextBlock
+                        VerticalAlignment="Center"
+                        FontFamily="{StaticResource CustomFontFamily}"
+                        FontSize="12"
+                        FontWeight="Bold"
+                        Foreground="WhiteSmoke"
+                        Text="中科微至智能相机" />
+                </ListBoxItem>
+            </ListBox>
+        </StackPanel>
         <!--  列表  -->
         <!--<ListBox
             Grid.Row="1"
