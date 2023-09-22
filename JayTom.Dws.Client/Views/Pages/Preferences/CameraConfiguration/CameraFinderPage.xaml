@@ -141,7 +141,18 @@
                 Foreground="DarkGray"
                 Text="SDK选择:" />
             <ListBox SelectionMode="Multiple" Style="{StaticResource MaterialDesignFilterChipPrimaryListBox}">
-                <ListBoxItem IsSelected="{Binding IsSaveBarcodeImage, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                <b:Interaction.Triggers>
+                    <b:EventTrigger EventName="SelectionChanged">
+                        <mvvm:InvokeCommandAction Command="{Binding SdkSelectionChangedCommand}" />
+                    </b:EventTrigger>
+                </b:Interaction.Triggers>
+
+                <ListBoxItem IsSelected="{Binding CameraSdkSelectorInfo.IsUseHikvisionSmartCameraSdk, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                    <b:Interaction.Triggers>
+                        <b:EventTrigger EventName="Selected">
+                            <mvvm:InvokeCommandAction Command="{Binding SdkSelectedCommand}" CommandParameter="IsUseHikvisionSmartCameraSdk" />
+                        </b:EventTrigger>
+                    </b:Interaction.Triggers>
                     <TextBlock
                         VerticalAlignment="Center"
                         FontFamily="{StaticResource CustomFontFamily}"
@@ -150,7 +161,12 @@
                         Foreground="WhiteSmoke"
                         Text="海康智能相机" />
                 </ListBoxItem>
-                <ListBoxItem IsSelected="{Binding IsSavePanoramaImage, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                <ListBoxItem IsSelected="{Binding CameraSdkSelectorInfo.IsUseHikvisionIndustrialCameraSdk, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                    <b:Interaction.Triggers>
+                        <b:EventTrigger EventName="Selected">
+                            <mvvm:InvokeCommandAction Command="{Binding SdkSelectedCommand}" CommandParameter="IsUseHikvisionIndustrialCameraSdk" />
+                        </b:EventTrigger>
+                    </b:Interaction.Triggers>
                     <TextBlock
                         VerticalAlignment="Center"
                         FontFamily="{StaticResource CustomFontFamily}"
@@ -159,7 +175,12 @@
                         Foreground="WhiteSmoke"
                         Text="海康工业相机" />
                 </ListBoxItem>
-                <ListBoxItem IsSelected="{Binding IsSaveVolumeImage, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                <ListBoxItem IsSelected="{Binding CameraSdkSelectorInfo.IsUseDaHuaSmartCameraSdk, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                    <b:Interaction.Triggers>
+                        <b:EventTrigger EventName="Selected">
+                            <mvvm:InvokeCommandAction Command="{Binding SdkSelectedCommand}" CommandParameter="IsUseDaHuaSmartCameraSdk" />
+                        </b:EventTrigger>
+                    </b:Interaction.Triggers>
                     <TextBlock
                         VerticalAlignment="Center"
                         FontFamily="{StaticResource CustomFontFamily}"
@@ -168,7 +189,12 @@
                         Foreground="WhiteSmoke"
                         Text="大华智能相机" />
                 </ListBoxItem>
-                <ListBoxItem IsSelected="{Binding IsSaveVolumeImage, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                <ListBoxItem IsSelected="{Binding CameraSdkSelectorInfo.IsUseDaHuaSecurityCameraSdk, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                    <b:Interaction.Triggers>
+                        <b:EventTrigger EventName="Selected">
+                            <mvvm:InvokeCommandAction Command="{Binding SdkSelectedCommand}" CommandParameter="IsUseDaHuaSecurityCameraSdk" />
+                        </b:EventTrigger>
+                    </b:Interaction.Triggers>
                     <TextBlock
                         VerticalAlignment="Center"
                         FontFamily="{StaticResource CustomFontFamily}"
@@ -177,7 +203,13 @@
                         Foreground="WhiteSmoke"
                         Text="大华安防相机" />
                 </ListBoxItem>
-                <ListBoxItem IsSelected="{Binding IsSaveVolumeImage, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                <ListBoxItem IsSelected="{Binding CameraSdkSelectorInfo.IsUseWayzimSmartCameraSdk, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                    <b:Interaction.Triggers>
+                        <b:EventTrigger EventName="Selected">
+                            <mvvm:InvokeCommandAction Command="{Binding SdkSelectedCommand}" CommandParameter="IsUseWayzimSmartCameraSdk" />
+                        </b:EventTrigger>
+                    </b:Interaction.Triggers>
+
                     <TextBlock
                         VerticalAlignment="Center"
                         FontFamily="{StaticResource CustomFontFamily}"

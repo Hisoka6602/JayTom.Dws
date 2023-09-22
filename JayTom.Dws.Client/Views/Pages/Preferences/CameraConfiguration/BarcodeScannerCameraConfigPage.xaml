@@ -56,19 +56,12 @@
                 Foreground="DarkGray"
                 Text="{x:Static languages:Language.IsEnableRealTimeImage}" />
             <!--  实时图像  -->
-            <Border
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center"
-                Background="#2E2E2E"
+            <CheckBox
+                BorderBrush="DodgerBlue"
                 BorderThickness="2"
-                CornerRadius="5">
-                <CheckBox
-                    materialDesign:CheckBoxAssist.CheckBoxSize="20"
-                    BorderThickness="0"
-                    Focusable="False"
-                    IsChecked="{Binding IsShowRealTimeImage, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                    Style="{StaticResource MaterialDesignCheckBox}" />
-            </Border>
+                Focusable="False"
+                IsChecked="{Binding IsShowRealTimeImage, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                Style="{StaticResource CustomCheckBoxStyle}" />
 
             <!--  应用全部按钮  -->
             <Button

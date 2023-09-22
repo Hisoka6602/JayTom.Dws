@@ -45,6 +45,7 @@ namespace JayTom.Dws.Client.Service.Device {
         private readonly List<CameraParametersModifiedEventArgs> _cameraParameters = new();
         private BarcodeFilterSettingsDto? _barcodeFilterSettingsDto = new();
         private WeightSettingsDto? _weightSettingsDto = new();
+        private CameraSdkSelectorDto? _cameraSdkSelectorDto = new();
         private static ConcurrentDictionary<string, CameraInfo> _cameraInfos = new();
         public bool RunningStatus { get; private set; } = false;
         public ScaleType ScaleType { get; private set; } = ScaleType.None;
@@ -71,7 +72,35 @@ namespace JayTom.Dws.Client.Service.Device {
             await Task.Yield();
             _cameraInfos.Clear();
             try {
-                var cameras = await new DaHuaSmartCamera().EnumerateCameras();
+                if (_cameraSdkSelectorDto is null) {
+                    var configInfoModel = await _configRepository.FirstOrDefault(f =>
+                        f.ConfigName.Equals("CameraSdkSelector"));
+                    _cameraSdkSelectorDto = configInfoModel is not null ? JsonConvert.DeserializeObject<CameraSdkSelectorDto>(configInfoModel.Value) : new CameraSdkSelectorDto();
+                }
+
+                var hikvisionIndustrialCameras = new List<CameraInfo>();
+                var hikvisionSmartCameras = new List<CameraInfo>();
+                var daHuaSecurityCameras = new List<CameraInfo>();
+                //判断已经选择的相机
+                if (_cameraSdkSelectorDto?.IsUseDaHuaSmartCameraSdk == true) {
+                    //大华智能相机
+                    await new DaHuaSmartCamera().EnumerateCameras();
+                }
+
+                if (_cameraSdkSelectorDto?.IsUseHikvisionIndustrialCameraSdk == true) {
+                    //海康工业相机
+                    hikvisionIndustrialCameras = await new HikvisionIndustrialCamera().EnumerateCameras();
+                }
+
+                if (_cameraSdkSelectorDto?.IsUseHikvisionSmartCameraSdk == true) {
+                    //海康智能相机
+                    hikvisionSmartCameras = await new HikvisionSmartCamera().EnumerateCameras();
+                }
+                if (_cameraSdkSelectorDto?.IsUseDaHuaSecurityCameraSdk == true) {
+                    //大华安防相机
+                    daHuaSecurityCameras = await new DaHuatechSecurityCamera().EnumerateCameras();
+                }
+                /*var cameras = await new DaHuaSmartCamera().EnumerateCameras();
                 var infos = await new HikvisionIndustrialCamera().EnumerateCameras();
                 var cameraInfos = await new HikvisionSmartCamera().EnumerateCameras();
                 var enumerateCameras = await new DaHuatechSecurityCamera().EnumerateCameras();
@@ -80,7 +109,12 @@ namespace JayTom.Dws.Client.Service.Device {
                 var cameraList = infos?.Union(cameraInfos
                                               ?? new List<CameraInfo>())?.ToList()?
                                      .Union(enumerateCameras ?? new List<CameraInfo>())?.ToList()/*?
-                                     .Union(wayzimSmartCameras ?? new List<CameraInfo>())?.ToList()*/
+                                     .Union(wayzimSmartCameras ?? new List<CameraInfo>())?.ToList()#1#
+                                 ?? new List<CameraInfo>();*/
+
+                var cameraList = hikvisionIndustrialCameras?.Union(hikvisionSmartCameras
+                                                                   ?? new List<CameraInfo>())?.ToList()?
+                                     .Union(daHuaSecurityCameras ?? new List<CameraInfo>())?.ToList()
                                  ?? new List<CameraInfo>();
 
                 var list = cameraList.Select(s =>
@@ -183,6 +217,18 @@ namespace JayTom.Dws.Client.Service.Device {
                     if (RunningStatus) {
                         OnDeviceException(new DeviceExceptionEventArgs() {
                             ExceptionMessage = new Exception($"{Languages.Language.ResourceManager.GetString("必须先停止运行再设置条码过滤才能生效") ?? string.Empty}")
+                        });
+                    }
+                }
+                else if (settings is SettingsChangedEvent { SettingsName: "CameraSdkSelector" }) {
+                    try {
+                        var configInfoModel = await _configRepository.FirstOrDefault(f =>
+                            f.ConfigName.Equals("CameraSdkSelector"));
+                        _cameraSdkSelectorDto = configInfoModel is not null ? JsonConvert.DeserializeObject<CameraSdkSelectorDto>(configInfoModel.Value) : new CameraSdkSelectorDto();
+                    }
+                    catch (Exception e) {
+                        OnDeviceException(new DeviceExceptionEventArgs() {
+                            ExceptionMessage = new Exception($"{e.Message}")
                         });
                     }
                 }
@@ -324,6 +370,7 @@ namespace JayTom.Dws.Client.Service.Device {
             if (RunningStatus) {
                 return;
             }
+
             //如果没有枚举过相机就需要在这里枚举
             if (_cameraInfos.Count == 0) {
                 await OnCameraEnumerationRefreshed();

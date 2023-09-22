@@ -26,6 +26,7 @@
         </b:EventTrigger>
     </b:Interaction.Triggers>
     <Page.Resources>
+
         <settingsConverter:ShortcutMacroConverter x:Key="ShortcutMacroConverter" />
         <DataTemplate x:Key="ImageSettingButtonTemplate" DataType="{x:Type imageSettingModels:ItemBaseTemplateModel}">
             <Button
@@ -233,7 +234,12 @@
                         FontWeight="Bold"
                         Foreground="DarkGray"
                         Text="{x:Static languages:Language.IsUserOriginalImage}" />
-                    <CheckBox materialDesign:CheckBoxAssist.CheckBoxSize="20" IsChecked="{Binding IsSaveOriginalImage, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    <CheckBox
+                        BorderBrush="DodgerBlue"
+                        BorderThickness="2"
+                        Foreground="#2E2E2E"
+                        IsChecked="{Binding IsSaveOriginalImage, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                        Style="{StaticResource CustomCheckBoxStyle}" />
                 </StackPanel>
             </StackPanel>
             <!--  图片质量  -->
@@ -268,7 +274,11 @@
                         FontWeight="Bold"
                         Foreground="DarkGray"
                         Text="{x:Static languages:Language.IsUseWatermark}" />
-                    <CheckBox materialDesign:CheckBoxAssist.CheckBoxSize="20" IsChecked="{Binding IsUseWatermark, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                    <CheckBox
+                        BorderBrush="DodgerBlue"
+                        BorderThickness="2"
+                        IsChecked="{Binding IsUseWatermark, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                        Style="{StaticResource CustomCheckBoxStyle}">
                         <b:Interaction.Triggers>
                             <b:EventTrigger EventName="PreviewMouseUp">
                                 <mvvm:InvokeCommandAction Command="{Binding CheckBoxValueChangedCommand}" />
@@ -1017,7 +1027,11 @@
                         FontWeight="Bold"
                         Foreground="DarkGray"
                         Text="{x:Static languages:Language.IsUseFTPUpload}" />
-                    <CheckBox materialDesign:CheckBoxAssist.CheckBoxSize="20" IsChecked="{Binding IsFtpUploadEnabled, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    <CheckBox
+                        BorderBrush="DodgerBlue"
+                        BorderThickness="2"
+                        IsChecked="{Binding IsFtpUploadEnabled, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                        Style="{StaticResource CustomCheckBoxStyle}" />
                 </StackPanel>
                 <StackPanel Margin="50,10,0,0" Orientation="Horizontal">
                     <!--  IP地址  -->
