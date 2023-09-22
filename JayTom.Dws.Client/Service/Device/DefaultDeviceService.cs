@@ -75,12 +75,12 @@ namespace JayTom.Dws.Client.Service.Device {
                 var infos = await new HikvisionIndustrialCamera().EnumerateCameras();
                 var cameraInfos = await new HikvisionSmartCamera().EnumerateCameras();
                 var enumerateCameras = await new DaHuatechSecurityCamera().EnumerateCameras();
-                var wayzimSmartCameras = await new WayzimSmartCamera().EnumerateCameras();
+                //var wayzimSmartCameras = await new WayzimSmartCamera().EnumerateCameras();
 
                 var cameraList = infos?.Union(cameraInfos
                                               ?? new List<CameraInfo>())?.ToList()?
-                                     .Union(enumerateCameras ?? new List<CameraInfo>())?.ToList()?
-                                     .Union(wayzimSmartCameras ?? new List<CameraInfo>())?.ToList()
+                                     .Union(enumerateCameras ?? new List<CameraInfo>())?.ToList()/*?
+                                     .Union(wayzimSmartCameras ?? new List<CameraInfo>())?.ToList()*/
                                  ?? new List<CameraInfo>();
 
                 var list = cameraList.Select(s =>

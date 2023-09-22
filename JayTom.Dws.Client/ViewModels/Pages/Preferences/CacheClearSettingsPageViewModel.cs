@@ -277,7 +277,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                         if (_imageSettingsDto is not null) {
                             if (!string.IsNullOrEmpty(_imageSettingsDto?.ImageRootDirectory)) {
                                 var pathRoot = Path.GetPathRoot(_imageSettingsDto.ImageRootDirectory);
-                                IsSameDiskStorage = string.Equals(pathRoot, Path.GetPathRoot(Directory.GetCurrentDirectory()), StringComparison.OrdinalIgnoreCase) &&
+                                IsSameDiskStorage = string.Equals(pathRoot, Path.GetPathRoot(System.Diagnostics.Process.GetCurrentProcess()?.MainModule?.FileName), StringComparison.OrdinalIgnoreCase) &&
                                                     Directory.Exists($"{_imageSettingsDto?.ImageRootDirectory}\\BarcodeImage") &&
                                                     Directory.Exists($"{_imageSettingsDto?.ImageRootDirectory}\\PanoramaImage");
                             }
