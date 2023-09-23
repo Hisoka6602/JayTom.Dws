@@ -381,6 +381,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                                 barCodeItemModel.RequestTime = model.UploadResponse?.RequestTime ?? DateTime.Today;
                                 barCodeItemModel.ResponseContent = model.UploadResponse?.ResponseContent ?? string.Empty;
                                 barCodeItemModel.ResponseTime = model.UploadResponse?.ResponseTime ?? DateTime.Today;
+                                if (barCodeItemModel.RequestStatus == UploadStatus.Succeeded) {
+                                    UploadedDataCount += 1;
+                                }
+                                if (barCodeItemModel.RequestStatus == UploadStatus.Failed) {
+                                    AbnormalDataCount += 1;
+                                }
                             }, DispatcherPriority.Background);
                         }
                     }
@@ -584,23 +590,19 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         /// </summary>
         private async void AddNewRow(BarCodeItemModel item) {
             await Application.Current.Dispatcher.InvokeAsync(async () => {
-                item.Num = BarCodeItems.Count + 1;
+                item.Num = TotalDataCount += 1;
                 try {
                     await _updateSlim.WaitAsync();
                     BarCodeItems.Insert(0, item);
+                    if (BarCodeItems.Count > 200) {
+                        BarCodeItems.RemoveAt(BarCodeItems.Count - 1);
+                    }
                 }
                 finally {
                     _updateSlim.Release();
                 }
 
                 item.IsInserting = true;
-                TotalDataCount += 1;
-                if (item.RequestStatus == UploadStatus.Succeeded) {
-                    UploadedDataCount += 1;
-                }
-                if (item.RequestStatus == UploadStatus.Failed) {
-                    AbnormalDataCount += 1;
-                }
             });
         }
     }
