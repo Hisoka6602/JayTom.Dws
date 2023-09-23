@@ -9,6 +9,7 @@ using System.Net.Sockets;
 using Newtonsoft.Json.Linq;
 using System.Threading.Tasks;
 using System.Drawing.Imaging;
+using System.Drawing.Drawing2D;
 using System.Collections.Generic;
 using Image = System.Drawing.Image;
 using System.Collections.Concurrent;
@@ -108,7 +109,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                             await _snapRevPhotoSlim.WaitAsync();
                             var tryDequeue = _imageMessageQueue.TryDequeue(out var imageMessageInfo);
                             if (tryDequeue && imageMessageInfo is not null) {
-                                var thumbnailImage = imageBitmap?.GetThumbnailImage(800, 600, () => false, IntPtr.Zero);
+                                var thumbnailImage = GenerateThumbnail(imageBitmap);
                                 OnPhotoTaken(new PhotoTakenEventArgs() {
                                     Timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds(),
                                     Barcode = imageMessageInfo.Barcode,
@@ -132,7 +133,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
 
                     _baseDaHuatech.RegisterRealtimeFrameCallback(devInfo.SerialNumber, imageBitmap => {
                         try {
-                            var thumbnailImage = imageBitmap?.GetThumbnailImage(800, 600, () => false, IntPtr.Zero);
+                            var thumbnailImage = GenerateThumbnail(imageBitmap);
                             OnRealtimeImage(new RealtimeImageEventArgs() {
                                 ThumbImage = (Bitmap?)thumbnailImage
                             });
@@ -388,6 +389,38 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
         protected virtual async void OnRealtimeImage(RealtimeImageEventArgs e) {
             await Task.Yield();
             RealtimeImage?.Invoke(this, e);
+        }
+
+        public static Image? GenerateThumbnail(Image? sourceImage, int thumbnailWidth = 800, int thumbnailHeight = 600) {
+            if (sourceImage is null) {
+                return null;
+            }
+            // 创建目标缩略图的空白画布
+            var thumbnail = new Bitmap(thumbnailWidth, thumbnailHeight);
+
+            using var graphics = Graphics.FromImage(thumbnail);
+            // 设置绘图质量参数
+            graphics.CompositingQuality = CompositingQuality.HighSpeed;
+            graphics.SmoothingMode = SmoothingMode.HighSpeed;
+            graphics.InterpolationMode = InterpolationMode.Low;
+
+            // 计算缩放比例
+            var scaleX = (float)thumbnailWidth / sourceImage.Width;
+            var scaleY = (float)thumbnailHeight / sourceImage.Height;
+            var scale = Math.Min(scaleX, scaleY);
+
+            // 计算缩放后的宽度和高度
+            var scaledWidth = (int)(sourceImage.Width * scale);
+            var scaledHeight = (int)(sourceImage.Height * scale);
+
+            // 计算在画布上居中绘制的起始位置
+            var startX = (thumbnailWidth - scaledWidth) / 2;
+            var startY = (thumbnailHeight - scaledHeight) / 2;
+
+            // 绘制缩略图
+            graphics.DrawImage(sourceImage, startX, startY, scaledWidth, scaledHeight);
+
+            return thumbnail;
         }
     }
 }

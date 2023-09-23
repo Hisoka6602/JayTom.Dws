@@ -12,9 +12,11 @@ using System.Diagnostics;
 using MvCodeReaderSDKNet;
 using System.Threading.Tasks;
 using System.Drawing.Imaging;
+using System.Drawing.Drawing2D;
 using System.Collections.Generic;
 using System.Reflection.Metadata;
 using Point = System.Drawing.Point;
+using Image = System.Drawing.Image;
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using JayTom.Dws.Camera.FilterContainer;
@@ -44,6 +46,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
 
         private MVIDCodeReader.cbImageBufferdelegate? _readImageCallback = null;
         private double FrameRate { get; set; }
+        private GCHandle? _imageBufferHandle;
 
         //过滤器
         private readonly BarCodeFilterContainer _barCodeFilterContainer = new();
@@ -240,7 +243,8 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
         //条码回调事件
         public async void ImageCallbackFunc(IntPtr pstOutput, IntPtr puser) {
             if (Status == CameraStatus.Running && IntPtr.Zero != pstOutput) {
-                var stOutput = new MVIDCodeReader.MVID_CAM_OUTPUT_INFO();
+                var stOutput = (MVIDCodeReader.MVID_CAM_OUTPUT_INFO)(Marshal.PtrToStructure(pstOutput,
+                    typeof(MVIDCodeReader.MVID_CAM_OUTPUT_INFO)) ?? new MVIDCodeReader.MVID_CAM_OUTPUT_INFO());
                 await ProcessImageAsync(stOutput, pstOutput);
             }
         }
@@ -397,7 +401,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                             return;
                         }
                         var image = await ConvertPointerToImage(pFrameInfo);
-                        var thumbnailImage = image?.GetThumbnailImage(800, 600, () => false, IntPtr.Zero);
+                        var thumbnailImage = GenerateThumbnail(image);
                         await Task.Delay(100, cancellation);
                         OnPhotoTaken(new PhotoTakenEventArgs {
                             Timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds(),
@@ -440,11 +444,9 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
             //帧时间戳
             var timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds();
             if (MVIDCodeReader.MVID_IMAGE_TYPE.MVID_IMAGE_BMP != stOutput.stImage.enImageType) {
-                stOutput = (MVIDCodeReader.MVID_CAM_OUTPUT_INFO)(Marshal.PtrToStructure(ptr,
-                    typeof(MVIDCodeReader.MVID_CAM_OUTPUT_INFO)) ?? new MVIDCodeReader.MVID_CAM_OUTPUT_INFO());
                 var bitmap = await GetBitmapAsync(stOutput, ptr);
                 //1024*768
-                var thumbnailImage = bitmap?.GetThumbnailImage(800, 600, () => false, IntPtr.Zero);
+                var thumbnailImage = GenerateThumbnail(bitmap);
                 if (0 != stOutput.stCodeList.nCodeNum && BindingType != CameraBindingType.PanoramicCamera) {
                     if (IsShowBarcodeBorder && thumbnailImage is not null && thumbnailImage.PixelFormat != PixelFormat.Format8bppIndexed &&
                         stOutput.stCodeList.stCodeInfo?.Any() == true) {
@@ -476,24 +478,27 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                                 ScanTime = DateTime.Now
                             });
                             if (validateData) {
-                                OnBarcodeRead(new BarcodeReadEventArgs() {
-                                    Barcode = mvidCodeInfo.strCode,
-                                    Timestamp = timestamp,
-                                    CameraSerialNumber = this.Structure.chSerialNumber,
-                                    ScanTime = DateTime.Now,
-                                    ThumbImage = (Bitmap?)thumbnailImage,
-                                    Image = bitmap,
-                                    AreaCoords = Enumerable.Range(0, 4).Select(s => {
-                                        if (bitmap != null)
-                                            return new System.Drawing.Point {
-                                                X = (int)(stOutput.stCodeList.stCodeInfo[i].stCornerPt[s].nX *
-                                                    (float)(bitmap.Size.Width) / stOutput.stImage.nWidth),
-                                                Y = (int)(stOutput.stCodeList.stCodeInfo[i].stCornerPt[s].nY *
-                                                          (float)(bitmap.Size.Height) /
-                                                          stOutput.stImage.nHeight)
-                                            };
-                                        return default;
-                                    })?.ToList(),
+                                //发处理条形码，提高处理速度
+                                await Task.Factory.StartNew(() => {
+                                    OnBarcodeRead(new BarcodeReadEventArgs() {
+                                        Barcode = mvidCodeInfo.strCode,
+                                        Timestamp = timestamp,
+                                        CameraSerialNumber = this.Structure.chSerialNumber,
+                                        ScanTime = DateTime.Now,
+                                        ThumbImage = (Bitmap?)thumbnailImage,
+                                        Image = bitmap,
+                                        AreaCoords = Enumerable.Range(0, 4).Select(s => {
+                                            if (bitmap != null)
+                                                return new System.Drawing.Point {
+                                                    X = (int)(stOutput.stCodeList.stCodeInfo[i].stCornerPt[s].nX *
+                                                        (float)(bitmap.Size.Width) / stOutput.stImage.nWidth),
+                                                    Y = (int)(stOutput.stCodeList.stCodeInfo[i].stCornerPt[s].nY *
+                                                              (float)(bitmap.Size.Height) /
+                                                              stOutput.stImage.nHeight)
+                                                };
+                                            return default;
+                                        })?.ToList(),
+                                    });
                                 });
                             }
                         }
@@ -508,28 +513,35 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                     });
                 }
                 //显示图像
+                await Task.Delay(1);
             }
         }
 
         private async Task<Bitmap?> GetBitmapAsync(MVIDCodeReader.MVID_CAM_OUTPUT_INFO stOutput, IntPtr ptr) {
-            Bitmap? bitmap = null;
+            /*Bitmap? bitmap = null;
             try {
                 bitmap = await ConvertPointerToImage(stOutput.stImage);
 
                 if (IsOriginalImageOut) {
-                    return (Bitmap?)bitmap?.GetThumbnailImage(bitmap?.Width ?? 1280, bitmap?.Height ?? 960,
+                    return (Bitmap?)bitmap?.GenerateThumbnail(bitmap?.Width ?? 1280, bitmap?.Height ?? 960,
                         () => false, IntPtr.Zero);
                 }
 
-                return (Bitmap?)bitmap?.GetThumbnailImage(800, 600, () => false, IntPtr.Zero);
+                return (Bitmap?)bitmap?.GenerateThumbnail(800, 600, () => false, IntPtr.Zero);
             }
             finally {
                 bitmap?.Dispose();
+            }*/
+            var bitmap = await ConvertPointerToImage(stOutput.stImage);
+            if (IsOriginalImageOut) {
+                return bitmap;
             }
+
+            return (Bitmap?)GenerateThumbnail(bitmap);
         }
 
         private async Task<Bitmap?> ConvertPointerToImage(MVIDCodeReader.MVID_IMAGE_INFO pFrameInfo) {
-            Bitmap? bitmap = null;
+            /*Bitmap? bitmap = null;
             try {
                 await _semaphoreSlim.WaitAsync();
 
@@ -561,6 +573,42 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                             Exception = e
                         });
                     }
+                }
+            }
+            catch (Exception e) {
+                OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
+                    Exception = e
+                });
+            }
+            finally {
+                _semaphoreSlim.Release();
+            }
+            return bitmap;*/
+            Bitmap? bitmap = null;
+            try {
+                await _semaphoreSlim.WaitAsync();
+
+                if (_imageBufferHandle is null || _imageBuffer.Length != pFrameInfo.nImageLen) {
+                    _imageBufferHandle?.Free();
+                    _imageBufferHandle = GCHandle.Alloc(_imageBuffer, GCHandleType.Pinned);
+                }
+
+                Marshal.Copy(pFrameInfo.pImageBuf, _imageBuffer, 0, (int)pFrameInfo.nImageLen);
+                var pImage = _imageBufferHandle.Value.AddrOfPinnedObject();
+                if (MVIDCodeReader.MVID_IMAGE_TYPE.MVID_IMAGE_MONO8 == pFrameInfo.enImageType) {
+                    bitmap = new Bitmap(pFrameInfo.nWidth, pFrameInfo.nHeight, pFrameInfo.nWidth,
+                        PixelFormat.Format8bppIndexed, pImage);
+
+                    var cp = bitmap.Palette;
+                    for (var i = 0; i < 256; i++) {
+                        cp.Entries[i] = System.Drawing.Color.FromArgb(i, i, i);
+                    }
+
+                    bitmap.Palette = cp;
+                }
+                else {
+                    bitmap = new Bitmap(pFrameInfo.nWidth, pFrameInfo.nHeight, pFrameInfo.nWidth * 3,
+                        PixelFormat.Format24bppRgb, pImage);
                 }
             }
             catch (Exception e) {
@@ -675,6 +723,45 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
             catch (Exception e) {
                 return new KeyValuePair<bool, string>(false, e.Message);
             }
+        }
+
+        /// <summary>
+        /// 生成缩略图
+        /// </summary>
+        /// <param name="sourceImage"></param>
+        /// <param name="thumbnailWidth"></param>
+        /// <param name="thumbnailHeight"></param>
+        /// <returns></returns>
+        public static Image? GenerateThumbnail(Image? sourceImage, int thumbnailWidth = 800, int thumbnailHeight = 600) {
+            if (sourceImage is null) {
+                return null;
+            }
+            // 创建目标缩略图的空白画布
+            var thumbnail = new Bitmap(thumbnailWidth, thumbnailHeight);
+
+            using var graphics = Graphics.FromImage(thumbnail);
+            // 设置绘图质量参数
+            graphics.CompositingQuality = CompositingQuality.HighSpeed;
+            graphics.SmoothingMode = SmoothingMode.HighSpeed;
+            graphics.InterpolationMode = InterpolationMode.Low;
+
+            // 计算缩放比例
+            var scaleX = (float)thumbnailWidth / sourceImage.Width;
+            var scaleY = (float)thumbnailHeight / sourceImage.Height;
+            var scale = Math.Min(scaleX, scaleY);
+
+            // 计算缩放后的宽度和高度
+            var scaledWidth = (int)(sourceImage.Width * scale);
+            var scaledHeight = (int)(sourceImage.Height * scale);
+
+            // 计算在画布上居中绘制的起始位置
+            var startX = (thumbnailWidth - scaledWidth) / 2;
+            var startY = (thumbnailHeight - scaledHeight) / 2;
+
+            // 绘制缩略图
+            graphics.DrawImage(sourceImage, startX, startY, scaledWidth, scaledHeight);
+
+            return thumbnail;
         }
     }
 }

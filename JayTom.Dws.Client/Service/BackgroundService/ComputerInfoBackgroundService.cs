@@ -94,7 +94,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         UpTime = TimeSpan.FromSeconds(counter.NextValue()),
                         SystemInfoString = systemInfoString
                     });
-                    if (memoryInfoAsync.UsedMemoryPercent >= 50) {
+                    if (memoryInfoAsync.UsedMemoryPercent >= 70) {
                         GC.Collect();
                     }
                 }, stoppingToken);

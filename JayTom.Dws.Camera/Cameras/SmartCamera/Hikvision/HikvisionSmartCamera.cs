@@ -8,6 +8,7 @@ using MVIDCodeReaderNet;
 using MvCodeReaderSDKNet;
 using System.Threading.Tasks;
 using System.Drawing.Imaging;
+using System.Drawing.Drawing2D;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
@@ -368,7 +369,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                         if (DateTime.Now.Subtract(_lockDateTime).TotalMilliseconds >= 100) {
                             _lockDateTime = DateTime.Now;
                             var bmp = await GetBitmapAsync(pData, _bufForDriver, stFrameInfoEx2);
-                            var thumbnailImage = bmp?.GetThumbnailImage(800, 600, () => false, IntPtr.Zero);
+                            var thumbnailImage = GenerateThumbnail(bmp);
                             var stBcrResultEx2 =
                                 (MvCodeReader.MV_CODEREADER_RESULT_BCR_EX2)(Marshal.PtrToStructure(
                                                                                 stFrameInfoEx2.UnparsedBcrList
@@ -510,7 +511,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                     }
             }
             if (!IsOriginalImageOut) {
-                bmp = (Bitmap?)bmp?.GetThumbnailImage(800, 600, () => false, IntPtr.Zero);
+                bmp = (Bitmap?)GenerateThumbnail(bmp);
             }
 
             return bmp;
@@ -590,6 +591,38 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
         protected virtual async void OnRealtimeImage(RealtimeImageEventArgs e) {
             await Task.Yield();
             RealtimeImage?.Invoke(this, e);
+        }
+
+        public static Image? GenerateThumbnail(Image? sourceImage, int thumbnailWidth = 800, int thumbnailHeight = 600) {
+            if (sourceImage is null) {
+                return null;
+            }
+            // 创建目标缩略图的空白画布
+            var thumbnail = new Bitmap(thumbnailWidth, thumbnailHeight);
+
+            using var graphics = Graphics.FromImage(thumbnail);
+            // 设置绘图质量参数
+            graphics.CompositingQuality = CompositingQuality.HighSpeed;
+            graphics.SmoothingMode = SmoothingMode.HighSpeed;
+            graphics.InterpolationMode = InterpolationMode.Low;
+
+            // 计算缩放比例
+            var scaleX = (float)thumbnailWidth / sourceImage.Width;
+            var scaleY = (float)thumbnailHeight / sourceImage.Height;
+            var scale = Math.Min(scaleX, scaleY);
+
+            // 计算缩放后的宽度和高度
+            var scaledWidth = (int)(sourceImage.Width * scale);
+            var scaledHeight = (int)(sourceImage.Height * scale);
+
+            // 计算在画布上居中绘制的起始位置
+            var startX = (thumbnailWidth - scaledWidth) / 2;
+            var startY = (thumbnailHeight - scaledHeight) / 2;
+
+            // 绘制缩略图
+            graphics.DrawImage(sourceImage, startX, startY, scaledWidth, scaledHeight);
+
+            return thumbnail;
         }
     }
 }

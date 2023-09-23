@@ -10,10 +10,13 @@ using System.Drawing;
 using Newtonsoft.Json;
 using System.Threading;
 using JayTom.Dws.Camera;
+using System.IO.Packaging;
 using System.Windows.Input;
+using System.Windows.Media;
 using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
 using Prism.Services.Dialogs;
+using System.Drawing.Imaging;
 using System.Windows.Controls;
 using JayTom.Dws.Client.Models;
 using System.Windows.Documents;
@@ -26,7 +29,10 @@ using JayTom.Dws.Domain.Converters;
 
 using JayTom.Dws.Domain.Converters;
 
+using System.Windows.Media.Imaging;
 using System.Collections.ObjectModel;
+using System.Runtime.InteropServices;
+using System.Collections.Specialized;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.PluginInterface.Utils;
 using JayTom.Dws.Client.Service.Device;
@@ -268,21 +274,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                 await Application.Current.Dispatcher.InvokeAsync(async () => {
                     var model = CameraItems.FirstOrDefault(f => f.SerialNumber.Equals(args.CameraSerialNumber));
 
-                    if (model is not null) {
+                    if (model?.Image != null) {
                         //图片转换
-                        if (args?.Image is not null) {
+                        if (args?.ThumbImage is not null) {
                             if (args.Timestamp != model.ImageTimestamp) {
-                                model.Image = null;
-                                await Task.Delay(10);
                                 model.ImageTimestamp = args.Timestamp;
-                                // 将缩略图转换为BitmapSource
-                                await Application.Current.Dispatcher.InvokeAsync(() => {
-                                    //更新图片
-                                    model.Image = args.ThumbImage.ConvertBitmapToBitmapSource();
-                                    model.FrameRate = args?.FrameRate ?? 0;
-                                    //更新右边信息
-                                    BarCode = "未识别到条码";
-                                });
+                                model.BitmapQueue.Enqueue(args.ThumbImage);
                             }
                         }
                     }
@@ -396,60 +393,51 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
 
         private async void DeviceServiceOnPanoramaCaptured(object? sender, PanoramaCaptureEventArgs args) {
             //全景相机
-            await _imageSemaphoreSlim.WaitAsync();
-            var model = CameraItems.FirstOrDefault(f => f.SerialNumber.Equals(args.CameraSerialNumber) &&
-                                                        f.Type is CameraType.PanoramicCamera);
-            if (model is not null) {
+            await Task.Yield();
+            var model = CameraItems.FirstOrDefault(f => f.SerialNumber.Equals(args.CameraSerialNumber) && f.Type is CameraType.PanoramicCamera);
+            if (model is not null &&
+                model.Image is not null) {
                 //图片转换
                 if (args?.ThumbImage is not null) {
                     if (args.Timestamp != model.ImageTimestamp) {
-                        model.Image = null;
-                        await Task.Delay(5);
+                        //model.Image = null;
+
                         model.ImageTimestamp = args.Timestamp;
-                        await Application.Current.Dispatcher.BeginInvoke(() => {
-                            //更新图片
-                            if (!model.IsRealtimeImageEnabled) {
-                                model.Image = args.ThumbImage.ConvertBitmapToBitmapSource();
-                            }
-                        }, DispatcherPriority.Background);
+                        if (!model.IsRealtimeImageEnabled) {
+                            model.BitmapQueue.Enqueue(args.ThumbImage);
+                        }
                     }
                 }
             }
-            _imageSemaphoreSlim.Release();
         }
 
         private async void DeviceServiceOnRealTimeImage(object? sender, RealTimeImageEventArgs args) {
             //实时画面
+            await Task.Yield();
             var model = CameraItems.FirstOrDefault(f => f.SerialNumber.Equals(args.Camera?.Info?.SerialNumber));
-            if (model is not null && args.Image is not null) {
-                //图片转换
-                await Application.Current.Dispatcher.BeginInvoke(() => {
-                    //更新图片
-                    if (model.IsRealtimeImageEnabled) {
-                        model.Image = args.Image.ConvertBitmapToBitmapSource();
-                    }
-                }, DispatcherPriority.Background);
+            if (model is not null && args.Image is not null &&
+                model.Image is not null) {
+                if (model.IsRealtimeImageEnabled) {
+                    model.BitmapQueue.Enqueue(args.Image);
+                }
             }
         }
 
         private async void DeviceServiceOnBarcodeScanned(object? sender, BarcodeReadEventArgs args) {
             //更新图片
-            await _imageSemaphoreSlim.WaitAsync();
 
             var model = CameraItems.FirstOrDefault(f => f.SerialNumber.Equals(args.CameraSerialNumber) &&
                                                         f.Type is CameraType.IndustrialCamera or CameraType.SmartCamera);
             if (model is not null) {
                 //图片转换
-                if (args?.ThumbImage is not null) {
+                if (args?.ThumbImage is not null &&
+                    model.Image is not null) {
                     if (args.Timestamp != model.ImageTimestamp) {
-                        model.Image = null;
-                        await Task.Delay(50);
                         model.ImageTimestamp = args.Timestamp;
+                        if (!model.IsRealtimeImageEnabled) {
+                            model.BitmapQueue.Enqueue(args.ThumbImage);
+                        }
                         await Application.Current.Dispatcher.BeginInvoke(() => {
-                            //更新图片
-                            if (!model.IsRealtimeImageEnabled) {
-                                model.Image = args.ThumbImage.ConvertBitmapToBitmapSource();
-                            }
                             model.FrameRate = args?.FrameRate ?? 0;
                             //更新右边信息
                             BarCode = args?.Barcode ?? "未识别到条码";
@@ -457,7 +445,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     }
                 }
             }
-            _imageSemaphoreSlim.Release();
         }
 
         /// <summary>
@@ -551,22 +538,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             else if (obj.Camera is ISecurityCamera securityCamera) {
                 await securityCamera.TakePhotoAsync(string.Empty, 0);
             }
-
-            /*if (!obj.IsSwitchingState) {
-                try {
-                    obj.IsSwitchingState = true;
-                    await Task.Delay(TimeSpan.FromSeconds(5));
-                    obj.Status = obj.Status switch {
-                        CameraStatus.Running => CameraStatus.Paused,
-                        CameraStatus.Failure or CameraStatus.Paused or CameraStatus.Disconnected =>
-                            CameraStatus.Running,
-                        _ => obj.Status
-                    };
-                }
-                finally {
-                    obj.IsSwitchingState = false;
-                }
-            }*/
         }
 
         /// <summary>

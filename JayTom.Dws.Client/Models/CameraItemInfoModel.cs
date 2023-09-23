@@ -1,18 +1,26 @@
 ﻿using System;
+using DryIoc;
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
+using System.Drawing;
+using System.Windows;
+using System.Threading;
 using JayTom.Dws.Camera;
 using System.Windows.Media;
 using System.Windows.Input;
 using System.Threading.Tasks;
-using System.Windows.Controls;
+using System.Drawing.Imaging;
+using System.Windows.Threading;
 using System.Collections.Generic;
+using System.Windows.Media.Imaging;
+using System.Collections.Concurrent;
+using System.Collections.Specialized;
+using Image = System.Windows.Controls.Image;
 
 namespace JayTom.Dws.Client.Models {
 
     public class CameraItemInfoModel : BindableBase {
-        private ImageSource? _image;
         private string _cameraName = string.Empty;
         private CameraType _type;
         private CameraStatus _status = CameraStatus.Disconnected;
@@ -24,6 +32,39 @@ namespace JayTom.Dws.Client.Models {
         private ICamera? _camera;
         private bool _isRealtimeImageEnabled;
         private Image? _imageControl;
+        private CancellationTokenSource tokenSource = new();
+
+        public CameraItemInfoModel() {
+            if (this is INotifyCollectionChanged notifyCollectionChanged) {
+                notifyCollectionChanged.CollectionChanged +=
+                    delegate (object? sender, NotifyCollectionChangedEventArgs args) {
+                        if (args.Action == NotifyCollectionChangedAction.Remove && args.OldItems?.Contains(this) == true) {
+                            //移除
+                            BitmapQueue.Clear();
+                            tokenSource.Cancel();
+                        }
+                    };
+            }
+            Task.Factory.StartNew(async () => {
+                while (!tokenSource.IsCancellationRequested) {
+                    var tryDequeue = BitmapQueue.TryDequeue(out var bitmap);
+                    if (tryDequeue && bitmap is not null && this.Image is not null) {
+                        var rect = new Rectangle(0, 0, bitmap.Width, bitmap.Height);
+                        var bitmapData = bitmap.LockBits(rect, ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+                        await this.Image.Dispatcher.InvokeAsync(() => {
+                            this.Image.WritePixels(new Int32Rect(0, 0, bitmap.Width, bitmap.Height), bitmapData.Scan0, bitmapData.Stride * bitmapData.Height, bitmapData.Stride);
+                            bitmap.UnlockBits(bitmapData);
+                        }, DispatcherPriority.Render);
+                    }
+                    await Task.Delay(20);
+                }
+            }, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+        }
+
+        /// <summary>
+        /// 图片队列
+        /// </summary>
+        public ConcurrentQueue<Bitmap> BitmapQueue { get; init; } = new();
 
         public string CameraId {
             get => _cameraId;
@@ -33,10 +74,7 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 图片
         /// </summary>
-        public ImageSource? Image {
-            get => _image;
-            set => SetProperty(ref _image, value);
-        }
+        public WriteableBitmap? Image { get; init; } = new(800, 600, 96, 96, PixelFormats.Bgr24, null);
 
         /// <summary>
         /// 图片时间戳

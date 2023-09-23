@@ -9,6 +9,7 @@ using System.Diagnostics;
 using MvCodeReaderSDKNet;
 using System.Threading.Tasks;
 using System.Drawing.Imaging;
+using System.Drawing.Drawing2D;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
@@ -301,7 +302,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
                 }
                 //图片
                 var bitmap = grabbedRawData.ToBitmap(true);
-                var thumbnailImage = bitmap?.GetThumbnailImage(800, 600, () => false, IntPtr.Zero);
+                var thumbnailImage = GenerateThumbnail(bitmap);
                 if (chunkDataInfos.Any()) {
                     foreach (var dataInfo in chunkDataInfos) {
                         // 一维码 0x80000000 == chunkId || 二维码  0x80000001 == chunkId
@@ -492,6 +493,38 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
         protected virtual async void OnRealtimeImage(RealtimeImageEventArgs e) {
             await Task.Yield();
             RealtimeImage?.Invoke(this, e);
+        }
+
+        public static Image? GenerateThumbnail(Image? sourceImage, int thumbnailWidth = 800, int thumbnailHeight = 600) {
+            if (sourceImage is null) {
+                return null;
+            }
+            // 创建目标缩略图的空白画布
+            var thumbnail = new Bitmap(thumbnailWidth, thumbnailHeight);
+
+            using var graphics = Graphics.FromImage(thumbnail);
+            // 设置绘图质量参数
+            graphics.CompositingQuality = CompositingQuality.HighSpeed;
+            graphics.SmoothingMode = SmoothingMode.HighSpeed;
+            graphics.InterpolationMode = InterpolationMode.Low;
+
+            // 计算缩放比例
+            var scaleX = (float)thumbnailWidth / sourceImage.Width;
+            var scaleY = (float)thumbnailHeight / sourceImage.Height;
+            var scale = Math.Min(scaleX, scaleY);
+
+            // 计算缩放后的宽度和高度
+            var scaledWidth = (int)(sourceImage.Width * scale);
+            var scaledHeight = (int)(sourceImage.Height * scale);
+
+            // 计算在画布上居中绘制的起始位置
+            var startX = (thumbnailWidth - scaledWidth) / 2;
+            var startY = (thumbnailHeight - scaledHeight) / 2;
+
+            // 绘制缩略图
+            graphics.DrawImage(sourceImage, startX, startY, scaledWidth, scaledHeight);
+
+            return thumbnail;
         }
     }
 }

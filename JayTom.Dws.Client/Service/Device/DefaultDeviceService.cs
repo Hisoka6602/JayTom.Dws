@@ -45,7 +45,7 @@ namespace JayTom.Dws.Client.Service.Device {
         private readonly List<CameraParametersModifiedEventArgs> _cameraParameters = new();
         private BarcodeFilterSettingsDto? _barcodeFilterSettingsDto = new();
         private WeightSettingsDto? _weightSettingsDto = new();
-        private CameraSdkSelectorDto? _cameraSdkSelectorDto = new();
+        private CameraSdkSelectorDto? _cameraSdkSelectorDto;
         private static ConcurrentDictionary<string, CameraInfo> _cameraInfos = new();
         public bool RunningStatus { get; private set; } = false;
         public ScaleType ScaleType { get; private set; } = ScaleType.None;
@@ -74,7 +74,7 @@ namespace JayTom.Dws.Client.Service.Device {
             try {
                 if (_cameraSdkSelectorDto is null) {
                     var configInfoModel = await _configRepository.FirstOrDefault(f =>
-                        f.ConfigName.Equals("CameraSdkSelector"));
+                        f.ConfigName.Equals("CameraSdkSelector"), token);
                     _cameraSdkSelectorDto = configInfoModel is not null ? JsonConvert.DeserializeObject<CameraSdkSelectorDto>(configInfoModel.Value) : new CameraSdkSelectorDto();
                 }
 
