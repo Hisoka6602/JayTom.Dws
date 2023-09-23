@@ -155,7 +155,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     //触发全景拍照
                     var enumerable = _cameras.Where(w => w.BindingType == CameraBindingType.PanoramicCamera);
                     foreach (var c in enumerable) {
-                        if (c is IIndustrialCamera camera) {
+                        if (c is IIndustrialCamera camera && _deviceService.RunningStatus) {
                             await camera.TakePhotoAsync(args.Barcode, timestamp);
                         }
                     }

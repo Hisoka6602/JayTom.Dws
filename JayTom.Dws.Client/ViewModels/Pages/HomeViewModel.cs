@@ -592,10 +592,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             await Application.Current.Dispatcher.InvokeAsync(async () => {
                 item.Num = TotalDataCount += 1;
                 try {
+                    await Task.Delay(5);
                     await _updateSlim.WaitAsync();
                     BarCodeItems.Insert(0, item);
                     if (BarCodeItems.Count > 200) {
-                        BarCodeItems.RemoveAt(BarCodeItems.Count - 1);
+                        Application.Current.Dispatcher.InvokeAsync(() => {
+                            BarCodeItems.RemoveAt(BarCodeItems.Count - 1);
+                        }, DispatcherPriority.Background);
                     }
                 }
                 finally {
@@ -603,7 +606,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                 }
 
                 item.IsInserting = true;
-            });
+            }, DispatcherPriority.Render);
         }
     }
 }
