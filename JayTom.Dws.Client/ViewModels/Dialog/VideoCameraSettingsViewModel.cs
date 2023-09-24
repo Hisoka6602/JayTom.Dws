@@ -8,11 +8,14 @@ using System.Threading.Tasks;
 using Prism.Services.Dialogs;
 using JayTom.Dws.Client.Models;
 using System.Collections.Generic;
+using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech;
 
 namespace JayTom.Dws.Client.ViewModels.Dialog {
+
     public class VideoCameraSettingsViewModel : BindableBase, IDialogAware {
         private string _userName = string.Empty;
         private string _passWord = string.Empty;
+        private string _serialNo = string.Empty;
 
         public string UserName {
             get => _userName;
@@ -24,25 +27,35 @@ namespace JayTom.Dws.Client.ViewModels.Dialog {
             set => SetProperty(ref _passWord, value);
         }
 
-        public ICommand CloseCommand {
-            get => new DelegateCommand<CameraItemInfoModel>(CloseDelegate);
+        public string SerialNo {
+            get => _serialNo;
+            set => SetProperty(ref _serialNo, value);
         }
 
-        private void CloseDelegate(CameraItemInfoModel obj) {
-            RequestClose?.Invoke(new DialogResult(ButtonResult.Cancel));
+        public ICommand CloseCommand {
+            get => new DelegateCommand<object>(CloseDelegate);
+        }
 
+        private void CloseDelegate(object obj) {
+            RequestClose?.Invoke(new DialogResult(ButtonResult.Cancel));
         }
 
         public ICommand OkCommand {
-            get => new DelegateCommand<CameraItemInfoModel>(OkDelegate);
+            get => new DelegateCommand<object>(OkDelegate);
         }
 
-        private void OkDelegate(CameraItemInfoModel obj) {
-
+        private async void OkDelegate(object obj) {
+            //
+            var failureMessage = string.Empty;
+            var (key, value) = await BaseDaHuatech.CreateInstance().LogIn(SerialNo, UserName, PassWord);
+            if (!key) {
+                failureMessage = value;
+            }
             OnRequestClose(new DialogResult(ButtonResult.OK, new DialogParameters()
             {
                 {"UserName",UserName},
                 {"PassWord",PassWord},
+                {"FailureMessage",failureMessage},
             }));
         }
 
@@ -54,6 +67,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog {
         }
 
         public void OnDialogOpened(IDialogParameters parameters) {
+            SerialNo = parameters.GetValue<string>("SerialNo");
         }
 
         public string Title { get; }

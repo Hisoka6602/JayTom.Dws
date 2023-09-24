@@ -6,6 +6,7 @@ using System.Drawing;
 using Newtonsoft.Json;
 using MVIDCodeReaderNet;
 using MvCodeReaderSDKNet;
+using Newtonsoft.Json.Linq;
 using System.Threading.Tasks;
 using System.Drawing.Imaging;
 using System.Drawing.Drawing2D;
@@ -207,7 +208,14 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                     //注册回调函数
                     _tokenSource = new CancellationTokenSource();
                     new TaskFactory(TaskCreationOptions.LongRunning, TaskContinuationOptions.LongRunning)
-                       .StartNew(async () => await BarcodeCallbackThread(_tokenSource.Token));
+                       .StartNew(async () => await BarcodeCallbackThread(_tokenSource.Token))
+                       .ConfigureAwait(false).GetAwaiter();
+
+                    if (TriggerMode == TriggerMode.Software) {
+                        new TaskFactory(TaskCreationOptions.LongRunning, TaskContinuationOptions.LongRunning)
+                            .StartNew(async () => await ContinuousSoftTrigger(500, _tokenSource.Token))
+                            .ConfigureAwait(false).GetAwaiter();
+                    }
 
                     OnCameraInitialized(new CameraInitializedEventArgs() {
                         CameraInfo = this.Info
@@ -288,7 +296,10 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
         public event EventHandler<PhotoTakenEventArgs>? PhotoTaken;
 
         public Task TakePhotoAsync(string barcode, long barcodeTimestamp, CancellationToken cancellation = default) {
-            throw new NotImplementedException();
+            OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
+                Exception = new Exception("没有实现拍照方法")
+            });
+            return Task.CompletedTask;
         }
 
         public Task TakePhotoAsync(string barcode, long barcodeTimestamp, TimeSpan delay, CancellationToken cancellation = default) {
@@ -304,7 +315,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
         public TriggerMode TriggerMode { get; set; } = TriggerMode.Hardware;
 
         public void SoftwareTriggerOnce() {
-            Task.Run(() => {
+            Task.Factory.StartNew(() => {
                 if (IsUseTriggerMode && TriggerMode == TriggerMode.Software) {
                     int nRet = _mvCodeReader?.MV_CODEREADER_SetCommandValue_NET("TriggerSoftware") ?? 0;
                     if (MvCodeReader.MV_CODEREADER_OK != nRet) {
@@ -336,6 +347,28 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
             Array.Reverse(addressBytes);
 
             return new IPAddress(addressBytes);
+        }
+
+        private async Task ContinuousSoftTrigger(int intervalTime, CancellationToken token) {
+            if (intervalTime <= 0) {
+                intervalTime = 50;
+            }
+            while (!token.IsCancellationRequested) {
+                if (IsUseTriggerMode && TriggerMode == TriggerMode.Software) {
+                    var nRet = _mvCodeReader?.MV_CODEREADER_SetCommandValue_NET("TriggerSoftware") ?? 0;
+                    if (MvCodeReader.MV_CODEREADER_OK != nRet) {
+                        OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
+                            Exception = new Exception($"软触发异常:{nRet:X}")
+                        });
+                    }
+                }
+                else {
+                    OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
+                        Exception = new Exception($"需要初始化时使用触发模式，并且使用软触发才能生效")
+                    });
+                }
+                await Task.Delay(intervalTime, token);
+            }
         }
 
         private async Task BarcodeCallbackThread(CancellationToken token) {

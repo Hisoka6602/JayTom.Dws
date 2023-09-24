@@ -16,5 +16,11 @@ namespace JayTom.Dws.Data.LocalConf.CameraConfig {
         /// </summary>
         [Column("IsShowRealTimeImage"), InsertOrUpdata]
         public bool IsShowRealTimeImage { get; set; }
+
+        /// <summary>
+        /// 连接参数
+        /// </summary>
+        [Column("CameraConnectionParameters"), InsertOrUpdata]
+        public string CameraConnectionParameters { get; set; } = string.Empty;
     }
 }

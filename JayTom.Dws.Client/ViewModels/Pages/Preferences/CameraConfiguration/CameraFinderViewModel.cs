@@ -5,6 +5,8 @@ using System.Text;
 using Prism.Commands;
 using System.Windows;
 using Newtonsoft.Json;
+using Mono.Unix.Native;
+using JayTom.Dws.Camera;
 using System.Diagnostics;
 using System.Windows.Input;
 using JayTom.Dws.Domain.Dto;
@@ -22,6 +24,7 @@ using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Data.LocalConf.CameraConfig;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Infrastructure.Repository.LocalConf;
+using CameraType = JayTom.Dws.Client.Models.CameraType;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.StartPanel;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
@@ -250,21 +253,32 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
             if (_isExecuting) {
                 return;
             }
-
             var cameraConnectionParameters = string.Empty;
+            var failureMessage = string.Empty;
             if (obj.CameraType == CameraType.VideoCamera) {
                 //弹出账号密码录入框
-                _dialogService.ShowDialog($"VideoCameraSettingsDialog", callback => {
-                    if (callback.Result != ButtonResult.OK) {
-                        return;
-                    }
+                var result = ButtonResult.No;
+                _dialogService.ShowDialog($"VideoCameraSettingsDialog", new DialogParameters()
+                {
+                    {"SerialNo", obj.SerialNumber}
+                }, callback => {
+                    result = callback.Result;
                     var userName = callback.Parameters.GetValue<string>("UserName");
                     var passWord = callback.Parameters.GetValue<string>("PassWord");
+                    failureMessage = callback.Parameters.GetValue<string>("FailureMessage");
+
                     cameraConnectionParameters = JsonConvert.SerializeObject(new {
                         UserName = userName,
                         PassWord = passWord,
                     });
                 });
+                if (result != ButtonResult.OK) {
+                    return;
+                }
+                if (!failureMessage.Equals(string.Empty)) {
+                    CameraFinderMessageQueue.Enqueue(failureMessage);
+                    return;
+                }
             }
 
             await Application.Current.Dispatcher.InvokeAsync(async () => {
@@ -313,6 +327,24 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
             if (_isExecuting) {
                 return;
             }
+            var cameraConnectionParameters = string.Empty;
+            var result = ButtonResult.No;
+            if (obj.CameraType == CameraType.SmartCamera &&
+                obj.Brand.Contains("Hik")) {
+                //弹出触发选择
+                _dialogService.ShowDialog("TriggerModeSelectionPage", callback => {
+                    //获取参数
+                    result = callback.Result;
+                    var triggerMode = callback.Parameters.GetValue<TriggerMode>("CameraTriggerMode");
+                    cameraConnectionParameters = JsonConvert.SerializeObject(new {
+                        TriggerMode = triggerMode,
+                    });
+                });
+                if (result != ButtonResult.OK) {
+                    return;
+                }
+            }
+
             await Application.Current.Dispatcher.InvokeAsync(async () => {
                 _isExecuting = true;
                 var isSuccess = false;
@@ -324,7 +356,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                     Name = obj.Name,
                     SerialNumber = obj.SerialNumber,
                     Version = obj.Version,
-                    IsShowRealTimeImage = true
+                    IsShowRealTimeImage = true,
+                    CameraConnectionParameters = cameraConnectionParameters
                 });
                 if (insertOrUpdate) {
                     //从数据库修改或增加

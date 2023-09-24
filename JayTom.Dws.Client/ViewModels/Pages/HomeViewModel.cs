@@ -58,6 +58,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         private readonly IResultOutputService _resultOutputService;
         private readonly IExternalDataService _externalDataService;
         private readonly IConfigRepository _configRepository;
+        private readonly IBarcodeScannerCameraConfigRepository _barcodeScannerCameraConfigRepository;
         private ObservableCollection<CameraItemInfoModel> _cameraItems = new();
 
         private ObservableCollection<BarCodeItemModel> _barCodeItems = new();
@@ -201,7 +202,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             IImageStorageService imageStorageService,
             IResultOutputService resultOutputService,
             IExternalDataService externalDataService,
-            IConfigRepository configRepository) {
+            IConfigRepository configRepository,
+            IBarcodeScannerCameraConfigRepository barcodeScannerCameraConfigRepository) {
             _dialogService = dialogService;
             _computerInfoReporter = computerInfoReporter;
             _barCodeRepository = barCodeRepository;
@@ -210,6 +212,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             _resultOutputService = resultOutputService;
             _externalDataService = externalDataService;
             _configRepository = configRepository;
+            _barcodeScannerCameraConfigRepository = barcodeScannerCameraConfigRepository;
             CameraItems = new() {
                 /*new CameraItemInfoModel()
                 {
@@ -254,7 +257,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                         Camera = s,
                         StatusClickCommand = StatusClickCommand,
                         TakePhotoCommand = TakePhotoCommand,
-                        SwitchRealtimeImageCommand = SwitchRealtimeImageCommand
+                        SwitchRealtimeImageCommand = SwitchRealtimeImageCommand,
+                        IsRealtimeImageEnabled = s?.IsRealtimeImageEnabled ?? false
                     })?.ToList();
                     CameraItems.AddRange(infoModels);
                 });
@@ -501,7 +505,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             get => new DelegateCommand<CameraItemInfoModel>(SwitchRealtimeImageDelegate);
         }
 
-        private void SwitchRealtimeImageDelegate(CameraItemInfoModel obj) {
+        private async void SwitchRealtimeImageDelegate(CameraItemInfoModel obj) {
             if (obj.Camera is { } camera) {
                 if (camera.IsRealtimeImageEnabled) {
                     camera.StopRealTimeImage();
@@ -510,6 +514,16 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     camera.StartRealTimeImage();
                 }
                 obj.IsRealtimeImageEnabled = camera.IsRealtimeImageEnabled;
+
+                //保存到数据库
+                if (camera.BindingType == CameraBindingType.ScannerCamera) {
+                    var configInfoModel = await _barcodeScannerCameraConfigRepository.FirstOrDefault(f =>
+                        camera.Info != null && f.SerialNumber.Equals(camera.Info.SerialNumber));
+                    if (configInfoModel != null) {
+                        configInfoModel.IsShowRealTimeImage = camera.IsRealtimeImageEnabled;
+                        await _barcodeScannerCameraConfigRepository.InsertOrUpdate(configInfoModel);
+                    }
+                }
             }
         }
 
@@ -598,7 +612,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     if (BarCodeItems.Count > 200) {
                         Application.Current.Dispatcher.InvokeAsync(() => {
                             BarCodeItems.RemoveAt(BarCodeItems.Count - 1);
-                        }, DispatcherPriority.Background);
+                        }, DispatcherPriority.Render);
                     }
                 }
                 finally {

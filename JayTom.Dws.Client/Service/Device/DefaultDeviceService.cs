@@ -6,6 +6,7 @@ using System.Drawing;
 using Newtonsoft.Json;
 using System.Threading;
 using JayTom.Dws.Camera;
+using Newtonsoft.Json.Linq;
 using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
 using JayTom.Dws.Plugin.Scale;
@@ -510,7 +511,12 @@ namespace JayTom.Dws.Client.Service.Device {
                                     industrialCamera.BarcodeRead += delegate (object? sender, BarcodeReadEventArgs args) {
                                         OnBarcodeScanned(args);
                                     };
-
+                                    var isShowRealTimeImage = scannerCameraConfigInfoModels?.FirstOrDefault(f =>
+                                        f.SerialNumber.Equals(camera.Info?.SerialNumber))
+                                        ?.IsShowRealTimeImage;
+                                    if (isShowRealTimeImage == true) {
+                                        industrialCamera.StartRealTimeImage();
+                                    }
                                     break;
 
                                 case ISmartCamera smartCamera:
@@ -521,6 +527,25 @@ namespace JayTom.Dws.Client.Service.Device {
                                     smartCamera.NotBarcodeHitEvent += delegate (object? sender, BarcodeReadEventArgs args) {
                                         OnNotBarcodeHitEvent(args);
                                     };
+                                    try {
+                                        var scannerCameraConfigInfoModel = scannerCameraConfigInfoModels?.FirstOrDefault(f =>
+                                            f.SerialNumber.Equals(camera.Info?.SerialNumber));
+                                        var parameters = scannerCameraConfigInfoModel?.CameraConnectionParameters;
+                                        if (!string.IsNullOrEmpty(parameters)) {
+                                            var jObject = JObject.Parse(parameters);
+                                            if (jObject["TriggerMode"] is not null) {
+                                                smartCamera.TriggerMode = (TriggerMode)jObject["TriggerMode"].Value<int>();
+                                            }
+                                        }
+
+                                        if (scannerCameraConfigInfoModel?.IsShowRealTimeImage == true) {
+                                            smartCamera.StartRealTimeImage();
+                                        }
+                                    }
+                                    catch (Exception e) {
+                                        NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
+                                    }
+
                                     break;
 
                                 case ISecurityCamera securityCamera: {
@@ -669,7 +694,7 @@ namespace JayTom.Dws.Client.Service.Device {
                     BindingType: CameraBindingType.PanoramicCamera,
                     SdkType: (SdkType.IndustrialCameraSdk or SdkType.SecurityCamera),
                 })?.ToList();
-            if (cameras?.Any() == true) {
+            if (cameras?.Any() == true && RunningStatus) {
                 foreach (var camera in cameras) {
                     if (camera is IIndustrialCamera industrialCamera) {
                         await industrialCamera.TakePhotoAsync(e.Barcode, e.Timestamp);

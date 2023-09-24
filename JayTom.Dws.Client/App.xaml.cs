@@ -86,6 +86,10 @@ namespace JayTom.Dws.Client {
             {
                 containerRegistry.RegisterDialog<VideoCameraSettingsDialog>();
             }
+            //海康软硬触发
+            {
+                containerRegistry.RegisterDialog<TriggerModeSelectionPage>();
+            }
             //跳转注册
             {
                 containerRegistry.RegisterForNavigation<PluginMarketplacePage>();
@@ -301,7 +305,8 @@ namespace JayTom.Dws.Client {
             ViewModelLocationProvider.Register<VolumeSettingsPage, VolumeSettingsViewModel>();
             ViewModelLocationProvider.Register<LogManagerPage, LogManagerViewModel>();
             ViewModelLocationProvider.Register<VideoCameraSettingsDialog, VideoCameraSettingsViewModel>();
-
+            ViewModelLocationProvider.Register<TriggerModeSelectionPage, TriggerModeSelectionViewModel>();
+            ViewModelLocationProvider.Register<ResolutionConstraintDialog, ResolutionConstraintViewModel>();
             //接口
             ViewModelLocationProvider.Register<DefaultApiPage, DefaultApiPageViewModel>();
             //其他插件

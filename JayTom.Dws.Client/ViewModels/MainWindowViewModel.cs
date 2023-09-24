@@ -18,7 +18,9 @@ using JayTom.Dws.Data.LocalConf;
 using System.Collections.Generic;
 using System.Windows.Media.Imaging;
 using System.Collections.ObjectModel;
+using JayTom.Dws.Client.Views.Dialog;
 using JayTom.Dws.PluginInterface.Utils;
+using JayTom.Dws.Client.ViewModels.Dialog;
 using JayTom.Dws.Domain.Repository.LocalConf;
 
 namespace JayTom.Dws.Client.ViewModels {
@@ -217,6 +219,34 @@ namespace JayTom.Dws.Client.ViewModels {
                 var languageInfoModel = models.FirstOrDefault(f => f.DisplayName.Equals(language));
                 if (languageInfoModel is not null) {
                     SelectedLanguage = languageInfoModel;
+                }
+                //判断分辨率
+                // 获取当前屏幕分辨率
+                if (System.Windows.Forms.Screen.PrimaryScreen != null &&
+                    System.Windows.Forms.Screen.PrimaryScreen?.Bounds is not null) {
+                    var screenWidth = System.Windows.Forms.Screen.PrimaryScreen.Bounds.Width;
+                    var screenHeight = System.Windows.Forms.Screen.PrimaryScreen.Bounds.Height;
+
+                    // 获取当前屏幕DPI
+                    var dpiX = System.Windows.Forms.Screen.PrimaryScreen.Bounds.Width / System.Windows.Forms.Screen.PrimaryScreen.Bounds.Size.Width * 96f;
+                    var dpiY = System.Windows.Forms.Screen.PrimaryScreen.Bounds.Height / System.Windows.Forms.Screen.PrimaryScreen.Bounds.Size.Height * 96f;
+
+                    // 计算DPI调整后的分辨率
+                    var adjustedScreenWidth = (int)(screenWidth * 96f / dpiX);
+                    var adjustedScreenHeight = (int)(screenHeight * 96f / dpiY);
+                    if (adjustedScreenWidth < 1820 ||
+                        adjustedScreenHeight < 900) {
+                        var resolutionConstraintDialog = new ResolutionConstraintDialog();
+                        if (resolutionConstraintDialog.DataContext is ResolutionConstraintViewModel model) {
+                            model.Identifier = "MainDialog";
+                            model.MinimumWidth = 1820;
+                            model.MinimumHeight = 900;
+                            await DialogHost.Show(resolutionConstraintDialog, model.Identifier);
+                            if (!model.ContinueRunning) {
+                                System.Windows.Application.Current.Shutdown();//关闭
+                            }
+                        }
+                    }
                 }
 
                 IsLoaded = true;
