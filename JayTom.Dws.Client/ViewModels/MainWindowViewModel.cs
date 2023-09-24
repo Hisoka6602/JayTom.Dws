@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using System.Windows.Media.Imaging;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Views.Dialog;
+using System.Runtime.InteropServices;
 using JayTom.Dws.PluginInterface.Utils;
 using JayTom.Dws.Client.ViewModels.Dialog;
 using JayTom.Dws.Domain.Repository.LocalConf;
@@ -228,9 +229,9 @@ namespace JayTom.Dws.Client.ViewModels {
                     var screenHeight = System.Windows.Forms.Screen.PrimaryScreen.Bounds.Height;
 
                     // 获取当前屏幕DPI
-                    var dpiX = System.Windows.Forms.Screen.PrimaryScreen.Bounds.Width / System.Windows.Forms.Screen.PrimaryScreen.Bounds.Size.Width * 96f;
-                    var dpiY = System.Windows.Forms.Screen.PrimaryScreen.Bounds.Height / System.Windows.Forms.Screen.PrimaryScreen.Bounds.Size.Height * 96f;
-
+                    var hdc = GetDC(IntPtr.Zero);
+                    var dpiX = GetDeviceCaps(hdc, LOGPIXELSX);
+                    var dpiY = GetDeviceCaps(hdc, LOGPIXELSY);
                     // 计算DPI调整后的分辨率
                     var adjustedScreenWidth = (int)(screenWidth * 96f / dpiX);
                     var adjustedScreenHeight = (int)(screenHeight * 96f / dpiY);
@@ -330,5 +331,17 @@ namespace JayTom.Dws.Client.ViewModels {
                 }
             }
         }
+
+        [DllImport("User32.dll")]
+        private static extern IntPtr GetDC(IntPtr hwnd);
+
+        [DllImport("User32.dll")]
+        private static extern int ReleaseDC(IntPtr hwnd, IntPtr dc);
+
+        [DllImport("Gdi32.dll")]
+        private static extern int GetDeviceCaps(IntPtr hdc, int nIndex);
+
+        private const int LOGPIXELSX = 88;
+        private const int LOGPIXELSY = 90;
     }
 }
