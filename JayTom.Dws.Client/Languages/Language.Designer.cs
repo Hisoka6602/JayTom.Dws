@@ -754,6 +754,15 @@ namespace JayTom.Dws.Client.Languages {
         }
         
         /// <summary>
+        ///   查找类似 退出 的本地化字符串。
+        /// </summary>
+        public static string Exit {
+            get {
+                return ResourceManager.GetString("Exit", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查找类似 导出 的本地化字符串。
         /// </summary>
         public static string Export {
@@ -840,6 +849,15 @@ namespace JayTom.Dws.Client.Languages {
         public static string HardDisk {
             get {
                 return ResourceManager.GetString("HardDisk", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 硬触发 的本地化字符串。
+        /// </summary>
+        public static string HardTrigger {
+            get {
+                return ResourceManager.GetString("HardTrigger", resourceCulture);
             }
         }
         
@@ -979,11 +997,29 @@ namespace JayTom.Dws.Client.Languages {
         }
         
         /// <summary>
+        ///   查找类似 是否继续运行? 的本地化字符串。
+        /// </summary>
+        public static string IsContinueRunning {
+            get {
+                return ResourceManager.GetString("IsContinueRunning", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查找类似 是否开启实时图像: 的本地化字符串。
         /// </summary>
         public static string IsEnableRealTimeImage {
             get {
                 return ResourceManager.GetString("IsEnableRealTimeImage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 确定 的本地化字符串。
+        /// </summary>
+        public static string IsOk {
+            get {
+                return ResourceManager.GetString("IsOk", resourceCulture);
             }
         }
         
@@ -1281,6 +1317,24 @@ namespace JayTom.Dws.Client.Languages {
         public static string LogManagement {
             get {
                 return ResourceManager.GetString("LogManagement", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 检查到系统分辨率不适配,最低分辨率要求为: 的本地化字符串。
+        /// </summary>
+        public static string lowResolutionPrompt {
+            get {
+                return ResourceManager.GetString("lowResolutionPrompt", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Tips:如果您设置了Dpi缩放，请尝试调整 的本地化字符串。
+        /// </summary>
+        public static string lowResolutionTips {
+            get {
+                return ResourceManager.GetString("lowResolutionTips", resourceCulture);
             }
         }
         
@@ -1798,11 +1852,29 @@ namespace JayTom.Dws.Client.Languages {
         }
         
         /// <summary>
+        ///   查找类似 运行 的本地化字符串。
+        /// </summary>
+        public static string Run {
+            get {
+                return ResourceManager.GetString("Run", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查找类似 采样频率: 的本地化字符串。
         /// </summary>
         public static string SamplingFrequency {
             get {
                 return ResourceManager.GetString("SamplingFrequency", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 触发模式: 的本地化字符串。
+        /// </summary>
+        public static string SanTriggerMode {
+            get {
+                return ResourceManager.GetString("SanTriggerMode", resourceCulture);
             }
         }
         
@@ -1983,6 +2055,15 @@ namespace JayTom.Dws.Client.Languages {
         public static string SmartCamera {
             get {
                 return ResourceManager.GetString("SmartCamera", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 软触发 的本地化字符串。
+        /// </summary>
+        public static string SoftTrigger {
+            get {
+                return ResourceManager.GetString("SoftTrigger", resourceCulture);
             }
         }
         
@@ -2505,6 +2586,15 @@ namespace JayTom.Dws.Client.Languages {
         public static string TriggerPosition {
             get {
                 return ResourceManager.GetString("TriggerPosition", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 如果继续运行可能UI布局错乱 的本地化字符串。
+        /// </summary>
+        public static string uiErrorTips {
+            get {
+                return ResourceManager.GetString("uiErrorTips", resourceCulture);
             }
         }
         

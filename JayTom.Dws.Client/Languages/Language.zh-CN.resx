@@ -425,6 +425,10 @@
     <value>异常数量</value>
     <comment>1-异常数量(主页)</comment>
   </data>
+  <data name="Exit" xml:space="preserve">
+    <value>退出</value>
+    <comment>15-退出</comment>
+  </data>
   <data name="Export" xml:space="preserve">
     <value>导出</value>
     <comment>6-导出</comment>
@@ -464,6 +468,10 @@
   <data name="HardDisk" xml:space="preserve">
     <value>硬盘</value>
     <comment>4-硬盘</comment>
+  </data>
+  <data name="HardTrigger" xml:space="preserve">
+    <value>硬触发</value>
+    <comment>15-硬触发</comment>
   </data>
   <data name="Height" xml:space="preserve">
     <value>高度:</value>
@@ -525,9 +533,17 @@
     <value>IP地址:</value>
     <comment>8-IP地址</comment>
   </data>
+  <data name="IsContinueRunning" xml:space="preserve">
+    <value>是否继续运行?</value>
+    <comment>15-是否继续运行?</comment>
+  </data>
   <data name="IsEnableRealTimeImage" xml:space="preserve">
     <value>是否开启实时图像:</value>
     <comment>7-是否开启实时图像</comment>
+  </data>
+  <data name="IsOk" xml:space="preserve">
+    <value>确定</value>
+    <comment>15-确定</comment>
   </data>
   <data name="IsOutputBarcode" xml:space="preserve">
     <value>是否输出条码</value>
@@ -660,6 +676,14 @@
   <data name="LogManagement" xml:space="preserve">
     <value>日志管理</value>
     <comment>0-日志管理(菜单)</comment>
+  </data>
+  <data name="lowResolutionPrompt" xml:space="preserve">
+    <value>检查到系统分辨率不适配,最低分辨率要求为:</value>
+    <comment>15-检查到系统分辨率不适配,最低分辨率要求为:</comment>
+  </data>
+  <data name="lowResolutionTips" xml:space="preserve">
+    <value>Tips:如果您设置了Dpi缩放，请尝试调整</value>
+    <comment>15-Tips:如果您设置了Dpi缩放，请尝试调整</comment>
   </data>
   <data name="ManualCleanup" xml:space="preserve">
     <value>手动清理:</value>
@@ -889,9 +913,17 @@
     <value>根目录</value>
     <comment>8-根目录</comment>
   </data>
+  <data name="Run" xml:space="preserve">
+    <value>运行</value>
+    <comment>15-运行</comment>
+  </data>
   <data name="SamplingFrequency" xml:space="preserve">
     <value>采样频率:</value>
     <comment>9-采样频率</comment>
+  </data>
+  <data name="SanTriggerMode" xml:space="preserve">
+    <value>触发模式:</value>
+    <comment>15-触发模式</comment>
   </data>
   <data name="Save" xml:space="preserve">
     <value>保存</value>
@@ -972,6 +1004,10 @@
   <data name="SmartCamera" xml:space="preserve">
     <value>智能相机</value>
     <comment>12-智能相机</comment>
+  </data>
+  <data name="SoftTrigger" xml:space="preserve">
+    <value>软触发</value>
+    <comment>15-软触发</comment>
   </data>
   <data name="StabilityAccuracy" xml:space="preserve">
     <value>稳定精度:</value>
@@ -1204,6 +1240,10 @@
   <data name="TriggerPosition" xml:space="preserve">
     <value>触发位置:</value>
     <comment>10-触发位置</comment>
+  </data>
+  <data name="uiErrorTips" xml:space="preserve">
+    <value>如果继续运行可能UI布局错乱</value>
+    <comment>15-如果继续运行可能UI布局错乱</comment>
   </data>
   <data name="Unbind" xml:space="preserve">
     <value>解绑</value>

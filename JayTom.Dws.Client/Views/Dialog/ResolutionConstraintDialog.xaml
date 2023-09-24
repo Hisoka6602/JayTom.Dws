@@ -3,6 +3,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:languages="clr-namespace:JayTom.Dws.Client.Languages"
     xmlns:local="clr-namespace:JayTom.Dws.Client.Views.Dialog"
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -35,13 +36,15 @@
                 Visibility="Visible" />
             <!--  提示  -->
             <TextBlock
+                MaxWidth="460"
                 Margin="5,10"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
                 FontSize="16"
                 FontWeight="Bold"
-                Foreground="DarkGray">
-                <Run Text="检查到系统分辨率不适配,最低分辨率要求为:" /> <Run Text="{Binding MinimumWidth, UpdateSourceTrigger=PropertyChanged}" /><Run Text="x" /><Run Text="{Binding MinimumHeight, UpdateSourceTrigger=PropertyChanged}" />
+                Foreground="DarkGray"
+                TextWrapping="Wrap">
+                <Run Text="{x:Static languages:Language.lowResolutionPrompt}" /> <Run Text="{Binding MinimumWidth, UpdateSourceTrigger=PropertyChanged}" /><Run Text="x" /><Run Text="{Binding MinimumHeight, UpdateSourceTrigger=PropertyChanged}" />
             </TextBlock>
             <TextBlock
                 Margin="5,10"
@@ -51,7 +54,7 @@
                 FontWeight="Bold"
                 Foreground="DarkGray"
                 Opacity="0.6"
-                Text="Tips:如果您设置了Dpi缩放，请尝试调整" />
+                Text="{x:Static languages:Language.lowResolutionTips}" />
             <TextBlock
                 Margin="5,10"
                 HorizontalAlignment="Center"
@@ -60,7 +63,7 @@
                 FontWeight="Bold"
                 Foreground="DarkGray"
                 Opacity="0.8"
-                Text="如果继续运行可能UI布局错乱" />
+                Text="{x:Static languages:Language.uiErrorTips}" />
             <!--  按钮  -->
             <TextBlock
                 Margin="5,10"
@@ -69,7 +72,7 @@
                 FontSize="30"
                 FontWeight="Bold"
                 Foreground="DarkGray"
-                Text="是否继续运行?" />
+                Text="{x:Static languages:Language.IsContinueRunning}" />
 
             <StackPanel
                 HorizontalAlignment="Center"
@@ -93,7 +96,7 @@
                         FontSize="18"
                         FontWeight="Bold"
                         Foreground="White"
-                        Text="运行" />
+                        Text="{x:Static languages:Language.Run}" />
                 </Button>
                 <Button
                     Width="120"
@@ -113,10 +116,9 @@
                         FontSize="18"
                         FontWeight="Bold"
                         Foreground="White"
-                        Text="退出" />
+                        Text="{x:Static languages:Language.Exit}" />
                 </Button>
             </StackPanel>
-
         </StackPanel>
     </Border>
 </UserControl>
