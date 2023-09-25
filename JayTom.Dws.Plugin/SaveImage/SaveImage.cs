@@ -22,11 +22,11 @@ namespace JayTom.Dws.Plugin.SaveImage {
                     // 创建缩略图时使用原始的宽度和高度
                     image = image.GetThumbnailImage(image.Width, image.Height, () => false, IntPtr.Zero);
                 }
-
+                using var processedImage = new Bitmap(image);
                 if (watermarkParams is not null) {
                     // 添加水印
                     var watermarkTestText = string.Join("\n", watermarkParams.WatermarkContent ?? new List<string>());
-                    using var processedImage = new Bitmap(image);
+
                     using (var graphics = Graphics.FromImage(processedImage)) {
                         // 在此处进行水印绘制操作
                         using var watermarkFont = new Font("Microsoft YaHei", watermarkParams.FontSize, FontStyle.Bold);
@@ -63,15 +63,12 @@ namespace JayTom.Dws.Plugin.SaveImage {
                         graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
                         graphics.DrawString(watermarkTestText, watermarkFont, watermarkBrush, x, y);
                     }
-
-                    if (!Directory.Exists(imagePath)) {
-                        Directory.CreateDirectory(imagePath);
-                    }
-
-                    // 保存修改后的图像
-                    processedImage.Save($"{imagePath}\\{imageName}.jpg", ImageFormat.Jpeg);
                 }
-
+                if (!Directory.Exists(imagePath)) {
+                    Directory.CreateDirectory(imagePath);
+                }
+                // 保存修改后的图像
+                processedImage.Save($"{imagePath}\\{imageName}.jpg", ImageFormat.Jpeg);
                 return new KeyValuePair<bool, string>(true, "原图保存成功"); // 返回保存成功的信息
             }
             catch (Exception ex) {

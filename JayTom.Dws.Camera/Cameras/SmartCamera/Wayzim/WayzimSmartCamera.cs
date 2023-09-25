@@ -7,6 +7,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Threading.Tasks;
 using System.Drawing.Imaging;
+using System.Drawing.Drawing2D;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
@@ -16,7 +17,6 @@ using static JayTom.Dws.Camera.Cameras.SmartCamera.Irayple.DaHuaSmartCamera;
 namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
 
     public class WayzimSmartCamera : ISmartCamera {
-        private static SemaphoreSlim _readSlim = new(1);
         private static SemaphoreSlim _bindingSlim = new(1);
 
         /// <summary>
@@ -27,24 +27,15 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
         //过滤器
         private readonly BarCodeFilterContainer _barCodeFilterContainer = new();
 
+        //相机对象
+        private CameraDataService? _cameraDataService;
+
         /// <summary>
         /// 固定端口
         /// </summary>
         public WayzimSmartCamera(CameraInfo info) {
             this.Info = info;
             this.Info.Type = CameraType.SmartCamera;
-            if (this.Info.Name.Equals("t1")) {
-                this.Info.Port = 51236;
-            }
-            else if (this.Info.Name.Equals("t2")) {
-                this.Info.Port = 51237;
-            }
-            else if (this.Info.Name.Equals("t4")) {
-                this.Info.Port = 51238;
-            }
-            else if (this.Info.Name.Equals("t3")) {
-                this.Info.Port = 51239;
-            }
         }
 
         public WayzimSmartCamera() {
@@ -62,6 +53,8 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
         public CameraBindingType BindingType { get; set; } = CameraBindingType.ScannerCamera;
 
         public async Task<List<CameraInfo>?> EnumerateCameras() {
+            await Task.Yield();
+            GWCameraService.SetWriteLog(s => { });
             var cameraInfoStructs = GWCameraService.GetCameraInfos();
             var cameraInfos = cameraInfoStructs?.Select(s => new CameraInfo() {
                 Brand = "Wayzim",
@@ -73,6 +66,9 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
                 SerialNumber = s.CamMacAdr.Replace(":", string.Empty),
                 Id = s.DevIndex,
             })?.ToList();
+            OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
+                Exception = new Exception($"相机数量:{cameraInfos?.Count}")
+            });
             if (cameraInfos?.Any() == true) {
                 foreach (var cameraInfo in cameraInfos) {
                     _devInfo.AddOrUpdate(cameraInfo.SerialNumber, cameraInfo, (k, v) => cameraInfo);
@@ -102,11 +98,23 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
             }
             if (param is CameraInfo info) {
                 this.Info = info;
+                var tryGetValue = _devInfo.TryGetValue(info.SerialNumber, out var devInfo);
+                if (tryGetValue && devInfo is not null) {
+                    this.Info = devInfo;
+                }
+                else {
+                    OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
+                        Exception = new Exception("设备不存在或已离线,请重新枚举!")
+                    });
+                    return new KeyValuePair<bool, string>(false, "设备不存在或已离线,请重新枚举!");
+                }
             }
             return new KeyValuePair<bool, string>(true, "初始化成功");
         }
 
         public async Task<KeyValuePair<bool, string>> Start(object param) {
+            const int port = 51236;
+            var errorMsg = "";
             try {
                 await _bindingSlim.WaitAsync();
                 await Task.Delay(50);
@@ -114,25 +122,18 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
                     return new KeyValuePair<bool, string>(false, "设备已在运行中");
                 }
 
-                if (this.Info is not null) {
-                    var errorMsg = string.Empty;
-                    var recReaultInfo =
-                        GWCameraService.RecReaultInfo(Info.Id, ReaultCallBack, null, ref errorMsg, this.Info.Port);
-                    if (recReaultInfo) {
-                        OnCameraInitialized(new CameraInitializedEventArgs() {
-                            CameraInfo = this.Info,
-                        });
-                        OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
-                            Exception = new Exception($"{this.Info.Id}")
-                        });
-                    }
-                    else {
-                        OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
-                            Exception = new Exception($"相机回调绑定失败:{JsonConvert.SerializeObject(this.Info)}")
-                        });
-                    }
-
-                    return new KeyValuePair<bool, string>(recReaultInfo, errorMsg);
+                _cameraDataService = GWCameraService.GetCameraInstance(Info?.Id ?? 0, ReaultCallBack, null, ref errorMsg, port);
+                if (!errorMsg.Equals(string.Empty)) {
+                    OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
+                        Exception = new Exception($"相机回调绑定失败:{errorMsg}")
+                    });
+                    return new KeyValuePair<bool, string>(false, errorMsg);
+                }
+                else {
+                    OnCameraInitialized(new CameraInitializedEventArgs() {
+                        CameraInfo = this.Info,
+                    });
+                    return new KeyValuePair<bool, string>(true, errorMsg);
                 }
             }
             catch (Exception e) {
@@ -152,18 +153,14 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
         /// <param name="infostruct"></param>
         /// <param name="tag"></param>
         private async void ReaultCallBack(ResultInfoStruct infostruct, object tag) {
-            await _readSlim.WaitAsync();
-            OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
-                Exception = new Exception($"接收到数据:相机ID：{Info?.Id},相机端口:{Info.Port},相机序列号:{Info?.SerialNumber},相机IP:{infostruct.CodeInfo.CamIpAdr}")
-            });
             Bitmap? bitmap = null;
             Image? thumbnailImage = null;
             var localTime = DateTimeOffset.Now.ToLocalTime();
-            long timestamp = localTime.ToUnixTimeMilliseconds();
+            var timestamp = localTime.ToUnixTimeMilliseconds();
             //解析图片
             if (infostruct.ImageInfo is { Size: > 0, ImageType: ImageTypes.JPEG }) {
                 bitmap = ConvertByteArrayToBitmap(infostruct.ImageInfo.ImageBytes);
-                thumbnailImage = bitmap?.GetThumbnailImage(800, 600, () => false, IntPtr.Zero);
+                thumbnailImage = GenerateThumbnail(bitmap);
                 //画边框
                 if (IsShowBarcodeBorder && thumbnailImage is not null && bitmap is not null &&
                     thumbnailImage.PixelFormat != PixelFormat.Format8bppIndexed &&
@@ -183,9 +180,9 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
                     }
                 }
             }
-
             if (infostruct.CodeInfo.CodeInfos?.Any() == true) {
                 //扫到条码
+
                 foreach (var codeInfo in infostruct.CodeInfo.CodeInfos) {
                     //过滤
                     var validateData = _barCodeFilterContainer.ValidateData(new BarCodeFilterInfo() {
@@ -217,9 +214,15 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
                     ScanTime = DateTime.Now
                 });
             }
-
+            if (IsRealtimeImageEnabled) {
+                OnRealtimeImage(new RealtimeImageEventArgs() {
+                    Timestamp = timestamp,
+                    ThumbImage = (Bitmap?)thumbnailImage,
+                });
+            }
             await Task.Delay(5);
-            _readSlim.Release();
+            /*infostruct.CodeInfo = default;
+            infostruct.ImageInfo = default;*/
         }
 
         private Bitmap? ConvertByteArrayToBitmap(byte[] imageData) {
@@ -234,6 +237,20 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
             }
             return (Bitmap?)img;
         }
+
+        /*private Bitmap? ConvertByteArrayToBitmap(byte[] imageData) {
+            Bitmap? bitmap = null;
+
+            using var ms = new MemoryStream(imageData);
+            try {
+                bitmap = new Bitmap(ms);
+            }
+            catch (Exception ex) {
+                bitmap = null;
+            }
+
+            return bitmap;
+        }*/
 
         private List<Point> ConvertPoint(CodeInfo info) {
             var points = new List<Point>();
@@ -250,7 +267,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
         public async Task<KeyValuePair<bool, string>> Stop() {
             await Task.Yield();
             try {
-                GWCameraService.Close();
+                _cameraDataService?.Dispose();
                 OnCameraDisconnected(new CameraConnectionEventArgs() {
                     CameraInfo = Info
                 });
@@ -267,18 +284,14 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
             });
         }
 
-        public bool IsRealtimeImageEnabled { get; } = false;
+        public bool IsRealtimeImageEnabled { get; private set; } = false;
 
         public void StartRealTimeImage() {
-            OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
-                Exception = new Exception("该SDK无实时图像函数")
-            });
+            IsRealtimeImageEnabled = true;
         }
 
         public void StopRealTimeImage() {
-            OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
-                Exception = new Exception("该SDK无实时图像函数")
-            });
+            IsRealtimeImageEnabled = false;
         }
 
         public event EventHandler<PhotoTakenEventArgs>? PhotoTaken;
@@ -366,6 +379,38 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
         protected virtual async void OnNotBarcodeHitEvent(BarcodeReadEventArgs e) {
             await Task.Yield();
             NotBarcodeHitEvent?.Invoke(this, e);
+        }
+
+        public static Image? GenerateThumbnail(Image? sourceImage, int thumbnailWidth = 800, int thumbnailHeight = 600) {
+            if (sourceImage is null) {
+                return null;
+            }
+            // 创建目标缩略图的空白画布
+            var thumbnail = new Bitmap(thumbnailWidth, thumbnailHeight);
+
+            using var graphics = Graphics.FromImage(thumbnail);
+            // 设置绘图质量参数
+            graphics.CompositingQuality = CompositingQuality.HighSpeed;
+            graphics.SmoothingMode = SmoothingMode.HighSpeed;
+            graphics.InterpolationMode = InterpolationMode.Low;
+
+            // 计算缩放比例
+            var scaleX = (float)thumbnailWidth / sourceImage.Width;
+            var scaleY = (float)thumbnailHeight / sourceImage.Height;
+            var scale = Math.Min(scaleX, scaleY);
+
+            // 计算缩放后的宽度和高度
+            var scaledWidth = (int)(sourceImage.Width * scale);
+            var scaledHeight = (int)(sourceImage.Height * scale);
+
+            // 计算在画布上居中绘制的起始位置
+            var startX = (thumbnailWidth - scaledWidth) / 2;
+            var startY = (thumbnailHeight - scaledHeight) / 2;
+
+            // 绘制缩略图
+            graphics.DrawImage(sourceImage, startX, startY, scaledWidth, scaledHeight);
+
+            return thumbnail;
         }
     }
 }

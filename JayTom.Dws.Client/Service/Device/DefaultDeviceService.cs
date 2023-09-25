@@ -82,6 +82,7 @@ namespace JayTom.Dws.Client.Service.Device {
                 var hikvisionIndustrialCameras = new List<CameraInfo>();
                 var hikvisionSmartCameras = new List<CameraInfo>();
                 var daHuaSecurityCameras = new List<CameraInfo>();
+                var wayzimSmartCameras = new List<CameraInfo>();
                 //判断已经选择的相机
                 if (_cameraSdkSelectorDto?.IsUseDaHuaSmartCameraSdk == true) {
                     //大华智能相机
@@ -101,23 +102,18 @@ namespace JayTom.Dws.Client.Service.Device {
                     //大华安防相机
                     daHuaSecurityCameras = await new DaHuatechSecurityCamera().EnumerateCameras();
                 }
-                /*var cameras = await new DaHuaSmartCamera().EnumerateCameras();
-                var infos = await new HikvisionIndustrialCamera().EnumerateCameras();
-                var cameraInfos = await new HikvisionSmartCamera().EnumerateCameras();
-                var enumerateCameras = await new DaHuatechSecurityCamera().EnumerateCameras();
-                //var wayzimSmartCameras = await new WayzimSmartCamera().EnumerateCameras();
 
-                var cameraList = infos?.Union(cameraInfos
-                                              ?? new List<CameraInfo>())?.ToList()?
-                                     .Union(enumerateCameras ?? new List<CameraInfo>())?.ToList()/*?
-                                     .Union(wayzimSmartCameras ?? new List<CameraInfo>())?.ToList()#1#
-                                 ?? new List<CameraInfo>();*/
+                if (_cameraSdkSelectorDto?.IsUseWayzimSmartCameraSdk == true) {
+                    //中科微至智能相机
+                    wayzimSmartCameras = await new WayzimSmartCamera().EnumerateCameras();
+                }
 
                 var cameraList = hikvisionIndustrialCameras?.Union(hikvisionSmartCameras
                                                                    ?? new List<CameraInfo>())?.ToList()?
-                                     .Union(daHuaSecurityCameras ?? new List<CameraInfo>())?.ToList()
+                                     .Union(daHuaSecurityCameras ?? new List<CameraInfo>())?.ToList()?
+                                     .Union(wayzimSmartCameras ?? new List<CameraInfo>())?.ToList()
                                  ?? new List<CameraInfo>();
-
+                NLog.LogManager.GetCurrentClassLogger().Error($"{JsonConvert.SerializeObject(wayzimSmartCameras, Formatting.Indented)}");
                 var list = cameraList.Select(s =>
                     _cameraInfos.AddOrUpdate(s.SerialNumber, s,
                         (k, v) => s))?.ToList();
@@ -132,6 +128,7 @@ namespace JayTom.Dws.Client.Service.Device {
                     Brand = s.Brand
                 })?.ToList();
                 CameraEnumerationRefreshed?.Invoke(null, itemInfoModels ?? new List<CameraFinderItemInfoModel>());
+
                 return new KeyValuePair<bool, string>(true, Languages.Language.ResourceManager.GetString("相机检索成功") ?? string.Empty);
             }
             catch (Exception e) {
@@ -269,9 +266,9 @@ namespace JayTom.Dws.Client.Service.Device {
             }
             else {
                 _cameras.Clear();
-                var scannerCameraConfigInfoModels = await _barcodeScannerCameraConfigRepository.Select(s => s.Id > 0, o => o.Id);
-                var panoramaCameraConfigInfoModels = await _panoramaCameraConfigRepository.Select(s => s.Id > 0, o => o.Id);
-                var volumeCameraConfigInfoModels = await _volumeCameraConfigRepository.Select(s => s.Id > 0, o => o.Id);
+                var scannerCameraConfigInfoModels = await _barcodeScannerCameraConfigRepository.Select(s => s.Id > 0, o => o.Id, token);
+                var panoramaCameraConfigInfoModels = await _panoramaCameraConfigRepository.Select(s => s.Id > 0, o => o.Id, token);
+                var volumeCameraConfigInfoModels = await _volumeCameraConfigRepository.Select(s => s.Id > 0, o => o.Id, token);
                 //保存绑定参数
                 _cameraParameters.Clear();
                 _cameraParameters.AddRange(scannerCameraConfigInfoModels?.Select(s => new CameraParametersModifiedEventArgs {

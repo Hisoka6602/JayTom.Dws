@@ -38,8 +38,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private List<ICamera> _cameras = new();
         private ConcurrentQueue<CameraImageInfo> _panoramicImageItems = new();
         private ConcurrentQueue<CameraImageInfo> _volumeCameraImageItems = new();
-        private ConcurrentQueue<SavedImageInfo> _savedImageItems = new();
-        //private Queue<ScanBarCodeInfo> _scanBarCodeItems = new();
 
         public ScanProcessBackgroundService(IDeviceService deviceService,
             IResultOutputService resultOutputService,
@@ -49,16 +47,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             _resultOutputService = resultOutputService;
             _imageStorageService = imageStorageService;
             _externalDataService = externalDataService;
-            _imageStorageService.ImageSaved += delegate (object? sender, ImageSavedEventArgs args) {
-                //保存后触发
-                _savedImageItems.Enqueue(new SavedImageInfo() {
-                    BarCode = args.BarCode,
-                    FilePath = args.FilePath,
-                    ImageType = args.ImageType,
-                    CameraSerialNumber = args.CameraSerialNumber ?? string.Empty,
-                    ScanTime = args.ScanTime,
-                });
-            };
+
             _deviceService.CameraInitialized += delegate (object? sender, List<ICamera> list) {
                 _cameras = list;
             };
@@ -261,9 +250,9 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                         Type = SaveImageType.VolumeImage
                                     });
                                 }
-                            }
-                            else {
-                                _volumeCameraImageItems.Enqueue(volumeCameraImageInfo);
+                                else {
+                                    _volumeCameraImageItems.Enqueue(volumeCameraImageInfo);
+                                }
                             }
                         }
                         //扫码图
@@ -289,32 +278,10 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 codeInfo.IsSavedImage = true;
                             }
                         }
-                        //填充路径
-                        if (_savedImageItems.Count > 0) {
-                            _savedImageItems.TryDequeue(out var savedImageInfo);
-                            if (savedImageInfo?.FilePath != null) {
-                                var codeInfo = _scanBarCodeItems.FirstOrDefault(f =>
-                                    f.BarCode.Equals(savedImageInfo.BarCode));
-                                if (codeInfo is not null) {
-                                    if (savedImageInfo.ImageType == SaveImageType.BarcodeImage) {
-                                        codeInfo.BarcodeImageFilePath = savedImageInfo.FilePath;
-                                    }
-                                    else if (savedImageInfo.ImageType == SaveImageType.PanoramaImage) {
-                                        codeInfo.PanoramaImageFilePaths?.Add(savedImageInfo.FilePath);
-                                    }
-                                    else if (savedImageInfo.ImageType == SaveImageType.VolumeImage) {
-                                        codeInfo.VolumeImageFilePaths?.Add(savedImageInfo.FilePath);
-                                    }
-                                }
-                            }
-                        }
 
                         //告诉界面这些scanBarCodeInfos已经填充完全部信息，即将移除
 
-                        var scanBarCodeInfos = _scanBarCodeItems.Where(w => w is { IsCompleted: true, IsSavedImage: true } &&
-                                                                            w.PanoramaImageFilePaths?.Count ==
-                                                                            _cameras.Count(c => c.BindingType == CameraBindingType.PanoramicCamera) &&
-                                                                            w.VolumeImageFilePaths?.Count == _cameras.Count(c => c.BindingType == CameraBindingType.VolumeCamera))
+                        var scanBarCodeInfos = _scanBarCodeItems.Where(w => w is { IsCompleted: true, IsSavedImage: true })
                             .ToList();
 
                         var count = _scanBarCodeItems.Count;
@@ -350,7 +317,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             /// <summary>
             /// 条码存图路径
             /// </summary>
-            public string? BarcodeImageFilePath { get; set; }
+           // public string? BarcodeImageFilePath { get; set; }
 
             /// <summary>
             /// 重量
@@ -380,12 +347,12 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             /// <summary>
             /// 全景图存图路径列表
             /// </summary>
-            public List<string>? PanoramaImageFilePaths { get; set; } = new();
+            //public List<string>? PanoramaImageFilePaths { get; set; } = new();
 
             /// <summary>
             /// 体积图存图路径列表
             /// </summary>
-            public List<string>? VolumeImageFilePaths { get; set; } = new();
+            //public List<string>? VolumeImageFilePaths { get; set; } = new();
 
             /// <summary>
             /// 相机序列号
