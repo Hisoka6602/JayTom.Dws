@@ -221,8 +221,8 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
                 });
             }
             await Task.Delay(5);
-            /*infostruct.CodeInfo = default;
-            infostruct.ImageInfo = default;*/
+            infostruct.CodeInfo = default;
+            infostruct.ImageInfo = default;
         }
 
         private Bitmap? ConvertByteArrayToBitmap(byte[] imageData) {

@@ -3,6 +3,7 @@ using JayTom.Dws.Camera;
 using JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision;
 
 internal class Program {
+    private static SemaphoreSlim _saveSlim = new(1);
 
     private static async Task Main(string[] args) {
         AppDomain.CurrentDomain.UnhandledException += UnhandledExceptionHandler;
@@ -15,10 +16,31 @@ internal class Program {
         camera.CameraExceptionOccurred += delegate (object? sender, CameraExceptionEventArgs eventArgs) {
             Console.WriteLine($"相机异常:{eventArgs?.Exception?.Message}");
         };
-        var infos = camera.EnumerateCameras();
+        camera.RealtimeImage += async delegate (object? sender, RealtimeImageEventArgs eventArgs) {
+            //存图到本地
+            try {
+                await _saveSlim.WaitAsync();
+                eventArgs.ThumbImage?.Save($"{AppDomain.CurrentDomain.BaseDirectory}\\img\\{DateTimeOffset.Now.ToUnixTimeMilliseconds()}.jpg");
+                Console.WriteLine("已保存图片到本地");
+            }
+            catch (Exception e) {
+                Console.WriteLine(e);
+            }
+            finally {
+                _saveSlim.Release();
+            }
+        };
+        camera.CameraInitialized += delegate (object? sender, CameraInitializedEventArgs eventArgs) {
+            if (!Directory.Exists($"{AppDomain.CurrentDomain.BaseDirectory}\\img")) {
+                Directory.CreateDirectory($"{AppDomain.CurrentDomain.BaseDirectory}\\img");
+            }
+
+            camera.StartRealTimeImage();
+        };
+        var infos = await camera.EnumerateCameras();
         if (infos?.Any() == true) {
             foreach (var cameraInfo in infos) {
-                Console.WriteLine(JsonConvert.SerializeObject(cameraInfo));
+                Console.WriteLine(JsonConvert.SerializeObject(cameraInfo, Formatting.Indented));
                 Console.WriteLine("-------------------------------");
             }
         }
@@ -28,6 +50,10 @@ internal class Program {
         int.TryParse(line, out var id);
         var (key, value) = await camera.Initialize(infos?[id]);
         Console.WriteLine(value);
+        if (!key) {
+            Console.WriteLine(value);
+            return;
+        }
         var (b, s) = await camera.Start(string.Empty);
         Console.WriteLine(s);
         Console.ReadLine();
