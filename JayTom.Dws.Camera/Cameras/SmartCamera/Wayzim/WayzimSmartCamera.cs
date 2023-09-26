@@ -159,8 +159,8 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
             var timestamp = localTime.ToUnixTimeMilliseconds();
             //解析图片
             if (infostruct.ImageInfo is { Size: > 0, ImageType: ImageTypes.JPEG }) {
-                bitmap = ConvertByteArrayToBitmap(infostruct.ImageInfo.ImageBytes);
-                thumbnailImage = GenerateThumbnail(bitmap);
+                bitmap = await ConvertByteArrayToBitmapAsync(infostruct.ImageInfo.ImageBytes);
+                thumbnailImage = this.GenerateThumbnail(bitmap);
                 //画边框
                 if (IsShowBarcodeBorder && thumbnailImage is not null && bitmap is not null &&
                     thumbnailImage.PixelFormat != PixelFormat.Format8bppIndexed &&
@@ -222,7 +222,6 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
             }
             await Task.Delay(5);
             infostruct.CodeInfo = default;
-            infostruct.ImageInfo = default;
         }
 
         private Bitmap? ConvertByteArrayToBitmap(byte[] imageData) {
@@ -238,7 +237,28 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
             return (Bitmap?)img;
         }
 
-        /*private Bitmap? ConvertByteArrayToBitmap(byte[] imageData) {
+        private async Task<Bitmap?> ConvertByteArrayToBitmapAsync(byte[] imageData) {
+            Bitmap? bitmap = null;
+            using var ms = new MemoryStream();
+            await ms.WriteAsync(imageData, 0, imageData.Length);
+            ms.Seek(0, SeekOrigin.Begin);
+
+            try {
+                var image = await Task.FromResult(Image.FromStream(ms, true));
+                bitmap = (Bitmap?)image;
+            }
+            catch (Exception ex) {
+                bitmap = null;
+            }
+            finally {
+                Array.Clear(imageData, 0, imageData.Length);
+            }
+
+            return bitmap;
+        }
+
+        /*private async Task<Bitmap?> ConvertByteArrayToBitmap(byte[] imageData) {
+            await Task.Yield();
             Bitmap? bitmap = null;
 
             using var ms = new MemoryStream(imageData);
@@ -247,6 +267,9 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
             }
             catch (Exception ex) {
                 bitmap = null;
+            }
+            finally {
+                Array.Clear(imageData, 0, imageData.Length);
             }
 
             return bitmap;
@@ -381,34 +404,79 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
             NotBarcodeHitEvent?.Invoke(this, e);
         }
 
-        public static Image? GenerateThumbnail(Image? sourceImage, int thumbnailWidth = 800, int thumbnailHeight = 600) {
+        public unsafe Bitmap? GenerateThumbnail(Bitmap? sourceImage, int thumbnailWidth = 800, int thumbnailHeight = 600) {
             if (sourceImage is null) {
                 return null;
             }
-            // 创建目标缩略图的空白画布
+
+            var sourceData = sourceImage.LockBits(new Rectangle(0, 0, sourceImage.Width, sourceImage.Height), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
+
+            try {
+                var thumbnail = new Bitmap(thumbnailWidth, thumbnailHeight);
+                var thumbnailData = thumbnail.LockBits(new Rectangle(0, 0, thumbnailWidth, thumbnailHeight), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
+
+                try {
+                    byte* sourcePtr = (byte*)sourceData.Scan0;
+                    byte* thumbnailPtr = (byte*)thumbnailData.Scan0;
+
+                    var sourceBytesPerPixel = 4;
+                    var thumbnailBytesPerPixel = 4;
+
+                    var scaleX = (float)thumbnailWidth / sourceImage.Width;
+                    var scaleY = (float)thumbnailHeight / sourceImage.Height;
+
+                    var sourceWidth = sourceImage.Width;
+                    var sourceHeight = sourceImage.Height;
+
+                    for (int y = 0; y < thumbnailHeight; y++) {
+                        for (int x = 0; x < thumbnailWidth; x++) {
+                            var sourceX = (int)(x / scaleX);
+                            var sourceY = (int)(y / scaleY);
+
+                            var sourceIndex = (sourceY * sourceWidth + sourceX) * sourceBytesPerPixel;
+                            var thumbnailIndex = (y * thumbnailWidth + x) * thumbnailBytesPerPixel;
+
+                            thumbnailPtr[thumbnailIndex] = sourcePtr[sourceIndex];
+                            thumbnailPtr[thumbnailIndex + 1] = sourcePtr[sourceIndex + 1];
+                            thumbnailPtr[thumbnailIndex + 2] = sourcePtr[sourceIndex + 2];
+                            thumbnailPtr[thumbnailIndex + 3] = sourcePtr[sourceIndex + 3];
+                        }
+                    }
+                }
+                finally {
+                    thumbnail.UnlockBits(thumbnailData);
+                }
+
+                return thumbnail;
+            }
+            finally {
+                sourceImage.UnlockBits(sourceData);
+            }
+        }
+
+        public static Image? GenerateThumbnail1(Image? sourceImage, int thumbnailWidth = 800, int thumbnailHeight = 600) {
+            if (sourceImage is null) {
+                return null;
+            }
             var thumbnail = new Bitmap(thumbnailWidth, thumbnailHeight);
 
-            using var graphics = Graphics.FromImage(thumbnail);
-            // 设置绘图质量参数
-            graphics.CompositingQuality = CompositingQuality.HighSpeed;
-            graphics.SmoothingMode = SmoothingMode.HighSpeed;
-            graphics.InterpolationMode = InterpolationMode.Low;
+            using (var graphics = Graphics.FromImage(thumbnail)) {
+                graphics.CompositingQuality = CompositingQuality.HighSpeed;
+                graphics.SmoothingMode = SmoothingMode.HighSpeed;
+                graphics.InterpolationMode = InterpolationMode.Low;
 
-            // 计算缩放比例
-            var scaleX = (float)thumbnailWidth / sourceImage.Width;
-            var scaleY = (float)thumbnailHeight / sourceImage.Height;
-            var scale = Math.Min(scaleX, scaleY);
+                var scaleX = (float)thumbnailWidth / sourceImage.Width;
+                var scaleY = (float)thumbnailHeight / sourceImage.Height;
+                var scale = Math.Min(scaleX, scaleY);
 
-            // 计算缩放后的宽度和高度
-            var scaledWidth = (int)(sourceImage.Width * scale);
-            var scaledHeight = (int)(sourceImage.Height * scale);
+                var scaledWidth = (int)(sourceImage.Width * scale);
+                var scaledHeight = (int)(sourceImage.Height * scale);
 
-            // 计算在画布上居中绘制的起始位置
-            var startX = (thumbnailWidth - scaledWidth) / 2;
-            var startY = (thumbnailHeight - scaledHeight) / 2;
+                var startX = (thumbnailWidth - scaledWidth) / 2;
+                var startY = (thumbnailHeight - scaledHeight) / 2;
 
-            // 绘制缩略图
-            graphics.DrawImage(sourceImage, startX, startY, scaledWidth, scaledHeight);
+                graphics.DrawImage(sourceImage, startX, startY, scaledWidth, scaledHeight);
+            }
 
             return thumbnail;
         }
