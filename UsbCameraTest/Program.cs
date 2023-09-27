@@ -431,7 +431,7 @@ internal class Program {
 
         bmp.UnlockBits(bmpData);
         grayBmp.UnlockBits(grayBmpData);*/
-        grayBmp.Save($"{AppDomain.CurrentDomain.BaseDirectory}\\{DateTimeOffset.Now.ToUnixTimeMilliseconds()}.jpg");
+
         return grayBmp;
     }
 
