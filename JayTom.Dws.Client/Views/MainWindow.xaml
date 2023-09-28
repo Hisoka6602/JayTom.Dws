@@ -11,7 +11,7 @@
     xmlns:mvvm="http://prismlibrary.com/"
     Name="MainWin"
     Width="1820"
-    Height="900"
+    Height="950"
     MinWidth="800"
     MinHeight="750"
     mvvm:ViewModelLocator.AutoWireViewModel="True"

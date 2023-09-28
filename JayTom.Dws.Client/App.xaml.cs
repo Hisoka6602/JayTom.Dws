@@ -104,6 +104,10 @@ namespace JayTom.Dws.Client {
                 containerRegistry.RegisterForNavigation<WeightSettingPages>();
                 containerRegistry.RegisterForNavigation<VolumeSettingsPage>();
                 containerRegistry.RegisterForNavigation<LogManagerPage>();
+                containerRegistry.RegisterForNavigation<PackageSortingSettingsPage>();
+                containerRegistry.RegisterForNavigation<OcrSettingsPage>();
+                containerRegistry.RegisterForNavigation<WorkflowSettingsPage>();
+
                 //LogManagerPage
                 //相机
                 containerRegistry.RegisterForNavigation<BarcodeScannerCameraConfigPage>();
@@ -307,6 +311,10 @@ namespace JayTom.Dws.Client {
             ViewModelLocationProvider.Register<VideoCameraSettingsDialog, VideoCameraSettingsViewModel>();
             ViewModelLocationProvider.Register<TriggerModeSelectionPage, TriggerModeSelectionViewModel>();
             ViewModelLocationProvider.Register<ResolutionConstraintDialog, ResolutionConstraintViewModel>();
+
+            ViewModelLocationProvider.Register<PackageSortingSettingsPage, PackageSortingSettingsViewModel>();
+            ViewModelLocationProvider.Register<OcrSettingsPage, OcrSettingsViewModel>();
+            ViewModelLocationProvider.Register<WorkflowSettingsPage, WorkflowSettingsViewModel>();
             //接口
             ViewModelLocationProvider.Register<DefaultApiPage, DefaultApiPageViewModel>();
             //其他插件

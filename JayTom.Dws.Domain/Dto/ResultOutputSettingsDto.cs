@@ -9,7 +9,6 @@ using System.Collections.Generic;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
 
 namespace JayTom.Dws.Domain.Dto {
-
     public class ResultOutputSettingsDto {
 
         /// <summary>
@@ -41,7 +40,10 @@ namespace JayTom.Dws.Domain.Dto {
         /// 串口输出配置
         /// </summary>
         public SerialPortSettingsInfo SerialPortSettingsInfo { get; set; } = new();
-
+        /// <summary>
+        /// 串口输出内容
+        /// </summary>
+        public SerialPortResultOutputInfo SerialPortResultOutputInfo { get; set; } = new();
         /// <summary>
         /// 是否使用音频输出
         /// </summary>
@@ -62,7 +64,24 @@ namespace JayTom.Dws.Domain.Dto {
         /// </summary>
         public LocationOutputSettingsInfo LocationOutputSettingsInfo { get; set; } = new();
     }
+    /// <summary>
+    /// 串口输出内容
+    /// </summary>
+    public class SerialPortResultOutputInfo {
+        /// <summary>
+        /// 是否使用数据模板输出
+        /// </summary>
+        public bool IsUseDataTemplateOutput { get; set; }
+        /// <summary>
+        /// 是否使用自定义内容输出
+        /// </summary>
+        public bool IsUseCustomContentOutput { get; set; }
+        /// <summary>
+        /// 自定义内容
+        /// </summary>
+        public string CustomOutputContent { get; set; } = string.Empty;
 
+    }
     /// <summary>
     /// 上传设置
     /// </summary>

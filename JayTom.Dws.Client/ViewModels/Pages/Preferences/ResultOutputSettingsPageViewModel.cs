@@ -29,7 +29,6 @@ using JayTom.Dws.Client.Models.ResultOutputSettingsModel;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.StartPanel;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
-
     public class ResultOutputSettingsPageViewModel : BindableBase {
         private readonly ISoundRepository _soundRepository;
         private readonly IConfigRepository _configRepository;
@@ -203,6 +202,23 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         private SnackbarMessageQueue _resultOutputSettingsMessageQueue = new(TimeSpan.FromSeconds(2));
         private AudioOutputSettingsInfoModel _audioOutputSettingsInfo = new();
         private bool _isSavingInProgress;
+        private SerialPortResultOutputModel _serialPortResultOutput = new();
+
+        private ObservableCollection<DataFormatTypeInfoModel> _dataFormatTypeItems = new()
+        {
+            new DataFormatTypeInfoModel()
+            {
+                Name = "Ascii",
+                Value = DataFormatType.Ascii
+            },
+            new DataFormatTypeInfoModel()
+            {
+                Name = "Hex",
+                Value = DataFormatType.Hex
+            },
+        };
+
+        private DataFormatTypeInfoModel _selectDataFormat = new();
 
         public ResultOutputSettingsPageViewModel(ISoundRepository soundRepository,
             IConfigRepository configRepository) {
@@ -305,6 +321,21 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         public TriggerPositionResultModel SelectedTriggerPositionResult {
             get => _selectedTriggerPositionResult;
             set => SetProperty(ref _selectedTriggerPositionResult, value);
+        }
+        public DataFormatTypeInfoModel SelectDataFormat {
+            get => _selectDataFormat;
+            set => SetProperty(ref _selectDataFormat, value);
+        }
+        public ObservableCollection<DataFormatTypeInfoModel> DataFormatTypeItems {
+            get => _dataFormatTypeItems;
+            set => SetProperty(ref _dataFormatTypeItems, value);
+        }
+        /// <summary>
+        /// 串口内容
+        /// </summary>
+        public SerialPortResultOutputModel SerialPortResultOutput {
+            get => _serialPortResultOutput;
+            set => SetProperty(ref _serialPortResultOutput, value);
         }
 
         /// <summary>
@@ -554,6 +585,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                                 PortName = SelectedPort,
                                 DataBits = SelectedDataBits,
                                 StopBits = SelectedStopBits.Value,
+                                DataFormat = SelectDataFormat.Value,
+                            },
+                            SerialPortResultOutputInfo = new SerialPortResultOutputInfo() {
+                                CustomOutputContent = SerialPortResultOutput.CustomOutputContent,
+                                IsUseCustomContentOutput = SerialPortResultOutput.IsUseCustomContentOutput,
+                                IsUseDataTemplateOutput = SerialPortResultOutput.IsUseDataTemplateOutput
                             },
                             IsUseAudioOutput = IsUseAudioOutput,
                             AudioOutputSettingsInfo = new AudioOutputSettingsInfo() {
@@ -631,6 +668,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                                 //加载结果判断值
                                 SelectedTriggerPositionResult = TriggerPositionResultItems.FirstOrDefault(f =>
                                     f.ResultValue.Equals(settingsDto.AudioOutputSettingsInfo.Result)) ?? new TriggerPositionResultModel();
+                                SelectDataFormat =
+                                    DataFormatTypeItems?.FirstOrDefault(f =>
+                                        f.Value.Equals(settingsDto.SerialPortSettingsInfo.DataFormat)) ??
+                                    new DataFormatTypeInfoModel();
                                 OutputItems.Clear();
                                 var models = settingsDto.DataTemplate.Select((s, i) => new ItemBaseTemplateModel() {
                                     ApplicationType = s.ApplicationType,
@@ -663,6 +704,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                                     DataBits = settingsDto.SerialPortSettingsInfo.DataBits,
                                     PortName = settingsDto.SerialPortSettingsInfo.PortName,
                                     StopBits = settingsDto.SerialPortSettingsInfo.StopBits,
+                                    DataFormat = settingsDto.SerialPortSettingsInfo.DataFormat
+                                };
+                                SerialPortResultOutput = new SerialPortResultOutputModel() {
+                                    CustomOutputContent = settingsDto.SerialPortResultOutputInfo.CustomOutputContent,
+                                    IsUseCustomContentOutput =
+                                        settingsDto.SerialPortResultOutputInfo.IsUseCustomContentOutput,
+                                    IsUseDataTemplateOutput =
+                                        settingsDto.SerialPortResultOutputInfo.IsUseDataTemplateOutput
                                 };
                                 IsUseAudioOutput = settingsDto.IsUseAudioOutput;
                                 AudioOutputSettingsInfo = new AudioOutputSettingsInfoModel() {
@@ -683,6 +732,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                                     WeightOutputKey = settingsDto.LocationOutputSettingsInfo.WeightOutputKey,
                                     WeightOutputPosition = settingsDto.LocationOutputSettingsInfo.WeightOutputPosition,
                                 };
+
                             }
                         }
                         catch (Exception e) {

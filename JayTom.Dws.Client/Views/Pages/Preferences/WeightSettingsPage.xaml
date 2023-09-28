@@ -426,7 +426,7 @@
                                         FontWeight="Bold"
                                         Foreground="White"
                                         InputMethod.IsInputMethodEnabled="False"
-                                        Text="{Binding WeightSettingsInfo.CommonWeight.MinWeight, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                                        Text="{Binding WeightSettingsInfo.CommonWeight.MinWeight, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, StringFormat={}{0:F3}}" />
                                 </Border>
                             </StackPanel>
                             <StackPanel Orientation="Horizontal">
@@ -457,7 +457,7 @@
                                         FontWeight="Bold"
                                         Foreground="White"
                                         InputMethod.IsInputMethodEnabled="False"
-                                        Text="{Binding WeightSettingsInfo.CommonWeight.MaxWeight, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                                        Text="{Binding WeightSettingsInfo.CommonWeight.MaxWeight, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, StringFormat={}{0:F3}}" />
                                 </Border>
                             </StackPanel>
                         </StackPanel>
@@ -1041,7 +1041,7 @@
                                         FontWeight="Bold"
                                         Foreground="White"
                                         InputMethod.IsInputMethodEnabled="False"
-                                        Text="{Binding WeightSettingsInfo.AdditionalWeight.WeightConversionRate, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                                        Text="{Binding WeightSettingsInfo.AdditionalWeight.WeightConversionRate, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, StringFormat={}{0:0.###}}" />
                                 </Border>
                                 <TextBlock
                                     Margin="5,0"
@@ -1104,7 +1104,7 @@
                                         FontWeight="Bold"
                                         Foreground="White"
                                         InputMethod.IsInputMethodEnabled="False"
-                                        Text="{Binding WeightSettingsInfo.AdditionalWeight.AppendedWeightValue, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                                        Text="{Binding WeightSettingsInfo.AdditionalWeight.AppendedWeightValue, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, StringFormat={}{0:0.###}}" />
                                 </Border>
                             </StackPanel>
                         </StackPanel>
@@ -1160,7 +1160,7 @@
                                         FontWeight="Bold"
                                         Foreground="White"
                                         InputMethod.IsInputMethodEnabled="False"
-                                        Text="{Binding WeightSettingsInfo.AdditionalWeight.FixedWeightValue, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                                        Text="{Binding WeightSettingsInfo.AdditionalWeight.FixedWeightValue, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, StringFormat={}{0:0.###}}" />
                                 </Border>
                             </StackPanel>
                         </StackPanel>

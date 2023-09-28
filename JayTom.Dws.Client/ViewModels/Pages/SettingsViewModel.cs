@@ -20,7 +20,6 @@ using JayTom.Dws.Client.Views.Dialog;
 using JayTom.Dws.Client.ViewModels.Dialog;
 
 namespace JayTom.Dws.Client.ViewModels.Pages {
-
     public class SettingsViewModel : BindableBase {
         private readonly IRegionManager _regionManager;
 
@@ -161,6 +160,46 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     ClickCommand = ClickCommand,
                     PageClassName = "ContentInputSettingsPage"
                 },
+                new MenuItemInfoModel()
+                {
+                    IconFont = new IconInfoModel()
+                    {
+                        IconFont = "pack://application:,,,/Fonts/#iconfont",
+                        IconCode = "\xe79f",
+                        IconSize = 33
+                    },
+                    Title = "分拣设置"??string.Empty,
+                    Description = "分拣相关设置" ?? string.Empty,
+                    ClickCommand = ClickCommand,
+                    PageClassName = "PackageSortingSettingsPage"
+                },
+                new MenuItemInfoModel()
+                {
+                    IconFont = new IconInfoModel()
+                    {
+                        IconFont = "pack://application:,,,/Fonts/#iconfont",
+                        IconCode = "\xe7a0",
+                        IconSize = 25
+                    },
+                    Title = "Ocr设置"??string.Empty,
+                    Description = "Ocr相关设置" ?? string.Empty,
+                    ClickCommand = ClickCommand,
+                    PageClassName = "OcrSettingsPage"
+                },
+                new MenuItemInfoModel()
+                {
+                    IconFont = new IconInfoModel()
+                    {
+                        IconFont = "pack://application:,,,/Fonts/#iconfont",
+                        IconCode = "\xe63e",
+                        IconSize = 30
+                    },
+                    Title = "工作流"??string.Empty,
+                    Description = "工作流相关设置" ?? string.Empty,
+                    ClickCommand = ClickCommand,
+                    PageClassName = "WorkflowSettingsPage"
+                },
+
                 new MenuItemInfoModel()
                 {
                     IconFont = new IconInfoModel()
