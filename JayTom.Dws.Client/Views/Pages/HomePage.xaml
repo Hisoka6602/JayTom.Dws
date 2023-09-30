@@ -145,6 +145,7 @@
         <Grid Grid.Column="1">
             <Grid.RowDefinitions>
                 <RowDefinition Height="160" />
+                <RowDefinition Height="Auto" MaxHeight="230" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
             <!--  实时条码体积  -->
@@ -403,9 +404,319 @@
                     </Border>
                 </Grid>
             </materialDesign:Card>
-            <!--  数据列表，统计  -->
+            <!--  Ocr信息  -->
             <materialDesign:Card
                 Grid.Row="1"
+                Height="Auto"
+                Margin="5,5"
+                materialDesign:ElevationAssist.Elevation="Dp6"
+                Background="#BF2E2E2E"
+                BorderThickness="2"
+                UniformCornerRadius="10">
+                <Grid Margin="30,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="30" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <TextBlock
+                        Grid.Row="0"
+                        Margin="0,2"
+                        HorizontalAlignment="Left"
+                        FontSize="20"
+                        FontWeight="Bold"
+                        Foreground="DimGray"
+                        Style="{StaticResource CustomGridViewTextBlockCellStyle}"
+                        Text="OCR" />
+
+                    <!--  详细信息  -->
+                    <Grid Grid.Row="1">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="50*" />
+                            <ColumnDefinition Width="50*" />
+                        </Grid.ColumnDefinitions>
+                        <!--  三段码  -->
+                        <StackPanel
+                            Grid.Row="0"
+                            Grid.Column="0"
+                            Margin="0,5"
+                            Orientation="Horizontal">
+                            <TextBlock
+                                Margin="5,0"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                FontFamily="{StaticResource IconFontFamily}"
+                                FontSize="20"
+                                Foreground="DimGray"
+                                Text="&#xe776;"
+                                TextAlignment="Center" />
+                            <TextBlock
+                                HorizontalAlignment="Left"
+                                FontSize="18"
+                                FontWeight="Bold"
+                                Foreground="DimGray"
+                                Style="{StaticResource CustomGridViewTextBlockCellStyle}">
+                                <Run Text="三段码:" /> <Run
+                                    FontSize="22"
+                                    Foreground="White"
+                                    Text="320-44-22" />
+                            </TextBlock>
+                        </StackPanel>
+                        <!--  格口号  -->
+                        <StackPanel
+                            Grid.Row="0"
+                            Grid.Column="1"
+                            Margin="0,5"
+                            Orientation="Horizontal">
+                            <TextBlock
+                                Margin="5,0"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                FontFamily="{StaticResource IconFontFamily}"
+                                FontSize="20"
+                                FontWeight="Bold"
+                                Foreground="DimGray"
+                                Text="&#xe7b4;"
+                                TextAlignment="Center" />
+                            <TextBlock
+                                HorizontalAlignment="Left"
+                                FontSize="18"
+                                FontWeight="Bold"
+                                Foreground="DimGray"
+                                Style="{StaticResource CustomGridViewTextBlockCellStyle}">
+                                <Run Text="输出格口号:" /> <Run
+                                    FontSize="22"
+                                    Foreground="White"
+                                    Text="05" />
+                            </TextBlock>
+                        </StackPanel>
+                        <!--  分割线  -->
+                        <Rectangle
+                            Grid.Row="1"
+                            Grid.Column="0"
+                            Grid.ColumnSpan="2"
+                            Height="0.6"
+                            Margin="5,5"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Top"
+                            Opacity="0.3"
+                            Stroke="DimGray"
+                            StrokeDashArray="8"
+                            StrokeThickness="1" />
+
+                        <!--  物流公司  -->
+                        <StackPanel
+                            Grid.Row="2"
+                            Grid.Column="0"
+                            Grid.ColumnSpan="2"
+                            Margin="0,5"
+                            Orientation="Horizontal">
+                            <TextBlock
+                                Margin="5,0"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                FontFamily="{StaticResource IconFontFamily}"
+                                FontSize="20"
+                                Foreground="DimGray"
+                                Text="&#xe7a8;"
+                                TextAlignment="Center" />
+                            <TextBlock
+                                HorizontalAlignment="Left"
+                                FontWeight="Bold"
+                                Foreground="DimGray"
+                                Style="{StaticResource CustomGridViewTextBlockCellStyle}">
+                                <Run Text="物流公司:" /> <Run Foreground="White" Text="韵达" />
+                            </TextBlock>
+                        </StackPanel>
+                        <!--  耗时  -->
+                        <StackPanel
+                            Grid.Row="2"
+                            Grid.Column="1"
+                            Margin="0,5"
+                            Orientation="Horizontal">
+                            <TextBlock
+                                Margin="5,0"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                FontFamily="{StaticResource IconFontFamily}"
+                                FontSize="16"
+                                Foreground="DimGray"
+                                Text="&#xe635;"
+                                TextAlignment="Center" />
+                            <TextBlock
+                                HorizontalAlignment="Left"
+                                FontWeight="Bold"
+                                Foreground="DimGray"
+                                Style="{StaticResource CustomGridViewTextBlockCellStyle}">
+                                <Run Text="识别耗时(ms):" /> <Run Foreground="White" Text="120" />
+                            </TextBlock>
+                        </StackPanel>
+
+                        <!--  收件人信息  -->
+                        <StackPanel
+                            Grid.Row="3"
+                            Grid.Column="0"
+                            Margin="0,2"
+                            Orientation="Vertical">
+                            <!--  收件人电话  -->
+                            <StackPanel Margin="0,5" Orientation="Horizontal">
+                                <TextBlock
+                                    Margin="5,0"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    FontFamily="{StaticResource IconFontFamily}"
+                                    FontSize="16"
+                                    Foreground="DimGray"
+                                    Text="&#xe7ac;"
+                                    TextAlignment="Center" />
+                                <TextBlock
+                                    HorizontalAlignment="Left"
+                                    FontWeight="Bold"
+                                    Foreground="DimGray"
+                                    Style="{StaticResource CustomGridViewTextBlockCellStyle}">
+                                    <Run Text="收件人电话:" /> <Run
+                                        FontWeight="UltraLight"
+                                        Foreground="White"
+                                        Text="13800138000" />
+                                </TextBlock>
+                            </StackPanel>
+
+                            <!--  收件人名称  -->
+                            <StackPanel Margin="0,5" Orientation="Horizontal">
+                                <TextBlock
+                                    Margin="5,0"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    FontFamily="{StaticResource IconFontFamily}"
+                                    FontSize="16"
+                                    Foreground="DimGray"
+                                    Text="&#xe7ab;"
+                                    TextAlignment="Center" />
+                                <TextBlock
+                                    HorizontalAlignment="Left"
+                                    FontWeight="Bold"
+                                    Foreground="DimGray"
+                                    Style="{StaticResource CustomGridViewTextBlockCellStyle}">
+                                    <Run Text="收件人名称:" /> <Run
+                                        FontWeight="UltraLight"
+                                        Foreground="White"
+                                        Text="马化腾" />
+                                </TextBlock>
+                            </StackPanel>
+
+                            <!--  收件人地址  -->
+                            <StackPanel Margin="0,5" Orientation="Horizontal">
+                                <TextBlock
+                                    Margin="5,0"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    FontFamily="{StaticResource IconFontFamily}"
+                                    FontSize="16"
+                                    Foreground="DimGray"
+                                    Text="&#xe7af;"
+                                    TextAlignment="Center" />
+                                <TextBlock
+                                    HorizontalAlignment="Left"
+                                    FontWeight="Bold"
+                                    Foreground="DimGray"
+                                    Style="{StaticResource CustomGridViewTextBlockCellStyle}">
+                                    <Run Text="收件人地址:" /> <Run
+                                        FontWeight="UltraLight"
+                                        Foreground="White"
+                                        Text="北京市东城区长安街" />
+                                </TextBlock>
+                            </StackPanel>
+
+                        </StackPanel>
+                        <!--  寄件人信息  -->
+                        <StackPanel
+                            Grid.Row="3"
+                            Grid.Column="1"
+                            Margin="0,2"
+                            Orientation="Vertical">
+                            <!--  寄件人电话  -->
+                            <StackPanel Margin="0,5" Orientation="Horizontal">
+                                <TextBlock
+                                    Margin="5,0"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    FontFamily="{StaticResource IconFontFamily}"
+                                    FontSize="16"
+                                    Foreground="DimGray"
+                                    Text="&#xe7ac;"
+                                    TextAlignment="Center" />
+                                <TextBlock
+                                    HorizontalAlignment="Left"
+                                    FontWeight="Bold"
+                                    Foreground="DimGray"
+                                    Style="{StaticResource CustomGridViewTextBlockCellStyle}">
+                                    <Run Text="寄件人电话:" /> <Run
+                                        FontWeight="UltraLight"
+                                        Foreground="White"
+                                        Text="13800138000" />
+                                </TextBlock>
+                            </StackPanel>
+
+                            <!--  寄件人名称  -->
+                            <StackPanel Margin="0,5" Orientation="Horizontal">
+                                <TextBlock
+                                    Margin="5,0"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    FontFamily="{StaticResource IconFontFamily}"
+                                    FontSize="16"
+                                    Foreground="DimGray"
+                                    Text="&#xe7ab;"
+                                    TextAlignment="Center" />
+                                <TextBlock
+                                    HorizontalAlignment="Left"
+                                    FontWeight="Bold"
+                                    Foreground="DimGray"
+                                    Style="{StaticResource CustomGridViewTextBlockCellStyle}">
+                                    <Run Text="寄件人名称:" /> <Run
+                                        FontWeight="UltraLight"
+                                        Foreground="White"
+                                        Text="马化腾" />
+                                </TextBlock>
+                            </StackPanel>
+
+                            <!--  寄件人地址  -->
+                            <StackPanel Margin="0,5" Orientation="Horizontal">
+                                <TextBlock
+                                    Margin="5,0"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    FontFamily="{StaticResource IconFontFamily}"
+                                    FontSize="16"
+                                    Foreground="DimGray"
+                                    Text="&#xe7af;"
+                                    TextAlignment="Center" />
+                                <TextBlock
+                                    HorizontalAlignment="Left"
+                                    FontWeight="Bold"
+                                    Foreground="DimGray"
+                                    Style="{StaticResource CustomGridViewTextBlockCellStyle}">
+                                    <Run Text="寄件人地址:" /> <Run
+                                        FontWeight="UltraLight"
+                                        Foreground="White"
+                                        Text="北京市东城区长安街" />
+                                </TextBlock>
+                            </StackPanel>
+
+                        </StackPanel>
+
+                    </Grid>
+                </Grid>
+            </materialDesign:Card>
+            <!--  数据列表，统计  -->
+            <materialDesign:Card
+                Grid.Row="2"
                 Margin="5"
                 materialDesign:ElevationAssist.Elevation="Dp6"
                 Background="Transparent"
@@ -454,8 +765,8 @@
                     <ListView
                         Grid.Row="0"
                         Width="860"
-                        Height="480"
-                        Margin="20,10,20,0"
+                        Height="Auto"
+                        Margin="20,10,20,20"
                         Padding="10,0"
                         Focusable="False"
                         ItemsSource="{Binding BarCodeItems, UpdateSourceTrigger=PropertyChanged, IsAsync=True}"
