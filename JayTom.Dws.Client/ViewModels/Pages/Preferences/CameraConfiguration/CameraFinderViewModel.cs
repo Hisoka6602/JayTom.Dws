@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
@@ -28,6 +29,7 @@ using CameraType = JayTom.Dws.Client.Models.CameraType;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.StartPanel;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
+
     public class CameraFinderViewModel : BindableBase {
         private readonly IDeviceService _deviceService;
         private readonly IBarcodeScannerCameraConfigRepository _barcodeScannerCameraConfigRepository;
@@ -521,6 +523,37 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
             //判断是否安装了对应SDK的必要程序
             //判断运行目录是否包含必要Sdk
             //如果不满足任意条件则取消选择
+
+            //检查写出文件，后续使用环境变量后删除
+            var destinationDir = Directory.GetCurrentDirectory();
+            var files = new List<string>();
+            if (obj.ToString()?.Equals("IsUseHikvisionSmartCameraSdk") == true) {
+                //海康智能相机
+                files = Directory.GetFiles($"{destinationDir}\\Cameras\\SmartCamera\\Hikvision\\Dll")?.ToList();
+            }
+            if (obj.ToString()?.Equals("IsUseHikvisionIndustrialCameraSdk") == true) {
+                //海康工业相机
+                files = Directory.GetFiles($"{destinationDir}\\Cameras\\IndustrialCamera\\Hikvision\\Dll")?.ToList();
+            }
+            if (obj.ToString()?.Equals("IsUseDaHuaSmartCameraSdk") == true) {
+                //大华智能相机
+                files = Directory.GetFiles($"{destinationDir}\\Cameras\\SmartCamera\\Irayple\\Dll")?.ToList();
+            }
+            if (obj.ToString()?.Equals("IsUseDaHuaSecurityCameraSdk") == true) {
+                //大华安防
+                files = Directory.GetFiles($"{destinationDir}\\Cameras\\SecurityCamera\\DaHuatech\\Dll")?.ToList();
+            }
+            if (obj.ToString()?.Equals("IsUseWayzimSmartCameraSdk") == true) {
+                //中科微至
+                files = Directory.GetFiles($"{destinationDir}\\Cameras\\SmartCamera\\Wayzim\\Dll")?.ToList();
+            }
+            if (files?.Any() == true) {
+                foreach (var s in files) {
+                    if (!File.Exists($"{destinationDir}\\{new FileInfo(s).Name}")) {
+                        File.Copy(s, $"{destinationDir}\\{new FileInfo(s).Name}", true);
+                    }
+                }
+            }
 
             Debug.WriteLine(obj);
         }
