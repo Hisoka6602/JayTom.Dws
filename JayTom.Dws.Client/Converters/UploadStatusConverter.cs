@@ -11,7 +11,6 @@ using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
 
 namespace JayTom.Dws.Client.Converters {
-
     public class UploadStatusConverter : IValueConverter {
 
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
@@ -27,8 +26,8 @@ namespace JayTom.Dws.Client.Converters {
                 if (parameter?.ToString()?.Equals("FontText") == true) {
                     return status switch {
                         UploadStatus.Succeeded => "\xe8bd",
-                        UploadStatus.Failed => "\xe677",
-                        _ => "\xe653"
+                        UploadStatus.Failed => "\xe7a4",
+                        _ => "\xe7a7"
                     };
                 }
                 if (parameter?.ToString()?.Equals("Text") == true) {
@@ -44,20 +43,27 @@ namespace JayTom.Dws.Client.Converters {
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
-            if (value is string status) {
+            if (value is UploadStatus status) {
                 if (parameter?.ToString()?.Equals("Background") == true) {
                     return status switch {
-                        "成功" => new SolidColorBrush(Colors.DarkGreen),
-                        "失败" => new SolidColorBrush(Colors.DarkRed),
+                        UploadStatus.Succeeded => new SolidColorBrush(Colors.DarkGreen),
+                        UploadStatus.Failed => new SolidColorBrush(Colors.DarkRed),
                         _ => new SolidColorBrush(Colors.RoyalBlue)
                     };
                 }
 
                 if (parameter?.ToString()?.Equals("FontText") == true) {
                     return status switch {
-                        "成功" => "\xe8bd",
-                        "失败" => "\xe677",
-                        _ => "\xe653"
+                        UploadStatus.Succeeded => "\xe8bd",
+                        UploadStatus.Failed => "\xe7a4",
+                        _ => "\xe7a7"
+                    };
+                }
+                if (parameter?.ToString()?.Equals("Text") == true) {
+                    return status switch {
+                        UploadStatus.Succeeded => Languages.Language.ResourceManager.GetString("ApiSuccess") ?? string.Empty,
+                        UploadStatus.Failed => Languages.Language.ResourceManager.GetString("ApiFailure") ?? string.Empty,
+                        _ => Languages.Language.ResourceManager.GetString("ApiNotUploaded") ?? string.Empty
                     };
                 }
             }

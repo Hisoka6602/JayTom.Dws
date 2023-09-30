@@ -10,6 +10,7 @@ using System.Globalization;
 using JayTom.Dws.Plugin.Tcp;
 using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
+using JayTom.Dws.Plugin.Scale;
 using JayTom.Dws.Plugin.Speech;
 using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
@@ -19,6 +20,7 @@ using NetTopologySuite.GeometriesGraph;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Repository.LocalData;
+using JayTom.Dws.Plugin.Scale.ScaleValueParameters;
 using JayTom.Dws.Client.Service.ResultOutput.Communication.TcpComm;
 using JayTom.Dws.Client.Service.ExternalDataService.Communication.TcpComm;
 
@@ -33,9 +35,11 @@ namespace JayTom.Dws.Client.Service.ResultOutput {
         private SemaphoreSlim _semaphore = new(1);
         private ResultOutputSettingsDto? _outputSettingsDto;
         private ConcurrentDictionary<string, byte[]>? _sounds = new();
+        private System.IO.Ports.SerialPort? _serialPort { get; set; }
 
         public DefaultResultOutputService(IConfigRepository configRepository,
-            ISpeech speech, ITcpContentOutput tcpContentOutput, ISoundRepository soundRepository) {
+            ISpeech speech, ITcpContentOutput tcpContentOutput,
+            ISoundRepository soundRepository) {
             _configRepository = configRepository;
             _speech = speech;
             _tcpContentOutput = tcpContentOutput;
@@ -102,10 +106,32 @@ namespace JayTom.Dws.Client.Service.ResultOutput {
                                 soundInfoModel.SoundFile, (a, b) => b);
                         }
                     }
+
+                    if (_outputSettingsDto.IsUseSerialOutput) {
+                        //连接串口
+                        try {
+                            _serialPort?.Close();
+                            _serialPort = new System.IO.Ports.SerialPort() {
+                                BaudRate = _outputSettingsDto.SerialPortSettingsInfo.BaudRate,
+                                DataBits = _outputSettingsDto.SerialPortSettingsInfo.DataBits,
+                                Parity = _outputSettingsDto.SerialPortSettingsInfo.Parity,
+                                StopBits = _outputSettingsDto.SerialPortSettingsInfo.StopBits,
+                                PortName = _outputSettingsDto.SerialPortSettingsInfo.PortName,
+                            };
+                            _serialPort.Open();
+                            if (!_serialPort.IsOpen) {
+                                //语言设置
+                                OnOutputFailed(new Exception("输出串口连接失败"));
+                            }
+                        }
+                        catch (Exception e) {
+                            OnOutputFailed(e);
+                        }
+                    }
                     _semaphore.Release();
                 }
             });
-
+            //默认加载
             EventAggregator.Instance.Publish(new SettingsChangedEvent() {
                 SettingsName = "ResultOutputSettings",
             });
@@ -142,6 +168,14 @@ namespace JayTom.Dws.Client.Service.ResultOutput {
                             return await TcpOutput(message, cancellationToken);
                         }
                         //串口输出
+                        if (_outputSettingsDto.IsUseSerialOutput) {
+                            if (_outputSettingsDto.SerialPortResultOutputInfo.IsUseCustomContentOutput) {
+                                return await SerialPortOutput(_outputSettingsDto.SerialPortResultOutputInfo.CustomOutputContent, cancellationToken);
+                            }
+                            else {
+                                return await SerialPortOutput(message, cancellationToken);
+                            }
+                        }
                         //Http输出
                         //位置输出
                         return true;
@@ -171,6 +205,38 @@ namespace JayTom.Dws.Client.Service.ResultOutput {
             }
 
             return isSend;
+        }
+
+        /// <summary>
+        /// 串口输出
+        /// </summary>
+        /// <param name="message"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        private async Task<bool> SerialPortOutput(string message, CancellationToken cancellationToken = default) {
+            await Task.Yield();
+            if (_outputSettingsDto is not null) {
+                if (_outputSettingsDto.IsUseSerialOutput) {
+                    try {
+                        switch (_outputSettingsDto.SerialPortSettingsInfo.DataFormat) {
+                            case DataFormatType.Ascii:
+                                _serialPort?.WriteLine(message);
+                                return true;
+
+                            case DataFormatType.Hex: {
+                                    var toByteArray = HexStringToByteArray(message);
+                                    _serialPort?.Write(toByteArray, 0, toByteArray.Length);
+                                    return true;
+                                }
+                        }
+                    }
+                    catch (Exception e) {
+                        OnOutputFailed(e);
+                        return false;
+                    }
+                }
+            }
+            return false;
         }
 
         /// <summary>
@@ -240,6 +306,17 @@ namespace JayTom.Dws.Client.Service.ResultOutput {
         protected virtual async void OnOutputFailed(Exception e) {
             await Task.Yield();
             OutputFailed?.Invoke(this, e);
+        }
+
+        private static byte[] HexStringToByteArray(string hexString) {
+            hexString = hexString.Replace(" ", ""); // 移除空格
+
+            var bytes = new byte[hexString.Length / 2];
+            for (var i = 0; i < hexString.Length; i += 2) {
+                bytes[i / 2] = Convert.ToByte(hexString.Substring(i, 2), 16);
+            }
+
+            return bytes;
         }
     }
 }

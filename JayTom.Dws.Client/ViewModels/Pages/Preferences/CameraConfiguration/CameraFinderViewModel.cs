@@ -28,7 +28,6 @@ using CameraType = JayTom.Dws.Client.Models.CameraType;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.StartPanel;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
-
     public class CameraFinderViewModel : BindableBase {
         private readonly IDeviceService _deviceService;
         private readonly IBarcodeScannerCameraConfigRepository _barcodeScannerCameraConfigRepository;
@@ -253,6 +252,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
             if (_isExecuting) {
                 return;
             }
+            //判断有没有选中对应的SDK
             var cameraConnectionParameters = string.Empty;
             var failureMessage = string.Empty;
             if (obj.CameraType == CameraType.VideoCamera) {
@@ -327,6 +327,43 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
             if (_isExecuting) {
                 return;
             }
+            //判断有没有选中对应的SDK
+            if ((obj.Brand.Contains("Hikrobot") || obj.Brand.Contains("Hikvision")) &&
+                obj.CameraType == CameraType.IndustrialCamera &&
+                !CameraSdkSelectorInfo.IsUseHikvisionIndustrialCameraSdk) {
+                //海康工业
+                CameraFinderMessageQueue.Enqueue("未勾选对应的SDK，无法绑定该相机");
+                return;
+            }
+            if ((obj.Brand.Contains("Hikrobot") || obj.Brand.Contains("Hikvision")) &&
+                obj.CameraType == CameraType.IndustrialCamera &&
+                !CameraSdkSelectorInfo.IsUseHikvisionSmartCameraSdk) {
+                //海康智能
+                CameraFinderMessageQueue.Enqueue("未勾选对应的SDK，无法绑定该相机");
+                return;
+            }
+            if ((obj.Brand.Contains("Dahua") || obj.Brand.Contains("Huaray")) &&
+                obj.CameraType == CameraType.SmartCamera &&
+                !CameraSdkSelectorInfo.IsUseDaHuaSmartCameraSdk) {
+                //大华智能
+                CameraFinderMessageQueue.Enqueue("未勾选对应的SDK，无法绑定该相机");
+                return;
+            }
+            if ((obj.Brand.Contains("Dahua") || obj.Brand.Contains("Huaray")) &&
+                obj.CameraType == CameraType.VideoCamera &&
+                !CameraSdkSelectorInfo.IsUseDaHuaSecurityCameraSdk) {
+                //大华安防
+                CameraFinderMessageQueue.Enqueue("未勾选对应的SDK，无法绑定该相机");
+                return;
+            }
+            if (obj.Brand.Contains("Wayzim") &&
+                obj.CameraType == CameraType.SmartCamera &&
+                !CameraSdkSelectorInfo.IsUseWayzimSmartCameraSdk) {
+                //中科智能
+                CameraFinderMessageQueue.Enqueue("未勾选对应的SDK，无法绑定该相机");
+                return;
+            }
+            //CameraSdkSelectorInfo
             var cameraConnectionParameters = string.Empty;
             var result = ButtonResult.No;
             if (obj.CameraType == CameraType.SmartCamera &&
@@ -388,6 +425,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
             if (_isExecuting) {
                 return;
             }
+            //判断有没有选中对应的SDK
             await Application.Current.Dispatcher.InvokeAsync(async () => {
                 _isExecuting = true;
                 var isSuccess = false;

@@ -672,6 +672,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                                     DataFormatTypeItems?.FirstOrDefault(f =>
                                         f.Value.Equals(settingsDto.SerialPortSettingsInfo.DataFormat)) ??
                                     new DataFormatTypeInfoModel();
+                                SelectedPort = PortItems.FirstOrDefault(f =>
+                                    f.Equals(settingsDto.SerialPortSettingsInfo.PortName)) ?? string.Empty;
                                 OutputItems.Clear();
                                 var models = settingsDto.DataTemplate.Select((s, i) => new ItemBaseTemplateModel() {
                                     ApplicationType = s.ApplicationType,
