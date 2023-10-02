@@ -2,11 +2,100 @@
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
+using Prism.Regions;
+using System.Windows;
+using Prism.Commands;
+using System.Windows.Input;
 using System.Threading.Tasks;
+using System.Windows.Controls;
+using JayTom.Dws.Client.Models;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
 
     public class PackageSortingSettingsViewModel : BindableBase {
+        private readonly IRegionManager _regionManager;
+        private ObservableCollection<MenuItemInfoModel> _packageSortingMenuItems;
+        private static bool _isLoaded;
+
+        public PackageSortingSettingsViewModel(IRegionManager regionManager) {
+            _regionManager = regionManager;
+            _packageSortingMenuItems = new ObservableCollection<MenuItemInfoModel>()
+            {
+                new()
+                {
+                    Title = "格口定义",
+                    IconFont = new IconInfoModel()
+                    {
+                        IconFont = "pack://application:,,,/Fonts/#iconfont",
+                        IconCode = "\xe7c0",
+                        IconSize = 25
+                    },
+                    Description = "定义包裹流出位置",
+                    IsSelected = true,
+                    //PageClassName = "CameraFinderPage",
+                },
+                new()
+                {
+                    Title = "物流识别",
+                    IconFont = new IconInfoModel()
+                    {
+                        IconFont = "pack://application:,,,/Fonts/#iconfont",
+                        IconCode = "\xe7a8",
+                        IconSize = 25
+                    },
+                    Description = "识别单号对应物流公司",
+                    //PageClassName = "CameraFinderPage",
+                },
+                new()
+                {
+                    Title = "指令绑定",
+                    IconFont = new IconInfoModel()
+                    {
+                        IconFont = "pack://application:,,,/Fonts/#iconfont",
+                        IconCode = "\xe7b8",
+                        IconSize = 25
+                    },
+                    Description = "对应格口指令绑定",
+                    //PageClassName = "CameraFinderPage",
+                },
+                new()
+                {
+                    Title = "分拣方案",
+                    IconFont = new IconInfoModel()
+                    {
+                        IconFont = "pack://application:,,,/Fonts/#iconfont",
+                        IconCode = "\xe7b9",
+                        IconSize = 25
+                    },
+                    Description = "集成分拣方案",
+                    //PageClassName = "CameraFinderPage",
+                },
+            };
+        }
+
+        public ObservableCollection<MenuItemInfoModel> PackageSortingMenuItems {
+            get => _packageSortingMenuItems;
+            set => SetProperty(ref _packageSortingMenuItems, value);
+        }
+
+        public ICommand LoadedCommand {
+            get => new DelegateCommand<Frame>(LoadedDelegate);
+        }
+
+        private async void LoadedDelegate(Frame obj) {
+            if (!_isLoaded) {
+                _isLoaded = true;
+                await Application.Current.Dispatcher.InvokeAsync(() => {
+                    if (!_regionManager.Regions.ContainsRegionWithName("PackageSortingRegion")) {
+                        //创建区域(用于视觉树以外控件)
+                        RegionManager.SetRegionName(obj, "PackageSortingRegion");
+                        RegionManager.SetRegionManager(obj, _regionManager);
+                    }
+                    //_regionManager.Regions["PackageSortingRegion"].RequestNavigate("CameraFinderPage");
+                });
+            }
+        }
     }
 }

@@ -27,6 +27,8 @@
         <converters:CameraListBoxWidthConverter x:Key="CameraListBoxWidthConverter" />
         <converters:EllipseCenterConverter x:Key="EllipseCenterConverter" />
         <converters:RunningStatusConverter x:Key="RunningStatusConverter" />
+        <converters:OcrInfoShowToVisibilityConverter x:Key="OcrInfoShowToVisibilityConverter" />
+
         <settingsConverter:VolumeUnitConverter x:Key="VolumeUnitConverter" />
         <unitConverter:VolumeConverter x:Key="VolumeConverter" />
         <unitConverter:WeightConverter x:Key="WeightConverter" />
@@ -161,19 +163,53 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="460" />
                     </Grid.ColumnDefinitions>
-                    <!--  条码  -->
-                    <TextBlock
-                        Grid.Column="0"
-                        MinWidth="380"
-                        Margin="10,10"
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Center"
-                        FontFamily="{StaticResource CustomFontFamily}"
-                        FontSize="40"
-                        FontWeight="Bold"
-                        Foreground="White"
-                        Text="{Binding BarCode, UpdateSourceTrigger=PropertyChanged}"
-                        TextAlignment="Center" />
+                    <!--  条码、物流公司  -->
+                    <Grid Grid.Column="0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <!--  条码  -->
+                        <TextBlock
+                            Grid.Row="0"
+                            MinWidth="380"
+                            Margin="10,10"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontFamily="{StaticResource CustomFontFamily}"
+                            FontSize="40"
+                            FontWeight="Bold"
+                            Foreground="White"
+                            Text="{Binding BarCode, UpdateSourceTrigger=PropertyChanged}"
+                            TextAlignment="Center" />
+                        <!--  物流公司  -->
+                        <StackPanel
+                            Grid.Row="1"
+                            Margin="0,5"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Orientation="Horizontal"
+                            Visibility="{Binding OcrSettingsInfo.IsShowLogisticsCompany, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <TextBlock
+                                Margin="5,0"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                FontFamily="{StaticResource IconFontFamily}"
+                                FontSize="20"
+                                Foreground="DimGray"
+                                Text="&#xe7a8;"
+                                TextAlignment="Center" />
+                            <TextBlock
+                                HorizontalAlignment="Left"
+                                FontWeight="Bold"
+                                Foreground="DimGray"
+                                Style="{StaticResource CustomGridViewTextBlockCellStyle}">
+                                <Run Text="物流公司:" /> <Run Foreground="White" Text="韵达" />
+                            </TextBlock>
+                        </StackPanel>
+                    </Grid>
+
+
 
                     <Rectangle
                         Grid.Column="1"
@@ -412,13 +448,14 @@
                 materialDesign:ElevationAssist.Elevation="Dp6"
                 Background="#BF2E2E2E"
                 BorderThickness="2"
-                UniformCornerRadius="10">
+                UniformCornerRadius="10"
+                Visibility="{Binding OcrSettingsInfo.IsUseOcr, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <Grid Margin="30,0">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="30" />
+                        <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
-                    <TextBlock
+                    <!--<TextBlock
                         Grid.Row="0"
                         Margin="0,2"
                         HorizontalAlignment="Left"
@@ -426,7 +463,7 @@
                         FontWeight="Bold"
                         Foreground="DimGray"
                         Style="{StaticResource CustomGridViewTextBlockCellStyle}"
-                        Text="OCR" />
+                        Text="OCR" />-->
 
                     <!--  详细信息  -->
                     <Grid Grid.Row="1">
@@ -473,7 +510,8 @@
                             Grid.Row="0"
                             Grid.Column="1"
                             Margin="0,5"
-                            Orientation="Horizontal">
+                            Orientation="Horizontal"
+                            Visibility="{Binding OcrSettingsInfo.IsShowCompartmentNumber, Converter={StaticResource BooleanToVisibilityConverter}}">
                             <TextBlock
                                 Margin="5,0"
                                 HorizontalAlignment="Center"
@@ -510,36 +548,14 @@
                             StrokeDashArray="8"
                             StrokeThickness="1" />
 
-                        <!--  物流公司  -->
-                        <StackPanel
-                            Grid.Row="2"
-                            Grid.Column="0"
-                            Grid.ColumnSpan="2"
-                            Margin="0,5"
-                            Orientation="Horizontal">
-                            <TextBlock
-                                Margin="5,0"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                FontFamily="{StaticResource IconFontFamily}"
-                                FontSize="20"
-                                Foreground="DimGray"
-                                Text="&#xe7a8;"
-                                TextAlignment="Center" />
-                            <TextBlock
-                                HorizontalAlignment="Left"
-                                FontWeight="Bold"
-                                Foreground="DimGray"
-                                Style="{StaticResource CustomGridViewTextBlockCellStyle}">
-                                <Run Text="物流公司:" /> <Run Foreground="White" Text="韵达" />
-                            </TextBlock>
-                        </StackPanel>
+
                         <!--  耗时  -->
                         <StackPanel
                             Grid.Row="2"
-                            Grid.Column="1"
+                            Grid.Column="0"
                             Margin="0,5"
-                            Orientation="Horizontal">
+                            Orientation="Horizontal"
+                            Visibility="{Binding OcrSettingsInfo.IsShowRecognitionTime, Converter={StaticResource BooleanToVisibilityConverter}}">
                             <TextBlock
                                 Margin="5,0"
                                 HorizontalAlignment="Center"
@@ -557,160 +573,228 @@
                                 <Run Text="识别耗时(ms):" /> <Run Foreground="White" Text="120" />
                             </TextBlock>
                         </StackPanel>
-
-                        <!--  收件人信息  -->
-                        <StackPanel
+                        <!--  收寄件人信息  -->
+                        <Grid
                             Grid.Row="3"
                             Grid.Column="0"
+                            Grid.ColumnSpan="2"
                             Margin="0,2"
-                            Orientation="Vertical">
+                            Visibility="{Binding OcrSettingsInfo, Converter={StaticResource OcrInfoShowToVisibilityConverter}}">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" MinWidth="200" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" MinWidth="200" />
+                            </Grid.ColumnDefinitions>
+                            <!--  标识条  -->
+                            <!--  电话  -->
+                            <Grid
+                                Grid.Row="0"
+                                Grid.Column="1"
+                                Margin="5,5"
+                                HorizontalAlignment="Stretch">
+                                <Rectangle
+                                    Width="Auto"
+                                    Height="1"
+                                    MinWidth="200"
+                                    Margin="0,5"
+                                    HorizontalAlignment="Stretch"
+                                    VerticalAlignment="Center"
+                                    Fill="RoyalBlue"
+                                    Opacity="0.9" />
+                                <Border
+                                    Width="Auto"
+                                    Height="20"
+                                    MaxWidth="100"
+                                    Background="RoyalBlue"
+                                    CornerRadius="10">
+                                    <TextBlock
+                                        Width="Auto"
+                                        MaxWidth="100"
+                                        Margin="10,0"
+                                        FontSize="12"
+                                        FontWeight="UltraLight"
+                                        Style="{StaticResource CustomGridViewTextBlockCellStyle}"
+                                        Text="电话" />
+                                </Border>
+                            </Grid>
+                            <!--  名称  -->
+                            <Grid
+                                Grid.Row="1"
+                                Grid.Column="1"
+                                Margin="5,5"
+                                HorizontalAlignment="Stretch">
+                                <Rectangle
+                                    Width="Auto"
+                                    Height="1"
+                                    MinWidth="200"
+                                    Margin="0,5"
+                                    HorizontalAlignment="Stretch"
+                                    VerticalAlignment="Center"
+                                    Fill="RoyalBlue"
+                                    Opacity="0.9" />
+                                <Border
+                                    Width="Auto"
+                                    Height="20"
+                                    MaxWidth="100"
+                                    Background="RoyalBlue"
+                                    CornerRadius="10">
+                                    <TextBlock
+                                        Width="Auto"
+                                        MaxWidth="100"
+                                        Margin="10,0"
+                                        FontSize="12"
+                                        FontWeight="UltraLight"
+                                        Style="{StaticResource CustomGridViewTextBlockCellStyle}"
+                                        Text="姓名" />
+                                </Border>
+                            </Grid>
+                            <!--  地址  -->
+                            <Grid
+                                Grid.Row="2"
+                                Grid.Column="1"
+                                Margin="5,5"
+                                HorizontalAlignment="Stretch">
+                                <Rectangle
+                                    Width="Auto"
+                                    Height="1"
+                                    MinWidth="200"
+                                    Margin="0,5"
+                                    HorizontalAlignment="Stretch"
+                                    VerticalAlignment="Center"
+                                    Fill="RoyalBlue"
+                                    Opacity="0.9" />
+                                <Border
+                                    Width="Auto"
+                                    Height="20"
+                                    MaxWidth="100"
+                                    Background="RoyalBlue"
+                                    CornerRadius="10">
+                                    <TextBlock
+                                        Width="Auto"
+                                        MaxWidth="100"
+                                        Margin="10,0"
+                                        FontSize="12"
+                                        FontWeight="UltraLight"
+                                        Style="{StaticResource CustomGridViewTextBlockCellStyle}"
+                                        Text="地址" />
+                                </Border>
+                            </Grid>
+                            <!--  收件标记  -->
+                            <TextBlock
+                                Grid.Row="0"
+                                Grid.RowSpan="3"
+                                Grid.Column="0"
+                                Width="Auto"
+                                Margin="10,0"
+                                FontSize="30"
+                                FontWeight="Bold"
+                                Foreground="DimGray"
+                                Opacity="0.2"
+                                Style="{StaticResource CustomGridViewTextBlockCellStyle}"
+                                Text="收件信息" />
+                            <!--  发件标记  -->
+                            <TextBlock
+                                Grid.Row="0"
+                                Grid.RowSpan="3"
+                                Grid.Column="2"
+                                Width="Auto"
+                                MaxWidth="500"
+                                Margin="10,0"
+                                FontSize="30"
+                                FontWeight="Bold"
+                                Foreground="DimGray"
+                                Opacity="0.2"
+                                Style="{StaticResource CustomGridViewTextBlockCellStyle}"
+                                Text="寄件信息"
+                                TextTrimming="WordEllipsis" />
+
+                            <!--  收件人信息  -->
                             <!--  收件人电话  -->
-                            <StackPanel Margin="0,5" Orientation="Horizontal">
-                                <TextBlock
-                                    Margin="5,0"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    FontFamily="{StaticResource IconFontFamily}"
-                                    FontSize="16"
-                                    Foreground="DimGray"
-                                    Text="&#xe7ac;"
-                                    TextAlignment="Center" />
-                                <TextBlock
-                                    HorizontalAlignment="Left"
-                                    FontWeight="Bold"
-                                    Foreground="DimGray"
-                                    Style="{StaticResource CustomGridViewTextBlockCellStyle}">
-                                    <Run Text="收件人电话:" /> <Run
-                                        FontWeight="UltraLight"
-                                        Foreground="White"
-                                        Text="13800138000" />
-                                </TextBlock>
-                            </StackPanel>
-
+                            <TextBlock
+                                Grid.Row="0"
+                                Grid.Column="0"
+                                Width="Auto"
+                                MaxWidth="500"
+                                HorizontalAlignment="Right"
+                                FontWeight="Bold"
+                                Opacity="0.7"
+                                Style="{StaticResource CustomGridViewTextBlockCellStyle}"
+                                Text="13800138000"
+                                TextTrimming="WordEllipsis"
+                                Visibility="{Binding OcrSettingsInfo.IsShowReceiverInfo, Converter={StaticResource BooleanToVisibilityConverter}}" />
                             <!--  收件人名称  -->
-                            <StackPanel Margin="0,5" Orientation="Horizontal">
-                                <TextBlock
-                                    Margin="5,0"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    FontFamily="{StaticResource IconFontFamily}"
-                                    FontSize="16"
-                                    Foreground="DimGray"
-                                    Text="&#xe7ab;"
-                                    TextAlignment="Center" />
-                                <TextBlock
-                                    HorizontalAlignment="Left"
-                                    FontWeight="Bold"
-                                    Foreground="DimGray"
-                                    Style="{StaticResource CustomGridViewTextBlockCellStyle}">
-                                    <Run Text="收件人名称:" /> <Run
-                                        FontWeight="UltraLight"
-                                        Foreground="White"
-                                        Text="马化腾" />
-                                </TextBlock>
-                            </StackPanel>
-
+                            <TextBlock
+                                Grid.Row="1"
+                                Grid.Column="0"
+                                Width="Auto"
+                                MaxWidth="500"
+                                HorizontalAlignment="Right"
+                                FontWeight="Bold"
+                                Opacity="0.7"
+                                Style="{StaticResource CustomGridViewTextBlockCellStyle}"
+                                Text="马化腾"
+                                TextTrimming="WordEllipsis"
+                                Visibility="{Binding OcrSettingsInfo.IsShowReceiverInfo, Converter={StaticResource BooleanToVisibilityConverter}}" />
                             <!--  收件人地址  -->
-                            <StackPanel Margin="0,5" Orientation="Horizontal">
-                                <TextBlock
-                                    Margin="5,0"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    FontFamily="{StaticResource IconFontFamily}"
-                                    FontSize="16"
-                                    Foreground="DimGray"
-                                    Text="&#xe7af;"
-                                    TextAlignment="Center" />
-                                <TextBlock
-                                    HorizontalAlignment="Left"
-                                    FontWeight="Bold"
-                                    Foreground="DimGray"
-                                    Style="{StaticResource CustomGridViewTextBlockCellStyle}">
-                                    <Run Text="收件人地址:" /> <Run
-                                        FontWeight="UltraLight"
-                                        Foreground="White"
-                                        Text="北京市东城区长安街" />
-                                </TextBlock>
-                            </StackPanel>
+                            <TextBlock
+                                Grid.Row="2"
+                                Grid.Column="0"
+                                Width="Auto"
+                                MaxWidth="500"
+                                HorizontalAlignment="Right"
+                                FontWeight="Bold"
+                                Opacity="0.7"
+                                Style="{StaticResource CustomGridViewTextBlockCellStyle}"
+                                Text="北京市东城区长安街"
+                                TextTrimming="WordEllipsis"
+                                Visibility="{Binding OcrSettingsInfo.IsShowReceiverInfo, Converter={StaticResource BooleanToVisibilityConverter}}" />
 
-                        </StackPanel>
-                        <!--  寄件人信息  -->
-                        <StackPanel
-                            Grid.Row="3"
-                            Grid.Column="1"
-                            Margin="0,2"
-                            Orientation="Vertical">
+                            <!--  寄件人信息  -->
                             <!--  寄件人电话  -->
-                            <StackPanel Margin="0,5" Orientation="Horizontal">
-                                <TextBlock
-                                    Margin="5,0"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    FontFamily="{StaticResource IconFontFamily}"
-                                    FontSize="16"
-                                    Foreground="DimGray"
-                                    Text="&#xe7ac;"
-                                    TextAlignment="Center" />
-                                <TextBlock
-                                    HorizontalAlignment="Left"
-                                    FontWeight="Bold"
-                                    Foreground="DimGray"
-                                    Style="{StaticResource CustomGridViewTextBlockCellStyle}">
-                                    <Run Text="寄件人电话:" /> <Run
-                                        FontWeight="UltraLight"
-                                        Foreground="White"
-                                        Text="13800138000" />
-                                </TextBlock>
-                            </StackPanel>
-
+                            <TextBlock
+                                Grid.Row="0"
+                                Grid.Column="2"
+                                Width="Auto"
+                                MaxWidth="500"
+                                HorizontalAlignment="Left"
+                                FontWeight="Bold"
+                                Opacity="0.7"
+                                Style="{StaticResource CustomGridViewTextBlockCellStyle}"
+                                Text="13800138000"
+                                TextTrimming="WordEllipsis"
+                                Visibility="{Binding OcrSettingsInfo.IsShowSenderInfo, Converter={StaticResource BooleanToVisibilityConverter}}" />
                             <!--  寄件人名称  -->
-                            <StackPanel Margin="0,5" Orientation="Horizontal">
-                                <TextBlock
-                                    Margin="5,0"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    FontFamily="{StaticResource IconFontFamily}"
-                                    FontSize="16"
-                                    Foreground="DimGray"
-                                    Text="&#xe7ab;"
-                                    TextAlignment="Center" />
-                                <TextBlock
-                                    HorizontalAlignment="Left"
-                                    FontWeight="Bold"
-                                    Foreground="DimGray"
-                                    Style="{StaticResource CustomGridViewTextBlockCellStyle}">
-                                    <Run Text="寄件人名称:" /> <Run
-                                        FontWeight="UltraLight"
-                                        Foreground="White"
-                                        Text="马化腾" />
-                                </TextBlock>
-                            </StackPanel>
-
+                            <TextBlock
+                                Grid.Row="1"
+                                Grid.Column="2"
+                                Width="Auto"
+                                MaxWidth="500"
+                                HorizontalAlignment="Left"
+                                FontWeight="Bold"
+                                Opacity="0.7"
+                                Style="{StaticResource CustomGridViewTextBlockCellStyle}"
+                                Text="马化腾"
+                                TextTrimming="WordEllipsis"
+                                Visibility="{Binding OcrSettingsInfo.IsShowSenderInfo, Converter={StaticResource BooleanToVisibilityConverter}}" />
                             <!--  寄件人地址  -->
-                            <StackPanel Margin="0,5" Orientation="Horizontal">
-                                <TextBlock
-                                    Margin="5,0"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    FontFamily="{StaticResource IconFontFamily}"
-                                    FontSize="16"
-                                    Foreground="DimGray"
-                                    Text="&#xe7af;"
-                                    TextAlignment="Center" />
-                                <TextBlock
-                                    HorizontalAlignment="Left"
-                                    FontWeight="Bold"
-                                    Foreground="DimGray"
-                                    Style="{StaticResource CustomGridViewTextBlockCellStyle}">
-                                    <Run Text="寄件人地址:" /> <Run
-                                        FontWeight="UltraLight"
-                                        Foreground="White"
-                                        Text="北京市东城区长安街" />
-                                </TextBlock>
-                            </StackPanel>
-
-                        </StackPanel>
-
+                            <TextBlock
+                                Grid.Row="2"
+                                Grid.Column="2"
+                                Width="Auto"
+                                MaxWidth="500"
+                                HorizontalAlignment="Left"
+                                FontWeight="Bold"
+                                Opacity="0.7"
+                                Style="{StaticResource CustomGridViewTextBlockCellStyle}"
+                                Text="北京市东城区长安街"
+                                TextTrimming="WordEllipsis"
+                                Visibility="{Binding OcrSettingsInfo.IsShowSenderInfo, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                        </Grid>
                     </Grid>
                 </Grid>
             </materialDesign:Card>

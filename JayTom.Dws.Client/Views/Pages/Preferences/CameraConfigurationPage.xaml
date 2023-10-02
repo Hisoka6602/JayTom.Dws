@@ -16,7 +16,7 @@
     FontFamily="{StaticResource CustomFontFamily}"
     mc:Ignorable="d">
     <b:Interaction.Triggers>
-        <b:EventTrigger EventName="Loaded" SourceName="SettingPage">
+        <b:EventTrigger EventName="Loaded" SourceName="CameraConfigurationView">
             <b:InvokeCommandAction Command="{Binding LoadedCommand}" CommandParameter="{Binding ElementName=CameraRegionFrame}" />
         </b:EventTrigger>
     </b:Interaction.Triggers>

@@ -26,9 +26,7 @@ using JayTom.Dws.Data.LocalData;
 using JayTom.Dws.Client.Service;
 using System.Collections.Generic;
 using JayTom.Dws.Domain.Converters;
-
 using JayTom.Dws.Domain.Converters;
-
 using System.Windows.Media.Imaging;
 using System.Collections.ObjectModel;
 using System.Runtime.InteropServices;
@@ -40,6 +38,7 @@ using JayTom.Dws.Client.Service.ImageStorage;
 using JayTom.Dws.Domain.Repository.LocalData;
 using JayTom.Dws.Client.Service.ResultOutput;
 using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Client.Models.OcrSettingsModel;
 using JayTom.Dws.Client.Service.ExternalDataService;
 using CameraType = JayTom.Dws.Client.Models.CameraType;
 using CameraStatus = JayTom.Dws.Client.Models.CameraStatus;
@@ -48,7 +47,6 @@ using static JayTom.Dws.Client.Service.BackgroundService.SubmitApiBackgroundServ
 using static JayTom.Dws.Client.Service.BackgroundService.ScanProcessBackgroundService;
 
 namespace JayTom.Dws.Client.ViewModels.Pages {
-
     public class HomeViewModel : BindableBase {
         private readonly IDialogService _dialogService;
         private readonly IComputerInfoReporter _computerInfoReporter;
@@ -80,6 +78,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         private static SemaphoreSlim _runningSemaphoreSlim = new(1, 1);
         private static SemaphoreSlim _imageSemaphoreSlim = new(1, 1);
         private static SemaphoreSlim _updateSlim = new(1, 1);
+        private OcrSettingsInfoModel _ocrSettingsInfo = new();
 
         public SnackbarMessageQueue HomeMessageQueue {
             get => _homeMessageQueue;
@@ -95,7 +94,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             get => _barCodeItems;
             set => SetProperty(ref _barCodeItems, value);
         }
-
+        /// <summary>
+        /// Ocr
+        /// </summary>
+        public OcrSettingsInfoModel OcrSettingsInfo {
+            get => _ocrSettingsInfo;
+            set => SetProperty(ref _ocrSettingsInfo, value);
+        }
         /// <summary>
         /// 体积单位
         /// </summary>
@@ -355,20 +360,48 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                 }
             });
             EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async info => {
-                if (info is SettingsChangedEvent model) {
-                    if (model.SettingsName.Equals("VolumeSettings")) {
-                        await Application.Current.Dispatcher.InvokeAsync(async () => {
-                            //临时写在这里加载配置，后续修改通过事件通知
-                            var configInfoModel = await _configRepository.FirstOrDefault(s => s.ConfigName.Equals("VolumeSettings"));
-                            if (configInfoModel is not null) {
-                                var volumeSettingsDto = JsonConvert.DeserializeObject<VolumeSettingsDto>(configInfoModel.Value);
-                                if (volumeSettingsDto is not null) {
-                                    VolumeUnit = volumeSettingsDto.Unit;
+                try {
+                    if (info is SettingsChangedEvent model) {
+                        if (model.SettingsName.Equals("VolumeSettings")) {
+                            await Application.Current.Dispatcher.InvokeAsync(async () => {
+                                //临时写在这里加载配置，后续修改通过事件通知
+                                var configInfoModel = await _configRepository.FirstOrDefault(s => s.ConfigName.Equals("VolumeSettings"));
+                                if (configInfoModel is not null) {
+                                    var volumeSettingsDto = JsonConvert.DeserializeObject<VolumeSettingsDto>(configInfoModel.Value);
+                                    if (volumeSettingsDto is not null) {
+                                        VolumeUnit = volumeSettingsDto.Unit;
+                                    }
                                 }
-                            }
-                        });
+                            });
+                        }
+                        else if (model.SettingsName.Equals("OcrSettings")) {
+                            await Application.Current.Dispatcher.InvokeAsync(async () => {
+                                //临时写在这里加载配置，后续修改通过事件通知
+                                var configInfoModel = await _configRepository.FirstOrDefault(s => s.ConfigName.Equals("OcrSettings"));
+                                if (configInfoModel is not null) {
+                                    var ocrSettingsDto = JsonConvert.DeserializeObject<OcrSettingsDto>(configInfoModel.Value);
+                                    if (ocrSettingsDto is not null) {
+                                        OcrSettingsInfo = new OcrSettingsInfoModel() {
+                                            IsShowSenderInfo = ocrSettingsDto.IsShowSenderInfo,
+                                            IsUseOcr = ocrSettingsDto.IsUseOcr,
+                                            IsShowCompartmentNumber = ocrSettingsDto.IsShowCompartmentNumber,
+                                            IsShowLogisticsCompany = ocrSettingsDto.IsShowLogisticsCompany,
+                                            IsShowReceiverInfo = ocrSettingsDto.IsShowReceiverInfo,
+                                            IsShowRecognitionTime = ocrSettingsDto.IsShowRecognitionTime
+                                        };
+
+                                    }
+                                }
+                            });
+                        }
                     }
                 }
+                catch (Exception e) {
+                    Console.WriteLine(e);
+
+                }
+
+
             });
             //更新上传状态
             EventAggregator.Instance.Subscribe<ApiResponseReceived>(async item => {
@@ -478,6 +511,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                 //临时写在这里加载配置，后续修改通过事件通知
                 EventAggregator.Instance.Publish(new SettingsChangedEvent {
                     SettingsName = "VolumeSettings"
+                });
+                EventAggregator.Instance.Publish(new SettingsChangedEvent {
+                    SettingsName = "OcrSettings"
                 });
             });
         }
