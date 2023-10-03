@@ -34,7 +34,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     },
                     Description = "定义包裹流出位置",
                     IsSelected = true,
-                    //PageClassName = "CameraFinderPage",
+                    PageClassName = "PackageExitDefinitionPage",
                 },
                 new()
                 {
@@ -58,6 +58,18 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                         IconSize = 25
                     },
                     Description = "对应格口指令绑定",
+                    //PageClassName = "CameraFinderPage",
+                },
+                new()
+                {
+                    Title = "下位机通讯",
+                    IconFont = new IconInfoModel()
+                    {
+                        IconFont = "pack://application:,,,/Fonts/#iconfont",
+                        IconCode = "\xe7ce",
+                        IconSize = 25
+                    },
+                    Description = "下位机通讯设置",
                     //PageClassName = "CameraFinderPage",
                 },
                 new()
@@ -93,7 +105,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                         RegionManager.SetRegionName(obj, "PackageSortingRegion");
                         RegionManager.SetRegionManager(obj, _regionManager);
                     }
-                    //_regionManager.Regions["PackageSortingRegion"].RequestNavigate("CameraFinderPage");
+                    _regionManager.Regions["PackageSortingRegion"].RequestNavigate("PackageExitDefinitionPage");
                 });
             }
         }

@@ -4,6 +4,7 @@ using JayTom.Dws.Data.LocalConf;
 using Microsoft.EntityFrameworkCore;
 using JayTom.Dws.Data.LocalConf.CameraConfig;
 using JayTom.Dws.Infrastructure.Repository.LocalData;
+using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 
 namespace JayTom.Dws.Infrastructure {
 
@@ -68,13 +69,6 @@ namespace JayTom.Dws.Infrastructure {
                 modelBuilder.Entity<ConfigInfoModel>()
                     .HasIndex(b => b.ConfigName)
                     .IsUnique();
-                //RequestParametersInfoModel
-                modelBuilder.Entity<RequestParametersInfoModel>().HasKey(c => new {
-                    c.Id
-                });
-                modelBuilder.Entity<RequestParametersInfoModel>()
-                    .HasIndex(b => b.InterfaceName)
-                    .IsUnique();
                 //BarcodeScannerCamera
                 modelBuilder.Entity<BarcodeScannerCameraConfigInfoModel>().HasKey(c => new {
                     c.Id
@@ -97,6 +91,30 @@ namespace JayTom.Dws.Infrastructure {
                 modelBuilder.Entity<VolumeCameraConfigInfoModel>()
                     .HasIndex(b => b.SerialNumber)
                     .IsUnique();
+                //分拣
+                modelBuilder.Entity<LogisticsCodeRecognitionInfoModel>().HasKey(c => new {
+                    c.Id
+                });
+                modelBuilder.Entity<LogisticsCodeRecognitionInfoModel>()
+                    .HasIndex(b => b.LogisticsCode)
+                    .IsUnique();
+
+                modelBuilder.Entity<PackageExitDefinitionInfoModel>().HasKey(c => new {
+                    c.Id
+                });
+                modelBuilder.Entity<PackageExitDefinitionInfoModel>()
+                    .HasIndex(b => new { b.Id, b.IsActive })
+                    .IsUnique();
+                modelBuilder.Entity<SortingInstructionBindingInfoModel>().HasKey(c => new {
+                    c.Id
+                });
+                modelBuilder.Entity<SortingInstructionBindingInfoModel>()
+                    .HasIndex(b => new { b.SortingInstructionGroup, b.IsActive })
+                    .IsUnique();
+
+                modelBuilder.Entity<LogisticsRegexInfoModel>().HasKey(c => new {
+                    c.Id
+                });
             }
             //log
             {

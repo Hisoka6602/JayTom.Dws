@@ -61,11 +61,15 @@ using JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision;
 using JayTom.Dws.Client.HomeToolPlugin.SunnenPlugin.Views;
 using JayTom.Dws.Client.HomeToolPlugin.SunnenPlugin.ViewModels;
 using JayTom.Dws.Client.Views.Pages.Preferences.ApiConfiguration;
+using JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration;
 using JayTom.Dws.Client.Service.ResultOutput.Communication.TcpComm;
 using JayTom.Dws.Client.Views.Pages.Preferences.CameraConfiguration;
 using JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration;
+using JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration;
 using JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration;
 using JayTom.Dws.Client.Service.ExternalDataService.Communication.TcpComm;
+using JayTom.Dws.Client.Views.Pages.Preferences.PackageSortingConfiguration;
+using JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration;
 
 namespace JayTom.Dws.Client {
 
@@ -114,6 +118,11 @@ namespace JayTom.Dws.Client {
                 containerRegistry.RegisterForNavigation<CameraFinderPage>();
                 containerRegistry.RegisterForNavigation<PanoramaCameraConfigPage>();
                 containerRegistry.RegisterForNavigation<VolumeCameraConfigPage>();
+                //分拣设置
+                containerRegistry.RegisterForNavigation<LogisticsCodeRecognitionPage>();
+                containerRegistry.RegisterForNavigation<PackageExitDefinitionPage>();
+                containerRegistry.RegisterForNavigation<SortingInstructionBindingPage>();
+                containerRegistry.RegisterForNavigation<SortingSchemeSettingsPage>();
             }
             //其他注册
             containerRegistry.GetContainer().RegisterServices(services => {
@@ -134,6 +143,10 @@ namespace JayTom.Dws.Client {
                 services.AddScoped<IConfigRepository, ConfigRepository>();
                 services.AddScoped<IPanoramaImageRepository, PanoramaImageRepository>();
 
+                services.AddScoped<ILogisticsCodeRecognitionRepository, LogisticsCodeRecognitionRepository>();
+                services.AddScoped<IPackageExitDefinitionRepository, PackageExitDefinitionRepository>();
+                services.AddScoped<ISortingInstructionBindingRepository, SortingInstructionBindingRepository>();
+                services.AddScoped<ILogisticsRegexRepository, LogisticsRegexRepository>();
                 /*services.AddScoped<IConfigRepository, ConfigRepository>();
 
                 //服务注册
@@ -254,6 +267,12 @@ namespace JayTom.Dws.Client {
                         services.AddSingleton(container.Resolve<ISoundRepository>());
                         services.AddSingleton(container.Resolve<IConfigRepository>());
                         services.AddSingleton(container.Resolve<IPanoramaImageRepository>());
+
+                        services.AddSingleton(container.Resolve<ILogisticsCodeRecognitionRepository>());
+                        services.AddSingleton(container.Resolve<IPackageExitDefinitionRepository>());
+                        services.AddSingleton(container.Resolve<ISortingInstructionBindingRepository>());
+                        services.AddSingleton(container.Resolve<ILogisticsRegexRepository>());
+
                         services.AddSingleton(container.Resolve<IExternalDataService>());
                         services.AddSingleton(container.Resolve<ICacheCleanupService>());
                         //补注册
@@ -285,6 +304,7 @@ namespace JayTom.Dws.Client {
             ViewModelLocationProvider.Register<ExportDialog, ExportDialogViewModel>();
             ViewModelLocationProvider.Register<LoadingDialog, LoadingDialogViewModel>();
             ViewModelLocationProvider.Register<DataTimeEditor, DataTimeEditorViewModel>();
+            ViewModelLocationProvider.Register<PackageExitDefinitionEditor, PackageExitDefinitionEditorViewModel>();
             ViewModelLocationProvider.Register<MainWindow, MainWindowViewModel>();
             ViewModelLocationProvider.Register<SettingsPage, SettingsViewModel>();
             ViewModelLocationProvider.Register<PluginMarketplacePage, PluginMarketplaceViewModel>();
@@ -315,6 +335,11 @@ namespace JayTom.Dws.Client {
             ViewModelLocationProvider.Register<PackageSortingSettingsPage, PackageSortingSettingsViewModel>();
             ViewModelLocationProvider.Register<OcrSettingsPage, OcrSettingsViewModel>();
             ViewModelLocationProvider.Register<WorkflowSettingsPage, WorkflowSettingsViewModel>();
+
+            ViewModelLocationProvider.Register<LogisticsCodeRecognitionPage, LogisticsCodeRecognitionViewModel>();
+            ViewModelLocationProvider.Register<PackageExitDefinitionPage, PackageExitDefinitionViewModel>();
+            ViewModelLocationProvider.Register<SortingInstructionBindingPage, SortingInstructionBindingViewModel>();
+            ViewModelLocationProvider.Register<SortingSchemeSettingsPage, SortingSchemeSettingsViewModel>();
             //接口
             ViewModelLocationProvider.Register<DefaultApiPage, DefaultApiPageViewModel>();
             //其他插件

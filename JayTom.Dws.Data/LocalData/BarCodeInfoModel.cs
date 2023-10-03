@@ -96,12 +96,6 @@ namespace JayTom.Dws.Data.LocalData {
         [Column("BarcodeImagePath")]
         public string? BarcodeImagePath { get; set; }
 
-        /*/// <summary>
-        /// 全景图片保存路径
-        /// </summary>
-        [Column("PanoramaImagePath")]
-        public string? PanoramaImagePath { get; set; }*/
-
         /// <summary>
         /// 全景图片保存路径
         /// </summary>
