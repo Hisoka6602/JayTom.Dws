@@ -9,6 +9,7 @@ using System.Windows.Input;
 using System.Threading.Tasks;
 using System.Windows.Controls;
 using JayTom.Dws.Client.Models;
+using System.Windows.Threading;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 
@@ -35,6 +36,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     Description = "定义包裹流出位置",
                     IsSelected = true,
                     PageClassName = "PackageExitDefinitionPage",
+                    ClickCommand = ClickCommand
                 },
                 new()
                 {
@@ -46,7 +48,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                         IconSize = 25
                     },
                     Description = "识别单号对应物流公司",
-                    //PageClassName = "CameraFinderPage",
+                    PageClassName = "LogisticsCodeRecognitionPage",
+                    ClickCommand = ClickCommand
                 },
                 new()
                 {
@@ -108,6 +111,28 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     _regionManager.Regions["PackageSortingRegion"].RequestNavigate("PackageExitDefinitionPage");
                 });
             }
+        }
+
+        /// <summary>
+        /// 点击事件
+        /// </summary>
+        public ICommand ClickCommand {
+            get => new DelegateCommand<MenuItemInfoModel>(MenuClickDelegate);
+        }
+
+        private async void MenuClickDelegate(MenuItemInfoModel obj) {
+            await Application.Current.Dispatcher.InvokeAsync(() => {
+                if (!obj.PageClassName.Equals(string.Empty)) {
+                    foreach (var item in PackageSortingMenuItems) {
+                        item.IsSelected = false;
+                    }
+
+                    obj.IsSelected = true;
+
+                    _regionManager?.Regions?["PackageSortingRegion"]
+                        ?.RequestNavigate(new Uri(obj.PageClassName, UriKind.Relative));
+                }
+            }, DispatcherPriority.Background);
         }
     }
 }

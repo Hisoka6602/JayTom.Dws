@@ -2,14 +2,17 @@
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
 using JayTom.Dws.Data.Attributes;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace JayTom.Dws.Data.LocalConf.PackageSortingConfig {
+
     [Table("Conf_LogisticsCodeRecognitionInfo", Schema = "dbo")]
     public class LogisticsCodeRecognitionInfoModel : BasePackageSortingConfig {
+
         /// <summary>
         /// 物流代码
         /// </summary>
@@ -37,7 +40,9 @@ namespace JayTom.Dws.Data.LocalConf.PackageSortingConfig {
         /// <summary>
         /// 绑定出口代码
         /// </summary>
-        [Column("ExitCode"), InsertOrUpdata]
-        public string? ExitCode { get; set; }
+        [Column("ExitId"), InsertOrUpdata]
+        public long ExitId { get; set; }
+
+        public virtual ICollection<LogisticsRegexInfoModel>? LogisticsRegexItems { get; set; }
     }
 }

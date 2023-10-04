@@ -111,7 +111,11 @@ namespace JayTom.Dws.Infrastructure {
                 modelBuilder.Entity<SortingInstructionBindingInfoModel>()
                     .HasIndex(b => new { b.SortingInstructionGroup, b.IsActive })
                     .IsUnique();
-
+                modelBuilder.Entity<LogisticsCodeRecognitionInfoModel>()
+                    .HasMany(b => b.LogisticsRegexItems)
+                    .WithOne(n => n.LogisticsCodeInfo)
+                    .HasForeignKey(n => new { n.LogisticsId })
+                    .OnDelete(DeleteBehavior.Cascade);
                 modelBuilder.Entity<LogisticsRegexInfoModel>().HasKey(c => new {
                     c.Id
                 });

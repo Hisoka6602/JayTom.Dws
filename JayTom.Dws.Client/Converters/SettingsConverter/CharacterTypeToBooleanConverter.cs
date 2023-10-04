@@ -9,10 +9,11 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 
 namespace JayTom.Dws.Client.Converters.SettingsConverter {
+
     public class CharacterTypeToBooleanConverter : IValueConverter {
 
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
-            if (Enum.TryParse(value.ToString(), out CharacterType selectedType)) {
+            if (!string.IsNullOrEmpty(value?.ToString()) && Enum.TryParse(value.ToString(), out CharacterType selectedType)) {
                 if (Enum.TryParse(parameter.ToString(), out CharacterType result)) {
                     return selectedType == result;
                 }

@@ -2,12 +2,14 @@
     x:Class="JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration.PackageExitDefinitionEditor"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:languages="clr-namespace:JayTom.Dws.Client.Languages"
     xmlns:local="clr-namespace:JayTom.Dws.Client.Views.Editors"
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:mvvm="http://prismlibrary.com/"
+    Name="PackageExitDefinitionView"
     MaxWidth="700"
     MaxHeight="648"
     d:DesignHeight="450"
@@ -15,6 +17,11 @@
     mvvm:ViewModelLocator.AutoWireViewModel="True"
     FontFamily="{StaticResource CustomFontFamily}"
     mc:Ignorable="d">
+    <b:Interaction.Triggers>
+        <b:EventTrigger EventName="Loaded" SourceName="PackageExitDefinitionView">
+            <b:InvokeCommandAction Command="{Binding LoadedCommand, IsAsync=False}" CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type UserControl}}}" />
+        </b:EventTrigger>
+    </b:Interaction.Triggers>
     <Border Background="#2E2E2E" CornerRadius="20">
         <Grid
             Width="400"
@@ -35,7 +42,7 @@
                 FontSize="16"
                 FontWeight="Bold"
                 Foreground="DarkGray">
-                <Run Text="格口Id:" /><Run Text="1" />
+                <Run Text="格口Id:" /><Run Text="{Binding Id, UpdateSourceTrigger=PropertyChanged}" />
             </TextBlock>
             <!--  格口名称  -->
             <StackPanel
@@ -67,8 +74,7 @@
                         FontSize="13"
                         FontWeight="Bold"
                         Foreground="White"
-                        InputMethod.IsInputMethodEnabled="False"
-                        Text="{Binding WeightSettingsInfo.StaticWeight.SendingContent, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                        Text="{Binding ExitName, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                 </Border>
             </StackPanel>
             <!--  格口类型  -->
@@ -100,11 +106,13 @@
                         materialDesign:ButtonAssist.CornerRadius="15"
                         materialDesign:ColorZoneAssist.Mode="Dark"
                         BorderThickness="0"
+                        DisplayMemberPath="Name"
                         FontSize="12"
                         FontWeight="Bold"
                         Foreground="White"
-                        ItemsSource="{Binding BaudRateItems, UpdateSourceTrigger=PropertyChanged}"
-                        SelectedItem="{Binding WeightSettingsInfo.Connection.BaudRate, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                        ItemsSource="{Binding ExitTypeItems, UpdateSourceTrigger=PropertyChanged}"
+                        SelectedItem="{Binding SelectExitType, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                        SelectedValuePath="Value"
                         Style="{StaticResource MaterialDesignComboBox}" />
                 </Border>
             </StackPanel>
@@ -124,7 +132,7 @@
                     materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
                     materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
                     Focusable="False"
-                    IsChecked="{Binding OcrSettingsInfo.IsShowLogisticsCompany, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                    IsChecked="{Binding IsActive, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                     Style="{StaticResource MaterialDesignSwitchToggleButton}" />
             </StackPanel>
             <!--  备注  -->
@@ -161,7 +169,7 @@
                         FontWeight="Bold"
                         Foreground="White"
                         Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                        Text="{Binding JsonContent, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
+                        Text="{Binding Remarks, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                         TextWrapping="Wrap"
                         VerticalScrollBarVisibility="Auto" />
                 </Border>
@@ -182,7 +190,7 @@
                     materialDesign:ButtonAssist.CornerRadius="15"
                     Background="RoyalBlue"
                     BorderThickness="0"
-                    Command="{Binding ContinueCommand}"
+                    Command="{Binding SaveCommand}"
                     Focusable="False"
                     Style="{StaticResource MaterialDesignRaisedDarkButton}">
                     <StackPanel Orientation="Horizontal">
@@ -201,7 +209,6 @@
                             Foreground="White"
                             Text="{x:Static languages:Language.Save}" />
                     </StackPanel>
-
                 </Button>
                 <Button
                     Height="30"
@@ -213,7 +220,7 @@
                     materialDesign:ButtonAssist.CornerRadius="15"
                     Background="DarkRed"
                     BorderThickness="0"
-                    Command="{Binding ExitCommand}"
+                    Command="{Binding CancelCommand}"
                     Focusable="False"
                     Style="{StaticResource MaterialDesignRaisedDarkButton}">
                     <StackPanel Orientation="Horizontal">
