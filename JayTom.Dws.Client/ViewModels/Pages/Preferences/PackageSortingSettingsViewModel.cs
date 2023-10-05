@@ -61,7 +61,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                         IconSize = 25
                     },
                     Description = "对应格口指令绑定",
-                    //PageClassName = "CameraFinderPage",
+                    PageClassName = "SortingInstructionBindingPage",
+                    ClickCommand = ClickCommand
                 },
                 new()
                 {

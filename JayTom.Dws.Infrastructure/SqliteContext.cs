@@ -109,8 +109,17 @@ namespace JayTom.Dws.Infrastructure {
                     c.Id
                 });
                 modelBuilder.Entity<SortingInstructionBindingInfoModel>()
-                    .HasIndex(b => new { b.SortingInstructionGroup, b.IsActive })
+                    .HasIndex(b => new { b.ExitId, b.IsActive })
                     .IsUnique();
+                modelBuilder.Entity<SortingInstructionInfoModel>().HasKey(c => new {
+                    c.Id
+                });
+                modelBuilder.Entity<SortingInstructionBindingInfoModel>()
+                    .HasMany(b => b.InstructionItems)
+                    .WithOne(n => n.SortingInstructionBindingInfo)
+                    .HasForeignKey(n => new { n.InstructionBindingId })
+                    .OnDelete(DeleteBehavior.Cascade);
+
                 modelBuilder.Entity<LogisticsCodeRecognitionInfoModel>()
                     .HasMany(b => b.LogisticsRegexItems)
                     .WithOne(n => n.LogisticsCodeInfo)

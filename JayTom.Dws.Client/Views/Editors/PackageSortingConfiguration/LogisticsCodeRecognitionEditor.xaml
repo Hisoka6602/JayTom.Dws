@@ -93,6 +93,7 @@
                             FontSize="13"
                             FontWeight="Bold"
                             Foreground="White"
+                            InputMethod.IsInputMethodEnabled="False"
                             Text="{Binding LogisticsCodeRecognitionItemInfo.LogisticsCode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                     </Border>
                 </StackPanel>
@@ -184,15 +185,14 @@
                         Background="#202020"
                         CornerRadius="5">
                         <Image
-                            Width="160"
-                            Height="30"
+                            Width="40"
+                            Height="40"
                             MaxWidth="300"
-                            Margin="5,0"
+                            Margin="5"
                             materialDesign:TextFieldAssist.HasClearButton="False"
                             materialDesign:TextFieldAssist.HasFilledTextField="True"
                             Source="{Binding LogisticsCodeRecognitionItemInfo.Icon}">
                             <!--  图标  -->
-
                         </Image>
                     </Border>
                     <Button
@@ -246,6 +246,7 @@
                             FontSize="13"
                             FontWeight="Bold"
                             Foreground="White"
+                            IsReadOnly="True"
                             Text="{Binding SoundFilePath, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                     </Border>
                     <Button
@@ -313,9 +314,9 @@
                 Orientation="Vertical">
                 <!--  正则列表  -->
                 <DataGrid
+                    Height="300"
                     MinWidth="500"
-                    MinHeight="300"
-                    Margin="20,20,20,0"
+                    Margin="20"
                     Padding="10,0"
                     VerticalAlignment="Stretch"
                     materialDesign:DataGridAssist.CellPadding="4 2 2 2"
@@ -560,7 +561,7 @@
                                             Focusable="False"
                                             FontWeight="Bold"
                                             Foreground="White"
-                                            IsChecked="{Binding StartCharacterType, Converter={StaticResource CharacterTypeToBooleanConverter}, ConverterParameter=Letter}"
+                                            IsChecked="{Binding CharacterType, Converter={StaticResource CharacterTypeToBooleanConverter}, ConverterParameter=Letter}"
                                             Style="{StaticResource MaterialDesignRadioButton}" />
                                         <RadioButton
                                             Margin="10,0"
@@ -568,7 +569,7 @@
                                             Focusable="False"
                                             FontWeight="Bold"
                                             Foreground="White"
-                                            IsChecked="{Binding StartCharacterType, Converter={StaticResource CharacterTypeToBooleanConverter}, ConverterParameter=Number}"
+                                            IsChecked="{Binding CharacterType, Converter={StaticResource CharacterTypeToBooleanConverter}, ConverterParameter=Number}"
                                             Style="{StaticResource MaterialDesignRadioButton}" />
                                     </StackPanel>
                                 </Border>
@@ -669,7 +670,7 @@
                                         FontWeight="Bold"
                                         Foreground="White"
                                         InputMethod.IsInputMethodEnabled="False"
-                                        Text="{Binding StartCharacterType, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                                        Text="{Binding StartCharacter, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                                 </Border>
                             </StackPanel>
                             <StackPanel Orientation="Horizontal">
@@ -702,10 +703,9 @@
                                         FontWeight="Bold"
                                         Foreground="White"
                                         InputMethod.IsInputMethodEnabled="False"
-                                        Text="{Binding EndCharacterType, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                                        Text="{Binding EndCharacter, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                                 </Border>
                             </StackPanel>
-
                         </StackPanel>
                     </StackPanel>
                 </StackPanel>

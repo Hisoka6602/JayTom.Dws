@@ -13,16 +13,10 @@ namespace JayTom.Dws.Data.LocalConf.PackageSortingConfig {
     public class SortingInstructionBindingInfoModel : BasePackageSortingConfig {
 
         /// <summary>
-        /// 分拣指令组(使用换行符分割)
-        /// </summary>
-        [Column("SortingInstructionGroup"), Required, UpdateBy]
-        public string SortingInstructionGroup { get; set; } = string.Empty;
-
-        /// <summary>
         /// 出口代码
         /// </summary>
-        [Column("ExitCode"), Required, InsertOrUpdata]
-        public string? ExitCode { get; set; }
+        [Column("ExitId"), Required, UpdateBy]
+        public long? ExitId { get; set; }
 
         /// <summary>
         /// 延迟发送(ms)
@@ -39,7 +33,9 @@ namespace JayTom.Dws.Data.LocalConf.PackageSortingConfig {
         /// <summary>
         /// 是否生效
         /// </summary>
-        [Column("IsActive"), Required, InsertOrUpdata]
+        [Column("IsActive"), Required, UpdateBy]
         public bool IsActive { get; set; }
+
+        public virtual ICollection<SortingInstructionInfoModel>? InstructionItems { get; set; }
     }
 }

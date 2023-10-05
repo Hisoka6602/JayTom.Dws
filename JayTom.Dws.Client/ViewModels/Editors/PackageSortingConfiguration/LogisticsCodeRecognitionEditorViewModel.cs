@@ -1,35 +1,32 @@
 ﻿using System;
+using ImTools;
+using System.IO;
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
 using Prism.Commands;
+using Microsoft.Win32;
 using System.Windows.Input;
+using System.Windows.Forms;
 using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
 using MaterialDesignThemes.Wpf;
 using System.Collections.Generic;
+using System.Windows.Media.Imaging;
 using LibreHardwareMonitor.Hardware;
 using System.Collections.ObjectModel;
+using Microsoft.AspNetCore.Mvc.Filters;
+using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Client.Models.PackageSorting;
+using OpenFileDialog = System.Windows.Forms.OpenFileDialog;
 
 namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
-
     public class LogisticsCodeRecognitionEditorViewModel : BindableBase {
+        private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
         private string _identifier = string.Empty;
         private LogisticsCodeRecognitionItemInfoModel _logisticsCodeRecognitionItemInfo = new();
 
-        private ObservableCollection<LogisticsRegexItemInfoModel> _logisticsRegexItems = new()
-        {
-            new LogisticsRegexItemInfoModel()
-            {
-                CreateTime = DateTime.Now,
-                LogisticsId = 1,
-                ModifyTime = DateTime.Now,
-                Num = 1,
-                RegexPattern = "这些命名尽量简明扼要地描述了每个命令的功能，并遵循了常见的命名约定。请根据你自己的实际需求和上下文进行适当调整，以确保命令名称的准确性和易读性。",
-                Remarks = "备注"
-            }
-        };
+        private ObservableCollection<LogisticsRegexItemInfoModel> _logisticsRegexItems = new();
 
         private int? _minimumLength;
         private int? _maximumLength;
@@ -42,6 +39,11 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
         private PackageExitDefinitionItemInfoModel _selectPackageExitDefinitionInfo = new();
         private bool _isOk;
         private string _soundFilePath = string.Empty;
+        private string _exceptionContent = string.Empty;
+
+        public LogisticsCodeRecognitionEditorViewModel(IPackageExitDefinitionRepository packageExitDefinitionRepository) {
+            _packageExitDefinitionRepository = packageExitDefinitionRepository;
+        }
 
         /// <summary>
         /// 窗口标识
@@ -118,7 +120,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
         /// <summary>
         /// 开头字符类型
         /// </summary>
-        public string? StartCharacterType {
+        public string? StartCharacter {
             get => _startCharacterType;
             set => SetProperty(ref _startCharacterType, value);
         }
@@ -126,7 +128,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
         /// <summary>
         /// 结尾字符类型
         /// </summary>
-        public string? EndCharacterType {
+        public string? EndCharacter {
             get => _endCharacterType;
             set => SetProperty(ref _endCharacterType, value);
         }
@@ -152,6 +154,14 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
             set => SetProperty(ref _isOk, value);
         }
 
+        /// <summary>
+        /// 异常内容
+        /// </summary>
+        public string ExceptionContent {
+            get => _exceptionContent;
+            set => SetProperty(ref _exceptionContent, value);
+        }
+
         public ICommand DeleteRegexCommand {
             get => new DelegateCommand<LogisticsRegexItemInfoModel>(DeleteRegexDelegate);
         }
@@ -167,33 +177,123 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
         }
 
         private async void LoadImageDelegate(object obj) {
-            Console.WriteLine(1);
+            var openFileDialog = new OpenFileDialog() {
+                Filter = @"*.PNG|*.PNG|*.Icon|*.Ico|*.BMP|*.Bmp|*.JPG|*.Jpg",
+                InitialDirectory = System.Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+                CheckFileExists = true,
+                CheckPathExists = true,
+                Title = "请选择图像文件",
+                RestoreDirectory = true,
+            };
+            var showDialog = openFileDialog.ShowDialog();
+            if (showDialog == DialogResult.OK) {
+                if (!string.IsNullOrEmpty(openFileDialog.FileName)) {
+                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                        LogisticsCodeRecognitionItemInfo.Icon = CreateBitmapImage(new Uri(openFileDialog.FileName), 30, 30);
+                        LogisticsCodeRecognitionItemInfo.IconName = new FileInfo(openFileDialog.FileName).Name;
+                    });
+                }
+            }
         }
 
         public ICommand LoadSoundCommand {
             get => new DelegateCommand<object>(LoadSoundDelegate);
         }
 
-        private void LoadSoundDelegate(object obj) {
-            Console.WriteLine(1);
+        private async void LoadSoundDelegate(object obj) {
+            var openFileDialog = new OpenFileDialog() {
+                Filter = $"{Languages.Language.ResourceManager.GetString("声音文件") ?? string.Empty}|*.wav;*.mp3",
+                Title = Languages.Language.ResourceManager.GetString("请选择声音文件"),
+                InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop)
+            };
+            if (openFileDialog.ShowDialog() == DialogResult.OK) {
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+                    SoundFilePath = new FileInfo(openFileDialog.FileName).Name;
+                    LogisticsCodeRecognitionItemInfo.SoundBytes = await File.ReadAllBytesAsync(openFileDialog.FileName);
+                    LogisticsCodeRecognitionItemInfo.SoundName = new FileInfo(openFileDialog.FileName).Name;
+                });
+            }
         }
 
         public ICommand SaveRuleCommand {
             get => new DelegateCommand<object>(SaveRuleDelegate);
         }
 
-        private void SaveRuleDelegate(object obj) {
-            //整理规则
-            //添加到列表
-            Console.WriteLine(1);
+        private async void SaveRuleDelegate(object obj) {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                var regularChars = new List<string>();
+                //不能包含
+                if (!string.IsNullOrWhiteSpace(DisallowedCharacters)) {
+                    var strings = DisallowedCharacters.Split(";");
+                    strings.ForEach(f => {
+                        regularChars.Add($"(^(?!.*{f}))");
+                    });
+                }
+                //必须包含
+                if (!string.IsNullOrWhiteSpace(RequiredCharacters)) {
+                    var strings = RequiredCharacters.Split(";");
+                    strings.ForEach(f => {
+                        regularChars.Add($"(?=.*{f})");
+                    });
+                }
+                //指定开头
+                if (!string.IsNullOrWhiteSpace(StartCharacter)) {
+                    var replace = StartCharacter.Replace(";", "|");
+                    regularChars.Add($"(?=^({replace}).*)");
+                }
+
+                //指定结尾
+                if (!string.IsNullOrWhiteSpace(EndCharacter)) {
+                    var replace = EndCharacter.Replace(";", "|");
+                    regularChars.Add($"(?=.*({replace})$)");
+                }
+                //字符限制
+                if (CharacterType is not null) {
+                    switch (CharacterType) {
+                        case Domain.Dto.CharacterType.Alphanumeric:
+                            regularChars.Add("(?=[0-9a-zA-Z]+$)");
+                            break;
+
+                        case Domain.Dto.CharacterType.Letter:
+                            regularChars.Add("(?=\\d+$)");
+                            break;
+
+                        case Domain.Dto.CharacterType.Number:
+                            regularChars.Add("(?=[a-zA-Z]+$)");
+                            break;
+                    }
+                }
+                //位数限制
+                if (MinimumLength is not null && MaximumLength is not null) {
+                    regularChars.Add($"(^.{{{MinimumLength},{MaximumLength}}}$)");
+                }
+
+                var join = string.Join(string.Empty, regularChars);
+                if (!LogisticsRegexItems.Any(a => a.RegexPattern.Equals(join))) {
+                    LogisticsRegexItems.Add(new LogisticsRegexItemInfoModel() {
+                        CreateTime = DateTime.Now,
+                        ModifyTime = DateTime.Now,
+                        Num = LogisticsRegexItems.Count + 1,
+                        RegexPattern = join
+                    });
+                }
+            });
         }
 
         public ICommand ClearConditionsCommand {
             get => new DelegateCommand<object>(ClearConditionsDelegate);
         }
 
-        private void ClearConditionsDelegate(object obj) {
-            Console.WriteLine(1);
+        private async void ClearConditionsDelegate(object obj) {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                DisallowedCharacters =
+                    RequiredCharacters =
+                        StartCharacter =
+                            EndCharacter = null;
+                CharacterType = null;
+                MinimumLength =
+                    MaximumLength = null;
+            });
         }
 
         public ICommand SaveCommand {
@@ -202,7 +302,21 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
 
         private void SaveDelegate() {
             //规则需要同步到表[使用同步:多删少增]
-            Console.WriteLine(1);
+            try {
+                IsOk = true;
+
+                Pitcher.Throw.ArgumentNull.WhenNull(LogisticsCodeRecognitionItemInfo, nameof(LogisticsCodeRecognitionItemInfo));
+                Pitcher.Throw.ArgumentNull.WhenNullOrEmpty(LogisticsCodeRecognitionItemInfo.LogisticsCode, "LogisticsCode");
+                Pitcher.Throw.ArgumentNull.WhenNullOrEmpty(LogisticsCodeRecognitionItemInfo.LogisticsName, "LogisticsName");
+            }
+            catch (Exception e) {
+                IsOk = false;
+                ExceptionContent = e.Message;
+            }
+
+            if (DialogHost.IsDialogOpen(Identifier)) {
+                DialogHost.Close(Identifier);
+            }
         }
 
         public ICommand CancelCommand {
@@ -220,17 +334,48 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
             get => new DelegateCommand<object>(LoadedDelegate);
         }
 
-        private void LoadedDelegate(object obj) {
+        private async void LoadedDelegate(object obj) {
+            var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0,
+                o => o.CreateTime);
+
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+                PackageExitDefinitionItems.Clear();
+                var packageExitDefinitionItemInfoModels = packageExitDefinitionInfoModels?.Select((s, i) => new PackageExitDefinitionItemInfoModel {
+                    CreateTime = s.CreateTime,
+                    ExitName = s.ExitName,
+                    Id = s.Id,
+                    IsActive = s.IsActive,
+                    ModifyTime = s.ModifyTime,
+                    Num = i + 1,
+                    Remarks = s.Remarks,
+                    Type = s.Type
+                })?.ToList();
+
+                if (packageExitDefinitionItemInfoModels?.Any() == true) {
+                    PackageExitDefinitionItems.AddRange(packageExitDefinitionItemInfoModels);
+                    var packageExitDefinitionItemInfoModel = PackageExitDefinitionItems.FirstOrDefault(f =>
+                        f.Id.Equals(LogisticsCodeRecognitionItemInfo.ExitId));
+                    SelectPackageExitDefinitionInfo = packageExitDefinitionItemInfoModel ?? new PackageExitDefinitionItemInfoModel();
+                }
+            });
         }
 
-        //删除规则
+        public BitmapImage CreateBitmapImage(Uri uri, int width, int height) {
+            try {
+                var image = new BitmapImage();
+                image.BeginInit();
+                image.UriSource = uri;
+                image.DecodePixelHeight = height;
+                image.DecodePixelWidth = width;
+                image.CacheOption = BitmapCacheOption.OnLoad;
+                image.EndInit();
+                return image;
+            }
+            catch {
+                // ignored
+            }
 
-        //加载图片
-        //加载声音
-        //保存规则
-        //清空条件
-        //保存
-        //取消
-        //页面加载
+            return null;
+        }
     }
 }

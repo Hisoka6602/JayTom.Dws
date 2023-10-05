@@ -2,10 +2,14 @@
     x:Class="JayTom.Dws.Client.Views.Pages.Preferences.PackageSortingConfiguration.SortingInstructionBindingPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:languages="clr-namespace:JayTom.Dws.Client.Languages"
     xmlns:local="clr-namespace:JayTom.Dws.Client.Views.Pages.Preferences.PackageSortingConfiguration"
+    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:mvvm="http://prismlibrary.com/"
+    Name="SortingInstructionBindingView"
     Title="SortingInstructionBindingPage"
     d:DesignHeight="450"
     d:DesignWidth="800"
@@ -14,5 +18,330 @@
     FontFamily="{StaticResource CustomFontFamily}"
     mc:Ignorable="d">
     <!--  指令绑定  -->
-    <Grid />
+    <b:Interaction.Triggers>
+        <b:EventTrigger EventName="Loaded" SourceName="SortingInstructionBindingView">
+            <b:InvokeCommandAction Command="{Binding LoadedCommand, IsAsync=False}" CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Page}}}" />
+        </b:EventTrigger>
+    </b:Interaction.Triggers>
+    <materialDesign:DialogHost
+        Background="Transparent"
+        DialogBackground="Transparent"
+        DialogMargin="5"
+        FocusVisualStyle="{x:Null}"
+        Focusable="False"
+        Identifier="SortingInstructionBindingDialog"
+        Style="{StaticResource MaterialDesignEmbeddedDialogHost}">
+
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <!--  列表  -->
+            <DataGrid
+                Grid.Row="0"
+                MinWidth="500"
+                MinHeight="300"
+                Margin="20,20,20,0"
+                Padding="10,0"
+                materialDesign:DataGridAssist.CellPadding="4 2 2 2"
+                materialDesign:DataGridAssist.ColumnHeaderPadding="4 2 2 2"
+                AlternatingRowBackground="#101E90FF"
+                AutoGenerateColumns="False"
+                Background="Transparent"
+                CanUserAddRows="False"
+                CanUserResizeColumns="True"
+                CanUserSortColumns="False"
+                CellStyle="{StaticResource CustomDataGridTextCellStyle}"
+                ColumnHeaderStyle="{StaticResource CustomDataGridTextColumnStyle}"
+                Focusable="False"
+                Foreground="White"
+                FrozenColumnCount="2"
+                GridLinesVisibility="None"
+                HorizontalScrollBarVisibility="Auto"
+                ItemsSource="{Binding SortingInstructionBindingItems, UpdateSourceTrigger=PropertyChanged}"
+                RowBackground="#061E90FF"
+                Style="{StaticResource VirtualizingDataGridStyle}">
+                <DataGrid.RowStyle>
+                    <Style BasedOn="{StaticResource MaterialDesignDataGridRow}" TargetType="DataGridRow">
+                        <Setter Property="Height" Value="35" />
+                    </Style>
+                </DataGrid.RowStyle>
+                <DataGrid.Columns>
+                    <DataGridTextColumn
+                        Width="45"
+                        MinWidth="45"
+                        Binding="{Binding Num, UpdateSourceTrigger=PropertyChanged}"
+                        CellStyle="{StaticResource CustomDataGridTextCellStyle}"
+                        IsReadOnly="True">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="No." />
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <!--  分拣指令组  -->
+                    <DataGridTextColumn
+                        Width="100"
+                        MinWidth="100"
+                        Binding="{Binding SortingInstructionGroup, UpdateSourceTrigger=PropertyChanged}"
+                        CellStyle="{StaticResource CustomDataGridTextCellStyle}"
+                        EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="分拣指令组" />
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <!--  绑定格口  -->
+                    <DataGridTextColumn
+                        Width="100"
+                        MinWidth="100"
+                        Binding="{Binding ExitName, UpdateSourceTrigger=PropertyChanged}"
+                        CellStyle="{StaticResource CustomDataGridTextCellStyle}"
+                        EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="绑定格口" />
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <!--  延迟发送(ms)  -->
+                    <DataGridTextColumn
+                        Width="100"
+                        MinWidth="100"
+                        Binding="{Binding DelaySendMilliseconds, UpdateSourceTrigger=PropertyChanged}"
+                        CellStyle="{StaticResource CustomDataGridTextCellStyle}"
+                        EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="延迟发送(ms)" />
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <!--  发送间隔(ms)  -->
+                    <DataGridTextColumn
+                        Width="100"
+                        MinWidth="100"
+                        Binding="{Binding SendIntervalMilliseconds, UpdateSourceTrigger=PropertyChanged}"
+                        CellStyle="{StaticResource CustomDataGridTextCellStyle}"
+                        EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="发送间隔(ms)" />
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <!--  是否生效  -->
+                    <DataGridTemplateColumn Width="80" MinWidth="80">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <ToggleButton
+                                    materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
+                                    materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
+                                    Command="{Binding ElementName=PackageExitDefinitionView, Path=DataContext.ActiveCommand}"
+                                    CommandParameter="{Binding}"
+                                    IsChecked="{Binding IsActive, UpdateSourceTrigger=PropertyChanged}"
+                                    Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                        <DataGridTemplateColumn.Header>
+                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="是否生效" />
+                        </DataGridTemplateColumn.Header>
+                    </DataGridTemplateColumn>
+                    <!--  备注  -->
+                    <DataGridTextColumn
+                        Width="180"
+                        MinWidth="180"
+                        Binding="{Binding Remarks, UpdateSourceTrigger=PropertyChanged}"
+                        CellStyle="{StaticResource CustomDataGridTextCellStyle}"
+                        EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="备注" />
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+
+                    <!--  添加时间  -->
+                    <DataGridTextColumn
+                        Width="130"
+                        MinWidth="130"
+                        Binding="{Binding CreateTime, UpdateSourceTrigger=PropertyChanged, StringFormat=yyyy-MM-dd HH:mm:ss}"
+                        CellStyle="{StaticResource CustomDataGridTextCellStyle}"
+                        EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="添加时间" />
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <!--  修改时间  -->
+                    <DataGridTextColumn
+                        Width="130"
+                        MinWidth="130"
+                        Binding="{Binding ModifyTime, UpdateSourceTrigger=PropertyChanged, StringFormat=yyyy-MM-dd HH:mm:ss}"
+                        CellStyle="{StaticResource CustomDataGridTextCellStyle}"
+                        EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="修改时间" />
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <!--  操作  -->
+                    <DataGridTemplateColumn
+                        Width="320"
+                        MinWidth="320"
+                        MaxWidth="600"
+                        CellStyle="{StaticResource CustomDataGridTextCellStyle}">
+                        <DataGridTemplateColumn.Header>
+                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="{x:Static languages:Language.TableHeaderOperation}" />
+                        </DataGridTemplateColumn.Header>
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Button
+                                            Height="30"
+                                            MinWidth="80"
+                                            Margin="5,0"
+                                            materialDesign:ButtonAssist.CornerRadius="5"
+                                            Background="DodgerBlue"
+                                            Command="{Binding ElementName=SortingInstructionBindingView, Path=DataContext.PlaySoundCommand}"
+                                            CommandParameter="{Binding}"
+                                            Focusable="False"
+                                            Foreground="RoyalBlue"
+                                            Style="{StaticResource MaterialDesignFlatLightButton}">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock
+                                                    HorizontalAlignment="Center"
+                                                    VerticalAlignment="Center"
+                                                    FontFamily="{StaticResource IconFontFamily}"
+                                                    FontSize="16"
+                                                    Foreground="White"
+                                                    Text="&#xe7d8;" />
+                                                <TextBlock
+                                                    Margin="5,0"
+                                                    HorizontalAlignment="Center"
+                                                    VerticalAlignment="Center"
+                                                    Background="Transparent"
+                                                    FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                                                    FontSize="13"
+                                                    FontWeight="Light"
+                                                    Foreground="White"
+                                                    IsEnabled="True"
+                                                    Text="发送测试"
+                                                    TextAlignment="Justify" />
+                                            </StackPanel>
+                                        </Button>
+                                        <Button
+                                            Width="80"
+                                            Height="30"
+                                            MinWidth="60"
+                                            materialDesign:ButtonAssist.CornerRadius="5"
+                                            Background="RoyalBlue"
+                                            Command="{Binding ElementName=SortingInstructionBindingView, Path=DataContext.ModifyCommand}"
+                                            CommandParameter="{Binding}"
+                                            Focusable="False"
+                                            Foreground="RoyalBlue"
+                                            Style="{StaticResource MaterialDesignFlatLightButton}">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock
+                                                    HorizontalAlignment="Center"
+                                                    VerticalAlignment="Center"
+                                                    FontFamily="{StaticResource IconFontFamily}"
+                                                    FontSize="13"
+                                                    Foreground="White"
+                                                    Text="&#xe7ca;" />
+                                                <TextBlock
+                                                    Margin="5,0"
+                                                    HorizontalAlignment="Center"
+                                                    VerticalAlignment="Center"
+                                                    Background="Transparent"
+                                                    FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                                                    FontSize="13"
+                                                    FontWeight="Light"
+                                                    Foreground="White"
+                                                    IsEnabled="True"
+                                                    Text="修改"
+                                                    TextAlignment="Justify" />
+                                            </StackPanel>
+                                        </Button>
+                                        <Button
+                                            Width="80"
+                                            Height="30"
+                                            MinWidth="60"
+                                            Margin="5,0"
+                                            materialDesign:ButtonAssist.CornerRadius="5"
+                                            Background="DarkRed"
+                                            Command="{Binding ElementName=SortingInstructionBindingView, Path=DataContext.DeleteCommand}"
+                                            CommandParameter="{Binding}"
+                                            Focusable="False"
+                                            Foreground="Red"
+                                            Style="{StaticResource MaterialDesignFlatLightButton}">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock
+                                                    HorizontalAlignment="Center"
+                                                    VerticalAlignment="Center"
+                                                    FontFamily="{StaticResource IconFontFamily}"
+                                                    FontSize="10"
+                                                    Foreground="White"
+                                                    Text="&#xe601;" />
+                                                <TextBlock
+                                                    Margin="5,0"
+                                                    HorizontalAlignment="Center"
+                                                    VerticalAlignment="Center"
+                                                    Background="Transparent"
+                                                    FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                                                    FontSize="13"
+                                                    FontWeight="Light"
+                                                    Foreground="White"
+                                                    IsEnabled="True"
+                                                    Text="{x:Static languages:Language.Delete}"
+                                                    TextAlignment="Justify" />
+                                            </StackPanel>
+                                        </Button>
+                                    </StackPanel>
+                                </StackPanel>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+            </DataGrid>
+            <!--  按钮  -->
+            <Button
+                Grid.Row="1"
+                Margin="0,20"
+                Background="#2E2E2E"
+                BorderBrush="#AE2E2E2E"
+                Command="{Binding AddCommand}"
+                Cursor="Hand"
+                RenderTransformOrigin="0.5,0.5"
+                ToolTip="添加数据">
+                <Button.RenderTransform>
+                    <ScaleTransform CenterX="0.5" CenterY="0.5" ScaleX="1" ScaleY="1" />
+                </Button.RenderTransform>
+                <Button.Style>
+                    <Style BasedOn="{StaticResource MaterialDesignFloatingActionAccentButton}" TargetType="Button">
+                        <Style.Triggers>
+                            <!--  放大  -->
+                            <EventTrigger RoutedEvent="MouseEnter">
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation
+                                            Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                                            To="1.5"
+                                            Duration="0:0:0.2" />
+                                        <DoubleAnimation
+                                            Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                            To="1.5"
+                                            Duration="0:0:0.2" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </EventTrigger>
+                            <EventTrigger RoutedEvent="MouseLeave">
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" Duration="0:0:0.2" />
+                                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" Duration="0:0:0.2" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </EventTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+                <materialDesign:PackIcon
+                    Width="30"
+                    Height="30"
+                    Foreground="White"
+                    Kind="PlusThick" />
+            </Button>
+            <!--  提示框  -->
+        </Grid>
+    </materialDesign:DialogHost>
 </Page>

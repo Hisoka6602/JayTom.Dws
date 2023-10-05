@@ -147,6 +147,7 @@ namespace JayTom.Dws.Client {
                 services.AddScoped<IPackageExitDefinitionRepository, PackageExitDefinitionRepository>();
                 services.AddScoped<ISortingInstructionBindingRepository, SortingInstructionBindingRepository>();
                 services.AddScoped<ILogisticsRegexRepository, LogisticsRegexRepository>();
+                services.AddScoped<ISortingInstructionRepository, SortingInstructionRepository>();
                 /*services.AddScoped<IConfigRepository, ConfigRepository>();
 
                 //服务注册

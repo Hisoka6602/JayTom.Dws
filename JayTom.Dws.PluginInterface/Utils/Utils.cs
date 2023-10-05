@@ -11,7 +11,6 @@ using System.Collections.Generic;
 using System.Windows.Media.Imaging;
 
 namespace JayTom.Dws.PluginInterface.Utils {
-
     public static class Utils {
 
         public static T? GetVisualChild<T>(DependencyObject parent, Func<T, bool> predicate) where T : Visual {
@@ -74,6 +73,42 @@ namespace JayTom.Dws.PluginInterface.Utils {
             encoder.Frames.Add(BitmapFrame.Create(bitmapSource));
             encoder.Save(memoryStream);
             return Image.FromStream(memoryStream);
+        }
+        public static byte[]? ImageSourceToByteArray(this ImageSource imageSource) {
+            try {
+                var bitmapSource = (BitmapSource)imageSource;
+                var encoder = new PngBitmapEncoder();
+                var memoryStream = new MemoryStream();
+
+                encoder.Frames.Add(BitmapFrame.Create(bitmapSource));
+                encoder.Save(memoryStream);
+
+                return memoryStream.ToArray();
+            }
+            catch (Exception e) {
+                return null;
+
+            }
+
+        }
+
+        public static ImageSource? ByteArrayToImageSource(this byte[] byteArray) {
+            try {
+                var bitmapImage = new BitmapImage();
+                using (var stream = new MemoryStream(byteArray)) {
+                    bitmapImage.BeginInit();
+                    bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+                    bitmapImage.StreamSource = stream;
+                    bitmapImage.EndInit();
+                }
+                bitmapImage.Freeze(); // 冻结图像以提高性能
+                return bitmapImage;
+            }
+            catch (Exception e) {
+                return null;
+
+            }
+
         }
     }
 }

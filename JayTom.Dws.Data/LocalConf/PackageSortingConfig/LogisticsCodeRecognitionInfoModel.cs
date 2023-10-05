@@ -32,10 +32,22 @@ namespace JayTom.Dws.Data.LocalConf.PackageSortingConfig {
         public byte[]? SoundBytes { get; set; }
 
         /// <summary>
+        /// 声音文件名
+        /// </summary>
+        [Column("SoundName"), InsertOrUpdata]
+        public string? SoundName { get; set; }
+
+        /// <summary>
         /// 物流图标
         /// </summary>
         [Column("Icon"), InsertOrUpdata]
         public byte[]? IconBytes { get; set; }
+
+        /// <summary>
+        /// 图标名称
+        /// </summary>
+        [Column("IconName"), InsertOrUpdata]
+        public string IconName { get; set; } = string.Empty;
 
         /// <summary>
         /// 绑定出口代码
