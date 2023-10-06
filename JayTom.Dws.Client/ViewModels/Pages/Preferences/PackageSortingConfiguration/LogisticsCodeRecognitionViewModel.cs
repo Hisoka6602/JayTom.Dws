@@ -111,7 +111,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                             LogisticsCodeRecognitionMessageQueue.Enqueue("保存失败");
                         }
                     }
-
                 }
             });
         }
@@ -190,7 +189,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         else {
                             LogisticsCodeRecognitionMessageQueue.Enqueue("保存失败");
                         }
-
                     }
 
                     //同步到正则表
@@ -225,17 +223,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         }
 
         private void PlaySoundDelegate(LogisticsCodeRecognitionItemInfoModel obj) {
-
             if (obj.SoundBytes?.Length > 0) {
                 Task.Factory.StartNew(() => {
                     _speech.PlayByteFile(obj.SoundBytes);
                 });
-
-
             }
-
         }
-
 
         private async void RefreshData() {
             var loadingDialog = new LoadingDialog();
@@ -273,7 +266,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         Remarks = s1.Remarks,
                         RegexPattern = s1.RegexPattern
                     }).ToList() ?? new List<LogisticsRegexItemInfoModel>()),
-                    RegexPattern = string.Join("\n", s.LogisticsRegexItems?.Select(s => s.RegexPattern))
+                    RegexPattern = string.Join("\n", s.LogisticsRegexItems?.Select(s2 => s2.RegexPattern) ?? Array.Empty<string>())
                 })?.ToList();
                 LogisticsCodeRecognitionItems.AddRange(infoModels);
                 if (DialogHost.IsDialogOpen(model.Identifier)) {

@@ -21,6 +21,7 @@ using JayTom.Dws.Client.Models.PackageSorting;
 using OpenFileDialog = System.Windows.Forms.OpenFileDialog;
 
 namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
+
     public class LogisticsCodeRecognitionEditorViewModel : BindableBase {
         private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
         private string _identifier = string.Empty;
@@ -169,6 +170,12 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
         private async void DeleteRegexDelegate(LogisticsRegexItemInfoModel obj) {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
                 LogisticsRegexItems.Remove(obj);
+                //调整Num
+                if (LogisticsRegexItems?.Any() == true) {
+                    for (int i = 0; i < LogisticsRegexItems.Count; i++) {
+                        LogisticsRegexItems[i].Num = i + 1;
+                    }
+                }
             });
         }
 
@@ -342,7 +349,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
                 PackageExitDefinitionItems.Clear();
                 var packageExitDefinitionItemInfoModels = packageExitDefinitionInfoModels?.Select((s, i) => new PackageExitDefinitionItemInfoModel {
                     CreateTime = s.CreateTime,
-                    ExitName = s.ExitName,
+                    ExitName = $"{s.ExitName}{(s.IsActive ? "" : "(未生效)")}",
                     Id = s.Id,
                     IsActive = s.IsActive,
                     ModifyTime = s.ModifyTime,

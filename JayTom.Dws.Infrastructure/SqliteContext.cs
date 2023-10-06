@@ -108,9 +108,9 @@ namespace JayTom.Dws.Infrastructure {
                 modelBuilder.Entity<SortingInstructionBindingInfoModel>().HasKey(c => new {
                     c.Id
                 });
-                modelBuilder.Entity<SortingInstructionBindingInfoModel>()
+                /*modelBuilder.Entity<SortingInstructionBindingInfoModel>()
                     .HasIndex(b => new { b.ExitId, b.IsActive })
-                    .IsUnique();
+                    .IsUnique();*/
                 modelBuilder.Entity<SortingInstructionInfoModel>().HasKey(c => new {
                     c.Id
                 });

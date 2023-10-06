@@ -143,7 +143,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         private async void ActiveDelegate(PackageExitDefinitionItemInfoModel obj) {
             var model = await _packageExitDefinitionRepository.FirstOrDefault(f => f.Id.Equals(obj.Id));
             if (model is not null) {
-                model.IsActive = model.IsActive;
+                model.IsActive = obj.IsActive;
                 var update = await _packageExitDefinitionRepository.Update(model);
                 if (!update) {
                     PackageExitDefinitionMessageQueue.Enqueue("保存失败");

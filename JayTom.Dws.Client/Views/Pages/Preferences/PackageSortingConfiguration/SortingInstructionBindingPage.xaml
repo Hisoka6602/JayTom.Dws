@@ -129,7 +129,7 @@
                                 <ToggleButton
                                     materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
                                     materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
-                                    Command="{Binding ElementName=PackageExitDefinitionView, Path=DataContext.ActiveCommand}"
+                                    Command="{Binding ElementName=SortingInstructionBindingView, Path=DataContext.ActiveCommand}"
                                     CommandParameter="{Binding}"
                                     IsChecked="{Binding IsActive, UpdateSourceTrigger=PropertyChanged}"
                                     Style="{StaticResource MaterialDesignSwitchToggleButton}" />
@@ -192,7 +192,7 @@
                                             Margin="5,0"
                                             materialDesign:ButtonAssist.CornerRadius="5"
                                             Background="DodgerBlue"
-                                            Command="{Binding ElementName=SortingInstructionBindingView, Path=DataContext.PlaySoundCommand}"
+                                            Command="{Binding ElementName=SortingInstructionBindingView, Path=DataContext.SendInstructionCommand}"
                                             CommandParameter="{Binding}"
                                             Focusable="False"
                                             Foreground="RoyalBlue"
@@ -300,7 +300,7 @@
                 Background="#2E2E2E"
                 BorderBrush="#AE2E2E2E"
                 Command="{Binding AddCommand}"
-                Cursor="Hand"
+                Cursor=""
                 RenderTransformOrigin="0.5,0.5"
                 ToolTip="添加数据">
                 <Button.RenderTransform>
@@ -341,7 +341,16 @@
                     Foreground="White"
                     Kind="PlusThick" />
             </Button>
-            <!--  提示框  -->
+            <!--  提示控件  -->
+            <materialDesign:Snackbar
+                Grid.Row="1"
+                Width="Auto"
+                Height="Auto"
+                VerticalAlignment="Bottom"
+                Background="BlueViolet"
+                FontFamily="LoadFiraCode"
+                FontWeight="Bold"
+                MessageQueue="{Binding SortingInstructionBindingMessageQueue}" />
         </Grid>
     </materialDesign:DialogHost>
 </Page>

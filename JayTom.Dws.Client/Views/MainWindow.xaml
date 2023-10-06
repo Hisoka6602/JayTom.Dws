@@ -111,14 +111,14 @@
                                 HorizontalAlignment="Right"
                                 VerticalAlignment="Center"
                                 Orientation="Horizontal">
-                                <!--  软件名  -->
+                                <!--  软件名 、SUNNEN  -->
                                 <TextBlock
                                     HorizontalAlignment="Center"
                                     VerticalAlignment="Center"
                                     FontSize="18"
                                     FontWeight="Bold"
                                     Foreground="White"
-                                    Text="SUNNEN" />
+                                    Text="盛九智能" />
                                 <!--  工具  -->
                                 <ComboBox
                                     Name="HomeToolComboBox"
@@ -140,6 +140,7 @@
                                     SelectedIndex="0"
                                     StaysOpenOnEdit="True"
                                     Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                                    Visibility="Collapsed"
                                     WindowChrome.IsHitTestVisibleInChrome="True">
                                     <b:Interaction.Triggers>
                                         <b:EventTrigger EventName="SelectionChanged">

@@ -307,6 +307,8 @@ namespace JayTom.Dws.Client {
             ViewModelLocationProvider.Register<DataTimeEditor, DataTimeEditorViewModel>();
             ViewModelLocationProvider.Register<PackageExitDefinitionEditor, PackageExitDefinitionEditorViewModel>();
             ViewModelLocationProvider.Register<LogisticsCodeRecognitionEditor, LogisticsCodeRecognitionEditorViewModel>();
+            ViewModelLocationProvider.Register<SortingInstructionBindingEditor, SortingInstructionBindingEditorViewModel>();
+
             ViewModelLocationProvider.Register<MainWindow, MainWindowViewModel>();
             ViewModelLocationProvider.Register<SettingsPage, SettingsViewModel>();
             ViewModelLocationProvider.Register<PluginMarketplacePage, PluginMarketplaceViewModel>();
