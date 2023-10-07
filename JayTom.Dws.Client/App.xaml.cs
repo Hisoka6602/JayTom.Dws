@@ -123,6 +123,7 @@ namespace JayTom.Dws.Client {
                 containerRegistry.RegisterForNavigation<PackageExitDefinitionPage>();
                 containerRegistry.RegisterForNavigation<SortingInstructionBindingPage>();
                 containerRegistry.RegisterForNavigation<SortingSchemeSettingsPage>();
+                containerRegistry.RegisterForNavigation<CommunicationsSettingsPage>();
             }
             //其他注册
             containerRegistry.GetContainer().RegisterServices(services => {
@@ -344,6 +345,7 @@ namespace JayTom.Dws.Client {
             ViewModelLocationProvider.Register<PackageExitDefinitionPage, PackageExitDefinitionViewModel>();
             ViewModelLocationProvider.Register<SortingInstructionBindingPage, SortingInstructionBindingViewModel>();
             ViewModelLocationProvider.Register<SortingSchemeSettingsPage, SortingSchemeSettingsViewModel>();
+            ViewModelLocationProvider.Register<CommunicationsSettingsPage, CommunicationsSettingsViewModel>();
             //接口
             ViewModelLocationProvider.Register<DefaultApiPage, DefaultApiPageViewModel>();
             //其他插件

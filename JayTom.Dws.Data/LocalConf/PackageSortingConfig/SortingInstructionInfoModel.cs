@@ -24,6 +24,12 @@ namespace JayTom.Dws.Data.LocalConf.PackageSortingConfig {
         [Column("Instruction"), Required, InsertOrUpdata]
         public string Instruction { get; set; } = string.Empty;
 
+        /// <summary>
+        /// 应答内容
+        /// </summary>
+        [Column("ReplyContent"), Required, InsertOrUpdata]
+        public string ReplyContent { get; set; } = string.Empty;
+
         [ForeignKey("Id")]
         public virtual SortingInstructionBindingInfoModel SortingInstructionBindingInfo { get; set; }
     }

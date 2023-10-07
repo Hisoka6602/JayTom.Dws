@@ -14,7 +14,6 @@ using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Client.Models.PackageSorting;
 
 namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
-
     public class SortingInstructionBindingEditorViewModel : BindableBase {
         private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
         private string _identifier = string.Empty;
@@ -27,6 +26,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
         private SortingInstructionBindingItemInfoModel _sortingInstructionBindingItemInfo = new();
         private PackageExitDefinitionItemInfoModel _selectExitDefinitionInfo = new();
         private bool _isOk;
+        private string _replyContent = string.Empty;
 
         public SortingInstructionBindingEditorViewModel(IPackageExitDefinitionRepository packageExitDefinitionRepository) {
             _packageExitDefinitionRepository = packageExitDefinitionRepository;
@@ -88,6 +88,14 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
         }
 
         /// <summary>
+        /// 应答内容
+        /// </summary>
+        public string ReplyContent {
+            get => _replyContent;
+            set => SetProperty(ref _replyContent, value);
+        }
+
+        /// <summary>
         /// 删除指令
         /// </summary>
         public ICommand DeleteInstructionCommand {
@@ -120,6 +128,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
                     SortingInstructionItems?.Add(new SortingInstructionItemInfoModel() {
                         CreateTime = DateTime.Now,
                         Instruction = Instruction,
+                        ReplyContent = ReplyContent,
                         InstructionBindingId = SortingInstructionBindingItemInfo.Id,
                         ModifyTime = DateTime.Now,
                         Remarks = SortingInstructionBindingItemInfo.Remarks,
@@ -172,10 +181,9 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
         private void SaveDelegate() {
             //保存方法
             try {
-                IsOk = true;
-
+                IsOk = (SortingInstructionItems.Any() && SelectExitDefinitionInfo.Id > 0);
                 Pitcher.Throw.ArgumentNull.WhenNull(SortingInstructionBindingItemInfo, nameof(SortingInstructionBindingItemInfo));
-                Pitcher.Throw.ArgumentNull.WhenNull(SelectExitDefinitionInfo, nameof(SelectExitDefinitionInfo));
+                Pitcher.Throw.ArgumentNull.WhenNull(SelectExitDefinitionInfo.Type, nameof(SelectExitDefinitionInfo.Type));
             }
             catch (Exception e) {
                 IsOk = false;

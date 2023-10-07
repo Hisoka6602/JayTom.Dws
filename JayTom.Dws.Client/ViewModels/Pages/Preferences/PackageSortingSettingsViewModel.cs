@@ -74,7 +74,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                         IconSize = 25
                     },
                     Description = "下位机通讯设置",
-                    //PageClassName = "CameraFinderPage",
+                    PageClassName = "CommunicationsSettingsPage",
+                    ClickCommand = ClickCommand
                 },
                 new()
                 {

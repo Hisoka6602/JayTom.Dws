@@ -43,7 +43,8 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalConf {
                                     ModifyTime = n.ModifyTime,
                                     InstructionBindingId = n.InstructionBindingId,
                                     Remarks = n.Remarks,
-                                    Instruction = n.Instruction
+                                    Instruction = n.Instruction,
+                                    ReplyContent = n.ReplyContent,
                                 }).ToList()
                         })
                         .ToListAsync(cancellationToken: token);

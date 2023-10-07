@@ -95,6 +95,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                                 CreateTime = s.CreateTime,
                                 Remarks = s.Remarks,
                                 Instruction = s.Instruction,
+                                ReplyContent = s.ReplyContent,
                                 InstructionBindingId = instructionBindingInfoModel?.Id ?? 0,
                                 ModifyTime = s.ModifyTime,
                             })?.ToList();
@@ -185,6 +186,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                                 CreateTime = s.CreateTime,
                                 Remarks = s.Remarks,
                                 Instruction = s.Instruction,
+                                ReplyContent = s.ReplyContent,
                                 InstructionBindingId = instructionBindingInfoModel?.Id ?? 0,
                                 ModifyTime = s.ModifyTime,
                             })?.ToList();
