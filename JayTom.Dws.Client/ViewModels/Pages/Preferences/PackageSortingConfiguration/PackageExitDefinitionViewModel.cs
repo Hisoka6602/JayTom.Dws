@@ -12,6 +12,7 @@ using MaterialDesignThemes.Wpf;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Views.Dialog;
+using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.ViewModels.Dialog;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Client.Models.PackageSorting;
@@ -57,15 +58,17 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                     }
                     if (model.IsOk) {
                         //保存到数据库
-                        var insertOrUpdate = await _packageExitDefinitionRepository.Insert(new PackageExitDefinitionInfoModel() {
+                        var packageExitDefinitionInfoModel = new PackageExitDefinitionInfoModel() {
                             CreateTime = DateTime.Now,
                             ExitName = model.ExitName,
                             IsActive = model.IsActive,
                             ModifyTime = DateTime.Now,
                             Remarks = model.Remarks,
                             Type = model.Type,
-                        });
+                        };
+                        var insertOrUpdate = await _packageExitDefinitionRepository.Insert(packageExitDefinitionInfoModel);
                         if (insertOrUpdate) {
+                            EventAggregator.Instance.Publish(packageExitDefinitionInfoModel);
                             PackageExitDefinitionMessageQueue.Enqueue("保存成功");
                             //刷新列表
                             RefreshData();

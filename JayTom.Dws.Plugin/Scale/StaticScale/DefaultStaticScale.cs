@@ -23,9 +23,8 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
         private BaseScaleConnectParam _baseScaleConnectParam = new();
         private SemaphoreSlim _semaphore = new(1);
 
-        public async void Dispose() {
+        public void Dispose() {
             _tokenSource?.Cancel();
-            await Task.Delay(500);
             if (_serialPort?.IsOpen == true) {
                 _serialPort?.Close();
             }
@@ -140,6 +139,7 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
                 }
             }
             catch (Exception e) {
+                Dispose();
                 OnExcepted(e);
                 return false;
             }
@@ -229,12 +229,14 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
         private async void ProcessSending() {
             while (!_tokenSource.Token.IsCancellationRequested) {
                 await Task.Delay(20);
-                if (_defaultStaticScaleValueParameters.SendingFormat == ScaleWeightFormat.Ascii) {
-                    _serialPort?.WriteLine(_defaultStaticScaleValueParameters.SendingContent);
-                }
-                else {
-                    var toByteArray = HexStringToByteArray(_defaultStaticScaleValueParameters.SendingContent);
-                    _serialPort?.Write(toByteArray, 0, toByteArray.Length);
+                if (_serialPort?.IsOpen == true) {
+                    if (_defaultStaticScaleValueParameters.SendingFormat == ScaleWeightFormat.Ascii) {
+                        _serialPort?.WriteLine(_defaultStaticScaleValueParameters.SendingContent);
+                    }
+                    else {
+                        var toByteArray = HexStringToByteArray(_defaultStaticScaleValueParameters.SendingContent);
+                        _serialPort?.Write(toByteArray, 0, toByteArray.Length);
+                    }
                 }
             }
         }

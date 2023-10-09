@@ -26,7 +26,9 @@ using JayTom.Dws.Data.LocalData;
 using JayTom.Dws.Client.Service;
 using System.Collections.Generic;
 using JayTom.Dws.Domain.Converters;
+
 using JayTom.Dws.Domain.Converters;
+
 using System.Windows.Media.Imaging;
 using System.Collections.ObjectModel;
 using System.Runtime.InteropServices;
@@ -34,6 +36,7 @@ using System.Collections.Specialized;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.PluginInterface.Utils;
 using JayTom.Dws.Client.Service.Device;
+using JayTom.Dws.Client.Service.Sorting;
 using JayTom.Dws.Client.Service.ImageStorage;
 using JayTom.Dws.Domain.Repository.LocalData;
 using JayTom.Dws.Client.Service.ResultOutput;
@@ -43,10 +46,12 @@ using JayTom.Dws.Client.Service.ExternalDataService;
 using CameraType = JayTom.Dws.Client.Models.CameraType;
 using CameraStatus = JayTom.Dws.Client.Models.CameraStatus;
 using ConnectionType = JayTom.Dws.Client.Models.ConnectionType;
+using ExceptionEventArgs = JayTom.Dws.Client.Service.Sorting.ExceptionEventArgs;
 using static JayTom.Dws.Client.Service.BackgroundService.SubmitApiBackgroundService;
 using static JayTom.Dws.Client.Service.BackgroundService.ScanProcessBackgroundService;
 
 namespace JayTom.Dws.Client.ViewModels.Pages {
+
     public class HomeViewModel : BindableBase {
         private readonly IDialogService _dialogService;
         private readonly IComputerInfoReporter _computerInfoReporter;
@@ -57,6 +62,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         private readonly IExternalDataService _externalDataService;
         private readonly IConfigRepository _configRepository;
         private readonly IBarcodeScannerCameraConfigRepository _barcodeScannerCameraConfigRepository;
+        private readonly ISortingService _sortingService;
         private ObservableCollection<CameraItemInfoModel> _cameraItems = new();
 
         private ObservableCollection<BarCodeItemModel> _barCodeItems = new();
@@ -94,6 +100,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             get => _barCodeItems;
             set => SetProperty(ref _barCodeItems, value);
         }
+
         /// <summary>
         /// Ocr
         /// </summary>
@@ -101,6 +108,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             get => _ocrSettingsInfo;
             set => SetProperty(ref _ocrSettingsInfo, value);
         }
+
         /// <summary>
         /// 体积单位
         /// </summary>
@@ -208,7 +216,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             IResultOutputService resultOutputService,
             IExternalDataService externalDataService,
             IConfigRepository configRepository,
-            IBarcodeScannerCameraConfigRepository barcodeScannerCameraConfigRepository) {
+            IBarcodeScannerCameraConfigRepository barcodeScannerCameraConfigRepository,
+            ISortingService sortingService) {
             _dialogService = dialogService;
             _computerInfoReporter = computerInfoReporter;
             _barCodeRepository = barCodeRepository;
@@ -218,6 +227,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             _externalDataService = externalDataService;
             _configRepository = configRepository;
             _barcodeScannerCameraConfigRepository = barcodeScannerCameraConfigRepository;
+            _sortingService = sortingService;
             CameraItems = new() {
                 /*new CameraItemInfoModel()
                 {
@@ -337,6 +347,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     Volume = (float)args.Volume;
                 });
             };
+            //分拣
+            _sortingService.HeartbeatError += delegate (object? sender, Exception exception) {
+                HomeMessageQueue.Enqueue($"{exception.Message}");
+            };
+            _sortingService.ExceptionOccurred += delegate (object? sender, ExceptionEventArgs args) {
+                HomeMessageQueue.Enqueue($"{args.ExceptionMessage}");
+            };
+
             EventAggregator.Instance.Subscribe<ScanBarCodeInfo>(async info => {
                 //填充数据到列表
                 if (info is ScanBarCodeInfo model) {
@@ -389,7 +407,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                                             IsShowReceiverInfo = ocrSettingsDto.IsShowReceiverInfo,
                                             IsShowRecognitionTime = ocrSettingsDto.IsShowRecognitionTime
                                         };
-
                                     }
                                 }
                             });
@@ -398,10 +415,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                 }
                 catch (Exception e) {
                     Console.WriteLine(e);
-
                 }
-
-
             });
             //更新上传状态
             EventAggregator.Instance.Subscribe<ApiResponseReceived>(async item => {
@@ -613,6 +627,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                             //启动
                             await _externalDataService.Start();
                             var (key, value) = await _deviceService.Start();
+                            await _sortingService.Start();
                             //提示
                         }
                         else {
@@ -620,6 +635,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                             HomeMessageQueue.Clear();
                             await _externalDataService.Stop();
                             var (key, value) = await _deviceService.Stop();
+                            await _sortingService.Stop();
                             //提示
                         }
 

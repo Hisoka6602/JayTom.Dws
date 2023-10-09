@@ -13,7 +13,8 @@ namespace JayTom.Dws.Plugin.Tcp {
     public class BaseTcpOperations : ITcpOperations {
         private readonly ITcpCommClient _tcpCommClient;
         private readonly ITcpCommServer _tcpCommServer;
-        public ConnectionStatus ConnectionStatus { get; private set; } = ConnectionStatus.Disconnected;
+
+        public ConnectionStatus ConnectionStatus => ConnectionType == ConnectionType.Client ? _tcpCommClient.ConnectionStatus : _tcpCommServer.ConnectionStatus;
 
         public event EventHandler<string>? ConnectionException;
 
@@ -24,6 +25,8 @@ namespace JayTom.Dws.Plugin.Tcp {
         public event EventHandler<CommunicationInfo>? Communication;
 
         public event EventHandler<string>? Connected;
+
+        public event EventHandler<Exception>? SendError;
 
         public BaseTcpOperations(ITcpCommClient tcpCommClient, ITcpCommServer tcpCommServer) {
             _tcpCommClient = tcpCommClient;
@@ -42,6 +45,9 @@ namespace JayTom.Dws.Plugin.Tcp {
             _tcpCommClient.Disconnected += delegate (object? sender, string s) {
                 OnDisconnected(s);
             };
+            _tcpCommClient.SendError += delegate (object? sender, Exception exception) {
+                OnSendError(exception);
+            };
             //注册事件
             _tcpCommServer = tcpCommServer;
             _tcpCommServer.Exception += delegate (object? sender, Exception exception) {
@@ -58,6 +64,9 @@ namespace JayTom.Dws.Plugin.Tcp {
             };
             _tcpCommServer.Disconnected += delegate (object? sender, string s) {
                 OnDisconnected(s);
+            };
+            _tcpCommServer.SendError += delegate (object? sender, Exception exception) {
+                OnSendError(exception);
             };
             //注册事件
             TcpServer = _tcpCommServer;
@@ -141,6 +150,7 @@ namespace JayTom.Dws.Plugin.Tcp {
 
         protected virtual async void OnDisconnected(string e) {
             await Task.Yield();
+
             Disconnected?.Invoke(this, e);
         }
 
@@ -151,7 +161,13 @@ namespace JayTom.Dws.Plugin.Tcp {
 
         protected virtual async void OnConnected(string e) {
             await Task.Yield();
+
             Connected?.Invoke(this, e);
+        }
+
+        protected virtual async void OnSendError(Exception e) {
+            await Task.Yield();
+            SendError?.Invoke(this, e);
         }
     }
 }

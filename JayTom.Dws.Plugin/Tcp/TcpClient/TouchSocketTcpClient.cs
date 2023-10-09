@@ -24,6 +24,8 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
 
         public event EventHandler<string>? Connected;
 
+        public event EventHandler<Exception>? SendError;
+
         public async Task<bool> Connect(string ipAddress, int port, int timeOut = 1000, CancellationToken token = default) {
             var parameter = SetParameter(new TcpConnectParam() {
                 Address = ipAddress,
@@ -139,7 +141,7 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
                 }
             }
             catch (Exception e) {
-                OnException(e);
+                OnSendError(e);
                 return false;
             }
             return false;
@@ -161,7 +163,7 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
                 }
             }
             catch (Exception e) {
-                OnException(e);
+                OnSendError(e);
                 return false;
             }
             return false;
@@ -169,7 +171,8 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
 
         public void Close() {
             _tcpClient?.Close();
-            ConnectionStatus = ConnectionStatus.Connected;
+            _tcpClient = null;
+            ConnectionStatus = ConnectionStatus.Disconnected;
         }
 
         protected virtual async void OnConnectionException(string e) {
@@ -195,6 +198,11 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
         protected virtual async void OnConnected(string e) {
             await Task.Yield();
             Connected?.Invoke(this, e);
+        }
+
+        protected virtual async void OnSendError(Exception e) {
+            await Task.Yield();
+            SendError?.Invoke(this, e);
         }
     }
 }

@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Text;
 using TouchSocket.Core;
+using TouchSocket.Http;
 using TouchSocket.Sockets;
 using System.Threading.Tasks;
 using System.Collections.Generic;
@@ -21,6 +22,8 @@ namespace JayTom.Dws.Plugin.Tcp.TcpServer {
         public event EventHandler<CommunicationInfo>? Communication;
 
         public event EventHandler<string>? Connected;
+
+        public event EventHandler<Exception>? SendError;
 
         public async Task<bool> Connect(string ipAddress, int port, int timeOut = 1000, CancellationToken token = default) {
             var parameter = SetParameter(new TcpConnectParam() {
@@ -56,6 +59,7 @@ namespace JayTom.Dws.Plugin.Tcp.TcpServer {
                 }
 
                 _tcpService.Start();
+
                 return true;
             }
             catch (Exception e) {
@@ -133,7 +137,7 @@ namespace JayTom.Dws.Plugin.Tcp.TcpServer {
                 }
             }
             catch (Exception e) {
-                OnException(e);
+                OnSendError(e);
                 return false;
             }
             return false;
@@ -159,16 +163,22 @@ namespace JayTom.Dws.Plugin.Tcp.TcpServer {
                 }
             }
             catch (Exception e) {
-                OnException(e);
+                OnSendError(e);
                 return false;
             }
             return false;
         }
 
         public void Close() {
-            _tcpService?.Stop();
-            _tcpService?.Dispose();
-            ConnectionStatus = _tcpService?.ServerState == ServerState.Running ? ConnectionStatus.Connected : ConnectionStatus.Disconnected;
+            try {
+                _tcpService?.Stop();
+                _tcpService?.Dispose();
+                ConnectionStatus = _tcpService?.ServerState == ServerState.Running ? ConnectionStatus.Connected : ConnectionStatus.Disconnected;
+                _tcpService = null;
+            }
+            catch (Exception e) {
+                Console.WriteLine(e);
+            }
         }
 
         public string IpAddress { get; private set; } = string.Empty;
@@ -258,6 +268,11 @@ namespace JayTom.Dws.Plugin.Tcp.TcpServer {
         protected virtual async void OnDisconnected(string e) {
             await Task.Yield();
             Disconnected?.Invoke(this, e);
+        }
+
+        protected virtual async void OnSendError(Exception e) {
+            await Task.Yield();
+            SendError?.Invoke(this, e);
         }
     }
 }

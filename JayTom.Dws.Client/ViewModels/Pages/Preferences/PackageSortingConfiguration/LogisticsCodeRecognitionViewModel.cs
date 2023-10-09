@@ -11,6 +11,7 @@ using JayTom.Dws.Plugin.Speech;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Views.Dialog;
+using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.PluginInterface.Utils;
 using JayTom.Dws.Client.ViewModels.Dialog;
 using JayTom.Dws.Domain.Repository.LocalConf;
@@ -82,6 +83,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         };
                         var insertOrUpdate = await _logisticsCodeRecognitionRepository.InsertOrUpdate(infoModel);
                         if (insertOrUpdate) {
+                            EventAggregator.Instance.Publish(infoModel);
                             var logisticsCodeRecognitionInfoModel = await _logisticsCodeRecognitionRepository.FirstOrDefault(f =>
                                 f.LogisticsCode.Equals(infoModel.LogisticsCode));
                             var logisticsRegexInfoModels = model.LogisticsRegexItems.Select(s => new LogisticsRegexInfoModel {
@@ -100,6 +102,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                             //添加
                             var syncEntities = await _logisticsRegexRepository.InsertRange(logisticsRegexInfoModels ?? new List<LogisticsRegexInfoModel>());
                             if (syncEntities) {
+                                EventAggregator.Instance.Publish(logisticsRegexInfoModels);
                                 LogisticsCodeRecognitionMessageQueue.Enqueue("保存成功");
                                 RefreshData();
                             }

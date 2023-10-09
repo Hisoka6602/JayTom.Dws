@@ -138,6 +138,7 @@ namespace JayTom.Dws.Plugin.Scale.DynamicScale {
                 }
             }
             catch (Exception e) {
+                Dispose();
                 OnExcepted(e);
                 return false;
             }

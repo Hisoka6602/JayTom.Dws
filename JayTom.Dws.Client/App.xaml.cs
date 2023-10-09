@@ -38,6 +38,7 @@ using JayTom.Dws.Plugin.Tcp.TcpClient;
 using JayTom.Dws.Plugin.Tcp.TcpServer;
 using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Infrastructure.Service;
+using JayTom.Dws.Client.Service.Sorting;
 using JayTom.Dws.Client.ViewModels.Pages;
 using JayTom.Dws.Infrastructure.IComputer;
 using JayTom.Dws.Client.ViewModels.Dialog;
@@ -59,8 +60,10 @@ using JayTom.Dws.Infrastructure.Repository.LocalConf;
 using JayTom.Dws.Infrastructure.Repository.LocalData;
 using JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision;
 using JayTom.Dws.Client.HomeToolPlugin.SunnenPlugin.Views;
+using JayTom.Dws.Client.Service.Sorting.Communication.TcpComm;
 using JayTom.Dws.Client.HomeToolPlugin.SunnenPlugin.ViewModels;
 using JayTom.Dws.Client.Views.Pages.Preferences.ApiConfiguration;
+using JayTom.Dws.Client.Service.Sorting.Communication.SerialComm;
 using JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration;
 using JayTom.Dws.Client.Service.ResultOutput.Communication.TcpComm;
 using JayTom.Dws.Client.Views.Pages.Preferences.CameraConfiguration;
@@ -167,6 +170,8 @@ namespace JayTom.Dws.Client {
                 services.AddScoped<ITcpCommServer, TouchSocketTcpServer>();
                 services.AddScoped<ITcpContentOutput, TcpContentOutput>();
                 services.AddScoped<ITcpVolumeInput, TcpVolumeInput>();
+                services.AddScoped<ISortingSerialPort, SortingSerialPort>();
+                services.AddScoped<ISortingTcp, SortingTcp>();
                 //电脑注册
                 services.AddScoped<IComputer, Computer>();
                 //电脑信息上报
@@ -183,6 +188,8 @@ namespace JayTom.Dws.Client {
                 services.AddScoped<IExternalDataService, ExternalDataService>();
                 //基础服务注册
                 services.AddScoped<ICacheCleanupService, CacheCleanupService>();
+                //分拣注册 DefaultSortingService
+                services.AddScoped<ISortingService, DefaultSortingService>();
             });
         }
 

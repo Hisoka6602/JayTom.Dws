@@ -11,6 +11,7 @@ using MaterialDesignThemes.Wpf;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Views.Dialog;
+using JayTom.Dws.Client.Service.Sorting;
 using JayTom.Dws.Client.ViewModels.Dialog;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Client.Models.PackageSorting;
@@ -26,6 +27,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         private readonly ISortingInstructionBindingRepository _sortingInstructionBindingRepository;
         private readonly ISortingInstructionRepository _sortingInstructionRepository;
         private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
+        private readonly ISortingService _sortingService;
 
         private ObservableCollection<SortingInstructionBindingItemInfoModel> _sortingInstructionBindingItems = new();
 
@@ -33,10 +35,15 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
         public SortingInstructionBindingViewModel(ISortingInstructionBindingRepository sortingInstructionBindingRepository,
             ISortingInstructionRepository sortingInstructionRepository,
-            IPackageExitDefinitionRepository packageExitDefinitionRepository) {
+            IPackageExitDefinitionRepository packageExitDefinitionRepository,
+            ISortingService sortingService) {
             _sortingInstructionBindingRepository = sortingInstructionBindingRepository;
             _sortingInstructionRepository = sortingInstructionRepository;
             _packageExitDefinitionRepository = packageExitDefinitionRepository;
+            _sortingService = sortingService;
+            _sortingService.SendError += delegate (object? sender, ExceptionEventArgs args) {
+                SortingInstructionBindingMessageQueue.Enqueue(args.ExceptionMessage);
+            };
         }
 
         public SnackbarMessageQueue SortingInstructionBindingMessageQueue {
@@ -244,6 +251,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         }
 
         private void SendInstructionDelegate(SortingInstructionBindingItemInfoModel obj) {
+            _sortingService.SendInstructions(obj.SortingInstructionItems.Select(s => s.Instruction)
+                    ?.ToList() ?? new List<string>(),
+                TimeSpan.FromMilliseconds(obj.SendIntervalMilliseconds));
             Console.WriteLine(11);
         }
 

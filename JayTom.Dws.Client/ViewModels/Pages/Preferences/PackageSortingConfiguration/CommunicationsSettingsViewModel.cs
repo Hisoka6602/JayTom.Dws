@@ -14,6 +14,7 @@ using JayTom.Dws.Data.LocalConf;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.EventMediators;
+using JayTom.Dws.Client.Service.Sorting;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Dto.CommunicationsSettings;
@@ -24,6 +25,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
     public class CommunicationsSettingsViewModel : BindableBase {
         private readonly IConfigRepository _configRepository;
+        private readonly ISortingService _sortingService;
         private CommunicationsSettingsInfoModel _communicationsSettingsInfo = new();
 
         private ObservableCollection<CommunicationsTypeInfoModel> _communicationsTypeItems = new()
@@ -178,8 +180,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         private bool _isSavingInProgress;
         private SnackbarMessageQueue _communicationsSettingsMessageQueue = new(TimeSpan.FromSeconds(2));
 
-        public CommunicationsSettingsViewModel(IConfigRepository configRepository) {
+        public CommunicationsSettingsViewModel(IConfigRepository configRepository,
+            ISortingService sortingService) {
             _configRepository = configRepository;
+            _sortingService = sortingService;
+            _sortingService.ExceptionOccurred += delegate (object? sender, ExceptionEventArgs args) {
+                CommunicationsSettingsMessageQueue.Enqueue(args.ExceptionMessage);
+            };
         }
 
         public SnackbarMessageQueue CommunicationsSettingsMessageQueue {

@@ -38,6 +38,8 @@ namespace JayTom.Dws.Plugin.Tcp {
         /// </summary>
         event EventHandler<string> Connected;
 
+        event EventHandler<Exception> SendError; //发送异常
+
         /// <summary>
         /// 连接
         /// </summary>
