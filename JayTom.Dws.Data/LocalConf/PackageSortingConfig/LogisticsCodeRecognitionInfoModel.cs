@@ -7,8 +7,10 @@ using System.Collections.Generic;
 using JayTom.Dws.Data.Attributes;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using JayTom.Dws.Data.LocalConf.PackageSortingConfig.RuleConfig;
 
-namespace JayTom.Dws.Data.LocalConf.PackageSortingConfig {
+namespace JayTom.Dws.Data.LocalConf.PackageSortingConfig
+{
 
     [Table("Conf_LogisticsCodeRecognitionInfo", Schema = "dbo")]
     public class LogisticsCodeRecognitionInfoModel : BasePackageSortingConfig {

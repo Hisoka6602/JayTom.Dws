@@ -1,32 +1,58 @@
-﻿using System.Text;
-using JayTom.Dws.Plugin.Ftp;
-using JayTom.Dws.Plugin.Tcp;
+﻿using System;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Linq.Expressions;
+using System.Linq.Dynamic.Core;
+using System.Collections.Generic;
 
 internal class Program {
 
     private static async Task Main(string[] args) {
-        /*byte[] bytes = { 0xE6, 0xB5, 0x8B, 0xE8, 0xAF, 0x95, 0xE6, 0xB6, 0x88, 0xE6, 0x81, 0xAF };
-        string str = Encoding.Default.GetString(bytes);*/
-        var tcpCommunicationClient = new TcpCommunicationClient();
-        tcpCommunicationClient.SetParameter(new TcpConnectParam {
-            Address = "127.0.0.1",
-            Port = 60000
-        });
-        var b = await tcpCommunicationClient.Connect();
-        await Task.Delay(1000);
-        await tcpCommunicationClient.SendMessage("BarCode:SF797784454");
-        await Task.Delay(5000);
-        await tcpCommunicationClient.SendMessage("Weight:3235-");
-        /*var fluentFtpClient = new FluentFtpClient();
-       var connect = await fluentFtpClient.
-           Connect("127.0.0.1", "aaa", "123");
-       var (key, value) = await fluentFtpClient.UploadFile("C:\\Users\\77051\\Desktop\\cecmAJoYODQ26.jpg",
-           "Users\\77051\\Desktop\\cecmAJoYODQ26.jpg");
+        float x = 5, y = 18, z = 14;
+        string formula = "x > 10.0 AND y < 20.1 AND z <> 12.0 AND o>6";
 
-       var fileList = fluentFtpClient.GetFileList();
-       Console.WriteLine(fileList);
-       Console.WriteLine(key);
-       Console.WriteLine(connect);*/
-        Console.WriteLine("Hello, World!");
+        // 使用DataTable的Compute方法计算公式的值
+        bool result = (bool)new System.Data.DataTable().Compute(formula.Replace("x", x.ToString()).Replace("y", y.ToString()).Replace("z", z.ToString()), null);
+
+        if (result) {
+            Console.WriteLine("公式成立");
+        }
+        else {
+            Console.WriteLine("公式不成立");
+        }
+    }
+
+    // 从计算公式中提取变量名称
+    private static string[] ExtractVariableNames(string formula) {
+        var variables = new HashSet<string>();
+        foreach (var token in formula.Split(' ')) {
+            if (token.Length > 0 && char.IsLetter(token[0])) {
+                variables.Add(token);
+            }
+        }
+        return variables.ToArray();
+    }
+}
+
+public class ExpressionEvaluator {
+    private readonly Func<Dictionary<string, object>, object> _evaluator;
+
+    public ExpressionEvaluator(LambdaExpression expression) {
+        _evaluator = expression.Compile() as Func<Dictionary<string, object>, object>;
+    }
+
+    public T Evaluate<T>(Dictionary<string, object> arguments) {
+        var result = _evaluator.Invoke(arguments.ToDictionary(kv => kv.Key, kv => (object)Convert.ChangeType(kv.Value, typeof(float))));
+        return (T)Convert.ChangeType(result, typeof(T));
+    }
+}
+
+public static class DynamicExpression {
+
+    public static ExpressionEvaluator CompileLambda(string expression, params string[] parameterNames) {
+        var parameterExpressions = parameterNames.Select(name => Expression.Parameter(typeof(float), name)).ToArray();
+        var lambdaBody = DynamicExpressionParser.ParseLambda(parameterExpressions, null, expression).Body;
+        var lambdaExpression = Expression.Lambda(lambdaBody, parameterExpressions);
+        return new ExpressionEvaluator(lambdaExpression);
     }
 }

@@ -12,10 +12,11 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Models.Cameras;
 using JayTom.Dws.Client.Service.Device;
-using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Infrastructure.Repository.LocalConf;
+using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 
-namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
+namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
+{
 
     public class BarcodeScannerCameraConfigViewModel : BindableBase {
         private readonly IDeviceService _deviceService;

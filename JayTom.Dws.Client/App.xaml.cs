@@ -60,19 +60,25 @@ using JayTom.Dws.Infrastructure.Repository.LocalConf;
 using JayTom.Dws.Infrastructure.Repository.LocalData;
 using JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision;
 using JayTom.Dws.Client.HomeToolPlugin.SunnenPlugin.Views;
+using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 using JayTom.Dws.Client.Service.Sorting.Communication.TcpComm;
 using JayTom.Dws.Client.HomeToolPlugin.SunnenPlugin.ViewModels;
 using JayTom.Dws.Client.Views.Pages.Preferences.ApiConfiguration;
 using JayTom.Dws.Client.Service.Sorting.Communication.SerialComm;
 using JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration;
+using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
+using JayTom.Dws.Infrastructure.Repository.LocalConf.CameraConfig;
 using JayTom.Dws.Client.Service.ResultOutput.Communication.TcpComm;
 using JayTom.Dws.Client.Views.Pages.Preferences.CameraConfiguration;
 using JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration;
 using JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration;
 using JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration;
 using JayTom.Dws.Client.Service.ExternalDataService.Communication.TcpComm;
+using JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Client.Views.Pages.Preferences.PackageSortingConfiguration;
+using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig.RuleConfig;
 using JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration;
+using JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig.RuleConfig;
 
 namespace JayTom.Dws.Client {
 
@@ -127,6 +133,7 @@ namespace JayTom.Dws.Client {
                 containerRegistry.RegisterForNavigation<SortingInstructionBindingPage>();
                 containerRegistry.RegisterForNavigation<SortingSchemeSettingsPage>();
                 containerRegistry.RegisterForNavigation<CommunicationsSettingsPage>();
+                containerRegistry.RegisterForNavigation<SortingMethodPage>();
             }
             //其他注册
             containerRegistry.GetContainer().RegisterServices(services => {
@@ -152,6 +159,19 @@ namespace JayTom.Dws.Client {
                 services.AddScoped<ISortingInstructionBindingRepository, SortingInstructionBindingRepository>();
                 services.AddScoped<ILogisticsRegexRepository, LogisticsRegexRepository>();
                 services.AddScoped<ISortingInstructionRepository, SortingInstructionRepository>();
+
+                services.AddScoped<IBarCodeSortingRepository, BarCodeSortingRepository>();
+                services.AddScoped<IBarCodeRegexRepository, BarCodeRegexRepository>();
+
+                services.AddScoped<IWeightSortingRepository, WeightSortingRepository>();
+                services.AddScoped<IWeightRuleRepository, WeightRuleRepository>();
+
+                services.AddScoped<IVolumeSortingRepository, VolumeSortingRepository>();
+                services.AddScoped<IVolumeRuleRepository, VolumeRuleRepository>();
+
+                services.AddScoped<ILogisticsSortingRepository, LogisticsSortingRepository>();
+                services.AddScoped<ILogisticsRuleRepository, LogisticsRuleRepository>();
+
                 /*services.AddScoped<IConfigRepository, ConfigRepository>();
 
                 //服务注册
@@ -353,6 +373,7 @@ namespace JayTom.Dws.Client {
             ViewModelLocationProvider.Register<SortingInstructionBindingPage, SortingInstructionBindingViewModel>();
             ViewModelLocationProvider.Register<SortingSchemeSettingsPage, SortingSchemeSettingsViewModel>();
             ViewModelLocationProvider.Register<CommunicationsSettingsPage, CommunicationsSettingsViewModel>();
+            ViewModelLocationProvider.Register<SortingMethodPage, SortingMethodViewModel>();
             //接口
             ViewModelLocationProvider.Register<DefaultApiPage, DefaultApiPageViewModel>();
             //其他插件

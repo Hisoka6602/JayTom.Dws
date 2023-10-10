@@ -79,15 +79,16 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                 },
                 new()
                 {
-                    Title = "分拣方案",
+                    Title = "分拣模式",
                     IconFont = new IconInfoModel()
                     {
                         IconFont = "pack://application:,,,/Fonts/#iconfont",
                         IconCode = "\xe7b9",
                         IconSize = 25
                     },
-                    Description = "集成分拣方案",
-                    //PageClassName = "CameraFinderPage",
+                    Description = "分拣依据选择",
+                    PageClassName = "SortingMethodPage",
+                    ClickCommand = ClickCommand
                 },
             };
         }

@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using JayTom.Dws.Data.LocalConf.CameraConfig;
 using JayTom.Dws.Infrastructure.Repository.LocalData;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
+using JayTom.Dws.Data.LocalConf.PackageSortingConfig.RuleConfig;
 
 namespace JayTom.Dws.Infrastructure {
 
@@ -98,7 +99,14 @@ namespace JayTom.Dws.Infrastructure {
                 modelBuilder.Entity<LogisticsCodeRecognitionInfoModel>()
                     .HasIndex(b => b.LogisticsCode)
                     .IsUnique();
-
+                modelBuilder.Entity<LogisticsCodeRecognitionInfoModel>()
+                    .HasMany(b => b.LogisticsRegexItems)
+                    .WithOne(n => n.LogisticsCodeInfo)
+                    .HasForeignKey(n => new { n.LogisticsId })
+                    .OnDelete(DeleteBehavior.Cascade);
+                modelBuilder.Entity<LogisticsRegexInfoModel>().HasKey(c => new {
+                    c.Id
+                });
                 modelBuilder.Entity<PackageExitDefinitionInfoModel>().HasKey(c => new {
                     c.Id
                 });
@@ -120,14 +128,53 @@ namespace JayTom.Dws.Infrastructure {
                     .HasForeignKey(n => new { n.InstructionBindingId })
                     .OnDelete(DeleteBehavior.Cascade);
 
-                modelBuilder.Entity<LogisticsCodeRecognitionInfoModel>()
-                    .HasMany(b => b.LogisticsRegexItems)
-                    .WithOne(n => n.LogisticsCodeInfo)
-                    .HasForeignKey(n => new { n.LogisticsId })
-                    .OnDelete(DeleteBehavior.Cascade);
-                modelBuilder.Entity<LogisticsRegexInfoModel>().HasKey(c => new {
+                modelBuilder.Entity<BarCodeSortingInfoModel>().HasKey(c => new {
                     c.Id
                 });
+                modelBuilder.Entity<BarCodeRegexInfoModel>().HasKey(c => new {
+                    c.Id
+                });
+                modelBuilder.Entity<BarCodeSortingInfoModel>()
+                    .HasMany(b => b.BarCodeRegexItems)
+                    .WithOne(n => n.BarCodeSortingInfo)
+                    .HasForeignKey(n => new { n.BarCodeSortingId })
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                modelBuilder.Entity<WeightSortingInfoModel>().HasKey(c => new {
+                    c.Id
+                });
+                modelBuilder.Entity<WeightRuleInfoModel>().HasKey(c => new {
+                    c.Id
+                });
+                modelBuilder.Entity<WeightSortingInfoModel>()
+                    .HasMany(b => b.WeightRuleItems)
+                    .WithOne(n => n.WeightSortingInfo)
+                    .HasForeignKey(n => new { n.WeightSortingId })
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                modelBuilder.Entity<VolumeSortingInfoModel>().HasKey(c => new {
+                    c.Id
+                });
+                modelBuilder.Entity<VolumeRuleInfoModel>().HasKey(c => new {
+                    c.Id
+                });
+                modelBuilder.Entity<VolumeSortingInfoModel>()
+                    .HasMany(b => b.VolumeRuleItems)
+                    .WithOne(n => n.VolumeSortingInfo)
+                    .HasForeignKey(n => new { n.VolumeSortingId })
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                modelBuilder.Entity<LogisticsSortingInfoModel>().HasKey(c => new {
+                    c.Id
+                });
+                modelBuilder.Entity<LogisticsRuleInfoModel>().HasKey(c => new {
+                    c.Id
+                });
+                modelBuilder.Entity<LogisticsSortingInfoModel>()
+                    .HasMany(b => b.LogisticsRuleItems)
+                    .WithOne(n => n.LogisticsSortingInfo)
+                    .HasForeignKey(n => new { n.LogisticsId })
+                    .OnDelete(DeleteBehavior.Cascade);
             }
             //log
             {

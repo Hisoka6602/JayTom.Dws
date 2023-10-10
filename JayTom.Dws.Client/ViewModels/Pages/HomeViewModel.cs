@@ -49,6 +49,7 @@ using ConnectionType = JayTom.Dws.Client.Models.ConnectionType;
 using ExceptionEventArgs = JayTom.Dws.Client.Service.Sorting.ExceptionEventArgs;
 using static JayTom.Dws.Client.Service.BackgroundService.SubmitApiBackgroundService;
 using static JayTom.Dws.Client.Service.BackgroundService.ScanProcessBackgroundService;
+using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 
 namespace JayTom.Dws.Client.ViewModels.Pages {
 

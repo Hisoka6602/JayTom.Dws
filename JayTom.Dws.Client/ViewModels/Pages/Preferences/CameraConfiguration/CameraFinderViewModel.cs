@@ -26,6 +26,7 @@ using JayTom.Dws.Data.LocalConf.CameraConfig;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Infrastructure.Repository.LocalConf;
 using CameraType = JayTom.Dws.Client.Models.CameraType;
+using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.StartPanel;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {

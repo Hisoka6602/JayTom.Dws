@@ -27,8 +27,10 @@ using JayTom.Dws.Camera.Cameras.SmartCamera.Irayple;
 using JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision;
 using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech;
 using JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision;
+using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 
-namespace JayTom.Dws.Client.Service.Device {
+namespace JayTom.Dws.Client.Service.Device
+{
 
     public class DefaultDeviceService : IDeviceService {
         private readonly IBarcodeScannerCameraConfigRepository _barcodeScannerCameraConfigRepository;
