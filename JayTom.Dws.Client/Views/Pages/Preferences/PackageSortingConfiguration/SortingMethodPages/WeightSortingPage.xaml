@@ -22,7 +22,7 @@
         DialogMargin="5"
         FocusVisualStyle="{x:Null}"
         Focusable="False"
-        Identifier="BarcodeSortingDialog"
+        Identifier="WeightSortingDialog"
         Style="{StaticResource MaterialDesignEmbeddedDialogHost}">
         <Grid>
             <Grid.RowDefinitions>
@@ -51,7 +51,7 @@
                 FrozenColumnCount="2"
                 GridLinesVisibility="None"
                 HorizontalScrollBarVisibility="Auto"
-                ItemsSource="{Binding LogisticsCodeRecognitionItems, UpdateSourceTrigger=PropertyChanged}"
+                ItemsSource="{Binding WeightSortingItems, UpdateSourceTrigger=PropertyChanged}"
                 RowBackground="#061E90FF"
                 Style="{StaticResource VirtualizingDataGridStyle}">
                 <DataGrid.RowStyle>
@@ -96,7 +96,7 @@
                     <DataGridTextColumn
                         Width="100"
                         MinWidth="100"
-                        Binding="{Binding RegexPattern, UpdateSourceTrigger=PropertyChanged}"
+                        Binding="{Binding SortingRuleGroup, UpdateSourceTrigger=PropertyChanged}"
                         CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                         EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
                         <DataGridTextColumn.Header>
@@ -138,39 +138,6 @@
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal">
                                     <StackPanel Orientation="Horizontal">
-                                        <Button
-                                            Height="30"
-                                            MinWidth="80"
-                                            Margin="5,0"
-                                            materialDesign:ButtonAssist.CornerRadius="5"
-                                            Background="DodgerBlue"
-                                            Command="{Binding ElementName=LogisticsCodeRecognitionView, Path=DataContext.PlaySoundCommand}"
-                                            CommandParameter="{Binding}"
-                                            Focusable="False"
-                                            Foreground="RoyalBlue"
-                                            Style="{StaticResource MaterialDesignFlatLightButton}">
-                                            <StackPanel Orientation="Horizontal">
-                                                <TextBlock
-                                                    HorizontalAlignment="Center"
-                                                    VerticalAlignment="Center"
-                                                    FontFamily="{StaticResource IconFontFamily}"
-                                                    FontSize="16"
-                                                    Foreground="White"
-                                                    Text="&#xe701;" />
-                                                <TextBlock
-                                                    Margin="5,0"
-                                                    HorizontalAlignment="Center"
-                                                    VerticalAlignment="Center"
-                                                    Background="Transparent"
-                                                    FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
-                                                    FontSize="13"
-                                                    FontWeight="Light"
-                                                    Foreground="White"
-                                                    IsEnabled="True"
-                                                    Text="播放声音"
-                                                    TextAlignment="Justify" />
-                                            </StackPanel>
-                                        </Button>
                                         <Button
                                             Width="80"
                                             Height="30"
@@ -302,7 +269,7 @@
                 Background="BlueViolet"
                 FontFamily="LoadFiraCode"
                 FontWeight="Bold"
-                MessageQueue="{Binding LogisticsCodeRecognitionMessageQueue}" />
+                MessageQueue="{Binding WeightSortingMessageQueue}" />
         </Grid>
     </materialDesign:DialogHost>
 </Page>

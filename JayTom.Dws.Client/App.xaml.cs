@@ -343,6 +343,7 @@ namespace JayTom.Dws.Client {
             ViewModelLocationProvider.Register<LogisticsCodeRecognitionEditor, LogisticsCodeRecognitionEditorViewModel>();
             ViewModelLocationProvider.Register<SortingInstructionBindingEditor, SortingInstructionBindingEditorViewModel>();
             ViewModelLocationProvider.Register<BarcodeSortingRuleEditor, BarcodeSortingRuleEditorViewModel>();
+            ViewModelLocationProvider.Register<WeightSortingRuleEditor, WeightSortingRuleEditorViewModel>();
 
             ViewModelLocationProvider.Register<MainWindow, MainWindowViewModel>();
             ViewModelLocationProvider.Register<SettingsPage, SettingsViewModel>();
@@ -383,6 +384,8 @@ namespace JayTom.Dws.Client {
             ViewModelLocationProvider.Register<SortingMethodPage, SortingMethodViewModel>();
             //分拣模式
             ViewModelLocationProvider.Register<BarcodeSortingPage, BarcodeSortingViewModel>();
+            ViewModelLocationProvider.Register<WeightSortingPage, WeightSortingViewModel>();
+
             //接口
             ViewModelLocationProvider.Register<DefaultApiPage, DefaultApiPageViewModel>();
             //其他插件
