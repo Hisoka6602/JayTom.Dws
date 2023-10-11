@@ -18,7 +18,7 @@ namespace JayTom.Dws.Data.LocalConf.PackageSortingConfig.RuleConfig {
         [Column("VolumeSortingId"), Required, InsertOrUpdata]
         public long VolumeSortingId { get; set; }
 
-        /// <summary>
+        /*/// <summary>
         /// 运算符
         /// </summary>
         [Column("Operator"), Required, InsertOrUpdata]
@@ -40,7 +40,13 @@ namespace JayTom.Dws.Data.LocalConf.PackageSortingConfig.RuleConfig {
         /// 规则名称
         /// </summary>
         [Column("RuleName"), Required, InsertOrUpdata]
-        public string RuleName { get; set; } = string.Empty;
+        public string RuleName { get; set; } = string.Empty;*/
+
+        /// <summary>
+        /// 规则
+        /// </summary>
+        [Column("Formula"), Required, InsertOrUpdata]
+        public string Formula { get; set; } = string.Empty;
 
         [ForeignKey("Id")]
         public virtual VolumeSortingInfoModel VolumeSortingInfo { get; set; }

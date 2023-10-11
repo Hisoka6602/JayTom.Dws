@@ -19,6 +19,7 @@ using Microsoft.AspNetCore.Mvc.Filters;
 using JayTom.Dws.Client.Models.PackageSorting;
 using OpenFileDialog = System.Windows.Forms.OpenFileDialog;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
+using JayTom.Dws.Client.Models.PackageSorting.Rule;
 
 namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
 

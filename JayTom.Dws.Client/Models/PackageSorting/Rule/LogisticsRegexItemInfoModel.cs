@@ -8,7 +8,7 @@ using JayTom.Dws.Data.Attributes;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace JayTom.Dws.Client.Models.PackageSorting {
+namespace JayTom.Dws.Client.Models.PackageSorting.Rule {
 
     public class LogisticsRegexItemInfoModel : BasePackageSortingItemInfoModel {
         private long _logisticsId;

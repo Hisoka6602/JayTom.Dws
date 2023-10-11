@@ -24,11 +24,11 @@ namespace JayTom.Dws.Data.LocalConf.PackageSortingConfig.RuleConfig {
         [Column("LogisticsId"), Required, InsertOrUpdata]
         public long LogisticsId { get; set; }
 
-        /// <summary>
+        /*/// <summary>
         /// 规则名称
         /// </summary>
         [Column("RuleName"), Required, InsertOrUpdata]
-        public string RuleName { get; set; } = string.Empty;
+        public string RuleName { get; set; } = string.Empty;*/
 
         [ForeignKey("Id")]
         public virtual LogisticsSortingInfoModel LogisticsSortingInfo { get; set; }

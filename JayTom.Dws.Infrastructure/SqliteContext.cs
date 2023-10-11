@@ -175,6 +175,30 @@ namespace JayTom.Dws.Infrastructure {
                     .WithOne(n => n.LogisticsSortingInfo)
                     .HasForeignKey(n => new { n.LogisticsId })
                     .OnDelete(DeleteBehavior.Cascade);
+
+                modelBuilder.Entity<OcrSortingInfoModel>().HasKey(c => new {
+                    c.Id
+                });
+                modelBuilder.Entity<OcrRuleInfoModel>().HasKey(c => new {
+                    c.Id
+                });
+                modelBuilder.Entity<OcrSortingInfoModel>()
+                    .HasMany(b => b.OcrRuleItems)
+                    .WithOne(n => n.OcrSortingInfo)
+                    .HasForeignKey(n => new { n.OcrSortingId })
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                modelBuilder.Entity<ApiSortingInfoModel>().HasKey(c => new {
+                    c.Id
+                });
+                modelBuilder.Entity<ApiRuleInfoModel>().HasKey(c => new {
+                    c.Id
+                });
+                modelBuilder.Entity<ApiSortingInfoModel>()
+                    .HasMany(b => b.ApiRuleItems)
+                    .WithOne(n => n.ApiSortingInfo)
+                    .HasForeignKey(n => new { n.ApiSortingId })
+                    .OnDelete(DeleteBehavior.Cascade);
             }
             //log
             {

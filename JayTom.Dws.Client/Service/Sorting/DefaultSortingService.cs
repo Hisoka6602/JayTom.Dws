@@ -115,7 +115,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
 
                         var configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("CommunicationsSettings"));
                         _communicationsSettingsDto =
-                            JsonConvert.DeserializeObject<CommunicationsSettingsDto>(configInfoModel.Value) ?? new CommunicationsSettingsDto();
+                            JsonConvert.DeserializeObject<CommunicationsSettingsDto>(configInfoModel?.Value ?? string.Empty) ?? new CommunicationsSettingsDto();
                         if (_communicationsSettingsDto is not null) {
                             IsSortingEnabled = _communicationsSettingsDto.Type != CommunicationsType.None;
                             await Disconnect();

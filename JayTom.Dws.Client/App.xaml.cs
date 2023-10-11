@@ -79,6 +79,10 @@ using JayTom.Dws.Client.Views.Pages.Preferences.PackageSortingConfiguration;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig.RuleConfig;
 using JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration;
 using JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig.RuleConfig;
+using JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration.SortingMethodEditors;
+using JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.SortingMethodEditors;
+using JayTom.Dws.Client.Views.Pages.Preferences.PackageSortingConfiguration.SortingMethodPages;
+using JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration.SortingMethodPages;
 
 namespace JayTom.Dws.Client {
 
@@ -172,6 +176,8 @@ namespace JayTom.Dws.Client {
                 services.AddScoped<ILogisticsSortingRepository, LogisticsSortingRepository>();
                 services.AddScoped<ILogisticsRuleRepository, LogisticsRuleRepository>();
 
+                services.AddScoped<IOcrSortingRepository, OcrSortingRepository>();
+                services.AddScoped<IOcrRuleRepository, OcrRuleRepository>();
                 /*services.AddScoped<IConfigRepository, ConfigRepository>();
 
                 //服务注册
@@ -336,6 +342,7 @@ namespace JayTom.Dws.Client {
             ViewModelLocationProvider.Register<PackageExitDefinitionEditor, PackageExitDefinitionEditorViewModel>();
             ViewModelLocationProvider.Register<LogisticsCodeRecognitionEditor, LogisticsCodeRecognitionEditorViewModel>();
             ViewModelLocationProvider.Register<SortingInstructionBindingEditor, SortingInstructionBindingEditorViewModel>();
+            ViewModelLocationProvider.Register<BarcodeSortingRuleEditor, BarcodeSortingRuleEditorViewModel>();
 
             ViewModelLocationProvider.Register<MainWindow, MainWindowViewModel>();
             ViewModelLocationProvider.Register<SettingsPage, SettingsViewModel>();
@@ -374,6 +381,8 @@ namespace JayTom.Dws.Client {
             ViewModelLocationProvider.Register<SortingSchemeSettingsPage, SortingSchemeSettingsViewModel>();
             ViewModelLocationProvider.Register<CommunicationsSettingsPage, CommunicationsSettingsViewModel>();
             ViewModelLocationProvider.Register<SortingMethodPage, SortingMethodViewModel>();
+            //分拣模式
+            ViewModelLocationProvider.Register<BarcodeSortingPage, BarcodeSortingViewModel>();
             //接口
             ViewModelLocationProvider.Register<DefaultApiPage, DefaultApiPageViewModel>();
             //其他插件
