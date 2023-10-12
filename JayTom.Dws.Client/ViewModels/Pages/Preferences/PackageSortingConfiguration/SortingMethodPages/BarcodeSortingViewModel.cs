@@ -32,6 +32,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         private ObservableCollection<BarCodeSortingItemInfoModel> _barCodeSortingItems = new();
 
         private SnackbarMessageQueue _barcodeSortingMessageQueue = new(TimeSpan.FromSeconds(2));
+        private bool _isLoaded;
 
         public BarcodeSortingViewModel(IBarCodeSortingRepository barCodeSortingRepository,
             IBarCodeRegexRepository barCodeRegexRepository,
@@ -117,7 +118,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         }
 
         private void LoadedDelegate(object obj) {
-            RefreshData();
+            if (!_isLoaded) {
+                _isLoaded = true;
+                RefreshData();
+            }
         }
 
         public ICommand ModifyCommand {

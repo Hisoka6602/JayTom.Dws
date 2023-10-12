@@ -27,6 +27,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
         private ObservableCollection<PackageExitDefinitionItemInfoModel> _packageExitDefinitionItems = new();
         private SnackbarMessageQueue _packageExitDefinitionMessageQueue = new(TimeSpan.FromSeconds(2));
+        private bool _isLoaded;
 
         public PackageExitDefinitionViewModel(IPackageExitDefinitionRepository packageExitDefinitionRepository) {
             _packageExitDefinitionRepository = packageExitDefinitionRepository;
@@ -161,7 +162,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         }
 
         private void LoadedDelegate(object obj) {
-            RefreshData();
+            if (!_isLoaded) {
+                _isLoaded = true;
+                RefreshData();
+            }
         }
 
         private async void RefreshData() {

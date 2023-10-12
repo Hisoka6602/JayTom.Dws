@@ -34,6 +34,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         private readonly ISpeech _speech;
         private ObservableCollection<LogisticsCodeRecognitionItemInfoModel> _logisticsCodeRecognitionItems = new();
         private SnackbarMessageQueue _logisticsCodeRecognitionMessageQueue = new(TimeSpan.FromSeconds(2));
+        private bool _isLoaded;
 
         public LogisticsCodeRecognitionViewModel(ILogisticsCodeRecognitionRepository logisticsCodeRecognitionRepository,
             ILogisticsRegexRepository logisticsRegexRepository,
@@ -126,7 +127,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         }
 
         private void LoadedDelegate(object obj) {
-            RefreshData();
+            if (!_isLoaded) {
+                _isLoaded = true;
+                RefreshData();
+            }
         }
 
         /// <summary>

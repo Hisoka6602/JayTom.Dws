@@ -32,6 +32,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         private ObservableCollection<SortingInstructionBindingItemInfoModel> _sortingInstructionBindingItems = new();
 
         private SnackbarMessageQueue _sortingInstructionBindingMessageQueue = new(TimeSpan.FromSeconds(2));
+        private bool _isLoaded;
 
         public SortingInstructionBindingViewModel(ISortingInstructionBindingRepository sortingInstructionBindingRepository,
             ISortingInstructionRepository sortingInstructionRepository,
@@ -138,7 +139,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         }
 
         private void LoadedDelegate(object obj) {
-            RefreshData();
+            if (!_isLoaded) {
+                _isLoaded = true;
+                RefreshData();
+            }
         }
 
         /// <summary>

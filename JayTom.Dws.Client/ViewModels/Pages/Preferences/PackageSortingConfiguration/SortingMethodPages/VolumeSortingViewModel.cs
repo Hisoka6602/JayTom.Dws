@@ -33,6 +33,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         private ObservableCollection<VolumeSortingItemInfoModel> _volumeSortingItems = new();
 
         private SnackbarMessageQueue _volumeSortingMessageQueue = new(TimeSpan.FromSeconds(2));
+        private bool _isLoaded;
 
         public VolumeSortingViewModel(IVolumeSortingRepository volumeSortingRepository,
             IVolumeRuleRepository volumeRuleRepository,
@@ -118,7 +119,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         }
 
         private void LoadedDelegate(object obj) {
-            RefreshData();
+            if (!_isLoaded) {
+                _isLoaded = true;
+                RefreshData();
+            }
         }
 
         public ICommand ModifyCommand {

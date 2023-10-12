@@ -30,7 +30,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         private readonly IWeightRuleRepository _weightRuleRepository;
         private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
         private SnackbarMessageQueue _weightSortingMessageQueue = new(TimeSpan.FromSeconds(2));
-
+        private bool _isLoaded;
         private ObservableCollection<WeightSortingItemInfoModel> _weightSortingItems = new();
 
         public WeightSortingViewModel(IWeightSortingRepository weightSortingRepository,
@@ -119,7 +119,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         }
 
         private void LoadedDelegate(object obj) {
-            RefreshData();
+            if (!_isLoaded) {
+                _isLoaded = true;
+                RefreshData();
+            }
         }
 
         public ICommand ModifyCommand {
