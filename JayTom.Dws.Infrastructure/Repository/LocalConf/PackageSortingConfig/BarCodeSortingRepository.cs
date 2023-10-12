@@ -11,7 +11,6 @@ using JayTom.Dws.Data.LocalConf.PackageSortingConfig.RuleConfig;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
 
 namespace JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig {
-
     public class BarCodeSortingRepository : LocalRepositoryBase<BarCodeSortingInfoModel>, IBarCodeSortingRepository {
 
         public BarCodeSortingRepository(IDbContextFactory<SqliteContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
@@ -31,6 +30,7 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig {
                             Remarks = b.Remarks,
                             CreateTime = b.CreateTime,
                             ExitId = b.ExitId,
+                            SortingName = b.SortingName,
                             Id = b.Id,
                             ModifyTime = b.ModifyTime,
                             BarCodeRegexItems = b.BarCodeRegexItems

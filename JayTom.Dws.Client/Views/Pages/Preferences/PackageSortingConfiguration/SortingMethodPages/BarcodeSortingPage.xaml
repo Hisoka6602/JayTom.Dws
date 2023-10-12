@@ -87,6 +87,17 @@
                             <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="绑定格口" />
                         </DataGridTextColumn.Header>
                     </DataGridTextColumn>
+                    <!--  规则名称  -->
+                    <DataGridTextColumn
+                        Width="100"
+                        MinWidth="100"
+                        Binding="{Binding SortingName, UpdateSourceTrigger=PropertyChanged}"
+                        CellStyle="{StaticResource CustomDataGridTextCellStyle}"
+                        EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="规则名称" />
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
                     <!--  备注  -->
                     <DataGridTextColumn
                         Width="180"

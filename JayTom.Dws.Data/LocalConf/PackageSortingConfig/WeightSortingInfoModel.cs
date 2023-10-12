@@ -18,6 +18,9 @@ namespace JayTom.Dws.Data.LocalConf.PackageSortingConfig {
         [Column("ExitId"), InsertOrUpdata]
         public long ExitId { get; set; }
 
+        [Column("SortingName"), InsertOrUpdata]
+        public string SortingName { get; set; } = string.Empty;
+
         public virtual ICollection<WeightRuleInfoModel>? WeightRuleItems { get; set; }
     }
 }

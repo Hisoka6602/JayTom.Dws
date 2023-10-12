@@ -1,4 +1,5 @@
 ﻿using System;
+using Prism.Mvvm;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -8,12 +9,12 @@ using JayTom.Dws.Client.Models.PackageSorting.Rule;
 
 namespace JayTom.Dws.Client.Models.PackageSorting {
 
-    public class WeightSortingItemInfoModel : BasePackageSortingItemInfoModel {
+    public class VolumeSortingItemInfoModel : BasePackageSortingItemInfoModel {
         private long? _exitId;
         private string? _exitName;
-        private string _sortingRuleGroup = string.Empty;
-        private ObservableCollection<WeightRuleItemInfoModel> _weightRuleItems = new();
         private string _sortingName = string.Empty;
+        private string _sortingRuleGroup = string.Empty;
+        private ObservableCollection<VolumeRuleItemInfoModel> _volumeRuleItems = new();
 
         /// <summary>
         /// 出口代码
@@ -47,9 +48,9 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
             set => SetProperty(ref _sortingRuleGroup, value);
         }
 
-        public ObservableCollection<WeightRuleItemInfoModel> WeightRuleItems {
-            get => _weightRuleItems;
-            set => SetProperty(ref _weightRuleItems, value);
+        public ObservableCollection<VolumeRuleItemInfoModel> VolumeRuleItems {
+            get => _volumeRuleItems;
+            set => SetProperty(ref _volumeRuleItems, value);
         }
     }
 }

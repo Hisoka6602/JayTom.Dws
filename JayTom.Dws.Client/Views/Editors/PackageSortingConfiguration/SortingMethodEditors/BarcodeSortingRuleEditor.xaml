@@ -91,6 +91,39 @@
                             Style="{StaticResource MaterialDesignComboBox}" />
                     </Border>
                 </StackPanel>
+                <!--  规则名称  -->
+                <StackPanel
+                    Margin="5"
+                    VerticalAlignment="Center"
+                    Orientation="Horizontal">
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="规则名称:" />
+                    <Border
+                        Margin="5"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Background="#202020"
+                        CornerRadius="5">
+                        <TextBox
+                            Width="225"
+                            Height="30"
+                            MaxWidth="300"
+                            Margin="5,0"
+                            materialDesign:TextFieldAssist.HasClearButton="False"
+                            materialDesign:TextFieldAssist.HasFilledTextField="True"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="White"
+                            Text="{Binding BarCodeSortingItemInfo.SortingName, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    </Border>
+                </StackPanel>
                 <!--  备注  -->
                 <StackPanel Margin="5" Orientation="Vertical">
                     <TextBlock

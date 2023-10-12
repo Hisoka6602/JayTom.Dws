@@ -181,7 +181,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
         }
 
         public ICommand LoadedCommand {
-            get => new DelegateCommand<object>(LoadeDelegate);
+            get => new DelegateCommand<object>(LoadedDelegate);
         }
 
         /// <summary>
@@ -192,7 +192,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
             set => SetProperty(ref _isRefreshing, value);
         }
 
-        private async void LoadeDelegate(object obj) {
+        private async void LoadedDelegate(object obj) {
             //加载相机对比绑定状态
             if (!_isLoaded) {
                 _isLoaded = true;

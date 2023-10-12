@@ -3,15 +3,13 @@ using Prism.Mvvm;
 using System.Linq;
 using System.Text;
 using Prism.Commands;
-using System.Net.Http.Json;
+using NPOI.SS.Formula;
 using System.Windows.Input;
 using System.Threading.Tasks;
 using MaterialDesignThemes.Wpf;
-using NPOI.SS.Formula.Functions;
 using System.Collections.Generic;
 using LibreHardwareMonitor.Hardware;
 using System.Collections.ObjectModel;
-using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc.Filters;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
 using JayTom.Dws.Client.Models.PackageSorting;
@@ -20,27 +18,22 @@ using JayTom.Dws.Client.Models.PackageSorting.Rule;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
 
 namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.SortingMethodEditors {
-    public class WeightSortingRuleEditorViewModel : BindableBase {
+    public class VolumeSortingRuleEditorViewModel : BindableBase {
         private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
         private string _identifier = string.Empty;
         private bool _isOk;
         private string _exceptionContent = string.Empty;
-        private ObservableCollection<ItemBaseTemplateModel> _formulaTemplate = new();
         private string _formula = string.Empty;
         private bool _isUseTemplateFormula = true;
         private bool _isUseCustomFormula;
+        private ObservableCollection<ItemBaseTemplateModel> _formulaTemplate = new();
         private ObservableCollection<PackageExitDefinitionItemInfoModel> _packageExitDefinitionItems = new();
         private PackageExitDefinitionItemInfoModel _selectPackageExitDefinitionInfo = new();
-        private WeightSortingItemInfoModel _weightSortingItemInfo = new();
-        private ObservableCollection<WeightRuleItemInfoModel> _weightRuleItems = new();
+        private ObservableCollection<VolumeRuleItemInfoModel> _volumeRuleItems = new();
+        private VolumeSortingItemInfoModel _volumeSortingItemInfo = new();
 
-        public WeightSortingRuleEditorViewModel(IPackageExitDefinitionRepository packageExitDefinitionRepository) {
+        public VolumeSortingRuleEditorViewModel(IPackageExitDefinitionRepository packageExitDefinitionRepository) {
             _packageExitDefinitionRepository = packageExitDefinitionRepository;
-        }
-
-        public ObservableCollection<ItemBaseTemplateModel> FormulaTemplate {
-            get => _formulaTemplate;
-            set => SetProperty(ref _formulaTemplate, value);
         }
 
         /// <summary>
@@ -93,14 +86,19 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
             set => SetProperty(ref _isUseCustomFormula, value);
         }
 
-        public WeightSortingItemInfoModel WeightSortingItemInfo {
-            get => _weightSortingItemInfo;
-            set => SetProperty(ref _weightSortingItemInfo, value);
+        public ObservableCollection<ItemBaseTemplateModel> FormulaTemplate {
+            get => _formulaTemplate;
+            set => SetProperty(ref _formulaTemplate, value);
         }
 
-        public ObservableCollection<WeightRuleItemInfoModel> WeightRuleItems {
-            get => _weightRuleItems;
-            set => SetProperty(ref _weightRuleItems, value);
+        public ObservableCollection<VolumeRuleItemInfoModel> VolumeRuleItems {
+            get => _volumeRuleItems;
+            set => SetProperty(ref _volumeRuleItems, value);
+        }
+
+        public VolumeSortingItemInfoModel VolumeSortingItemInfo {
+            get => _volumeSortingItemInfo;
+            set => SetProperty(ref _volumeSortingItemInfo, value);
         }
 
         /// <summary>
@@ -293,7 +291,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
                 if (packageExitDefinitionItemInfoModels?.Any() == true) {
                     PackageExitDefinitionItems.AddRange(packageExitDefinitionItemInfoModels);
                     var packageExitDefinitionItemInfoModel = PackageExitDefinitionItems.FirstOrDefault(f =>
-                        f.Id.Equals(WeightSortingItemInfo.ExitId));
+                        f.Id.Equals(VolumeSortingItemInfo.ExitId));
                     SelectPackageExitDefinitionInfo =
                         packageExitDefinitionItemInfoModel ?? new PackageExitDefinitionItemInfoModel();
                 }
@@ -301,16 +299,16 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
         }
 
         public ICommand DeleteFormulaCommand {
-            get => new DelegateCommand<WeightRuleItemInfoModel>(DeleteFormulaDelegate);
+            get => new DelegateCommand<VolumeRuleItemInfoModel>(DeleteFormulaDelegate);
         }
 
-        private async void DeleteFormulaDelegate(WeightRuleItemInfoModel obj) {
+        private async void DeleteFormulaDelegate(VolumeRuleItemInfoModel obj) {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                WeightRuleItems.Remove(obj);
+                VolumeRuleItems.Remove(obj);
                 //调整Num
-                if (WeightRuleItems?.Any() == true) {
-                    for (var i = 0; i < WeightRuleItems.Count; i++) {
-                        WeightRuleItems[i].Num = i + 1;
+                if (VolumeRuleItems?.Any() == true) {
+                    for (var i = 0; i < VolumeRuleItems.Count; i++) {
+                        VolumeRuleItems[i].Num = i + 1;
                     }
                 }
             });
@@ -323,13 +321,13 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
         private async void SaveRuleDelegate(object obj) {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
                 string formula = IsUseCustomFormula ? CustomFormula : Formula;
-                if (!string.IsNullOrEmpty(formula) && !WeightRuleItems.Any(a => a.Formula.Equals(formula))) {
-                    WeightRuleItems.Add(new WeightRuleItemInfoModel() {
+                if (!string.IsNullOrEmpty(formula) && !VolumeRuleItems.Any(a => a.Formula.Equals(formula))) {
+                    VolumeRuleItems.Add(new VolumeRuleItemInfoModel() {
                         CreateTime = DateTime.Now,
                         Formula = formula,
                         ModifyTime = DateTime.Now,
-                        Num = WeightRuleItems.Count + 1,
-                        WeightSortingId = WeightSortingItemInfo.Id
+                        Num = VolumeRuleItems.Count + 1,
+                        VolumeSortingId = VolumeSortingItemInfo.Id
                     });
                 }
             });
@@ -351,11 +349,11 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
         private void SaveDelegate() {
             try {
                 IsOk = true;
-                WeightSortingItemInfo.ModifyTime = DateTime.Now;
-                Pitcher.Throw.ArgumentNull.WhenNull(WeightSortingItemInfo, nameof(WeightSortingItemInfo));
-                Pitcher.Throw.ArgumentNull.WhenNullOrEmpty(WeightSortingItemInfo.SortingName, nameof(WeightSortingItemInfo.SortingName));
+                VolumeSortingItemInfo.ModifyTime = DateTime.Now;
+                Pitcher.Throw.ArgumentNull.WhenNull(VolumeSortingItemInfo, nameof(VolumeSortingItemInfo));
+                Pitcher.Throw.ArgumentNull.WhenNullOrEmpty(VolumeSortingItemInfo.SortingName, nameof(VolumeSortingItemInfo.SortingName));
 
-                if (WeightSortingItemInfo.ExitId <= 0) {
+                if (VolumeSortingItemInfo.ExitId <= 0) {
                     throw new Exception("格口未选择!");
                 }
             }

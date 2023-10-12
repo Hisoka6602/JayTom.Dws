@@ -312,10 +312,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         /// 窗口加载
         /// </summary>
         public ICommand LoadedCommand {
-            get => new DelegateCommand<object>(LoadeDelegate);
+            get => new DelegateCommand<object>(LoadedDelegate);
         }
 
-        private async void LoadeDelegate(object obj) {
+        private async void LoadedDelegate(object obj) {
             if (!_isLoaded) {
                 _isLoaded = true;
                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {

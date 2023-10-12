@@ -2,12 +2,14 @@
     x:Class="JayTom.Dws.Client.Views.Pages.Preferences.PackageSortingConfiguration.SortingMethodPages.WeightSortingPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:languages="clr-namespace:JayTom.Dws.Client.Languages"
     xmlns:local="clr-namespace:JayTom.Dws.Client.Views.Pages.Preferences.PackageSortingConfiguration.SortingMethodPages"
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:mvvm="http://prismlibrary.com/"
+    Name="WeightSortingView"
     Title="WeightSortingPage"
     d:DesignHeight="450"
     d:DesignWidth="800"
@@ -15,7 +17,11 @@
     Focusable="False"
     FontFamily="{StaticResource CustomFontFamily}"
     mc:Ignorable="d">
-
+    <b:Interaction.Triggers>
+        <b:EventTrigger EventName="Loaded" SourceName="WeightSortingView">
+            <b:InvokeCommandAction Command="{Binding LoadedCommand, IsAsync=False}" CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Page}}}" />
+        </b:EventTrigger>
+    </b:Interaction.Triggers>
     <materialDesign:DialogHost
         Background="Transparent"
         DialogBackground="Transparent"
@@ -81,6 +87,17 @@
                             <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="绑定格口" />
                         </DataGridTextColumn.Header>
                     </DataGridTextColumn>
+                    <!--  规则名称  -->
+                    <DataGridTextColumn
+                        Width="100"
+                        MinWidth="100"
+                        Binding="{Binding SortingName, UpdateSourceTrigger=PropertyChanged}"
+                        CellStyle="{StaticResource CustomDataGridTextCellStyle}"
+                        EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="规则名称" />
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
                     <!--  备注  -->
                     <DataGridTextColumn
                         Width="180"
@@ -94,8 +111,8 @@
                     </DataGridTextColumn>
                     <!--  正则  -->
                     <DataGridTextColumn
-                        Width="100"
-                        MinWidth="100"
+                        Width="260"
+                        MinWidth="200"
                         Binding="{Binding SortingRuleGroup, UpdateSourceTrigger=PropertyChanged}"
                         CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                         EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
@@ -144,7 +161,7 @@
                                             MinWidth="60"
                                             materialDesign:ButtonAssist.CornerRadius="5"
                                             Background="RoyalBlue"
-                                            Command="{Binding ElementName=LogisticsCodeRecognitionView, Path=DataContext.ModifyCommand}"
+                                            Command="{Binding ElementName=WeightSortingView, Path=DataContext.ModifyCommand}"
                                             CommandParameter="{Binding}"
                                             Focusable="False"
                                             Foreground="RoyalBlue"
@@ -178,7 +195,7 @@
                                             Margin="5,0"
                                             materialDesign:ButtonAssist.CornerRadius="5"
                                             Background="DarkRed"
-                                            Command="{Binding ElementName=LogisticsCodeRecognitionView, Path=DataContext.DeleteCommand}"
+                                            Command="{Binding ElementName=WeightSortingView, Path=DataContext.DeleteCommand}"
                                             CommandParameter="{Binding}"
                                             Focusable="False"
                                             Foreground="Red"

@@ -19,7 +19,6 @@ using Microsoft.Extensions.FileSystemGlobbing.Internal;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
 
 namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.SortingMethodEditors {
-
     public class BarcodeSortingRuleEditorViewModel : BindableBase {
         private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
         private string _identifier = string.Empty;
@@ -181,7 +180,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
                     }
                     //字符限制
                     var join = string.Join(string.Empty, regularChars);
-                    if (!BarCodeRegexItems.Any(a => a.RegexPattern.Equals(join))) {
+                    if (!string.IsNullOrEmpty(join) && !BarCodeRegexItems.Any(a => a.RegexPattern.Equals(join))) {
                         BarCodeRegexItems.Add(new BarCodeRegexItemInfoModel() {
                             CreateTime = DateTime.Now,
                             ModifyTime = DateTime.Now,
@@ -191,7 +190,8 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
                     }
                 }
                 else if (IsUseRegex) {
-                    if (!string.IsNullOrEmpty(RegexPattern)) {
+                    if (!string.IsNullOrEmpty(RegexPattern) &&
+                        !BarCodeRegexItems.Any(a => a.RegexPattern.Equals(RegexPattern))) {
                         BarCodeRegexItems.Add(new BarCodeRegexItemInfoModel() {
                             CreateTime = DateTime.Now,
                             ModifyTime = DateTime.Now,
@@ -225,9 +225,15 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
             try {
                 IsOk = true;
                 BarCodeSortingItemInfo.ModifyTime = DateTime.Now;
+
                 Pitcher.Throw.ArgumentNull.WhenNull(BarCodeSortingItemInfo, nameof(BarCodeSortingItemInfo));
+                Pitcher.Throw.ArgumentNull.WhenNullOrEmpty(BarCodeSortingItemInfo.SortingName, nameof(BarCodeSortingItemInfo.SortingName));
                 foreach (var barCodeRegexItemInfoModel in BarCodeRegexItems) {
                     Regex.IsMatch("aa", barCodeRegexItemInfoModel.RegexPattern);
+                }
+
+                if (BarCodeSortingItemInfo.ExitId <= 0) {
+                    throw new Exception("格口未选择!");
                 }
             }
             catch (Exception e) {

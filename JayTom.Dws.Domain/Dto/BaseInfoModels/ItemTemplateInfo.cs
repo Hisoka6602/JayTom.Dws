@@ -55,5 +55,10 @@ namespace JayTom.Dws.Domain.Dto.BaseInfoModels {
         /// Api数据
         /// </summary>
         ApiData = 5,
+
+        /// <summary>
+        /// 逻辑公式
+        /// </summary>
+        Formula = 6
     }
 }

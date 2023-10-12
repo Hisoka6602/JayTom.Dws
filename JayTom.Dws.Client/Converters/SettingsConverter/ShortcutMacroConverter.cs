@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 
 namespace JayTom.Dws.Client.Converters.SettingsConverter {
-
     public class ShortcutMacroConverter : IValueConverter {
 
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
@@ -54,7 +53,16 @@ namespace JayTom.Dws.Client.Converters.SettingsConverter {
 
                     case "{Hour}":
                         return Languages.Language.ResourceManager.GetString("Hour") ?? string.Empty;
+                    case "{>}":
+                        return ">";
 
+                    case "{<}":
+                        return "<";
+                    case "{=}":
+                        return "=";
+
+                    case "{<>}":
+                        return "<>";
                     default:
                         return "null";
                 }

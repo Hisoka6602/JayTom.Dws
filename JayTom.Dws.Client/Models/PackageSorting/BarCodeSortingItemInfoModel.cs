@@ -13,6 +13,7 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         private string? _exitName;
         private string _sortingRuleGroup = string.Empty;
         private ObservableCollection<BarCodeRegexItemInfoModel> _barCodeRegexItems = new();
+        private string _sortingName = string.Empty;
 
         /// <summary>
         /// 出口代码
@@ -28,6 +29,14 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         public string? ExitName {
             get => _exitName;
             set => SetProperty(ref _exitName, value);
+        }
+
+        /// <summary>
+        /// 规则名称
+        /// </summary>
+        public string SortingName {
+            get => _sortingName;
+            set => SetProperty(ref _sortingName, value);
         }
 
         /// <summary>

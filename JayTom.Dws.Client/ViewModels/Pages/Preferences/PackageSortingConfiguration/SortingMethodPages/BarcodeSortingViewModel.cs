@@ -23,6 +23,7 @@ using JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration.SortingMethodE
 using JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.SortingMethodEditors;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration.SortingMethodPages {
+
     public class BarcodeSortingViewModel : BindableBase {
         private readonly IBarCodeSortingRepository _barCodeSortingRepository;
         private readonly IBarCodeRegexRepository _barCodeRegexRepository;
@@ -71,6 +72,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                             ExitId = model.SelectPackageExitDefinitionInfo.Id,
                             ModifyTime = model.BarCodeSortingItemInfo.ModifyTime,
                             Remarks = model.BarCodeSortingItemInfo.Remarks,
+                            SortingName = model.BarCodeSortingItemInfo.SortingName
                         };
                         var insertOrUpdate = await _barCodeSortingRepository.Insert(infoModel);
                         if (insertOrUpdate) {
@@ -111,10 +113,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         }
 
         public ICommand LoadedCommand {
-            get => new DelegateCommand<object>(LoadeDelegate);
+            get => new DelegateCommand<object>(LoadedDelegate);
         }
 
-        private void LoadeDelegate(object obj) {
+        private void LoadedDelegate(object obj) {
             RefreshData();
         }
 
@@ -141,6 +143,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                             ExitId = model.SelectPackageExitDefinitionInfo.Id,
                             ModifyTime = model.BarCodeSortingItemInfo.ModifyTime,
                             Remarks = model.BarCodeSortingItemInfo.Remarks,
+                            SortingName = model.BarCodeSortingItemInfo.SortingName,
                             Id = model.BarCodeSortingItemInfo.Id
                         };
                         var insertOrUpdate = await _barCodeSortingRepository.Update(infoModel);
@@ -216,6 +219,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                     ModifyTime = s.ModifyTime,
                     Num = i + 1,
                     Remarks = s.Remarks,
+                    SortingName = s.SortingName,
                     ExitId = s.ExitId,
                     ExitName = packageExitDefinitionInfoModels?.FirstOrDefault(f => f.Id.Equals(s.ExitId))?.ExitName ?? string.Empty,
                     BarCodeRegexItems = new ObservableCollection<BarCodeRegexItemInfoModel>(s.BarCodeRegexItems?.Select((s1, i1) => new BarCodeRegexItemInfoModel {
