@@ -24,7 +24,6 @@ using JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration.SortingMethodE
 using JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.SortingMethodEditors;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration.SortingMethodPages {
-
     public class VolumeSortingViewModel : BindableBase {
         private readonly IVolumeSortingRepository _volumeSortingRepository;
         private readonly IVolumeRuleRepository _volumeRuleRepository;
@@ -78,7 +77,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         };
                         var insert = await _volumeSortingRepository.Insert(volumeSortingInfoModel);
                         if (insert) {
-                            EventAggregator.Instance.Publish(insert);
+                            EventAggregator.Instance.Publish(volumeSortingInfoModel);
 
                             var sortingInfoModel = await _volumeSortingRepository.FirstOrDefault(f =>
                                 f.ModifyTime.Equals(model.VolumeSortingItemInfo.ModifyTime) &&

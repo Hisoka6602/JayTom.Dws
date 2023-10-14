@@ -118,7 +118,7 @@
                                     FontSize="18"
                                     FontWeight="Bold"
                                     Foreground="White"
-                                    Text="盛九智能" />
+                                    Text="无限创科DWS分拣控制系统" />
                                 <!--  工具  -->
                                 <ComboBox
                                     Name="HomeToolComboBox"

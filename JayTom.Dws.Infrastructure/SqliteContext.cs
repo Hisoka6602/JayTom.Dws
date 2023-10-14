@@ -8,7 +8,6 @@ using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig.RuleConfig;
 
 namespace JayTom.Dws.Infrastructure {
-
     public sealed class SqliteContext : DbContext {
 
         public SqliteContext(DbContextOptions<SqliteContext> options) : base(options) {
@@ -173,7 +172,7 @@ namespace JayTom.Dws.Infrastructure {
                 modelBuilder.Entity<LogisticsSortingInfoModel>()
                     .HasMany(b => b.LogisticsRuleItems)
                     .WithOne(n => n.LogisticsSortingInfo)
-                    .HasForeignKey(n => new { n.LogisticsId })
+                    .HasForeignKey(n => new { n.LogisticsSortingId })
                     .OnDelete(DeleteBehavior.Cascade);
 
                 modelBuilder.Entity<OcrSortingInfoModel>().HasKey(c => new {
