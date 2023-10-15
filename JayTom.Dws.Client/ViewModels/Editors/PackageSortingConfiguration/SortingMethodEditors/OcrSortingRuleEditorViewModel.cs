@@ -1,11 +1,9 @@
 ﻿using System;
-using ImTools;
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
 using Prism.Commands;
 using System.Windows.Input;
-using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
 using MaterialDesignThemes.Wpf;
 using System.Collections.Generic;
@@ -15,30 +13,26 @@ using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc.Filters;
 using JayTom.Dws.Client.Models.PackageSorting;
 using JayTom.Dws.Client.Models.PackageSorting.Rule;
-using Microsoft.Extensions.FileSystemGlobbing.Internal;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
 
 namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.SortingMethodEditors {
-
-    public class BarcodeSortingRuleEditorViewModel : BindableBase {
+    public class OcrSortingRuleEditorViewModel : BindableBase {
         private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
         private string _identifier = string.Empty;
         private bool _isOk;
         private string _exceptionContent = string.Empty;
-        private bool _isUseRules = true;
-        private bool _isUseRegex;
-        private string? _requiredCharacters;
-        private string? _startCharacterType;
-        private string? _endCharacterType;
-        private string? _regexPattern;
-
-        private ObservableCollection<BarCodeRegexItemInfoModel> _barCodeRegexItems = new();
-
+        private ObservableCollection<OcrRuleItemInfoModel> _ocrRuleItems = new();
         private ObservableCollection<PackageExitDefinitionItemInfoModel> _packageExitDefinitionItems = new();
         private PackageExitDefinitionItemInfoModel _selectPackageExitDefinitionInfo = new();
-        private BarCodeSortingItemInfoModel _barCodeSortingItemInfo = new();
+        private OcrSortingItemInfoModel _ocrSortingItemInfo = new();
+        private bool _isUseRules = true;
+        private bool _isUseRegex;
+        private int _startPosition;
+        private int _endPosition;
+        private string _content = string.Empty;
+        private string? _regexPattern;
 
-        public BarcodeSortingRuleEditorViewModel(IPackageExitDefinitionRepository packageExitDefinitionRepository) {
+        public OcrSortingRuleEditorViewModel(IPackageExitDefinitionRepository packageExitDefinitionRepository) {
             _packageExitDefinitionRepository = packageExitDefinitionRepository;
         }
 
@@ -63,9 +57,9 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
             set => SetProperty(ref _exceptionContent, value);
         }
 
-        public ObservableCollection<BarCodeRegexItemInfoModel> BarCodeRegexItems {
-            get => _barCodeRegexItems;
-            set => SetProperty(ref _barCodeRegexItems, value);
+        public ObservableCollection<OcrRuleItemInfoModel> OcrRuleItems {
+            get => _ocrRuleItems;
+            set => SetProperty(ref _ocrRuleItems, value);
         }
 
         /// <summary>
@@ -84,9 +78,9 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
             set => SetProperty(ref _selectPackageExitDefinitionInfo, value);
         }
 
-        public BarCodeSortingItemInfoModel BarCodeSortingItemInfo {
-            get => _barCodeSortingItemInfo;
-            set => SetProperty(ref _barCodeSortingItemInfo, value);
+        public OcrSortingItemInfoModel OcrSortingItemInfo {
+            get => _ocrSortingItemInfo;
+            set => SetProperty(ref _ocrSortingItemInfo, value);
         }
 
         /// <summary>
@@ -106,27 +100,27 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
         }
 
         /// <summary>
-        /// 必须包含的字符
+        /// 字符开始位置
         /// </summary>
-        public string? RequiredCharacters {
-            get => _requiredCharacters;
-            set => SetProperty(ref _requiredCharacters, value);
+        public int StartPosition {
+            get => _startPosition;
+            set => SetProperty(ref _startPosition, value);
         }
 
         /// <summary>
-        /// 开头字符类型
+        /// 字符结束位置
         /// </summary>
-        public string? StartCharacter {
-            get => _startCharacterType;
-            set => SetProperty(ref _startCharacterType, value);
+        public int EndPosition {
+            get => _endPosition;
+            set => SetProperty(ref _endPosition, value);
         }
 
         /// <summary>
-        /// 结尾字符类型
+        /// 字符内容
         /// </summary>
-        public string? EndCharacter {
-            get => _endCharacterType;
-            set => SetProperty(ref _endCharacterType, value);
+        public string Content {
+            get => _content;
+            set => SetProperty(ref _content, value);
         }
 
         /// <summary>
@@ -141,67 +135,16 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
             get => new DelegateCommand<BarCodeRegexItemInfoModel>(DeleteRegexDelegate);
         }
 
-        private async void DeleteRegexDelegate(BarCodeRegexItemInfoModel obj) {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                BarCodeRegexItems.Remove(obj);
-                //调整Num
-                if (BarCodeRegexItems?.Any() == true) {
-                    for (var i = 0; i < BarCodeRegexItems.Count; i++) {
-                        BarCodeRegexItems[i].Num = i + 1;
-                    }
-                }
-            });
+        private void DeleteRegexDelegate(BarCodeRegexItemInfoModel obj) {
+            Console.WriteLine(11);
         }
 
-        public ICommand SaveRuleCommand {
-            get => new DelegateCommand<object>(SaveRuleDelegate);
+        public ICommand AddRegexCommand {
+            get => new DelegateCommand<object>(AddRegexDelegate);
         }
 
-        private async void SaveRuleDelegate(object obj) {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                if (IsUseRules) {
-                    var regularChars = new List<string>();
-                    //必须包含
-                    if (!string.IsNullOrWhiteSpace(RequiredCharacters)) {
-                        var strings = RequiredCharacters.Split(";");
-                        strings.ForEach(f => {
-                            regularChars.Add($"(?=.*{f})");
-                        });
-                    }
-                    //指定开头
-                    if (!string.IsNullOrWhiteSpace(StartCharacter)) {
-                        var replace = StartCharacter.Replace(";", "|");
-                        regularChars.Add($"(?=^({replace}).*)");
-                    }
-
-                    //指定结尾
-                    if (!string.IsNullOrWhiteSpace(EndCharacter)) {
-                        var replace = EndCharacter.Replace(";", "|");
-                        regularChars.Add($"(?=.*({replace})$)");
-                    }
-                    //字符限制
-                    var join = string.Join(string.Empty, regularChars);
-                    if (!string.IsNullOrEmpty(join) && !BarCodeRegexItems.Any(a => a.RegexPattern.Equals(join))) {
-                        BarCodeRegexItems.Add(new BarCodeRegexItemInfoModel() {
-                            CreateTime = DateTime.Now,
-                            ModifyTime = DateTime.Now,
-                            Num = BarCodeRegexItems.Count + 1,
-                            RegexPattern = join
-                        });
-                    }
-                }
-                else if (IsUseRegex) {
-                    if (!string.IsNullOrEmpty(RegexPattern) &&
-                        !BarCodeRegexItems.Any(a => a.RegexPattern.Equals(RegexPattern))) {
-                        BarCodeRegexItems.Add(new BarCodeRegexItemInfoModel() {
-                            CreateTime = DateTime.Now,
-                            ModifyTime = DateTime.Now,
-                            Num = BarCodeRegexItems.Count + 1,
-                            RegexPattern = RegexPattern
-                        });
-                    }
-                }
-            });
+        private void AddRegexDelegate(object obj) {
+            Console.WriteLine(11);
         }
 
         public ICommand ClearConditionsCommand {
@@ -210,10 +153,9 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
 
         private async void ClearConditionsDelegate(object obj) {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                RequiredCharacters =
-                        StartCharacter =
-                            EndCharacter =
-                                RegexPattern = null;
+                StartPosition =
+                    EndPosition = 0;
+                Content = string.Empty;
             });
         }
 
@@ -221,18 +163,17 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
             get => new DelegateCommand(SaveDelegate);
         }
 
-        private void SaveDelegate() {
-            //规则需要同步到表[使用同步:多删少增]
+        private async void SaveDelegate() {
             try {
                 IsOk = true;
-                BarCodeSortingItemInfo.ModifyTime = DateTime.Now;
+                OcrSortingItemInfo.ModifyTime = DateTime.Now;
 
-                Pitcher.Throw.ArgumentNull.WhenNull(BarCodeSortingItemInfo, nameof(BarCodeSortingItemInfo));
-                Pitcher.Throw.ArgumentNull.WhenNullOrEmpty(BarCodeSortingItemInfo.SortingName, nameof(BarCodeSortingItemInfo.SortingName));
-                foreach (var barCodeRegexItemInfoModel in BarCodeRegexItems) {
-                    Regex.IsMatch("aa", barCodeRegexItemInfoModel.RegexPattern);
+                Pitcher.Throw.ArgumentNull.WhenNull(OcrSortingItemInfo, nameof(OcrSortingItemInfo));
+                Pitcher.Throw.ArgumentNull.WhenNullOrEmpty(OcrSortingItemInfo.SortingName, nameof(OcrSortingItemInfo.SortingName));
+                foreach (var ocrRuleItemInfoModel in OcrRuleItems) {
+                    Regex.IsMatch("aa", ocrRuleItemInfoModel.RegexPattern);
+
                 }
-
                 if (SelectPackageExitDefinitionInfo.Id <= 0) {
                     throw new Exception("格口未选择!");
                 }
@@ -265,7 +206,6 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
         private async void LoadedDelegate(object obj) {
             var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0,
                 o => o.CreateTime);
-
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
                 PackageExitDefinitionItems.Clear();
                 var packageExitDefinitionItemInfoModels = packageExitDefinitionInfoModels?.Select((s, i) =>
@@ -283,7 +223,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
                 if (packageExitDefinitionItemInfoModels?.Any() == true) {
                     PackageExitDefinitionItems.AddRange(packageExitDefinitionItemInfoModels);
                     var packageExitDefinitionItemInfoModel = PackageExitDefinitionItems.FirstOrDefault(f =>
-                        f.Id.Equals(BarCodeSortingItemInfo.ExitId));
+                        f.Id.Equals(OcrSortingItemInfo.ExitId));
                     SelectPackageExitDefinitionInfo =
                         packageExitDefinitionItemInfoModel ?? new PackageExitDefinitionItemInfoModel();
                 }

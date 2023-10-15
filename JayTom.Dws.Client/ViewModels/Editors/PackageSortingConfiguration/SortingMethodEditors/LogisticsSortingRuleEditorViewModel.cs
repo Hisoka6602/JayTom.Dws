@@ -148,7 +148,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
                 Pitcher.Throw.ArgumentNull.WhenNull(LogisticsRuleItems, nameof(LogisticsRuleItems));
                 Pitcher.Throw.ArgumentNull.WhenNullOrEmpty(LogisticsSortingItemInfo.SortingName, nameof(LogisticsSortingItemInfo.SortingName));
 
-                if (LogisticsSortingItemInfo.ExitId <= 0) {
+                if (SelectPackageExitDefinitionInfo.Id <= 0) {
                     throw new Exception("格口未选择!");
                 }
             }

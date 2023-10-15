@@ -346,6 +346,7 @@ namespace JayTom.Dws.Client {
             ViewModelLocationProvider.Register<WeightSortingRuleEditor, WeightSortingRuleEditorViewModel>();
             ViewModelLocationProvider.Register<VolumeSortingRuleEditor, VolumeSortingRuleEditorViewModel>();
             ViewModelLocationProvider.Register<LogisticsSortingRuleEditor, LogisticsSortingRuleEditorViewModel>();
+            ViewModelLocationProvider.Register<OcrSortingRuleEditor, OcrSortingRuleEditorViewModel>();
 
             ViewModelLocationProvider.Register<MainWindow, MainWindowViewModel>();
             ViewModelLocationProvider.Register<SettingsPage, SettingsViewModel>();
@@ -390,6 +391,7 @@ namespace JayTom.Dws.Client {
 
             ViewModelLocationProvider.Register<VolumeSortingPage, VolumeSortingViewModel>();
             ViewModelLocationProvider.Register<LogisticsSortingPage, LogisticsSortingViewModel>();
+            ViewModelLocationProvider.Register<OcrSortingPage, OcrSortingViewModel>();
             //接口
             ViewModelLocationProvider.Register<DefaultApiPage, DefaultApiPageViewModel>();
             //其他插件
