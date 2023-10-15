@@ -24,7 +24,6 @@ using JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration.SortingMethodE
 using JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.SortingMethodEditors;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration.SortingMethodPages {
-
     public class LogisticsSortingViewModel : BindableBase {
         private readonly ILogisticsSortingRepository _logisticsSortingRepository;
         private readonly ILogisticsRuleRepository _logisticsRuleRepository;
@@ -242,7 +241,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         LogisticsId = s1.LogisticsId,
                         LogisticsName = logisticsCodeRecognitionInfoModels.FirstOrDefault(f => f.Id.Equals(s1.LogisticsId))?.LogisticsName ?? string.Empty
                     }).ToList() ?? new List<LogisticsRuleItemInfoModel>()),
-                    SortingRuleGroup = string.Join("\n", s.LogisticsRuleItems?.Select(s2 =>
+                    SortingRuleGroup = string.Join(",", s.LogisticsRuleItems?.Select(s2 =>
                         logisticsCodeRecognitionInfoModels.FirstOrDefault(f => f.Id.Equals(s2.LogisticsId))?.LogisticsName ?? string.Empty) ?? Array.Empty<string>())
                 })?.ToList();
                 LogisticsSortingItems.AddRange(infoModels);

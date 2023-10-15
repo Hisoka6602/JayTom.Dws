@@ -112,35 +112,13 @@
                     </DataGridTextColumn>
                     <!--  正则  -->
                     <DataGridTextColumn
-                        Width="260"
-                        MinWidth="200"
+                        Width="450"
+                        MinWidth="450"
                         Binding="{Binding SortingRuleGroup, UpdateSourceTrigger=PropertyChanged}"
                         CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                         EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
                         <DataGridTextColumn.Header>
                             <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="分拣规则" />
-                        </DataGridTextColumn.Header>
-                    </DataGridTextColumn>
-                    <!--  添加时间  -->
-                    <DataGridTextColumn
-                        Width="130"
-                        MinWidth="130"
-                        Binding="{Binding CreateTime, UpdateSourceTrigger=PropertyChanged, StringFormat=yyyy-MM-dd HH:mm:ss}"
-                        CellStyle="{StaticResource CustomDataGridTextCellStyle}"
-                        EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
-                        <DataGridTextColumn.Header>
-                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="添加时间" />
-                        </DataGridTextColumn.Header>
-                    </DataGridTextColumn>
-                    <!--  修改时间  -->
-                    <DataGridTextColumn
-                        Width="130"
-                        MinWidth="130"
-                        Binding="{Binding ModifyTime, UpdateSourceTrigger=PropertyChanged, StringFormat=yyyy-MM-dd HH:mm:ss}"
-                        CellStyle="{StaticResource CustomDataGridTextCellStyle}"
-                        EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
-                        <DataGridTextColumn.Header>
-                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="修改时间" />
                         </DataGridTextColumn.Header>
                     </DataGridTextColumn>
                     <!--  操作  -->
