@@ -16,7 +16,6 @@ using JayTom.Dws.Client.Models.PackageSorting.Rule;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
 
 namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.SortingMethodEditors {
-
     public class LogisticsSortingRuleEditorViewModel : BindableBase {
         private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
         private readonly ILogisticsCodeRecognitionRepository _logisticsCodeRecognitionRepository;
@@ -147,7 +146,9 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
                 }
                 Pitcher.Throw.ArgumentNull.WhenNull(LogisticsRuleItems, nameof(LogisticsRuleItems));
                 Pitcher.Throw.ArgumentNull.WhenNullOrEmpty(LogisticsSortingItemInfo.SortingName, nameof(LogisticsSortingItemInfo.SortingName));
-
+                if (!LogisticsRuleItems.Any()) {
+                    throw new Exception("物流不能为空!");
+                }
                 if (SelectPackageExitDefinitionInfo.Id <= 0) {
                     throw new Exception("格口未选择!");
                 }

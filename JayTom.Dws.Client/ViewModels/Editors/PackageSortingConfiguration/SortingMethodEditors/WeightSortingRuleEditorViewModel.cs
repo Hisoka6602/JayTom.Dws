@@ -20,7 +20,6 @@ using JayTom.Dws.Client.Models.PackageSorting.Rule;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
 
 namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.SortingMethodEditors {
-
     public class WeightSortingRuleEditorViewModel : BindableBase {
         private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
         private string _identifier = string.Empty;
@@ -355,7 +354,9 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
                 WeightSortingItemInfo.ModifyTime = DateTime.Now;
                 Pitcher.Throw.ArgumentNull.WhenNull(WeightSortingItemInfo, nameof(WeightSortingItemInfo));
                 Pitcher.Throw.ArgumentNull.WhenNullOrEmpty(WeightSortingItemInfo.SortingName, nameof(WeightSortingItemInfo.SortingName));
-
+                if (!WeightRuleItems.Any()) {
+                    throw new Exception("规则不能为空!");
+                }
                 if (SelectPackageExitDefinitionInfo.Id <= 0) {
                     throw new Exception("格口未选择!");
                 }

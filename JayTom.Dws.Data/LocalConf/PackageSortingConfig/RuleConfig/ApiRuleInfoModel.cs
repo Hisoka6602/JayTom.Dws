@@ -8,7 +8,6 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace JayTom.Dws.Data.LocalConf.PackageSortingConfig.RuleConfig {
-
     public class ApiRuleInfoModel : BasePackageSortingConfig {
 
         /// <summary>
@@ -18,10 +17,10 @@ namespace JayTom.Dws.Data.LocalConf.PackageSortingConfig.RuleConfig {
         public long ApiSortingId { get; set; }
 
         /// <summary>
-        /// 正则表达式
+        /// Json内容
         /// </summary>
-        [Column("RegexPattern"), Required, InsertOrUpdata]
-        public string RegexPattern { get; set; } = string.Empty;
+        [Column("JsonContent"), Required, InsertOrUpdata]
+        public string JsonContent { get; set; } = string.Empty;
 
         [ForeignKey("Id")]
         public virtual ApiSortingInfoModel ApiSortingInfo { get; set; }

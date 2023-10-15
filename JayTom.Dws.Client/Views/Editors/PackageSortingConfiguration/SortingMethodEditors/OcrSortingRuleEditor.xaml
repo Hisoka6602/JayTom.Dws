@@ -307,7 +307,7 @@
                                         Margin="5"
                                         HorizontalAlignment="Center"
                                         VerticalAlignment="Center"
-                                        Background="#1A696969"
+                                        Background="#202020"
                                         CornerRadius="5">
                                         <TextBox
                                             Width="80"
@@ -322,10 +322,16 @@
                                             FontWeight="Bold"
                                             Foreground="White"
                                             InputMethod.IsInputMethodEnabled="False"
-                                            Text="{Binding StartPosition, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                                            Text="{Binding StartPosition, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                                            <b:Interaction.Triggers>
+                                                <b:EventTrigger EventName="TextChanged">
+                                                    <mvvm:InvokeCommandAction Command="{Binding StartPositionChangedCommand}" />
+                                                </b:EventTrigger>
+                                            </b:Interaction.Triggers>
+                                        </TextBox>
                                     </Border>
                                 </StackPanel>
-                                <StackPanel Orientation="Horizontal">
+                                <StackPanel IsEnabled="False" Orientation="Horizontal">
                                     <!--  图标  -->
                                     <TextBlock
                                         Margin="5,0"
@@ -338,7 +344,7 @@
                                         Margin="5"
                                         HorizontalAlignment="Center"
                                         VerticalAlignment="Center"
-                                        Background="#1A696969"
+                                        Background="#202020"
                                         CornerRadius="5">
                                         <TextBox
                                             Width="80"
@@ -371,7 +377,7 @@
                                     Margin="5"
                                     HorizontalAlignment="Center"
                                     VerticalAlignment="Center"
-                                    Background="#1A696969"
+                                    Background="#202020"
                                     CornerRadius="5">
                                     <TextBox
                                         Width="310"
@@ -386,7 +392,13 @@
                                         FontWeight="Bold"
                                         Foreground="White"
                                         InputMethod.IsInputMethodEnabled="False"
-                                        Text="{Binding Content, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                                        Text="{Binding Content, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                                        <b:Interaction.Triggers>
+                                            <b:EventTrigger EventName="TextChanged">
+                                                <mvvm:InvokeCommandAction Command="{Binding ContentChangedCommand}" />
+                                            </b:EventTrigger>
+                                        </b:Interaction.Triggers>
+                                    </TextBox>
                                 </Border>
                             </StackPanel>
                         </StackPanel>

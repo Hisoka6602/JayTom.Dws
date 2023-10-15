@@ -178,6 +178,9 @@ namespace JayTom.Dws.Client {
 
                 services.AddScoped<IOcrSortingRepository, OcrSortingRepository>();
                 services.AddScoped<IOcrRuleRepository, OcrRuleRepository>();
+                services.AddScoped<IApiSortingRepository, ApiSortingRepository>();
+                services.AddScoped<IApiRuleRepository, ApiRuleRepository>();
+
                 /*services.AddScoped<IConfigRepository, ConfigRepository>();
 
                 //服务注册
@@ -347,6 +350,7 @@ namespace JayTom.Dws.Client {
             ViewModelLocationProvider.Register<VolumeSortingRuleEditor, VolumeSortingRuleEditorViewModel>();
             ViewModelLocationProvider.Register<LogisticsSortingRuleEditor, LogisticsSortingRuleEditorViewModel>();
             ViewModelLocationProvider.Register<OcrSortingRuleEditor, OcrSortingRuleEditorViewModel>();
+            ViewModelLocationProvider.Register<ApiSortingRuleEditor, ApiSortingRuleEditorViewModel>();
 
             ViewModelLocationProvider.Register<MainWindow, MainWindowViewModel>();
             ViewModelLocationProvider.Register<SettingsPage, SettingsViewModel>();
@@ -392,6 +396,7 @@ namespace JayTom.Dws.Client {
             ViewModelLocationProvider.Register<VolumeSortingPage, VolumeSortingViewModel>();
             ViewModelLocationProvider.Register<LogisticsSortingPage, LogisticsSortingViewModel>();
             ViewModelLocationProvider.Register<OcrSortingPage, OcrSortingViewModel>();
+            ViewModelLocationProvider.Register<ApiResponseSortingPage, ApiResponseSortingViewModel>();
             //接口
             ViewModelLocationProvider.Register<DefaultApiPage, DefaultApiPageViewModel>();
             //其他插件

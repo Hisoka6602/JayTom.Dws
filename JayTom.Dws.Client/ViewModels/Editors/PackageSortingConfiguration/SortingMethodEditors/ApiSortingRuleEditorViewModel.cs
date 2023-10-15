@@ -3,9 +3,12 @@ using Prism.Mvvm;
 using System.Linq;
 using System.Text;
 using Prism.Commands;
+using Newtonsoft.Json;
 using System.Windows.Input;
+using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
 using MaterialDesignThemes.Wpf;
+using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
 using LibreHardwareMonitor.Hardware;
 using System.Collections.ObjectModel;
@@ -17,23 +20,25 @@ using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
 
 namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.SortingMethodEditors {
 
-    public class OcrSortingRuleEditorViewModel : BindableBase {
+    public class ApiSortingRuleEditorViewModel : BindableBase {
         private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
         private string _identifier = string.Empty;
         private bool _isOk;
         private string _exceptionContent = string.Empty;
-        private ObservableCollection<OcrRuleItemInfoModel> _ocrRuleItems = new();
+        private ObservableCollection<ApiRuleItemInfoModel> _apiRuleItems = new();
         private ObservableCollection<PackageExitDefinitionItemInfoModel> _packageExitDefinitionItems = new();
         private PackageExitDefinitionItemInfoModel _selectPackageExitDefinitionInfo = new();
-        private OcrSortingItemInfoModel _ocrSortingItemInfo = new();
-        private bool _isUseRules = true;
-        private bool _isUseRegex;
-        private int _startPosition;
-        private int _endPosition;
-        private string _content = string.Empty;
-        private string? _regexPattern;
+        private UploadStatus _responseStatus;
+        private bool _isUseStringComparison;
+        private bool _isUseStringSearch;
+        private bool _isUseJsonField = true;
+        private string _searchStringContent = string.Empty;
+        private string _jsonField = string.Empty;
+        private string _jsonFieldValue = string.Empty;
+        private ObservableCollection<UploadStatus> _uploadStatusItems = new(Enum.GetValues(typeof(UploadStatus)).Cast<UploadStatus>());
+        private ApiSortingItemInfoModel _apiSortingItemInfo = new();
 
-        public OcrSortingRuleEditorViewModel(IPackageExitDefinitionRepository packageExitDefinitionRepository) {
+        public ApiSortingRuleEditorViewModel(IPackageExitDefinitionRepository packageExitDefinitionRepository) {
             _packageExitDefinitionRepository = packageExitDefinitionRepository;
         }
 
@@ -58,9 +63,9 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
             set => SetProperty(ref _exceptionContent, value);
         }
 
-        public ObservableCollection<OcrRuleItemInfoModel> OcrRuleItems {
-            get => _ocrRuleItems;
-            set => SetProperty(ref _ocrRuleItems, value);
+        public ObservableCollection<ApiRuleItemInfoModel> ApiRuleItems {
+            get => _apiRuleItems;
+            set => SetProperty(ref _apiRuleItems, value);
         }
 
         /// <summary>
@@ -79,113 +84,112 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
             set => SetProperty(ref _selectPackageExitDefinitionInfo, value);
         }
 
-        public OcrSortingItemInfoModel OcrSortingItemInfo {
-            get => _ocrSortingItemInfo;
-            set => SetProperty(ref _ocrSortingItemInfo, value);
+        public ObservableCollection<UploadStatus> UploadStatusItems {
+            get => _uploadStatusItems;
+            set => SetProperty(ref _uploadStatusItems, value);
+        }
+
+        public ApiSortingItemInfoModel ApiSortingItemInfo {
+            get => _apiSortingItemInfo;
+            set => SetProperty(ref _apiSortingItemInfo, value);
         }
 
         /// <summary>
-        /// 是否使用规则
+        /// 上传状态
         /// </summary>
-        public bool IsUseRules {
-            get => _isUseRules;
-            set => SetProperty(ref _isUseRules, value);
+        public UploadStatus ResponseStatus {
+            get => _responseStatus;
+            set => SetProperty(ref _responseStatus, value);
         }
 
         /// <summary>
-        /// 是否使用正则表达式
+        /// 是否使用字符串判断
         /// </summary>
-        public bool IsUseRegex {
-            get => _isUseRegex;
-            set => SetProperty(ref _isUseRegex, value);
+        public bool IsUseStringComparison {
+            get => _isUseStringComparison;
+            set => SetProperty(ref _isUseStringComparison, value);
         }
 
         /// <summary>
-        /// 字符开始位置
+        /// 是否使用字符串查找
         /// </summary>
-        public int StartPosition {
-            get => _startPosition;
-            set => SetProperty(ref _startPosition, value);
+        public bool IsUseStringSearch {
+            get => _isUseStringSearch;
+            set => SetProperty(ref _isUseStringSearch, value);
         }
 
         /// <summary>
-        /// 字符结束位置
+        /// 是否使用字符串取值
         /// </summary>
-        public int EndPosition {
-            get => _endPosition;
-            set => SetProperty(ref _endPosition, value);
+        public bool IsUseJsonField {
+            get => _isUseJsonField;
+            set => SetProperty(ref _isUseJsonField, value);
         }
 
         /// <summary>
-        /// 字符内容
+        /// 查找字符串内容
         /// </summary>
-        public string Content {
-            get => _content;
-            set => SetProperty(ref _content, value);
+        public string SearchStringContent {
+            get => _searchStringContent;
+            set => SetProperty(ref _searchStringContent, value);
         }
 
         /// <summary>
-        /// 正则表达式
+        /// Json字段
         /// </summary>
-        public string? RegexPattern {
-            get => _regexPattern;
-            set => SetProperty(ref _regexPattern, value);
+        public string JsonField {
+            get => _jsonField;
+            set => SetProperty(ref _jsonField, value);
         }
 
-        public ICommand DeleteRegexCommand {
-            get => new DelegateCommand<OcrRuleItemInfoModel>(DeleteRegexDelegate);
+        /// <summary>
+        /// Json字段值
+        /// </summary>
+        public string JsonFieldValue {
+            get => _jsonFieldValue;
+            set => SetProperty(ref _jsonFieldValue, value);
         }
 
-        private async void DeleteRegexDelegate(OcrRuleItemInfoModel obj) {
+        public ICommand DeleteJsonCommand {
+            get => new DelegateCommand<ApiRuleItemInfoModel>(DeleteJsonDelegate);
+        }
+
+        private async void DeleteJsonDelegate(ApiRuleItemInfoModel obj) {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                OcrRuleItems.Remove(obj);
+                ApiRuleItems.Remove(obj);
                 //调整Num
-                if (OcrRuleItems?.Any() == true) {
-                    for (var i = 0; i < OcrRuleItems.Count; i++) {
-                        OcrRuleItems[i].Num = i + 1;
+                if (ApiRuleItems?.Any() == true) {
+                    for (var i = 0; i < ApiRuleItems.Count; i++) {
+                        ApiRuleItems[i].Num = i + 1;
                     }
                 }
             });
         }
 
-        public ICommand AddRegexCommand {
-            get => new DelegateCommand<object>(AddRegexDelegate);
+        public ICommand AddJsonCommand {
+            get => new DelegateCommand<object>(AddJsonDelegate);
         }
 
-        private async void AddRegexDelegate(object obj) {
+        private async void AddJsonDelegate(object obj) {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                if (IsUseRules) {
-                    if (EndPosition > StartPosition &&
-                        !string.IsNullOrEmpty(Content)) {
-                        try {
-                            var regular = $"(?<=^.{{{StartPosition}}})({Content})";
-                            if (!OcrRuleItems.Any(a => a.RegexPattern.Equals(regular))) {
-                                OcrRuleItems.Add(new OcrRuleItemInfoModel() {
-                                    CreateTime = DateTime.Now,
-                                    ModifyTime = DateTime.Now,
-                                    Num = OcrRuleItems.Count + 1,
-                                    OcrSortingId = OcrSortingItemInfo.Id,
-                                    RegexPattern = regular
-                                });
-                            }
-                        }
-                        catch (Exception e) {
-                            Console.WriteLine(e);
-                        }
-                    }
-                }
-                else {
-                    if (!string.IsNullOrEmpty(RegexPattern)) {
-                        if (!OcrRuleItems.Any(a => a.RegexPattern.Equals(RegexPattern))) {
-                            OcrRuleItems.Add(new OcrRuleItemInfoModel() {
-                                CreateTime = DateTime.Now,
-                                ModifyTime = DateTime.Now,
-                                Num = OcrRuleItems.Count + 1,
-                                OcrSortingId = OcrSortingItemInfo.Id,
-                                RegexPattern = RegexPattern
-                            });
-                        }
-                    }
+                var apiRuleJsonDto = new ApiRuleJsonDto() {
+                    JsonField = JsonField,
+                    JsonFieldValue = JsonFieldValue,
+                    ResponseStatus = ResponseStatus,
+                    SearchStringContent = SearchStringContent,
+                    IsUseJsonField = IsUseJsonField,
+                    IsUseStringComparison = IsUseStringComparison,
+                    IsUseStringSearch = IsUseStringSearch
+                };
+                var serializeObject = JsonConvert.SerializeObject(apiRuleJsonDto);
+                if (ApiRuleItems.Any(a => a.JsonContent.Equals(serializeObject)) != true) {
+                    ApiRuleItems.Add(new ApiRuleItemInfoModel() {
+                        ApiSortingId = ApiSortingItemInfo.Id,
+                        CreateTime = DateTime.Now,
+                        JsonContent = serializeObject,
+                        ModifyTime = DateTime.Now,
+                        Num = ApiRuleItems.Count + 1,
+                    });
                 }
             });
         }
@@ -196,9 +200,11 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
 
         private async void ClearConditionsDelegate(object obj) {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                StartPosition =
-                    EndPosition = 0;
-                Content = string.Empty;
+                IsUseStringComparison = false;
+
+                SearchStringContent =
+                    JsonField =
+                        JsonFieldValue = string.Empty;
             });
         }
 
@@ -209,13 +215,14 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
         private async void SaveDelegate() {
             try {
                 IsOk = true;
-                OcrSortingItemInfo.ModifyTime = DateTime.Now;
+                ApiSortingItemInfo.ModifyTime = DateTime.Now;
 
-                Pitcher.Throw.ArgumentNull.WhenNull(OcrSortingItemInfo, nameof(OcrSortingItemInfo));
-                Pitcher.Throw.ArgumentNull.WhenNullOrEmpty(OcrSortingItemInfo.SortingName, nameof(OcrSortingItemInfo.SortingName));
-                foreach (var ocrRuleItemInfoModel in OcrRuleItems) {
-                    Regex.IsMatch("aa", ocrRuleItemInfoModel.RegexPattern);
+                Pitcher.Throw.ArgumentNull.WhenNull(ApiSortingItemInfo, nameof(ApiSortingItemInfo));
+                Pitcher.Throw.ArgumentNull.WhenNullOrEmpty(ApiSortingItemInfo.SortingName, nameof(ApiSortingItemInfo.SortingName));
+                if (!ApiRuleItems.Any()) {
+                    throw new Exception("规则不能为空!");
                 }
+
                 if (SelectPackageExitDefinitionInfo.Id <= 0) {
                     throw new Exception("格口未选择!");
                 }
@@ -265,30 +272,10 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
                 if (packageExitDefinitionItemInfoModels?.Any() == true) {
                     PackageExitDefinitionItems.AddRange(packageExitDefinitionItemInfoModels);
                     var packageExitDefinitionItemInfoModel = PackageExitDefinitionItems.FirstOrDefault(f =>
-                        f.Id.Equals(OcrSortingItemInfo.ExitId));
+                        f.Id.Equals(ApiSortingItemInfo.ExitId));
                     SelectPackageExitDefinitionInfo =
                         packageExitDefinitionItemInfoModel ?? new PackageExitDefinitionItemInfoModel();
                 }
-            });
-        }
-
-        public ICommand StartPositionChangedCommand {
-            get => new DelegateCommand<object>(StartPositionChangedDelegate);
-        }
-
-        private async void StartPositionChangedDelegate(object obj) {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                EndPosition = StartPosition + Content.Length;
-            });
-        }
-
-        public ICommand ContentChangedCommand {
-            get => new DelegateCommand<object>(ContentChangedDelegate);
-        }
-
-        private async void ContentChangedDelegate(object obj) {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                EndPosition = StartPosition + Content.Length;
             });
         }
     }

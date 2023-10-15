@@ -76,7 +76,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         };
                         var insert = await _weightSortingRepository.Insert(weightSortingInfoModel);
                         if (insert) {
-                            EventAggregator.Instance.Publish(insert);
+                            EventAggregator.Instance.Publish(weightSortingInfoModel);
 
                             var sortingInfoModel = await _weightSortingRepository.FirstOrDefault(f =>
                                 f.ModifyTime.Equals(model.WeightSortingItemInfo.ModifyTime) &&

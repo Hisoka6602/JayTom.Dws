@@ -18,7 +18,6 @@ using JayTom.Dws.Client.Models.PackageSorting.Rule;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
 
 namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.SortingMethodEditors {
-
     public class VolumeSortingRuleEditorViewModel : BindableBase {
         private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
         private string _identifier = string.Empty;
@@ -353,7 +352,9 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
                 VolumeSortingItemInfo.ModifyTime = DateTime.Now;
                 Pitcher.Throw.ArgumentNull.WhenNull(VolumeSortingItemInfo, nameof(VolumeSortingItemInfo));
                 Pitcher.Throw.ArgumentNull.WhenNullOrEmpty(VolumeSortingItemInfo.SortingName, nameof(VolumeSortingItemInfo.SortingName));
-
+                if (!VolumeRuleItems.Any()) {
+                    throw new Exception("物流不能为空!");
+                }
                 if (SelectPackageExitDefinitionInfo.Id <= 0) {
                     throw new Exception("格口未选择!");
                 }

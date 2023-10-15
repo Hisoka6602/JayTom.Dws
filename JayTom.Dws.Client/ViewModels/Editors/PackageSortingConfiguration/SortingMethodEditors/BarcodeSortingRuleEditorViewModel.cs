@@ -19,7 +19,6 @@ using Microsoft.Extensions.FileSystemGlobbing.Internal;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
 
 namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.SortingMethodEditors {
-
     public class BarcodeSortingRuleEditorViewModel : BindableBase {
         private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
         private string _identifier = string.Empty;
@@ -229,6 +228,10 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
 
                 Pitcher.Throw.ArgumentNull.WhenNull(BarCodeSortingItemInfo, nameof(BarCodeSortingItemInfo));
                 Pitcher.Throw.ArgumentNull.WhenNullOrEmpty(BarCodeSortingItemInfo.SortingName, nameof(BarCodeSortingItemInfo.SortingName));
+                if (!BarCodeRegexItems.Any()) {
+                    throw new Exception("规则不能为空!");
+                }
+
                 foreach (var barCodeRegexItemInfoModel in BarCodeRegexItems) {
                     Regex.IsMatch("aa", barCodeRegexItemInfoModel.RegexPattern);
                 }
