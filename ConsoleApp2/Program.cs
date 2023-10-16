@@ -1,5 +1,10 @@
 ﻿using System;
 using System.Linq;
+using ConsoleApp2;
+using System.Text;
+using Newtonsoft.Json;
+using System.Collections;
+using System.Net.Http.Json;
 using System.Threading.Tasks;
 using System.Linq.Expressions;
 using System.Linq.Dynamic.Core;
@@ -8,7 +13,7 @@ using System.Collections.Generic;
 internal class Program {
 
     private static async Task Main(string[] args) {
-        float x = 5, y = 18, z = 14;
+        /*float x = 5, y = 18, z = 14;
         string formula = "x > 10.0 AND y < 20.1 AND z <> 12.0 AND o>6";
 
         // 使用DataTable的Compute方法计算公式的值
@@ -19,7 +24,27 @@ internal class Program {
         }
         else {
             Console.WriteLine("公式不成立");
+        }*/
+
+        var icamCameraInfoCpp = new ICAM_CameraInfoCpp();
+        var devices = ICAMAPI.ICAM_EnumerateDevices(ref icamCameraInfoCpp);
+        Console.WriteLine("搜索相机返回值:" + devices + "  相机数量:" + icamCameraInfoCpp.CameraCount);
+
+        foreach (var cameraDefailInfoCpp in icamCameraInfoCpp.Cameras) {
+            Console.WriteLine(JsonConvert.SerializeObject(new {
+                Ip = ICAMAPI.ICAM_BytesToString(cameraDefailInfoCpp.CamIp),
+                Mac = ICAMAPI.ICAM_BytesToString(cameraDefailInfoCpp.CamMac),
+                SerialNumber = ICAMAPI.ICAM_BytesToString(cameraDefailInfoCpp.CamSerialNumber),
+                EtIp = ICAMAPI.ICAM_BytesToString(cameraDefailInfoCpp.EtIp),
+                EtMac = ICAMAPI.ICAM_BytesToString(cameraDefailInfoCpp.EtMac),
+                FriendlyName = ICAMAPI.ICAM_BytesToString(cameraDefailInfoCpp.CamFriendlyName),
+                GateWay = ICAMAPI.ICAM_BytesToString(cameraDefailInfoCpp.CamGateWay),
+                EtGateWay = ICAMAPI.ICAM_BytesToString(cameraDefailInfoCpp.EtGateWay),
+                Mask = ICAMAPI.ICAM_BytesToString(cameraDefailInfoCpp.CamMask),
+            }, Formatting.Indented));
         }
+
+        Console.ReadLine();
     }
 
     // 从计算公式中提取变量名称

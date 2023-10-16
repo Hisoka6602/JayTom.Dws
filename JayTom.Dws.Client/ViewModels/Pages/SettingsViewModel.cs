@@ -20,6 +20,7 @@ using JayTom.Dws.Client.Views.Dialog;
 using JayTom.Dws.Client.ViewModels.Dialog;
 
 namespace JayTom.Dws.Client.ViewModels.Pages {
+
     public class SettingsViewModel : BindableBase {
         private readonly IRegionManager _regionManager;
 
@@ -160,7 +161,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     ClickCommand = ClickCommand,
                     PageClassName = "ContentInputSettingsPage"
                 },
-                new MenuItemInfoModel()
+                /*new MenuItemInfoModel()
                 {
                     IconFont = new IconInfoModel()
                     {
@@ -172,8 +173,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     Description = "分拣相关设置" ?? string.Empty,
                     ClickCommand = ClickCommand,
                     PageClassName = "PackageSortingSettingsPage"
-                },
-                new MenuItemInfoModel()
+                },*/
+                /*new MenuItemInfoModel()
                 {
                     IconFont = new IconInfoModel()
                     {
@@ -185,8 +186,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     Description = "Ocr相关设置" ?? string.Empty,
                     ClickCommand = ClickCommand,
                     PageClassName = "OcrSettingsPage"
-                },
-                new MenuItemInfoModel()
+                },*/
+                /*new MenuItemInfoModel()
                 {
                     IconFont = new IconInfoModel()
                     {
@@ -198,7 +199,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     Description = "工作流相关设置" ?? string.Empty,
                     ClickCommand = ClickCommand,
                     PageClassName = "WorkflowSettingsPage"
-                },
+                },*/
 
                 new MenuItemInfoModel()
                 {

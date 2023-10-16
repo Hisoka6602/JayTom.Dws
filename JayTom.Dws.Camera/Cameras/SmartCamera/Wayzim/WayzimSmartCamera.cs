@@ -277,7 +277,6 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
 
         private List<Point> ConvertPoint(CodeInfo info) {
             var points = new List<Point>();
-
             for (var i = 0; i < info.PtCorner.Length; i += 2) {
                 var x = info.PtCorner[i];
                 var y = info.PtCorner[i + 1];

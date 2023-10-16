@@ -212,22 +212,22 @@ namespace JayTom.Dws.Camera {
 
             var otherInfo = (CameraInfo)obj;
             return Name == otherInfo.Name &&
-                   Brand == otherInfo.Brand &&
+                   //Brand == otherInfo.Brand &&
                    SerialNumber == otherInfo.SerialNumber &&
                    IpAddress == otherInfo.IpAddress &&
-                   Port == otherInfo.Port &&
+                   Port == otherInfo.Port /*&&
                    Version == otherInfo.Version &&
-                   Model == otherInfo.Model;
+                   Model == otherInfo.Model*/;
         }
 
         public override int GetHashCode() {
             return Name.GetHashCode()
-                                    ^ Brand.GetHashCode()
+                                    //^ Brand.GetHashCode()
                                     ^ SerialNumber.GetHashCode()
                                     ^ IpAddress.GetHashCode()
                                     ^ Port.GetHashCode()
-                                    ^ Version.GetHashCode()
-                                    ^ Model.GetHashCode();
+                                    /*^ Version.GetHashCode()
+                                    ^ Model.GetHashCode()*/;
         }
     }
 

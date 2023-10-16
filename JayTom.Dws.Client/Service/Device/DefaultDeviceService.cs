@@ -25,12 +25,12 @@ using JayTom.Dws.Plugin.Scale.ScaleValueParameters;
 using JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim;
 using JayTom.Dws.Camera.Cameras.SmartCamera.Irayple;
 using JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision;
+using JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim;
 using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech;
-using JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
+using JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision;
 
-namespace JayTom.Dws.Client.Service.Device
-{
+namespace JayTom.Dws.Client.Service.Device {
 
     public class DefaultDeviceService : IDeviceService {
         private readonly IBarcodeScannerCameraConfigRepository _barcodeScannerCameraConfigRepository;
@@ -85,6 +85,8 @@ namespace JayTom.Dws.Client.Service.Device
                 var hikvisionSmartCameras = new List<CameraInfo>();
                 var daHuaSecurityCameras = new List<CameraInfo>();
                 var wayzimSmartCameras = new List<CameraInfo>();
+                var wayzimIndustrialCameras = new List<CameraInfo>();
+
                 //判断已经选择的相机
                 if (_cameraSdkSelectorDto?.IsUseDaHuaSmartCameraSdk == true) {
                     //大华智能相机
@@ -109,13 +111,17 @@ namespace JayTom.Dws.Client.Service.Device
                     //中科微至智能相机
                     wayzimSmartCameras = await new WayzimSmartCamera().EnumerateCameras();
                 }
+                if (_cameraSdkSelectorDto?.IsUseWayzimIndustrialCameraSdk == true) {
+                    //中科微至工业相机
+                    wayzimIndustrialCameras = await new WayzimIndustrialCamera().EnumerateCameras();
+                }
 
-                var cameraList = hikvisionIndustrialCameras?.Union(hikvisionSmartCameras
-                                                                   ?? new List<CameraInfo>())?.ToList()?
+                var cameraList = wayzimIndustrialCameras?.Union(wayzimSmartCameras
+                                                                ?? new List<CameraInfo>())?.ToList()?
                                      .Union(daHuaSecurityCameras ?? new List<CameraInfo>())?.ToList()?
-                                     .Union(wayzimSmartCameras ?? new List<CameraInfo>())?.ToList()
+                                     .Union(hikvisionIndustrialCameras ?? new List<CameraInfo>())?.ToList()
+                                     .Union(hikvisionSmartCameras ?? new List<CameraInfo>())?.ToList()
                                  ?? new List<CameraInfo>();
-                NLog.LogManager.GetCurrentClassLogger().Error($"{JsonConvert.SerializeObject(wayzimSmartCameras, Formatting.Indented)}");
                 var list = cameraList.Select(s =>
                     _cameraInfos.AddOrUpdate(s.SerialNumber, s,
                         (k, v) => s))?.ToList();
@@ -773,7 +779,7 @@ namespace JayTom.Dws.Client.Service.Device
         }
 
         private ICamera? ConvertCamera(CameraInfo info) {
-            switch (info.Brand) { //WayzimSmartCamera
+            switch (info.Brand) {
                 case not null when (info.Brand.Contains("Hikrobot") || info.Brand.Contains("Hikvision")):
                     if (info.Model.Contains("MV-ID"))
                         return new HikvisionSmartCamera(info);
@@ -791,6 +797,8 @@ namespace JayTom.Dws.Client.Service.Device
                 case not null when (info.Brand.Contains("Wayzim") /*|| info.Brand.Contains("Huaray")*/):
                     if (info.Model.Contains("SmartCamera"))
                         return new WayzimSmartCamera(info);
+                    if (info.Model.Contains("IndustrialCamera"))
+                        return new WayzimIndustrialCamera(info);
                     break;
 
                 default:

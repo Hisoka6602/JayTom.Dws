@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Config>
+    <nBarcodeCount>0</nBarcodeCount>
+    <nCodeSymbology>65539</nCodeSymbology>
+    <nBarcodeDgtNum>0</nBarcodeDgtNum>
+    <nBarcodeDgtNumExt>0</nBarcodeDgtNumExt>
+    <nBarcodeValidity>0</nBarcodeValidity>
+    <nBarcodeValidityExt>0</nBarcodeValidityExt>
+    <nMultiPkgDetect>0</nMultiPkgDetect>
+    <nTimeLinitMillis>0</nTimeLinitMillis>
+    <nBarcodeSearchDepth>4</nBarcodeSearchDepth>
+    <n2DcodeSearchDepth>0</n2DcodeSearchDepth>
+    <n2DcodeCount>0</n2DcodeCount>
+    <nBarcodeSensitivity>0</nBarcodeSensitivity>
+    <nCodeResultInframeFilter>0</nCodeResultInframeFilter>
+    <nReflectionFilter>0</nReflectionFilter>
+    <nCodeLocateIntensify>1</nCodeLocateIntensify>
+    <nBarcodeRecogIntensify>0</nBarcodeRecogIntensify>
+	<AlgorithmTaskNum>4</AlgorithmTaskNum>
+</Config>

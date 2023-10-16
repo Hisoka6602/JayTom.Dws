@@ -218,6 +218,21 @@
                         Foreground="WhiteSmoke"
                         Text="中科微至智能相机" />
                 </ListBoxItem>
+                <ListBoxItem IsSelected="{Binding CameraSdkSelectorInfo.IsUseWayzimIndustrialCameraSdk, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                    <b:Interaction.Triggers>
+                        <b:EventTrigger EventName="Selected">
+                            <mvvm:InvokeCommandAction Command="{Binding SdkSelectedCommand}" CommandParameter="IsUseWayzimIndustrialCameraSdk" />
+                        </b:EventTrigger>
+                    </b:Interaction.Triggers>
+
+                    <TextBlock
+                        VerticalAlignment="Center"
+                        FontFamily="{StaticResource CustomFontFamily}"
+                        FontSize="12"
+                        FontWeight="Bold"
+                        Foreground="WhiteSmoke"
+                        Text="中科微至工业相机" />
+                </ListBoxItem>
             </ListBox>
         </StackPanel>
         <!--  列表  -->

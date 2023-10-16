@@ -46,6 +46,27 @@
     <None Update="Cameras\IndustrialCamera\Hikvision\Dll\RulerFilter.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="Cameras\IndustrialCamera\Wayzim\Dll\DVPCamera64.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Cameras\IndustrialCamera\Wayzim\Dll\ExCommonCoreApi.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Cameras\IndustrialCamera\Wayzim\Dll\ICAMConfig.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Cameras\IndustrialCamera\Wayzim\Dll\ICAM_SDK_CPP.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Cameras\IndustrialCamera\Wayzim\Dll\MVCAMSDK_X64.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Cameras\IndustrialCamera\Wayzim\Dll\opencv_world451.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Cameras\IndustrialCamera\Wayzim\Dll\WayzimCodeReader.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="Cameras\SecurityCamera\DaHuatech\Dll\avnetsdk.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
