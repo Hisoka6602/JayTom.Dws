@@ -44,12 +44,12 @@ using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Client.Models.OcrSettingsModel;
 using JayTom.Dws.Client.Service.ExternalDataService;
 using CameraType = JayTom.Dws.Client.Models.CameraType;
+using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 using CameraStatus = JayTom.Dws.Client.Models.CameraStatus;
 using ConnectionType = JayTom.Dws.Client.Models.ConnectionType;
 using ExceptionEventArgs = JayTom.Dws.Client.Service.Sorting.ExceptionEventArgs;
 using static JayTom.Dws.Client.Service.BackgroundService.SubmitApiBackgroundService;
 using static JayTom.Dws.Client.Service.BackgroundService.ScanProcessBackgroundService;
-using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 
 namespace JayTom.Dws.Client.ViewModels.Pages {
 

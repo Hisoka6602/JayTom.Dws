@@ -43,7 +43,7 @@ namespace JayTom.Dws.Interface.WeciMexicoDv {
         }
 
         public async Task<UploadResponse> UploadData([NotNull] string barcode, [NotNull] double weight, double length = default, double width = default, double height = default,
-            double volume = default, Image? image = default, Image? panoramaImage = default,
+            double volume = default, Image? image = default, Image? panoramaImage = default, object? other = null,
             CancellationToken token = default) {
             var resultContent = string.Empty;
             var exceptionMsg = string.Empty;
@@ -133,8 +133,8 @@ namespace JayTom.Dws.Interface.WeciMexicoDv {
             return response;
         }
 
-        public Task<UploadResponse> UploadData(string barcode, double weight, DateTime scanTime, double length = default, double width = default,
-            double height = default, double volume = default, Image? image = default, Image? panoramaImage = default,
+        public Task<UploadResponse> UploadData([NotNull] string barcode, [NotNull] double weight, DateTime scanTime, double length = default, double width = default,
+            double height = default, double volume = default, Image? image = default, Image? panoramaImage = default, object? other = null,
             CancellationToken token = default) {
             throw new NotImplementedException();
         }

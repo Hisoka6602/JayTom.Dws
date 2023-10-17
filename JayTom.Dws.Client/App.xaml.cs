@@ -197,10 +197,13 @@ namespace JayTom.Dws.Client {
                 services.AddScoped<ISpeech, Speech>();
                 services.AddScoped<ITcpCommClient, TouchSocketTcpClient>();
                 services.AddScoped<ITcpCommServer, TouchSocketTcpServer>();
-                services.AddScoped<ITcpContentOutput, TcpContentOutput>();
-                services.AddScoped<ITcpVolumeInput, TcpVolumeInput>();
+                //services.AddScoped<ITcpContentOutput, TcpContentOutput>();
+                services.AddSingleton<ITcpContentOutput>(provider => new TcpContentOutput(new TouchSocketTcpClient(), new TouchSocketTcpServer()));
+                //services.AddScoped<ITcpVolumeInput, TcpVolumeInput>();
+                services.AddSingleton<ITcpVolumeInput>(provider => new TcpVolumeInput(new TouchSocketTcpClient(), new TouchSocketTcpServer()));
                 services.AddScoped<ISortingSerialPort, SortingSerialPort>();
-                services.AddScoped<ISortingTcp, SortingTcp>();
+                //services.AddScoped<ISortingTcp, SortingTcp>();
+                services.AddSingleton<ISortingTcp>(provider => new SortingTcp(new TouchSocketTcpClient(), new TouchSocketTcpServer()));
                 //电脑注册
                 services.AddScoped<IComputer, Computer>();
                 //电脑信息上报
@@ -328,10 +331,24 @@ namespace JayTom.Dws.Client {
         }
 
         protected override async void OnExit(ExitEventArgs e) {
+            var deviceService = _host?.Services.GetService<IDeviceService>();
+            if (deviceService is not null) {
+                if (deviceService.RunningStatus) {
+                    await deviceService.Stop();
+                }
+            }
+
+            var sortingService = _host?.Services.GetService<ISortingService>();
+            if (sortingService is not null) {
+                if (sortingService.RunningStatus) {
+                    await sortingService.Stop();
+                }
+            }
             if (_host is not null) {
                 await _host.StopAsync();
                 _host.Dispose();
             }
+
             await Task.Delay(500);
             base.OnExit(e);
         }

@@ -37,6 +37,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                 Name = Languages.Language.ResourceManager.GetString("DefaultApi")??string.Empty,
                 Value = ApiType.DefaultApi
             },
+            new ApiTypeInfoModel()
+            {
+                Name = "SunnenApi",
+                Value = ApiType.SunnenApi
+            },
         };
 
         private ApiTypeInfoModel? _selectApiType = new();

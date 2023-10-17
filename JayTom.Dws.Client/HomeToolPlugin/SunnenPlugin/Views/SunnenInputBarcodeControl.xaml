@@ -69,6 +69,16 @@
                     HorizontalAlignment="Right"
                     VerticalAlignment="Center"
                     Orientation="Horizontal">
+                    <!--  最小化  -->
+                    <Button
+                        Command="{Binding MinWinCommand}"
+                        Style="{StaticResource SystemButtonStyle}"
+                        ToolTip="Minimize">
+                        <TextBlock
+                            Foreground="White"
+                            Style="{StaticResource SystemTextBlockStyle}"
+                            Text="&#xe626;" />
+                    </Button>
                     <!--  关闭  -->
                     <Button
                         Command="{Binding CloseWinCommand}"

@@ -51,11 +51,9 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
                         });
                     };
                     _tcpClient.Connected += delegate {
-                        ConnectionStatus = ConnectionStatus.Connected;
                         OnConnected($"IpAddress:{IpAddress},Port:{Port}");
                     };
                     _tcpClient.Disconnected += delegate (ITcpClientBase client, DisconnectEventArgs args) {
-                        ConnectionStatus = ConnectionStatus.Disconnected;
                         OnDisconnected($"IpAddress:{IpAddress},Port:{Port}");
                     };
                 }
@@ -100,11 +98,9 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
                             });
                         };
                         _tcpClient.Connected += delegate {
-                            ConnectionStatus = ConnectionStatus.Connected;
                             OnConnected($"IpAddress:{IpAddress},Port:{Port}");
                         };
                         _tcpClient.Disconnected += delegate (ITcpClientBase client, DisconnectEventArgs args) {
-                            ConnectionStatus = ConnectionStatus.Disconnected;
                             OnDisconnected($"IpAddress:{IpAddress},Port:{Port}");
                         };
                     }
@@ -187,6 +183,7 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
 
         protected virtual async void OnDisconnected(string e) {
             await Task.Yield();
+            ConnectionStatus = ConnectionStatus.Disconnected;
             Disconnected?.Invoke(this, e);
         }
 
@@ -197,6 +194,7 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
 
         protected virtual async void OnConnected(string e) {
             await Task.Yield();
+            ConnectionStatus = ConnectionStatus.Connected;
             Connected?.Invoke(this, e);
         }
 

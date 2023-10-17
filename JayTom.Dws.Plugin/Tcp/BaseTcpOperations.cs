@@ -11,8 +11,8 @@ using JayTom.Dws.Plugin.Tcp.TcpServer;
 namespace JayTom.Dws.Plugin.Tcp {
 
     public class BaseTcpOperations : ITcpOperations {
-        private readonly ITcpCommClient _tcpCommClient;
-        private readonly ITcpCommServer _tcpCommServer;
+        private ITcpCommClient _tcpCommClient;
+        private ITcpCommServer _tcpCommServer;
 
         public ConnectionStatus ConnectionStatus => ConnectionType == ConnectionType.Client ? _tcpCommClient.ConnectionStatus : _tcpCommServer.ConnectionStatus;
 

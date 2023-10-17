@@ -1,6 +1,7 @@
 ﻿using System;
 using JayTom.Dws.Domain.Dto;
 using System.Collections.Generic;
+using JayTom.Dws.PluginInterface;
 
 namespace JayTom.Dws.Client.EventMediators {
 
@@ -87,5 +88,11 @@ namespace JayTom.Dws.Client.EventMediators {
         /// 需要扣除的体积
         /// </summary>
         public float VolumeToDeduct { get; set; }
+    }
+
+    public class PluginParamChangedEvent {
+        public PluginType Type { get; set; }
+        public string PluginName { get; set; } = string.Empty;
+        public string Content { get; set; } = string.Empty;
     }
 }

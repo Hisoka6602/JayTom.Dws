@@ -85,6 +85,24 @@ namespace JayTom.Dws.Client.HomeToolPlugin.SunnenPlugin.ViewModels {
             RequestClose?.Invoke(new DialogResult(ButtonResult.OK));
         }
 
+        public ICommand MinWinCommand {
+            get => new DelegateCommand<object>(MinWinDelegate);
+        }
+
+        private async void MinWinDelegate(object obj) {
+            await Application.Current.Dispatcher.InvokeAsync(() => {
+                // 获取对话框所属的窗口对象
+                Window dialogWindow = Application.Current.Windows.OfType<Window>().SingleOrDefault(x => x.IsActive);
+
+                // 将窗口状态设置为最小化
+                if (dialogWindow != null) {
+                    dialogWindow.WindowState = WindowState.Minimized;
+                }
+
+                //Application.Current.MainWindow.WindowState = WindowState.Minimized;
+            });
+        }
+
         public ICommand SwitchPackageCommand {
             get => new DelegateCommand<object>(SwitchPackageDelegate);
         }
@@ -96,6 +114,11 @@ namespace JayTom.Dws.Client.HomeToolPlugin.SunnenPlugin.ViewModels {
                     "Pallet" => PackageType.Pallet,
                     _ => PackageType
                 };
+                EventAggregator.Instance.Publish(new PluginParamChangedEvent {
+                    Type = PluginType.HomeTool,
+                    PluginName = "SunnenPlugin",
+                    Content = obj.ToString() ?? string.Empty
+                });
             }
         }
 

@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using System.Linq.Expressions;
 using System.Linq.Dynamic.Core;
 using System.Collections.Generic;
+using JayTom.Dws.Interface.Sunnen;
 
 internal class Program {
 
@@ -26,24 +27,10 @@ internal class Program {
             Console.WriteLine("公式不成立");
         }*/
 
-        var icamCameraInfoCpp = new ICAM_CameraInfoCpp();
-        var devices = ICAMAPI.ICAM_EnumerateDevices(ref icamCameraInfoCpp);
-        Console.WriteLine("搜索相机返回值:" + devices + "  相机数量:" + icamCameraInfoCpp.CameraCount);
-
-        foreach (var cameraDefailInfoCpp in icamCameraInfoCpp.Cameras) {
-            Console.WriteLine(JsonConvert.SerializeObject(new {
-                Ip = ICAMAPI.ICAM_BytesToString(cameraDefailInfoCpp.CamIp),
-                Mac = ICAMAPI.ICAM_BytesToString(cameraDefailInfoCpp.CamMac),
-                SerialNumber = ICAMAPI.ICAM_BytesToString(cameraDefailInfoCpp.CamSerialNumber),
-                EtIp = ICAMAPI.ICAM_BytesToString(cameraDefailInfoCpp.EtIp),
-                EtMac = ICAMAPI.ICAM_BytesToString(cameraDefailInfoCpp.EtMac),
-                FriendlyName = ICAMAPI.ICAM_BytesToString(cameraDefailInfoCpp.CamFriendlyName),
-                GateWay = ICAMAPI.ICAM_BytesToString(cameraDefailInfoCpp.CamGateWay),
-                EtGateWay = ICAMAPI.ICAM_BytesToString(cameraDefailInfoCpp.EtGateWay),
-                Mask = ICAMAPI.ICAM_BytesToString(cameraDefailInfoCpp.CamMask),
-            }, Formatting.Indented));
-        }
-
+        var uploadResponse = await new SunnenApi(null).UploadData("1234567890aa",
+            1.05, DateTime.Now, 10, 20,
+            30, 40, null, null, "Box");
+        Console.WriteLine(uploadResponse);
         Console.ReadLine();
     }
 

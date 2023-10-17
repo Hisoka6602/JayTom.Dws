@@ -22,10 +22,11 @@ namespace JayTom.Dws.Interface {
         /// <param name="volume">体积</param>
         /// <param name="image">图片</param>
         /// <param name="panoramaImage">全景图片</param>
+        /// <param name="other"></param>
         /// <param name="token"></param>
         /// <returns></returns>
         Task<UploadResponse> UploadData([NotNull] string barcode, [NotNull] double weight, double length = default, double width = default, double height = default,
-            double volume = default, Image? image = default, Image? panoramaImage = default, CancellationToken token = default);
+            double volume = default, Image? image = default, Image? panoramaImage = default, object? other = null, CancellationToken token = default);
 
         /// <summary>
         /// 数据上传
@@ -39,10 +40,11 @@ namespace JayTom.Dws.Interface {
         /// <param name="volume"></param>
         /// <param name="image"></param>
         /// <param name="panoramaImage"></param>
+        /// <param name="other"></param>
         /// <param name="token"></param>
         /// <returns></returns>
         Task<UploadResponse> UploadData([NotNull] string barcode, [NotNull] double weight, DateTime scanTime, double length = default, double width = default, double height = default,
-            double volume = default, Image? image = default, Image? panoramaImage = default, CancellationToken token = default);
+            double volume = default, Image? image = default, Image? panoramaImage = default, object? other = null, CancellationToken token = default);
 
         /// <summary>
         /// 设置接口参数

@@ -11,6 +11,7 @@ using System.Globalization;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection.PortableExecutable;
 
 namespace JayTom.Dws.Interface {
@@ -23,13 +24,13 @@ namespace JayTom.Dws.Interface {
             _httpClientFactory = httpClientFactory;
         }
 
-        public async Task<UploadResponse> UploadData(string barcode, double weight, double length = default, double width = default, double height = default,
-            double volume = default, Image? image = default, Image? panoramaImage = default, CancellationToken token = default) {
+        public async Task<UploadResponse> UploadData([NotNull] string barcode, [NotNull] double weight, double length = default, double width = default, double height = default,
+            double volume = default, Image? image = default, Image? panoramaImage = default, object? other = null, CancellationToken token = default) {
             return new UploadResponse();
         }
 
-        public async Task<UploadResponse> UploadData(string barcode, double weight, DateTime scanTime, double length = default, double width = default,
-            double height = default, double volume = default, Image? image = default, Image? panoramaImage = default,
+        public async Task<UploadResponse> UploadData([NotNull] string barcode, [NotNull] double weight, DateTime scanTime, double length = default, double width = default,
+            double height = default, double volume = default, Image? image = default, Image? panoramaImage = default, object? other = null,
             CancellationToken token = default) {
             var resultContent = string.Empty;
             var exceptionMsg = string.Empty;

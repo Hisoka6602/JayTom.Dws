@@ -10,10 +10,13 @@ using JayTom.Dws.Interface;
 using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using JayTom.Dws.PluginInterface;
+using JayTom.Dws.Interface.Sunnen;
 using JayTom.Dws.Domain.Dto.ApiDto;
 using System.Collections.Concurrent;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.Repository.LocalConf;
+using UploadResponse = JayTom.Dws.Interface.UploadResponse;
 using static JayTom.Dws.Client.Service.BackgroundService.ScanProcessBackgroundService;
 
 namespace JayTom.Dws.Client.Service.BackgroundService {
@@ -27,6 +30,12 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private ConcurrentQueue<SubmitItemInfo> _submitItems = new();
         private ApiSettingsDto? _apiSettingsDto;
         private static DefaultApi.DefaultApiParameters _defaultApiParameters = new();
+
+        #region 非通用版本变量(临时)
+
+        private static string _sunnenApiPackage = string.Empty;
+
+        #endregion 非通用版本变量(临时)
 
         public SubmitApiBackgroundService(IHttpClientFactory httpClientFactory, IConfigRepository configRepository) {
             _httpClientFactory = httpClientFactory;
@@ -87,6 +96,13 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     }
                 }
             });
+            EventAggregator.Instance.Subscribe<PluginParamChangedEvent>(item => {
+                if (item is PluginParamChangedEvent model) {
+                    if (model is { Type: PluginType.HomeTool, PluginName: "SunnenPlugin" }) {
+                        _sunnenApiPackage = model.Content;
+                    }
+                }
+            });
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
@@ -100,8 +116,9 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 if (tryDequeue && info is not null) {
                     //上传
                     //判断上传接口
-                    Task.Run(async () => {
+                    Task.Factory.StartNew(async () => {
                         IDataUploader uploader;
+                        UploadResponse? uploadResponse = null;
                         switch (_apiSettingsDto?.Type) {
                             case ApiType.None:
                                 return;
@@ -112,22 +129,12 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                     //设置参数
                                     var (key, value) = await uploader.SetParameters(_defaultApiParameters);
                                     if (key) {
-                                        var uploadResponse = await uploader.UploadData(info.Barcode ?? string.Empty,
+                                        uploadResponse = await uploader.UploadData(info.Barcode ?? string.Empty,
                                             info.Weight, info.ScanTime,
                                             info.Length, info.Width,
                                             info.Height, info.Volume,
                                             info.Image, info.PanoramaImage,
-                                            stoppingToken);
-                                        //临时单线程
-                                        EventAggregator.Instance.Publish(new ApiResponseReceived {
-                                            Barcode = info.Barcode,
-                                            ScanTime = info.ScanTime,
-                                            UploadResponse = uploadResponse
-                                        });
-                                        EventAggregator.Instance.Publish(new TriggerPositionEvent() {
-                                            IsSuccess = uploadResponse.IsSuccess,
-                                            TriggerPosition = TriggerPositionEnum.HttpOutput
-                                        });
+                                            stoppingToken, stoppingToken);
                                     }
                                     else {
                                         Console.WriteLine("设置参数失败!");
@@ -135,6 +142,29 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
                                     break;
                                 }
+                            case ApiType.SunnenApi:
+                                uploader = new SunnenApi(_httpClientFactory);
+                                uploadResponse = await uploader.UploadData(info.Barcode ?? string.Empty,
+                                    info.Weight, info.ScanTime,
+                                    info.Length, info.Width,
+                                    info.Height, info.Volume,
+                                    info.Image, info.PanoramaImage,
+                                    _sunnenApiPackage, stoppingToken);
+                                break;
+                        }
+
+                        if (_apiSettingsDto?.Type is not null &&
+                            _apiSettingsDto.Type != ApiType.None) {
+                            //临时单线程
+                            EventAggregator.Instance.Publish(new ApiResponseReceived {
+                                Barcode = info.Barcode,
+                                ScanTime = info.ScanTime,
+                                UploadResponse = uploadResponse
+                            });
+                            EventAggregator.Instance.Publish(new TriggerPositionEvent() {
+                                IsSuccess = uploadResponse?.IsSuccess ?? false,
+                                TriggerPosition = TriggerPositionEnum.HttpOutput
+                            });
                         }
                     });
                 }

@@ -21,5 +21,10 @@ namespace JayTom.Dws.Domain.Dto {
         /// 基础api
         /// </summary>
         DefaultApi = 1,
+
+        /// <summary>
+        /// 桑能Api(新加坡)
+        /// </summary>
+        SunnenApi = 2
     }
 }
