@@ -2,9 +2,11 @@
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
+using Prism.Regions;
 using System.Windows;
 using Prism.Commands;
 using System.Threading;
+using System.Diagnostics;
 using System.Windows.Input;
 using System.Threading.Tasks;
 using Prism.Services.Dialogs;
@@ -15,6 +17,7 @@ using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.PluginInterface.Utils;
 
 namespace JayTom.Dws.Client.HomeToolPlugin.SunnenPlugin.ViewModels {
+
     public class SunnenInputBarcodeViewModel : BindableBase, IDialogAware {
         private string _barCode = string.Empty;
         private PackageType _packageType = PackageType.Pallet;
@@ -70,6 +73,11 @@ namespace JayTom.Dws.Client.HomeToolPlugin.SunnenPlugin.ViewModels {
         }
 
         public void OnDialogOpened(IDialogParameters parameters) {
+            foreach (Window window in Application.Current.Windows) {
+                if (window.Name.Equals("SunnenInputBarcodeWindows")) {
+                    window.Close();
+                }
+            }
         }
 
         public string Title => string.Empty;
@@ -151,7 +159,17 @@ namespace JayTom.Dws.Client.HomeToolPlugin.SunnenPlugin.ViewModels {
                 if (textBox is not null) {
                     textBox.Focus();
                 }
+                EventAggregator.Instance.Publish(new PluginParamChangedEvent {
+                    Type = PluginType.HomeTool,
+                    PluginName = "SunnenPlugin",
+                    Content = "Pallet"
+                });
             });
+            var dialogWindow = Application.Current.Windows.OfType<Window>().SingleOrDefault(x => x.IsActive);
+            if (dialogWindow is not null) {
+                dialogWindow.Owner = null;
+                dialogWindow.Name = "SunnenInputBarcodeWindows";
+            }
         }
     }
 

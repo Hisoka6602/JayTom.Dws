@@ -70,7 +70,7 @@ namespace JayTom.Dws.Client.ViewModels {
                     Brief = "InputBarcodeControl",
                     ControlClassName = "SunnenInputBarcodeControl",
                     IsRunnable = true,
-                    IsModal = true,
+                    IsModal = false,
                     OpenCommand = OpenHomeToolCommand
                 }
             };
