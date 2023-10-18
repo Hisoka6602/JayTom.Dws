@@ -17,7 +17,7 @@ using static JayTom.Dws.Interface.Szjy188.SzjyApi;
 namespace JayTom.Dws.Interface.Szjy188 {
     public class SzjyApi : IDataUploader {
         private readonly IHttpClientFactory _httpClientFactory;
-        private int? _uid = null;
+        private static int? _uid = null;
         public string Url { get; private set; } = string.Empty;
         public string UserName { get; private set; } = string.Empty;
         public string Password { get; private set; } = string.Empty;
