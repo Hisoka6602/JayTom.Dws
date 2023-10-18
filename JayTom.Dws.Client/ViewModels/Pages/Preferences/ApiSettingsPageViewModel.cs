@@ -21,7 +21,6 @@ using JayTom.Dws.Client.Models.ImageSettingModels;
 using JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
-
     public class ApiSettingsPageViewModel : BindableBase {
         private readonly IConfigRepository _configRepository;
 
@@ -41,6 +40,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             {
                 Name = "SunnenApi",
                 Value = ApiType.SunnenApi
+            },
+            new ApiTypeInfoModel()
+            {
+                Name = "神州集运后台接口",
+                Value = ApiType.SzjyApi
             },
         };
 

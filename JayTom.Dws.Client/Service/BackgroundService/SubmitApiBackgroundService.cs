@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using JayTom.Dws.PluginInterface;
 using JayTom.Dws.Interface.Sunnen;
 using JayTom.Dws.Domain.Dto.ApiDto;
+using JayTom.Dws.Interface.Szjy188;
 using System.Collections.Concurrent;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.Repository.LocalConf;
@@ -30,6 +31,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private ConcurrentQueue<SubmitItemInfo> _submitItems = new();
         private ApiSettingsDto? _apiSettingsDto;
         private static DefaultApi.DefaultApiParameters _defaultApiParameters = new();
+        private static SzjyApi.SzjyApiParam _szjyApiParam = new();
 
         #region 非通用版本变量(临时)
 
@@ -94,6 +96,29 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             }
                         }
                     }
+                    else if (model.SettingsName.Equals("SzjyApiParameters")) {
+                        //默认上传接口改参数
+                        var configInfoModel = await _configRepository.FirstOrDefault(f => f.ConfigName.Equals("SzjyApiParameters"));
+                        if (configInfoModel is not null) {
+                            try {
+                                var szjyApiDto = JsonConvert.DeserializeObject<SzjyApiDto>(configInfoModel.Value);
+                                if (szjyApiDto != null) {
+                                    _szjyApiParam = new SzjyApi.SzjyApiParam() {
+                                        Machine = szjyApiDto.Machine,
+                                        Password = szjyApiDto.Password,
+                                        TimeOut = szjyApiDto.TimeOut,
+                                        UserName = szjyApiDto.UserName,
+                                        Url = szjyApiDto.Url,
+                                    };
+                                }
+                            }
+                            catch (Exception e) {
+                                //抛出异常事件
+                                Console.WriteLine(e);
+                            }
+                        }
+                    }
+                    //其他接口
                 }
             });
             EventAggregator.Instance.Subscribe<PluginParamChangedEvent>(item => {
@@ -134,25 +159,48 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                             info.Length, info.Width,
                                             info.Height, info.Volume,
                                             info.Image, info.PanoramaImage,
-                                            stoppingToken, stoppingToken);
+                                            null, stoppingToken);
                                     }
                                     else {
+                                        uploadResponse = new UploadResponse() {
+                                            ExceptionMsg = "设置参数失败"
+                                        };
                                         Console.WriteLine("设置参数失败!");
                                     }
 
                                     break;
                                 }
-                            case ApiType.SunnenApi:
-                                uploader = new SunnenApi(_httpClientFactory);
-                                uploadResponse = await uploader.UploadData(info.Barcode ?? string.Empty,
-                                    info.Weight, info.ScanTime,
-                                    info.Length, info.Width,
-                                    info.Height, info.Volume,
-                                    info.Image, info.PanoramaImage,
-                                    _sunnenApiPackage, stoppingToken);
-                                break;
+                            case ApiType.SunnenApi: {
+                                    uploader = new SunnenApi(_httpClientFactory);
+                                    uploadResponse = await uploader.UploadData(info.Barcode ?? string.Empty,
+                                        info.Weight, info.ScanTime,
+                                        info.Length, info.Width,
+                                        info.Height, info.Volume,
+                                        info.Image, info.PanoramaImage,
+                                        _sunnenApiPackage, stoppingToken);
+                                    break;
+                                }
+                            case ApiType.SzjyApi: {
+                                    //神州集运后台
+                                    uploader = new SzjyApi(_httpClientFactory);
+                                    var (key, value) = await uploader.SetParameters(_szjyApiParam);
+                                    if (key) {
+                                        uploadResponse = await uploader.UploadData(info.Barcode ?? string.Empty,
+                                            info.Weight, info.ScanTime,
+                                            info.Length, info.Width,
+                                            info.Height, info.Volume,
+                                            info.Image, info.PanoramaImage,
+                                            null, stoppingToken);
+                                    }
+                                    else {
+                                        uploadResponse = new UploadResponse() {
+                                            ExceptionMsg = "设置参数失败"
+                                        };
+                                        Console.WriteLine("设置参数失败!");
+                                    }
+                                    break;
+                                }
                         }
-
                         if (_apiSettingsDto?.Type is not null &&
                             _apiSettingsDto.Type != ApiType.None) {
                             //临时单线程

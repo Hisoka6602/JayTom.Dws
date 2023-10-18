@@ -15,10 +15,9 @@ using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.PluginInterface.Utils;
 
 namespace JayTom.Dws.Client.HomeToolPlugin.SunnenPlugin.ViewModels {
-
     public class SunnenInputBarcodeViewModel : BindableBase, IDialogAware {
         private string _barCode = string.Empty;
-        private PackageType _packageType = PackageType.Box;
+        private PackageType _packageType = PackageType.Pallet;
         private int _deductedLength;
         private int _deductedWidth;
         private int _deductedHeight;

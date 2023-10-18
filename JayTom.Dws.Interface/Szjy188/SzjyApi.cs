@@ -1,0 +1,365 @@
+﻿using System;
+using System.Linq;
+using System.Text;
+using System.Drawing;
+using Newtonsoft.Json;
+using System.Net.Http;
+using System.Threading;
+using System.Diagnostics;
+using Newtonsoft.Json.Linq;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.Text.RegularExpressions;
+using JayTom.Dws.Interface.WeciMexicoDv;
+using System.Reflection.PortableExecutable;
+using static JayTom.Dws.Interface.Szjy188.SzjyApi;
+
+namespace JayTom.Dws.Interface.Szjy188 {
+    public class SzjyApi : IDataUploader {
+        private readonly IHttpClientFactory _httpClientFactory;
+        private int? _uid = null;
+        public string Url { get; private set; } = string.Empty;
+        public string UserName { get; private set; } = string.Empty;
+        public string Password { get; private set; } = string.Empty;
+
+        public string Machine { get; set; } = "default";
+
+        /// <summary>
+        /// 超时
+        /// </summary>
+        public int TimeOut { get; private set; } = 10000;
+
+        public SzjyApi(IHttpClientFactory httpClientFactory) {
+            _httpClientFactory = httpClientFactory;
+        }
+
+        public async Task<UploadResponse> UploadData(string barcode, double weight, double length = default,
+            double width = default, double height = default,
+            double volume = default, Image? image = default, Image? panoramaImage = default, object? other = null,
+            CancellationToken token = default) {
+            if (_uid is null) {
+                var (key, value) = await LogIn(UserName, Password, token);
+                if (key && value is not null) {
+                    if (value.Status != 0) {
+                        return new UploadResponse() {
+                            ExceptionMsg = value.Message,
+                            IsSuccess = false
+                        };
+                    }
+                    else {
+                        _uid = value.Uid;
+                    }
+                }
+                else {
+                    return new UploadResponse() {
+                        ExceptionMsg = "登录连接错误!",
+                        IsSuccess = false
+                    };
+                }
+            }
+            UploadResponse response;
+            var resultContent = string.Empty;
+            var exceptionMsg = string.Empty;
+            var isSuccess = false;
+            var method = "/add-entry-big";
+            Dictionary<string, object> param = new()
+            {
+                {"sendcode",barcode},
+                {"weight",weight},
+                {"length",length},
+                {"width",width},
+                {"height",height},
+                {"machine",Machine},
+                {"uid",_uid},
+            };
+            var urlJoin = string.Join("&", param.Select(s => $"{s.Key}={s.Value}"));
+            var requestTime = DateTime.Now;
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
+            try {
+                using (var httpClient = _httpClientFactory.CreateClient("INSURANCE")) {
+                    httpClient.Timeout = TimeSpan.FromMilliseconds(TimeOut);
+                    var stringAsync = await httpClient.GetStringAsync($"{Url}{method}?{urlJoin}", token);
+
+                    resultContent = Regex.Unescape(stringAsync);
+                    if (!string.IsNullOrWhiteSpace(resultContent)) {
+                        //判断
+                        var uploadResultsInfo = JsonConvert.DeserializeObject<UploadResultsInfo>(resultContent);
+                        if (uploadResultsInfo is not null && uploadResultsInfo.Result) {
+                            isSuccess = true;
+                        }
+                    }
+                }
+            }
+            catch (HttpRequestException e) {
+                isSuccess = false;
+                exceptionMsg = e.Message;
+            }
+            catch (AggregateException) {
+                isSuccess = false;
+                exceptionMsg = "接口访问异常!";
+            }
+            catch (JsonException) {
+                isSuccess = false;
+                exceptionMsg = "报文解析异常!";
+            }
+            catch (TaskCanceledException) {
+                isSuccess = false;
+                exceptionMsg = "接口访问返回超时!";
+            }
+            catch (Exception e) {
+                isSuccess = false;
+                exceptionMsg = e.Message;
+            }
+            finally {
+                stopwatch.Stop();
+                response = new UploadResponse() {
+                    ExceptionMsg = exceptionMsg,
+                    ApiParameters = JsonConvert.SerializeObject(this),
+                    IsSuccess = isSuccess,
+                    Duration = stopwatch.Elapsed.TotalSeconds,
+                    RequestContent = string.Empty,
+                    RequestTime = requestTime,
+                    RequestUrl = $"{Url}{method}?{urlJoin}",
+                    ResponseContent = resultContent,
+                    ResponseTime = DateTime.Now
+                };
+            }
+            return response;
+        }
+
+        public async Task<UploadResponse> UploadData(string barcode, double weight, DateTime scanTime,
+            double length = default, double width = default,
+            double height = default, double volume = default, Image? image = default, Image? panoramaImage = default,
+            object? other = null, CancellationToken token = default) {
+            if (_uid is null) {
+                var (key, value) = await LogIn(UserName, Password, token);
+                if (key && value is not null) {
+                    if (value.Status != 0) {
+                        return new UploadResponse() {
+                            ExceptionMsg = value.Message,
+                            IsSuccess = false
+                        };
+                    }
+                    else {
+                        _uid = value.Uid;
+                    }
+                }
+                else {
+                    return new UploadResponse() {
+                        ExceptionMsg = "登录连接错误!",
+                        IsSuccess = false
+                    };
+                }
+            }
+            UploadResponse response;
+            var resultContent = string.Empty;
+            var exceptionMsg = string.Empty;
+            var isSuccess = false;
+            var method = "/add-entry-big";
+            Dictionary<string, object> param = new()
+            {
+                {"sendcode",barcode},
+                {"weight",weight},
+                {"length",length},
+                {"width",width},
+                {"height",height},
+                {"machine",Machine},
+                {"uid",_uid},
+            };
+            var urlJoin = string.Join("&", param.Select(s => $"{s.Key}={s.Value}"));
+            var requestTime = DateTime.Now;
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
+            try {
+                using (var httpClient = _httpClientFactory.CreateClient("INSURANCE")) {
+                    httpClient.Timeout = TimeSpan.FromMilliseconds(TimeOut);
+                    var stringAsync = await httpClient.GetStringAsync($"{Url}{method}?{urlJoin}", token);
+
+                    resultContent = Regex.Unescape(stringAsync);
+                    if (!string.IsNullOrWhiteSpace(resultContent)) {
+                        //判断
+                        var uploadResultsInfo = JsonConvert.DeserializeObject<UploadResultsInfo>(resultContent);
+                        if (uploadResultsInfo is not null && uploadResultsInfo.Result) {
+                            isSuccess = true;
+                        }
+                    }
+                }
+            }
+            catch (HttpRequestException e) {
+                isSuccess = false;
+                exceptionMsg = e.Message;
+            }
+            catch (AggregateException) {
+                isSuccess = false;
+                exceptionMsg = "接口访问异常!";
+            }
+            catch (JsonException) {
+                isSuccess = false;
+                exceptionMsg = "报文解析异常!";
+            }
+            catch (TaskCanceledException) {
+                isSuccess = false;
+                exceptionMsg = "接口访问返回超时!";
+            }
+            catch (Exception e) {
+                isSuccess = false;
+                exceptionMsg = e.Message;
+            }
+            finally {
+                stopwatch.Stop();
+                response = new UploadResponse() {
+                    ExceptionMsg = exceptionMsg,
+                    ApiParameters = JsonConvert.SerializeObject(this),
+                    IsSuccess = isSuccess,
+                    Duration = stopwatch.Elapsed.TotalSeconds,
+                    RequestContent = string.Empty,
+                    RequestTime = requestTime,
+                    RequestUrl = $"{Url}{method}?{urlJoin}",
+                    ResponseContent = resultContent,
+                    ResponseTime = DateTime.Now
+                };
+            }
+            return response;
+        }
+
+        public Task<KeyValuePair<bool, string>> SetParameters<T>(T parameters) {
+            if (parameters is SzjyApiParam param) {
+                if (param.Url is not null) {
+                    this.Url = param.Url;
+                }
+
+                if (param.UserName is not null) {
+                    this.UserName = param.UserName;
+                }
+                if (param.Password is not null) {
+                    this.Password = param.Password;
+                }
+                if (param.TimeOut is not null) {
+                    this.TimeOut = param.TimeOut.Value;
+                }
+
+                if (param.Machine is not null) {
+                    this.Machine = param.Machine;
+                }
+                return Task.FromResult(new KeyValuePair<bool, string>(true, "设置成功!"));
+            }
+            else {
+                return Task.FromResult(new KeyValuePair<bool, string>(true, "参数类型不匹配"));
+            }
+        }
+
+        /// <summary>
+        /// 登录
+        /// </summary>
+        /// <param name="userName"></param>
+        /// <param name="passWord"></param>
+        /// <returns></returns>
+        public async Task<KeyValuePair<bool, LogInResultsInfo?>> LogIn(string userName, string passWord, CancellationToken token = default) {
+            string resultContent;
+            var method = "/login";
+            var data = new {
+                username = userName,
+                password = passWord,
+            };
+            try {
+                using (var httpClient = _httpClientFactory.CreateClient("INSURANCE")) {
+                    httpClient.Timeout = TimeSpan.FromMilliseconds(TimeOut);
+                    HttpResponseMessage message;
+                    using (Stream dataStream =
+                           new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data)))) {
+                        using (HttpContent content = new StreamContent(dataStream)) {
+                            content.Headers.Add("Content-Type", "application/json");
+                            message = await httpClient.PostAsync($"{Url}{method}", content, token)
+                                .ConfigureAwait(false);
+                        }
+                    }
+
+                    resultContent = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                    resultContent = Regex.Unescape(resultContent);
+
+                    var logInResultsInfo = JsonConvert.DeserializeObject<LogInResultsInfo>(resultContent);
+                    return new KeyValuePair<bool, LogInResultsInfo?>(true, logInResultsInfo);
+                }
+            }
+            catch (Exception e) {
+                return new KeyValuePair<bool, LogInResultsInfo?>(false, null);
+            }
+        }
+
+        public class SzjyApiParam {
+
+            /// <summary>
+            /// Url
+            /// </summary>
+            public string? Url { get; set; }
+
+            /// <summary>
+            /// 账号
+            /// </summary>
+            public string? UserName { get; set; }
+
+            /// <summary>
+            /// 密码
+            /// </summary>
+            public string? Password { get; set; }
+
+            /// <summary>
+            /// 机器码
+            /// </summary>
+            public string? Machine { get; set; }
+
+            /// <summary>
+            /// 超时
+            /// </summary>
+            public int? TimeOut { get; set; }
+        }
+
+        public class LogInResultsInfo {
+
+            /// <summary>
+            /// 状态
+            /// </summary>
+            public int Status { get; set; }
+
+            /// <summary>
+            /// Uid
+            /// </summary>
+            public int Uid { get; set; }
+
+            /// <summary>
+            /// 名称
+            /// </summary>
+            public string UserName { get; set; } = string.Empty;
+
+            /// <summary>
+            /// 显示名称
+            /// </summary>
+            public string NickName { get; set; } = string.Empty;
+
+            /// <summary>
+            /// 消息
+            /// </summary>
+            public string Message { get; set; } = string.Empty;
+        }
+
+        public class UploadResultsInfo {
+
+            /// <summary>
+            /// 结果
+            /// </summary>
+            public bool Result { get; set; }
+
+            /// <summary>
+            /// 信息
+            /// </summary>
+
+            public string Message { get; set; } = string.Empty;
+
+            /// <summary>
+            /// 频道
+            /// </summary>
+            public int? ChannelCode { get; set; }
+        }
+    }
+}

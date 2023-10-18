@@ -95,6 +95,7 @@ namespace JayTom.Dws.Client {
         protected override void RegisterTypes(IContainerRegistry containerRegistry) {
             //注册窗口
             containerRegistry.RegisterDialog<ApiAccessDialog>();
+            containerRegistry.RegisterDialog<ApiTestDialog>();
             //插件窗口
             {
                 containerRegistry.RegisterDialog<SunnenInputBarcodeControl>();
@@ -147,6 +148,20 @@ namespace JayTom.Dws.Client {
                         builder.CommandTimeout(100); //180秒超时
                         builder.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
                     }).UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking), 300);
+                //http
+                services.AddHttpClient("INSURANCE", httpClient => {
+                    // httpClient.Timeout = TimeSpan.FromSeconds(10);
+                }).ConfigurePrimaryHttpMessageHandler(() => {
+                    var handler = new HttpClientHandler() {
+                        UseDefaultCredentials = true,
+                        MaxConnectionsPerServer = 1000,
+                        ServerCertificateCustomValidationCallback = (m, c, ch, _) => true,
+                        //UseProxy = false
+                    };
+
+                    return handler;
+                });
+
                 //配置内存缓存
                 services.AddMemoryCache();
                 //本地数据表注册
@@ -261,21 +276,10 @@ namespace JayTom.Dws.Client {
             Task.Run(() => {
                 // 启用硬件加速
                 RenderOptions.ProcessRenderMode = RenderMode.Default;
-                var container = Container.GetContainer();
+                var container1 = Container.GetContainer();
                 _host = Host.CreateDefaultBuilder()
                     .ConfigureServices((hostContext, services) => {
-                        services.AddHttpClient("INSURANCE", httpClient => {
-                            // httpClient.Timeout = TimeSpan.FromSeconds(10);
-                        }).ConfigurePrimaryHttpMessageHandler(() => {
-                            var handler = new HttpClientHandler() {
-                                UseDefaultCredentials = true,
-                                MaxConnectionsPerServer = 1000,
-                                ServerCertificateCustomValidationCallback = (m, c, ch, _) => true,
-                                //UseProxy = false
-                            };
-
-                            return handler;
-                        });
+                        services.AddSingleton(container1.Resolve<IHttpClientFactory>());
                         //Api接口注册
 
                         services.AddSingleton<IDataUploader, DefaultApi>();
@@ -284,38 +288,38 @@ namespace JayTom.Dws.Client {
                         services.AddSingleton<ITcpCommunication, TcpCommunication>();
                         services.AddSingleton(container.Resolve<IBarcodeScannerService>());*/
 
-                        services.AddSingleton(container.Resolve<IComputer>());
-                        services.AddSingleton(container.Resolve<IComputerInfoReporter>());
-                        services.AddSingleton(container.Resolve<IFtp>());
-                        services.AddSingleton(container.Resolve<ISaveImage>());
-                        services.AddSingleton(container.Resolve<ISpeech>());
-                        services.AddSingleton(container.Resolve<ITcpCommClient>());
-                        services.AddSingleton(container.Resolve<ITcpCommServer>());
+                        services.AddSingleton(container1.Resolve<IComputer>());
+                        services.AddSingleton(container1.Resolve<IComputerInfoReporter>());
+                        services.AddSingleton(container1.Resolve<IFtp>());
+                        services.AddSingleton(container1.Resolve<ISaveImage>());
+                        services.AddSingleton(container1.Resolve<ISpeech>());
+                        services.AddSingleton(container1.Resolve<ITcpCommClient>());
+                        services.AddSingleton(container1.Resolve<ITcpCommServer>());
 
-                        services.AddSingleton(container.Resolve<ITcpContentOutput>());
-                        services.AddSingleton(container.Resolve<ITcpVolumeInput>());
+                        services.AddSingleton(container1.Resolve<ITcpContentOutput>());
+                        services.AddSingleton(container1.Resolve<ITcpVolumeInput>());
 
-                        services.AddSingleton(container.Resolve<IDynamicScale>());
-                        services.AddSingleton(container.Resolve<IStaticScale>());
+                        services.AddSingleton(container1.Resolve<IDynamicScale>());
+                        services.AddSingleton(container1.Resolve<IStaticScale>());
 
-                        services.AddSingleton(container.Resolve<IDeviceService>());
-                        services.AddSingleton(container.Resolve<IImageStorageService>());
-                        services.AddSingleton(container.Resolve<IResultOutputService>());
-                        services.AddSingleton(container.Resolve<IBarCodeRepository>());
-                        services.AddSingleton(container.Resolve<IBarcodeScannerCameraConfigRepository>());
-                        services.AddSingleton(container.Resolve<IPanoramaCameraConfigRepository>());
-                        services.AddSingleton(container.Resolve<IVolumeCameraConfigRepository>());
-                        services.AddSingleton(container.Resolve<ISoundRepository>());
-                        services.AddSingleton(container.Resolve<IConfigRepository>());
-                        services.AddSingleton(container.Resolve<IPanoramaImageRepository>());
+                        services.AddSingleton(container1.Resolve<IDeviceService>());
+                        services.AddSingleton(container1.Resolve<IImageStorageService>());
+                        services.AddSingleton(container1.Resolve<IResultOutputService>());
+                        services.AddSingleton(container1.Resolve<IBarCodeRepository>());
+                        services.AddSingleton(container1.Resolve<IBarcodeScannerCameraConfigRepository>());
+                        services.AddSingleton(container1.Resolve<IPanoramaCameraConfigRepository>());
+                        services.AddSingleton(container1.Resolve<IVolumeCameraConfigRepository>());
+                        services.AddSingleton(container1.Resolve<ISoundRepository>());
+                        services.AddSingleton(container1.Resolve<IConfigRepository>());
+                        services.AddSingleton(container1.Resolve<IPanoramaImageRepository>());
 
-                        services.AddSingleton(container.Resolve<ILogisticsCodeRecognitionRepository>());
-                        services.AddSingleton(container.Resolve<IPackageExitDefinitionRepository>());
-                        services.AddSingleton(container.Resolve<ISortingInstructionBindingRepository>());
-                        services.AddSingleton(container.Resolve<ILogisticsRegexRepository>());
+                        services.AddSingleton(container1.Resolve<ILogisticsCodeRecognitionRepository>());
+                        services.AddSingleton(container1.Resolve<IPackageExitDefinitionRepository>());
+                        services.AddSingleton(container1.Resolve<ISortingInstructionBindingRepository>());
+                        services.AddSingleton(container1.Resolve<ILogisticsRegexRepository>());
 
-                        services.AddSingleton(container.Resolve<IExternalDataService>());
-                        services.AddSingleton(container.Resolve<ICacheCleanupService>());
+                        services.AddSingleton(container1.Resolve<IExternalDataService>());
+                        services.AddSingleton(container1.Resolve<ICacheCleanupService>());
                         //补注册
 
                         services.AddHostedService<ComputerInfoBackgroundService>(); // 注册后台服务
@@ -375,6 +379,7 @@ namespace JayTom.Dws.Client {
             ViewModelLocationProvider.Register<HomePage, HomeViewModel>();
             ViewModelLocationProvider.Register<StatusBarPage, StatusBarViewModel>();
             ViewModelLocationProvider.Register<ApiAccessDialog, ApiAccessViewModel>();
+            ViewModelLocationProvider.Register<ApiTestDialog, ApiTestViewModel>();
             ViewModelLocationProvider.Register<DataManagementPage, DataManagementViewModel>();
             ViewModelLocationProvider.Register<CameraConfigurationPage, CameraConfigurationViewModel>();
             ViewModelLocationProvider.Register<BarcodeScannerCameraConfigPage, BarcodeScannerCameraConfigViewModel>();
@@ -416,6 +421,7 @@ namespace JayTom.Dws.Client {
             ViewModelLocationProvider.Register<ApiResponseSortingPage, ApiResponseSortingViewModel>();
             //接口
             ViewModelLocationProvider.Register<DefaultApiPage, DefaultApiPageViewModel>();
+            ViewModelLocationProvider.Register<SzjyApiPage, SzjyApiPageViewModel>();
             //其他插件
             {
                 ViewModelLocationProvider.Register<SunnenInputBarcodeControl, SunnenInputBarcodeViewModel>();

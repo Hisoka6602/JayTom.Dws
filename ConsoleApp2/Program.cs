@@ -10,6 +10,8 @@ using System.Linq.Expressions;
 using System.Linq.Dynamic.Core;
 using System.Collections.Generic;
 using JayTom.Dws.Interface.Sunnen;
+using JayTom.Dws.Interface.Szjy188;
+using static JayTom.Dws.Interface.Szjy188.SzjyApi;
 
 internal class Program {
 
@@ -26,8 +28,13 @@ internal class Program {
         else {
             Console.WriteLine("公式不成立");
         }*/
-
-        var uploadResponse = await new SunnenApi(null).UploadData("1234567890aa",
+        var szjyApi = new SzjyApi(null);
+        szjyApi.SetParameters(new SzjyApiParam {
+            UserName = "quanlai07",
+            Password = "Ql123456",
+            Url = "https://www.szjy188.com/auto-entry"
+        });
+        var uploadResponse = await szjyApi.UploadData("1234567890aa",
             1.05, DateTime.Now, 10, 20,
             30, 40, null, null, "Box");
         Console.WriteLine(uploadResponse);
