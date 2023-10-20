@@ -28,6 +28,11 @@ internal class Program {
         else {
             Console.WriteLine("公式不成立");
         }*/
+
+        var validateWeight = ValidateWeight(34);
+        var validateSorting = ValidateSorting(11, 12, 13, 1800);
+        return;
+
         var szjyApi = new SzjyApi(null);
         szjyApi.SetParameters(new SzjyApiParam {
             UserName = "quanlai07",
@@ -50,6 +55,40 @@ internal class Program {
             }
         }
         return variables.ToArray();
+    }
+
+    public static bool ValidateWeight(double weight) {
+        string formula = "It > 30 && It < 50 && It != 33";
+        try {
+            // 解析并计算表达式
+            var expression = DynamicExpressionParser
+                .ParseLambda(new[] { Expression.Parameter(typeof(double), "it") }, typeof(bool), formula);
+            // 编译并执行表达式
+            return (bool)(expression.Compile().DynamicInvoke(weight) ?? false);
+        }
+        catch (Exception e) {
+            return false;
+        }
+    }
+
+    public static bool ValidateSorting(double length, double width, double height, double volume) {
+        string formula = "Length > 10 and Width < 20 and Width > 10 and Height > 8 and Height < 50 and Volume > 105";
+        try {
+            // 解析并计算表达式
+            ParameterExpression[] parameters = {
+                Expression.Parameter(typeof(double), "Length"),
+                Expression.Parameter(typeof(double), "Width"),
+                Expression.Parameter(typeof(double), "Height"),
+                Expression.Parameter(typeof(double), "Volume")
+            };
+            LambdaExpression expression = DynamicExpressionParser.ParseLambda(parameters, typeof(bool), formula);
+
+            // 编译并执行表达式
+            return (bool)(expression.Compile().DynamicInvoke(length, width, height, volume) ?? false);
+        }
+        catch (Exception e) {
+            return false;
+        }
     }
 }
 

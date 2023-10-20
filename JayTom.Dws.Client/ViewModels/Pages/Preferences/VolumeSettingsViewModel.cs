@@ -23,7 +23,6 @@ using JayTom.Dws.Client.Models.VolumeSettingsModel;
 using JayTom.Dws.Client.Models.SettingsCommomModels;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
-
     public class VolumeSettingsViewModel : BindableBase {
         private readonly IConfigRepository _configRepository;
         private VolumeSettingsInfoModel _volumeSettingsInfo = new();
@@ -375,6 +374,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                                 VolumeTriggerPosition = SelectTriggerPosition.Value,
                                 SendContent = VolumeSettingsInfo.VolumeInformationRequesterInfo.SendContent,
                                 SendDelay = VolumeSettingsInfo.VolumeInformationRequesterInfo.SendDelay,
+                                SendCount = VolumeSettingsInfo.VolumeInformationRequesterInfo.SendCount,
+                                SendInterval = VolumeSettingsInfo.VolumeInformationRequesterInfo.SendInterval,
                                 VolumeRequesterType = VolumeSettingsInfo.VolumeInformationRequesterInfo.VolumeRequesterType,
                                 TcpSettingsInfo = new TcpSettingsInfo() {
                                     ConnectionMode = VolumeSettingsInfo.VolumeInformationRequesterInfo.TcpSettingsInfo.ConnectionMode,
@@ -445,6 +446,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                                     VolumeTriggerPosition = settingsDto.VolumeInformationRequesterInfo.VolumeTriggerPosition,
                                     SendContent = settingsDto.VolumeInformationRequesterInfo.SendContent,
                                     SendDelay = settingsDto.VolumeInformationRequesterInfo.SendDelay,
+                                    SendCount = settingsDto.VolumeInformationRequesterInfo.SendCount,
+                                    SendInterval = settingsDto.VolumeInformationRequesterInfo.SendInterval,
                                     VolumeRequesterType = settingsDto.VolumeInformationRequesterInfo.VolumeRequesterType,
                                     TcpSettingsInfo = new TcpSettingsInfo() {
                                         ConnectionMode = settingsDto.VolumeInformationRequesterInfo.TcpSettingsInfo

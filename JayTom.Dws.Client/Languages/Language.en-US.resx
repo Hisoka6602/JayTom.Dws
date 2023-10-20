@@ -977,9 +977,17 @@
     <value>SelectedApi:</value>
     <comment>10-使用的Api接口</comment>
   </data>
+  <data name="SendCount" xml:space="preserve">
+    <value>SendCount:</value>
+    <comment>9-发送次数</comment>
+  </data>
   <data name="SendDelay" xml:space="preserve">
     <value>SendDelay:</value>
     <comment>10-发送延迟</comment>
+  </data>
+  <data name="SendInterval" xml:space="preserve">
+    <value>SendInterval:</value>
+    <comment>9-发送间隔</comment>
   </data>
   <data name="SentContent" xml:space="preserve">
     <value>SentContent:</value>

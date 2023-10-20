@@ -28,8 +28,8 @@
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="ResizeMode" Value="NoResize" />
             <Setter Property="WindowStyle" Value="None" />
-            <Setter Property="Width" Value="760" />
-            <Setter Property="Height" Value="350" />
+            <Setter Property="Width" Value="400" />
+            <Setter Property="Height" Value="260" />
             <Setter Property="SizeToContent" Value="Manual" />
             <Setter Property="WindowChrome.WindowChrome">
                 <Setter.Value>
@@ -101,14 +101,14 @@
                 <!--  扫码条码框  -->
                 <Border
                     Grid.Row="0"
-                    Margin="50,10,0,5"
+                    Margin="10,10,10,5"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"
                     Background="#1A696969"
                     CornerRadius="5">
                     <Grid>
                         <Border
-                            Width="80"
+                            Width="60"
                             Margin="2"
                             HorizontalAlignment="Left"
                             Background="DarkGray"
@@ -117,24 +117,24 @@
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
                                 FontFamily="{StaticResource CustomFontFamily}"
-                                FontSize="16"
+                                FontSize="13"
                                 FontWeight="Bold"
                                 Foreground="#2E2E2E"
                                 Text="BarCode" />
                         </Border>
                         <TextBox
                             Name="BarCodeTextBox"
-                            Width="420"
-                            Height="45"
+                            Width="250"
+                            Height="40"
                             MaxWidth="500"
-                            Margin="85,0,5,0"
+                            Margin="65,0,5,0"
                             materialDesign:TextFieldAssist.HasClearButton="False"
                             materialDesign:TextFieldAssist.HasFilledTextField="True"
                             Background="Transparent"
                             BorderThickness="0"
                             Focusable="True"
                             FontFamily="{StaticResource CustomFontFamily}"
-                            FontSize="25"
+                            FontSize="16"
                             FontWeight="Bold"
                             Foreground="White"
                             Text="{Binding BarCode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
@@ -152,13 +152,13 @@
                     VerticalAlignment="Center"
                     Orientation="Horizontal">
                     <Button
-                        Width="200"
-                        Height="80"
+                        Width="100"
+                        Height="40"
                         Margin="30,0"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
                         VerticalContentAlignment="Center"
-                        materialDesign:ButtonAssist.CornerRadius="40"
+                        materialDesign:ButtonAssist.CornerRadius="20"
                         Background="{Binding PackageType, Converter={StaticResource PackageTypeToColorConverter}, ConverterParameter=Box}"
                         BorderBrush="RoyalBlue"
                         BorderThickness="{Binding PackageType, Converter={StaticResource PackageTypeToBorderThicknessConverter}, ConverterParameter=Box}"
@@ -168,7 +168,7 @@
                         Style="{StaticResource MaterialDesignRaisedDarkButton}">
                         <TextBlock
                             FontFamily="{StaticResource CustomFontFamily}"
-                            FontSize="40"
+                            FontSize="20"
                             FontWeight="Bold"
                             Foreground="White"
                             Text="Box" />
@@ -176,13 +176,13 @@
 
                     <Button
                         Name="PalletButton"
-                        Width="200"
-                        Height="80"
+                        Width="100"
+                        Height="40"
                         Margin="30,0"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
                         VerticalContentAlignment="Center"
-                        materialDesign:ButtonAssist.CornerRadius="40"
+                        materialDesign:ButtonAssist.CornerRadius="20"
                         Background="{Binding PackageType, Converter={StaticResource PackageTypeToColorConverter}, ConverterParameter=Pallet}"
                         BorderBrush="RoyalBlue"
                         BorderThickness="{Binding PackageType, Converter={StaticResource PackageTypeToBorderThicknessConverter}, ConverterParameter=Pallet}"
@@ -192,14 +192,14 @@
                         Style="{StaticResource MaterialDesignRaisedDarkButton}">
                         <TextBlock
                             FontFamily="{StaticResource CustomFontFamily}"
-                            FontSize="40"
+                            FontSize="20"
                             FontWeight="Bold"
                             Foreground="White"
                             Text="Pallet" />
                     </Button>
                 </StackPanel>
                 <!--  减去的值  -->
-                <StackPanel Grid.Row="2">
+                <StackPanel Grid.Row="2" Visibility="Collapsed">
                     <StackPanel
                         Margin="10,30"
                         HorizontalAlignment="Center"

@@ -14,7 +14,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
-
     public class PackageSortingSettingsViewModel : BindableBase {
         private readonly IRegionManager _regionManager;
         private ObservableCollection<MenuItemInfoModel> _packageSortingMenuItems;
@@ -24,6 +23,19 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             _regionManager = regionManager;
             _packageSortingMenuItems = new ObservableCollection<MenuItemInfoModel>()
             {
+                new()
+                {
+                    Title = "下位机通讯",
+                    IconFont = new IconInfoModel()
+                    {
+                        IconFont = "pack://application:,,,/Fonts/#iconfont",
+                        IconCode = "\xe7ce",
+                        IconSize = 25
+                    },
+                    Description = "下位机通讯设置",
+                    PageClassName = "CommunicationsSettingsPage",
+                    ClickCommand = ClickCommand
+                },
                 new()
                 {
                     Title = "格口定义",
@@ -38,19 +50,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     PageClassName = "PackageExitDefinitionPage",
                     ClickCommand = ClickCommand
                 },
-                new()
-                {
-                    Title = "物流识别",
-                    IconFont = new IconInfoModel()
-                    {
-                        IconFont = "pack://application:,,,/Fonts/#iconfont",
-                        IconCode = "\xe7a8",
-                        IconSize = 25
-                    },
-                    Description = "识别单号对应物流公司",
-                    PageClassName = "LogisticsCodeRecognitionPage",
-                    ClickCommand = ClickCommand
-                },
+
                 new()
                 {
                     Title = "指令绑定",
@@ -66,15 +66,15 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                 },
                 new()
                 {
-                    Title = "下位机通讯",
+                    Title = "物流识别",
                     IconFont = new IconInfoModel()
                     {
                         IconFont = "pack://application:,,,/Fonts/#iconfont",
-                        IconCode = "\xe7ce",
+                        IconCode = "\xe7a8",
                         IconSize = 25
                     },
-                    Description = "下位机通讯设置",
-                    PageClassName = "CommunicationsSettingsPage",
+                    Description = "识别单号对应物流公司",
+                    PageClassName = "LogisticsCodeRecognitionPage",
                     ClickCommand = ClickCommand
                 },
                 new()

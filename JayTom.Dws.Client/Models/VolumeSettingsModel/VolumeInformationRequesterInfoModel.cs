@@ -9,7 +9,6 @@ using JayTom.Dws.Domain.Dto.BaseInfoModels;
 using JayTom.Dws.Client.Models.SettingsCommomModels;
 
 namespace JayTom.Dws.Client.Models.VolumeSettingsModel {
-
     public class VolumeInformationRequesterInfoModel : BindableBase {
         private VolumeTriggerPosition _volumeTriggerPosition = VolumeTriggerPosition.None;
         private int _sendDelay;
@@ -17,6 +16,8 @@ namespace JayTom.Dws.Client.Models.VolumeSettingsModel {
         private TcpSettingsInfo _tcpSettingsInfo = new();
         private SerialPortSettingsInfoModel _serialPortSettingsInfo = new();
         private VolumeRequesterType _volumeRequesterType;
+        private int _sendCount;
+        private int _sendInterval;
 
         /// <summary>
         /// 触发位置
@@ -40,6 +41,22 @@ namespace JayTom.Dws.Client.Models.VolumeSettingsModel {
         public string SendContent {
             get => _sendContent;
             set => SetProperty(ref _sendContent, value);
+        }
+
+        /// <summary>
+        /// 发送次数
+        /// </summary>
+        public int SendCount {
+            get => _sendCount;
+            set => SetProperty(ref _sendCount, value);
+        }
+
+        /// <summary>
+        /// 发送间隔
+        /// </summary>
+        public int SendInterval {
+            get => _sendInterval;
+            set => SetProperty(ref _sendInterval, value);
         }
 
         /// <summary>

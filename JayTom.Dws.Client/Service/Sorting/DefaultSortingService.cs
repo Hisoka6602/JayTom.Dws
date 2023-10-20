@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Polly;
+using System;
 using DryIoc;
 using System.Linq;
 using System.Text;
@@ -7,7 +8,11 @@ using System.Threading;
 using JayTom.Dws.Domain.Dto;
 using JayTom.Dws.Plugin.Tcp;
 using System.Threading.Tasks;
+using System.Linq.Expressions;
+using System.Linq.Dynamic.Core;
+using JayTom.Dws.Data.LocalConf;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
@@ -18,6 +23,9 @@ using JayTom.Dws.Data.LocalConf.PackageSortingConfig.RuleConfig;
 using JayTom.Dws.Client.Service.Sorting.Communication.SerialComm;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig.RuleConfig;
+using static JayTom.Dws.Client.Service.BackgroundService.SubmitApiBackgroundService;
+using JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig.RuleConfig;
+using static JayTom.Dws.Client.Service.BackgroundService.ScanProcessBackgroundService;
 
 namespace JayTom.Dws.Client.Service.Sorting {
 
@@ -28,13 +36,44 @@ namespace JayTom.Dws.Client.Service.Sorting {
         private readonly ILogisticsRegexRepository _logisticsRegexRepository;
         private readonly ILogisticsCodeRecognitionRepository _logisticsCodeRecognitionRepository;
         private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
+        private readonly IBarCodeSortingRepository _barCodeSortingRepository;
+        private readonly IBarCodeRegexRepository _barCodeRegexRepository;
+        private readonly ILogisticsSortingRepository _logisticsSortingRepository;
+        private readonly ILogisticsRuleRepository _logisticsRuleRepository;
+        private readonly IOcrSortingRepository _ocrSortingRepository;
+        private readonly IOcrRuleRepository _ocrRuleRepository;
+        private readonly ISortingInstructionBindingRepository _sortingInstructionBindingRepository;
+        private readonly ISortingInstructionRepository _sortingInstructionRepository;
+        private readonly IVolumeSortingRepository _volumeSortingRepository;
+        private readonly IWeightSortingRepository _weightSortingRepository;
+        private readonly IVolumeRuleRepository _volumeRuleRepository;
+        private readonly IWeightRuleRepository _weightRuleRepository;
         private SemaphoreSlim _semaphore = new(1);
         private CommunicationsSettingsDto _communicationsSettingsDto = new();
-        private List<LogisticsRegexInfoModel>? _logisticsRegexInfos = new();
-        private List<LogisticsCodeRecognitionInfoModel>? _logisticsCodeRecognitionInfos = new();
-        private List<PackageExitDefinitionInfoModel>? _packageExitDefinitionInfos = new();
+        private SortingMethodDto _sortingMethodDto = new();
+        private ConcurrentQueue<string> _replyContentQueue = new();
 
         public event EventHandler<ExceptionEventArgs>? ExceptionOccurred;
+
+        #region 配置
+
+        private List<LogisticsRegexInfoModel> _logisticsRegexInfos = new();
+        private List<LogisticsCodeRecognitionInfoModel> _logisticsCodeRecognitionInfos = new();
+        private List<PackageExitDefinitionInfoModel> _packageExitDefinitionInfos = new();
+        private List<BarCodeSortingInfoModel> _barCodeSortingInfoModels = new();
+        private List<BarCodeRegexInfoModel> _barCodeRegexInfos = new();
+        private List<LogisticsSortingInfoModel> _logisticsSortingInfoModels = new();
+        private List<LogisticsRuleInfoModel> _logisticsRuleInfoModels = new();
+        private List<OcrSortingInfoModel> _ocrSortingInfoModels = new();
+        private List<OcrRuleInfoModel> _ocrRuleInfoModels = new();
+        private List<SortingInstructionBindingInfoModel> _sortingInstructionBindingInfoModels = new();
+        private List<SortingInstructionInfoModel> _sortingInstructionInfoModels = new();
+        private List<VolumeSortingInfoModel> _volumeSortingInfoModels = new();
+        private List<WeightSortingInfoModel> _weightSortingInfoModels = new();
+        private List<VolumeRuleInfoModel> _volumeRuleInfoModels = new();
+        private List<WeightRuleInfoModel> _weightRuleInfoModels = new();
+
+        #endregion 配置
 
         public event EventHandler<RetryEventArgs>? RetryOccurred;
 
@@ -48,13 +87,37 @@ namespace JayTom.Dws.Client.Service.Sorting {
             ISortingSerialPort sortingSerialPort,
             ISortingTcp sortingTcp, ILogisticsRegexRepository logisticsRegexRepository,
             ILogisticsCodeRecognitionRepository logisticsCodeRecognitionRepository,
-            IPackageExitDefinitionRepository packageExitDefinitionRepository) {
+            IPackageExitDefinitionRepository packageExitDefinitionRepository,
+            IBarCodeSortingRepository barCodeSortingRepository,
+            IBarCodeRegexRepository barCodeRegexRepository,
+            ILogisticsSortingRepository logisticsSortingRepository,
+            ILogisticsRuleRepository logisticsRuleRepository,
+            IOcrSortingRepository ocrSortingRepository,
+            IOcrRuleRepository ocrRuleRepository,
+            ISortingInstructionBindingRepository sortingInstructionBindingRepository,
+            ISortingInstructionRepository sortingInstructionRepository,
+            IVolumeSortingRepository volumeSortingRepository,
+            IWeightSortingRepository weightSortingRepository,
+            IVolumeRuleRepository volumeRuleRepository,
+            IWeightRuleRepository weightRuleRepository) {
             _configRepository = configRepository;
             _sortingSerialPort = sortingSerialPort;
             _sortingTcp = sortingTcp;
             _logisticsRegexRepository = logisticsRegexRepository;
             _logisticsCodeRecognitionRepository = logisticsCodeRecognitionRepository;
             _packageExitDefinitionRepository = packageExitDefinitionRepository;
+            _barCodeSortingRepository = barCodeSortingRepository;
+            _barCodeRegexRepository = barCodeRegexRepository;
+            _logisticsSortingRepository = logisticsSortingRepository;
+            _logisticsRuleRepository = logisticsRuleRepository;
+            _ocrSortingRepository = ocrSortingRepository;
+            _ocrRuleRepository = ocrRuleRepository;
+            _sortingInstructionBindingRepository = sortingInstructionBindingRepository;
+            _sortingInstructionRepository = sortingInstructionRepository;
+            _volumeSortingRepository = volumeSortingRepository;
+            _weightSortingRepository = weightSortingRepository;
+            _volumeRuleRepository = volumeRuleRepository;
+            _weightRuleRepository = weightRuleRepository;
             //事件
             _sortingSerialPort.Disconnected += delegate (object? sender, ISortingSerialPort port) {
                 IsConnected = false;
@@ -70,6 +133,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                 };
             _sortingSerialPort.DataReceived += delegate (object? sender, MessageEventArgs args) {
                 //接收的数据
+                _replyContentQueue.Enqueue(args.AsciiMessage);
             };
             _sortingSerialPort.HeartbeatError += delegate (object? sender, Exception exception) {
                 OnHeartbeatError(exception);
@@ -97,6 +161,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
             _sortingTcp.Communication += delegate (object? sender, CommunicationInfo info) {
                 if (info.Type == CommunicationType.Receive) {
                     //接收消息
+                    _replyContentQueue.Enqueue(info.Content);
                 }
             };
             _sortingTcp.HeartbeatError += delegate (object? sender, Exception exception) {
@@ -144,18 +209,71 @@ namespace JayTom.Dws.Client.Service.Sorting {
                 _packageExitDefinitionInfos = await _packageExitDefinitionRepository.Select(s => s.Id > 0,
                     o => o.Id);
             });
-            //触发初始化
-            EventAggregator.Instance.Publish(new SettingsChangedEvent {
-                SettingsName = "CommunicationsSettings"
+            //触发方式
+            EventAggregator.Instance.Subscribe<ScanBarCodeInfo>(async item => {
+                if (item is ScanBarCodeInfo model) {
+                    await Task.Yield();
+                    //不包含Api
+                    if (_sortingMethodDto.SortMode != SortMode.None &&
+                        _sortingMethodDto.SortMode != SortMode.CombinedWorkflowSorting &&
+                        _sortingMethodDto.SortMode != SortMode.CombinedWorkflowSorting) {
+                        ExecuteSorting(new SortingParam() {
+                            BarCode = model.BarCode,
+                            ApiResponseContent = string.Empty,
+                            Height = (float)(model.Height ?? 0),
+                            Length = (float)(model.Length ?? 0),
+                            ScanTime = model.ScanTime,
+                            Volume = (float)(model.Volume ?? 0),
+                            Width = (float)(model.Width ?? 0),
+                            Weight = (float)(model.Weight ?? 0),
+                            //三段码未完成
+                            OcrCode = string.Empty,
+                        });
+                    }
+                }
             });
+
+            //触发初始化
+            /*EventAggregator.Instance.Publish(new SettingsChangedEvent {
+                SettingsName = "CommunicationsSettings"
+            });*/
         }
 
-        public async void ExecuteSorting(string barCode, DateTime scanTime, object sortingType, string apiResponseContent) {
-            //需要传入更多元素、重量、体积、
-            //获取分拣判断类型[物流、Ocr、接口、条码]
-            //获取分拣格口
-            //发送指令(当所有条件都不满足,则判断有无异常口,如果有则发送异常口指令)
-            throw new NotImplementedException();
+        public void ExecuteSorting(SortingParam param, CancellationToken token = default) {
+            if (_sortingMethodDto is not null) {
+                switch (_sortingMethodDto.SortMode) {
+                    case SortMode.BarcodeSorting:
+                        BarcodeSorting(param.BarCode, token);
+                        break;
+
+                    case SortMode.WeightSorting:
+                        WeightSorting(param.Weight, token);
+                        break;
+
+                    case SortMode.VolumeSorting:
+                        VolumeSorting(param.Length, param.Width, param.Height, param.Volume, token);
+                        break;
+
+                    case SortMode.LogisticsSorting:
+                        LogisticsSorting(param.BarCode, token);
+                        break;
+
+                    case SortMode.OcrSorting:
+                        OcrSorting(token);
+                        break;
+
+                    case SortMode.ApiResponseSorting:
+                        ApiResponseSorting(token);
+                        break;
+
+                    case SortMode.CombinedWorkflowSorting:
+                        CombinedWorkflowSorting(token);
+                        break;
+
+                    default:
+                        break;
+                }
+            }
         }
 
         public async void SendInstructions(List<string> instructions, TimeSpan interval) {
@@ -185,6 +303,93 @@ namespace JayTom.Dws.Client.Service.Sorting {
                     instructions?.Any() == true) {
                     foreach (var instruction in instructions) {
                         await _sortingTcp.SendMessage(instruction);
+                        await Task.Delay(interval);
+                    }
+                }
+                else {
+                    OnExceptionOccurred(new ExceptionEventArgs() {
+                        ExceptionMessage = "下位机未连接!"
+                    });
+                }
+            }
+        }
+
+        public async void SendInstructions(List<SortingInstructionInfoModel> sortingInstructionInfoModels, TimeSpan interval) {
+            //判断是否连接，如果未连接则连接
+            if (!IsConnected) {
+                await Connect(false);
+            }
+            if (_communicationsSettingsDto.Type == CommunicationsType.SerialPort) {
+                //串口
+                if (_sortingSerialPort.Status == SortingSerialPortStatus.Running &&
+                    sortingInstructionInfoModels?.Any() == true) {
+                    foreach (var instruction in sortingInstructionInfoModels) {
+                        if (_communicationsSettingsDto.MachineReplyInfo.IsVerificationEnabled) {
+                            var retryPolicy = Policy.HandleResult<bool>(result => !result)
+                                .RetryAsync(_communicationsSettingsDto.MachineReplyInfo.MaxRetryCount, (a, b) => {
+                                });
+
+                            var executeAsync = await retryPolicy.ExecuteAsync(async () => {
+                                _sortingSerialPort.Send(instruction.Instruction);
+                                return await WaitForReply(instruction.ReplyContent,
+                                    TimeSpan.FromMilliseconds(_communicationsSettingsDto.MachineReplyInfo.Timeout));
+                            });
+                            if (!executeAsync) {
+                                OnExceptionOccurred(new ExceptionEventArgs() {
+                                    ExceptionMessage = "未收到应答信息!"
+                                });
+                                break;
+                            }
+                        }
+                        else {
+                            //不使用应答
+                            _sortingSerialPort.Send(instruction.Instruction);
+                        }
+                        await Task.Delay(interval);
+                    }
+                }
+                else {
+                    OnExceptionOccurred(new ExceptionEventArgs() {
+                        ExceptionMessage = "下位机未连接!"
+                    });
+                }
+            }
+            else if (_communicationsSettingsDto.Type == CommunicationsType.TCP) {
+                //tcp
+                if (_sortingTcp.ConnectionStatus == ConnectionStatus.Connected &&
+                    sortingInstructionInfoModels?.Any() == true) {
+                    foreach (var instruction in sortingInstructionInfoModels) {
+                        //使用应答
+                        if (_communicationsSettingsDto.MachineReplyInfo.IsVerificationEnabled) {
+                            var retryPolicy = Policy.HandleResult<bool>(result => !result)
+                               .RetryAsync(_communicationsSettingsDto.MachineReplyInfo.MaxRetryCount, (a, b) => {
+                               });
+
+                            var executeAsync = await retryPolicy.ExecuteAsync(async () => {
+                                var sendMessage = await _sortingTcp.SendMessage(instruction.Instruction);
+                                if (sendMessage) {
+                                    return await WaitForReply(instruction.ReplyContent,
+                                        TimeSpan.FromMilliseconds(_communicationsSettingsDto.MachineReplyInfo.Timeout));
+                                }
+                                return false;
+                            });
+                            if (!executeAsync) {
+                                OnExceptionOccurred(new ExceptionEventArgs() {
+                                    ExceptionMessage = "未收到应答信息!"
+                                });
+                                break;
+                            }
+                        }
+                        else {
+                            //不使用应答
+                            var sendMessage = await _sortingTcp.SendMessage(instruction.Instruction);
+                            if (!sendMessage) {
+                                OnExceptionOccurred(new ExceptionEventArgs() {
+                                    ExceptionMessage = "发送失败!"
+                                });
+                                break;
+                            }
+                        }
                         await Task.Delay(interval);
                     }
                 }
@@ -242,6 +447,61 @@ namespace JayTom.Dws.Client.Service.Sorting {
             if (!RunningStatus) {
                 await Disconnect();
                 await Connect();
+
+                #region 读取配置信息
+
+                try {
+                    var configInfoModel = await _configRepository.FirstOrDefault(f =>
+                        f.ConfigName.Equals("SortingMethodSettings"), token);
+                    if (configInfoModel is not null) {
+                        _sortingMethodDto = JsonConvert.DeserializeObject<SortingMethodDto>(configInfoModel.Value) ?? new SortingMethodDto();
+                    }
+
+                    configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("CommunicationsSettings"), token);
+                    _communicationsSettingsDto =
+                        JsonConvert.DeserializeObject<CommunicationsSettingsDto>(configInfoModel?.Value ?? string.Empty) ?? new CommunicationsSettingsDto();
+                    if (_communicationsSettingsDto is not null) {
+                        IsSortingEnabled = _communicationsSettingsDto.Type != CommunicationsType.None;
+                        await Disconnect();
+                    }
+                    _packageExitDefinitionInfos = await _packageExitDefinitionRepository.Select(s => s.Id > 0,
+                        o => o.Id);
+
+                    _logisticsCodeRecognitionInfos = await _logisticsCodeRecognitionRepository.Select(s => s.Id > 0,
+                    o => o.Id, token);
+                    _logisticsRegexInfos = await _logisticsRegexRepository.Select(s => s.Id > 0,
+                        o => o.CreateTime, token);
+                    _barCodeSortingInfoModels = await _barCodeSortingRepository.Select(s => s.Id > 0,
+                        o => o.CreateTime, token);
+                    _barCodeRegexInfos = await _barCodeRegexRepository.Select(s => s.Id > 0,
+                        o => o.Id, token);
+                    _logisticsSortingInfoModels = await _logisticsSortingRepository.Select(s => s.Id > 0, o => o.CreateTime, token);
+                    _logisticsRuleInfoModels = await _logisticsRuleRepository.Select(s => s.Id > 0,
+                        o => o.CreateTime, token);
+                    _ocrSortingInfoModels = await _ocrSortingRepository.Select(s => s.Id > 0,
+                        o => o.CreateTime, token);
+                    _ocrRuleInfoModels = await _ocrRuleRepository.Select(s => s.Id > 0,
+                        o => o.CreateTime, token);
+
+                    _sortingInstructionBindingInfoModels = await _sortingInstructionBindingRepository.Select(s => s.Id > 0,
+                        o => o.CreateTime, token);
+                    _sortingInstructionInfoModels = await _sortingInstructionRepository.Select(s => s.Id > 0,
+                        o => o.CreateTime, token);
+                    _volumeSortingInfoModels = await _volumeSortingRepository.Select(s => s.Id > 0,
+                        o => o.CreateTime, token);
+                    _volumeRuleInfoModels = await _volumeRuleRepository.Select(s => s.Id > 0, o => o.CreateTime, token);
+                    _weightSortingInfoModels = await _weightSortingRepository.Select(s => s.Id > 0,
+                        o => o.CreateTime, token);
+                    _weightRuleInfoModels = await _weightRuleRepository.Select(s => s.Id > 0, o => o.CreateTime, token);
+                }
+                catch (Exception e) {
+                    OnExceptionOccurred(new ExceptionEventArgs() {
+                        ExceptionMessage = $"分拣配置读取异常:{e}"
+                    });
+                }
+
+                #endregion 读取配置信息
+
                 RunningStatus = true;
                 return new KeyValuePair<bool, string>(true, "已启动");
             }
@@ -254,6 +514,255 @@ namespace JayTom.Dws.Client.Service.Sorting {
             await Disconnect();
             RunningStatus = false;
             return new KeyValuePair<bool, string>(true, "已停止");
+        }
+
+        public async void ExceptionSorting(CancellationToken token = default) {
+            var packageExitDefinitionInfoModel = _packageExitDefinitionInfos.FirstOrDefault(f =>
+                f is { Type: ExitType.AbnormalExit, IsActive: true });
+            if (packageExitDefinitionInfoModel is not null) {
+                //执行分拣
+                //判断指令提交方式
+                var sortingInstructionInfoModels = _sortingInstructionInfoModels.Where(w =>
+                        w.InstructionBindingId.Equals(packageExitDefinitionInfoModel.Id))
+                    ?.ToList();
+                var sortingInstructionBindingInfoModel = _sortingInstructionBindingInfoModels.FirstOrDefault(f =>
+                    f.ExitId.Equals(packageExitDefinitionInfoModel.Id));
+                if (sortingInstructionBindingInfoModel is not null) {
+                    await Task.Delay(sortingInstructionBindingInfoModel.DelaySendMilliseconds, token);
+                    SendInstructions(sortingInstructionInfoModels ?? new List<SortingInstructionInfoModel>(),
+                        TimeSpan.FromMilliseconds(sortingInstructionBindingInfoModel.SendIntervalMilliseconds));
+                }
+            }
+        }
+
+        public async void BarcodeSorting(string barcode, CancellationToken token = default) {
+            try {
+                var barCodeRegexInfoModel = _barCodeRegexInfos.FirstOrDefault(f => Regex.IsMatch(barcode, f.RegexPattern));
+                if (barCodeRegexInfoModel is not null) {
+                    //取出对于格口id
+                    var barCodeSortingInfoModel = _barCodeSortingInfoModels.FirstOrDefault(f =>
+                        f.Id.Equals(barCodeRegexInfoModel.BarCodeSortingId));
+                    if (barCodeSortingInfoModel is not null) {
+                        //取出格口指令
+                        //判断格口是否生效
+                        var packageExitDefinitionInfoModel = _packageExitDefinitionInfos.FirstOrDefault(f => f.Id.Equals(barCodeSortingInfoModel.ExitId) &&
+                            f.IsActive);
+                        if (packageExitDefinitionInfoModel is not null) {
+                            var sortingInstructionBindingInfoModel = _sortingInstructionBindingInfoModels.FirstOrDefault(f =>
+                                f.ExitId.Equals(barCodeSortingInfoModel.ExitId));
+                            if (sortingInstructionBindingInfoModel is not null) {
+                                //执行分拣
+                                //判断指令提交方式
+                                var sortingInstructionInfoModels = _sortingInstructionInfoModels.Where(w =>
+                                        w.InstructionBindingId.Equals(sortingInstructionBindingInfoModel.Id))
+                                    ?.ToList();
+                                await Task.Delay(sortingInstructionBindingInfoModel.DelaySendMilliseconds, token);
+                                SendInstructions(sortingInstructionInfoModels ?? new List<SortingInstructionInfoModel>(),
+                                    TimeSpan.FromMilliseconds(sortingInstructionBindingInfoModel.SendIntervalMilliseconds));
+                            }
+                            else {
+                                //走异常口
+                                ExceptionSorting(token);
+                            }
+                        }
+                        else {
+                            //走异常口
+                            ExceptionSorting(token);
+                        }
+                    }
+                    else {
+                        //走异常口
+                        ExceptionSorting(token);
+                    }
+                }
+                else {
+                    //走异常口
+                    ExceptionSorting(token);
+                }
+            }
+            catch (Exception e) {
+                OnExceptionOccurred(new ExceptionEventArgs() {
+                    ExceptionMessage = $"分拣异常:{e}"
+                });
+            }
+        }
+
+        public async void WeightSorting(float weight, CancellationToken token = default) {
+            //取出重量规则
+            try {
+                var weightRuleInfoModel = _weightRuleInfoModels.FirstOrDefault(f => ValidateWeight(f.Formula, weight));
+                if (weightRuleInfoModel is not null) {
+                    //取出格口
+                    var weightSortingInfoModel = _weightSortingInfoModels.FirstOrDefault(f =>
+                        f.Id.Equals(weightRuleInfoModel.WeightSortingId));
+                    if (weightSortingInfoModel is not null) {
+                        //取出格口指令
+                        //判断格口是否生效
+                        var packageExitDefinitionInfoModel = _packageExitDefinitionInfos.FirstOrDefault(f => f.Id.Equals(weightSortingInfoModel.ExitId) &&
+                            f.IsActive);
+                        if (packageExitDefinitionInfoModel is not null) {
+                            var sortingInstructionBindingInfoModel = _sortingInstructionBindingInfoModels.FirstOrDefault(f =>
+                                f.ExitId.Equals(weightSortingInfoModel.ExitId));
+                            if (sortingInstructionBindingInfoModel is not null) {
+                                //执行分拣
+                                //判断指令提交方式
+                                var sortingInstructionInfoModels = _sortingInstructionInfoModels.Where(w =>
+                                        w.InstructionBindingId.Equals(sortingInstructionBindingInfoModel.Id))
+                                    ?.ToList();
+                                await Task.Delay(sortingInstructionBindingInfoModel.DelaySendMilliseconds, token);
+                                SendInstructions(sortingInstructionInfoModels ?? new List<SortingInstructionInfoModel>(),
+                                    TimeSpan.FromMilliseconds(sortingInstructionBindingInfoModel.SendIntervalMilliseconds));
+                            }
+                            else {
+                                //走异常口
+                                ExceptionSorting(token);
+                            }
+                        }
+                        else {
+                            //走异常口
+                            ExceptionSorting(token);
+                        }
+                    }
+                    else {
+                        //走异常口
+                        ExceptionSorting(token);
+                    }
+                }
+                else {
+                    //走异常口
+                    ExceptionSorting(token);
+                }
+            }
+            catch (Exception e) {
+                OnExceptionOccurred(new ExceptionEventArgs() {
+                    ExceptionMessage = $"分拣异常:{e}"
+                });
+            }
+        }
+
+        public async void VolumeSorting(double length, double width, double height, double volume, CancellationToken token = default) {
+            try {
+                var volumeRuleInfoModel = _volumeRuleInfoModels.FirstOrDefault(f => ValidateVolume(f.Formula, length, width, height, volume));
+                if (volumeRuleInfoModel is not null) {
+                    var volumeSortingInfoModel = _volumeSortingInfoModels.FirstOrDefault(f => f.Id.Equals(volumeRuleInfoModel.VolumeSortingId));
+                    if (volumeSortingInfoModel is not null) {
+                        //取出格口指令
+                        //判断格口是否生效
+                        var packageExitDefinitionInfoModel = _packageExitDefinitionInfos.FirstOrDefault(f => f.Id.Equals(volumeSortingInfoModel.ExitId) &&
+                            f.IsActive);
+                        if (packageExitDefinitionInfoModel is not null) {
+                            var sortingInstructionBindingInfoModel = _sortingInstructionBindingInfoModels.FirstOrDefault(f =>
+                                f.ExitId.Equals(volumeSortingInfoModel.ExitId));
+                            if (sortingInstructionBindingInfoModel is not null) {
+                                //执行分拣
+                                //判断指令提交方式
+                                var sortingInstructionInfoModels = _sortingInstructionInfoModels.Where(w =>
+                                        w.InstructionBindingId.Equals(sortingInstructionBindingInfoModel.Id))
+                                    ?.ToList();
+                                await Task.Delay(sortingInstructionBindingInfoModel.DelaySendMilliseconds, token);
+                                SendInstructions(sortingInstructionInfoModels ?? new List<SortingInstructionInfoModel>(),
+                                    TimeSpan.FromMilliseconds(sortingInstructionBindingInfoModel.SendIntervalMilliseconds));
+                            }
+                            else {
+                                //走异常口
+                                ExceptionSorting(token);
+                            }
+                        }
+                        else {
+                            //走异常口
+                            ExceptionSorting(token);
+                        }
+                    }
+                    else {
+                        //走异常口
+                        ExceptionSorting(token);
+                    }
+                }
+                else {
+                    //走异常口
+                    ExceptionSorting(token);
+                }
+            }
+            catch (Exception e) {
+                OnExceptionOccurred(new ExceptionEventArgs() {
+                    ExceptionMessage = $"分拣异常:{e}"
+                });
+            }
+        }
+
+        public async void LogisticsSorting(string barcode, CancellationToken token = default) {
+            try {
+                var logisticsRegexInfoModel = _logisticsRegexInfos.FirstOrDefault(f => Regex.IsMatch(barcode, f.RegexPattern));
+                if (logisticsRegexInfoModel is not null) {
+                    //取出物流
+                    var logisticsRuleInfoModel = _logisticsRuleInfoModels.FirstOrDefault(f => f.LogisticsId.Equals(logisticsRegexInfoModel.LogisticsId));
+                    if (logisticsRuleInfoModel is not null) {
+                        var logisticsSortingInfoModel = _logisticsSortingInfoModels.FirstOrDefault(f => f.Id.Equals(logisticsRuleInfoModel.LogisticsId));
+                        if (logisticsSortingInfoModel is not null) {
+                            //取出格口指令
+                            //判断格口是否生效
+                            var packageExitDefinitionInfoModel = _packageExitDefinitionInfos.FirstOrDefault(f => f.Id.Equals(logisticsSortingInfoModel.ExitId) &&
+                                f.IsActive);
+                            if (packageExitDefinitionInfoModel is not null) {
+                                var sortingInstructionBindingInfoModel = _sortingInstructionBindingInfoModels.FirstOrDefault(f =>
+                                    f.ExitId.Equals(logisticsSortingInfoModel.ExitId));
+                                if (sortingInstructionBindingInfoModel is not null) {
+                                    //执行分拣
+                                    //判断指令提交方式
+                                    var sortingInstructionInfoModels = _sortingInstructionInfoModels.Where(w =>
+                                            w.InstructionBindingId.Equals(sortingInstructionBindingInfoModel.Id))
+                                        ?.ToList();
+                                    await Task.Delay(sortingInstructionBindingInfoModel.DelaySendMilliseconds, token);
+                                    SendInstructions(sortingInstructionInfoModels ?? new List<SortingInstructionInfoModel>(),
+                                        TimeSpan.FromMilliseconds(sortingInstructionBindingInfoModel.SendIntervalMilliseconds));
+                                }
+                                else {
+                                    //走异常口
+                                    ExceptionSorting(token);
+                                }
+                            }
+                            else {
+                                //走异常口
+                                ExceptionSorting(token);
+                            }
+                        }
+                        else {
+                            //走异常口
+                            ExceptionSorting(token);
+                        }
+                    }
+                    else {
+                        //走异常口
+                        ExceptionSorting(token);
+                    }
+                }
+                else {
+                    //走异常口
+                    ExceptionSorting(token);
+                }
+            }
+            catch (Exception e) {
+                OnExceptionOccurred(new ExceptionEventArgs() {
+                    ExceptionMessage = $"分拣异常:{e}"
+                });
+            }
+        }
+
+        public void OcrSorting(CancellationToken token = default) {
+            throw new NotImplementedException();
+        }
+
+        public void ApiResponseSorting(CancellationToken token = default) {
+            //取出所有规则
+            //转换规则
+            //先验证对应的响应状态
+            //逐个验证规则是否符合调节(IsUseStringComparison优先)
+
+            throw new NotImplementedException();
+        }
+
+        public void CombinedWorkflowSorting(CancellationToken token = default) {
+            throw new NotImplementedException();
         }
 
         /// <summary>
@@ -331,6 +840,52 @@ namespace JayTom.Dws.Client.Service.Sorting {
         protected virtual async void OnSendError(ExceptionEventArgs e) {
             await Task.Yield();
             SendError?.Invoke(this, e);
+        }
+
+        private async Task<bool> WaitForReply(string replyContent, TimeSpan timeOut) {
+            await Task.Yield();
+            var startTime = DateTime.Now;
+            do {
+                var tryDequeue = _replyContentQueue.TryDequeue(out var result);
+                if (tryDequeue &&
+                   replyContent.Equals(result)) {
+                    return true;
+                }
+                await Task.Delay(5);
+            } while (DateTime.Now.Subtract(startTime) < timeOut);
+            return false;
+        }
+
+        public bool ValidateWeight(string formula, double weight) {
+            try {
+                // 解析并计算表达式
+                var expression = DynamicExpressionParser
+                    .ParseLambda(new[] { Expression.Parameter(typeof(double), "weight") }, typeof(bool), formula);
+                // 编译并执行表达式
+                return (bool)(expression.Compile().DynamicInvoke(weight) ?? false);
+            }
+            catch (Exception e) {
+                return false;
+            }
+        }
+
+        public bool ValidateVolume(string formula, double length, double width, double height, double volume) {
+            try {
+                // 解析并计算表达式
+                ParameterExpression[] parameters = {
+                    Expression.Parameter(typeof(double), "Length"),
+                    Expression.Parameter(typeof(double), "Width"),
+                    Expression.Parameter(typeof(double), "Height"),
+                    Expression.Parameter(typeof(double), "Volume")
+                };
+                var expression = DynamicExpressionParser.ParseLambda(parameters, typeof(bool), formula);
+
+                // 编译并执行表达式
+                return (bool)(expression.Compile().DynamicInvoke(length, width, height, volume) ?? false);
+            }
+            catch (Exception e) {
+                return false;
+            }
         }
     }
 }

@@ -2,12 +2,12 @@
 using System.Linq;
 using System.Text;
 using System.Threading;
+using JayTom.Dws.Interface;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 
 namespace JayTom.Dws.Client.Service.Sorting {
-
     public interface ISortingService {
 
         /// <summary>
@@ -38,11 +38,8 @@ namespace JayTom.Dws.Client.Service.Sorting {
         /// <summary>
         /// 执行分拣
         /// </summary>
-        /// <param name="barCode"></param>
-        /// <param name="scanTime"></param>
-        /// <param name="sortingType"></param>
-        /// <param name="apiResponseContent"></param>
-        void ExecuteSorting(string barCode, DateTime scanTime, object sortingType, string apiResponseContent);
+
+        void ExecuteSorting(SortingParam param, CancellationToken token = default);
 
         /// <summary>
         /// 发送一组指令
@@ -50,6 +47,13 @@ namespace JayTom.Dws.Client.Service.Sorting {
         /// <param name="instructions"></param>
         /// <param name="interval"></param>
         void SendInstructions(List<string> instructions, TimeSpan interval);
+
+        /// <summary>
+        /// 发送一组指(包含应答)
+        /// </summary>
+        /// <param name="sortingInstructionInfoModels"></param>
+        /// <param name="interval"></param>
+        void SendInstructions(List<SortingInstructionInfoModel> sortingInstructionInfoModels, TimeSpan interval);
 
         /// <summary>
         /// 是否已连接
@@ -82,6 +86,67 @@ namespace JayTom.Dws.Client.Service.Sorting {
         /// 停止分拣服务
         /// </summary>
         Task<KeyValuePair<bool, string>> Stop(CancellationToken token = default);
+
+        /// <summary>
+        /// 异常口分拣
+        /// </summary>
+        void ExceptionSorting(CancellationToken token = default);
+
+        /// <summary>
+        /// 条码分拣
+        /// </summary>
+        /// <param name="barcode"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        void BarcodeSorting(string barcode, CancellationToken token = default);
+
+        /// <summary>
+        /// 重量分拣
+        /// </summary>
+        /// <param name="weight"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        void WeightSorting(float weight, CancellationToken token = default);
+
+        /// <summary>
+        /// 体积分拣
+        /// </summary>
+        /// <param name="volume"></param>
+        /// <param name="token"></param>
+        /// <param name="length"></param>
+        /// <param name="width"></param>
+        /// <param name="height"></param>
+        /// <returns></returns>
+        void VolumeSorting(double length, double width, double height, double volume, CancellationToken token = default);
+
+        /// <summary>
+        /// 物流分拣
+        /// </summary>
+        /// <param name="barcode"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        void LogisticsSorting(string barcode, CancellationToken token = default);
+
+        /// <summary>
+        /// Ocr分拣
+        /// </summary>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        void OcrSorting(CancellationToken token = default);
+
+        /// <summary>
+        /// Api响应内容分拣
+        /// </summary>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        void ApiResponseSorting(CancellationToken token = default);
+
+        /// <summary>
+        /// 工作流分拣
+        /// </summary>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        void CombinedWorkflowSorting(CancellationToken token = default);
     }
 
     public class ExceptionEventArgs : EventArgs {
@@ -138,5 +203,53 @@ namespace JayTom.Dws.Client.Service.Sorting {
         //效验协议
         //通讯协议
         //是否心跳包
+    }
+
+    public class SortingParam {
+
+        /// <summary>
+        /// 条码
+        /// </summary>
+        public string BarCode { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 扫码时间
+        /// </summary>
+        public DateTime? ScanTime { get; set; }
+
+        /// <summary>
+        /// 重量
+        /// </summary>
+        public float Weight { get; set; }
+
+        /// <summary>
+        /// 长度
+        /// </summary>
+        public float Length { get; set; }
+
+        /// <summary>
+        /// 宽度
+        /// </summary>
+        public float Width { get; set; }
+
+        /// <summary>
+        /// 高度
+        /// </summary>
+        public float Height { get; set; }
+
+        /// <summary>
+        /// 体积
+        /// </summary>
+        public float Volume { get; set; }
+
+        /// <summary>
+        /// Ocr三段码
+        /// </summary>
+        public string OcrCode { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Api响应内容
+        /// </summary>
+        public UploadResponse ApiResponse { get; set; } = new();
     }
 }

@@ -57,10 +57,16 @@ namespace JayTom.Dws.Client.Service.ExternalDataService {
         public async Task<KeyValuePair<bool, string>> GetVolume(string barcode, CancellationToken token = default) {
             await Task.Delay(_volumeSettingsDto.VolumeInformationRequesterInfo.SendDelay, token);
             if (_volumeSettingsDto.VolumeInformationRequesterInfo.VolumeRequesterType == VolumeRequesterType.Tcp) {
-                var sendMessage = await _tcpVolumeInput.SendMessage(_volumeSettingsDto.VolumeInformationRequesterInfo.SendContent, token);
-                if (!sendMessage) {
-                    OnExternalDataException(new Exception($"{Languages.Language.ResourceManager.GetString("发送失败") ?? string.Empty}"));
-                    return new KeyValuePair<bool, string>(false, $"{Languages.Language.ResourceManager.GetString("发送失败") ?? string.Empty}");
+                var sendCount = _volumeSettingsDto.VolumeInformationRequesterInfo.SendCount < 0
+                    ? 0
+                    : _volumeSettingsDto.VolumeInformationRequesterInfo.SendCount;
+                for (int i = 0; i < sendCount; i++) {
+                    var sendMessage = await _tcpVolumeInput.SendMessage(_volumeSettingsDto.VolumeInformationRequesterInfo.SendContent, token);
+                    if (!sendMessage) {
+                        OnExternalDataException(new Exception($"{Languages.Language.ResourceManager.GetString("发送失败") ?? string.Empty}"));
+                        return new KeyValuePair<bool, string>(false, $"{Languages.Language.ResourceManager.GetString("发送失败") ?? string.Empty}");
+                    }
+                    await Task.Delay(_volumeSettingsDto.VolumeInformationRequesterInfo.SendInterval, token);
                 }
 
                 _volumeBarCodeItems.Enqueue(barcode);

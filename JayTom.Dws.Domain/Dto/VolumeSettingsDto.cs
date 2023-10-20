@@ -7,7 +7,6 @@ using JayTom.Dws.Domain.Converters;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
 
 namespace JayTom.Dws.Domain.Dto {
-
     public class VolumeSettingsDto {
 
         /// <summary>
@@ -57,7 +56,14 @@ namespace JayTom.Dws.Domain.Dto {
         /// 发送内容
         /// </summary>
         public string SendContent { get; set; } = string.Empty;
-
+        /// <summary>
+        /// 发送次数
+        /// </summary>
+        public int SendCount { get; set; }
+        /// <summary>
+        /// 发送间隔
+        /// </summary>
+        public int SendInterval { get; set; }
         /// <summary>
         /// 发送模式
         /// </summary>

@@ -1996,11 +1996,29 @@ namespace JayTom.Dws.Client.Languages {
         }
         
         /// <summary>
+        ///   查找类似 发送次数: 的本地化字符串。
+        /// </summary>
+        public static string SendCount {
+            get {
+                return ResourceManager.GetString("SendCount", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查找类似 发送延迟: 的本地化字符串。
         /// </summary>
         public static string SendDelay {
             get {
                 return ResourceManager.GetString("SendDelay", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 发送间隔: 的本地化字符串。
+        /// </summary>
+        public static string SendInterval {
+            get {
+                return ResourceManager.GetString("SendInterval", resourceCulture);
             }
         }
         

@@ -483,6 +483,70 @@
                                     Text="{Binding VolumeSettingsInfo.VolumeInformationRequesterInfo.SendContent, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                             </Border>
                         </StackPanel>
+                        <!--  发送次数  -->
+                        <StackPanel Orientation="Horizontal">
+                            <!--  图标  -->
+                            <TextBlock
+                                Margin="5,0"
+                                VerticalAlignment="Center"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                Text="{x:Static languages:Language.SendCount}" />
+                            <Border
+                                Margin="5"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Background="#1A696969"
+                                CornerRadius="5">
+                                <TextBox
+                                    Width="130"
+                                    Height="30"
+                                    MaxWidth="500"
+                                    Margin="5,0"
+                                    materialDesign:TextFieldAssist.HasClearButton="False"
+                                    materialDesign:TextFieldAssist.HasFilledTextField="True"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    FontSize="13"
+                                    FontWeight="Bold"
+                                    Foreground="White"
+                                    InputMethod.IsInputMethodEnabled="False"
+                                    Text="{Binding VolumeSettingsInfo.VolumeInformationRequesterInfo.SendCount, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                            </Border>
+                        </StackPanel>
+                        <!--  发送间隔  -->
+                        <StackPanel Orientation="Horizontal">
+                            <!--  图标  -->
+                            <TextBlock
+                                Margin="5,0"
+                                VerticalAlignment="Center"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                Text="{x:Static languages:Language.SendInterval}" />
+                            <Border
+                                Margin="5"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Background="#1A696969"
+                                CornerRadius="5" Cursor="">
+                                <TextBox
+                                    Width="130"
+                                    Height="30"
+                                    MaxWidth="500"
+                                    Margin="5,0"
+                                    materialDesign:TextFieldAssist.HasClearButton="False"
+                                    materialDesign:TextFieldAssist.HasFilledTextField="True"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    FontSize="13"
+                                    FontWeight="Bold"
+                                    Foreground="White"
+                                    InputMethod.IsInputMethodEnabled="False"
+                                    Text="{Binding VolumeSettingsInfo.VolumeInformationRequesterInfo.SendInterval, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                            </Border>
+                        </StackPanel>
                         <!--  发送类型  -->
                         <StackPanel>
                             <!--  Tcp触发  -->
