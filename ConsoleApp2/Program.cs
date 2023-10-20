@@ -3,7 +3,9 @@ using System.Linq;
 using ConsoleApp2;
 using System.Text;
 using Newtonsoft.Json;
+using System.Text.Json;
 using System.Collections;
+using System.Diagnostics;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using System.Linq.Expressions;
@@ -11,26 +13,22 @@ using System.Linq.Dynamic.Core;
 using System.Collections.Generic;
 using JayTom.Dws.Interface.Sunnen;
 using JayTom.Dws.Interface.Szjy188;
+using static System.Text.Json.JsonElement;
 using static JayTom.Dws.Interface.Szjy188.SzjyApi;
 
 internal class Program {
 
     private static async Task Main(string[] args) {
-        /*float x = 5, y = 18, z = 14;
-        string formula = "x > 10.0 AND y < 20.1 AND z <> 12.0 AND o>6";
-
-        // 使用DataTable的Compute方法计算公式的值
-        bool result = (bool)new System.Data.DataTable().Compute(formula.Replace("x", x.ToString()).Replace("y", y.ToString()).Replace("z", z.ToString()), null);
-
-        if (result) {
-            Console.WriteLine("公式成立");
+        string json = "{\"key1\":{\"key2\":{\"field\":\"valueaa\"}},\"key3\":[{\"field1\":\"value2\"}]}";
+        string fieldName = "key";
+        JsonDocument jsonDocument = JsonDocument.Parse(json);
+        JsonElement? fieldValue = FindFieldValue(jsonDocument.RootElement, fieldName);
+        if (fieldValue.HasValue) {
+            Console.WriteLine($"Field '{fieldName}' exists. Value: {fieldValue.Value}");
         }
         else {
-            Console.WriteLine("公式不成立");
-        }*/
-
-        var validateWeight = ValidateWeight(34);
-        var validateSorting = ValidateSorting(11, 12, 13, 1800);
+            Console.WriteLine($"Field '{fieldName}' does not exist.");
+        }
         return;
 
         var szjyApi = new SzjyApi(null);
@@ -44,6 +42,126 @@ internal class Program {
             30, 40, null, null, "Box");
         Console.WriteLine(uploadResponse);
         Console.ReadLine();
+    }
+
+    private static JsonElement? FindFieldValue(JsonElement root, string fieldName) {
+        try {
+            var stack = new Stack<JsonElement>();
+            stack.Push(root);
+
+            while (stack.Count > 0) {
+                var element = stack.Pop();
+
+                if (element.ValueKind == JsonValueKind.Object) {
+                    if (element.TryGetProperty(fieldName, out JsonElement field)) {
+                        return field;
+                    }
+
+                    foreach (JsonProperty property in element.EnumerateObject()) {
+                        stack.Push(property.Value);
+                    }
+                }
+                else if (element.ValueKind == JsonValueKind.Array) {
+                    foreach (JsonElement arrayElement in element.EnumerateArray()) {
+                        stack.Push(arrayElement);
+                    }
+                }
+            }
+        }
+        catch (Exception e) {
+            Console.WriteLine(e.ToString());
+        }
+
+        return null;
+    }
+
+    private static JsonElement? FindFieldValue1(JsonElement element, string fieldName) {
+        if (element.ValueKind == JsonValueKind.Object) {
+            if (element.TryGetProperty(fieldName, out JsonElement field)) {
+                return field;
+            }
+
+            foreach (JsonProperty property in element.EnumerateObject()) {
+                JsonElement? fieldValue = FindFieldValue(property.Value, fieldName);
+                if (fieldValue.HasValue) {
+                    return fieldValue;
+                }
+            }
+        }
+        else if (element.ValueKind == JsonValueKind.Array) {
+            foreach (JsonElement arrayElement in element.EnumerateArray()) {
+                JsonElement? fieldValue = FindFieldValue(arrayElement, fieldName);
+                if (fieldValue.HasValue) {
+                    return fieldValue;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    public static Dictionary<string, object> SearchFields(JsonElement element) {
+        Dictionary<string, object> jsonDictionary = new();
+        if (element.ValueKind == JsonValueKind.Object) {
+            var objectEnumerator = element.EnumerateObject();
+            foreach (var variable in objectEnumerator) {
+                jsonDictionary.Add(variable.Name, variable.Value);
+                if (variable.Value.ValueKind != JsonValueKind.Undefined) {
+                    SearchFields(variable.Value);
+                }
+            }
+        }
+        else if (element.ValueKind == JsonValueKind.Array) {
+            foreach (var arrayElement in element.EnumerateArray()) {
+                if (arrayElement.ValueKind != JsonValueKind.Undefined) {
+                    SearchFields(arrayElement);
+                }
+            }
+        }
+        else if (element.ValueKind == JsonValueKind.String) {
+            Console.WriteLine(element);
+        }
+
+        return jsonDictionary;
+    }
+
+    private static object? SearchField(JsonElement element, string fieldName) {
+        if (element.ValueKind == JsonValueKind.Object) {
+            var objectEnumerator = element.EnumerateObject();
+            foreach (var variable in objectEnumerator) {
+                if (variable.Name.Equals(fieldName)) {
+                    return variable.Value.ToString();
+                }
+                else {
+                    if (variable.Value.ValueKind != JsonValueKind.Undefined) {
+                        SearchField(variable.Value, fieldName);
+                    }
+                }
+            }
+            var property = element.EnumerateObject()
+                .FirstOrDefault(x => x.Name.Equals(fieldName, StringComparison.OrdinalIgnoreCase));
+            if (property.Name.Equals(fieldName)) {
+                return property.Value.ToString();
+            }
+            if (property.Value.ValueKind == JsonValueKind.Undefined) // ValueKind is undefined
+            {
+                return null;
+            }
+            else if (property.Value.ValueKind == JsonValueKind.Object ||
+                     property.Value.ValueKind == JsonValueKind.Array) {
+                return SearchField(property.Value, fieldName);
+            }
+        }
+        else if (element.ValueKind == JsonValueKind.Array) {
+            foreach (var arrayElement in element.EnumerateArray()) {
+                var result = SearchField(arrayElement, fieldName);
+                if (result != null) {
+                    return result?.ToString();
+                }
+            }
+        }
+
+        return null;
     }
 
     // 从计算公式中提取变量名称

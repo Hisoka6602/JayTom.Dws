@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 
 namespace JayTom.Dws.Client.Service.Sorting {
+
     public interface ISortingService {
 
         /// <summary>
@@ -137,9 +138,10 @@ namespace JayTom.Dws.Client.Service.Sorting {
         /// <summary>
         /// Api响应内容分拣
         /// </summary>
+        /// <param name="apiResponse"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        void ApiResponseSorting(CancellationToken token = default);
+        void ApiResponseSorting(UploadResponse apiResponse, CancellationToken token = default);
 
         /// <summary>
         /// 工作流分拣

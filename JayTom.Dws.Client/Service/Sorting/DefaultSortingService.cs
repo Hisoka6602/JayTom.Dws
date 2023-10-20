@@ -5,12 +5,15 @@ using System.Linq;
 using System.Text;
 using Newtonsoft.Json;
 using System.Threading;
+using System.Text.Json;
+using JayTom.Dws.Interface;
 using JayTom.Dws.Domain.Dto;
 using JayTom.Dws.Plugin.Tcp;
 using System.Threading.Tasks;
 using System.Linq.Expressions;
 using System.Linq.Dynamic.Core;
 using JayTom.Dws.Data.LocalConf;
+using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
@@ -48,6 +51,8 @@ namespace JayTom.Dws.Client.Service.Sorting {
         private readonly IWeightSortingRepository _weightSortingRepository;
         private readonly IVolumeRuleRepository _volumeRuleRepository;
         private readonly IWeightRuleRepository _weightRuleRepository;
+        private readonly IApiSortingRepository _apiSortingRepository;
+        private readonly IApiRuleRepository _apiRuleRepository;
         private SemaphoreSlim _semaphore = new(1);
         private CommunicationsSettingsDto _communicationsSettingsDto = new();
         private SortingMethodDto _sortingMethodDto = new();
@@ -72,6 +77,8 @@ namespace JayTom.Dws.Client.Service.Sorting {
         private List<WeightSortingInfoModel> _weightSortingInfoModels = new();
         private List<VolumeRuleInfoModel> _volumeRuleInfoModels = new();
         private List<WeightRuleInfoModel> _weightRuleInfoModels = new();
+        private List<ApiRuleInfoModel> _apiRuleInfoModels = new();
+        private List<ApiSortingInfoModel> _apiSortingInfoModels = new();
 
         #endregion 配置
 
@@ -99,7 +106,9 @@ namespace JayTom.Dws.Client.Service.Sorting {
             IVolumeSortingRepository volumeSortingRepository,
             IWeightSortingRepository weightSortingRepository,
             IVolumeRuleRepository volumeRuleRepository,
-            IWeightRuleRepository weightRuleRepository) {
+            IWeightRuleRepository weightRuleRepository,
+            IApiSortingRepository apiSortingRepository,
+            IApiRuleRepository apiRuleRepository) {
             _configRepository = configRepository;
             _sortingSerialPort = sortingSerialPort;
             _sortingTcp = sortingTcp;
@@ -118,6 +127,8 @@ namespace JayTom.Dws.Client.Service.Sorting {
             _weightSortingRepository = weightSortingRepository;
             _volumeRuleRepository = volumeRuleRepository;
             _weightRuleRepository = weightRuleRepository;
+            _apiSortingRepository = apiSortingRepository;
+            _apiRuleRepository = apiRuleRepository;
             //事件
             _sortingSerialPort.Disconnected += delegate (object? sender, ISortingSerialPort port) {
                 IsConnected = false;
@@ -219,7 +230,6 @@ namespace JayTom.Dws.Client.Service.Sorting {
                         _sortingMethodDto.SortMode != SortMode.CombinedWorkflowSorting) {
                         ExecuteSorting(new SortingParam() {
                             BarCode = model.BarCode,
-                            ApiResponseContent = string.Empty,
                             Height = (float)(model.Height ?? 0),
                             Length = (float)(model.Length ?? 0),
                             ScanTime = model.ScanTime,
@@ -263,7 +273,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                         break;
 
                     case SortMode.ApiResponseSorting:
-                        ApiResponseSorting(token);
+                        ApiResponseSorting(param.ApiResponse, token);
                         break;
 
                     case SortMode.CombinedWorkflowSorting:
@@ -493,6 +503,8 @@ namespace JayTom.Dws.Client.Service.Sorting {
                     _weightSortingInfoModels = await _weightSortingRepository.Select(s => s.Id > 0,
                         o => o.CreateTime, token);
                     _weightRuleInfoModels = await _weightRuleRepository.Select(s => s.Id > 0, o => o.CreateTime, token);
+                    _apiRuleInfoModels = await _apiRuleRepository.Select(s => s.Id > 0, o => o.CreateTime, token);
+                    _apiSortingInfoModels = await _apiSortingRepository.Select(s => s.Id > 0, o => o.CreateTime, token);
                 }
                 catch (Exception e) {
                     OnExceptionOccurred(new ExceptionEventArgs() {
@@ -752,13 +764,48 @@ namespace JayTom.Dws.Client.Service.Sorting {
             throw new NotImplementedException();
         }
 
-        public void ApiResponseSorting(CancellationToken token = default) {
-            //取出所有规则
-            //转换规则
-            //先验证对应的响应状态
-            //逐个验证规则是否符合调节(IsUseStringComparison优先)
-
-            throw new NotImplementedException();
+        public async void ApiResponseSorting(UploadResponse apiResponse, CancellationToken token = default) {
+            var apiRuleInfoModel = _apiRuleInfoModels.FirstOrDefault(f =>
+                ValidateApiRule(apiResponse, f.JsonContent));
+            if (apiRuleInfoModel != null) {
+                var apiSortingInfoModel = _apiSortingInfoModels.FirstOrDefault(f => f.Id.Equals(apiRuleInfoModel.ApiSortingId));
+                if (apiSortingInfoModel is not null) {
+                    //取出格口指令
+                    //判断格口是否生效
+                    var packageExitDefinitionInfoModel = _packageExitDefinitionInfos.FirstOrDefault(f => f.Id.Equals(apiSortingInfoModel.ExitId) &&
+                        f.IsActive);
+                    if (packageExitDefinitionInfoModel is not null) {
+                        var sortingInstructionBindingInfoModel = _sortingInstructionBindingInfoModels.FirstOrDefault(f =>
+                            f.ExitId.Equals(apiSortingInfoModel.ExitId));
+                        if (sortingInstructionBindingInfoModel is not null) {
+                            //执行分拣
+                            //判断指令提交方式
+                            var sortingInstructionInfoModels = _sortingInstructionInfoModels.Where(w =>
+                                    w.InstructionBindingId.Equals(sortingInstructionBindingInfoModel.Id))
+                                ?.ToList();
+                            await Task.Delay(sortingInstructionBindingInfoModel.DelaySendMilliseconds, token);
+                            SendInstructions(sortingInstructionInfoModels ?? new List<SortingInstructionInfoModel>(),
+                                TimeSpan.FromMilliseconds(sortingInstructionBindingInfoModel.SendIntervalMilliseconds));
+                        }
+                        else {
+                            //走异常口
+                            ExceptionSorting(token);
+                        }
+                    }
+                    else {
+                        //走异常口
+                        ExceptionSorting(token);
+                    }
+                }
+                else {
+                    //走异常口
+                    ExceptionSorting(token);
+                }
+            }
+            else {
+                //走异常口
+                ExceptionSorting(token);
+            }
         }
 
         public void CombinedWorkflowSorting(CancellationToken token = default) {
@@ -856,6 +903,40 @@ namespace JayTom.Dws.Client.Service.Sorting {
             return false;
         }
 
+        private bool ValidateApiRule(UploadResponse apiResponse, string json) {
+            try {
+                var apiRuleJsonDto = JsonConvert.DeserializeObject<ApiRuleJsonDto>(json);
+
+                if (apiRuleJsonDto is not null) {
+                    if (apiRuleJsonDto.ResponseStatus == (apiResponse.IsSuccess ? UploadStatus.Succeeded : UploadStatus.Failed)) {
+                        //判断查找方式
+                        if (!apiRuleJsonDto.IsUseStringComparison) {
+                            return true;
+                        }
+                        else {
+                            if (apiRuleJsonDto.IsUseStringSearch) {
+                                return apiResponse.ResponseContent.Contains(apiRuleJsonDto.SearchStringContent);
+                            }
+                            else if (apiRuleJsonDto.IsUseJsonField) {
+                                var reader = new Utf8JsonReader(Encoding.UTF8.GetBytes(apiResponse.ResponseContent));
+                                var tryParseValue = JsonDocument.TryParseValue(ref reader, out var document);
+                                if (tryParseValue && document is not null) {
+                                    var fieldValue = FindFieldValue(document.RootElement, apiRuleJsonDto.JsonField);
+                                    if (fieldValue.HasValue) {
+                                        return fieldValue.Value.ToString()?.Equals(apiRuleJsonDto.JsonFieldValue) == true;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception e) {
+                Console.WriteLine(e);
+            }
+            return false;
+        }
+
         public bool ValidateWeight(string formula, double weight) {
             try {
                 // 解析并计算表达式
@@ -886,6 +967,42 @@ namespace JayTom.Dws.Client.Service.Sorting {
             catch (Exception e) {
                 return false;
             }
+        }
+
+        private JsonElement? FindFieldValue(JsonElement root, string fieldName) {
+            try {
+                var stack = new Stack<JsonElement>();
+                stack.Push(root);
+
+                while (stack.Count > 0) {
+                    var element = stack.Pop();
+
+                    switch (element.ValueKind) {
+                        case JsonValueKind.Object when element.TryGetProperty(fieldName, out var field):
+                            return field;
+
+                        case JsonValueKind.Object: {
+                                foreach (var property in element.EnumerateObject()) {
+                                    stack.Push(property.Value);
+                                }
+
+                                break;
+                            }
+                        case JsonValueKind.Array: {
+                                foreach (var arrayElement in element.EnumerateArray()) {
+                                    stack.Push(arrayElement);
+                                }
+
+                                break;
+                            }
+                    }
+                }
+            }
+            catch (Exception e) {
+                Console.WriteLine(e.ToString());
+            }
+
+            return null;
         }
     }
 }
