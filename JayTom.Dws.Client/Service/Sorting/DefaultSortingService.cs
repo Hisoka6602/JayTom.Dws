@@ -269,7 +269,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                         break;
 
                     case SortMode.OcrSorting:
-                        OcrSorting(token);
+                        OcrSorting(param.OcrCode, token);
                         break;
 
                     case SortMode.ApiResponseSorting:
@@ -547,7 +547,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
             }
         }
 
-        public async void BarcodeSorting(string barcode, CancellationToken token = default) {
+        public void BarcodeSorting(string barcode, CancellationToken token = default) {
             try {
                 var barCodeRegexInfoModel = _barCodeRegexInfos.FirstOrDefault(f => Regex.IsMatch(barcode, f.RegexPattern));
                 if (barCodeRegexInfoModel is not null) {
@@ -555,32 +555,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                     var barCodeSortingInfoModel = _barCodeSortingInfoModels.FirstOrDefault(f =>
                         f.Id.Equals(barCodeRegexInfoModel.BarCodeSortingId));
                     if (barCodeSortingInfoModel is not null) {
-                        //取出格口指令
-                        //判断格口是否生效
-                        var packageExitDefinitionInfoModel = _packageExitDefinitionInfos.FirstOrDefault(f => f.Id.Equals(barCodeSortingInfoModel.ExitId) &&
-                            f.IsActive);
-                        if (packageExitDefinitionInfoModel is not null) {
-                            var sortingInstructionBindingInfoModel = _sortingInstructionBindingInfoModels.FirstOrDefault(f =>
-                                f.ExitId.Equals(barCodeSortingInfoModel.ExitId));
-                            if (sortingInstructionBindingInfoModel is not null) {
-                                //执行分拣
-                                //判断指令提交方式
-                                var sortingInstructionInfoModels = _sortingInstructionInfoModels.Where(w =>
-                                        w.InstructionBindingId.Equals(sortingInstructionBindingInfoModel.Id))
-                                    ?.ToList();
-                                await Task.Delay(sortingInstructionBindingInfoModel.DelaySendMilliseconds, token);
-                                SendInstructions(sortingInstructionInfoModels ?? new List<SortingInstructionInfoModel>(),
-                                    TimeSpan.FromMilliseconds(sortingInstructionBindingInfoModel.SendIntervalMilliseconds));
-                            }
-                            else {
-                                //走异常口
-                                ExceptionSorting(token);
-                            }
-                        }
-                        else {
-                            //走异常口
-                            ExceptionSorting(token);
-                        }
+                        SubSorting(barCodeSortingInfoModel.ExitId, token);
                     }
                     else {
                         //走异常口
@@ -599,7 +574,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
             }
         }
 
-        public async void WeightSorting(float weight, CancellationToken token = default) {
+        public void WeightSorting(float weight, CancellationToken token = default) {
             //取出重量规则
             try {
                 var weightRuleInfoModel = _weightRuleInfoModels.FirstOrDefault(f => ValidateWeight(f.Formula, weight));
@@ -608,32 +583,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                     var weightSortingInfoModel = _weightSortingInfoModels.FirstOrDefault(f =>
                         f.Id.Equals(weightRuleInfoModel.WeightSortingId));
                     if (weightSortingInfoModel is not null) {
-                        //取出格口指令
-                        //判断格口是否生效
-                        var packageExitDefinitionInfoModel = _packageExitDefinitionInfos.FirstOrDefault(f => f.Id.Equals(weightSortingInfoModel.ExitId) &&
-                            f.IsActive);
-                        if (packageExitDefinitionInfoModel is not null) {
-                            var sortingInstructionBindingInfoModel = _sortingInstructionBindingInfoModels.FirstOrDefault(f =>
-                                f.ExitId.Equals(weightSortingInfoModel.ExitId));
-                            if (sortingInstructionBindingInfoModel is not null) {
-                                //执行分拣
-                                //判断指令提交方式
-                                var sortingInstructionInfoModels = _sortingInstructionInfoModels.Where(w =>
-                                        w.InstructionBindingId.Equals(sortingInstructionBindingInfoModel.Id))
-                                    ?.ToList();
-                                await Task.Delay(sortingInstructionBindingInfoModel.DelaySendMilliseconds, token);
-                                SendInstructions(sortingInstructionInfoModels ?? new List<SortingInstructionInfoModel>(),
-                                    TimeSpan.FromMilliseconds(sortingInstructionBindingInfoModel.SendIntervalMilliseconds));
-                            }
-                            else {
-                                //走异常口
-                                ExceptionSorting(token);
-                            }
-                        }
-                        else {
-                            //走异常口
-                            ExceptionSorting(token);
-                        }
+                        SubSorting(weightSortingInfoModel.ExitId, token);
                     }
                     else {
                         //走异常口
@@ -652,38 +602,13 @@ namespace JayTom.Dws.Client.Service.Sorting {
             }
         }
 
-        public async void VolumeSorting(double length, double width, double height, double volume, CancellationToken token = default) {
+        public void VolumeSorting(double length, double width, double height, double volume, CancellationToken token = default) {
             try {
                 var volumeRuleInfoModel = _volumeRuleInfoModels.FirstOrDefault(f => ValidateVolume(f.Formula, length, width, height, volume));
                 if (volumeRuleInfoModel is not null) {
                     var volumeSortingInfoModel = _volumeSortingInfoModels.FirstOrDefault(f => f.Id.Equals(volumeRuleInfoModel.VolumeSortingId));
                     if (volumeSortingInfoModel is not null) {
-                        //取出格口指令
-                        //判断格口是否生效
-                        var packageExitDefinitionInfoModel = _packageExitDefinitionInfos.FirstOrDefault(f => f.Id.Equals(volumeSortingInfoModel.ExitId) &&
-                            f.IsActive);
-                        if (packageExitDefinitionInfoModel is not null) {
-                            var sortingInstructionBindingInfoModel = _sortingInstructionBindingInfoModels.FirstOrDefault(f =>
-                                f.ExitId.Equals(volumeSortingInfoModel.ExitId));
-                            if (sortingInstructionBindingInfoModel is not null) {
-                                //执行分拣
-                                //判断指令提交方式
-                                var sortingInstructionInfoModels = _sortingInstructionInfoModels.Where(w =>
-                                        w.InstructionBindingId.Equals(sortingInstructionBindingInfoModel.Id))
-                                    ?.ToList();
-                                await Task.Delay(sortingInstructionBindingInfoModel.DelaySendMilliseconds, token);
-                                SendInstructions(sortingInstructionInfoModels ?? new List<SortingInstructionInfoModel>(),
-                                    TimeSpan.FromMilliseconds(sortingInstructionBindingInfoModel.SendIntervalMilliseconds));
-                            }
-                            else {
-                                //走异常口
-                                ExceptionSorting(token);
-                            }
-                        }
-                        else {
-                            //走异常口
-                            ExceptionSorting(token);
-                        }
+                        SubSorting(volumeSortingInfoModel.ExitId, token);
                     }
                     else {
                         //走异常口
@@ -702,7 +627,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
             }
         }
 
-        public async void LogisticsSorting(string barcode, CancellationToken token = default) {
+        public void LogisticsSorting(string barcode, CancellationToken token = default) {
             try {
                 var logisticsRegexInfoModel = _logisticsRegexInfos.FirstOrDefault(f => Regex.IsMatch(barcode, f.RegexPattern));
                 if (logisticsRegexInfoModel is not null) {
@@ -711,32 +636,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                     if (logisticsRuleInfoModel is not null) {
                         var logisticsSortingInfoModel = _logisticsSortingInfoModels.FirstOrDefault(f => f.Id.Equals(logisticsRuleInfoModel.LogisticsId));
                         if (logisticsSortingInfoModel is not null) {
-                            //取出格口指令
-                            //判断格口是否生效
-                            var packageExitDefinitionInfoModel = _packageExitDefinitionInfos.FirstOrDefault(f => f.Id.Equals(logisticsSortingInfoModel.ExitId) &&
-                                f.IsActive);
-                            if (packageExitDefinitionInfoModel is not null) {
-                                var sortingInstructionBindingInfoModel = _sortingInstructionBindingInfoModels.FirstOrDefault(f =>
-                                    f.ExitId.Equals(logisticsSortingInfoModel.ExitId));
-                                if (sortingInstructionBindingInfoModel is not null) {
-                                    //执行分拣
-                                    //判断指令提交方式
-                                    var sortingInstructionInfoModels = _sortingInstructionInfoModels.Where(w =>
-                                            w.InstructionBindingId.Equals(sortingInstructionBindingInfoModel.Id))
-                                        ?.ToList();
-                                    await Task.Delay(sortingInstructionBindingInfoModel.DelaySendMilliseconds, token);
-                                    SendInstructions(sortingInstructionInfoModels ?? new List<SortingInstructionInfoModel>(),
-                                        TimeSpan.FromMilliseconds(sortingInstructionBindingInfoModel.SendIntervalMilliseconds));
-                                }
-                                else {
-                                    //走异常口
-                                    ExceptionSorting(token);
-                                }
-                            }
-                            else {
-                                //走异常口
-                                ExceptionSorting(token);
-                            }
+                            SubSorting(logisticsSortingInfoModel.ExitId, token);
                         }
                         else {
                             //走异常口
@@ -760,42 +660,38 @@ namespace JayTom.Dws.Client.Service.Sorting {
             }
         }
 
-        public void OcrSorting(CancellationToken token = default) {
-            throw new NotImplementedException();
-        }
-
-        public async void ApiResponseSorting(UploadResponse apiResponse, CancellationToken token = default) {
-            var apiRuleInfoModel = _apiRuleInfoModels.FirstOrDefault(f =>
-                ValidateApiRule(apiResponse, f.JsonContent));
-            if (apiRuleInfoModel != null) {
-                var apiSortingInfoModel = _apiSortingInfoModels.FirstOrDefault(f => f.Id.Equals(apiRuleInfoModel.ApiSortingId));
-                if (apiSortingInfoModel is not null) {
-                    //取出格口指令
-                    //判断格口是否生效
-                    var packageExitDefinitionInfoModel = _packageExitDefinitionInfos.FirstOrDefault(f => f.Id.Equals(apiSortingInfoModel.ExitId) &&
-                        f.IsActive);
-                    if (packageExitDefinitionInfoModel is not null) {
-                        var sortingInstructionBindingInfoModel = _sortingInstructionBindingInfoModels.FirstOrDefault(f =>
-                            f.ExitId.Equals(apiSortingInfoModel.ExitId));
-                        if (sortingInstructionBindingInfoModel is not null) {
-                            //执行分拣
-                            //判断指令提交方式
-                            var sortingInstructionInfoModels = _sortingInstructionInfoModels.Where(w =>
-                                    w.InstructionBindingId.Equals(sortingInstructionBindingInfoModel.Id))
-                                ?.ToList();
-                            await Task.Delay(sortingInstructionBindingInfoModel.DelaySendMilliseconds, token);
-                            SendInstructions(sortingInstructionInfoModels ?? new List<SortingInstructionInfoModel>(),
-                                TimeSpan.FromMilliseconds(sortingInstructionBindingInfoModel.SendIntervalMilliseconds));
-                        }
-                        else {
-                            //走异常口
-                            ExceptionSorting(token);
-                        }
+        public void OcrSorting(string ocrContent, CancellationToken token = default) {
+            try {
+                var ocrRuleInfoModel = _ocrRuleInfoModels.FirstOrDefault(f => Regex.IsMatch(ocrContent, f.RegexPattern));
+                if (ocrRuleInfoModel is not null) {
+                    var ocrSortingInfoModel = _ocrSortingInfoModels.FirstOrDefault(f => f.Id.Equals(ocrRuleInfoModel.OcrSortingId));
+                    if (ocrSortingInfoModel is not null) {
+                        SubSorting(ocrSortingInfoModel.ExitId, token);
                     }
                     else {
                         //走异常口
                         ExceptionSorting(token);
                     }
+                }
+                else {
+                    //走异常口
+                    ExceptionSorting(token);
+                }
+            }
+            catch (Exception e) {
+                OnExceptionOccurred(new ExceptionEventArgs() {
+                    ExceptionMessage = $"分拣异常:{e}"
+                });
+            }
+        }
+
+        public void ApiResponseSorting(UploadResponse apiResponse, CancellationToken token = default) {
+            var apiRuleInfoModel = _apiRuleInfoModels.FirstOrDefault(f =>
+                ValidateApiRule(apiResponse, f.JsonContent));
+            if (apiRuleInfoModel != null) {
+                var apiSortingInfoModel = _apiSortingInfoModels.FirstOrDefault(f => f.Id.Equals(apiRuleInfoModel.ApiSortingId));
+                if (apiSortingInfoModel is not null) {
+                    SubSorting(apiSortingInfoModel.ExitId, token);
                 }
                 else {
                     //走异常口
@@ -887,6 +783,40 @@ namespace JayTom.Dws.Client.Service.Sorting {
         protected virtual async void OnSendError(ExceptionEventArgs e) {
             await Task.Yield();
             SendError?.Invoke(this, e);
+        }
+
+        /// <summary>
+        /// 分拣
+        /// </summary>
+        /// <param name="exitId"></param>
+        /// <param name="token"></param>
+        private async void SubSorting(long exitId, CancellationToken token = default) {
+            //取出格口指令
+            //判断格口是否生效
+            var packageExitDefinitionInfoModel = _packageExitDefinitionInfos.FirstOrDefault(f => f.Id.Equals(exitId) &&
+                f.IsActive);
+            if (packageExitDefinitionInfoModel is not null) {
+                var sortingInstructionBindingInfoModel = _sortingInstructionBindingInfoModels.FirstOrDefault(f =>
+                    f.ExitId.Equals(exitId));
+                if (sortingInstructionBindingInfoModel is not null) {
+                    //执行分拣
+                    //判断指令提交方式
+                    var sortingInstructionInfoModels = _sortingInstructionInfoModels.Where(w =>
+                            w.InstructionBindingId.Equals(sortingInstructionBindingInfoModel.Id))
+                        ?.ToList();
+                    await Task.Delay(sortingInstructionBindingInfoModel.DelaySendMilliseconds, token);
+                    SendInstructions(sortingInstructionInfoModels ?? new List<SortingInstructionInfoModel>(),
+                        TimeSpan.FromMilliseconds(sortingInstructionBindingInfoModel.SendIntervalMilliseconds));
+                }
+                else {
+                    //走异常口
+                    ExceptionSorting(token);
+                }
+            }
+            else {
+                //走异常口
+                ExceptionSorting(token);
+            }
         }
 
         private async Task<bool> WaitForReply(string replyContent, TimeSpan timeOut) {

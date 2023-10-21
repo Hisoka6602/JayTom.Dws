@@ -419,6 +419,7 @@ namespace JayTom.Dws.Client {
             ViewModelLocationProvider.Register<LogisticsSortingPage, LogisticsSortingViewModel>();
             ViewModelLocationProvider.Register<OcrSortingPage, OcrSortingViewModel>();
             ViewModelLocationProvider.Register<ApiResponseSortingPage, ApiResponseSortingViewModel>();
+            ViewModelLocationProvider.Register<CombinedWorkflowSortingPage, CombinedWorkflowSortingViewModel>();
             //接口
             ViewModelLocationProvider.Register<DefaultApiPage, DefaultApiPageViewModel>();
             ViewModelLocationProvider.Register<SzjyApiPage, SzjyApiPageViewModel>();

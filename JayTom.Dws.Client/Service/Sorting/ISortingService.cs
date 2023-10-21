@@ -131,9 +131,10 @@ namespace JayTom.Dws.Client.Service.Sorting {
         /// <summary>
         /// Ocr分拣
         /// </summary>
+        /// <param name="ocrContent"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        void OcrSorting(CancellationToken token = default);
+        void OcrSorting(string ocrContent, CancellationToken token = default);
 
         /// <summary>
         /// Api响应内容分拣
