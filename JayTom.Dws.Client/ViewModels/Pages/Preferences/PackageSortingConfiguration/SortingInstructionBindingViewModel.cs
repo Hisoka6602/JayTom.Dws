@@ -255,7 +255,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         }
 
         private void SendInstructionDelegate(SortingInstructionBindingItemInfoModel obj) {
-            _sortingService.SendInstructions(obj.SortingInstructionItems.Select(s => s.Instruction)
+            _sortingService.SendInstructions(0, obj.SortingInstructionItems.Select(s => s.Instruction)
                     ?.ToList() ?? new List<string>(),
                 TimeSpan.FromMilliseconds(obj.SendIntervalMilliseconds));
             Console.WriteLine(11);

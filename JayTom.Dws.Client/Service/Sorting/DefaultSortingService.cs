@@ -11,6 +11,7 @@ using JayTom.Dws.Domain.Dto;
 using JayTom.Dws.Plugin.Tcp;
 using System.Threading.Tasks;
 using System.Linq.Expressions;
+using System.Windows.Controls;
 using System.Linq.Dynamic.Core;
 using JayTom.Dws.Data.LocalConf;
 using JayTom.Dws.Data.LocalData;
@@ -19,6 +20,7 @@ using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
+using JayTom.Dws.Domain.DownstreamProtocols;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Client.Service.BackgroundService;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
@@ -26,10 +28,10 @@ using JayTom.Dws.Client.Service.Sorting.Communication.TcpComm;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig.RuleConfig;
 using JayTom.Dws.Client.Service.Sorting.Communication.SerialComm;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
+using JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig.RuleConfig;
 using static JayTom.Dws.Client.Service.BackgroundService.SubmitApiBackgroundService;
 using JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig.RuleConfig;
-using static JayTom.Dws.Client.Service.BackgroundService.ScanProcessBackgroundService;
 
 namespace JayTom.Dws.Client.Service.Sorting {
 
@@ -54,6 +56,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
         private readonly IWeightRuleRepository _weightRuleRepository;
         private readonly IApiSortingRepository _apiSortingRepository;
         private readonly IApiRuleRepository _apiRuleRepository;
+        private IDeviceCommunicationProtocol? _deviceCommunicationProtocol = null;
         private SemaphoreSlim _semaphore = new(1);
         private CommunicationsSettingsDto _communicationsSettingsDto = new();
         private SortingMethodDto _sortingMethodDto = new();
@@ -90,6 +93,12 @@ namespace JayTom.Dws.Client.Service.Sorting {
         public event EventHandler<Exception>? HeartbeatError;
 
         public event EventHandler<ExceptionEventArgs>? SendError;
+
+        public event EventHandler<string>? CreatePackageEvent;
+
+        public event EventHandler<string>? RemovePackageEvent;
+
+        public event EventHandler<string>? ClearExceptionEvent;
 
         public DefaultSortingService(IConfigRepository configRepository,
             ISortingSerialPort sortingSerialPort,
@@ -145,6 +154,26 @@ namespace JayTom.Dws.Client.Service.Sorting {
                 };
             _sortingSerialPort.DataReceived += delegate (object? sender, MessageEventArgs args) {
                 //接收的数据
+                if (_deviceCommunicationProtocol is not null) {
+                    var deviceDecodeResult = _deviceCommunicationProtocol.DecodeData(args.AsciiMessage);
+                    if (deviceDecodeResult is not null) {
+                        if (deviceDecodeResult.Type == FunctionType.CreatePackage) {
+                            //创建包裹
+                            OnCreatePackageEvent(deviceDecodeResult.Keyword);
+                        }
+                        else if (deviceDecodeResult.Type == FunctionType.RemovePackage) {
+                            //移除包裹
+                            OnCreatePackageEvent(deviceDecodeResult.Keyword);
+                        }
+                        else if (deviceDecodeResult.Type == FunctionType.Heartbeat) {
+                            //心跳包
+                            OnCreatePackageEvent(deviceDecodeResult.Keyword);
+                        }
+                        else if (deviceDecodeResult.Type == FunctionType.ClearException) {
+                            //清空异常
+                        }
+                    }
+                }
                 _replyContentQueue.Enqueue(args.AsciiMessage);
             };
             _sortingSerialPort.HeartbeatError += delegate (object? sender, Exception exception) {
@@ -173,6 +202,27 @@ namespace JayTom.Dws.Client.Service.Sorting {
             _sortingTcp.Communication += delegate (object? sender, CommunicationInfo info) {
                 if (info.Type == CommunicationType.Receive) {
                     //接收消息
+                    if (_deviceCommunicationProtocol is not null) {
+                        var deviceDecodeResult = _deviceCommunicationProtocol.DecodeData(info.Content);
+                        if (deviceDecodeResult is not null) {
+                            if (deviceDecodeResult.Type == FunctionType.CreatePackage) {
+                                //创建包裹
+                                OnCreatePackageEvent(deviceDecodeResult.Keyword);
+                            }
+                            else if (deviceDecodeResult.Type == FunctionType.RemovePackage) {
+                                //移除包裹
+                                OnCreatePackageEvent(deviceDecodeResult.Keyword);
+                            }
+                            else if (deviceDecodeResult.Type == FunctionType.Heartbeat) {
+                                //心跳包
+                                OnCreatePackageEvent(deviceDecodeResult.Keyword);
+                            }
+                            else if (deviceDecodeResult.Type == FunctionType.ClearException) {
+                                //清空异常
+                            }
+                        }
+                    }
+
                     _replyContentQueue.Enqueue(info.Content);
                 }
             };
@@ -227,10 +277,11 @@ namespace JayTom.Dws.Client.Service.Sorting {
                     await Task.Yield();
                     //不包含Api
                     if (_sortingMethodDto.SortMode != SortMode.None &&
-                        _sortingMethodDto.SortMode != SortMode.CombinedWorkflowSorting &&
+                        _sortingMethodDto.SortMode != SortMode.ApiResponseSorting &&
                         _sortingMethodDto.SortMode != SortMode.CombinedWorkflowSorting) {
                         ExecuteSorting(new SortingParam() {
-                            BarCode = model.BarCode,
+                            Guid = model.Guid,
+                            BarCode = model.BarCode ?? string.Empty,
                             Height = (float)(model.Height ?? 0),
                             Length = (float)(model.Length ?? 0),
                             ScanTime = model.ScanTime,
@@ -243,7 +294,21 @@ namespace JayTom.Dws.Client.Service.Sorting {
                     }
                 }
             });
-
+            //Api触发
+            EventAggregator.Instance.Subscribe<ApiResponseReceived>(async item => {
+                if (item is ApiResponseReceived model) {
+                    if (_sortingMethodDto.SortMode == SortMode.ApiResponseSorting) {
+                        ExecuteSorting(new SortingParam() {
+                            Guid = model.Guid,
+                            BarCode = model.Barcode ?? string.Empty,
+                            ScanTime = model.ScanTime,
+                            OcrCode = string.Empty,
+                            ApiResponse = model.UploadResponse ?? new UploadResponse()
+                        });
+                    }
+                }
+            });
+            //
             //触发初始化
             /*EventAggregator.Instance.Publish(new SettingsChangedEvent {
                 SettingsName = "CommunicationsSettings"
@@ -254,31 +319,31 @@ namespace JayTom.Dws.Client.Service.Sorting {
             if (_sortingMethodDto is not null) {
                 switch (_sortingMethodDto.SortMode) {
                     case SortMode.BarcodeSorting:
-                        BarcodeSorting(param.BarCode, token);
+                        BarcodeSorting(param.BarCode, param.Guid, token);
                         break;
 
                     case SortMode.WeightSorting:
-                        WeightSorting(param.Weight, token);
+                        WeightSorting(param.Weight, param.Guid, token);
                         break;
 
                     case SortMode.VolumeSorting:
-                        VolumeSorting(param.Length, param.Width, param.Height, param.Volume, token);
+                        VolumeSorting(param.Length, param.Width, param.Height, param.Volume, param.Guid, token);
                         break;
 
                     case SortMode.LogisticsSorting:
-                        LogisticsSorting(param.BarCode, token);
+                        LogisticsSorting(param.BarCode, param.Guid, token);
                         break;
 
                     case SortMode.OcrSorting:
-                        OcrSorting(param.OcrCode, token);
+                        OcrSorting(param.OcrCode, param.Guid, token);
                         break;
 
                     case SortMode.ApiResponseSorting:
-                        ApiResponseSorting(param.ApiResponse, token);
+                        ApiResponseSorting(param.ApiResponse, param.Guid, token);
                         break;
 
                     case SortMode.CombinedWorkflowSorting:
-                        CombinedWorkflowSorting(token);
+                        CombinedWorkflowSorting(param.Guid, token);
                         break;
 
                     default:
@@ -287,7 +352,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
             }
         }
 
-        public async void SendInstructions(List<string> instructions, TimeSpan interval) {
+        public async void SendInstructions(long grid, List<string> instructions, TimeSpan interval) {
             //判断是否连接，如果未连接则连接
             if (!IsConnected) {
                 await Connect(false);
@@ -297,7 +362,14 @@ namespace JayTom.Dws.Client.Service.Sorting {
                 if (_sortingSerialPort.Status == SortingSerialPortStatus.Running &&
                     instructions?.Any() == true) {
                     foreach (var instruction in instructions) {
-                        _sortingSerialPort.Send(instruction);
+                        //效验协议
+
+                        var message = instruction;
+                        if (_deviceCommunicationProtocol is not null) {
+                            message = _deviceCommunicationProtocol.EncodeData(FunctionType.SendExit, (int)grid,
+                                instruction, null);
+                        }
+                        _sortingSerialPort.Send(message);
 
                         await Task.Delay(interval);
                     }
@@ -313,7 +385,15 @@ namespace JayTom.Dws.Client.Service.Sorting {
                 if (_sortingTcp.ConnectionStatus == ConnectionStatus.Connected &&
                     instructions?.Any() == true) {
                     foreach (var instruction in instructions) {
-                        await _sortingTcp.SendMessage(instruction);
+                        //效验协议
+
+                        var message = instruction;
+                        if (_deviceCommunicationProtocol is not null) {
+                            message = _deviceCommunicationProtocol.EncodeData(FunctionType.SendExit, (int)grid,
+                                instruction, null);
+                        }
+
+                        var sendMessage = await _sortingTcp.SendMessage(message);
                         await Task.Delay(interval);
                     }
                 }
@@ -325,7 +405,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
             }
         }
 
-        public async void SendInstructions(List<SortingInstructionInfoModel> sortingInstructionInfoModels, TimeSpan interval) {
+        public async void SendInstructions(long grid, List<SortingInstructionInfoModel> sortingInstructionInfoModels, TimeSpan interval) {
             //判断是否连接，如果未连接则连接
             if (!IsConnected) {
                 await Connect(false);
@@ -341,7 +421,13 @@ namespace JayTom.Dws.Client.Service.Sorting {
                                 });
 
                             var executeAsync = await retryPolicy.ExecuteAsync(async () => {
-                                _sortingSerialPort.Send(instruction.Instruction);
+                                //效验协议
+                                var message = instruction.Instruction;
+                                if (_deviceCommunicationProtocol is not null) {
+                                    message = _deviceCommunicationProtocol.EncodeData(FunctionType.SendExit, (int)grid,
+                                        instruction.Instruction, null);
+                                }
+                                _sortingSerialPort.Send(message);
                                 return await WaitForReply(instruction.ReplyContent,
                                     TimeSpan.FromMilliseconds(_communicationsSettingsDto.MachineReplyInfo.Timeout));
                             });
@@ -354,7 +440,12 @@ namespace JayTom.Dws.Client.Service.Sorting {
                         }
                         else {
                             //不使用应答
-                            _sortingSerialPort.Send(instruction.Instruction);
+                            var message = instruction.Instruction;
+                            if (_deviceCommunicationProtocol is not null) {
+                                message = _deviceCommunicationProtocol.EncodeData(FunctionType.SendExit, (int)grid,
+                                    instruction.Instruction, null);
+                            }
+                            _sortingSerialPort.Send(message);
                         }
                         await Task.Delay(interval);
                     }
@@ -377,7 +468,14 @@ namespace JayTom.Dws.Client.Service.Sorting {
                                });
 
                             var executeAsync = await retryPolicy.ExecuteAsync(async () => {
-                                var sendMessage = await _sortingTcp.SendMessage(instruction.Instruction);
+                                //效验协议
+                                var message = instruction.Instruction;
+                                if (_deviceCommunicationProtocol is not null) {
+                                    message = _deviceCommunicationProtocol.EncodeData(FunctionType.SendExit, (int)grid,
+                                        instruction.Instruction, null);
+                                }
+
+                                var sendMessage = await _sortingTcp.SendMessage(message);
                                 if (sendMessage) {
                                     return await WaitForReply(instruction.ReplyContent,
                                         TimeSpan.FromMilliseconds(_communicationsSettingsDto.MachineReplyInfo.Timeout));
@@ -393,7 +491,15 @@ namespace JayTom.Dws.Client.Service.Sorting {
                         }
                         else {
                             //不使用应答
-                            var sendMessage = await _sortingTcp.SendMessage(instruction.Instruction);
+
+                            //效验协议
+                            var message = instruction.Instruction;
+                            if (_deviceCommunicationProtocol is not null) {
+                                message = _deviceCommunicationProtocol.EncodeData(FunctionType.SendExit, (int)grid,
+                                    instruction.Instruction, null);
+                            }
+
+                            var sendMessage = await _sortingTcp.SendMessage(message);
                             if (!sendMessage) {
                                 OnExceptionOccurred(new ExceptionEventArgs() {
                                     ExceptionMessage = "发送失败!"
@@ -462,6 +568,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                 #region 读取配置信息
 
                 try {
+                    _deviceCommunicationProtocol = null;
                     var configInfoModel = await _configRepository.FirstOrDefault(f =>
                         f.ConfigName.Equals("SortingMethodSettings"), token);
                     if (configInfoModel is not null) {
@@ -506,6 +613,13 @@ namespace JayTom.Dws.Client.Service.Sorting {
                     _weightRuleInfoModels = await _weightRuleRepository.Select(s => s.Id > 0, o => o.CreateTime, token);
                     _apiRuleInfoModels = await _apiRuleRepository.Select(s => s.Id > 0, o => o.CreateTime, token);
                     _apiSortingInfoModels = await _apiSortingRepository.Select(s => s.Id > 0, o => o.CreateTime, token);
+
+                    //读协议
+                    if (_communicationsSettingsDto?.Protocol == CommunicationProtocol.Wxkc) {
+                        //无限科创协议
+                        _deviceCommunicationProtocol = new WxkcCommunicationProtocol();
+                    }
+                    //其他协议
                 }
                 catch (Exception e) {
                     OnExceptionOccurred(new ExceptionEventArgs() {
@@ -529,7 +643,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
             return new KeyValuePair<bool, string>(true, "已停止");
         }
 
-        public async void ExceptionSorting(CancellationToken token = default) {
+        public async void ExceptionSorting(long guid = 0, CancellationToken token = default) {
             var packageExitDefinitionInfoModel = _packageExitDefinitionInfos.FirstOrDefault(f =>
                 f is { Type: ExitType.AbnormalExit, IsActive: true });
             if (packageExitDefinitionInfoModel is not null) {
@@ -542,13 +656,13 @@ namespace JayTom.Dws.Client.Service.Sorting {
                     f.ExitId.Equals(packageExitDefinitionInfoModel.Id));
                 if (sortingInstructionBindingInfoModel is not null) {
                     await Task.Delay(sortingInstructionBindingInfoModel.DelaySendMilliseconds, token);
-                    SendInstructions(sortingInstructionInfoModels ?? new List<SortingInstructionInfoModel>(),
+                    SendInstructions(guid, sortingInstructionInfoModels ?? new List<SortingInstructionInfoModel>(),
                         TimeSpan.FromMilliseconds(sortingInstructionBindingInfoModel.SendIntervalMilliseconds));
                 }
             }
         }
 
-        public void BarcodeSorting(string barcode, CancellationToken token = default) {
+        public void BarcodeSorting(string barcode, long guid, CancellationToken token = default) {
             try {
                 var barCodeRegexInfoModel = _barCodeRegexInfos.FirstOrDefault(f => Regex.IsMatch(barcode, f.RegexPattern));
                 if (barCodeRegexInfoModel is not null) {
@@ -556,16 +670,16 @@ namespace JayTom.Dws.Client.Service.Sorting {
                     var barCodeSortingInfoModel = _barCodeSortingInfoModels.FirstOrDefault(f =>
                         f.Id.Equals(barCodeRegexInfoModel.BarCodeSortingId));
                     if (barCodeSortingInfoModel is not null) {
-                        SubSorting(barCodeSortingInfoModel.ExitId, token);
+                        SubSorting(barCodeSortingInfoModel.ExitId, guid, token);
                     }
                     else {
                         //走异常口
-                        ExceptionSorting(token);
+                        ExceptionSorting(guid, token);
                     }
                 }
                 else {
                     //走异常口
-                    ExceptionSorting(token);
+                    ExceptionSorting(guid, token);
                 }
             }
             catch (Exception e) {
@@ -575,7 +689,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
             }
         }
 
-        public void WeightSorting(float weight, CancellationToken token = default) {
+        public void WeightSorting(float weight, long guid, CancellationToken token = default) {
             //取出重量规则
             try {
                 var weightRuleInfoModel = _weightRuleInfoModels.FirstOrDefault(f => ValidateWeight(f.Formula, weight));
@@ -584,16 +698,16 @@ namespace JayTom.Dws.Client.Service.Sorting {
                     var weightSortingInfoModel = _weightSortingInfoModels.FirstOrDefault(f =>
                         f.Id.Equals(weightRuleInfoModel.WeightSortingId));
                     if (weightSortingInfoModel is not null) {
-                        SubSorting(weightSortingInfoModel.ExitId, token);
+                        SubSorting(weightSortingInfoModel.ExitId, guid, token);
                     }
                     else {
                         //走异常口
-                        ExceptionSorting(token);
+                        ExceptionSorting(guid, token);
                     }
                 }
                 else {
                     //走异常口
-                    ExceptionSorting(token);
+                    ExceptionSorting(guid, token);
                 }
             }
             catch (Exception e) {
@@ -603,22 +717,22 @@ namespace JayTom.Dws.Client.Service.Sorting {
             }
         }
 
-        public void VolumeSorting(double length, double width, double height, double volume, CancellationToken token = default) {
+        public void VolumeSorting(double length, double width, double height, double volume, long guid, CancellationToken token = default) {
             try {
                 var volumeRuleInfoModel = _volumeRuleInfoModels.FirstOrDefault(f => ValidateVolume(f.Formula, length, width, height, volume));
                 if (volumeRuleInfoModel is not null) {
                     var volumeSortingInfoModel = _volumeSortingInfoModels.FirstOrDefault(f => f.Id.Equals(volumeRuleInfoModel.VolumeSortingId));
                     if (volumeSortingInfoModel is not null) {
-                        SubSorting(volumeSortingInfoModel.ExitId, token);
+                        SubSorting(volumeSortingInfoModel.ExitId, guid, token);
                     }
                     else {
                         //走异常口
-                        ExceptionSorting(token);
+                        ExceptionSorting(guid, token);
                     }
                 }
                 else {
                     //走异常口
-                    ExceptionSorting(token);
+                    ExceptionSorting(guid, token);
                 }
             }
             catch (Exception e) {
@@ -628,7 +742,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
             }
         }
 
-        public void LogisticsSorting(string barcode, CancellationToken token = default) {
+        public void LogisticsSorting(string barcode, long guid, CancellationToken token = default) {
             try {
                 var logisticsRegexInfoModel = _logisticsRegexInfos.FirstOrDefault(f => Regex.IsMatch(barcode, f.RegexPattern));
                 if (logisticsRegexInfoModel is not null) {
@@ -637,21 +751,21 @@ namespace JayTom.Dws.Client.Service.Sorting {
                     if (logisticsRuleInfoModel is not null) {
                         var logisticsSortingInfoModel = _logisticsSortingInfoModels.FirstOrDefault(f => f.Id.Equals(logisticsRuleInfoModel.LogisticsId));
                         if (logisticsSortingInfoModel is not null) {
-                            SubSorting(logisticsSortingInfoModel.ExitId, token);
+                            SubSorting(logisticsSortingInfoModel.ExitId, guid, token);
                         }
                         else {
                             //走异常口
-                            ExceptionSorting(token);
+                            ExceptionSorting(guid, token);
                         }
                     }
                     else {
                         //走异常口
-                        ExceptionSorting(token);
+                        ExceptionSorting(guid, token);
                     }
                 }
                 else {
                     //走异常口
-                    ExceptionSorting(token);
+                    ExceptionSorting(guid, token);
                 }
             }
             catch (Exception e) {
@@ -661,22 +775,22 @@ namespace JayTom.Dws.Client.Service.Sorting {
             }
         }
 
-        public void OcrSorting(string ocrContent, CancellationToken token = default) {
+        public void OcrSorting(string ocrContent, long guid, CancellationToken token = default) {
             try {
                 var ocrRuleInfoModel = _ocrRuleInfoModels.FirstOrDefault(f => Regex.IsMatch(ocrContent, f.RegexPattern));
                 if (ocrRuleInfoModel is not null) {
                     var ocrSortingInfoModel = _ocrSortingInfoModels.FirstOrDefault(f => f.Id.Equals(ocrRuleInfoModel.OcrSortingId));
                     if (ocrSortingInfoModel is not null) {
-                        SubSorting(ocrSortingInfoModel.ExitId, token);
+                        SubSorting(ocrSortingInfoModel.ExitId, guid, token);
                     }
                     else {
                         //走异常口
-                        ExceptionSorting(token);
+                        ExceptionSorting(guid, token);
                     }
                 }
                 else {
                     //走异常口
-                    ExceptionSorting(token);
+                    ExceptionSorting(guid, token);
                 }
             }
             catch (Exception e) {
@@ -686,27 +800,26 @@ namespace JayTom.Dws.Client.Service.Sorting {
             }
         }
 
-        public void ApiResponseSorting(UploadResponse apiResponse, CancellationToken token = default) {
+        public void ApiResponseSorting(UploadResponse apiResponse, long guid, CancellationToken token = default) {
             var apiRuleInfoModel = _apiRuleInfoModels.FirstOrDefault(f =>
                 ValidateApiRule(apiResponse, f.JsonContent));
             if (apiRuleInfoModel != null) {
                 var apiSortingInfoModel = _apiSortingInfoModels.FirstOrDefault(f => f.Id.Equals(apiRuleInfoModel.ApiSortingId));
                 if (apiSortingInfoModel is not null) {
-                    SubSorting(apiSortingInfoModel.ExitId, token);
+                    SubSorting(apiSortingInfoModel.ExitId, guid, token);
                 }
                 else {
                     //走异常口
-                    ExceptionSorting(token);
+                    ExceptionSorting(guid, token);
                 }
             }
             else {
                 //走异常口
-                ExceptionSorting(token);
+                ExceptionSorting(guid, token);
             }
         }
 
-        public void CombinedWorkflowSorting(CancellationToken token = default) {
-            throw new NotImplementedException();
+        public void CombinedWorkflowSorting(long guid = 0, CancellationToken token = default) {
         }
 
         /// <summary>
@@ -790,8 +903,9 @@ namespace JayTom.Dws.Client.Service.Sorting {
         /// 分拣
         /// </summary>
         /// <param name="exitId"></param>
+        /// <param name="guid"></param>
         /// <param name="token"></param>
-        private async void SubSorting(long exitId, CancellationToken token = default) {
+        private async void SubSorting(long exitId, long guid, CancellationToken token = default) {
             //取出格口指令
             //判断格口是否生效
             var packageExitDefinitionInfoModel = _packageExitDefinitionInfos.FirstOrDefault(f => f.Id.Equals(exitId) &&
@@ -806,17 +920,17 @@ namespace JayTom.Dws.Client.Service.Sorting {
                             w.InstructionBindingId.Equals(sortingInstructionBindingInfoModel.Id))
                         ?.ToList();
                     await Task.Delay(sortingInstructionBindingInfoModel.DelaySendMilliseconds, token);
-                    SendInstructions(sortingInstructionInfoModels ?? new List<SortingInstructionInfoModel>(),
+                    SendInstructions(guid, sortingInstructionInfoModels ?? new List<SortingInstructionInfoModel>(),
                         TimeSpan.FromMilliseconds(sortingInstructionBindingInfoModel.SendIntervalMilliseconds));
                 }
                 else {
                     //走异常口
-                    ExceptionSorting(token);
+                    ExceptionSorting(guid, token);
                 }
             }
             else {
                 //走异常口
-                ExceptionSorting(token);
+                ExceptionSorting(guid, token);
             }
         }
 
@@ -934,6 +1048,21 @@ namespace JayTom.Dws.Client.Service.Sorting {
             }
 
             return null;
+        }
+
+        protected virtual async void OnCreatePackageEvent(string e) {
+            await Task.Yield();
+            CreatePackageEvent?.Invoke(this, e);
+        }
+
+        protected virtual async void OnRemovePackageEvent(string e) {
+            await Task.Yield();
+            RemovePackageEvent?.Invoke(this, e);
+        }
+
+        protected virtual async void OnClearExceptionEvent(string e) {
+            await Task.Yield();
+            ClearExceptionEvent?.Invoke(this, e);
         }
     }
 }

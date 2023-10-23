@@ -322,12 +322,15 @@ namespace JayTom.Dws.Client {
                         services.AddSingleton(container1.Resolve<ICacheCleanupService>());
                         //补注册
 
-                        services.AddHostedService<ComputerInfoBackgroundService>(); // 注册后台服务
-                        services.AddHostedService<ScanProcessBackgroundService>(); // 注册后扫码过程服务
+                        //注册分拣服务
+                        services.AddSingleton(container1.Resolve<ISortingService>());
+
+                        services.AddHostedService<PackageBackgroundService>(); // 注册后组包服务
                         services.AddHostedService<SaveImageBackgroundService>();//注册存图服务
                         services.AddHostedService<SubmitApiBackgroundService>();//提交Api
-                        services.AddHostedService<CleanupService>();//清理
                         services.AddHostedService<DataProcessingBackgroundService>();//数据处理
+                        services.AddHostedService<CleanupService>();//清理
+                        services.AddHostedService<ComputerInfoBackgroundService>(); // 注册后台服务
                     })
                     .Build();
                 _host.Start();

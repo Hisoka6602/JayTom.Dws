@@ -6,11 +6,14 @@ using System.Drawing;
 using Newtonsoft.Json;
 using System.Threading;
 using JayTom.Dws.Camera;
+using JayTom.Dws.Interface;
 using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
 using JayTom.Dws.Data.LocalConf;
 using NPOI.SS.Formula.Functions;
 using System.Collections.Generic;
+using JayTom.Dws.Domain.Dto.ApiDto;
+using JayTom.Dws.Interface.Szjy188;
 using System.Collections.Concurrent;
 using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Client.EventMediators;
@@ -18,8 +21,9 @@ using JayTom.Dws.Client.Service.Sorting;
 using JayTom.Dws.Client.Service.ImageStorage;
 using JayTom.Dws.Client.Service.ResultOutput;
 using JayTom.Dws.Domain.Repository.LocalConf;
+using static JayTom.Dws.Interface.DefaultApi;
+using static JayTom.Dws.Interface.Szjy188.SzjyApi;
 using JayTom.Dws.Client.Service.ExternalDataService;
-using static JayTom.Dws.Client.Service.BackgroundService.ScanProcessBackgroundService;
 
 namespace JayTom.Dws.Client.Service.BackgroundService {
 
@@ -146,9 +150,10 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 }
             };
             //下位机(创建包裹)
-            _sortingService.CreatePackageEvent += delegate (object? sender, object o) {
+            _sortingService.CreatePackageEvent += delegate (object? sender, string o) {
                 if (_communicationsSettingsDto.Protocol == CommunicationProtocol.Wxkc) {
-                    if (o is int num) {
+                    var tryParse = int.TryParse(o, out var num);
+                    if (tryParse) {
                         //创建包裹
                         var packageInfo = new PackageInfo() {
                             Guid = num
@@ -159,9 +164,10 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 //其他协议
             };
             //下位机(移除包裹)
-            _sortingService.RemovePackageEvent += delegate (object? sender, object o) {
+            _sortingService.RemovePackageEvent += delegate (object? sender, string o) {
                 if (_communicationsSettingsDto.Protocol == CommunicationProtocol.Wxkc) {
-                    if (o is int num) {
+                    var tryParse = int.TryParse(o, out var num);
+                    if (tryParse) {
                         var count = _packageInfos.Count;
                         while (count-- > 0) {
                             _packageInfos.TryDequeue(out var info);
@@ -175,7 +181,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 //其他协议
             };
             //下位机(清空异常)
-            _sortingService.ClearExceptionEvent += delegate (object? sender, object o) {
+            _sortingService.ClearExceptionEvent += delegate (object? sender, string o) {
                 _packageInfos.Clear();
             };
             //手动输入条码
@@ -222,6 +228,44 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 }
             });
             //配置更改触发事件
+            EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async item => {
+                if (item is SettingsChangedEvent model) {
+                    if (model.SettingsName.Equals("CommunicationsSettings")) {
+                        try {
+                            var configInfoModel = await _configRepository.FirstOrDefault(f => f.ConfigName.Equals("CommunicationsSettings"));
+                            if (configInfoModel != null) {
+                                _communicationsSettingsDto = JsonConvert.DeserializeObject<CommunicationsSettingsDto>(configInfoModel.Value) ?? new CommunicationsSettingsDto();
+                            }
+                        }
+                        catch (Exception e) {
+                            NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
+                        }
+                    }
+                    else if (model.SettingsName.Equals("VolumeSettings")) {
+                        try {
+                            var configInfoModel = await _configRepository.FirstOrDefault(f => f.ConfigName.Equals("CommunicationsSettings"));
+                            if (configInfoModel != null) {
+                                _volumeSettingsDto = JsonConvert.DeserializeObject<VolumeSettingsDto>(configInfoModel.Value) ?? new VolumeSettingsDto();
+                            }
+                        }
+                        catch (Exception e) {
+                            NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
+                        }
+                    }
+                    else if (model.SettingsName.Equals("WeightSettings")) {
+                        try {
+                            var configInfoModel = await _configRepository.FirstOrDefault(f => f.ConfigName.Equals("CommunicationsSettings"));
+                            if (configInfoModel != null) {
+                                _weightSettingsDto = JsonConvert.DeserializeObject<WeightSettingsDto>(configInfoModel.Value) ?? new WeightSettingsDto();
+                            }
+                        }
+                        catch (Exception e) {
+                            NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
+                        }
+                    }
+                    //其他设置
+                }
+            });
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken) {

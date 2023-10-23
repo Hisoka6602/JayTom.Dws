@@ -3,6 +3,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
 
@@ -48,25 +49,39 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
             var keywordPosition = 0;
             if (bytes.Length == 8) {
                 //不效验
+                string hexString;
+                int number;
                 switch (bytes[1]) {
                     case 0x12:
                         type = FunctionType.CreatePackage;
                         description = $"创建包裹";
-                        key = BitConverter.ToString(new[] { bytes[2], bytes[3] });
+                        hexString = BitConverter.ToString(new[] { bytes[2], bytes[3] })
+                           .Replace("-", string.Empty).Replace(" ", string.Empty);
+                        if (int.TryParse(hexString, System.Globalization.NumberStyles.HexNumber, null, out number)) {
+                            key = number.ToString();
+                        }
                         keywordPosition = 2;
                         break;
 
                     case 0x02:
                         type = FunctionType.Heartbeat;
                         description = $"心跳包";
-                        key = BitConverter.ToString(new[] { bytes[2], bytes[3] });
+                        hexString = BitConverter.ToString(new[] { bytes[2], bytes[3] })
+                           .Replace("-", string.Empty).Replace(" ", string.Empty);
+                        if (int.TryParse(hexString, System.Globalization.NumberStyles.HexNumber, null, out number)) {
+                            key = number.ToString();
+                        }
                         keywordPosition = 2;
                         break;
 
                     case 0x21:
                         type = FunctionType.RemovePackage;
                         description = $"移除包裹";
-                        key = BitConverter.ToString(new[] { bytes[2], bytes[3] });
+                        hexString = BitConverter.ToString(new[] { bytes[2], bytes[3] })
+                            .Replace("-", string.Empty).Replace(" ", string.Empty);
+                        if (int.TryParse(hexString, System.Globalization.NumberStyles.HexNumber, null, out number)) {
+                            key = number.ToString();
+                        }
                         keywordPosition = 2;
                         break;
 

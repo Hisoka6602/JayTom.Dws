@@ -18,7 +18,6 @@ using System.Collections.Concurrent;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using UploadResponse = JayTom.Dws.Interface.UploadResponse;
-using static JayTom.Dws.Client.Service.BackgroundService.ScanProcessBackgroundService;
 
 namespace JayTom.Dws.Client.Service.BackgroundService {
 
@@ -52,6 +51,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         Height = (float)(model.Height ?? 0),
                         Volume = (float)(model.Volume ?? 0),
                         ScanTime = model.ScanTime,
+                        Guid = model.Guid,
                         //图片暂时不写
                     });
                 }
@@ -205,6 +205,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             _apiSettingsDto.Type != ApiType.None) {
                             //临时单线程
                             EventAggregator.Instance.Publish(new ApiResponseReceived {
+                                Guid = info.Guid,
                                 Barcode = info.Barcode,
                                 ScanTime = info.ScanTime,
                                 UploadResponse = uploadResponse
@@ -260,7 +261,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         }
 
         public class SubmitItemInfo {
-
+            public long Guid { get; set; }
             /// <summary>
             /// 条码
             /// </summary>
@@ -311,7 +312,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         /// Api回传类
         /// </summary>
         public class ApiResponseReceived {
-
+            public long Guid { get; set; }
             /// <summary>
             /// 条码
             /// </summary>

@@ -11,7 +11,6 @@ using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.Repository.LocalData;
 using JayTom.Dws.Client.Service.ImageStorage;
 using static JayTom.Dws.Client.Service.BackgroundService.SubmitApiBackgroundService;
-using static JayTom.Dws.Client.Service.BackgroundService.ScanProcessBackgroundService;
 
 namespace JayTom.Dws.Client.Service.BackgroundService {
 

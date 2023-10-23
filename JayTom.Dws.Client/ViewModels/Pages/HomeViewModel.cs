@@ -42,6 +42,7 @@ using JayTom.Dws.Domain.Repository.LocalData;
 using JayTom.Dws.Client.Service.ResultOutput;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Client.Models.OcrSettingsModel;
+using JayTom.Dws.Client.Service.BackgroundService;
 using JayTom.Dws.Client.Service.ExternalDataService;
 using CameraType = JayTom.Dws.Client.Models.CameraType;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
@@ -49,7 +50,6 @@ using CameraStatus = JayTom.Dws.Client.Models.CameraStatus;
 using ConnectionType = JayTom.Dws.Client.Models.ConnectionType;
 using ExceptionEventArgs = JayTom.Dws.Client.Service.Sorting.ExceptionEventArgs;
 using static JayTom.Dws.Client.Service.BackgroundService.SubmitApiBackgroundService;
-using static JayTom.Dws.Client.Service.BackgroundService.ScanProcessBackgroundService;
 
 namespace JayTom.Dws.Client.ViewModels.Pages {
 
@@ -356,9 +356,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                 HomeMessageQueue.Enqueue($"{args.ExceptionMessage}");
             };
 
-            EventAggregator.Instance.Subscribe<ScanBarCodeInfo>(async info => {
+            EventAggregator.Instance.Subscribe<PackageInfo>(async info => {
                 //填充数据到列表
-                if (info is ScanBarCodeInfo model) {
+                if (info is PackageInfo model) {
                     AddNewRow(new BarCodeItemModel() {
                         Barcode = model.BarCode,
                         ScanTime = model.ScanTime,
