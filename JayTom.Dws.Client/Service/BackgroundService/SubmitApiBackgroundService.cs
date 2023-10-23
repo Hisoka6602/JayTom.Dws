@@ -42,8 +42,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         public SubmitApiBackgroundService(IHttpClientFactory httpClientFactory, IConfigRepository configRepository) {
             _httpClientFactory = httpClientFactory;
             _configRepository = configRepository;
-            EventAggregator.Instance.Subscribe<ScanBarCodeInfo>(item => {
-                if (item is ScanBarCodeInfo model) {
+            EventAggregator.Instance.Subscribe<PackageInfo>(item => {
+                if (item is PackageInfo model) {
                     _submitItems.Enqueue(new SubmitItemInfo() {
                         Barcode = model.BarCode,
                         Weight = (float)(model.Weight ?? 0),

@@ -42,11 +42,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     ScanTime = args.ScanTime,
                 });
             };
-            EventAggregator.Instance.Subscribe<ScanBarCodeInfo>(item => {
-                if (item is ScanBarCodeInfo model) {
+            EventAggregator.Instance.Subscribe<PackageInfo>(item => {
+                if (item is PackageInfo model) {
                     //添加
                     _insertItems.Enqueue(new BarCodeInfoModel() {
-                        Barcode = model.BarCode,
+                        Barcode = model.BarCode ?? string.Empty,
                         Weight = (float)(model.Weight ?? 0),
                         ScanTime = model.ScanTime,
                         Volume = (float)(model.Volume ?? 0),

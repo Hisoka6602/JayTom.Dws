@@ -304,7 +304,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             }
         }
 
-        public class ScanBarCodeInfo {
+        public class ScanBarCodeInfo1 {
 
             /// <summary>
             /// 条码
@@ -439,51 +439,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             /// 条码时间戳
             /// </summary>
             public long BarcodeTimestamp { get; set; }
-        }
-
-        public class SavedImageInfo {
-
-            /// <summary>
-            /// 文件路径
-            /// </summary>
-            public string? FilePath { get; set; }
-
-            /// <summary>
-            /// 条码
-            /// </summary>
-            public string? BarCode { get; set; }
-
-            /// <summary>
-            /// 图片类型
-            /// </summary>
-            public SaveImageType? ImageType { get; set; }
-
-            /// <summary>
-            /// 相机序列号
-            /// </summary>
-            public string CameraSerialNumber { get; set; } = string.Empty;
-
-            /// <summary>
-            /// 扫码时间
-            /// </summary>
-            public DateTime ScanTime { get; set; }
-        }
-
-        /// <summary>
-        /// 存图参数
-        /// </summary>
-        public class ImageMessageInfo {
-            public Image? Image { get; set; }
-
-            public SaveImageType Type { get; set; }
-            public string BarCode { get; set; } = string.Empty;
-            public float Weight { get; set; }
-            public DateTime ScanTime { get; set; }
-            public float Length { get; set; }
-            public float Width { get; set; }
-            public float Height { get; set; }
-            public float Volume { get; set; }
-            public string CameraSerialNumber { get; set; } = string.Empty;
         }
     }
 }

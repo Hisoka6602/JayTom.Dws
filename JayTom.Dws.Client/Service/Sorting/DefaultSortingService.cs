@@ -20,6 +20,7 @@ using System.Text.RegularExpressions;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
 using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Client.Service.BackgroundService;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Client.Service.Sorting.Communication.TcpComm;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig.RuleConfig;
@@ -221,8 +222,8 @@ namespace JayTom.Dws.Client.Service.Sorting {
                     o => o.Id);
             });
             //触发方式
-            EventAggregator.Instance.Subscribe<ScanBarCodeInfo>(async item => {
-                if (item is ScanBarCodeInfo model) {
+            EventAggregator.Instance.Subscribe<PackageInfo>(async item => {
+                if (item is PackageInfo model) {
                     await Task.Yield();
                     //不包含Api
                     if (_sortingMethodDto.SortMode != SortMode.None &&
