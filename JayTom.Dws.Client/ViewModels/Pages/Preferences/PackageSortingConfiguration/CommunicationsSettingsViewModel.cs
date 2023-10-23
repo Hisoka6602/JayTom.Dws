@@ -90,6 +90,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                 Name = "CANopen",
                 Value = CommunicationProtocol.CANopen,
             },
+            new CommunicationProtocolInfoModel()
+            {
+                Name = "无限创科协议",
+                Value = CommunicationProtocol.Wxkc,
+            },
         };
 
         private CommunicationsTypeInfoModel _selectCommunicationsType = new();
@@ -348,7 +353,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                                     HeartbeatInfo = new HeartbeatInfoModel() {
                                         HeartbeatData = settingsDto.HeartbeatInfo.HeartbeatData,
                                         HeartbeatInterval = settingsDto.HeartbeatInfo.HeartbeatInterval,
-                                        IsHeartbeatEnabled = settingsDto.HeartbeatInfo.IsHeartbeatEnabled
+                                        IsHeartbeatEnabled = settingsDto.HeartbeatInfo.IsHeartbeatEnabled,
+                                        IsHeartbeatActive = settingsDto.HeartbeatInfo.IsHeartbeatActive,
                                     },
                                     MachineReplyInfo = new MachineReplyInfoModel() {
                                         IsVerificationEnabled = settingsDto.MachineReplyInfo.IsVerificationEnabled,
@@ -375,7 +381,15 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                                             Port = settingsDto.TcpSettingsInfo.ClientConfig.Port,
                                         }
                                     },
+                                    DeviceControlSettingsInfo = new DeviceControlSettingsInfoModel() {
+                                        IsUseRemovePackageByDevice = settingsDto.DeviceControlSettingsInfo.IsUseRemovePackageByDevice,
+                                        IsUseStartDeviceByDevice = settingsDto.DeviceControlSettingsInfo.IsUseStartDeviceByDevice,
+                                        IsUseStopDeviceByDevice = settingsDto.DeviceControlSettingsInfo.IsUseStopDeviceByDevice,
+                                        IsUseCreatePackageByDevice = settingsDto.DeviceControlSettingsInfo.IsUseCreatePackageByDevice
+                                    },
                                     Type = settingsDto.Type,
+                                    IsUsePackageExpiry = settingsDto.IsUsePackageExpiry,
+                                    PackageExpiryTime = settingsDto.PackageExpiryTime,
                                 };
                             }
                         }
@@ -407,6 +421,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                                 HeartbeatData = CommunicationsSettingsInfo.HeartbeatInfo.HeartbeatData,
                                 HeartbeatInterval = CommunicationsSettingsInfo.HeartbeatInfo.HeartbeatInterval,
                                 IsHeartbeatEnabled = CommunicationsSettingsInfo.HeartbeatInfo.IsHeartbeatEnabled,
+                                IsHeartbeatActive = CommunicationsSettingsInfo.HeartbeatInfo.IsHeartbeatActive,
                             },
                             MachineReplyInfo = new MachineReplyInfo() {
                                 IsVerificationEnabled = CommunicationsSettingsInfo.MachineReplyInfo.IsVerificationEnabled,
@@ -433,7 +448,15 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                                     Port = CommunicationsSettingsInfo.TcpSettingsInfo.ServerConfig.Port,
                                 }
                             },
+                            DeviceControlSettingsInfo = new DeviceControlSettingsInfo() {
+                                IsUseCreatePackageByDevice = CommunicationsSettingsInfo.DeviceControlSettingsInfo.IsUseCreatePackageByDevice,
+                                IsUseRemovePackageByDevice = CommunicationsSettingsInfo.DeviceControlSettingsInfo.IsUseRemovePackageByDevice,
+                                IsUseStartDeviceByDevice = CommunicationsSettingsInfo.DeviceControlSettingsInfo.IsUseStartDeviceByDevice,
+                                IsUseStopDeviceByDevice = CommunicationsSettingsInfo.DeviceControlSettingsInfo.IsUseStopDeviceByDevice
+                            },
                             Type = SelectCommunicationsType.Value,
+                            IsUsePackageExpiry = CommunicationsSettingsInfo.IsUsePackageExpiry,
+                            PackageExpiryTime = CommunicationsSettingsInfo.PackageExpiryTime
                         })
                     });
                     if (insertOrUpdate) {

@@ -33,7 +33,14 @@ namespace JayTom.Dws.Domain.Dto {
         /// 是否主动触发体积获取
         /// </summary>
         public bool IsTriggerVolumeRequest { get; set; }
-
+        /// <summary>
+        /// 是否使用融合超时
+        /// </summary>
+        public bool IsUseFusionTimeout { get; set; }
+        /// <summary>
+        /// 融合超时时间
+        /// </summary>
+        public int FusionTimeout { get; set; }
         /// <summary>
         /// 发送参数
         /// </summary>

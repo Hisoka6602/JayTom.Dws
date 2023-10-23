@@ -21,7 +21,6 @@ using ListViewItem = System.Windows.Controls.ListViewItem;
 using IDropTarget = GongSolutions.Wpf.DragDrop.IDropTarget;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration.SortingMethodPages {
-
     public class CombinedWorkflowSortingViewModel : BindableBase, IDropTarget {
 
         private ObservableCollection<CombinedWorkflowNodeModel> _combinedWorkflowNodes = new()
@@ -105,17 +104,37 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             if (dropInfo.VisualTarget is ItemsControl) {
                 dropInfo.DropTargetAdorner = DropTargetAdorners.Highlight;
                 dropInfo.Effects = DragDropEffects.Move;
-                var model = CanvasNodes.FirstOrDefault(f =>
-                    f is { ConnectPositiveResult: false, ConnectNegativeResult: false });
-                if (model is not null) {
+                var model = CanvasNodes.FirstOrDefault(f => !f.ConnectPositiveResult
+                    || !f.ConnectPositiveResult);
+                if (model != null) {
                     //获取长度宽度
+                    if (dropInfo.DropPosition.Y > model.PositiveConnectionPoint.Y) {
+                        //在连接对象下面
+                        //取出中心点
+                        var element = dropInfo.DragInfo.VisualSourceItem;
+                        if (element is FrameworkElement frameworkElement) {
+                            var actualWidth = frameworkElement.ActualWidth;
+                            var centerPoint = actualWidth / 2;
+                            if (!model.ConnectPositiveResult &&
+                                dropInfo.DropPosition.X < model.Left + centerPoint) {
+                                //左边
+                                //画线
+                                Debug.WriteLine($"在左边");
+                            }
+                            else if (!model.ConnectNegativeResult &&
+                                   dropInfo.DropPosition.X > model.Left + centerPoint) {
+                                Debug.WriteLine($"在右边");
+                                //画线
+                            }
+                            Debug.WriteLine($"frameworkElement.X:{dropInfo.DropPosition.X}-model.X:{model.Left + centerPoint}");
+                        }
 
-                    //获取中心点在左边还是右边
+                        //获取中心点在左边还是右边
+                    }
 
-                    //显示连接线
 
-                    Debug.WriteLine($"是点:{model.PositiveConnectionPoint}--否点:{model.NegativeConnectionPoint}");
                 }
+
             }
         }
 
@@ -130,26 +149,18 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                     Panel.SetZIndex(dropInfo.VisualTargetItem, 29);
                     Panel.SetZIndex(dropInfo.DragInfo.VisualSourceItem, 30);
                 }
-                if (dropInfo.DragInfo.VisualSourceItem is ListViewItem listViewItem) {
+
+                if (dropInfo.DragInfo.VisualSourceItem is FrameworkElement frameworkElement) {
                     item.PositiveConnectionPoint = new Point() {
                         X = dropInfo.DropPosition.X + 10,
-                        Y = dropInfo.DropPosition.Y + listViewItem.ActualHeight
+                        Y = dropInfo.DropPosition.Y + frameworkElement.ActualHeight
                     };
                     item.NegativeConnectionPoint = new Point() {
-                        X = dropInfo.DropPosition.X + listViewItem.ActualWidth - 10,
-                        Y = dropInfo.DropPosition.Y + listViewItem.ActualHeight
+                        X = dropInfo.DropPosition.X + frameworkElement.ActualWidth - 10,
+                        Y = dropInfo.DropPosition.Y + frameworkElement.ActualHeight
                     };
                 }
-                else if (dropInfo.DragInfo.VisualSourceItem is ContentPresenter contentPresenterItem) {
-                    item.PositiveConnectionPoint = new Point() {
-                        X = dropInfo.DropPosition.X + 10,
-                        Y = dropInfo.DropPosition.Y + contentPresenterItem.ActualHeight
-                    };
-                    item.NegativeConnectionPoint = new Point() {
-                        X = dropInfo.DropPosition.X + contentPresenterItem.ActualWidth - 10,
-                        Y = dropInfo.DropPosition.Y + contentPresenterItem.ActualHeight
-                    };
-                }
+
                 if (dropInfo.DragInfo.VisualSource is ListView) {
                     CanvasNodes.Add(item);
                     CombinedWorkflowNodes.Remove(item);

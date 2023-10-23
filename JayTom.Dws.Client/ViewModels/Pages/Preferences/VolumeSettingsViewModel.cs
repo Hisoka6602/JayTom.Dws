@@ -370,6 +370,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                             Separator = VolumeSettingsInfo.Separator,
                             IsUseExternalVolumeInput = VolumeSettingsInfo.IsUseExternalVolumeInput,
                             IsTriggerVolumeRequest = VolumeSettingsInfo.IsTriggerVolumeRequest,
+                            IsUseFusionTimeout = VolumeSettingsInfo.IsUseFusionTimeout,
+                            FusionTimeout = VolumeSettingsInfo.FusionTimeout,
                             VolumeInformationRequesterInfo = new VolumeInformationRequesterInfo() {
                                 VolumeTriggerPosition = SelectTriggerPosition.Value,
                                 SendContent = VolumeSettingsInfo.VolumeInformationRequesterInfo.SendContent,
@@ -441,7 +443,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                                 Separator = settingsDto.Separator,
                                 IsUseExternalVolumeInput = settingsDto.IsUseExternalVolumeInput,
                                 IsTriggerVolumeRequest = settingsDto.IsTriggerVolumeRequest,
-
+                                FusionTimeout = settingsDto.FusionTimeout,
+                                IsUseFusionTimeout = settingsDto.IsUseFusionTimeout,
                                 VolumeInformationRequesterInfo = new VolumeInformationRequesterInfoModel() {
                                     VolumeTriggerPosition = settingsDto.VolumeInformationRequesterInfo.VolumeTriggerPosition,
                                     SendContent = settingsDto.VolumeInformationRequesterInfo.SendContent,

@@ -12,7 +12,6 @@ using JayTom.Dws.Client.Models.ImageSettingModels;
 using JayTom.Dws.Client.Models.SettingsCommomModels;
 
 namespace JayTom.Dws.Client.Models.VolumeSettingsModel {
-
     public class VolumeSettingsInfoModel : BindableBase {
         private ObservableCollection<ItemBaseTemplateModel> _dataTemplate = new();
         private bool _isUseExternalVolumeInput;
@@ -21,6 +20,8 @@ namespace JayTom.Dws.Client.Models.VolumeSettingsModel {
         private VolumeInformationRequesterInfoModel _volumeInformationRequesterInfo = new();
         private string _separator = string.Empty;
         private VolumeUnit _unit = VolumeUnit.Millimeter;
+        private bool _isUseFusionTimeout;
+        private int _fusionTimeout;
 
         /// <summary>
         /// 体积单位
@@ -60,6 +61,22 @@ namespace JayTom.Dws.Client.Models.VolumeSettingsModel {
         public bool IsTriggerVolumeRequest {
             get => _triggerVolumeRequest;
             set => SetProperty(ref _triggerVolumeRequest, value);
+        }
+
+        /// <summary>
+        /// 是否使用融合超时
+        /// </summary>
+        public bool IsUseFusionTimeout {
+            get => _isUseFusionTimeout;
+            set => SetProperty(ref _isUseFusionTimeout, value);
+        }
+
+        /// <summary>
+        /// 融合超时时间
+        /// </summary>
+        public int FusionTimeout {
+            get => _fusionTimeout;
+            set => SetProperty(ref _fusionTimeout, value);
         }
 
         /// <summary>

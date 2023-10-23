@@ -45,6 +45,8 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
             <!--  通讯类型  -->
@@ -613,6 +615,7 @@
                         Text="通讯协议:" />
                 </StackPanel>
                 <StackPanel Margin="50,5,0,0" Orientation="Horizontal">
+                    <!--  通讯协议  -->
                     <!--  图标  -->
                     <TextBlock
                         Margin="5,0"
@@ -649,9 +652,192 @@
                     </Border>
                 </StackPanel>
             </StackPanel>
-            <!--  下位机应答  -->
+            <!--  包裹超时设置  -->
             <StackPanel
                 Grid.Row="3"
+                Margin="5,0"
+                VerticalAlignment="Top"
+                Orientation="Vertical">
+                <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
+                    <TextBlock
+                        Margin="0,0,0,1"
+                        VerticalAlignment="Center"
+                        FontFamily="{StaticResource IconFontFamily}"
+                        FontSize="20"
+                        Foreground="DarkGray"
+                        Text="&#xe71d;" />
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="16"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="包裹超时:" />
+                </StackPanel>
+                <!--  内容  -->
+                <StackPanel Margin="50,5,0,0" Orientation="Vertical">
+                    <StackPanel
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        Orientation="Horizontal">
+                        <TextBlock
+                            Margin="5,0"
+                            VerticalAlignment="Center"
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="DarkGray"
+                            Text="是否使用包裹有效周期:" />
+                        <ToggleButton
+                            Name="IsUsePackageExpiryToggleButton"
+                            materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
+                            materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
+                            Focusable="False"
+                            IsChecked="{Binding CommunicationsSettingsInfo.IsUsePackageExpiry, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                            Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+                    </StackPanel>
+                    <StackPanel IsEnabled="{Binding ElementName=IsUsePackageExpiryToggleButton, Path=IsChecked}" Orientation="Horizontal">
+                        <!--  图标  -->
+                        <TextBlock
+                            Margin="5,0"
+                            VerticalAlignment="Center"
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="DarkGray"
+                            Text="有效时间:" />
+                        <Border
+                            Margin="5"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Background="#1A696969"
+                            CornerRadius="5">
+                            <TextBox
+                                Width="130"
+                                Height="30"
+                                MaxWidth="500"
+                                Margin="5,0"
+                                materialDesign:TextFieldAssist.HasClearButton="False"
+                                materialDesign:TextFieldAssist.HasFilledTextField="True"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="White"
+                                InputMethod.IsInputMethodEnabled="False"
+                                Text="{Binding CommunicationsSettingsInfo.PackageExpiryTime, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                        </Border>
+                    </StackPanel>
+                </StackPanel>
+            </StackPanel>
+            <!--  下位机设置  -->
+            <StackPanel
+                Grid.Row="4"
+                Margin="5,0"
+                VerticalAlignment="Top"
+                Orientation="Vertical">
+                <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
+                    <TextBlock
+                        Margin="0,0,0,1"
+                        VerticalAlignment="Center"
+                        FontFamily="{StaticResource IconFontFamily}"
+                        FontSize="20"
+                        Foreground="DarkGray"
+                        Text="&#xe805;" />
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="16"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="下位机设置:" />
+                </StackPanel>
+                <!--  内容  -->
+                <StackPanel Margin="50,5,0,0" Orientation="Vertical">
+                    <StackPanel Orientation="Horizontal">
+                        <StackPanel
+                            Margin="0,5"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Orientation="Horizontal">
+                            <TextBlock
+                                Margin="5,0"
+                                VerticalAlignment="Center"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                Text="是否由下位机创建包裹:" />
+                            <ToggleButton
+                                materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
+                                materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
+                                Focusable="False"
+                                IsChecked="{Binding CommunicationsSettingsInfo.DeviceControlSettingsInfo.IsUseCreatePackageByDevice, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+                        </StackPanel>
+                        <StackPanel
+                            Margin="0,5"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Orientation="Horizontal">
+                            <TextBlock
+                                Margin="5,0"
+                                VerticalAlignment="Center"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                Text="是否由下位机移除包裹:" />
+                            <ToggleButton
+                                materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
+                                materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
+                                Focusable="False"
+                                IsChecked="{Binding CommunicationsSettingsInfo.DeviceControlSettingsInfo.IsUseRemovePackageByDevice, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+                        </StackPanel>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <StackPanel
+                            Margin="0,5"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Orientation="Horizontal">
+                            <TextBlock
+                                Margin="5,0"
+                                VerticalAlignment="Center"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                Text="是否由下位机启动运行:" />
+                            <ToggleButton
+                                materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
+                                materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
+                                Focusable="False"
+                                IsChecked="{Binding CommunicationsSettingsInfo.DeviceControlSettingsInfo.IsUseStartDeviceByDevice, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+                        </StackPanel>
+                        <StackPanel
+                            Margin="0,5"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Orientation="Horizontal">
+                            <TextBlock
+                                Margin="5,0"
+                                VerticalAlignment="Center"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                Text="是否由下位机停止运行:" />
+                            <ToggleButton
+                                materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
+                                materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
+                                Focusable="False"
+                                IsChecked="{Binding CommunicationsSettingsInfo.DeviceControlSettingsInfo.IsUseStopDeviceByDevice, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+                        </StackPanel>
+                    </StackPanel>
+
+                </StackPanel>
+            </StackPanel>
+            <!--  下位机应答  -->
+            <StackPanel
+                Grid.Row="5"
                 Margin="5,0"
                 VerticalAlignment="Center"
                 Orientation="Vertical"
@@ -753,7 +939,7 @@
             </StackPanel>
             <!--  心跳包  -->
             <StackPanel
-                Grid.Row="4"
+                Grid.Row="6"
                 Margin="5,0"
                 VerticalAlignment="Center"
                 Orientation="Vertical"
@@ -787,8 +973,28 @@
                     IsEnabled="{Binding ElementName=IsHeartbeatEnabledToggleButton, Path=IsChecked}"
                     Orientation="Vertical"
                     Visibility="{Binding ElementName=IsHeartbeatEnabledToggleButton, Path=IsChecked, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <!--  是否主动发送心跳包  -->
+                    <StackPanel
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        Orientation="Horizontal">
+                        <TextBlock
+                            Margin="5,0"
+                            VerticalAlignment="Center"
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="DarkGray"
+                            Text="是否主动发送心跳包:" />
+                        <ToggleButton
+                            Name="IsHeartbeatActiveToggleButton"
+                            materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
+                            materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
+                            Focusable="False"
+                            IsChecked="{Binding CommunicationsSettingsInfo.HeartbeatInfo.IsHeartbeatActive, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                            Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+                    </StackPanel>
                     <!--  心跳包内容  -->
-                    <StackPanel Orientation="Horizontal">
+                    <StackPanel Orientation="Horizontal" Visibility="{Binding ElementName=IsHeartbeatActiveToggleButton, Path=IsChecked, Converter={StaticResource BooleanToVisibilityConverter}}">
                         <!--  图标  -->
                         <TextBlock
                             Margin="5,0"
@@ -820,7 +1026,7 @@
                         </Border>
                     </StackPanel>
                     <!--  心跳包间隔  -->
-                    <StackPanel Orientation="Horizontal">
+                    <StackPanel Orientation="Horizontal" Visibility="{Binding ElementName=IsHeartbeatActiveToggleButton, Path=IsChecked, Converter={StaticResource BooleanToVisibilityConverter}}">
                         <!--  图标  -->
                         <TextBlock
                             Margin="5,0"
@@ -855,7 +1061,7 @@
             </StackPanel>
             <!--  保存设置  -->
             <Button
-                Grid.Row="5"
+                Grid.Row="7"
                 Grid.Column="0"
                 MinHeight="30"
                 Margin="30,10"
@@ -924,7 +1130,7 @@
             </Button>
             <!--  提示框  -->
             <materialDesign:Snackbar
-                Grid.Row="5"
+                Grid.Row="7"
                 Grid.RowSpan="2"
                 Width="Auto"
                 Height="Auto"

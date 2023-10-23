@@ -77,6 +77,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     TriggerPosition = TriggerPositionEnum.PackageTrigger
                 });
             };
+
             _deviceService.PanoramaCaptured += async delegate (object? sender, PanoramaCaptureEventArgs args) {
                 await Task.Yield();
                 _panoramicImageItems.Enqueue(new CameraImageInfo() {
@@ -172,7 +173,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             if (scanBarCodeInfo.Length is not null &&
                                 scanBarCodeInfo.Width is not null &&
                                 scanBarCodeInfo.Height is not null &&
-                                scanBarCodeInfo.Weight is not null) {
+                                scanBarCodeInfo.Weight is not null &&
+                                !string.IsNullOrEmpty(scanBarCodeInfo.BarCode)) {
                                 //创建另一个对象处理耗时长的内容
                                 //上传
                                 //条码回调(告诉界面这个条码完成)

@@ -6,11 +6,11 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 
 namespace JayTom.Dws.Client.Models.CommunicationsSettingsModel {
-
     public class HeartbeatInfoModel : BindableBase {
         private bool _isHeartbeatEnabled;
         private string _heartbeatData = string.Empty;
         private int _heartbeatInterval;
+        private bool _isHeartbeatActive;
 
         /// <summary>
         /// 获取或设置一个值，指示是否启用心跳包功能。
@@ -34,6 +34,14 @@ namespace JayTom.Dws.Client.Models.CommunicationsSettingsModel {
         public int HeartbeatInterval {
             get => _heartbeatInterval;
             set => SetProperty(ref _heartbeatInterval, value);
+        }
+
+        /// <summary>
+        /// 是否主动发送心跳包
+        /// </summary>
+        public bool IsHeartbeatActive {
+            get => _isHeartbeatActive;
+            set => SetProperty(ref _isHeartbeatActive, value);
         }
     }
 }

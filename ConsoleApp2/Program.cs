@@ -11,14 +11,24 @@ using System.Threading.Tasks;
 using System.Linq.Expressions;
 using System.Linq.Dynamic.Core;
 using System.Collections.Generic;
+using Org.BouncyCastle.Utilities;
 using JayTom.Dws.Interface.Sunnen;
 using JayTom.Dws.Interface.Szjy188;
 using static System.Text.Json.JsonElement;
+using JayTom.Dws.Domain.DownstreamProtocols;
 using static JayTom.Dws.Interface.Szjy188.SzjyApi;
+using JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols;
 
 internal class Program {
 
     private static async Task Main(string[] args) {
+        var xorChecksum = WxkcCommunicationProtocol.XorChecksum(new byte[] { 0xFC, 0x12, 0x01, 0x01, 0x00, 0x00, 0x01 });
+        var encodeData = new WxkcCommunicationProtocol().EncodeData(FunctionType.Heartbeat, 0, "00 00", null);
+
+        int num = 256;
+        var base64String = BitConverter.ToString(new byte[] { 0x11, 0x1A });
+        string hexString = num.ToString("X4");
+
         string json = "{\"key1\":{\"key2\":{\"field\":\"valueaa\"}},\"key3\":[{\"field1\":\"value2\"}]}";
         string fieldName = "key";
         JsonDocument jsonDocument = JsonDocument.Parse(json);

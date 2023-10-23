@@ -44,6 +44,21 @@ namespace JayTom.Dws.Domain.Dto {
         /// 心跳包
         /// </summary>
         public HeartbeatInfo HeartbeatInfo { get; set; } = new();
+
+        /// <summary>
+        /// 下位机设置
+        /// </summary>
+        public DeviceControlSettingsInfo DeviceControlSettingsInfo { get; set; } = new();
+
+        /// <summary>
+        /// 是否使用包裹过期
+        /// </summary>
+        public bool IsUsePackageExpiry { get; set; }
+
+        /// <summary>
+        /// 包裹过期时间(设置为0则不验证)
+        /// </summary>
+        public int PackageExpiryTime { get; set; }
     }
 
     public enum CommunicationsType {
@@ -134,6 +149,11 @@ namespace JayTom.Dws.Domain.Dto {
         /// <summary>
         /// OPC 通信类型。
         /// </summary>
-        OPC
+        OPC,
+
+        /// <summary>
+        /// 无限创科协议
+        /// </summary>
+        Wxkc,
     }
 }

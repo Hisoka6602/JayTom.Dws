@@ -23,6 +23,18 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         private Point _positiveConnectionPoint;
         private Point _negativeConnectionPoint;
         private Point _receiverConnectionPoint;
+        private int _id;
+        private int _parentId;
+
+        public int Id {
+            get => _id;
+            set => SetProperty(ref _id, value);
+        }
+
+        public int ParentId {
+            get => _parentId;
+            set => SetProperty(ref _parentId, value);
+        }
 
         /// <summary>
         /// 节点类型
@@ -158,6 +170,17 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// API判断节点
         /// </summary>
-        ApiNode
+        ApiNode,
+        /// <summary>
+        /// 连接线
+        /// </summary>
+        ConnectionLine,
+    }
+
+    public class ConnectionLine {
+        public Point StartPoint { get; set; }
+        public Point BendPoint { get; set; }
+        public Point EndPoint { get; set; }
+        //线颜色
     }
 }

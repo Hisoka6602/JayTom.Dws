@@ -10,7 +10,6 @@ using JayTom.Dws.Domain.Dto.CommunicationsSettings;
 using JayTom.Dws.Client.Models.SettingsCommomModels;
 
 namespace JayTom.Dws.Client.Models.CommunicationsSettingsModel {
-
     public class CommunicationsSettingsInfoModel : BindableBase {
         private TcpSettingsInfoModel _tcpSettingsInfo = new();
         private SerialPortSettingsInfoModel _serialPortSettingsInfo = new();
@@ -18,6 +17,9 @@ namespace JayTom.Dws.Client.Models.CommunicationsSettingsModel {
         private CommunicationsType _type = CommunicationsType.None;
         private MachineReplyInfoModel _machineReplyInfo = new();
         private HeartbeatInfoModel _heartbeatInfo = new();
+        private int _packageExpiryTime;
+        private bool _isUsePackageExpiry;
+        private DeviceControlSettingsInfoModel _deviceControlSettingsInfo = new();
 
         public TcpSettingsInfoModel TcpSettingsInfo {
             get => _tcpSettingsInfo;
@@ -62,6 +64,29 @@ namespace JayTom.Dws.Client.Models.CommunicationsSettingsModel {
         public HeartbeatInfoModel HeartbeatInfo {
             get => _heartbeatInfo;
             set => SetProperty(ref _heartbeatInfo, value);
+        }
+        /// <summary>
+        /// 下位机设置
+        /// </summary>
+        public DeviceControlSettingsInfoModel DeviceControlSettingsInfo {
+            get => _deviceControlSettingsInfo;
+            set => SetProperty(ref _deviceControlSettingsInfo, value);
+        }
+
+        /// <summary>
+        /// 是否使用包裹过期
+        /// </summary>
+        public bool IsUsePackageExpiry {
+            get => _isUsePackageExpiry;
+            set => SetProperty(ref _isUsePackageExpiry, value);
+        }
+
+        /// <summary>
+        /// 包裹过期时间(设置为0则不验证)
+        /// </summary>
+        public int PackageExpiryTime {
+            get => _packageExpiryTime;
+            set => SetProperty(ref _packageExpiryTime, value);
         }
     }
 }

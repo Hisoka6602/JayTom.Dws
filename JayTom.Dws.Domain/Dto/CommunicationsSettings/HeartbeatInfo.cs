@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 
 namespace JayTom.Dws.Domain.Dto.CommunicationsSettings {
-
     public class HeartbeatInfo {
 
         /// <summary>
@@ -22,5 +21,9 @@ namespace JayTom.Dws.Domain.Dto.CommunicationsSettings {
         /// 获取或设置心跳包的发送间隔。
         /// </summary>
         public int HeartbeatInterval { get; set; }
+        /// <summary>
+        /// 是否主动发送心跳包
+        /// </summary>
+        public bool IsHeartbeatActive { get; set; }
     }
 }

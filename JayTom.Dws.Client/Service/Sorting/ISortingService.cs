@@ -37,6 +37,21 @@ namespace JayTom.Dws.Client.Service.Sorting {
         event EventHandler<ExceptionEventArgs> SendError;
 
         /// <summary>
+        /// 创建包裹
+        /// </summary>
+        event EventHandler<object> CreatePackageEvent;
+
+        /// <summary>
+        /// 移除包裹
+        /// </summary>
+        event EventHandler<object> RemovePackageEvent;
+
+        /// <summary>
+        /// 解除异常
+        /// </summary>
+        event EventHandler<object> ClearExceptionEvent;
+
+        /// <summary>
         /// 执行分拣
         /// </summary>
 
