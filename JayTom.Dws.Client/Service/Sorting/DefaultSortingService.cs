@@ -211,11 +211,11 @@ namespace JayTom.Dws.Client.Service.Sorting {
                             }
                             else if (deviceDecodeResult.Type == FunctionType.RemovePackage) {
                                 //移除包裹
-                                OnCreatePackageEvent(deviceDecodeResult.Keyword);
+                                OnRemovePackageEvent(deviceDecodeResult.Keyword);
                             }
                             else if (deviceDecodeResult.Type == FunctionType.Heartbeat) {
                                 //心跳包
-                                OnCreatePackageEvent(deviceDecodeResult.Keyword);
+                                //OnHeartbeatError(deviceDecodeResult.Keyword);
                             }
                             else if (deviceDecodeResult.Type == FunctionType.ClearException) {
                                 //清空异常
@@ -562,8 +562,6 @@ namespace JayTom.Dws.Client.Service.Sorting {
             //连接
             //心跳包
             if (!RunningStatus) {
-                await Disconnect();
-                await Connect();
 
                 #region 读取配置信息
 
@@ -580,7 +578,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                         JsonConvert.DeserializeObject<CommunicationsSettingsDto>(configInfoModel?.Value ?? string.Empty) ?? new CommunicationsSettingsDto();
                     if (_communicationsSettingsDto is not null) {
                         IsSortingEnabled = _communicationsSettingsDto.Type != CommunicationsType.None;
-                        await Disconnect();
+                        //await Disconnect();
                     }
                     _packageExitDefinitionInfos = await _packageExitDefinitionRepository.Select(s => s.Id > 0,
                         o => o.Id);
@@ -629,6 +627,8 @@ namespace JayTom.Dws.Client.Service.Sorting {
 
                 #endregion 读取配置信息
 
+                await Disconnect();
+                await Connect();
                 RunningStatus = true;
                 return new KeyValuePair<bool, string>(true, "已启动");
             }
