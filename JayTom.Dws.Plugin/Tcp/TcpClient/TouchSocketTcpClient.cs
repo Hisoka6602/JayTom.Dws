@@ -45,12 +45,17 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
                 if (_tcpClient is null) {
                     _tcpClient = new TouchSocket.Sockets.TcpClient();
                     _tcpClient.Received += delegate (TouchSocket.Sockets.TcpClient client, ByteBlock block, IRequestInfo info) {
-                        var msg = Encoding.Default.GetString(block.Buffer, 0, block.Len);
-                        OnCommunication(new CommunicationInfo() {
-                            Content = dataType == FormatType.Ascii ? msg : BitConverter.ToString(RemoveTrailingZeros(block.Buffer)).Replace("-", " "),
-                            Time = DateTime.Now,
-                            Type = CommunicationType.Receive
-                        });
+                        try {
+                            var msg = Encoding.Default.GetString(block.Buffer, 0, block.Len);
+                            OnCommunication(new CommunicationInfo() {
+                                Content = dataType == FormatType.Ascii ? msg : BitConverter.ToString(RemoveTrailingZeros(block.Buffer)).Replace("-", " "),
+                                Time = DateTime.Now,
+                                Type = CommunicationType.Receive
+                            });
+                        }
+                        catch (Exception e) {
+                            NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
+                        }
                     };
                     _tcpClient.Connected += delegate {
                         OnConnected($"IpAddress:{IpAddress},Port:{Port}");
@@ -92,12 +97,17 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
                     if (_tcpClient is null) {
                         _tcpClient = new TouchSocket.Sockets.TcpClient();
                         _tcpClient.Received += delegate (TouchSocket.Sockets.TcpClient client, ByteBlock block, IRequestInfo info) {
-                            var msg = Encoding.Default.GetString(block.Buffer, 0, block.Len);
-                            OnCommunication(new CommunicationInfo() {
-                                Content = tcpConnect.DataFormatType == FormatType.Ascii ? msg : BitConverter.ToString(RemoveTrailingZeros(block.Buffer)).Replace("-", " ").TrimEnd('0'),
-                                Time = DateTime.Now,
-                                Type = CommunicationType.Receive
-                            });
+                            try {
+                                var msg = Encoding.Default.GetString(block.Buffer, 0, block.Len);
+                                OnCommunication(new CommunicationInfo() {
+                                    Content = tcpConnect.DataFormatType == FormatType.Ascii ? msg : BitConverter.ToString(RemoveTrailingZeros(block.Buffer)).Replace("-", " ").TrimEnd('0'),
+                                    Time = DateTime.Now,
+                                    Type = CommunicationType.Receive
+                                });
+                            }
+                            catch (Exception e) {
+                                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
+                            }
                         };
                         _tcpClient.Connected += delegate {
                             OnConnected($"IpAddress:{IpAddress},Port:{Port}");
