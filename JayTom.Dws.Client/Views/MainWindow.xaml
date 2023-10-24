@@ -118,9 +118,10 @@
                                     FontSize="18"
                                     FontWeight="Bold"
                                     Foreground="White"
-                                    Text="SUNNEN" />
+                                    Text="无限创科DWS分拣控制系统" />
                                 <!--  工具  Visibility="Collapsed"  -->
                                 <ComboBox
+                                    Visibility="Collapsed"
                                     Name="HomeToolComboBox"
                                     MinWidth="50"
                                     Margin="15,0"

@@ -5,6 +5,7 @@ using TouchSocket.Core;
 using TouchSocket.Sockets;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace JayTom.Dws.Plugin.Tcp.TcpClient {
 
@@ -26,26 +27,27 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
 
         public event EventHandler<Exception>? SendError;
 
-        public async Task<bool> Connect(string ipAddress, int port, int timeOut = 1000, CancellationToken token = default) {
+        public async Task<bool> Connect(string ipAddress, int port, int timeOut = 1000, FormatType dataType = FormatType.Ascii, CancellationToken token = default) {
             var parameter = SetParameter(new TcpConnectParam() {
                 Address = ipAddress,
                 Port = port,
+                DataFormatType = dataType
             });
             if (parameter) {
-                return await Connect(token);
+                return await Connect(dataType, token);
             }
 
             return false;
         }
 
-        public async Task<bool> Connect(CancellationToken token = default) {
+        public async Task<bool> Connect(FormatType dataType = FormatType.Ascii, CancellationToken token = default) {
             try {
                 if (_tcpClient is null) {
                     _tcpClient = new TouchSocket.Sockets.TcpClient();
                     _tcpClient.Received += delegate (TouchSocket.Sockets.TcpClient client, ByteBlock block, IRequestInfo info) {
                         var msg = Encoding.Default.GetString(block.Buffer, 0, block.Len);
                         OnCommunication(new CommunicationInfo() {
-                            Content = msg,
+                            Content = dataType == FormatType.Ascii ? msg : BitConverter.ToString(RemoveTrailingZeros(block.Buffer)).Replace("-", " "),
                             Time = DateTime.Now,
                             Type = CommunicationType.Receive
                         });
@@ -74,7 +76,7 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
 
         public async Task<bool> Reconnect(int count, CancellationToken token = default) {
             for (var i = 0; i < count; i++) {
-                await Connect(token);
+                await Connect(token: token);
                 if (ConnectionStatus == ConnectionStatus.Connected) {
                     return true;
                 }
@@ -92,7 +94,7 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
                         _tcpClient.Received += delegate (TouchSocket.Sockets.TcpClient client, ByteBlock block, IRequestInfo info) {
                             var msg = Encoding.Default.GetString(block.Buffer, 0, block.Len);
                             OnCommunication(new CommunicationInfo() {
-                                Content = msg,
+                                Content = tcpConnect.DataFormatType == FormatType.Ascii ? msg : BitConverter.ToString(RemoveTrailingZeros(block.Buffer)).Replace("-", " ").TrimEnd('0'),
                                 Time = DateTime.Now,
                                 Type = CommunicationType.Receive
                             });
@@ -201,6 +203,13 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
         protected virtual async void OnSendError(Exception e) {
             await Task.Yield();
             SendError?.Invoke(this, e);
+        }
+
+        public byte[] RemoveTrailingZeros(byte[] input) {
+            int lastIndex = Array.FindLastIndex(input, b => b != 0x00);
+            byte[] result = new byte[lastIndex + 1];
+            Array.Copy(input, result, lastIndex + 1);
+            return result;
         }
     }
 }

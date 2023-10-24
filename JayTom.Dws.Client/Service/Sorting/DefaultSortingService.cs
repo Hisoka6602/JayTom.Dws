@@ -16,6 +16,7 @@ using System.Linq.Dynamic.Core;
 using JayTom.Dws.Data.LocalConf;
 using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
+using Org.BouncyCastle.Utilities;
 using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
 using JayTom.Dws.Client.EventMediators;
@@ -393,7 +394,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                                 instruction, null);
                         }
 
-                        var sendMessage = await _sortingTcp.SendMessage(message);
+                        var sendMessage = await _sortingTcp.SendMessage(HexStringToByteArray(message));
                         await Task.Delay(interval);
                     }
                 }
@@ -403,6 +404,17 @@ namespace JayTom.Dws.Client.Service.Sorting {
                     });
                 }
             }
+        }
+
+        private static byte[] HexStringToByteArray(string hexString) {
+            hexString = hexString.Replace(" ", ""); // 移除空格
+
+            var bytes = new byte[hexString.Length / 2];
+            for (var i = 0; i < hexString.Length; i += 2) {
+                bytes[i / 2] = Convert.ToByte(hexString.Substring(i, 2), 16);
+            }
+
+            return bytes;
         }
 
         public async void SendInstructions(long grid, List<SortingInstructionInfoModel> sortingInstructionInfoModels, TimeSpan interval) {
@@ -475,7 +487,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                                         instruction.Instruction, null);
                                 }
 
-                                var sendMessage = await _sortingTcp.SendMessage(message);
+                                var sendMessage = await _sortingTcp.SendMessage(HexStringToByteArray(message));
                                 if (sendMessage) {
                                     return await WaitForReply(instruction.ReplyContent,
                                         TimeSpan.FromMilliseconds(_communicationsSettingsDto.MachineReplyInfo.Timeout));
@@ -499,7 +511,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                                     instruction.Instruction, null);
                             }
 
-                            var sendMessage = await _sortingTcp.SendMessage(message);
+                            var sendMessage = await _sortingTcp.SendMessage(HexStringToByteArray(message));
                             if (!sendMessage) {
                                 OnExceptionOccurred(new ExceptionEventArgs() {
                                     ExceptionMessage = "发送失败!"
@@ -849,13 +861,13 @@ namespace JayTom.Dws.Client.Service.Sorting {
                     await _sortingTcp.Connect(
                         _communicationsSettingsDto.TcpSettingsInfo.ServerConfig.IpAddress,
                         _communicationsSettingsDto.TcpSettingsInfo.ServerConfig.Port,
-                        ConnectionType.Server);
+                        ConnectionType.Server, 2000, FormatType.Hex);
                 }
                 else {
                     await _sortingTcp.Connect(
                         _communicationsSettingsDto.TcpSettingsInfo.ClientConfig.IpAddress,
                         _communicationsSettingsDto.TcpSettingsInfo.ClientConfig.Port,
-                        ConnectionType.Client);
+                        ConnectionType.Client, 2000, FormatType.Hex);
                 }
                 //心跳包
                 if (isUseHeartbeat) {

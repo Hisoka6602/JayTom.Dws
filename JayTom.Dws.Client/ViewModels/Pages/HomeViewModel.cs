@@ -312,6 +312,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             _deviceService.CameraDisconnected += delegate (object? sender, List<ICamera> list) {
                 //更新现有列表,例如删除相机成员
             };
+            _deviceService.VolumeCaptured += DeviceServiceOnVolumeCaptured;
             _deviceService.DeviceException += async delegate (object? sender, DeviceExceptionEventArgs args) {
                 await Application.Current.Dispatcher.InvokeAsync(() => {
                     HomeMessageQueue.Enqueue(args?.ExceptionMessage?.Message ?? string.Empty);
@@ -446,6 +447,15 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                         _updateSlim.Release();
                     }
                 }
+            });
+        }
+
+        private async void DeviceServiceOnVolumeCaptured(object? sender, VolumeCapturedEventArgs args) {
+            await Application.Current.Dispatcher.BeginInvoke(() => {
+                Length = (float)args.Length;
+                Width = (float)args.Width;
+                Height = (float)args.Height;
+                Volume = (float)args.Volume;
             });
         }
 

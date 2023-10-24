@@ -18,6 +18,7 @@ using JayTom.Dws.Client.Models.Cameras;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Plugin.Scale.StaticScale;
 using JayTom.Dws.Plugin.Scale.DynamicScale;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Data.LocalConf.CameraConfig;
 using CameraType = JayTom.Dws.Camera.CameraType;
@@ -25,6 +26,7 @@ using JayTom.Dws.Plugin.Scale.ScaleValueParameters;
 using JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim;
 using JayTom.Dws.Camera.Cameras.SmartCamera.Irayple;
 using JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision;
+using JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision;
 using JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim;
 using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
@@ -86,7 +88,8 @@ namespace JayTom.Dws.Client.Service.Device {
                 var daHuaSecurityCameras = new List<CameraInfo>();
                 var wayzimSmartCameras = new List<CameraInfo>();
                 var wayzimIndustrialCameras = new List<CameraInfo>();
-
+                var hikvisionVolumeCameras = new List<CameraInfo>();
+                //HikvisionVolumeCamera
                 //判断已经选择的相机
                 if (_cameraSdkSelectorDto?.IsUseDaHuaSmartCameraSdk == true) {
                     //大华智能相机
@@ -115,12 +118,14 @@ namespace JayTom.Dws.Client.Service.Device {
                     //中科微至工业相机
                     wayzimIndustrialCameras = await new WayzimIndustrialCamera().EnumerateCameras();
                 }
-
+                //海康体积相机
+                hikvisionVolumeCameras = await new HikvisionVolumeCamera().EnumerateCameras();
                 var cameraList = wayzimIndustrialCameras?.Union(wayzimSmartCameras
                                                                 ?? new List<CameraInfo>())?.ToList()?
                                      .Union(daHuaSecurityCameras ?? new List<CameraInfo>())?.ToList()?
-                                     .Union(hikvisionIndustrialCameras ?? new List<CameraInfo>())?.ToList()
-                                     .Union(hikvisionSmartCameras ?? new List<CameraInfo>())?.ToList()
+                                     .Union(hikvisionIndustrialCameras ?? new List<CameraInfo>())?.ToList()?
+                                     .Union(hikvisionSmartCameras ?? new List<CameraInfo>())?.ToList()?
+                                     .Union(hikvisionVolumeCameras ?? new List<CameraInfo>())?.ToList()
                                  ?? new List<CameraInfo>();
                 var list = cameraList.Select(s =>
                     _cameraInfos.AddOrUpdate(s.SerialNumber, s,
@@ -561,6 +566,13 @@ namespace JayTom.Dws.Client.Service.Device {
                                             parameters ?? string.Empty;
                                         break;
                                     }
+                                case IVolumeCamera volumeCamera: {
+                                        volumeCamera.VolumeCaptured += delegate (object? sender,
+                                            VolumeCapturedEventArgs args) {
+                                                OnVolumeCaptured(args);
+                                            };
+                                        break;
+                                    }
                             }
 
                             //初始化
@@ -754,6 +766,9 @@ namespace JayTom.Dws.Client.Service.Device {
         private CameraType ConvertCameraType(string brand, string modelName) {
             switch (brand) {
                 case not null when (brand.Contains("Hikrobot") || brand.Contains("Hikvision")):
+                    if (modelName.Contains("MV-DL")) {
+                        return CameraType.VolumeCamera;
+                    }
                     if (modelName.Contains("MV-ID"))
                         return CameraType.SmartCamera;
                     if (modelName.Contains("MV-PD"))
@@ -781,6 +796,9 @@ namespace JayTom.Dws.Client.Service.Device {
         private ICamera? ConvertCamera(CameraInfo info) {
             switch (info.Brand) {
                 case not null when (info.Brand.Contains("Hikrobot") || info.Brand.Contains("Hikvision")):
+                    if (info.Model.Contains("MV-DL")) {
+                        return new HikvisionVolumeCamera(info);
+                    }
                     if (info.Model.Contains("MV-ID"))
                         return new HikvisionSmartCamera(info);
                     if (info.Model.Contains("MV-PD"))

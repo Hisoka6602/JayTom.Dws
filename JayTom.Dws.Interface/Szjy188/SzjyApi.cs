@@ -15,9 +15,10 @@ using System.Reflection.PortableExecutable;
 using static JayTom.Dws.Interface.Szjy188.SzjyApi;
 
 namespace JayTom.Dws.Interface.Szjy188 {
+
     public class SzjyApi : IDataUploader {
         private readonly IHttpClientFactory _httpClientFactory;
-        private static int? _uid = null;
+        public static int? _uid = null;
         public string Url { get; private set; } = string.Empty;
         public string UserName { get; private set; } = string.Empty;
         public string Password { get; private set; } = string.Empty;
@@ -43,6 +44,7 @@ namespace JayTom.Dws.Interface.Szjy188 {
                     if (value.Status != 0) {
                         return new UploadResponse() {
                             ExceptionMsg = value.Message,
+                            RequestContent = value.Message,
                             IsSuccess = false
                         };
                     }
@@ -53,6 +55,7 @@ namespace JayTom.Dws.Interface.Szjy188 {
                 else {
                     return new UploadResponse() {
                         ExceptionMsg = "登录连接错误!",
+                        RequestContent = "登录连接错误!",
                         IsSuccess = false
                     };
                 }
@@ -93,23 +96,23 @@ namespace JayTom.Dws.Interface.Szjy188 {
             }
             catch (HttpRequestException e) {
                 isSuccess = false;
-                exceptionMsg = e.Message;
+                resultContent += e.Message;
             }
             catch (AggregateException) {
                 isSuccess = false;
-                exceptionMsg = "接口访问异常!";
+                resultContent += "接口访问异常!";
             }
             catch (JsonException) {
                 isSuccess = false;
-                exceptionMsg = "报文解析异常!";
+                resultContent += "报文解析异常!";
             }
             catch (TaskCanceledException) {
                 isSuccess = false;
-                exceptionMsg = "接口访问返回超时!";
+                resultContent += "接口访问返回超时!";
             }
             catch (Exception e) {
                 isSuccess = false;
-                exceptionMsg = e.Message;
+                resultContent = e.Message;
             }
             finally {
                 stopwatch.Stop();
@@ -138,6 +141,7 @@ namespace JayTom.Dws.Interface.Szjy188 {
                     if (value.Status != 0) {
                         return new UploadResponse() {
                             ExceptionMsg = value.Message,
+                            RequestContent = value.Message,
                             IsSuccess = false
                         };
                     }
@@ -148,6 +152,7 @@ namespace JayTom.Dws.Interface.Szjy188 {
                 else {
                     return new UploadResponse() {
                         ExceptionMsg = "登录连接错误!",
+                        RequestContent = "登录连接错误!",
                         IsSuccess = false
                     };
                 }
@@ -188,23 +193,23 @@ namespace JayTom.Dws.Interface.Szjy188 {
             }
             catch (HttpRequestException e) {
                 isSuccess = false;
-                exceptionMsg = e.Message;
+                resultContent += e.Message;
             }
             catch (AggregateException) {
                 isSuccess = false;
-                exceptionMsg = "接口访问异常!";
+                resultContent += "接口访问异常!";
             }
             catch (JsonException) {
                 isSuccess = false;
-                exceptionMsg = "报文解析异常!";
+                exceptionMsg += "报文解析异常!";
             }
             catch (TaskCanceledException) {
                 isSuccess = false;
-                exceptionMsg = "接口访问返回超时!";
+                resultContent += "接口访问返回超时!";
             }
             catch (Exception e) {
                 isSuccess = false;
-                exceptionMsg = e.Message;
+                resultContent += e.Message;
             }
             finally {
                 stopwatch.Stop();
@@ -245,7 +250,7 @@ namespace JayTom.Dws.Interface.Szjy188 {
                 return Task.FromResult(new KeyValuePair<bool, string>(true, "设置成功!"));
             }
             else {
-                return Task.FromResult(new KeyValuePair<bool, string>(true, "参数类型不匹配"));
+                return Task.FromResult(new KeyValuePair<bool, string>(false, "参数类型不匹配"));
             }
         }
 
@@ -279,11 +284,16 @@ namespace JayTom.Dws.Interface.Szjy188 {
                     resultContent = Regex.Unescape(resultContent);
 
                     var logInResultsInfo = JsonConvert.DeserializeObject<LogInResultsInfo>(resultContent);
+                    if (logInResultsInfo is not null) {
+                        _uid = logInResultsInfo.Uid;
+                    }
                     return new KeyValuePair<bool, LogInResultsInfo?>(true, logInResultsInfo);
                 }
             }
             catch (Exception e) {
-                return new KeyValuePair<bool, LogInResultsInfo?>(false, null);
+                return new KeyValuePair<bool, LogInResultsInfo?>(false, new LogInResultsInfo() {
+                    Message = e.Message
+                });
             }
         }
 

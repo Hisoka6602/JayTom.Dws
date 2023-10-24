@@ -44,7 +44,7 @@ namespace JayTom.Dws.Plugin.Tcp {
         /// 连接
         /// </summary>
         /// <returns></returns>
-        Task<bool> Connect(string ipAddress, int port, int timeOut = 1000, CancellationToken token = default);
+        Task<bool> Connect(string ipAddress, int port, int timeOut = 1000, FormatType dataType = FormatType.Ascii, CancellationToken token = default);
 
         /// <summary>
         /// 重新连接
@@ -92,9 +92,16 @@ namespace JayTom.Dws.Plugin.Tcp {
         /// 端口
         /// </summary>
         public int Port { get; set; }
+
+        public FormatType DataFormatType { get; set; } = FormatType.Ascii;
     }
 
     public enum CommunicationType {
         Send, Receive
+    }
+
+    public enum FormatType {
+        Hex,
+        Ascii
     }
 }

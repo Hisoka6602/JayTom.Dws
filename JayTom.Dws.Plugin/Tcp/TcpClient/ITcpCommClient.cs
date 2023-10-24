@@ -22,9 +22,10 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
         /// <summary>
         /// 连接
         /// </summary>
+        /// <param name="dataType"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<bool> Connect(CancellationToken token = default);
+        Task<bool> Connect(FormatType dataType = FormatType.Ascii, CancellationToken token = default);
 
         /// <summary>
         /// 设置参数

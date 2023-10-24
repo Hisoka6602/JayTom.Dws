@@ -81,6 +81,10 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     var info = _packageInfos.OrderBy(o => o.CreateTime).FirstOrDefault(f => f.BarCode == null);
                     if (info != null) {
                         info.BarCode = args.Barcode;
+                        info.CameraSerialNumber = args.CameraSerialNumber;
+                        info.Image = args.Image;
+                        info.ScanTime = args.ScanTime;
+                        info.Timestamp = args.Timestamp;
                     }
                 }
                 //获取外部数据
@@ -109,12 +113,12 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             //体积相机
             _deviceService.VolumeCaptured += async delegate (object? sender, VolumeCapturedEventArgs args) {
                 await Task.Yield();
-                _volumeCameraImageItems.Enqueue(new CameraImageInfo() {
+                /*_volumeCameraImageItems.Enqueue(new CameraImageInfo() {
                     CameraSerialNumber = args.CameraSerialNumber,
                     Image = args.Image,
                     Barcode = args.Barcode,
                     BarcodeTimestamp = args.BarcodeTimestamp
-                });
+                });*/
                 //填充长宽高
                 var info = _packageInfos.FirstOrDefault(f => f.Length == null ||
                                                              f.Width == null ||
@@ -223,6 +227,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         var info = _packageInfos.OrderBy(o => o.CreateTime).FirstOrDefault(f => f.BarCode == null);
                         if (info != null) {
                             info.BarCode = args.Barcode;
+                            info.ScanTime = DateTime.Now;
+                            info.Timestamp = timestamp;
                         }
                     }
                 }

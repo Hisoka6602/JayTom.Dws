@@ -43,17 +43,19 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             _configRepository = configRepository;
             EventAggregator.Instance.Subscribe<PackageInfo>(item => {
                 if (item is PackageInfo model) {
-                    _submitItems.Enqueue(new SubmitItemInfo() {
-                        Barcode = model.BarCode,
-                        Weight = (float)(model.Weight ?? 0),
-                        Length = (float)(model.Length ?? 0),
-                        Width = (float)(model.Width ?? 0),
-                        Height = (float)(model.Height ?? 0),
-                        Volume = (float)(model.Volume ?? 0),
-                        ScanTime = model.ScanTime,
-                        Guid = model.Guid,
-                        //图片暂时不写
-                    });
+                    if (!string.IsNullOrEmpty(model.BarCode)) {
+                        _submitItems.Enqueue(new SubmitItemInfo() {
+                            Barcode = model.BarCode,
+                            Weight = (float)(model.Weight ?? 0),
+                            Length = (float)(model.Length ?? 0),
+                            Width = (float)(model.Width ?? 0),
+                            Height = (float)(model.Height ?? 0),
+                            Volume = (float)(model.Volume ?? 0),
+                            ScanTime = model.ScanTime,
+                            Guid = model.Guid,
+                            //图片暂时不写
+                        });
+                    }
                 }
             });
             EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async item => {
@@ -258,10 +260,31 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     Console.WriteLine(e);
                 }
             }
+            //神州
+            configInfoModel = await _configRepository.FirstOrDefault(f => f.ConfigName.Equals("SzjyApiParameters"));
+            if (configInfoModel is not null) {
+                try {
+                    var szjyApiDto = JsonConvert.DeserializeObject<SzjyApiDto>(configInfoModel.Value);
+                    if (szjyApiDto != null) {
+                        _szjyApiParam = new SzjyApi.SzjyApiParam() {
+                            Machine = szjyApiDto.Machine,
+                            Password = szjyApiDto.Password,
+                            TimeOut = szjyApiDto.TimeOut,
+                            UserName = szjyApiDto.UserName,
+                            Url = szjyApiDto.Url,
+                        };
+                    }
+                }
+                catch (Exception e) {
+                    //抛出异常事件
+                    Console.WriteLine(e);
+                }
+            }
         }
 
         public class SubmitItemInfo {
             public long Guid { get; set; }
+
             /// <summary>
             /// 条码
             /// </summary>
@@ -313,6 +336,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         /// </summary>
         public class ApiResponseReceived {
             public long Guid { get; set; }
+
             /// <summary>
             /// 条码
             /// </summary>

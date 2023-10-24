@@ -25,19 +25,20 @@ namespace JayTom.Dws.Plugin.Tcp.TcpServer {
 
         public event EventHandler<Exception>? SendError;
 
-        public async Task<bool> Connect(string ipAddress, int port, int timeOut = 1000, CancellationToken token = default) {
+        public async Task<bool> Connect(string ipAddress, int port, int timeOut = 1000, FormatType dataType = FormatType.Ascii, CancellationToken token = default) {
             var parameter = SetParameter(new TcpConnectParam() {
                 Address = ipAddress,
                 Port = port,
+                DataFormatType = dataType
             });
             if (parameter) {
-                return await Connect(token);
+                return await Connect(dataType, token);
             }
 
             return false;
         }
 
-        public async Task<bool> Connect(CancellationToken token = default) {
+        public async Task<bool> Connect(FormatType dataType = FormatType.Ascii, CancellationToken token = default) {
             await Task.Yield();
             try {
                 if (_tcpService is null) {
@@ -45,7 +46,7 @@ namespace JayTom.Dws.Plugin.Tcp.TcpServer {
                     _tcpService.Received += delegate (SocketClient client, ByteBlock block, IRequestInfo info) {
                         var msg = Encoding.Default.GetString(block.Buffer, 0, block.Len);
                         OnCommunication(new CommunicationInfo() {
-                            Content = msg,
+                            Content = dataType == FormatType.Ascii ? msg : BitConverter.ToString(RemoveTrailingZeros(block.Buffer)).Replace("-", " "),
                             Time = DateTime.Now,
                             Type = CommunicationType.Receive
                         });
@@ -73,7 +74,7 @@ namespace JayTom.Dws.Plugin.Tcp.TcpServer {
 
         public async Task<bool> Reconnect(int count, CancellationToken token = default) {
             for (var i = 0; i < count; i++) {
-                var connect = await Connect(token);
+                var connect = await Connect(token: token);
                 if (connect) {
                     return true;
                 }
@@ -91,7 +92,7 @@ namespace JayTom.Dws.Plugin.Tcp.TcpServer {
                         _tcpService.Received += delegate (SocketClient client, ByteBlock block, IRequestInfo info) {
                             var msg = Encoding.Default.GetString(block.Buffer, 0, block.Len);
                             OnCommunication(new CommunicationInfo() {
-                                Content = msg,
+                                Content = tcpConnect.DataFormatType == FormatType.Ascii ? msg : BitConverter.ToString(RemoveTrailingZeros(block.Buffer)).Replace("-", " "),
                                 Time = DateTime.Now,
                                 Type = CommunicationType.Receive
                             });
@@ -273,6 +274,13 @@ namespace JayTom.Dws.Plugin.Tcp.TcpServer {
         protected virtual async void OnSendError(Exception e) {
             await Task.Yield();
             SendError?.Invoke(this, e);
+        }
+
+        public byte[] RemoveTrailingZeros(byte[] input) {
+            int lastIndex = Array.FindLastIndex(input, b => b != 0x00);
+            byte[] result = new byte[lastIndex + 1];
+            Array.Copy(input, result, lastIndex + 1);
+            return result;
         }
     }
 }
