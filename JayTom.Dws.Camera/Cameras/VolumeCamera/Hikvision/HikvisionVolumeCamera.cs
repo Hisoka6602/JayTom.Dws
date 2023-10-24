@@ -246,6 +246,8 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision {
 
                 return new KeyValuePair<bool, string>(false, $"设置获取模式失败:{nRet:X}");
             }
+            //设置开启/关闭图像
+            //_mCsVolMeasure?.SetVolAPIOutputImgEnable(true);
             //开始工作
             nRet = _mCsVolMeasure?.Start() ?? -1;
             if (ERROR_DEFINE.MV_VOLM_OK != (ERROR_DEFINE)nRet) {
@@ -333,9 +335,9 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision {
                     if (1 == stResultInfo.nImgFlag) {
                         //实时画面
                         //用户自定义，处理图像信息，图像位于结构体stResultInfo.stImage
-                        /*var volmFrameInfo = stResultInfo.stImage;
+                        var volmFrameInfo = stResultInfo.stImage;
                         bitmap = await GetBitmapAsync(volmFrameInfo.pData, _bufForDriver, volmFrameInfo);
-                        thumbnailImage = GenerateThumbnail(bitmap);*/
+                        thumbnailImage = GenerateThumbnail(bitmap);
                     }
                     //判断体积标记位，是否有体积信息
                     if (1 == stResultInfo.nVolumeFlag) {
