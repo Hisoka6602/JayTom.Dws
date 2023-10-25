@@ -79,6 +79,7 @@ namespace JayTom.Dws.Plugin.Tcp {
         public DateTime Time { get; set; }
         public string Content { get; set; } = string.Empty;
         public CommunicationType Type { get; set; }
+        public FormatType FormatType { get; set; }
     }
 
     public class TcpConnectParam {

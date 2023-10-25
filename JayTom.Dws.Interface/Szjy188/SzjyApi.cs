@@ -121,12 +121,14 @@ namespace JayTom.Dws.Interface.Szjy188 {
                     ApiParameters = JsonConvert.SerializeObject(this),
                     IsSuccess = isSuccess,
                     Duration = stopwatch.Elapsed.TotalSeconds,
-                    RequestContent = string.Empty,
+                    RequestContent = $"{Url}{method}?{urlJoin}",
                     RequestTime = requestTime,
                     RequestUrl = $"{Url}{method}?{urlJoin}",
                     ResponseContent = resultContent,
                     ResponseTime = DateTime.Now
                 };
+                //临时记录上传耗时
+                NLog.LogManager.GetCurrentClassLogger().Warn($"上传耗时:{stopwatch.Elapsed.TotalMilliseconds}(ms)");
             }
             return response;
         }
@@ -218,12 +220,14 @@ namespace JayTom.Dws.Interface.Szjy188 {
                     ApiParameters = JsonConvert.SerializeObject(this),
                     IsSuccess = isSuccess,
                     Duration = stopwatch.Elapsed.TotalSeconds,
-                    RequestContent = string.Empty,
+                    RequestContent = $"{Url}{method}?{urlJoin}",
                     RequestTime = requestTime,
                     RequestUrl = $"{Url}{method}?{urlJoin}",
                     ResponseContent = resultContent,
                     ResponseTime = DateTime.Now
                 };
+                //临时记录上传耗时
+                NLog.LogManager.GetCurrentClassLogger().Warn($"上传耗时:{stopwatch.Elapsed.TotalMilliseconds}(ms)");
             }
             return response;
         }

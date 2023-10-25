@@ -57,6 +57,16 @@ namespace JayTom.Dws.Domain.DownstreamProtocols {
         /// 关键字所在字节位置
         /// </summary>
         public int KeywordPosition { get; set; }
+
+        /// <summary>
+        /// 是否异常
+        /// </summary>
+        public bool IsException { get; set; }
+
+        /// <summary>
+        /// 异常信息
+        /// </summary>
+        public string? ExceptionMessage { get; set; }
     }
 
     public enum FunctionType {
@@ -72,7 +82,7 @@ namespace JayTom.Dws.Domain.DownstreamProtocols {
         CreatePackage,
 
         /// <summary>
-        /// 移除包裹
+        /// 移除包裹(分拣完成)
         /// </summary>
         RemovePackage,
 
@@ -109,6 +119,11 @@ namespace JayTom.Dws.Domain.DownstreamProtocols {
         /// <summary>
         /// 解除异常
         /// </summary>
-        ClearException
+        ClearException,
+
+        /// <summary>
+        /// 锁格
+        /// </summary>
+        LockExit,
     }
 }

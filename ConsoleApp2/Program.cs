@@ -22,6 +22,12 @@ using JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols;
 internal class Program {
 
     private static async Task Main(string[] args) {
+        var data = new JtstCommunicationProtocol().
+            EncodeData(FunctionType.SendExit,
+                0, "05", "9720074634557");
+
+        return;
+
         var xorChecksum = WxkcCommunicationProtocol.XorChecksum(new byte[] { 0xFC, 0x12, 0x01, 0x01, 0x00, 0x00, 0x01 });
         var encodeData = new WxkcCommunicationProtocol().EncodeData(FunctionType.Heartbeat, 0, "00 00", null);
 

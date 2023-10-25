@@ -104,14 +104,19 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
         }
 
         private static byte[] HexStringToByteArray(string hexString) {
-            hexString = hexString.Replace(" ", ""); // 移除空格
+            try {
+                hexString = hexString.Replace(" ", ""); // 移除空格
 
-            var bytes = new byte[hexString.Length / 2];
-            for (var i = 0; i < hexString.Length; i += 2) {
-                bytes[i / 2] = Convert.ToByte(hexString.Substring(i, 2), 16);
+                var bytes = new byte[hexString.Length / 2];
+                for (var i = 0; i < hexString.Length; i += 2) {
+                    bytes[i / 2] = Convert.ToByte(hexString.Substring(i, 2), 16);
+                }
+
+                return bytes;
             }
-
-            return bytes;
+            catch (Exception e) {
+                return new byte[] { 0x00 };
+            }
         }
 
         public static string HexWithDelimiter(string hexString, string delimiter) {

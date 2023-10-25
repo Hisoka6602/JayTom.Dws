@@ -100,7 +100,7 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
                             try {
                                 var msg = Encoding.Default.GetString(block.Buffer, 0, block.Len);
                                 OnCommunication(new CommunicationInfo() {
-                                    Content = tcpConnect.DataFormatType == FormatType.Ascii ? msg : BitConverter.ToString(RemoveTrailingZeros(block.Buffer)).Replace("-", " ").TrimEnd('0'),
+                                    Content = tcpConnect.DataFormatType == FormatType.Ascii ? msg : BitConverter.ToString(RemoveTrailingZeros(block.Buffer)).Replace("-", " "),
                                     Time = DateTime.Now,
                                     Type = CommunicationType.Receive
                                 });
