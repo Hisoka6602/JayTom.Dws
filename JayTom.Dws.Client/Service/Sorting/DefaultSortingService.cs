@@ -629,6 +629,10 @@ namespace JayTom.Dws.Client.Service.Sorting {
                         //无限科创协议
                         _deviceCommunicationProtocol = new WxkcCommunicationProtocol();
                     }
+                    else if (_communicationsSettingsDto?.Protocol == CommunicationProtocol.JT_ST) {
+                        //江腾窄带协议
+                        _deviceCommunicationProtocol = new JtstCommunicationProtocol();
+                    }
                     //其他协议
                 }
                 catch (Exception e) {

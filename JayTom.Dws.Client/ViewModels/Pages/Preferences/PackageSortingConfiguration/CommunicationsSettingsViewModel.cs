@@ -95,6 +95,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                 Name = "无限创科协议",
                 Value = CommunicationProtocol.Wxkc,
             },
+            new CommunicationProtocolInfoModel()
+            {
+                Name = "江腾-窄带协议",
+                Value = CommunicationProtocol.JT_ST,
+            },
         };
 
         private CommunicationsTypeInfoModel _selectCommunicationsType = new();

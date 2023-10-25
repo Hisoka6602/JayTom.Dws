@@ -155,5 +155,10 @@ namespace JayTom.Dws.Domain.Dto {
         /// 无限创科协议
         /// </summary>
         Wxkc,
+
+        /// <summary>
+        /// 江腾窄带
+        /// </summary>
+        JT_ST,
     }
 }
