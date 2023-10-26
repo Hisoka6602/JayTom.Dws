@@ -4,6 +4,7 @@ using ConsoleApp2;
 using System.Text;
 using Newtonsoft.Json;
 using System.Text.Json;
+using JayTom.Dws.Camera;
 using System.Collections;
 using System.Diagnostics;
 using System.Net.Http.Json;
@@ -17,11 +18,31 @@ using JayTom.Dws.Interface.Szjy188;
 using static System.Text.Json.JsonElement;
 using JayTom.Dws.Domain.DownstreamProtocols;
 using static JayTom.Dws.Interface.Szjy188.SzjyApi;
+using JayTom.Dws.Camera.Cameras.VolumeCamera.Irayple;
 using JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols;
 
 internal class Program {
 
     private static async Task Main(string[] args) {
+        var daHuaVolumeCamera = new DaHuaVolumeCamera();
+        daHuaVolumeCamera.VolumeCaptured += delegate (object? sender, VolumeCapturedEventArgs eventArgs) {
+            Console.WriteLine($"长:{eventArgs.Length}--宽:{eventArgs.Width}--高:{eventArgs.Height}");
+        };
+        var (key, value) = await daHuaVolumeCamera.Initialize(null);
+        if (key) {
+            var (b, s) = await daHuaVolumeCamera.Start(null);
+            if (!b) {
+                Console.WriteLine(s);
+            }
+        }
+        else {
+            Console.WriteLine(value);
+        }
+
+        Console.ReadKey();
+
+        daHuaVolumeCamera.Dispose();
+        return;
         var data = new JtstCommunicationProtocol().
             EncodeData(FunctionType.SendExit,
                 0, "05", "9720074634557");
