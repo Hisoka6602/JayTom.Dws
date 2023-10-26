@@ -119,7 +119,7 @@ namespace JayTom.Dws.Client.Service.Device {
                     wayzimIndustrialCameras = await new WayzimIndustrialCamera().EnumerateCameras();
                 }
                 //海康体积相机
-                hikvisionVolumeCameras = await new HikvisionVolumeCamera().EnumerateCameras();
+                //hikvisionVolumeCameras = await new HikvisionVolumeCamera().EnumerateCameras();
                 var cameraList = wayzimIndustrialCameras?.Union(wayzimSmartCameras
                                                                 ?? new List<CameraInfo>())?.ToList()?
                                      .Union(daHuaSecurityCameras ?? new List<CameraInfo>())?.ToList()?

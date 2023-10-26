@@ -76,6 +76,9 @@ namespace JayTom.Dws.Plugin.Scale.DynamicScale {
                                 if (WeightFormat == ScaleWeightFormat.Ascii) {
                                     // 读取接收到的数据
                                     receivedData = port.ReadExisting() /*.Trim().Replace(" ", string.Empty)*/;
+
+                                    NLog.LogManager.GetCurrentClassLogger().Error($"接收到的重量内容:{receivedData}");
+
                                     // 定义匹配重量的正则表达式模式(不考虑负数)
                                     const string pattern = @"\b\d+\.\d+\b";
                                     var regex = new Regex(pattern);

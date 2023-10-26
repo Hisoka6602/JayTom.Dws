@@ -303,10 +303,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                             }
                         }
                     }
-                });
-                AddNewRow(new BarCodeItemModel() {
-                    Barcode = args.Barcode!,
-                    ScanTime = args.ScanTime!,
+
+                    if (model is not null) {
+                        //更新右边信息
+                        model.FrameRate = args?.FrameRate ?? 0;
+                        BarCode = args?.Barcode ?? "未识别到条码";
+                    }
                 });
             };
             _deviceService.CameraDisconnected += delegate (object? sender, List<ICamera> list) {

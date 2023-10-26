@@ -263,7 +263,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
         public int BarcodeBorderSize { get; set; } = 5;
         public Color BarcodeBorderColor { get; set; } = Color.LawnGreen;
         public bool IsShowBarcodeBorder { get; set; } = true;
-        public bool IsUseTriggerMode { get; set; } = false;
+        public bool IsUseTriggerMode { get; set; } = true;
         public TriggerMode TriggerMode { get; set; }
 
         public async void SoftwareTriggerOnce() {

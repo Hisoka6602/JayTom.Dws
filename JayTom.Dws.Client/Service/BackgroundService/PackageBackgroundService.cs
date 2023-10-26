@@ -94,11 +94,44 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 }
             };
             //空包裹
-            _deviceService.NotBarcodeHitEvent += delegate (object? sender, BarcodeReadEventArgs args) {
-                EventAggregator.Instance.Publish(new TriggerPositionEvent() {
-                    IsSuccess = false,
-                    TriggerPosition = TriggerPositionEnum.PackageTrigger
-                });
+            _deviceService.NotBarcodeHitEvent += async delegate (object? sender, BarcodeReadEventArgs args) {
+                await Task.Delay(200);
+                //等200ms,如果仍没有创建包裹则由空条码创建创建(有危险，看实际应用调整)
+                var orDefault = _packageInfos.OrderBy(o => o.CreateTime)
+                    .FirstOrDefault(f => DateTime.Now.Subtract(f.CreateTime).TotalMilliseconds < 500);
+                if (orDefault is null) {
+                    if (_communicationsSettingsDto.Type == CommunicationsType.None ||
+                        !_communicationsSettingsDto.DeviceControlSettingsInfo.IsUseCreatePackageByDevice) {
+                        var packageInfo = new PackageInfo() {
+                            Guid = args.Timestamp,
+                            BarCode = args.Barcode,
+                            CameraSerialNumber = args.CameraSerialNumber,
+                            Image = args.Image,
+                            ScanTime = args.ScanTime,
+                            Timestamp = args.Timestamp,
+                        };
+                        _packageInfos.Enqueue(packageInfo);
+                        EventAggregator.Instance.Publish(new TriggerPositionEvent() {
+                            IsSuccess = true,
+                            TriggerPosition = TriggerPositionEnum.PackageTrigger
+                        });
+                    }
+                    else {
+                        var info = _packageInfos.OrderBy(o => o.CreateTime).FirstOrDefault(f => f.BarCode == null);
+                        if (info != null) {
+                            info.BarCode = args.Barcode;
+                            info.CameraSerialNumber = args.CameraSerialNumber;
+                            info.Image = args.Image;
+                            info.ScanTime = args.ScanTime;
+                            info.Timestamp = args.Timestamp;
+                        }
+                    }
+                    //获取外部数据
+                    //体积
+                    if (_externalDataSource.IsVolumeInput) {
+                        await _externalDataService.GetVolume(args.Barcode);
+                    }
+                }
             };
             //全景相机
             _deviceService.PanoramaCaptured += async delegate (object? sender, PanoramaCaptureEventArgs args) {
