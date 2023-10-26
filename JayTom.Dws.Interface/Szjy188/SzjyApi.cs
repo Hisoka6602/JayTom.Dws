@@ -38,12 +38,15 @@ namespace JayTom.Dws.Interface.Szjy188 {
             double width = default, double height = default,
             double volume = default, Image? image = default, Image? panoramaImage = default, object? other = null,
             CancellationToken token = default) {
+            length -= 5;
+            width -= 5;
+            height -= 5;
             if (barcode.ToLower().Equals("noread") ||
-                weight == 0 || length == 0 || width == 0 ||
-                height == 0 || volume == 0) {
+                weight <= 0 || length <= 0 || width <= 0 ||
+                height <= 0 || volume <= 0) {
                 return new UploadResponse() {
                     ExceptionMsg = "条码不能为空,并且重量、体积不能为0",
-                    RequestContent = "登录连接错误!",
+                    ResponseContent = "条码不能为空,并且重量、体积不能为0!",
                     IsSuccess = false
                 };
             }
@@ -146,12 +149,15 @@ namespace JayTom.Dws.Interface.Szjy188 {
             double length = default, double width = default,
             double height = default, double volume = default, Image? image = default, Image? panoramaImage = default,
             object? other = null, CancellationToken token = default) {
+            length -= 5;
+            width -= 5;
+            height -= 5;
             if (barcode.ToLower().Equals("noread") ||
-                weight == 0 || length == 0 || width == 0 ||
-                height == 0 || volume == 0) {
+                weight <= 0 || length <= 0 || width <= 0 ||
+                height <= 0 || volume <= 0) {
                 return new UploadResponse() {
                     ExceptionMsg = "条码不能为空,并且重量、体积不能为0",
-                    RequestContent = "登录连接错误!",
+                    ResponseContent = "条码不能为空,并且重量、体积不能为0!",
                     IsSuccess = false
                 };
             }

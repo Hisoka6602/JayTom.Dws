@@ -339,11 +339,14 @@
                         </Style.Triggers>
                     </Style>
                 </Button.Style>
-                <materialDesign:PackIcon
-                    Width="30"
-                    Height="30"
+                <TextBlock
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Cursor=""
+                    FontFamily="{StaticResource IconFontFamily}"
+                    FontSize="26"
                     Foreground="White"
-                    Kind="PlusThick" />
+                    Text="&#xe820;" />
             </Button>
             <!--  提示控件  -->
             <materialDesign:Snackbar
