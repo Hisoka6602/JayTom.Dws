@@ -11,44 +11,43 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
 
         public string EncodeData(FunctionType type, int num, string data, object? other) {
             if (type == FunctionType.SendExit) {
-                if (other is string barcode) {
-                    var bytesDictionary = new Dictionary<string, byte[]>()
-                    {
-                        //整串长度(起始字节到结束字节)
-                        {"bitLengthByte",new byte[]{0x2A}},
-                        //起始字节
-                        {"startByte",new byte[]{0xFC}},
-                        //请求0x01或回复0x02
-                        {"typeByte",new byte[] { 0x01 }},
-                        //命令字节01表示wcs下传格口和单号（固定）
-                        {"commandByte",new byte[] { 0x01 }},
-                        //线体编码
-                        {"productionLineCodeByte",new byte[] { 0x02 }},
-                        //仓体号（可自定义）
-                        {"compartmentNumberByte",new byte[] { 0x0B }},
-                        //条码长度
-                        {"barcodeLengthByte",new[] {BitConverter.GetBytes((short)Encoding.UTF8.GetBytes(barcode).Length)[0]}},
-                        //条码(32位)
-                        {"barcodeByte",BarcodeToByteArray(barcode,32,0x20)},
-                        //分隔符('|')
-                        {"separatorByte",new byte[] { 0x7C }},
-                        //格口号，格口号为3，则为0x03
-                        {"exitCodeByte",new []{HexStringToByteArray(data)[0]}},
-                        //备用
-                        {"spareByteByte",new byte[] { 0x00 }},
-                        //结束字符
-                        {"endByteByte",new byte[] { 0xFD }},
-                    };
-                    var sum = bytesDictionary.Values.Sum(byteArray => byteArray.Length) - 1;
-                    bytesDictionary["bitLengthByte"] = new[] { BitConverter.GetBytes(sum)[0] };
+                var barcode = other?.ToString() ?? string.Empty;
+                var bytesDictionary = new Dictionary<string, byte[]>()
+                {
+                   //整串长度(起始字节到结束字节)
+                   {"bitLengthByte",new byte[]{0x2A}},
+                   //起始字节
+                   {"startByte",new byte[]{0xFC}},
+                   //请求0x01或回复0x02
+                   {"typeByte",new byte[] { 0x01 }},
+                   //命令字节01表示wcs下传格口和单号（固定）
+                   {"commandByte",new byte[] { 0x01 }},
+                   //线体编码
+                   {"productionLineCodeByte",new byte[] { 0x02 }},
+                   //仓体号（可自定义）
+                   {"compartmentNumberByte",new byte[] { 0x0B }},
+                   //条码长度
+                   {"barcodeLengthByte",new[] {BitConverter.GetBytes((short)Encoding.UTF8.GetBytes(barcode).Length)[0]}},
+                   //条码(32位)
+                   {"barcodeByte",BarcodeToByteArray(barcode,32,0x20)},
+                   //分隔符('|')
+                   {"separatorByte",new byte[] { 0x7C }},
+                   //格口号，格口号为3，则为0x03
+                   {"exitCodeByte",new []{HexStringToByteArray(data)[0]}},
+                   //备用
+                   {"spareByteByte",new byte[] { 0x00 }},
+                   //结束字符
+                   {"endByteByte",new byte[] { 0xFD }},
+               };
+                var sum = bytesDictionary.Values.Sum(byteArray => byteArray.Length) - 1;
+                bytesDictionary["bitLengthByte"] = new[] { BitConverter.GetBytes(sum)[0] };
 
-                    //var bytes = bytesDictionary.SelectMany(kv => kv.Value).ToArray();
-                    //发送指令
-                    var list = bytesDictionary.Select(s =>
-                            BitConverter.ToString(s.Value).Replace("-", " "))
-                        .ToList();
-                    return string.Join(" ", list);
-                }
+                //var bytes = bytesDictionary.SelectMany(kv => kv.Value).ToArray();
+                //发送指令
+                var list = bytesDictionary.Select(s =>
+                        BitConverter.ToString(s.Value).Replace("-", " "))
+                    .ToList();
+                return string.Join(" ", list);
             }
 
             return string.Empty;
