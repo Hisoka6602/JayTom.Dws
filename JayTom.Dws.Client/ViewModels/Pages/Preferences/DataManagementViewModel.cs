@@ -520,7 +520,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     model.Identifier = "MainDialog";
                     model.Message = "Retrieving data...";
                     DialogHost.Show(exportDialog, model.Identifier);
-                    //如果页数超过1页则从数据库获取数据
+                    //如果页数超过1页则从数据库获取数据(未完成)
                     var export = await _excel.Export(saveFileDialog.FileName,
                         $"BarCodeItems",
                         "BarCodeItems", BarCodeItems?.ToList() ?? new List<BarCodeItemModel>(),

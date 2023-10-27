@@ -39,11 +39,11 @@ namespace JayTom.Dws.Data.LocalConf.PackageSortingConfig {
         /// <summary>
         /// 包裹出口
         /// </summary>
-        PackageExit,
+        PackageExit = 0,
 
         /// <summary>
         /// 异常出口
         /// </summary>
-        AbnormalExit
+        AbnormalExit = 1
     }
 }

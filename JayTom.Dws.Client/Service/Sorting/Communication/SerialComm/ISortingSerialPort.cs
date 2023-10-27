@@ -2,9 +2,12 @@
 using System.IO.Ports;
 
 namespace JayTom.Dws.Client.Service.Sorting.Communication.SerialComm {
-
     public interface ISortingSerialPort : IDisposable {
+        /// <summary>
+        /// 格式
+        /// </summary>
 
+        SortingSerialPortFormat FormatType { get; }
         /// <summary>
         /// 状态
         /// </summary>

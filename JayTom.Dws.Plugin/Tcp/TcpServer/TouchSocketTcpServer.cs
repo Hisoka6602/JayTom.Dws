@@ -6,11 +6,13 @@ using TouchSocket.Http;
 using TouchSocket.Sockets;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace JayTom.Dws.Plugin.Tcp.TcpServer {
 
     public class TouchSocketTcpServer : ITcpCommServer {
         private TcpService? _tcpService;
+        public FormatType FormatType { get; set; }
         public ConnectionStatus ConnectionStatus { get; private set; } = ConnectionStatus.Disconnected;
 
         public event EventHandler<string>? ConnectionException;
@@ -26,6 +28,7 @@ namespace JayTom.Dws.Plugin.Tcp.TcpServer {
         public event EventHandler<Exception>? SendError;
 
         public async Task<bool> Connect(string ipAddress, int port, int timeOut = 1000, FormatType dataType = FormatType.Ascii, CancellationToken token = default) {
+            FormatType = dataType;
             var parameter = SetParameter(new TcpConnectParam() {
                 Address = ipAddress,
                 Port = port,
@@ -41,6 +44,7 @@ namespace JayTom.Dws.Plugin.Tcp.TcpServer {
         public async Task<bool> Connect(FormatType dataType = FormatType.Ascii, CancellationToken token = default) {
             await Task.Yield();
             try {
+                FormatType = dataType;
                 if (_tcpService is null) {
                     _tcpService = new TcpService();
                     _tcpService.Received += delegate (SocketClient client, ByteBlock block, IRequestInfo info) {
@@ -89,9 +93,10 @@ namespace JayTom.Dws.Plugin.Tcp.TcpServer {
 
         public bool SetParameter(object par) {
             if (par is TcpConnectParam tcpConnect) {
+                FormatType = tcpConnect.DataFormatType;
                 try {
-                    IpAddress = tcpConnect?.Address ?? string.Empty;
-                    Port = tcpConnect?.Port ?? 0;
+                    IpAddress = tcpConnect.Address ?? string.Empty;
+                    Port = tcpConnect.Port;
                     if (_tcpService is null) {
                         _tcpService = new TcpService();
                         _tcpService.Received += delegate (SocketClient client, ByteBlock block, IRequestInfo info) {

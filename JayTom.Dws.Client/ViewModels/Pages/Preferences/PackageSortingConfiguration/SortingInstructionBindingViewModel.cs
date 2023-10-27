@@ -13,6 +13,7 @@ using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Views.Dialog;
 using JayTom.Dws.Client.Service.Sorting;
 using JayTom.Dws.Client.ViewModels.Dialog;
+using JayTom.Dws.Domain.DownstreamProtocols;
 using JayTom.Dws.Client.Models.PackageSorting;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Infrastructure.Repository.LocalConf;
@@ -27,7 +28,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         private readonly ISortingInstructionBindingRepository _sortingInstructionBindingRepository;
         private readonly ISortingInstructionRepository _sortingInstructionRepository;
         private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
-        private readonly ISortingService _sortingService;
+        private readonly IInventoryManagementService _inventoryManagementService;
 
         private ObservableCollection<SortingInstructionBindingItemInfoModel> _sortingInstructionBindingItems = new();
 
@@ -37,12 +38,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         public SortingInstructionBindingViewModel(ISortingInstructionBindingRepository sortingInstructionBindingRepository,
             ISortingInstructionRepository sortingInstructionRepository,
             IPackageExitDefinitionRepository packageExitDefinitionRepository,
-            ISortingService sortingService) {
+            ISortingService sortingService,
+            IInventoryManagementService inventoryManagementService) {
             _sortingInstructionBindingRepository = sortingInstructionBindingRepository;
             _sortingInstructionRepository = sortingInstructionRepository;
             _packageExitDefinitionRepository = packageExitDefinitionRepository;
-            _sortingService = sortingService;
-            _sortingService.SendError += delegate (object? sender, ExceptionEventArgs args) {
+
+            _inventoryManagementService = inventoryManagementService;
+            _inventoryManagementService.SendError += delegate (object? sender, ExceptionEventArgs args) {
                 SortingInstructionBindingMessageQueue.Enqueue(args.ExceptionMessage);
             };
         }
@@ -255,10 +258,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         }
 
         private void SendInstructionDelegate(SortingInstructionBindingItemInfoModel obj) {
-            _sortingService.SendInstructions(0, obj.SortingInstructionItems.Select(s => s.Instruction)
+            _inventoryManagementService.SendInstructions(new object(),
+                obj.SortingInstructionItems.Select(s => s.Instruction)
                     ?.ToList() ?? new List<string>(),
-                TimeSpan.FromMilliseconds(obj.SendIntervalMilliseconds));
-            Console.WriteLine(11);
+                TimeSpan.FromMilliseconds(obj.SendIntervalMilliseconds),
+                new InstructionsAttach() {
+                    Timestamp = 0,
+                });
         }
 
         /// <summary>

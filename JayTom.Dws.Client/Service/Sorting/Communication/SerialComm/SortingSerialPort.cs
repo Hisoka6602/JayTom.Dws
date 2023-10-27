@@ -26,6 +26,7 @@ namespace JayTom.Dws.Client.Service.Sorting.Communication.SerialComm {
             OnDisconnected(this);
         }
 
+        public SortingSerialPortFormat FormatType { get; private set; }
         public SortingSerialPortStatus Status { get; private set; } = SortingSerialPortStatus.NotConnected;
 
         public event EventHandler<ISortingSerialPort>? ConnectionChanged;
@@ -42,6 +43,7 @@ namespace JayTom.Dws.Client.Service.Sorting.Communication.SerialComm {
 
         public bool Connect(string portName, int baudRate, int dataBits, Parity parity,
             StopBits stopBits, SortingSerialPortFormat dataFormat) {
+            FormatType = dataFormat;
             if (_serialPort?.IsOpen == true) {
                 return true;
             }

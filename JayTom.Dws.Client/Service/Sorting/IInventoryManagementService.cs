@@ -5,6 +5,7 @@ using System.Threading;
 using JayTom.Dws.Plugin.Tcp;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using JayTom.Dws.Domain.DownstreamProtocols;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 
 namespace JayTom.Dws.Client.Service.Sorting {
@@ -13,6 +14,11 @@ namespace JayTom.Dws.Client.Service.Sorting {
     /// 指令服务(在这里效验通讯)
     /// </summary>
     public interface IInventoryManagementService {
+
+        /// <summary>
+        /// 是否连接
+        /// </summary>
+        public bool IsConnected { get; }
 
         /// <summary>
         /// 通讯信息事件
@@ -25,20 +31,37 @@ namespace JayTom.Dws.Client.Service.Sorting {
         event EventHandler<Exception> CommunicationExceptionEvent;
 
         /// <summary>
-        /// 发送指令
+        /// 接收的指令
         /// </summary>
+        event EventHandler<DeviceDecodeResult> ReceivedInstructionsEvent;
+
+        /// <summary>
+        /// 心跳包异常事件
+        /// </summary>
+        public event EventHandler<Exception> HeartbeatError;
+
+        /// <summary>
+        /// 发送异常
+        /// </summary>
+        event EventHandler<ExceptionEventArgs> SendError;
+
+        /// <summary>
+        /// 发送指令(多用于测试)
+        /// </summary>
+        /// <param name="tag"></param>
         /// <param name="instructions"></param>
         /// <param name="interval"></param>
         /// <param name="attach"></param>
-        void SendInstructions(List<string> instructions, TimeSpan interval, InstructionsAttach attach);
+        void SendInstructions(object tag, List<string> instructions, TimeSpan interval, InstructionsAttach attach);
 
         /// <summary>
         /// 发送指令
         /// </summary>
+        /// <param name="tag"></param>
         /// <param name="instructions"></param>
         /// <param name="interval"></param>
         /// <param name="attach"></param>
-        void SendInstructions(List<SortingInstructionInfoModel> instructions, TimeSpan interval, InstructionsAttach attach);
+        void SendInstructions(object tag, List<SortingInstructionInfoModel> instructions, TimeSpan interval, InstructionsAttach attach);
 
         /// <summary>
         /// 连接方法
@@ -56,6 +79,11 @@ namespace JayTom.Dws.Client.Service.Sorting {
     }
 
     public class CommunicationMessageInfo : CommunicationInfo {
+
+        /// <summary>
+        /// 条码关联时间戳
+        /// </summary>
+        public long Timestamp { get; set; }
 
         /// <summary>
         /// 获取或设置关联的条码。
@@ -80,49 +108,6 @@ namespace JayTom.Dws.Client.Service.Sorting {
         /// <summary>
         /// 获取或设置分拣的唯一标识符（Guid）。
         /// </summary>
-        public string? Guid { get; set; }
-    }
-
-    public class InstructionsAttach {
-
-        /// <summary>
-        /// 获取或设置唯一标识符。
-        /// </summary>
-        public Guid Guid { get; set; }
-
-        /// <summary>
-        /// 获取或设置条码信息。
-        /// </summary>
-        public string? BarCode { get; set; }
-
-        /// <summary>
-        /// 获取或设置重量（以千克为单位）。
-        /// </summary>
-        public double Weight { get; set; }
-
-        /// <summary>
-        /// 获取或设置长度（以厘米为单位）。
-        /// </summary>
-        public double Length { get; set; }
-
-        /// <summary>
-        /// 获取或设置宽度（以厘米为单位）。
-        /// </summary>
-        public double Width { get; set; }
-
-        /// <summary>
-        /// 获取或设置高度（以厘米为单位）。
-        /// </summary>
-        public double Height { get; set; }
-
-        /// <summary>
-        /// 获取或设置体积（以立方厘米为单位）。
-        /// </summary>
-        public double Volume { get; set; }
-
-        /// <summary>
-        /// 获取或设置其他信息（通用对象类型）。
-        /// </summary>
-        public object? Other { get; set; }
+        public long? Guid { get; set; }
     }
 }

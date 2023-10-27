@@ -237,6 +237,8 @@ namespace JayTom.Dws.Client {
                 services.AddScoped<ICacheCleanupService, CacheCleanupService>();
                 //分拣注册 DefaultSortingService
                 services.AddScoped<ISortingService, DefaultSortingService>();
+                //分拣指令服务
+                services.AddScoped<IInventoryManagementService, DefaultInventoryManagementService>();
             });
         }
 
@@ -324,6 +326,7 @@ namespace JayTom.Dws.Client {
 
                         //注册分拣服务
                         services.AddSingleton(container1.Resolve<ISortingService>());
+                        services.AddSingleton(container1.Resolve<IInventoryManagementService>());
 
                         services.AddHostedService<PackageBackgroundService>(); // 注册后组包服务
                         services.AddHostedService<SaveImageBackgroundService>();//注册存图服务

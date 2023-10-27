@@ -13,6 +13,7 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
         private TouchSocket.Sockets.TcpClient? _tcpClient;
         public string IpAddress { get; private set; } = string.Empty;
         public int Port { get; private set; } = 0;
+        public FormatType FormatType { get; set; }
         public ConnectionStatus ConnectionStatus { get; private set; } = ConnectionStatus.Connected;
 
         public event EventHandler<string>? ConnectionException;
@@ -28,6 +29,7 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
         public event EventHandler<Exception>? SendError;
 
         public async Task<bool> Connect(string ipAddress, int port, int timeOut = 1000, FormatType dataType = FormatType.Ascii, CancellationToken token = default) {
+            FormatType = dataType;
             var parameter = SetParameter(new TcpConnectParam() {
                 Address = ipAddress,
                 Port = port,
@@ -42,6 +44,7 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
 
         public async Task<bool> Connect(FormatType dataType = FormatType.Ascii, CancellationToken token = default) {
             try {
+                FormatType = dataType;
                 if (_tcpClient is null) {
                     _tcpClient = new TouchSocket.Sockets.TcpClient();
                     _tcpClient.Received += delegate (TouchSocket.Sockets.TcpClient client, ByteBlock block, IRequestInfo info) {
@@ -92,8 +95,9 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
         public bool SetParameter(object par) {
             if (par is TcpConnectParam tcpConnect) {
                 try {
-                    IpAddress = tcpConnect?.Address ?? string.Empty;
-                    Port = tcpConnect?.Port ?? 0;
+                    FormatType = tcpConnect.DataFormatType;
+                    IpAddress = tcpConnect.Address ?? string.Empty;
+                    Port = tcpConnect.Port;
                     if (_tcpClient is null) {
                         _tcpClient = new TouchSocket.Sockets.TcpClient();
                         _tcpClient.Received += delegate (TouchSocket.Sockets.TcpClient client, ByteBlock block, IRequestInfo info) {

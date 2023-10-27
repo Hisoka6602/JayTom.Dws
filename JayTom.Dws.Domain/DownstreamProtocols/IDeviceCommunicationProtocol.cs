@@ -12,11 +12,11 @@ namespace JayTom.Dws.Domain.DownstreamProtocols {
         /// 数据编码
         /// </summary>
         /// <param name="type"></param>
-        /// <param name="num"></param>
+        /// <param name="tag"></param>
         /// <param name="data"></param>
         /// <param name="other"></param>
         /// <returns></returns>
-        string EncodeData(FunctionType type, int num, string data, object? other);
+        string EncodeData(FunctionType type, object tag, string data, object? other);
 
         /// <summary>
         /// 数据解码
@@ -125,5 +125,58 @@ namespace JayTom.Dws.Domain.DownstreamProtocols {
         /// 锁格
         /// </summary>
         LockExit,
+    }
+
+    public class InstructionsAttach {
+
+        /// <summary>
+        /// 条码关联时间戳
+        /// </summary>
+        public long Timestamp { get; set; }
+
+        /// <summary>
+        /// 获取或设置唯一标识符。
+        /// </summary>
+        public long Guid { get; set; }
+
+        /// <summary>
+        /// 获取或设置条码信息。
+        /// </summary>
+        public string? BarCode { get; set; }
+
+        /// <summary>
+        /// 获取或设置重量（以千克为单位）。
+        /// </summary>
+        public double Weight { get; set; }
+
+        /// <summary>
+        /// 获取或设置长度（以厘米为单位）。
+        /// </summary>
+        public double Length { get; set; }
+
+        /// <summary>
+        /// 获取或设置宽度（以厘米为单位）。
+        /// </summary>
+        public double Width { get; set; }
+
+        /// <summary>
+        /// 获取或设置高度（以厘米为单位）。
+        /// </summary>
+        public double Height { get; set; }
+
+        /// <summary>
+        /// 获取或设置体积（以立方厘米为单位）。
+        /// </summary>
+        public double Volume { get; set; }
+
+        /// <summary>
+        /// 格口名称
+        /// </summary>
+        public string ExitName { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 获取或设置其他信息（通用对象类型）。
+        /// </summary>
+        public object? Other { get; set; }
     }
 }

@@ -317,6 +317,7 @@
                     Margin="8,20"
                     Background="#2E2E2E"
                     BorderBrush="#AE2E2E2E"
+                    Command="{Binding ImportCommand}"
                     Cursor="Hand"
                     RenderTransformOrigin="0.5,0.5"
                     ToolTip="批量导入">
@@ -366,6 +367,7 @@
                     Margin="8,20"
                     Background="#2E2E2E"
                     BorderBrush="#AE2E2E2E"
+                    Command="{Binding ExportCommand}"
                     Cursor="Hand"
                     RenderTransformOrigin="0.5,0.5"
                     ToolTip="批量导出">

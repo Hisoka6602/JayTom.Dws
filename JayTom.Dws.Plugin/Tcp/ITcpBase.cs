@@ -5,9 +5,11 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 
 namespace JayTom.Dws.Plugin.Tcp {
-
     public interface ITcpBase {
-
+        /// <summary>
+        /// 发送格式
+        /// </summary>
+        public FormatType FormatType { get; set; }
         /// <summary>
         /// 连接状态
         /// </summary>

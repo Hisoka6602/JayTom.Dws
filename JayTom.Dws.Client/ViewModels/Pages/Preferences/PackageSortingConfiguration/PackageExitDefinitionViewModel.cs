@@ -5,16 +5,21 @@ using System.Linq;
 using System.Text;
 using Prism.Commands;
 using System.Windows;
+using Microsoft.Win32;
+using JayTom.Dws.Plugin;
 using System.Windows.Input;
+using System.Windows.Forms;
 using System.Threading.Tasks;
 using System.Windows.Threading;
 using MaterialDesignThemes.Wpf;
+using JayTom.Dws.Client.Models;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Views.Dialog;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.ViewModels.Dialog;
 using JayTom.Dws.Client.Models.PackageSorting;
+using Application = System.Windows.Application;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
@@ -25,12 +30,15 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
     //包裹出口定义页面
     public class PackageExitDefinitionViewModel : BindableBase {
         private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
+        private readonly IExcel _excel;
         private ObservableCollection<PackageExitDefinitionItemInfoModel> _packageExitDefinitionItems = new();
         private SnackbarMessageQueue _packageExitDefinitionMessageQueue = new(TimeSpan.FromSeconds(2));
         private bool _isLoaded;
 
-        public PackageExitDefinitionViewModel(IPackageExitDefinitionRepository packageExitDefinitionRepository) {
+        public PackageExitDefinitionViewModel(IPackageExitDefinitionRepository packageExitDefinitionRepository,
+            IExcel excel) {
             _packageExitDefinitionRepository = packageExitDefinitionRepository;
+            _excel = excel;
         }
 
         public ObservableCollection<PackageExitDefinitionItemInfoModel> PackageExitDefinitionItems {
@@ -196,6 +204,127 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                     DialogHost.Close(model.Identifier);
                 }
             });
+        }
+
+        /// <summary>
+        /// 导出
+        /// </summary>
+        public ICommand ExportCommand {
+            get => new DelegateCommand<PackageExitDefinitionItemInfoModel>(ExportDelegate);
+        }
+
+        private async void ExportDelegate(PackageExitDefinitionItemInfoModel obj) {
+            //导出
+            if (PackageExitDefinitionItems?.Any() != true) {
+                PackageExitDefinitionMessageQueue?.Enqueue(Languages.Language.ResourceManager.GetString("列表中没有数据") ?? string.Empty);
+                return;
+            }
+
+            //导出
+
+            var saveFileDialog = new Microsoft.Win32.SaveFileDialog() {
+                Title = "Please select the location to save the file.",
+                Filter = $"{Languages.Language.ResourceManager.GetString("Excel文件") ?? string.Empty}(xlsx)|*.xlsx",
+                DefaultExt = "xlsx",
+                InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+            };
+            if (saveFileDialog.ShowDialog() == true) {
+                var exportDialog = new ExportDialog();
+                if (exportDialog.DataContext is ExportDialogViewModel model) {
+                    model.FilePath = saveFileDialog.FileName;
+                    model.Identifier = "MainDialog";
+                    model.Message = "Retrieving data...";
+                    DialogHost.Show(exportDialog, model.Identifier);
+                    var export = await _excel.Export(saveFileDialog.FileName,
+                        $"定义格口列表",
+                        "格口列表", PackageExitDefinitionItems?.ToList() ?? new List<PackageExitDefinitionItemInfoModel>(),
+                        new List<string>(), async p => {
+                            model.Progress = p;
+                            model.ProgressText = $"{p}%";
+                            if (p == 100) {
+                                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                                    if (DialogHost.IsDialogOpen(model.Identifier)) {
+                                        DialogHost.Close(model.Identifier);
+                                    }
+                                });
+                            }
+                        }, e => {
+                            PackageExitDefinitionMessageQueue?.Enqueue(e.Message);
+                        });
+                    if (!export) {
+                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                            if (DialogHost.IsDialogOpen(model.Identifier)) {
+                                DialogHost.Close(model.Identifier);
+                            }
+                        });
+                    }
+                }
+            }
+        }
+
+        public ICommand ImportCommand {
+            get => new DelegateCommand<PackageExitDefinitionItemInfoModel>(ImportDelegate);
+        }
+
+        private async void ImportDelegate(PackageExitDefinitionItemInfoModel obj) {
+            //导入
+            var openFileDialog = new Microsoft.Win32.OpenFileDialog() {
+                Title = "Please select the file to import.",
+                Filter = $"{Languages.Language.ResourceManager.GetString("Excel文件") ?? string.Empty}(xlsx)|*.xlsx",
+                DefaultExt = "xlsx",
+                InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+            };
+            if (openFileDialog.ShowDialog() == true) {
+                var exportDialog = new ExportDialog();
+                if (exportDialog.DataContext is ExportDialogViewModel model) {
+                    model.FilePath = openFileDialog.FileName;
+                    model.Identifier = "MainDialog";
+                    model.Message = "Retrieving data...";
+                    DialogHost.Show(exportDialog, model.Identifier);
+
+                    var models = await _excel.ReadExcel<PackageExitDefinitionItemInfoModel>(openFileDialog.FileName, async p => {
+                        model.Progress = p;
+                        model.ProgressText = $"{p}%";
+                        if (p == 100) {
+                            await Application.Current.Dispatcher.InvokeAsync(() => {
+                                if (DialogHost.IsDialogOpen(model.Identifier)) {
+                                    DialogHost.Close(model.Identifier);
+                                }
+                            });
+                        }
+                    }, async e => {
+                        await Application.Current.Dispatcher.InvokeAsync(() => {
+                            if (DialogHost.IsDialogOpen(model.Identifier)) {
+                                DialogHost.Close(model.Identifier);
+                            }
+                        });
+                        PackageExitDefinitionMessageQueue?.Enqueue(e.Message);
+                    });
+                    await Task.Delay(500);
+                    if (models?.Any() == true) {
+                        //批量添加到数据库
+                        var infoModels = models.Select(s => new PackageExitDefinitionInfoModel {
+                            CreateTime = DateTime.Now,
+                            ExitName = s.ExitName,
+                            IsActive = s.IsActive,
+                            ModifyTime = DateTime.Now,
+                            Remarks = s.Remarks,
+                            Type = s.Type,
+                        }).ToList();
+
+                        var insertOrUpdate = await _packageExitDefinitionRepository.InsertRange(infoModels);
+                        if (insertOrUpdate) {
+                            EventAggregator.Instance.Publish(infoModels.FirstOrDefault());
+                            PackageExitDefinitionMessageQueue.Enqueue("保存成功");
+                            //刷新列表
+                            RefreshData();
+                        }
+                        else {
+                            PackageExitDefinitionMessageQueue.Enqueue("保存失败");
+                        }
+                    }
+                }
+            }
         }
     }
 }

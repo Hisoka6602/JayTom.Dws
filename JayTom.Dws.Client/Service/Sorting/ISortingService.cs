@@ -32,11 +32,6 @@ namespace JayTom.Dws.Client.Service.Sorting {
         public event EventHandler<Exception> HeartbeatError;
 
         /// <summary>
-        /// 发送异常
-        /// </summary>
-        event EventHandler<ExceptionEventArgs> SendError;
-
-        /// <summary>
         /// 创建包裹
         /// </summary>
         event EventHandler<string> CreatePackageEvent;
@@ -56,22 +51,6 @@ namespace JayTom.Dws.Client.Service.Sorting {
         /// </summary>
 
         void ExecuteSorting(SortingParam param, CancellationToken token = default);
-
-        /// <summary>
-        /// 发送一组指令
-        /// </summary>
-        /// <param name="grid"></param>
-        /// <param name="instructions"></param>
-        /// <param name="interval"></param>
-        void SendInstructions(long grid, List<string> instructions, TimeSpan interval);
-
-        /// <summary>
-        /// 发送一组指(包含应答)
-        /// </summary>
-        /// <param name="grid"></param>
-        /// <param name="sortingInstructionInfoModels"></param>
-        /// <param name="interval"></param>
-        void SendInstructions(long grid, List<SortingInstructionInfoModel> sortingInstructionInfoModels, TimeSpan interval);
 
         /// <summary>
         /// 是否已连接
@@ -108,72 +87,63 @@ namespace JayTom.Dws.Client.Service.Sorting {
         /// <summary>
         /// 异常口分拣
         /// </summary>
-        void ExceptionSorting(long guid = 0, CancellationToken token = default);
+        void ExceptionSorting(SortingParam param, CancellationToken token = default);
 
         /// <summary>
         /// 条码分拣
         /// </summary>
-        /// <param name="barcode"></param>
-        /// <param name="guid"></param>
+        /// <param name="param"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        void BarcodeSorting(string barcode, long guid, CancellationToken token = default);
+        void BarcodeSorting(SortingParam param, CancellationToken token = default);
 
         /// <summary>
         /// 重量分拣
         /// </summary>
-        /// <param name="weight"></param>
-        /// <param name="guid"></param>
+        /// <param name="param"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        void WeightSorting(float weight, long guid, CancellationToken token = default);
+        void WeightSorting(SortingParam param, CancellationToken token = default);
 
         /// <summary>
         /// 体积分拣
         /// </summary>
-        /// <param name="volume"></param>
-        /// <param name="guid"></param>
+        /// <param name="param"></param>
         /// <param name="token"></param>
-        /// <param name="length"></param>
-        /// <param name="width"></param>
-        /// <param name="height"></param>
         /// <returns></returns>
-        void VolumeSorting(double length, double width, double height, double volume, long guid, CancellationToken token = default);
+        void VolumeSorting(SortingParam param, CancellationToken token = default);
 
         /// <summary>
         /// 物流分拣
         /// </summary>
-        /// <param name="barcode"></param>
-        /// <param name="guid"></param>
+        /// <param name="param"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        void LogisticsSorting(string barcode, long guid, CancellationToken token = default);
+        void LogisticsSorting(SortingParam param, CancellationToken token = default);
 
         /// <summary>
         /// Ocr分拣
         /// </summary>
-        /// <param name="ocrContent"></param>
-        /// <param name="guid"></param>
+        /// <param name="param"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        void OcrSorting(string ocrContent, long guid, CancellationToken token = default);
+        void OcrSorting(SortingParam param, CancellationToken token = default);
 
         /// <summary>
         /// Api响应内容分拣
         /// </summary>
-        /// <param name="apiResponse"></param>
-        /// <param name="guid"></param>
+        /// <param name="param"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        void ApiResponseSorting(UploadResponse apiResponse, long guid, CancellationToken token = default);
+        void ApiResponseSorting(SortingParam param, CancellationToken token = default);
 
         /// <summary>
         /// 工作流分拣
         /// </summary>
-        /// <param name="guid"></param>
+        /// <param name="param"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        void CombinedWorkflowSorting(long guid = 0, CancellationToken token = default);
+        void CombinedWorkflowSorting(SortingParam param, CancellationToken token = default);
     }
 
     public class ExceptionEventArgs : EventArgs {
@@ -233,6 +203,16 @@ namespace JayTom.Dws.Client.Service.Sorting {
     }
 
     public class SortingParam {
+        public object? Tag { get; set; }
+
+        /// <summary>
+        /// 条码关联时间戳
+        /// </summary>
+        public long Timestamp { get; set; }
+
+        /// <summary>
+        ///
+        /// </summary>
         public long Guid { get; set; }
 
         /// <summary>
@@ -279,5 +259,10 @@ namespace JayTom.Dws.Client.Service.Sorting {
         /// Api响应内容
         /// </summary>
         public UploadResponse ApiResponse { get; set; } = new();
+
+        /// <summary>
+        /// 格口Id
+        /// </summary>
+        public long ExitId { get; set; }
     }
 }

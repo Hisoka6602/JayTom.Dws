@@ -2,8 +2,11 @@
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
+using System.ComponentModel;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using JayTom.Dws.Plugin.Excel.Attributes;
 
 namespace JayTom.Dws.Client.Models.PackageSorting {
 
@@ -23,24 +26,27 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         }
 
         /// <summary>
-        /// 序号
-        /// </summary>
-        public int Num {
-            get => _num;
-            set => SetProperty(ref _num, value);
-        }
-
-        /// <summary>
         /// 备注
         /// </summary>
+        [DisplayName("备注"), MemberNotNull, ExcelInfo(Width = 6000)]
         public string Remarks {
             get => _remarks;
             set => SetProperty(ref _remarks, value);
         }
 
         /// <summary>
+        /// 序号
+        /// </summary>
+        [DisplayName("序号"), ExcelInfo(Width = 2800)]
+        public int Num {
+            get => _num;
+            set => SetProperty(ref _num, value);
+        }
+
+        /// <summary>
         /// 创建时间
         /// </summary>
+        [DisplayName("创建时间"), ExcelInfo(Width = 5000)]
         public DateTime CreateTime {
             get => _createTime;
             set => SetProperty(ref _createTime, value);
@@ -49,6 +55,7 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 修改时间
         /// </summary>
+        [DisplayName("修改时间"), ExcelInfo(Width = 5000)]
         public DateTime ModifyTime {
             get => _modifyTime;
             set => SetProperty(ref _modifyTime, value);

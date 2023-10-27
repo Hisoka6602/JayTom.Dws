@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 
 namespace JayTom.Dws.Client.Models.PackageSorting {
+
     public class ExitTypeInfoModel : BindableBase {
         private string _name = string.Empty;
         private ExitType _value = ExitType.PackageExit;

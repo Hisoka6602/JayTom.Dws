@@ -50,8 +50,8 @@ namespace JayTom.Dws.Plugin.Excel {
                         });
                     }
                 }
-                var info = propertyInfos.FirstOrDefault(f => (bool)f?.GetCustomAttribute<DisplayNameAttribute>()
-                    ?.DisplayName?.Equals(cellFunc.ColumnName));
+                var info = propertyInfos.FirstOrDefault(f => (bool)(f?.GetCustomAttribute<DisplayNameAttribute>()
+                    ?.DisplayName?.Equals(cellFunc.ColumnName) ?? false));
                 //非空检查
                 var requiredAttribute = info?.GetCustomAttribute<RequiredAttribute>();
                 if (requiredAttribute is not null) {
@@ -314,12 +314,26 @@ namespace JayTom.Dws.Plugin.Excel {
                                         foreach (var columnInfo in columnIsExist) {
                                             var cell = row.GetCell(columnInfo.ColumnIndex);
                                             var value = cell?.ToString();
-                                            var info = propertyInfos.FirstOrDefault(f => (bool)f?.GetCustomAttribute<DisplayNameAttribute>()
-                                                ?.DisplayName?.Equals(columnInfo.ColumnName));
+
+                                            var info = propertyInfos.FirstOrDefault(f => f?.GetCustomAttribute<DisplayNameAttribute>()
+                                                ?.DisplayName?.Equals(columnInfo.ColumnName) ?? false);
+
                                             if (info is null || token.IsCancellationRequested) continue;
                                             //替换内容
                                             value = ignoreContent.Aggregate(value, (current, s) => current?.Replace(s, string.Empty));
                                             var type = info.PropertyType.Name;
+                                            //判断有没有转换
+                                            var infoAttribute = info.GetCustomAttribute<ExcelInfoAttribute>();
+                                            if (infoAttribute is not null &&
+                                                infoAttribute.IsEnumToInt) {
+                                                type = "Int32";
+                                            }
+                                            else if (infoAttribute is not null &&
+                                                     infoAttribute.IsBooleanToInt) {
+                                                value = value?.Equals("1") == true ? "true" : "false";
+                                                type = "Boolean";
+                                            }
+
                                             switch (type) {
                                                 case "Guid":
                                                     info.SetValue(item, new Guid(value ?? string.Empty), null);
@@ -345,7 +359,12 @@ namespace JayTom.Dws.Plugin.Excel {
                                                     info.SetValue(item, value ?? string.Empty, null);
                                                     break;
 
+                                                case "Boolean":
+                                                    info.SetValue(item, bool.TryParse(value, out var boolResult) ? boolResult : false, null);
+                                                    break;
+
                                                 default:
+                                                    info.SetValue(item, DBNull.Value, null);
                                                     break;
                                             }
 
@@ -363,6 +382,7 @@ namespace JayTom.Dws.Plugin.Excel {
                                     }
                                     var callback = await completionCallback(outList);
                                     if (callback.Key) {
+                                        await progressPercentage(100);
                                         return outList;
                                     }
                                     else {
@@ -543,7 +563,17 @@ namespace JayTom.Dws.Plugin.Excel {
                                 var value = firstOrDefault.GetValue(list[i]);
                                 var cell = rowContent.CreateCell(j);
                                 if (cell == null) continue;
-                                cell.SetCellValue(value?.ToString());
+                                if (value is Enum &&
+                                    infos[j].GetCustomAttribute<ExcelInfoAttribute>()?.IsEnumToInt == true) {
+                                    cell.SetCellValue((int)value);
+                                }
+                                else if (value is bool boolValue &&
+                                         infos[j].GetCustomAttribute<ExcelInfoAttribute>()?.IsBooleanToInt == true) {
+                                    cell.SetCellValue(boolValue ? 1 : 0);
+                                }
+                                else {
+                                    cell.SetCellValue(value?.ToString());
+                                }
                                 cell.CellStyle = CreateContentStyle(book);
                                 if (infos[j].GetCustomAttribute<ExcelInfoAttribute>()?.Width == 0) {
                                     sheet?.AutoSizeColumn(j);

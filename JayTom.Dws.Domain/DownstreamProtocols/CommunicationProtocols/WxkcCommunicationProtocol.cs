@@ -9,35 +9,39 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
 
     public class WxkcCommunicationProtocol : IDeviceCommunicationProtocol {
 
-        public string EncodeData(FunctionType type, int num, string data, object? other) {
-            //判断是否8个字节
-            //起始码
-            var startData = "00";
-            var functionData = "00";
-            var interaction = "00";
-            var bytes = HexStringToByteArray(data);
-            switch (type) {
-                case FunctionType.SendExit:
-                    if (bytes.Length == 2) {
-                        //格口号
-                        startData = "F9";
-                        functionData = "11";
-                        interaction = "01";
-                    }
-                    break;
+        public string EncodeData(FunctionType type, object tag, string data, object? other) {
+            if (other is InstructionsAttach attach) {
+                //判断是否8个字节
+                //起始码
+                var startData = "00";
+                var functionData = "00";
+                var interaction = "00";
+                var bytes = HexStringToByteArray(data);
+                switch (type) {
+                    case FunctionType.SendExit:
+                        if (bytes.Length == 2) {
+                            //格口号
+                            startData = "F9";
+                            functionData = "11";
+                            interaction = "01";
+                        }
+                        break;
 
-                case FunctionType.Heartbeat:
-                    startData = "95";
-                    functionData = "01";
-                    break;
+                    case FunctionType.Heartbeat:
+                        startData = "95";
+                        functionData = "01";
+                        break;
 
-                default:
-                    return string.Empty;
+                    default:
+                        return string.Empty;
+                }
+                var hexData = $"{startData}{functionData}{attach.Guid:X4}{data.Replace(" ", string.Empty)}{interaction}";
+                var byteArray = HexStringToByteArray(hexData);
+                var checksum = XorChecksum(byteArray).ToString("X2");
+                return HexWithDelimiter($"{hexData}{checksum}", " ");
             }
-            var hexData = $"{startData}{functionData}{num:X4}{data.Replace(" ", string.Empty)}{interaction}";
-            var byteArray = HexStringToByteArray(hexData);
-            var checksum = XorChecksum(byteArray).ToString("X2");
-            return HexWithDelimiter($"{hexData}{checksum}", " ");
+
+            return string.Empty;
         }
 
         public DeviceDecodeResult? DecodeData(string data) {
