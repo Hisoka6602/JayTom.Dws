@@ -82,7 +82,7 @@ namespace JayTom.Dws.Client.Service.Device {
                         f.ConfigName.Equals("CameraSdkSelector"), token);
                     _cameraSdkSelectorDto = configInfoModel is not null ? JsonConvert.DeserializeObject<CameraSdkSelectorDto>(configInfoModel.Value) : new CameraSdkSelectorDto();
                 }
-
+                var daHuaSmartCameras = new List<CameraInfo>();
                 var hikvisionIndustrialCameras = new List<CameraInfo>();
                 var hikvisionSmartCameras = new List<CameraInfo>();
                 var daHuaSecurityCameras = new List<CameraInfo>();
@@ -93,7 +93,7 @@ namespace JayTom.Dws.Client.Service.Device {
                 //判断已经选择的相机
                 if (_cameraSdkSelectorDto?.IsUseDaHuaSmartCameraSdk == true) {
                     //大华智能相机
-                    await new DaHuaSmartCamera().EnumerateCameras();
+                    daHuaSmartCameras = await new DaHuaSmartCamera().EnumerateCameras();
                 }
 
                 if (_cameraSdkSelectorDto?.IsUseHikvisionIndustrialCameraSdk == true) {
@@ -120,8 +120,10 @@ namespace JayTom.Dws.Client.Service.Device {
                 }
                 //海康体积相机
                 //hikvisionVolumeCameras = await new HikvisionVolumeCamera().EnumerateCameras();
-                var cameraList = wayzimIndustrialCameras?.Union(wayzimSmartCameras
-                                                                ?? new List<CameraInfo>())?.ToList()?
+
+                var cameraList = daHuaSmartCameras?.Union(wayzimIndustrialCameras
+                                                          ?? new List<CameraInfo>())?.ToList()?
+                                     .Union(wayzimSmartCameras ?? new List<CameraInfo>())?.ToList()?
                                      .Union(daHuaSecurityCameras ?? new List<CameraInfo>())?.ToList()?
                                      .Union(hikvisionIndustrialCameras ?? new List<CameraInfo>())?.ToList()?
                                      .Union(hikvisionSmartCameras ?? new List<CameraInfo>())?.ToList()?

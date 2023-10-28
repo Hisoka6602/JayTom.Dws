@@ -435,7 +435,6 @@
                                         FontSize="13"
                                         FontWeight="Bold"
                                         Foreground="White"
-                                        InputMethod.IsInputMethodEnabled="False"
                                         Text="{Binding SearchStringContent, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                                 </Border>
                             </StackPanel>

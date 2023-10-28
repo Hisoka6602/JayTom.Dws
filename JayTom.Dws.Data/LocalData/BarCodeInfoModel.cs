@@ -131,16 +131,16 @@ namespace JayTom.Dws.Data.LocalData {
         /// <summary>
         /// 上传成功
         /// </summary>
-        Succeeded,
+        Succeeded = 0,
 
         /// <summary>
         /// 上传失败
         /// </summary>
-        Failed,
+        Failed = 1,
 
         /// <summary>
         /// 未上传
         /// </summary>
-        NotUploaded
+        NotUploaded = 2
     }
 }

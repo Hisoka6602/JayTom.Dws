@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using Prism.Commands;
 using System.Windows;
+using JayTom.Dws.Plugin;
 using System.Windows.Input;
 using System.Threading.Tasks;
 using MaterialDesignThemes.Wpf;
@@ -28,6 +29,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         private readonly IVolumeSortingRepository _volumeSortingRepository;
         private readonly IVolumeRuleRepository _volumeRuleRepository;
         private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
+        private readonly IExcel _excel;
 
         private ObservableCollection<VolumeSortingItemInfoModel> _volumeSortingItems = new();
 
@@ -36,10 +38,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
         public VolumeSortingViewModel(IVolumeSortingRepository volumeSortingRepository,
             IVolumeRuleRepository volumeRuleRepository,
-            IPackageExitDefinitionRepository packageExitDefinitionRepository) {
+            IPackageExitDefinitionRepository packageExitDefinitionRepository,
+            IExcel excel) {
             _volumeSortingRepository = volumeSortingRepository;
             _volumeRuleRepository = volumeRuleRepository;
             _packageExitDefinitionRepository = packageExitDefinitionRepository;
+            _excel = excel;
         }
 
         public ObservableCollection<VolumeSortingItemInfoModel> VolumeSortingItems {
@@ -239,6 +243,188 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                     DialogHost.Close(model.Identifier);
                 }
             });
+        }
+
+        /// <summary>
+        /// 导出
+        /// </summary>
+        public ICommand ExportCommand {
+            get => new DelegateCommand<object>(ExportDelegate);
+        }
+
+        private async void ExportDelegate(object obj) {
+
+            //导出
+            if (VolumeSortingItems?.Any() != true) {
+                VolumeSortingMessageQueue?.Enqueue(Languages.Language.ResourceManager.GetString("列表中没有数据") ?? string.Empty);
+                return;
+            }
+
+            //导出
+
+            var saveFileDialog = new Microsoft.Win32.SaveFileDialog() {
+                Title = "Please select the location to save the file.",
+                Filter = $"{Languages.Language.ResourceManager.GetString("Excel文件") ?? string.Empty}(xlsx)|*.xlsx",
+                DefaultExt = "xlsx",
+                InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+            };
+            if (saveFileDialog.ShowDialog() == true) {
+                var exportDialog = new ExportDialog();
+                if (exportDialog.DataContext is ExportDialogViewModel model) {
+                    model.FilePath = saveFileDialog.FileName;
+                    model.Identifier = "MainDialog";
+                    model.Message = "Retrieving data...";
+                    DialogHost.Show(exportDialog, model.Identifier);
+                    var result = VolumeSortingItems
+                        ?.SelectMany(s => s.SortingRuleGroup.Split("\n")
+                            .Select(item => new VolumeSortingItemInfoModel() {
+                                CreateTime = s.CreateTime,
+                                ExitId = s.ExitId,
+                                ModifyTime = s.ModifyTime,
+                                Remarks = s.Remarks,
+                                ExitName = s.ExitName,
+                                SortingName = s.SortingName,
+                                Num = s.Num,
+                                Id = s.Id,
+                                SortingRuleGroup = item,
+                            }))
+                        ?.ToList();
+                    var export = await _excel.Export(saveFileDialog.FileName,
+                        $"体积分拣列表",
+                        "体积分拣列表", result ?? new List<VolumeSortingItemInfoModel>(),
+                        new List<string>(), async p => {
+                            model.Progress = p;
+                            model.ProgressText = $"{p}%";
+                            if (p == 100) {
+                                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                                    if (DialogHost.IsDialogOpen(model.Identifier)) {
+                                        DialogHost.Close(model.Identifier);
+                                    }
+                                });
+                            }
+                        }, e => {
+                            VolumeSortingMessageQueue?.Enqueue(e.Message);
+                        });
+                    if (!export) {
+                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                            if (DialogHost.IsDialogOpen(model.Identifier)) {
+                                DialogHost.Close(model.Identifier);
+                            }
+                        });
+                    }
+                }
+            }
+        }
+
+        public ICommand ImportCommand {
+            get => new DelegateCommand<object>(ImportDelegate);
+        }
+
+        private async void ImportDelegate(object obj) {
+            //导入
+            var openFileDialog = new Microsoft.Win32.OpenFileDialog() {
+                Title = "Please select the file to import.",
+                Filter = $"{Languages.Language.ResourceManager.GetString("Excel文件") ?? string.Empty}(xlsx)|*.xlsx",
+                DefaultExt = "xlsx",
+                InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+            };
+            if (openFileDialog.ShowDialog() == true) {
+                var exportDialog = new ExportDialog();
+                if (exportDialog.DataContext is ExportDialogViewModel model) {
+                    model.FilePath = openFileDialog.FileName;
+                    model.Identifier = "MainDialog";
+                    model.Message = "Retrieving data...";
+                    DialogHost.Show(exportDialog, model.Identifier);
+
+                    var models = await _excel.ReadExcel<VolumeSortingItemInfoModel>(openFileDialog.FileName, async p => {
+                        model.Progress = p;
+                        model.ProgressText = $"{p}%";
+                        if (p == 100) {
+                            await Application.Current.Dispatcher.InvokeAsync(() => {
+                                if (DialogHost.IsDialogOpen(model.Identifier)) {
+                                    DialogHost.Close(model.Identifier);
+                                }
+                            });
+                        }
+                    }, async e => {
+                        await Application.Current.Dispatcher.InvokeAsync(() => {
+                            if (DialogHost.IsDialogOpen(model.Identifier)) {
+                                DialogHost.Close(model.Identifier);
+                            }
+                        });
+                        VolumeSortingMessageQueue?.Enqueue(e.Message);
+                    });
+                    await Task.Delay(500);
+                    if (models?.Any() == true) {
+                        var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0,
+                            o => o.CreateTime);
+                        var dateTime = DateTime.Now;
+                        var volumeSortingInfoModels = models
+                            .Select(s => new VolumeSortingInfoModel() {
+                                CreateTime = dateTime,
+                                ExitId = packageExitDefinitionInfoModels.FirstOrDefault(f => f.ExitName.Equals(s.ExitName))?.Id ?? 0,
+                                ModifyTime = dateTime,
+                                SortingName = s.SortingName,
+                                Remarks = s.Remarks,
+                                VolumeRuleItems = new List<VolumeRuleInfoModel>
+                                {
+                                    new()
+                                    {
+                                        CreateTime = dateTime,
+                                        ModifyTime = dateTime,
+                                        Formula = s.SortingRuleGroup
+                                    }
+                                }
+                            })
+                            .GroupBy(s => s.ExitId)
+                            .Select(group => new VolumeSortingInfoModel {
+                                CreateTime = group.First().CreateTime,
+                                ExitId = group.Key,
+                                SortingName = group.First().SortingName,
+                                ModifyTime = group.First().ModifyTime,
+                                Remarks = group.First().Remarks,
+                                VolumeRuleItems = group.SelectMany(item => item.VolumeRuleItems).ToList()
+                            })
+                            .ToList();
+
+                        //批量添加
+                        var range = await _volumeSortingRepository.InsertRange(volumeSortingInfoModels);
+                        if (range) {
+                            //取出数据库对应指令列表内容
+                            var infoModels = await _volumeSortingRepository.SelectOrderByDescending(
+                                s => s.CreateTime.Equals(dateTime),
+                                o => o.CreateTime);
+                            foreach (var volumeSorting in infoModels) {
+                                var volumeRuleInfoModels = await _volumeRuleRepository.Select(
+                                    s => s.VolumeSortingId.Equals(volumeSorting.Id),
+                                    o => o.Id);
+                                if (volumeRuleInfoModels?.Any() == true) {
+                                    await _volumeRuleRepository.DeleteRange(volumeRuleInfoModels);
+                                }
+
+                                var volumeSortingInfoModel = volumeSortingInfoModels?.FirstOrDefault(f =>
+                                    f.ExitId.Equals(volumeSorting.ExitId) &&
+                                    f.CreateTime.Equals(dateTime));
+                                if (volumeSortingInfoModel is not null) {
+                                    var ruleInfoModels = volumeSortingInfoModel?.VolumeRuleItems.Select(s =>
+                                        new VolumeRuleInfoModel() {
+                                            Formula = s.Formula,
+                                            VolumeSortingId = volumeSorting.Id
+                                        })?.ToList();
+                                    await _volumeRuleRepository.InsertRange(ruleInfoModels ?? new List<VolumeRuleInfoModel>());
+                                }
+                            }
+
+                            VolumeSortingMessageQueue.Enqueue("保存成功");
+                            RefreshData();
+                        }
+                        else {
+                            VolumeSortingMessageQueue.Enqueue("保存失败");
+                        }
+                    }
+                }
+            }
+
         }
     }
 }

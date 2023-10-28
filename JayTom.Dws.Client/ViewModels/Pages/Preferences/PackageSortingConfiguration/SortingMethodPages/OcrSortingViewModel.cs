@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using Prism.Commands;
 using System.Windows;
+using JayTom.Dws.Plugin;
 using System.Windows.Input;
 using System.Threading.Tasks;
 using MaterialDesignThemes.Wpf;
@@ -28,16 +29,19 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         private readonly IOcrSortingRepository _ocrSortingRepository;
         private readonly IOcrRuleRepository _ocrRuleRepository;
         private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
+        private readonly IExcel _excel;
         private ObservableCollection<OcrSortingItemInfoModel> _ocrSortingItems = new();
         private SnackbarMessageQueue _ocrSortingMessageQueue = new(TimeSpan.FromSeconds(2));
         private bool _isLoaded;
 
         public OcrSortingViewModel(IOcrSortingRepository ocrSortingRepository,
             IOcrRuleRepository ocrRuleRepository,
-            IPackageExitDefinitionRepository packageExitDefinitionRepository) {
+            IPackageExitDefinitionRepository packageExitDefinitionRepository,
+            IExcel excel) {
             _ocrSortingRepository = ocrSortingRepository;
             _ocrRuleRepository = ocrRuleRepository;
             _packageExitDefinitionRepository = packageExitDefinitionRepository;
+            _excel = excel;
         }
 
         public ObservableCollection<OcrSortingItemInfoModel> OcrSortingItems {
@@ -242,6 +246,190 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                     DialogHost.Close(model.Identifier);
                 }
             });
+        }
+
+
+        /// <summary>
+        /// 导出
+        /// </summary>
+        public ICommand ExportCommand {
+            get => new DelegateCommand<object>(ExportDelegate);
+        }
+
+        private async void ExportDelegate(object obj) {
+
+
+            //导出
+            if (OcrSortingItems?.Any() != true) {
+                OcrSortingMessageQueue?.Enqueue(Languages.Language.ResourceManager.GetString("列表中没有数据") ?? string.Empty);
+                return;
+            }
+
+            //导出
+
+            var saveFileDialog = new Microsoft.Win32.SaveFileDialog() {
+                Title = "Please select the location to save the file.",
+                Filter = $"{Languages.Language.ResourceManager.GetString("Excel文件") ?? string.Empty}(xlsx)|*.xlsx",
+                DefaultExt = "xlsx",
+                InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+            };
+            if (saveFileDialog.ShowDialog() == true) {
+                var exportDialog = new ExportDialog();
+                if (exportDialog.DataContext is ExportDialogViewModel model) {
+                    model.FilePath = saveFileDialog.FileName;
+                    model.Identifier = "MainDialog";
+                    model.Message = "Retrieving data...";
+                    DialogHost.Show(exportDialog, model.Identifier);
+                    var result = OcrSortingItems
+                        ?.SelectMany(s => s.SortingRuleGroup.Split("\n")
+                            .Select(item => new OcrSortingItemInfoModel() {
+                                CreateTime = s.CreateTime,
+                                ExitId = s.ExitId,
+                                ModifyTime = s.ModifyTime,
+                                Remarks = s.Remarks,
+                                ExitName = s.ExitName,
+                                SortingName = s.SortingName,
+                                Num = s.Num,
+                                Id = s.Id,
+                                SortingRuleGroup = item,
+                            }))
+                        ?.ToList();
+                    var export = await _excel.Export(saveFileDialog.FileName,
+                        $"Ocr分拣列表",
+                        "Ocr分拣列表", result ?? new List<OcrSortingItemInfoModel>(),
+                        new List<string>(), async p => {
+                            model.Progress = p;
+                            model.ProgressText = $"{p}%";
+                            if (p == 100) {
+                                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                                    if (DialogHost.IsDialogOpen(model.Identifier)) {
+                                        DialogHost.Close(model.Identifier);
+                                    }
+                                });
+                            }
+                        }, e => {
+                            OcrSortingMessageQueue?.Enqueue(e.Message);
+                        });
+                    if (!export) {
+                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                            if (DialogHost.IsDialogOpen(model.Identifier)) {
+                                DialogHost.Close(model.Identifier);
+                            }
+                        });
+                    }
+                }
+            }
+        }
+
+        public ICommand ImportCommand {
+            get => new DelegateCommand<object>(ImportDelegate);
+        }
+
+        private async void ImportDelegate(object obj) {
+
+            //导入
+            var openFileDialog = new Microsoft.Win32.OpenFileDialog() {
+                Title = "Please select the file to import.",
+                Filter = $"{Languages.Language.ResourceManager.GetString("Excel文件") ?? string.Empty}(xlsx)|*.xlsx",
+                DefaultExt = "xlsx",
+                InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+            };
+            if (openFileDialog.ShowDialog() == true) {
+                var exportDialog = new ExportDialog();
+                if (exportDialog.DataContext is ExportDialogViewModel model) {
+                    model.FilePath = openFileDialog.FileName;
+                    model.Identifier = "MainDialog";
+                    model.Message = "Retrieving data...";
+                    DialogHost.Show(exportDialog, model.Identifier);
+
+                    var models = await _excel.ReadExcel<OcrSortingItemInfoModel>(openFileDialog.FileName, async p => {
+                        model.Progress = p;
+                        model.ProgressText = $"{p}%";
+                        if (p == 100) {
+                            await Application.Current.Dispatcher.InvokeAsync(() => {
+                                if (DialogHost.IsDialogOpen(model.Identifier)) {
+                                    DialogHost.Close(model.Identifier);
+                                }
+                            });
+                        }
+                    }, async e => {
+                        await Application.Current.Dispatcher.InvokeAsync(() => {
+                            if (DialogHost.IsDialogOpen(model.Identifier)) {
+                                DialogHost.Close(model.Identifier);
+                            }
+                        });
+                        OcrSortingMessageQueue?.Enqueue(e.Message);
+                    });
+                    await Task.Delay(500);
+                    if (models?.Any() == true) {
+                        var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0,
+                            o => o.CreateTime);
+                        var dateTime = DateTime.Now;
+                        var ocrSortingInfoModels = models
+                            .Select(s => new OcrSortingInfoModel() {
+                                CreateTime = dateTime,
+                                ExitId = packageExitDefinitionInfoModels.FirstOrDefault(f => f.ExitName.Equals(s.ExitName))?.Id ?? 0,
+                                ModifyTime = dateTime,
+                                SortingName = s.SortingName,
+                                Remarks = s.Remarks,
+                                OcrRuleItems = new List<OcrRuleInfoModel>
+                                {
+                                    new()
+                                    {
+                                        CreateTime = dateTime,
+                                        ModifyTime = dateTime,
+                                        RegexPattern = s.SortingRuleGroup,
+                                    }
+                                }
+                            })
+                            .GroupBy(s => s.ExitId)
+                            .Select(group => new OcrSortingInfoModel {
+                                CreateTime = group.First().CreateTime,
+                                ExitId = group.Key,
+                                SortingName = group.First().SortingName,
+                                ModifyTime = group.First().ModifyTime,
+                                Remarks = group.First().Remarks,
+                                OcrRuleItems = group.SelectMany(item => item.OcrRuleItems).ToList()
+                            })
+                            .ToList();
+
+                        //批量添加
+                        var range = await _ocrSortingRepository.InsertRange(ocrSortingInfoModels);
+                        if (range) {
+                            //取出数据库对应指令列表内容
+                            var infoModels = await _ocrSortingRepository.SelectOrderByDescending(
+                                s => s.CreateTime.Equals(dateTime),
+                                o => o.CreateTime);
+                            foreach (var ocrSorting in infoModels) {
+                                var ocrRuleInfoModels = await _ocrRuleRepository.Select(
+                                    s => s.OcrSortingInfo.Equals(ocrSorting.Id),
+                                    o => o.Id);
+                                if (ocrRuleInfoModels?.Any() == true) {
+                                    await _ocrRuleRepository.DeleteRange(ocrRuleInfoModels);
+                                }
+
+                                var ocrSortingInfoModel = ocrSortingInfoModels?.FirstOrDefault(f =>
+                                    f.ExitId.Equals(ocrSorting.ExitId) &&
+                                    f.CreateTime.Equals(dateTime));
+                                if (ocrSortingInfoModel is not null) {
+                                    var ruleInfoModels = ocrSortingInfoModel?.OcrRuleItems.Select(s =>
+                                        new OcrRuleInfoModel() {
+                                            RegexPattern = s.RegexPattern,
+                                            OcrSortingId = ocrSorting.Id,
+                                        })?.ToList();
+                                    await _ocrRuleRepository.InsertRange(ruleInfoModels ?? new List<OcrRuleInfoModel>());
+                                }
+                            }
+
+                            OcrSortingMessageQueue.Enqueue("保存成功");
+                            RefreshData();
+                        }
+                        else {
+                            OcrSortingMessageQueue.Enqueue("保存失败");
+                        }
+                    }
+                }
+            }
         }
     }
 }

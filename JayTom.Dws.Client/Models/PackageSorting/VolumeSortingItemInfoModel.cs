@@ -2,13 +2,15 @@
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
+using System.ComponentModel;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics.CodeAnalysis;
+using JayTom.Dws.Plugin.Excel.Attributes;
 using JayTom.Dws.Client.Models.PackageSorting.Rule;
 
 namespace JayTom.Dws.Client.Models.PackageSorting {
-
     public class VolumeSortingItemInfoModel : BasePackageSortingItemInfoModel {
         private long? _exitId;
         private string? _exitName;
@@ -27,6 +29,7 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 出口名称
         /// </summary>
+        [DisplayName("格口名称"), MemberNotNull, ExcelInfo(Width = 4000)]
         public string? ExitName {
             get => _exitName;
             set => SetProperty(ref _exitName, value);
@@ -35,6 +38,7 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 规则名称
         /// </summary>
+        [DisplayName("规则名称"), MemberNotNull, ExcelInfo(Width = 4000)]
         public string SortingName {
             get => _sortingName;
             set => SetProperty(ref _sortingName, value);
@@ -43,6 +47,7 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 规则组
         /// </summary>
+        [DisplayName("计算规则"), MemberNotNull, ExcelInfo(Width = 4000)]
         public string SortingRuleGroup {
             get => _sortingRuleGroup;
             set => SetProperty(ref _sortingRuleGroup, value);
