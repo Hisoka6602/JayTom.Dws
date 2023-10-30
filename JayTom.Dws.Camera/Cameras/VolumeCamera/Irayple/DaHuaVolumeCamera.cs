@@ -11,14 +11,13 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Irayple {
     public class DaHuaVolumeCamera : IVolumeCamera {
         private static IntPtr? _handle;
 
+        private static Volume3DSdk.VslbVolumeResultCB _resultCb;
+
         public async void Dispose() {
             await Stop();
             if (_handle is null || _handle == IntPtr.Zero) {
                 return;
             }
-            OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
-                Exception = new Exception("释放句柄")
-            });
             Volume3DSdk.vslbVolume3DFini(_handle.Value);
             Volume3DSdk.vslbVolume3DDestroy(_handle.Value);
             _handle = null;
@@ -28,11 +27,29 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Irayple {
         }
 
         public DaHuaVolumeCamera() {
+            _resultCb = (l, w, h, v) => {
+                OnVolumeCaptured(new VolumeCapturedEventArgs() {
+                    Timestamp = DateTime.Now,
+                    Length = l,
+                    Volume = v,
+                    Width = w,
+                    Height = h,
+                });
+            };
         }
 
         public DaHuaVolumeCamera(CameraInfo info) {
             this.Info = info;
             this.Info.Type = CameraType.VolumeCamera;
+            _resultCb = (l, w, h, v) => {
+                OnVolumeCaptured(new VolumeCapturedEventArgs() {
+                    Timestamp = DateTime.Now,
+                    Length = l,
+                    Volume = v,
+                    Width = w,
+                    Height = h,
+                });
+            };
         }
 
         public CameraInfo? Info { get; }
@@ -67,10 +84,6 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Irayple {
             }
             try {
                 if (_handle is null || _handle == IntPtr.Zero) {
-                    OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
-                        Exception = new Exception("进入初始化")
-                    });
-                    await Task.Delay(500);
                     _handle = Volume3DSdk.vslbVolume3DCreate();
                     if (_handle == IntPtr.Zero) {
                         OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
@@ -98,7 +111,7 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Irayple {
         }
 
         public async Task<KeyValuePair<bool, string>> Start(object param) {
-            await Task.Delay(1000);
+            await Task.Yield();
             try {
                 if (Status == CameraStatus.Running) {
                     OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
@@ -113,16 +126,7 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Irayple {
                     return new KeyValuePair<bool, string>(false, "相机句柄无效");
                 }
 
-                Volume3DSdk.VslbVolumeResultCB resultCb = (l, w, h, v) => {
-                    OnVolumeCaptured(new VolumeCapturedEventArgs() {
-                        Timestamp = DateTime.Now,
-                        Length = l,
-                        Volume = v,
-                        Width = w,
-                        Height = h,
-                    });
-                };
-                var runEx = Volume3DSdk.vslbVolume3DRun(_handle.Value, resultCb);
+                var runEx = Volume3DSdk.vslbVolume3DRun(_handle.Value, _resultCb);
 
                 Volume3DSdk.VslbVolumeResultCBEx cbx = resultPtr => {
                     try {
