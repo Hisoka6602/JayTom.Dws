@@ -21,6 +21,7 @@ using JayTom.Dws.Client.Models.ImageSettingModels;
 using JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
+
     public class ApiSettingsPageViewModel : BindableBase {
         private readonly IConfigRepository _configRepository;
 
@@ -40,6 +41,16 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             {
                 Name = "SunnenApi",
                 Value = ApiType.SunnenApi
+            },
+            new ApiTypeInfoModel()
+            {
+                Name = "旺店通WMS",
+                Value = ApiType.WdtWmsApi
+            },
+            new ApiTypeInfoModel()
+            {
+                Name = "旺店通ERP旗舰版",
+                Value = ApiType.WdtErpFlagShipApi
             },
             new ApiTypeInfoModel()
             {

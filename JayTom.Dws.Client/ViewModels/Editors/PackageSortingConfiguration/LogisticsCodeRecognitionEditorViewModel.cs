@@ -17,12 +17,11 @@ using LibreHardwareMonitor.Hardware;
 using System.Collections.ObjectModel;
 using Microsoft.AspNetCore.Mvc.Filters;
 using JayTom.Dws.Client.Models.PackageSorting;
+using JayTom.Dws.Client.Models.PackageSorting.Rule;
 using OpenFileDialog = System.Windows.Forms.OpenFileDialog;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
-using JayTom.Dws.Client.Models.PackageSorting.Rule;
 
 namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
-
     public class LogisticsCodeRecognitionEditorViewModel : BindableBase {
         private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
         private string _identifier = string.Empty;
@@ -135,21 +134,6 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
             set => SetProperty(ref _endCharacterType, value);
         }
 
-        /// <summary>
-        /// 格口列表
-        /// </summary>
-        public ObservableCollection<PackageExitDefinitionItemInfoModel> PackageExitDefinitionItems {
-            get => _packageExitDefinitionItems;
-            set => SetProperty(ref _packageExitDefinitionItems, value);
-        }
-
-        /// <summary>
-        /// 绑定的格口
-        /// </summary>
-        public PackageExitDefinitionItemInfoModel SelectPackageExitDefinitionInfo {
-            get => _selectPackageExitDefinitionInfo;
-            set => SetProperty(ref _selectPackageExitDefinitionInfo, value);
-        }
 
         public bool IsOk {
             get => _isOk;
@@ -342,30 +326,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
             get => new DelegateCommand<object>(LoadedDelegate);
         }
 
-        private async void LoadedDelegate(object obj) {
-            var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0,
-                o => o.CreateTime);
-
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
-                PackageExitDefinitionItems.Clear();
-                var packageExitDefinitionItemInfoModels = packageExitDefinitionInfoModels?.Select((s, i) => new PackageExitDefinitionItemInfoModel {
-                    CreateTime = s.CreateTime,
-                    ExitName = $"{s.ExitName}{(s.IsActive ? "" : "(未生效)")}",
-                    Id = s.Id,
-                    IsActive = s.IsActive,
-                    ModifyTime = s.ModifyTime,
-                    Num = i + 1,
-                    Remarks = s.Remarks,
-                    Type = s.Type
-                })?.ToList();
-
-                if (packageExitDefinitionItemInfoModels?.Any() == true) {
-                    PackageExitDefinitionItems.AddRange(packageExitDefinitionItemInfoModels);
-                    var packageExitDefinitionItemInfoModel = PackageExitDefinitionItems.FirstOrDefault(f =>
-                        f.Id.Equals(LogisticsCodeRecognitionItemInfo.ExitId));
-                    SelectPackageExitDefinitionInfo = packageExitDefinitionItemInfoModel ?? new PackageExitDefinitionItemInfoModel();
-                }
-            });
+        private void LoadedDelegate(object obj) {
         }
 
         public BitmapImage CreateBitmapImage(Uri uri, int width, int height) {

@@ -210,7 +210,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                                     cameraSdkSelectorDto.IsUseHikvisionIndustrialCameraSdk,
                                 IsUseHikvisionSmartCameraSdk = cameraSdkSelectorDto.IsUseHikvisionSmartCameraSdk,
                                 IsUseWayzimIndustrialCameraSdk = cameraSdkSelectorDto.IsUseWayzimIndustrialCameraSdk,
-                                IsUseWayzimSmartCameraSdk = cameraSdkSelectorDto.IsUseWayzimSmartCameraSdk
+                                IsUseWayzimSmartCameraSdk = cameraSdkSelectorDto.IsUseWayzimSmartCameraSdk,
+                                IsUseDaHuaVolumeCameraSdk = cameraSdkSelectorDto.IsUseDaHuaVolumeCameraSdk,
+                                IsUseHikvisionVolumeCameraSdk = cameraSdkSelectorDto.IsUseHikvisionVolumeCameraSdk
                             };
                         }
                     }
@@ -501,8 +503,16 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                 //海康工业相机
                 files = Directory.GetFiles($"{destinationDir}\\Cameras\\IndustrialCamera\\Hikvision\\Dll")?.ToList();
             }
+            if (obj.ToString()?.Equals("IsUseHikvisionVolumeCameraSdk") == true) {
+                //海康体积
+                files = Directory.GetFiles($"{destinationDir}\\Cameras\\VolumeCamera\\Hikvision\\Dll")?.ToList();
+            }
             if (obj.ToString()?.Equals("IsUseDaHuaSmartCameraSdk") == true) {
                 //大华智能相机
+                files = Directory.GetFiles($"{destinationDir}\\Cameras\\SmartCamera\\Irayple\\Dll")?.ToList();
+            }
+            if (obj.ToString()?.Equals("IsUseDaHuaVolumeCameraSdk") == true) {
+                //大华体积
                 files = Directory.GetFiles($"{destinationDir}\\Cameras\\SmartCamera\\Irayple\\Dll")?.ToList();
             }
             if (obj.ToString()?.Equals("IsUseDaHuaSecurityCameraSdk") == true) {
@@ -515,8 +525,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
             }
 
             if (obj.ToString()?.Equals("IsUseWayzimIndustrialCameraSdk") == true) {
+                //中科工业
                 files = Directory.GetFiles($"{destinationDir}\\Cameras\\IndustrialCamera\\Wayzim\\Dll")?.ToList();
             }
+
             if (files?.Any() == true) {
                 foreach (var s in files) {
                     if (!File.Exists($"{destinationDir}\\{new FileInfo(s).Name}")) {
@@ -542,7 +554,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                     IsUseHikvisionIndustrialCameraSdk = CameraSdkSelectorInfo.IsUseHikvisionIndustrialCameraSdk,
                     IsUseHikvisionSmartCameraSdk = CameraSdkSelectorInfo.IsUseHikvisionSmartCameraSdk,
                     IsUseWayzimIndustrialCameraSdk = CameraSdkSelectorInfo.IsUseWayzimIndustrialCameraSdk,
-                    IsUseWayzimSmartCameraSdk = CameraSdkSelectorInfo.IsUseWayzimSmartCameraSdk
+                    IsUseWayzimSmartCameraSdk = CameraSdkSelectorInfo.IsUseWayzimSmartCameraSdk,
+                    IsUseDaHuaVolumeCameraSdk = CameraSdkSelectorInfo.IsUseDaHuaVolumeCameraSdk,
+                    IsUseHikvisionVolumeCameraSdk = CameraSdkSelectorInfo.IsUseHikvisionVolumeCameraSdk
                 })
             });
             if (insertOrUpdate) {
@@ -571,6 +585,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                 CameraFinderMessageQueue.Enqueue("未勾选对应的SDK，无法绑定该相机");
                 return false;
             }
+            if ((obj.Brand.Contains("Hikrobot") || obj.Brand.Contains("Hikvision")) &&
+                obj.CameraType == CameraType.ThreeDCamera &&
+                !CameraSdkSelectorInfo.IsUseHikvisionVolumeCameraSdk) {
+                //海康体积
+                CameraFinderMessageQueue.Enqueue("未勾选对应的SDK，无法绑定该相机");
+                return false;
+            }
             if ((obj.Brand.Contains("Dahua") || obj.Brand.Contains("Huaray")) &&
                 obj.CameraType == CameraType.SmartCamera &&
                 !CameraSdkSelectorInfo.IsUseDaHuaSmartCameraSdk) {
@@ -582,6 +603,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                 obj.CameraType == CameraType.VideoCamera &&
                 !CameraSdkSelectorInfo.IsUseDaHuaSecurityCameraSdk) {
                 //大华安防
+                CameraFinderMessageQueue.Enqueue("未勾选对应的SDK，无法绑定该相机");
+                return false;
+            }
+            if ((obj.Brand.Contains("Dahua") || obj.Brand.Contains("Huaray")) &&
+                obj.CameraType == CameraType.ThreeDCamera &&
+                !CameraSdkSelectorInfo.IsUseDaHuaVolumeCameraSdk) {
+                //大华体积
                 CameraFinderMessageQueue.Enqueue("未勾选对应的SDK，无法绑定该相机");
                 return false;
             }

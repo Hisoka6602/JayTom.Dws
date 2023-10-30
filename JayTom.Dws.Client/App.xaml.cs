@@ -1,6 +1,7 @@
 ﻿using System;
 using DryIoc;
 using Prism.Ioc;
+using System.IO;
 using Prism.Mvvm;
 using System.Data;
 using System.Linq;
@@ -8,6 +9,7 @@ using Prism.DryIoc;
 using System.Windows;
 using System.Net.Http;
 using Newtonsoft.Json;
+using System.IO.Pipes;
 using System.Threading;
 using JayTom.Dws.Plugin;
 using JayTom.Dws.Camera;
@@ -91,6 +93,9 @@ namespace JayTom.Dws.Client {
     /// </summary>
     public partial class App : PrismApplication {
         private IHost? _host;
+        private Mutex? _singleInstanceMutex;
+        private NamedPipeServerStream? pipeServer;
+        private const string PipeName = "DwsPipe";
 
         protected override void RegisterTypes(IContainerRegistry containerRegistry) {
             //注册窗口
@@ -247,6 +252,13 @@ namespace JayTom.Dws.Client {
         }
 
         protected override void OnStartup(StartupEventArgs e) {
+            _singleInstanceMutex = new Mutex(true, "Dws.Client", out var createdNew);
+
+            if (!createdNew) {
+                // 另一个实例已经在运行，尝试激活它的窗口
+                NotifyExistingInstance();
+                Environment.Exit(0);
+            }
             ThreadPool.SetMinThreads(300, 200);
             this.DispatcherUnhandledException += delegate (object sender, DispatcherUnhandledExceptionEventArgs args) {
                 //异常触发
@@ -334,6 +346,7 @@ namespace JayTom.Dws.Client {
                         services.AddHostedService<DataProcessingBackgroundService>();//数据处理
                         services.AddHostedService<CleanupService>();//清理
                         services.AddHostedService<ComputerInfoBackgroundService>(); // 注册后台服务
+                        services.AddHostedService<SingleInstanceBackgroundService>(); // 注册单开激活服务
                     })
                     .Build();
                 _host.Start();
@@ -360,7 +373,25 @@ namespace JayTom.Dws.Client {
             }
 
             await Task.Delay(500);
+            if (_singleInstanceMutex is not null) {
+                _singleInstanceMutex.ReleaseMutex();
+                _singleInstanceMutex.Close();
+            }
             base.OnExit(e);
+        }
+
+        private void NotifyExistingInstance() {
+            try {
+                using (var pipeClient = new NamedPipeClientStream(".", PipeName, PipeDirection.Out)) {
+                    pipeClient.Connect(5000); // 连接到已存在的管道
+                    using (var sw = new StreamWriter(pipeClient)) {
+                        sw.Write("ActivateWindow");
+                    }
+                }
+            }
+            catch (TimeoutException) {
+                // 如果连接超时，可以处理错误情况
+            }
         }
 
         protected override void ConfigureViewModelLocator() {
@@ -429,6 +460,7 @@ namespace JayTom.Dws.Client {
             //接口
             ViewModelLocationProvider.Register<DefaultApiPage, DefaultApiPageViewModel>();
             ViewModelLocationProvider.Register<SzjyApiPage, SzjyApiPageViewModel>();
+            ViewModelLocationProvider.Register<WdtFlagshipApiPage, WdtFlagshipApiPageViewModel>();
             //其他插件
             {
                 ViewModelLocationProvider.Register<SunnenInputBarcodeControl, SunnenInputBarcodeViewModel>();

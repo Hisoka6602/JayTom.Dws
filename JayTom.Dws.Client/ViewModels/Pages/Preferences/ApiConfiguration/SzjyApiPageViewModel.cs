@@ -226,7 +226,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
                     IsLoginSuccessful = false;
                     //设置参数
                     var szjyApi = new SzjyApi(_httpClientFactory);
-                    await szjyApi.SetParameters(new SzjyApiParam() {
+                    await szjyApi.SetParameters(new SzjyApi.ApiParameter() {
                         Machine = SzjyApiInfo.Machine,
                         Password = SzjyApiInfo.Password,
                         Url = SzjyApiInfo.Url,
@@ -266,7 +266,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
                     //上传
                     var szjyApi = new SzjyApi(_httpClientFactory);
-                    await szjyApi.SetParameters(new SzjyApiParam() {
+                    await szjyApi.SetParameters(new SzjyApi.ApiParameter() {
                         Machine = SzjyApiInfo.Machine,
                         Password = SzjyApiInfo.Password,
                         Url = SzjyApiInfo.Url,

@@ -233,6 +233,36 @@
                         Foreground="WhiteSmoke"
                         Text="中科微至工业相机" />
                 </ListBoxItem>
+                <ListBoxItem IsSelected="{Binding CameraSdkSelectorInfo.IsUseHikvisionVolumeCameraSdk, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                    <b:Interaction.Triggers>
+                        <b:EventTrigger EventName="Selected">
+                            <mvvm:InvokeCommandAction Command="{Binding SdkSelectedCommand}" CommandParameter="IsUseHikvisionVolumeCameraSdk" />
+                        </b:EventTrigger>
+                    </b:Interaction.Triggers>
+
+                    <TextBlock
+                        VerticalAlignment="Center"
+                        FontFamily="{StaticResource CustomFontFamily}"
+                        FontSize="12"
+                        FontWeight="Bold"
+                        Foreground="WhiteSmoke"
+                        Text="海康体积相机" />
+                </ListBoxItem>
+                <ListBoxItem IsSelected="{Binding CameraSdkSelectorInfo.IsUseDaHuaVolumeCameraSdk, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                    <b:Interaction.Triggers>
+                        <b:EventTrigger EventName="Selected">
+                            <mvvm:InvokeCommandAction Command="{Binding SdkSelectedCommand}" CommandParameter="IsUseDaHuaVolumeCameraSdk" />
+                        </b:EventTrigger>
+                    </b:Interaction.Triggers>
+
+                    <TextBlock
+                        VerticalAlignment="Center"
+                        FontFamily="{StaticResource CustomFontFamily}"
+                        FontSize="12"
+                        FontWeight="Bold"
+                        Foreground="WhiteSmoke"
+                        Text="大华体积相机" />
+                </ListBoxItem>
             </ListBox>
         </StackPanel>
         <!--  列表  -->

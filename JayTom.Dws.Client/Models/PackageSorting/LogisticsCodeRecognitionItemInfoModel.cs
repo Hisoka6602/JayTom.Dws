@@ -9,17 +9,14 @@ using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Models.PackageSorting.Rule;
 
 namespace JayTom.Dws.Client.Models.PackageSorting {
-
     public class LogisticsCodeRecognitionItemInfoModel : BasePackageSortingItemInfoModel {
         private string _logisticsCode = string.Empty;
         private string _logisticsName = string.Empty;
         private byte[]? _soundBytes;
         private ImageSource? _icon;
-        private string _exitName = string.Empty;
         private string _regexPattern = string.Empty;
         private string? _soundName;
         private string _iconName = string.Empty;
-        private long _exitId;
         private ObservableCollection<LogisticsRegexItemInfoModel> _logisticsRegexItems = new();
 
         /// <summary>
@@ -69,23 +66,6 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
             get => _iconName;
             set => SetProperty(ref _iconName, value);
         }
-
-        /// <summary>
-        /// 绑定格口
-        /// </summary>
-        public string ExitName {
-            get => _exitName;
-            set => SetProperty(ref _exitName, value);
-        }
-
-        /// <summary>
-        /// 绑定格口Id
-        /// </summary>
-        public long ExitId {
-            get => _exitId;
-            set => SetProperty(ref _exitId, value);
-        }
-
         /// <summary>
         /// 正则表达式
         /// </summary>

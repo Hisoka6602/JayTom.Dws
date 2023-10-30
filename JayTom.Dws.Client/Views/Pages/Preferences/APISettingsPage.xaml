@@ -109,14 +109,12 @@
                         Source="ApiConfiguration/DefaultApiPage.xaml" />
                 </TabItem>
                 <TabItem Header="旺店通WMS">
-                    <TextBlock
-                        Margin="8"
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Center"
-                        FontSize="18"
-                        FontWeight="Bold"
-                        Foreground="White"
-                        Text="内容开发中..." />
+                    <Frame
+                        Margin="0"
+                        Padding="0"
+                        Focusable="False"
+                        NavigationUIVisibility="Hidden"
+                        Source="ApiConfiguration/WdtWmsApiPage.xaml" />
                 </TabItem>
                 <TabItem Header="旺店通ERP">
                     <TextBlock
@@ -129,14 +127,12 @@
                         Text="内容开发中..." />
                 </TabItem>
                 <TabItem Header="旺店通ERP旗舰版">
-                    <TextBlock
-                        Margin="8"
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Center"
-                        FontSize="18"
-                        FontWeight="Bold"
-                        Foreground="White"
-                        Text="内容开发中..." />
+                    <Frame
+                        Margin="0"
+                        Padding="0"
+                        Focusable="False"
+                        NavigationUIVisibility="Hidden"
+                        Source="ApiConfiguration/WdtFlagshipApiPage.xaml" />
                 </TabItem>
                 <TabItem Header="神州集运后台">
                     <Frame

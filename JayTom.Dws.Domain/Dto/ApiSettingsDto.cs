@@ -25,18 +25,22 @@ namespace JayTom.Dws.Domain.Dto {
         /// 桑能Api(新加坡)
         /// </summary>
         SunnenApi = 2,
+
         /// <summary>
         /// 旺店通Wms
         /// </summary>
         WdtWmsApi = 3,
+
         /// <summary>
         /// 旺店通Erp
         /// </summary>
         WdtErpApi = 4,
+
         /// <summary>
         /// 旺店通Erp旗舰版
         /// </summary>
         WdtErpFlagShipApi = 5,
+
         /// <summary>
         /// 神州集运后台
         /// </summary>

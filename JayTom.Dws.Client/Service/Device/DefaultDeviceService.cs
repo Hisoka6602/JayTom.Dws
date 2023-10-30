@@ -25,6 +25,7 @@ using CameraType = JayTom.Dws.Camera.CameraType;
 using JayTom.Dws.Plugin.Scale.ScaleValueParameters;
 using JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim;
 using JayTom.Dws.Camera.Cameras.SmartCamera.Irayple;
+using JayTom.Dws.Camera.Cameras.VolumeCamera.Irayple;
 using JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision;
 using JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision;
 using JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim;
@@ -89,6 +90,7 @@ namespace JayTom.Dws.Client.Service.Device {
                 var wayzimSmartCameras = new List<CameraInfo>();
                 var wayzimIndustrialCameras = new List<CameraInfo>();
                 var hikvisionVolumeCameras = new List<CameraInfo>();
+                var daHuaVolumeCameras = new List<CameraInfo>();
                 //HikvisionVolumeCamera
                 //判断已经选择的相机
                 if (_cameraSdkSelectorDto?.IsUseDaHuaSmartCameraSdk == true) {
@@ -118,11 +120,19 @@ namespace JayTom.Dws.Client.Service.Device {
                     //中科微至工业相机
                     wayzimIndustrialCameras = await new WayzimIndustrialCamera().EnumerateCameras();
                 }
-                //海康体积相机
-                //hikvisionVolumeCameras = await new HikvisionVolumeCamera().EnumerateCameras();
 
-                var cameraList = daHuaSmartCameras?.Union(wayzimIndustrialCameras
-                                                          ?? new List<CameraInfo>())?.ToList()?
+                if (_cameraSdkSelectorDto?.IsUseHikvisionVolumeCameraSdk == true) {
+                    //海康体积相机
+                    hikvisionVolumeCameras = await new HikvisionVolumeCamera().EnumerateCameras();
+                }
+
+                if (_cameraSdkSelectorDto?.IsUseDaHuaVolumeCameraSdk == true) {
+                    daHuaVolumeCameras = await new DaHuaSmartCamera().EnumerateCameras();
+                }
+
+                var cameraList = daHuaVolumeCameras?.Union(daHuaSmartCameras
+                                                           ?? new List<CameraInfo>())?.ToList()?
+                                     .Union(wayzimIndustrialCameras ?? new List<CameraInfo>())?.ToList()?
                                      .Union(wayzimSmartCameras ?? new List<CameraInfo>())?.ToList()?
                                      .Union(daHuaSecurityCameras ?? new List<CameraInfo>())?.ToList()?
                                      .Union(hikvisionIndustrialCameras ?? new List<CameraInfo>())?.ToList()?
@@ -442,7 +452,7 @@ namespace JayTom.Dws.Client.Service.Device {
                                     break;
                                 }
                             case BoundCameraType.PanoramicCamera: {
-                                    //体积相机
+                                    //全景相机
                                     if (parameter.Parameters is PanoramaCameraConfigInfoModel model) {
                                         var tryGetValue = _cameraInfos.TryGetValue(model.SerialNumber, out var info);
                                         if (tryGetValue && info is not null) {
@@ -780,8 +790,10 @@ namespace JayTom.Dws.Client.Service.Device {
                 case not null when (brand.Contains("Dahua") || brand.Contains("Huaray")):
                     if (modelName.Contains("IPC"))
                         return CameraType.VideoCamera;
-                    if (modelName.Contains("DH-MV") || modelName.Contains("DH-SL") || modelName.StartsWith("R"))
+                    if (modelName.Contains("DH-MV-S") || modelName.Contains("DH-SL") || modelName.StartsWith("R"))
                         return CameraType.SmartCamera;
+                    if (modelName.Contains("DH-MV-D"))
+                        return CameraType.VolumeCamera;
                     break;
 
                 case not null when (brand.Contains("Wayzim") /*|| info.Brand.Contains("Huaray")*/):
@@ -810,8 +822,10 @@ namespace JayTom.Dws.Client.Service.Device {
                 case not null when (info.Brand.Contains("Dahua") || info.Brand.Contains("Huaray")):
                     if (info.Model.Contains("IPC"))
                         return new DaHuatechSecurityCamera(info);
-                    if (info.Model.Contains("DH-MV") || info.Model.Contains("DH-SL") || info.Model.StartsWith("R"))
+                    if (info.Model.Contains("DH-MV-S") || info.Model.Contains("DH-SL") || info.Model.StartsWith("R"))
                         return new DaHuaSmartCamera(info);
+                    if (info.Model.Contains("DH-MV-D"))
+                        return new DaHuaVolumeCamera(info);
                     break;
 
                 case not null when (info.Brand.Contains("Wayzim") /*|| info.Brand.Contains("Huaray")*/):

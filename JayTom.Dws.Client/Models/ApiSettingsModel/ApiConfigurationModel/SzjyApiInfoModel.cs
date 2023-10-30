@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 
 namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
+
     public class SzjyApiInfoModel : BindableBase {
         private string _url = string.Empty;
         private string _userName = string.Empty;

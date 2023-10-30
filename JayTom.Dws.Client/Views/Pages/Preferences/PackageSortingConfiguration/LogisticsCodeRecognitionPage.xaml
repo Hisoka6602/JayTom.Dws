@@ -101,17 +101,6 @@
                             <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="物流名称" />
                         </DataGridTextColumn.Header>
                     </DataGridTextColumn>
-                    <!--  绑定格口  -->
-                    <DataGridTextColumn
-                        Width="100"
-                        MinWidth="100"
-                        Binding="{Binding ExitName, UpdateSourceTrigger=PropertyChanged}"
-                        CellStyle="{StaticResource CustomDataGridTextCellStyle}"
-                        EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
-                        <DataGridTextColumn.Header>
-                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="绑定格口" />
-                        </DataGridTextColumn.Header>
-                    </DataGridTextColumn>
                     <!--  物流图标  -->
                     <DataGridTemplateColumn Width="70" MinWidth="70">
                         <DataGridTemplateColumn.CellTemplate>

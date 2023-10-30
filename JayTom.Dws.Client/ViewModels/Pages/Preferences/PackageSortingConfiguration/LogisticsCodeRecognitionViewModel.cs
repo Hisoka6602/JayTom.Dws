@@ -75,7 +75,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         //添加到数据库
                         var infoModel = new LogisticsCodeRecognitionInfoModel() {
                             CreateTime = DateTime.Now,
-                            ExitId = model.SelectPackageExitDefinitionInfo.Id,
                             IconName = model.LogisticsCodeRecognitionItemInfo.IconName,
                             IconBytes = model.LogisticsCodeRecognitionItemInfo.Icon?.ImageSourceToByteArray(),
                             LogisticsCode = model.LogisticsCodeRecognitionItemInfo.LogisticsCode,
@@ -158,7 +157,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         //添加到数据库
                         var infoModel = new LogisticsCodeRecognitionInfoModel() {
                             CreateTime = DateTime.Now,
-                            ExitId = model.SelectPackageExitDefinitionInfo.Id,
                             IconName = model.LogisticsCodeRecognitionItemInfo.IconName,
                             IconBytes = model.LogisticsCodeRecognitionItemInfo.Icon?.ImageSourceToByteArray(),
                             LogisticsCode = model.LogisticsCodeRecognitionItemInfo.LogisticsCode,
@@ -247,7 +245,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                 model.Identifier = "LogisticsCodeRecognitionDialog";
                 DialogHost.Show(loadingDialog, model.Identifier).ConfigureAwait(false);
             });
-            var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0, o => o.CreateTime);
             var models = await _logisticsCodeRecognitionRepository.
                 LogisticsCodes(s => s.Id > 0);
 
@@ -259,8 +256,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                     ModifyTime = s.ModifyTime,
                     Num = i + 1,
                     Remarks = s.Remarks,
-                    ExitId = s.ExitId,
-                    ExitName = packageExitDefinitionInfoModels?.FirstOrDefault(f => f.Id.Equals(s.ExitId))?.ExitName ?? string.Empty,
                     Icon = s.IconBytes?.ByteArrayToImageSource(),
                     IconName = s.IconName,
                     LogisticsCode = s.LogisticsCode,

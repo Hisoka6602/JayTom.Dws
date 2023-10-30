@@ -11,6 +11,7 @@ using System.Net.Http.Json;
 using System.Threading.Tasks;
 using System.Linq.Expressions;
 using System.Linq.Dynamic.Core;
+using JayTom.Dws.Interface.Wdt;
 using System.Collections.Generic;
 using Org.BouncyCastle.Utilities;
 using JayTom.Dws.Interface.Sunnen;
@@ -24,6 +25,17 @@ using JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols;
 internal class Program {
 
     private static async Task Main(string[] args) {
+        var wdtWmsApi = new WdtWmsApi(null);
+        await wdtWmsApi.SetParameters(new WdtWmsApi.ApiParameter() {
+            AppKey = "yscc-wdt-weight",
+            AppSecret = "a6e8bd8450f0e16405328e7edd02057d",
+            Sid = "yscc",
+            Method = "trade.weight",
+            Url = "https://openapi.wdtwms.com/open_api/service.php",
+            TimeOut = 5000
+        });
+        await wdtWmsApi.UploadData("12121", 1.1);
+        return;
         var daHuaVolumeCamera = new DaHuaVolumeCamera();
         daHuaVolumeCamera.VolumeCaptured += delegate (object? sender, VolumeCapturedEventArgs eventArgs) {
             Console.WriteLine($"长:{eventArgs.Length}--宽:{eventArgs.Width}--高:{eventArgs.Height}");
@@ -69,7 +81,7 @@ internal class Program {
         return;
 
         var szjyApi = new SzjyApi(null);
-        szjyApi.SetParameters(new SzjyApiParam {
+        szjyApi.SetParameters(new SzjyApi.ApiParameter() {
             UserName = "quanlai07",
             Password = "Ql123456",
             Url = "https://www.szjy188.com/auto-entry"

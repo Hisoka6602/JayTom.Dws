@@ -130,42 +130,7 @@
                             Text="{Binding LogisticsCodeRecognitionItemInfo.LogisticsName, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                     </Border>
                 </StackPanel>
-                <!--  绑定格口  -->
-                <StackPanel Margin="5" Orientation="Horizontal">
-                    <TextBlock
-                        Margin="5,0"
-                        VerticalAlignment="Center"
-                        FontSize="13"
-                        FontWeight="Bold"
-                        Foreground="DarkGray"
-                        Text="绑定格口:" />
-                    <Border
-                        Margin="5"
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Center"
-                        Background="#202020"
-                        CornerRadius="5">
-                        <ComboBox
-                            Height="30"
-                            MinWidth="235"
-                            Padding="5,0"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            HorizontalContentAlignment="Center"
-                            VerticalContentAlignment="Center"
-                            materialDesign:ButtonAssist.CornerRadius="15"
-                            materialDesign:ColorZoneAssist.Mode="Dark"
-                            BorderThickness="0"
-                            DisplayMemberPath="ExitName"
-                            FontSize="12"
-                            FontWeight="Bold"
-                            Foreground="White"
-                            ItemsSource="{Binding PackageExitDefinitionItems, UpdateSourceTrigger=PropertyChanged}"
-                            SelectedItem="{Binding SelectPackageExitDefinitionInfo, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                            SelectedValuePath="Id"
-                            Style="{StaticResource MaterialDesignComboBox}" />
-                    </Border>
-                </StackPanel>
+
                 <!--  物流图标  -->
                 <StackPanel
                     Margin="5"

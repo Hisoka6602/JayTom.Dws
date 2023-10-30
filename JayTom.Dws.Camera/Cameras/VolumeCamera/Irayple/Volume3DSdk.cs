@@ -5,7 +5,7 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Irayple {
     /// <summary>
     /// 3D动态测体积
     /// </summary>
-    public class Volume3DSdk {
+    public static class Volume3DSdk {
         private const string DllPath = ".\\Cameras\\VolumeCamera\\Irayple\\Dll\\Volume3DSdkmd.dll";
 
         /// <summary>

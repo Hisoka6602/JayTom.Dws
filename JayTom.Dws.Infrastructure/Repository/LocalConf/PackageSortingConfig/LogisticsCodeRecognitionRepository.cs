@@ -32,7 +32,6 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig {
                         .Select(b => new LogisticsCodeRecognitionInfoModel {
                             Remarks = b.Remarks,
                             CreateTime = b.CreateTime,
-                            ExitId = b.ExitId,
                             Id = b.Id,
                             IconName = b.IconName,
                             IconBytes = b.IconBytes,

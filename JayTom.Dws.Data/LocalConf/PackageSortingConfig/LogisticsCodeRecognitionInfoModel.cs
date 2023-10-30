@@ -9,9 +9,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig.RuleConfig;
 
-namespace JayTom.Dws.Data.LocalConf.PackageSortingConfig
-{
-
+namespace JayTom.Dws.Data.LocalConf.PackageSortingConfig {
     [Table("Conf_LogisticsCodeRecognitionInfo", Schema = "dbo")]
     public class LogisticsCodeRecognitionInfoModel : BasePackageSortingConfig {
 
@@ -51,11 +49,6 @@ namespace JayTom.Dws.Data.LocalConf.PackageSortingConfig
         [Column("IconName"), InsertOrUpdata]
         public string IconName { get; set; } = string.Empty;
 
-        /// <summary>
-        /// 绑定出口代码
-        /// </summary>
-        [Column("ExitId"), InsertOrUpdata]
-        public long ExitId { get; set; }
 
         public virtual ICollection<LogisticsRegexInfoModel>? LogisticsRegexItems { get; set; }
     }

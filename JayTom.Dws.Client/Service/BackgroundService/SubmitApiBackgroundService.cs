@@ -9,6 +9,7 @@ using System.Threading;
 using JayTom.Dws.Interface;
 using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
+using JayTom.Dws.Interface.Wdt;
 using System.Collections.Generic;
 using JayTom.Dws.PluginInterface;
 using JayTom.Dws.Interface.Sunnen;
@@ -30,7 +31,9 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private ConcurrentQueue<SubmitItemInfo> _submitItems = new();
         private ApiSettingsDto? _apiSettingsDto;
         private static DefaultApi.DefaultApiParameters _defaultApiParameters = new();
-        private static SzjyApi.SzjyApiParam _szjyApiParam = new();
+        private static SzjyApi.ApiParameter _szjyApiParam = new();
+        private static WdtWmsApi.ApiParameter _wdtWmsApiParameter = new();
+        private static WdtFlagshipApi.ApiParameter _wdtFlagshipApiParameter = new();
 
         #region 非通用版本变量(临时)
 
@@ -105,12 +108,63 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             try {
                                 var szjyApiDto = JsonConvert.DeserializeObject<SzjyApiDto>(configInfoModel.Value);
                                 if (szjyApiDto != null) {
-                                    _szjyApiParam = new SzjyApi.SzjyApiParam() {
+                                    _szjyApiParam = new SzjyApi.ApiParameter() {
                                         Machine = szjyApiDto.Machine,
                                         Password = szjyApiDto.Password,
                                         TimeOut = szjyApiDto.TimeOut,
                                         UserName = szjyApiDto.UserName,
                                         Url = szjyApiDto.Url,
+                                    };
+                                }
+                            }
+                            catch (Exception e) {
+                                //抛出异常事件
+                                Console.WriteLine(e);
+                            }
+                        }
+                    }
+                    else if (model.SettingsName.Equals("WdtWmsApiParameters")) {
+                        //默认上传接口改参数
+                        var configInfoModel = await _configRepository.FirstOrDefault(f => f.ConfigName.Equals("WdtWmsApiParameters"));
+                        if (configInfoModel is not null) {
+                            try {
+                                var wdtWmsApiDto = JsonConvert.DeserializeObject<WdtWmsApiDto>(configInfoModel.Value);
+                                if (wdtWmsApiDto != null) {
+                                    _wdtWmsApiParameter = new WdtWmsApi.ApiParameter {
+                                        AppKey = wdtWmsApiDto.AppKey,
+                                        AppSecret = wdtWmsApiDto.AppSecret,
+                                        TimeOut = wdtWmsApiDto.TimeOut,
+                                        Method = wdtWmsApiDto.Method,
+                                        Url = wdtWmsApiDto.Url,
+                                        Sid = wdtWmsApiDto.Sid
+                                    };
+                                }
+                            }
+                            catch (Exception e) {
+                                //抛出异常事件
+                                Console.WriteLine(e);
+                            }
+                        }
+                    }
+                    else if (model.SettingsName.Equals("WdtFlagshipApiParameters")) {
+                        //默认上传接口改参数
+                        var configInfoModel = await _configRepository.FirstOrDefault(f => f.ConfigName.Equals("WdtFlagshipApiParameters"));
+                        if (configInfoModel is not null) {
+                            try {
+                                var wdtFlagshipApiDto = JsonConvert.DeserializeObject<WdtFlagshipApiDto>(configInfoModel.Value);
+                                if (wdtFlagshipApiDto != null) {
+                                    _wdtFlagshipApiParameter = new WdtFlagshipApi.ApiParameter {
+                                        TimeOut = wdtFlagshipApiDto.TimeOut,
+                                        Method = wdtFlagshipApiDto.Method,
+                                        Url = wdtFlagshipApiDto.Url,
+                                        Sid = wdtFlagshipApiDto.Sid,
+                                        Appsecret = wdtFlagshipApiDto.Appsecret,
+                                        Force = wdtFlagshipApiDto.Force,
+                                        Key = wdtFlagshipApiDto.Key,
+                                        OperateTableName = wdtFlagshipApiDto.OperateTableName,
+                                        PackagerId = wdtFlagshipApiDto.PackagerId,
+                                        Salt = wdtFlagshipApiDto.Salt,
+                                        V = wdtFlagshipApiDto.V
                                     };
                                 }
                             }
@@ -165,7 +219,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                     }
                                     else {
                                         uploadResponse = new UploadResponse() {
-                                            ExceptionMsg = "设置参数失败"
+                                            ExceptionMsg = value
                                         };
                                         Console.WriteLine("设置参数失败!");
                                     }
@@ -196,7 +250,45 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                     }
                                     else {
                                         uploadResponse = new UploadResponse() {
-                                            ExceptionMsg = "设置参数失败"
+                                            ExceptionMsg = value
+                                        };
+                                        Console.WriteLine("设置参数失败!");
+                                    }
+                                    break;
+                                }
+                            case ApiType.WdtWmsApi: {
+                                    uploader = new WdtWmsApi(_httpClientFactory);
+                                    var (key, value) = await uploader.SetParameters(_wdtWmsApiParameter);
+                                    if (key) {
+                                        uploadResponse = await uploader.UploadData(info.Barcode ?? string.Empty,
+                                            info.Weight, info.ScanTime,
+                                            info.Length, info.Width,
+                                            info.Height, info.Volume,
+                                            info.Image, info.PanoramaImage,
+                                            null, stoppingToken);
+                                    }
+                                    else {
+                                        uploadResponse = new UploadResponse() {
+                                            ExceptionMsg = value
+                                        };
+                                        Console.WriteLine("设置参数失败!");
+                                    }
+                                    break;
+                                }
+                            case ApiType.WdtErpFlagShipApi: {
+                                    uploader = new WdtFlagshipApi(_httpClientFactory);
+                                    var (key, value) = await uploader.SetParameters(_wdtFlagshipApiParameter);
+                                    if (key) {
+                                        uploadResponse = await uploader.UploadData(info.Barcode ?? string.Empty,
+                                            info.Weight, info.ScanTime,
+                                            info.Length, info.Width,
+                                            info.Height, info.Volume,
+                                            info.Image, info.PanoramaImage,
+                                            null, stoppingToken);
+                                    }
+                                    else {
+                                        uploadResponse = new UploadResponse() {
+                                            ExceptionMsg = value
                                         };
                                         Console.WriteLine("设置参数失败!");
                                     }
@@ -266,12 +358,59 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 try {
                     var szjyApiDto = JsonConvert.DeserializeObject<SzjyApiDto>(configInfoModel.Value);
                     if (szjyApiDto != null) {
-                        _szjyApiParam = new SzjyApi.SzjyApiParam() {
+                        _szjyApiParam = new SzjyApi.ApiParameter() {
                             Machine = szjyApiDto.Machine,
                             Password = szjyApiDto.Password,
                             TimeOut = szjyApiDto.TimeOut,
                             UserName = szjyApiDto.UserName,
                             Url = szjyApiDto.Url,
+                        };
+                    }
+                }
+                catch (Exception e) {
+                    //抛出异常事件
+                    Console.WriteLine(e);
+                }
+            }
+            //旺店通Wms
+            configInfoModel = await _configRepository.FirstOrDefault(f => f.ConfigName.Equals("WdtWmsApiParameters"));
+            if (configInfoModel is not null) {
+                try {
+                    var wdtWmsApiDto = JsonConvert.DeserializeObject<WdtWmsApiDto>(configInfoModel.Value);
+                    if (wdtWmsApiDto != null) {
+                        _wdtWmsApiParameter = new WdtWmsApi.ApiParameter {
+                            AppKey = wdtWmsApiDto.AppKey,
+                            AppSecret = wdtWmsApiDto.AppSecret,
+                            TimeOut = wdtWmsApiDto.TimeOut,
+                            Method = wdtWmsApiDto.Method,
+                            Url = wdtWmsApiDto.Url,
+                            Sid = wdtWmsApiDto.Sid
+                        };
+                    }
+                }
+                catch (Exception e) {
+                    //抛出异常事件
+                    Console.WriteLine(e);
+                }
+            }
+            //旺店通旗舰版
+            configInfoModel = await _configRepository.FirstOrDefault(f => f.ConfigName.Equals("WdtFlagshipApiParameters"));
+            if (configInfoModel is not null) {
+                try {
+                    var wdtFlagshipApiDto = JsonConvert.DeserializeObject<WdtFlagshipApiDto>(configInfoModel.Value);
+                    if (wdtFlagshipApiDto != null) {
+                        _wdtFlagshipApiParameter = new WdtFlagshipApi.ApiParameter {
+                            TimeOut = wdtFlagshipApiDto.TimeOut,
+                            Method = wdtFlagshipApiDto.Method,
+                            Url = wdtFlagshipApiDto.Url,
+                            Sid = wdtFlagshipApiDto.Sid,
+                            Appsecret = wdtFlagshipApiDto.Appsecret,
+                            Force = wdtFlagshipApiDto.Force,
+                            Key = wdtFlagshipApiDto.Key,
+                            OperateTableName = wdtFlagshipApiDto.OperateTableName,
+                            PackagerId = wdtFlagshipApiDto.PackagerId,
+                            Salt = wdtFlagshipApiDto.Salt,
+                            V = wdtFlagshipApiDto.V
                         };
                     }
                 }

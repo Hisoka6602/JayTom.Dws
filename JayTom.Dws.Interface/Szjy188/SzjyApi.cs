@@ -19,11 +19,7 @@ namespace JayTom.Dws.Interface.Szjy188 {
     public class SzjyApi : IDataUploader {
         private readonly IHttpClientFactory _httpClientFactory;
         public static int? _uid = null;
-        public string Url { get; private set; } = string.Empty;
-        public string UserName { get; private set; } = string.Empty;
-        public string Password { get; private set; } = string.Empty;
-
-        public string Machine { get; set; } = "default";
+        public ApiParameter ApiParameters { get; set; } = new();
 
         /// <summary>
         /// 超时
@@ -51,7 +47,7 @@ namespace JayTom.Dws.Interface.Szjy188 {
                 };
             }
             if (_uid is null) {
-                var (key, value) = await LogIn(UserName, Password, token);
+                var (key, value) = await LogIn(ApiParameters.UserName, ApiParameters.Password, token);
                 if (key && value is not null) {
                     if (value.Status != 0) {
                         return new UploadResponse() {
@@ -84,7 +80,7 @@ namespace JayTom.Dws.Interface.Szjy188 {
                 {"length",length},
                 {"width",width},
                 {"height",height},
-                {"machine",Machine},
+                {"machine",ApiParameters.Machine},
                 {"uid",_uid},
             };
             var urlJoin = string.Join("&", param.Select(s => $"{s.Key}={s.Value}"));
@@ -94,7 +90,7 @@ namespace JayTom.Dws.Interface.Szjy188 {
             try {
                 using (var httpClient = _httpClientFactory.CreateClient("INSURANCE")) {
                     httpClient.Timeout = TimeSpan.FromMilliseconds(TimeOut);
-                    var stringAsync = await httpClient.GetStringAsync($"{Url}{method}?{urlJoin}", token);
+                    var stringAsync = await httpClient.GetStringAsync($"{ApiParameters.Url}{method}?{urlJoin}", token);
 
                     resultContent = Regex.Unescape(stringAsync);
                     if (!string.IsNullOrWhiteSpace(resultContent)) {
@@ -133,9 +129,9 @@ namespace JayTom.Dws.Interface.Szjy188 {
                     ApiParameters = JsonConvert.SerializeObject(this),
                     IsSuccess = isSuccess,
                     Duration = stopwatch.Elapsed.TotalSeconds,
-                    RequestContent = $"{Url}{method}?{urlJoin}",
+                    RequestContent = $"{ApiParameters.Url}{method}?{urlJoin}",
                     RequestTime = requestTime,
-                    RequestUrl = $"{Url}{method}?{urlJoin}",
+                    RequestUrl = $"{ApiParameters.Url}{method}?{urlJoin}",
                     ResponseContent = resultContent,
                     ResponseTime = DateTime.Now
                 };
@@ -162,7 +158,7 @@ namespace JayTom.Dws.Interface.Szjy188 {
                 };
             }
             if (_uid is null) {
-                var (key, value) = await LogIn(UserName, Password, token);
+                var (key, value) = await LogIn(ApiParameters.UserName, ApiParameters.Password, token);
                 if (key && value is not null) {
                     if (value.Status != 0) {
                         return new UploadResponse() {
@@ -195,7 +191,7 @@ namespace JayTom.Dws.Interface.Szjy188 {
                 {"length",length},
                 {"width",width},
                 {"height",height},
-                {"machine",Machine},
+                {"machine",ApiParameters.Machine},
                 {"uid",_uid},
             };
             var urlJoin = string.Join("&", param.Select(s => $"{s.Key}={s.Value}"));
@@ -205,7 +201,7 @@ namespace JayTom.Dws.Interface.Szjy188 {
             try {
                 using (var httpClient = _httpClientFactory.CreateClient("INSURANCE")) {
                     httpClient.Timeout = TimeSpan.FromMilliseconds(TimeOut);
-                    var stringAsync = await httpClient.GetStringAsync($"{Url}{method}?{urlJoin}", token);
+                    var stringAsync = await httpClient.GetStringAsync($"{ApiParameters.Url}{method}?{urlJoin}", token);
 
                     resultContent = Regex.Unescape(stringAsync);
                     if (!string.IsNullOrWhiteSpace(resultContent)) {
@@ -244,9 +240,9 @@ namespace JayTom.Dws.Interface.Szjy188 {
                     ApiParameters = JsonConvert.SerializeObject(this),
                     IsSuccess = isSuccess,
                     Duration = stopwatch.Elapsed.TotalSeconds,
-                    RequestContent = $"{Url}{method}?{urlJoin}",
+                    RequestContent = $"{ApiParameters.Url}{method}?{urlJoin}",
                     RequestTime = requestTime,
-                    RequestUrl = $"{Url}{method}?{urlJoin}",
+                    RequestUrl = $"{ApiParameters.Url}{method}?{urlJoin}",
                     ResponseContent = resultContent,
                     ResponseTime = DateTime.Now
                 };
@@ -257,24 +253,14 @@ namespace JayTom.Dws.Interface.Szjy188 {
         }
 
         public Task<KeyValuePair<bool, string>> SetParameters<T>(T parameters) {
-            if (parameters is SzjyApiParam param) {
-                if (param.Url is not null) {
-                    this.Url = param.Url;
-                }
-
-                if (param.UserName is not null) {
-                    this.UserName = param.UserName;
-                }
-                if (param.Password is not null) {
-                    this.Password = param.Password;
-                }
-                if (param.TimeOut is not null) {
-                    this.TimeOut = param.TimeOut.Value;
-                }
-
-                if (param.Machine is not null) {
-                    this.Machine = param.Machine;
-                }
+            if (parameters is ApiParameter param) {
+                this.ApiParameters = new ApiParameter() {
+                    Machine = param.Machine,
+                    Password = param.Password,
+                    TimeOut = param.TimeOut,
+                    Url = param.Url,
+                    UserName = param.UserName,
+                };
                 return Task.FromResult(new KeyValuePair<bool, string>(true, "设置成功!"));
             }
             else {
@@ -303,7 +289,7 @@ namespace JayTom.Dws.Interface.Szjy188 {
                            new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data)))) {
                         using (HttpContent content = new StreamContent(dataStream)) {
                             content.Headers.Add("Content-Type", "application/json");
-                            message = await httpClient.PostAsync($"{Url}{method}", content, token)
+                            message = await httpClient.PostAsync($"{ApiParameters.Url}{method}", content, token)
                                 .ConfigureAwait(false);
                         }
                     }
@@ -325,32 +311,32 @@ namespace JayTom.Dws.Interface.Szjy188 {
             }
         }
 
-        public class SzjyApiParam {
+        public class ApiParameter {
 
             /// <summary>
             /// Url
             /// </summary>
-            public string? Url { get; set; }
+            public string Url { get; set; } = string.Empty;
 
             /// <summary>
             /// 账号
             /// </summary>
-            public string? UserName { get; set; }
+            public string UserName { get; set; } = string.Empty;
 
             /// <summary>
             /// 密码
             /// </summary>
-            public string? Password { get; set; }
+            public string Password { get; set; } = string.Empty;
 
             /// <summary>
             /// 机器码
             /// </summary>
-            public string? Machine { get; set; }
+            public string Machine { get; set; } = "default";
 
             /// <summary>
             /// 超时
             /// </summary>
-            public int? TimeOut { get; set; }
+            public int TimeOut { get; set; } = 1000;
         }
 
         public class LogInResultsInfo {

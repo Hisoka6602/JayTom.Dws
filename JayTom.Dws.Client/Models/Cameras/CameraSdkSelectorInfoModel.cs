@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 
 namespace JayTom.Dws.Client.Models.Cameras {
-
     public class CameraSdkSelectorInfoModel : BindableBase {
         private bool _isUseHikvisionSmartCameraSdk;
         private bool _isUseHikvisionIndustrialCameraSdk;
@@ -14,6 +13,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         private bool _isUseDaHuaSecurityCameraSdk;
         private bool _isUseWayzimSmartCameraSdk;
         private bool _isUseWayzimIndustrialCameraSdk;
+        private bool _isUseHikvisionVolumeCameraSdk;
+        private bool _isUseDaHuaVolumeCameraSdk;
 
         /// <summary>
         /// 是否使用海康智能相机SDK
@@ -61,6 +62,20 @@ namespace JayTom.Dws.Client.Models.Cameras {
         public bool IsUseWayzimIndustrialCameraSdk {
             get => _isUseWayzimIndustrialCameraSdk;
             set => SetProperty(ref _isUseWayzimIndustrialCameraSdk, value);
+        }
+        /// <summary>
+        /// 是否使用海康体积相机
+        /// </summary>
+        public bool IsUseHikvisionVolumeCameraSdk {
+            get => _isUseHikvisionVolumeCameraSdk;
+            set => SetProperty(ref _isUseHikvisionVolumeCameraSdk, value);
+        }
+        /// <summary>
+        /// 是否使用大华体积相机
+        /// </summary>
+        public bool IsUseDaHuaVolumeCameraSdk {
+            get => _isUseDaHuaVolumeCameraSdk;
+            set => SetProperty(ref _isUseDaHuaVolumeCameraSdk, value);
         }
     }
 }
