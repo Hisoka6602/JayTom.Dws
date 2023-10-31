@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using System.Windows.Controls;
 using MaterialDesignThemes.Wpf;
 using JayTom.Dws.Data.LocalConf;
+using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.EventMediators;
