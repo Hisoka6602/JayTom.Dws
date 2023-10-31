@@ -10,6 +10,7 @@ using JayTom.Dws.Plugin.Tcp;
 using System.Threading.Tasks;
 using System.Windows.Controls;
 using JayTom.Dws.Data.LocalConf;
+using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;

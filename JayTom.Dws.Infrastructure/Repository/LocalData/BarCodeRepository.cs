@@ -18,6 +18,7 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalData {
             int pageIndex, int pageSize,
             CancellationToken token = default) {
             try {
+                //联表
                 await using var concardContext = _contextFactory.CreateDbContext();
                 var dbSet = concardContext?.Set<BarCodeInfoModel>();
                 if (dbSet is null) return new KeyValuePair<bool, List<BarCodeInfoModel>>(false, new List<BarCodeInfoModel>());
@@ -25,6 +26,10 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalData {
                     .Where(where)
                     .OrderByDescending(order)
                     .Include(b => b.PanoramaImagePaths)
+                    .Include(b => b.VolumeInfo)
+                    .Include(b => b.WeightInfo)
+                    .Include(b => b.UploadInfo)
+                    .Include(b => b.SortingInfo)
                     .Skip(pageIndex * pageSize)
                     .Take(pageSize)
                     .ToListAsync(cancellationToken: token);

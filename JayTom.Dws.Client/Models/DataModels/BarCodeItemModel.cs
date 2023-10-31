@@ -10,7 +10,7 @@ using System.Collections.ObjectModel;
 using JayTom.Dws.Plugin.Excel.Attributes;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace JayTom.Dws.Client.Models {
+namespace JayTom.Dws.Client.Models.DataModels {
 
     public class BarCodeItemModel : BindableBase {
         private float _volume;
@@ -32,6 +32,11 @@ namespace JayTom.Dws.Client.Models {
         private string? _barcodeImagePath = string.Empty;
         private bool _isBarcodeImageExists;
         private List<PanoramaImageItemModel> _panoramaImageItems = new();
+        private VolumeItemModel _volumeInfo = new();
+        private WeightItemModel _weightInfo = new();
+        private UploadItemModel _uploadInfo = new();
+        private SortingItemModel _sortingInfo = new();
+        private OcrItemInfo _ocrInfo = new();
 
         [DisplayName("No."), ExcelInfo(Width = 3000)]
         public int Num {
@@ -120,6 +125,7 @@ namespace JayTom.Dws.Client.Models {
             set => SetProperty(ref _requestStatus, value);
         }
 
+        /*
         /// <summary>
         /// 上传时间
         /// </summary>
@@ -154,7 +160,7 @@ namespace JayTom.Dws.Client.Models {
         public string ResponseContent {
             get => _responseContent;
             set => SetProperty(ref _responseContent, value);
-        }
+        }*/
 
         /// <summary>
         /// 条码图片保存路径
@@ -173,6 +179,7 @@ namespace JayTom.Dws.Client.Models {
             set => SetProperty(ref _panoramaImageItems, value);
         }
 
+        /*
         /// <summary>
         /// 下位机指令内容
         /// </summary>
@@ -189,13 +196,54 @@ namespace JayTom.Dws.Client.Models {
         /// 指令发送目标地址
         /// </summary>
         [DisplayName("DestinationAddress"), ExcelInfo(Width = 4000)]
-        public string? DestinationAddress { get; set; }
+        public string? DestinationAddress { get; set; }*/
 
         /// <summary>
         /// 其他项
         /// </summary>
         [DisplayName("Other"), ExcelInfo(Width = 4000)]
         public string? Other { get; set; }
+
+        /// <summary>
+        /// 体积信息
+        /// </summary>
+        public VolumeItemModel VolumeInfo {
+            get => _volumeInfo;
+            set => SetProperty(ref _volumeInfo, value);
+        }
+
+        /// <summary>
+        /// 重量信息
+        /// </summary>
+        public WeightItemModel WeightInfo {
+            get => _weightInfo;
+            set => SetProperty(ref _weightInfo, value);
+        }
+
+        /// <summary>
+        /// 上传信息
+        /// </summary>
+        public UploadItemModel UploadInfo {
+            get => _uploadInfo;
+            set => SetProperty(ref _uploadInfo, value);
+        }
+
+        /// <summary>
+        /// 分拣信息
+        /// </summary>
+
+        public SortingItemModel SortingInfo {
+            get => _sortingInfo;
+            set => SetProperty(ref _sortingInfo, value);
+        }
+
+        /// <summary>
+        /// Ocr信息
+        /// </summary>
+        public OcrItemInfo OcrInfo {
+            get => _ocrInfo;
+            set => SetProperty(ref _ocrInfo, value);
+        }
 
         /// <summary>
         /// 是否插入

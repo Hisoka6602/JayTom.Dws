@@ -12,7 +12,7 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig.Ru
 
     public class VolumeRuleRepository : LocalRepositoryBase<VolumeRuleInfoModel>, IVolumeRuleRepository {
 
-        public VolumeRuleRepository(IDbContextFactory<SqliteContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
+        public VolumeRuleRepository(IDbContextFactory<SqliteConfContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
         }
     }
 }

@@ -12,7 +12,7 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig.Ru
 
     public class OcrRuleRepository : LocalRepositoryBase<OcrRuleInfoModel>, IOcrRuleRepository {
 
-        public OcrRuleRepository(IDbContextFactory<SqliteContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
+        public OcrRuleRepository(IDbContextFactory<SqliteConfContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
         }
     }
 }

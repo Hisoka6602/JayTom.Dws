@@ -16,7 +16,7 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig {
 
     public class LogisticsCodeRecognitionRepository : LocalRepositoryBase<LogisticsCodeRecognitionInfoModel>, ILogisticsCodeRecognitionRepository {
 
-        public LogisticsCodeRecognitionRepository(IDbContextFactory<SqliteContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
+        public LogisticsCodeRecognitionRepository(IDbContextFactory<SqliteConfContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
         }
 
         public async Task<List<LogisticsCodeRecognitionInfoModel>> LogisticsCodes(Expression<Func<LogisticsCodeRecognitionInfoModel, bool>> where, CancellationToken token = default) {

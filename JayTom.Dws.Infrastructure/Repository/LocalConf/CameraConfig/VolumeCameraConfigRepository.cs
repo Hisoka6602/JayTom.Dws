@@ -13,7 +13,7 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalConf.CameraConfig {
 
     public class VolumeCameraConfigRepository : LocalRepositoryBase<VolumeCameraConfigInfoModel>, IVolumeCameraConfigRepository {
 
-        public VolumeCameraConfigRepository(IDbContextFactory<SqliteContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
+        public VolumeCameraConfigRepository(IDbContextFactory<SqliteConfContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
         }
     }
 }

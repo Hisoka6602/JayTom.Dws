@@ -82,11 +82,13 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         && f.ScanTime.Equals(responseModel.ScanTime), stoppingToken);
 
                     if (barCodeInfoModel is not null) {
-                        barCodeInfoModel.RequestContent = responseModel.UploadResponse?.RequestContent ?? string.Empty;
                         barCodeInfoModel.RequestStatus = responseModel.UploadResponse?.IsSuccess == true ? UploadStatus.Succeeded : UploadStatus.Failed;
-                        barCodeInfoModel.RequestTime = responseModel.UploadResponse?.RequestTime ?? DateTime.Today;
+                        /*barCodeInfoModel.RequestTime = responseModel.UploadResponse?.RequestTime ?? DateTime.Today;
                         barCodeInfoModel.ResponseContent = responseModel.UploadResponse?.ResponseContent ?? string.Empty;
                         barCodeInfoModel.ResponseTime = responseModel.UploadResponse?.ResponseTime ?? DateTime.Today;
+                        barCodeInfoModel.RequestContent = responseModel.UploadResponse?.RequestContent ?? string.Empty;*/
+                        //保存到上传信息的表
+
                         var update = await _barCodeRepository.Update(barCodeInfoModel, stoppingToken);
                         if (!update) {
                             _updateResponseItems.Enqueue(responseModel);
@@ -124,7 +126,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         if (barCodeInfoModel is not null) {
                             var insert = await _panoramaImageRepository.Insert(new PanoramaImageInfoModel() {
                                 PanoramaImagePath = savedImageInfo.FilePath,
-                                BarcodeInfoId = barCodeInfoModel.Id
+                                BarcodeId = barCodeInfoModel.Id
                             }, stoppingToken);
                             if (!insert) {
                                 _savedImageItems.Enqueue(savedImageInfo);

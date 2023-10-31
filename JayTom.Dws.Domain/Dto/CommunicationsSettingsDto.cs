@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
 using JayTom.Dws.Domain.Dto.CommunicationsSettings;
@@ -59,106 +60,5 @@ namespace JayTom.Dws.Domain.Dto {
         /// 包裹过期时间(设置为0则不验证)
         /// </summary>
         public int PackageExpiryTime { get; set; }
-    }
-
-    public enum CommunicationsType {
-
-        /// <summary>
-        /// 无
-        /// </summary>
-        None,
-
-        /// <summary>
-        /// 串口通信类型。
-        /// </summary>
-        SerialPort,
-
-        /// <summary>
-        /// TCP通信类型。
-        /// </summary>
-        TCP,
-
-        /// <summary>
-        /// USB通信类型。
-        /// </summary>
-        USB,
-
-        /// <summary>
-        /// Ethernet通信类型。
-        /// </summary>
-        Ethernet,
-
-        /// <summary>
-        /// CAN总线通信类型。
-        /// </summary>
-        CAN,
-
-        /// <summary>
-        /// SPI通信类型。
-        /// </summary>
-        SPI,
-
-        /// <summary>
-        /// I2C通信类型。
-        /// </summary>
-        I2C
-    }
-
-    public enum CommunicationProtocol {
-
-        /// <summary>
-        /// 无通信类型。
-        /// </summary>
-        None,
-
-        /// <summary>
-        /// ModBus 通信类型。
-        /// </summary>
-        ModBus,
-
-        /// <summary>
-        /// CC-Link 通信类型。
-        /// </summary>
-        CCLink,
-
-        /// <summary>
-        /// ProfiBus 通信类型。
-        /// </summary>
-        ProfiBus,
-
-        /// <summary>
-        /// Profinet 通信类型。
-        /// </summary>
-        Profinet,
-
-        /// <summary>
-        /// EtherNet 通信类型。
-        /// </summary>
-        EtherNet,
-
-        /// <summary>
-        /// DeviceNet 通信类型。
-        /// </summary>
-        DeviceNet,
-
-        /// <summary>
-        /// CANopen 通信类型。
-        /// </summary>
-        CANopen,
-
-        /// <summary>
-        /// OPC 通信类型。
-        /// </summary>
-        OPC,
-
-        /// <summary>
-        /// 无限创科协议
-        /// </summary>
-        Wxkc,
-
-        /// <summary>
-        /// 江腾窄带
-        /// </summary>
-        JT_ST,
     }
 }

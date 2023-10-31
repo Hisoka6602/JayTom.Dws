@@ -66,6 +66,7 @@ namespace JayTom.Dws.Data.LocalData {
         [Column("RequestStatus")]
         public UploadStatus RequestStatus { get; set; } = UploadStatus.NotUploaded;
 
+        /*
         /// <summary>
         /// 上传时间
         /// </summary>
@@ -89,6 +90,7 @@ namespace JayTom.Dws.Data.LocalData {
         /// </summary>
         [Column("ResponseContent")]
         public string ResponseContent { get; set; } = string.Empty;
+        */
 
         /// <summary>
         /// 条码图片保存路径
@@ -102,28 +104,35 @@ namespace JayTom.Dws.Data.LocalData {
         public virtual ICollection<PanoramaImageInfoModel>? PanoramaImagePaths { get; set; }
 
         /// <summary>
-        /// 下位机指令内容
-        /// </summary>
-        [Column("InstructionContent")]
-        public string? InstructionContent { get; set; }
-
-        /// <summary>
-        /// 指令发送时间
-        /// </summary>
-        [Column("InstructionSentTime")]
-        public DateTime? InstructionSentTime { get; set; }
-
-        /// <summary>
-        /// 指令发送目标地址
-        /// </summary>
-        [Column("DestinationAddress")]
-        public string? DestinationAddress { get; set; }
-
-        /// <summary>
         /// 其他项
         /// </summary>
         [Column("Other")]
         public string? Other { get; set; }
+
+        /// <summary>
+        /// 分拣信息
+        /// </summary>
+        public virtual SortingInfoModel SortingInfo { get; set; } = new();
+
+        /// <summary>
+        /// 上传信息
+        /// </summary>
+        public virtual UploadInfoModel UploadInfo { get; set; } = new();
+
+        /// <summary>
+        /// 体积信息
+        /// </summary>
+        public virtual VolumeInfoModel VolumeInfo { get; set; } = new();
+
+        /// <summary>
+        /// 称重信息
+        /// </summary>
+        public virtual WeightInfoModel WeightInfo { get; set; } = new();
+
+        /// <summary>
+        /// Ocr信息
+        /// </summary>
+        public virtual OcrInfoModel OcrInfo { get; set; } = new();
     }
 
     public enum UploadStatus {

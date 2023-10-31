@@ -9,18 +9,12 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace JayTom.Dws.Data.LocalData {
 
     [Table("Data_PanoramaImageInfo", Schema = "dbo")]
-    public class PanoramaImageInfoModel : BaseModel {
+    public class PanoramaImageInfoModel : BaseBarCodeForeignKeyInfo {
 
         /// <summary>
         /// 全景图片保存路径
         /// </summary>
         [Column("PanoramaImagePath"), Required]
         public string? PanoramaImagePath { get; set; }
-
-        [Column("BarcodeInfoId")]
-        public long BarcodeInfoId { get; set; }
-
-        [ForeignKey("Id")]
-        public virtual BarCodeInfoModel BarcodeInfo { get; set; }
     }
 }

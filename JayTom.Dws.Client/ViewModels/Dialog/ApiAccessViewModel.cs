@@ -6,9 +6,9 @@ using Prism.Commands;
 using System.Windows.Input;
 using System.Threading.Tasks;
 using Prism.Services.Dialogs;
-using JayTom.Dws.Client.Models;
 using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
+using JayTom.Dws.Client.Models.DataModels;
 
 namespace JayTom.Dws.Client.ViewModels.Dialog {
 
@@ -94,10 +94,13 @@ namespace JayTom.Dws.Client.ViewModels.Dialog {
             if (itemModel is not null) {
                 Barcode = itemModel.Barcode;
                 RequestStatus = itemModel.RequestStatus;
+
+                /*
                 RequestTime = itemModel.RequestTime;
                 RequestContent = itemModel.RequestContent;
                 ResponseTime = itemModel.ResponseTime;
-                ResponseContent = itemModel.ResponseContent;
+                ResponseContent = itemModel.ResponseContent;*/
+                //需要显示访问耗时
             }
         }
 

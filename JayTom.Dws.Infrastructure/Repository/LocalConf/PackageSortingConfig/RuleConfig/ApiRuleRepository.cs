@@ -12,7 +12,7 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig.Ru
 
     public class ApiRuleRepository : LocalRepositoryBase<ApiRuleInfoModel>, IApiRuleRepository {
 
-        public ApiRuleRepository(IDbContextFactory<SqliteContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
+        public ApiRuleRepository(IDbContextFactory<SqliteConfContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
         }
     }
 }

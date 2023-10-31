@@ -12,9 +12,10 @@ using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig.RuleConfig;
 
 namespace JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig {
+
     public class LogisticsSortingRepository : LocalRepositoryBase<LogisticsSortingInfoModel>, ILogisticsSortingRepository {
 
-        public LogisticsSortingRepository(IDbContextFactory<SqliteContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
+        public LogisticsSortingRepository(IDbContextFactory<SqliteConfContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
         }
 
         public async Task<List<LogisticsSortingInfoModel>> LogisticsSortingItems(Expression<Func<LogisticsSortingInfoModel, bool>> where, CancellationToken token = default) {

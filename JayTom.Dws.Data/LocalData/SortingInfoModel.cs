@@ -8,8 +8,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace JayTom.Dws.Data.LocalData {
 
     [Table("Data_SortingInfo", Schema = "dbo")]
-    public class SortingInfoModel : BaseModel {
-        public long BarcodeId { get; set; }
+    public class SortingInfoModel : BaseBarCodeForeignKeyInfo {
 
         /// <summary>
         /// 是否使用分拣
@@ -75,7 +74,7 @@ namespace JayTom.Dws.Data.LocalData {
         /// 通讯方式
         /// </summary>
         [Column("CommunicationMethod")]
-        public string CommunicationMethod { get; set; } = string.Empty;
+        public CommunicationsType CommunicationMethod { get; set; } = CommunicationsType.None;
 
         /// <summary>
         /// 效验协议名称
@@ -125,5 +124,106 @@ namespace JayTom.Dws.Data.LocalData {
         /// 组合工作流分拣
         /// </summary>
         CombinedWorkflowSorting
+    }
+
+    public enum CommunicationsType {
+
+        /// <summary>
+        /// 无
+        /// </summary>
+        None,
+
+        /// <summary>
+        /// 串口通信类型。
+        /// </summary>
+        SerialPort,
+
+        /// <summary>
+        /// TCP通信类型。
+        /// </summary>
+        TCP,
+
+        /// <summary>
+        /// USB通信类型。
+        /// </summary>
+        USB,
+
+        /// <summary>
+        /// Ethernet通信类型。
+        /// </summary>
+        Ethernet,
+
+        /// <summary>
+        /// CAN总线通信类型。
+        /// </summary>
+        CAN,
+
+        /// <summary>
+        /// SPI通信类型。
+        /// </summary>
+        SPI,
+
+        /// <summary>
+        /// I2C通信类型。
+        /// </summary>
+        I2C
+    }
+
+    public enum CommunicationProtocol {
+
+        /// <summary>
+        /// 无通信类型。
+        /// </summary>
+        None,
+
+        /// <summary>
+        /// ModBus 通信类型。
+        /// </summary>
+        ModBus,
+
+        /// <summary>
+        /// CC-Link 通信类型。
+        /// </summary>
+        CCLink,
+
+        /// <summary>
+        /// ProfiBus 通信类型。
+        /// </summary>
+        ProfiBus,
+
+        /// <summary>
+        /// Profinet 通信类型。
+        /// </summary>
+        Profinet,
+
+        /// <summary>
+        /// EtherNet 通信类型。
+        /// </summary>
+        EtherNet,
+
+        /// <summary>
+        /// DeviceNet 通信类型。
+        /// </summary>
+        DeviceNet,
+
+        /// <summary>
+        /// CANopen 通信类型。
+        /// </summary>
+        CANopen,
+
+        /// <summary>
+        /// OPC 通信类型。
+        /// </summary>
+        OPC,
+
+        /// <summary>
+        /// 无限创科协议
+        /// </summary>
+        Wxkc,
+
+        /// <summary>
+        /// 江腾窄带
+        /// </summary>
+        JT_ST,
     }
 }

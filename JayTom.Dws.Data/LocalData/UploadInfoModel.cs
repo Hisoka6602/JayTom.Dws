@@ -10,14 +10,13 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace JayTom.Dws.Data.LocalData {
 
     [Table("Data_UploadInfo", Schema = "dbo")]
-    public class UploadInfoModel : BaseModel {
-        public long BarcodeId { get; set; }
+    public class UploadInfoModel : BaseBarCodeForeignKeyInfo {
 
         /// <summary>
-        /// 上传状态
+        /// 是否成功
         /// </summary>
-        [Column("RequestStatus"), Required]
-        public UploadStatus RequestStatus { get; set; } = UploadStatus.NotUploaded;
+        [Column("IsSuccess")]
+        public bool IsSuccess { get; set; }
 
         /// <summary>
         /// 上传内容

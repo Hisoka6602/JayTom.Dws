@@ -37,7 +37,7 @@ namespace JayTom.Dws.Data.LocalConf.PackageSortingConfig.RuleConfig {
         public string Formula { get; set; } = string.Empty;
 
         [ForeignKey("Id")]
-        public virtual WeightSortingInfoModel WeightSortingInfo { get; set; }
+        public virtual WeightSortingInfoModel WeightSortingInfo { get; set; } = new();
     }
 
     /// <summary>

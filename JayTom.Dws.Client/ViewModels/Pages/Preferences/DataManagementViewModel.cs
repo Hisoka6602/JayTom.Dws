@@ -17,7 +17,6 @@ using System.Windows.Controls;
 using JayTom.Dws.Plugin.Excel;
 using MaterialDesignThemes.Wpf;
 using System.Windows.Threading;
-using JayTom.Dws.Client.Models;
 using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
 using NetTopologySuite.Algorithm;
@@ -29,6 +28,7 @@ using JayTom.Dws.Client.Views.Editors;
 using JayTom.Dws.PluginInterface.Utils;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.ViewModels.Dialog;
+using JayTom.Dws.Client.Models.DataModels;
 using JayTom.Dws.Client.ViewModels.Editors;
 using JayTom.Dws.Domain.Repository.LocalData;
 using JayTom.Dws.Domain.Repository.LocalConf;
@@ -596,21 +596,61 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                                 Volume = s.Volume,
                                 ScanTime = s.ScanTime,
                                 RequestStatus = s.RequestStatus,
-                                RequestTime = s.RequestTime,
-                                RequestContent = s.RequestContent,
-                                ResponseTime = s.ResponseTime,
-                                ResponseContent = s.ResponseContent,
                                 BarcodeImagePath = s.BarcodeImagePath ?? string.Empty,
                                 IsBarcodeImageExists = s.BarcodeImagePath?.IsFileExists() ?? false,
-                                InstructionContent = s.InstructionContent ?? string.Empty,
-                                InstructionSentTime = s.InstructionSentTime,
-                                DestinationAddress = s.DestinationAddress ?? string.Empty,
                                 Other = s.Other ?? string.Empty,
                                 PanoramaImageItems = s.PanoramaImagePaths?.Select(ps =>
                                     new PanoramaImageItemModel() {
                                         IsPanoramaImageExists = ps.PanoramaImagePath?.IsFileExists() ?? false,
                                         PanoramaImagePath = ps.PanoramaImagePath
-                                    })?.ToList() ?? new List<PanoramaImageItemModel>()
+                                    })?.ToList() ?? new List<PanoramaImageItemModel>(),
+                                UploadInfo = new UploadItemModel {
+                                    DurationInSeconds = s.UploadInfo.DurationInSeconds,
+                                    ExceptionMessage = s.UploadInfo.ExceptionMessage,
+                                    InterfaceParameters = s.UploadInfo.InterfaceParameters,
+                                    IsSuccess = s.UploadInfo.IsSuccess,
+                                    RequestContent = s.UploadInfo.RequestContent,
+                                    RequestTime = s.UploadInfo.RequestTime,
+                                    RequestUrl = s.UploadInfo.RequestUrl,
+                                    ResponseContent = s.UploadInfo.ResponseContent,
+                                    ResponseTime = s.UploadInfo.ResponseTime
+                                },
+                                WeightInfo = new WeightItemModel() {
+                                    CreateTime = s.WeightInfo.CreateTime,
+                                    FormattedWeight = s.WeightInfo.FormattedWeight,
+                                    OriginalText = s.WeightInfo.OriginalText,
+                                    SerialPortName = s.WeightInfo.SerialPortName,
+                                    SourceType = s.WeightInfo.SourceType
+                                },
+                                SortingInfo = new SortingItemModel {
+                                    ChecksumProtocolName = s.SortingInfo.ChecksumProtocolName,
+                                    CommandTarget = s.SortingInfo.CommandTarget,
+                                    CommunicationMethod = s.SortingInfo.CommunicationMethod,
+                                    IsCreatedByLowerMachine = s.SortingInfo.IsCreatedByLowerMachine,
+                                    PackageCreationCommand = s.SortingInfo.PackageCreationCommand,
+                                    PackageCreationTime = s.SortingInfo.PackageCreationTime,
+                                    ReceivedCommand = s.SortingInfo.ReceivedCommand,
+                                    SentCommand = s.SortingInfo.SentCommand,
+                                    ExitId = s.SortingInfo.ExitId,
+                                    IsSortingUsed = s.SortingInfo.IsSortingUsed,
+                                    LogisticsId = s.SortingInfo.LogisticsId,
+                                    SortingMode = s.SortingInfo.SortingMode,
+                                },
+                                VolumeInfo = new VolumeItemModel() {
+                                    CreateTime = s.VolumeInfo.CreateTime,
+                                    FormattedHeight = s.VolumeInfo.FormattedHeight,
+                                    FormattedLength = s.VolumeInfo.FormattedLength,
+                                    FormattedVolume = s.VolumeInfo.FormattedVolume,
+                                    FormattedWidth = s.VolumeInfo.FormattedWidth,
+                                    OriginalText = s.VolumeInfo.OriginalText,
+                                    SourceType = s.VolumeInfo.SourceType
+                                },
+                                OcrInfo = new OcrItemInfo() {
+                                    CreateTime = s.OcrInfo.CreateTime,
+                                    OcrInterfaceName = s.OcrInfo.OcrInterfaceName,
+                                    OriginalContent = s.OcrInfo.OriginalContent,
+                                    ParsedContent = s.OcrInfo.ParsedContent
+                                }
                             })?.ToList();
                             await Task.Delay(100);
                             BarCodeItems.AddRange(itemModels);

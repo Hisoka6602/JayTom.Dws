@@ -12,7 +12,7 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig.Ru
 
     public class WeightRuleRepository : LocalRepositoryBase<WeightRuleInfoModel>, IWeightRuleRepository {
 
-        public WeightRuleRepository(IDbContextFactory<SqliteContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
+        public WeightRuleRepository(IDbContextFactory<SqliteConfContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
         }
     }
 }

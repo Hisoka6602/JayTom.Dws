@@ -12,7 +12,7 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig {
 
     public class SortingInstructionRepository : LocalRepositoryBase<SortingInstructionInfoModel>, ISortingInstructionRepository {
 
-        public SortingInstructionRepository(IDbContextFactory<SqliteContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
+        public SortingInstructionRepository(IDbContextFactory<SqliteConfContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
         }
     }
 }

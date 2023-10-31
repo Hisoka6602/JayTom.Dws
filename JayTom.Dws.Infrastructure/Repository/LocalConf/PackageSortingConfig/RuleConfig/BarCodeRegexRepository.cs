@@ -14,7 +14,7 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig.Ru
 
     public class BarCodeRegexRepository : LocalRepositoryBase<BarCodeRegexInfoModel>, IBarCodeRegexRepository {
 
-        public BarCodeRegexRepository(IDbContextFactory<SqliteContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
+        public BarCodeRegexRepository(IDbContextFactory<SqliteConfContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
         }
     }
 }

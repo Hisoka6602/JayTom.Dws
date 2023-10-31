@@ -147,19 +147,33 @@ namespace JayTom.Dws.Client {
             }
             //其他注册
             containerRegistry.GetContainer().RegisterServices(services => {
-                services.AddPooledDbContextFactory<SqliteContext>(options => options.UseSqlite(
-                    $"Data Source={System.AppDomain.CurrentDomain.BaseDirectory}Data.db",
-                    builder => {
-                        builder.CommandTimeout(100); //180秒超时
-                        builder.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
-                    }).UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking), 300);
+                services.AddPooledDbContextFactory<SqliteContext>(options => {
+                    options.UseSqlite(
+                        $"Data Source={System.AppDomain.CurrentDomain.BaseDirectory}Data.db",
+                        builder => {
+                            builder.CommandTimeout(100); //180秒超时
+                            builder.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
+                        }).UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
+                    options.UseSqlite(
+                        $"Data Source={System.AppDomain.CurrentDomain.BaseDirectory}Configuration.db",
+                        builder => {
+                            builder.CommandTimeout(100); //180秒超时
+                            builder.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
+                        }).UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
+                    options.UseSqlite(
+                        $"Data Source={System.AppDomain.CurrentDomain.BaseDirectory}ClientLogs.db",
+                        builder => {
+                            builder.CommandTimeout(100); //180秒超时
+                            builder.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
+                        }).UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
+                }, 300);
                 //http
                 services.AddHttpClient("INSURANCE", httpClient => {
                     // httpClient.Timeout = TimeSpan.FromSeconds(10);
                 }).ConfigurePrimaryHttpMessageHandler(() => {
                     var handler = new HttpClientHandler() {
                         UseDefaultCredentials = true,
-                        MaxConnectionsPerServer = 1000,
+                        MaxConnectionsPerServer = 600,
                         ServerCertificateCustomValidationCallback = (m, c, ch, _) => true,
                         //UseProxy = false
                     };
@@ -170,46 +184,49 @@ namespace JayTom.Dws.Client {
                 //配置内存缓存
                 services.AddMemoryCache();
                 //本地数据表注册
-                services.AddScoped<IBarcodeScannerCameraConfigRepository, BarcodeScannerCameraConfigRepository>();
-                services.AddScoped<IPanoramaCameraConfigRepository, PanoramaCameraConfigRepository>();
-                services.AddScoped<IVolumeCameraConfigRepository, VolumeCameraConfigRepository>();
-                services.AddScoped<IBarCodeRepository, BarCodeRepository>();
-                services.AddScoped<ISoundRepository, SoundRepository>();
-                services.AddScoped<IConfigRepository, ConfigRepository>();
-                services.AddScoped<IPanoramaImageRepository, PanoramaImageRepository>();
+                //data
+                {
+                    services.AddScoped<IBarCodeRepository, BarCodeRepository>();
+                    services.AddScoped<IPanoramaImageRepository, PanoramaImageRepository>();
+                    services.AddScoped<ISoundRepository, SoundRepository>();
+                    services.AddScoped<IVolumeRepository, VolumeRepository>();
+                    services.AddScoped<IWeightRepository, WeightRepository>();
+                    services.AddScoped<IUploadRepository, UploadRepository>();
+                    services.AddScoped<ISortingRepository, SortingRepository>();
+                    services.AddScoped<IOcrRepository, OcrRepository>();
+                }
+                //config
+                {
+                    services.AddScoped<IBarcodeScannerCameraConfigRepository, BarcodeScannerCameraConfigRepository>();
+                    services.AddScoped<IPanoramaCameraConfigRepository, PanoramaCameraConfigRepository>();
+                    services.AddScoped<IVolumeCameraConfigRepository, VolumeCameraConfigRepository>();
 
-                services.AddScoped<ILogisticsCodeRecognitionRepository, LogisticsCodeRecognitionRepository>();
-                services.AddScoped<IPackageExitDefinitionRepository, PackageExitDefinitionRepository>();
-                services.AddScoped<ISortingInstructionBindingRepository, SortingInstructionBindingRepository>();
-                services.AddScoped<ILogisticsRegexRepository, LogisticsRegexRepository>();
-                services.AddScoped<ISortingInstructionRepository, SortingInstructionRepository>();
+                    services.AddScoped<IConfigRepository, ConfigRepository>();
 
-                services.AddScoped<IBarCodeSortingRepository, BarCodeSortingRepository>();
-                services.AddScoped<IBarCodeRegexRepository, BarCodeRegexRepository>();
+                    services.AddScoped<ILogisticsCodeRecognitionRepository, LogisticsCodeRecognitionRepository>();
+                    services.AddScoped<IPackageExitDefinitionRepository, PackageExitDefinitionRepository>();
+                    services.AddScoped<ISortingInstructionBindingRepository, SortingInstructionBindingRepository>();
+                    services.AddScoped<ILogisticsRegexRepository, LogisticsRegexRepository>();
+                    services.AddScoped<ISortingInstructionRepository, SortingInstructionRepository>();
 
-                services.AddScoped<IWeightSortingRepository, WeightSortingRepository>();
-                services.AddScoped<IWeightRuleRepository, WeightRuleRepository>();
+                    services.AddScoped<IBarCodeSortingRepository, BarCodeSortingRepository>();
+                    services.AddScoped<IBarCodeRegexRepository, BarCodeRegexRepository>();
 
-                services.AddScoped<IVolumeSortingRepository, VolumeSortingRepository>();
-                services.AddScoped<IVolumeRuleRepository, VolumeRuleRepository>();
+                    services.AddScoped<IWeightSortingRepository, WeightSortingRepository>();
+                    services.AddScoped<IWeightRuleRepository, WeightRuleRepository>();
 
-                services.AddScoped<ILogisticsSortingRepository, LogisticsSortingRepository>();
-                services.AddScoped<ILogisticsRuleRepository, LogisticsRuleRepository>();
+                    services.AddScoped<IVolumeSortingRepository, VolumeSortingRepository>();
+                    services.AddScoped<IVolumeRuleRepository, VolumeRuleRepository>();
 
-                services.AddScoped<IOcrSortingRepository, OcrSortingRepository>();
-                services.AddScoped<IOcrRuleRepository, OcrRuleRepository>();
-                services.AddScoped<IApiSortingRepository, ApiSortingRepository>();
-                services.AddScoped<IApiRuleRepository, ApiRuleRepository>();
+                    services.AddScoped<ILogisticsSortingRepository, LogisticsSortingRepository>();
+                    services.AddScoped<ILogisticsRuleRepository, LogisticsRuleRepository>();
 
-                /*services.AddScoped<IConfigRepository, ConfigRepository>();
+                    services.AddScoped<IOcrSortingRepository, OcrSortingRepository>();
+                    services.AddScoped<IOcrRuleRepository, OcrRuleRepository>();
+                    services.AddScoped<IApiSortingRepository, ApiSortingRepository>();
+                    services.AddScoped<IApiRuleRepository, ApiRuleRepository>();
+                }
 
-                //服务注册
-                services.AddScoped<IBarcodeScannerService, BarcodeScannerService>();
-                //插件注册
-                services.AddScoped<ISpeech, Speech>();
-                services.AddScoped<IExcel, NpoiExport>();
-                //相机
-                services.AddScoped<I3DCamera, Percipio3DCamera>();*/
                 //插件注册
                 services.AddScoped<IExcel, NpoiExport>();
                 services.AddScoped<IFtp, FluentFtpClient>();
@@ -217,12 +234,9 @@ namespace JayTom.Dws.Client {
                 services.AddScoped<ISpeech, Speech>();
                 services.AddScoped<ITcpCommClient, TouchSocketTcpClient>();
                 services.AddScoped<ITcpCommServer, TouchSocketTcpServer>();
-                //services.AddScoped<ITcpContentOutput, TcpContentOutput>();
                 services.AddSingleton<ITcpContentOutput>(provider => new TcpContentOutput(new TouchSocketTcpClient(), new TouchSocketTcpServer()));
-                //services.AddScoped<ITcpVolumeInput, TcpVolumeInput>();
                 services.AddSingleton<ITcpVolumeInput>(provider => new TcpVolumeInput(new TouchSocketTcpClient(), new TouchSocketTcpServer()));
                 services.AddScoped<ISortingSerialPort, SortingSerialPort>();
-                //services.AddScoped<ISortingTcp, SortingTcp>();
                 services.AddSingleton<ISortingTcp>(provider => new SortingTcp(new TouchSocketTcpClient(), new TouchSocketTcpServer()));
                 //电脑注册
                 services.AddScoped<IComputer, Computer>();
@@ -233,14 +247,13 @@ namespace JayTom.Dws.Client {
                 //磅秤
                 services.AddScoped<IDynamicScale, DefaultDynamicScale>();
                 services.AddScoped<IStaticScale, DefaultStaticScale>();
-
                 services.AddScoped<IDeviceService, DefaultDeviceService>();
                 services.AddScoped<IImageStorageService, DefaultImageStorageService>();
                 services.AddScoped<IResultOutputService, DefaultResultOutputService>();
                 services.AddScoped<IExternalDataService, ExternalDataService>();
                 //基础服务注册
                 services.AddScoped<ICacheCleanupService, CacheCleanupService>();
-                //分拣注册 DefaultSortingService
+                //分拣注册
                 services.AddScoped<ISortingService, DefaultSortingService>();
                 //分拣指令服务
                 services.AddScoped<IInventoryManagementService, DefaultInventoryManagementService>();
@@ -294,6 +307,25 @@ namespace JayTom.Dws.Client {
                 _host = Host.CreateDefaultBuilder()
                     .ConfigureServices((hostContext, services) => {
                         services.AddSingleton(container1.Resolve<IHttpClientFactory>());
+
+                        //data
+                        {
+                            services.AddSingleton(container1.Resolve<IBarCodeRepository>());
+                            services.AddSingleton(container1.Resolve<IPanoramaCameraConfigRepository>());
+                            services.AddSingleton(container1.Resolve<ISoundRepository>());
+                        }
+                        //config
+                        {
+                            services.AddSingleton(container1.Resolve<IBarcodeScannerCameraConfigRepository>());
+                            services.AddSingleton(container1.Resolve<IVolumeCameraConfigRepository>());
+                            services.AddSingleton(container1.Resolve<IConfigRepository>());
+                            services.AddSingleton(container1.Resolve<IPanoramaImageRepository>());
+                            services.AddSingleton(container1.Resolve<ILogisticsCodeRecognitionRepository>());
+                            services.AddSingleton(container1.Resolve<IPackageExitDefinitionRepository>());
+                            services.AddSingleton(container1.Resolve<ISortingInstructionBindingRepository>());
+                            services.AddSingleton(container1.Resolve<ILogisticsRegexRepository>());
+                        }
+
                         //Api接口注册
 
                         services.AddSingleton<IDataUploader, DefaultApi>();
@@ -319,18 +351,6 @@ namespace JayTom.Dws.Client {
                         services.AddSingleton(container1.Resolve<IDeviceService>());
                         services.AddSingleton(container1.Resolve<IImageStorageService>());
                         services.AddSingleton(container1.Resolve<IResultOutputService>());
-                        services.AddSingleton(container1.Resolve<IBarCodeRepository>());
-                        services.AddSingleton(container1.Resolve<IBarcodeScannerCameraConfigRepository>());
-                        services.AddSingleton(container1.Resolve<IPanoramaCameraConfigRepository>());
-                        services.AddSingleton(container1.Resolve<IVolumeCameraConfigRepository>());
-                        services.AddSingleton(container1.Resolve<ISoundRepository>());
-                        services.AddSingleton(container1.Resolve<IConfigRepository>());
-                        services.AddSingleton(container1.Resolve<IPanoramaImageRepository>());
-
-                        services.AddSingleton(container1.Resolve<ILogisticsCodeRecognitionRepository>());
-                        services.AddSingleton(container1.Resolve<IPackageExitDefinitionRepository>());
-                        services.AddSingleton(container1.Resolve<ISortingInstructionBindingRepository>());
-                        services.AddSingleton(container1.Resolve<ILogisticsRegexRepository>());
 
                         services.AddSingleton(container1.Resolve<IExternalDataService>());
                         services.AddSingleton(container1.Resolve<ICacheCleanupService>());

@@ -9,36 +9,48 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace JayTom.Dws.Data.LocalLog {
 
     [Table("Log_DeviceLogInfo", Schema = "dbo")]
-    public class DeviceLogInfoModel : BaseModel {
+    public class DeviceLogInfoModel : BaseLogInfoModel {
 
         /// <summary>
-        /// 创建时间
+        /// 设备类型（相机、磅秤、其他终端）
         /// </summary>
-        [Column("CreateTime"), Required]
-        public DateTime CreateTime { get; set; }
+        [Column("DeviceType")]
+        public DeviceType DeviceType { get; set; }
 
         /// <summary>
-        /// 是否异常
+        /// 设备名称
         /// </summary>
-        [Column("IsException")]
-        public bool IsException { get; set; }
+        [Column("DeviceName")]
+        public string DeviceName { get; set; } = string.Empty;
 
         /// <summary>
-        /// 收发类型
+        /// 通讯方式（串口、Tcp、其他）
         /// </summary>
-        [Column("TransmitType")]
-        public int TransmitType { get; set; }
+        [Column("CommunicationMethod")]
+        public CommunicationMethod CommunicationMethod { get; set; }
 
         /// <summary>
-        /// 指令内容
+        /// 数据格式（字符串、十六进制）
         /// </summary>
-        [Column("InstructionContent")]
-        public string InstructionContent { get; set; } = string.Empty;
+        [Column("DataFormat")]
+        public DataFormatType DataFormat { get; set; }
 
         /// <summary>
-        /// 提示内容
+        /// 内容
         /// </summary>
-        [Column("PromptContent")]
-        public string PromptContent { get; set; } = string.Empty;
+        [Column("Content")]
+        public string Content { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 类型（信息、警告、异常）
+        /// </summary>
+        [Column("Type")]
+        public LogType Type { get; set; }
+    }
+
+    public enum DeviceType {
+        Camera,
+        Scale,
+        OtherTerminal
     }
 }

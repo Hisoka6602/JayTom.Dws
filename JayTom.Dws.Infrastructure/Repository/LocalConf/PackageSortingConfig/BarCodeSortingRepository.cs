@@ -11,9 +11,10 @@ using JayTom.Dws.Data.LocalConf.PackageSortingConfig.RuleConfig;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
 
 namespace JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig {
+
     public class BarCodeSortingRepository : LocalRepositoryBase<BarCodeSortingInfoModel>, IBarCodeSortingRepository {
 
-        public BarCodeSortingRepository(IDbContextFactory<SqliteContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
+        public BarCodeSortingRepository(IDbContextFactory<SqliteConfContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
         }
 
         public async Task<List<BarCodeSortingInfoModel>> BarCodeSortingItems(Expression<Func<BarCodeSortingInfoModel, bool>> where, CancellationToken token = default) {

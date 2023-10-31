@@ -4,12 +4,14 @@ using System.Linq;
 using System.Text;
 using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
+using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
 using JayTom.Dws.Domain.Dto.CommunicationsSettings;
 using JayTom.Dws.Client.Models.SettingsCommomModels;
 
 namespace JayTom.Dws.Client.Models.CommunicationsSettingsModel {
+
     public class CommunicationsSettingsInfoModel : BindableBase {
         private TcpSettingsInfoModel _tcpSettingsInfo = new();
         private SerialPortSettingsInfoModel _serialPortSettingsInfo = new();
@@ -65,6 +67,7 @@ namespace JayTom.Dws.Client.Models.CommunicationsSettingsModel {
             get => _heartbeatInfo;
             set => SetProperty(ref _heartbeatInfo, value);
         }
+
         /// <summary>
         /// 下位机设置
         /// </summary>

@@ -14,7 +14,7 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig {
 
     public class SortingInstructionBindingRepository : LocalRepositoryBase<SortingInstructionBindingInfoModel>, ISortingInstructionBindingRepository {
 
-        public SortingInstructionBindingRepository(IDbContextFactory<SqliteContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
+        public SortingInstructionBindingRepository(IDbContextFactory<SqliteConfContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
         }
 
         public async Task<List<SortingInstructionBindingInfoModel>> InstructionBindings(Expression<Func<SortingInstructionBindingInfoModel, bool>> where, CancellationToken token = default) {

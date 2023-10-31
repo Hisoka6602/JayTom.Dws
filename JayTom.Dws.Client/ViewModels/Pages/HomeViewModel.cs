@@ -37,6 +37,7 @@ using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.PluginInterface.Utils;
 using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Client.Service.Sorting;
+using JayTom.Dws.Client.Models.DataModels;
 using JayTom.Dws.Client.Service.ImageStorage;
 using JayTom.Dws.Domain.Repository.LocalData;
 using JayTom.Dws.Client.Service.ResultOutput;
@@ -431,11 +432,20 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                         if (barCodeItemModel is not null) {
                             await Application.Current.Dispatcher.BeginInvoke(() => {
                                 //更新数据
-                                barCodeItemModel.RequestContent = model.UploadResponse?.RequestContent ?? string.Empty;
+
                                 barCodeItemModel.RequestStatus = model.UploadResponse?.IsSuccess == true ? UploadStatus.Succeeded : UploadStatus.Failed;
-                                barCodeItemModel.RequestTime = model.UploadResponse?.RequestTime ?? DateTime.Today;
-                                barCodeItemModel.ResponseContent = model.UploadResponse?.ResponseContent ?? string.Empty;
-                                barCodeItemModel.ResponseTime = model.UploadResponse?.ResponseTime ?? DateTime.Today;
+
+                                barCodeItemModel.UploadInfo = new UploadItemModel() {
+                                    DurationInSeconds = model.UploadResponse?.Duration ?? 0,
+                                    ExceptionMessage = model.UploadResponse?.ExceptionMsg ?? string.Empty,
+                                    InterfaceParameters = model.UploadResponse?.ApiParameters ?? string.Empty,
+                                    IsSuccess = model.UploadResponse?.IsSuccess ?? false,
+                                    RequestContent = model.UploadResponse?.RequestContent ?? string.Empty,
+                                    RequestTime = model.UploadResponse?.RequestTime,
+                                    RequestUrl = model.UploadResponse?.RequestUrl ?? string.Empty,
+                                    ResponseContent = model.UploadResponse?.ResponseContent ?? string.Empty,
+                                    ResponseTime = model.UploadResponse?.ResponseTime
+                                };
                                 if (barCodeItemModel.RequestStatus == UploadStatus.Succeeded) {
                                     UploadedDataCount += 1;
                                 }

@@ -25,6 +25,6 @@ namespace JayTom.Dws.Data.LocalConf.PackageSortingConfig.RuleConfig {
         public string RegexPattern { get; set; } = string.Empty;
 
         [ForeignKey("Id")]
-        public virtual OcrSortingInfoModel OcrSortingInfo { get; set; }
+        public virtual OcrSortingInfoModel OcrSortingInfo { get; set; } = new();
     }
 }

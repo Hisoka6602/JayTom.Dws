@@ -49,7 +49,7 @@ namespace JayTom.Dws.Data.LocalConf.PackageSortingConfig.RuleConfig {
         public string Formula { get; set; } = string.Empty;
 
         [ForeignKey("Id")]
-        public virtual VolumeSortingInfoModel VolumeSortingInfo { get; set; }
+        public virtual VolumeSortingInfoModel VolumeSortingInfo { get; set; } = new();
     }
 
     public enum VolumeProperty {

@@ -3,6 +3,7 @@ using System.Linq;
 using System.Text;
 using System.IO.Ports;
 using System.Threading.Tasks;
+using JayTom.Dws.Data.LocalLog;
 using System.Collections.Generic;
 
 namespace JayTom.Dws.Domain.Dto.BaseInfoModels {

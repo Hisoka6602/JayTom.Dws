@@ -13,7 +13,7 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig.Ru
 
     public class LogisticsRegexRepository : LocalRepositoryBase<LogisticsRegexInfoModel>, ILogisticsRegexRepository {
 
-        public LogisticsRegexRepository(IDbContextFactory<SqliteContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
+        public LogisticsRegexRepository(IDbContextFactory<SqliteConfContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
         }
     }
 }

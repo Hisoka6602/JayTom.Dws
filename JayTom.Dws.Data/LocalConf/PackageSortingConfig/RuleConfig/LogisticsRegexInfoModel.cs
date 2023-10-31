@@ -26,6 +26,6 @@ namespace JayTom.Dws.Data.LocalConf.PackageSortingConfig.RuleConfig {
         public string RegexPattern { get; set; } = string.Empty;
 
         [ForeignKey("Id")]
-        public virtual LogisticsCodeRecognitionInfoModel LogisticsCodeInfo { get; set; }
+        public virtual LogisticsCodeRecognitionInfoModel LogisticsCodeInfo { get; set; } = new();
     }
 }

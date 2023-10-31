@@ -3,6 +3,7 @@ using System.Linq;
 using System.Text;
 using System.IO.Ports;
 using System.Threading.Tasks;
+using JayTom.Dws.Data.LocalLog;
 using System.Collections.Generic;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
 
@@ -70,11 +71,6 @@ namespace JayTom.Dws.Domain.Dto {
         /// 最大重量
         /// </summary>
         public float MaxWeight { get; set; }
-    }
-
-    public enum DataFormatType {
-        Hex,
-        Ascii
     }
 
     /// <summary>

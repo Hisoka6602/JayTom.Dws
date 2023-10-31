@@ -14,7 +14,7 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig {
 
     public class OcrSortingRepository : LocalRepositoryBase<OcrSortingInfoModel>, IOcrSortingRepository {
 
-        public OcrSortingRepository(IDbContextFactory<SqliteContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
+        public OcrSortingRepository(IDbContextFactory<SqliteConfContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
         }
 
         public async Task<List<OcrSortingInfoModel>> OcrSortingItems(Expression<Func<OcrSortingInfoModel, bool>> where, CancellationToken token = default) {

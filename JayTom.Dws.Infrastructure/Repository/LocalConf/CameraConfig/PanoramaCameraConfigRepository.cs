@@ -9,14 +9,11 @@ using Microsoft.Extensions.Caching.Memory;
 using JayTom.Dws.Data.LocalConf.CameraConfig;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 
-namespace JayTom.Dws.Infrastructure.Repository.LocalConf.CameraConfig
-{
+namespace JayTom.Dws.Infrastructure.Repository.LocalConf.CameraConfig {
 
-    public class PanoramaCameraConfigRepository : LocalRepositoryBase<PanoramaCameraConfigInfoModel>, IPanoramaCameraConfigRepository
-    {
+    public class PanoramaCameraConfigRepository : LocalRepositoryBase<PanoramaCameraConfigInfoModel>, IPanoramaCameraConfigRepository {
 
-        public PanoramaCameraConfigRepository(IDbContextFactory<SqliteContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache)
-        {
+        public PanoramaCameraConfigRepository(IDbContextFactory<SqliteConfContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
         }
     }
 }

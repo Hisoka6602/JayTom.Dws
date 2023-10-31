@@ -7,7 +7,7 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalConf {
 
     public class ConfigRepository : LocalRepositoryBase<ConfigInfoModel>, IConfigRepository {
 
-        public ConfigRepository(IDbContextFactory<SqliteContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
+        public ConfigRepository(IDbContextFactory<SqliteConfContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
         }
     }
 }

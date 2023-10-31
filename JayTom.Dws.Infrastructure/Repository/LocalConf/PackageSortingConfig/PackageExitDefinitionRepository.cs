@@ -13,7 +13,7 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig {
 
     public class PackageExitDefinitionRepository : LocalRepositoryBase<PackageExitDefinitionInfoModel>, IPackageExitDefinitionRepository {
 
-        public PackageExitDefinitionRepository(IDbContextFactory<SqliteContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
+        public PackageExitDefinitionRepository(IDbContextFactory<SqliteConfContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
         }
     }
 }

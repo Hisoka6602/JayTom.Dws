@@ -14,7 +14,7 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig {
 
     public class ApiSortingRepository : LocalRepositoryBase<ApiSortingInfoModel>, IApiSortingRepository {
 
-        public ApiSortingRepository(IDbContextFactory<SqliteContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
+        public ApiSortingRepository(IDbContextFactory<SqliteConfContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
         }
 
         public async Task<List<ApiSortingInfoModel>> ApiSortingItems(Expression<Func<ApiSortingInfoModel, bool>> where, CancellationToken token = default) {

@@ -14,7 +14,7 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig {
 
     public class WeightSortingRepository : LocalRepositoryBase<WeightSortingInfoModel>, IWeightSortingRepository {
 
-        public WeightSortingRepository(IDbContextFactory<SqliteContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
+        public WeightSortingRepository(IDbContextFactory<SqliteConfContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
         }
 
         public async Task<List<WeightSortingInfoModel>> WeightSortingItems(Expression<Func<WeightSortingInfoModel, bool>> where, CancellationToken token = default) {

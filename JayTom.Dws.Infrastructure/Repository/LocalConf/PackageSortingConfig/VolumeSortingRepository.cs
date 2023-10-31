@@ -14,7 +14,7 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig {
 
     public class VolumeSortingRepository : LocalRepositoryBase<VolumeSortingInfoModel>, IVolumeSortingRepository {
 
-        public VolumeSortingRepository(IDbContextFactory<SqliteContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
+        public VolumeSortingRepository(IDbContextFactory<SqliteConfContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
         }
 
         public async Task<List<VolumeSortingInfoModel>> VolumeSortingItems(Expression<Func<VolumeSortingInfoModel, bool>> where, CancellationToken token = default) {
