@@ -7,6 +7,7 @@ using JayTom.Dws.Plugin;
 using System.Windows.Input;
 using System.Threading.Tasks;
 using MaterialDesignThemes.Wpf;
+using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
 using JayTom.Dws.Client.Views.Dialog;
 using System.Collections.ObjectModel;
@@ -77,39 +78,18 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                             ExitId = model.SelectPackageExitDefinitionInfo.Id,
                             Remarks = model.LogisticsSortingItemInfo.Remarks,
                             SortingName = model.LogisticsSortingItemInfo.SortingName,
-                        };
-                        var insert = await _logisticsSortingRepository.Insert(logisticsSortingInfoModel);
-                        if (insert) {
-                            EventAggregator.Instance.Publish(logisticsSortingInfoModel);
-
-                            var sortingInfoModel = await _logisticsSortingRepository.FirstOrDefault(f =>
-                                f.ModifyTime.Equals(model.LogisticsSortingItemInfo.ModifyTime) &&
-                                f.ExitId.Equals(model.SelectPackageExitDefinitionInfo.Id));
-
-                            var logisticsRuleInfoModels = model.LogisticsRuleItems.Select(s => new LogisticsRuleInfoModel() {
+                            LogisticsRuleItems = model.LogisticsRuleItems.Select(s => new LogisticsRuleInfoModel() {
                                 CreateTime = s.CreateTime,
                                 ModifyTime = s.ModifyTime,
                                 LogisticsId = s.LogisticsId,
                                 Remarks = s.Remarks,
-                                LogisticsSortingId = sortingInfoModel.Id
-                            })?.ToList() ?? new List<LogisticsRuleInfoModel>();
-
-                            var ruleInfoModels = await _logisticsRuleRepository.Select(s => s.LogisticsSortingId.Equals(sortingInfoModel.Id),
-                            o => o.Id);
-
-                            if (ruleInfoModels?.Any() == true) {
-                                await _logisticsRuleRepository.DeleteRange(ruleInfoModels);
-                            }
-
-                            var insertRange = await _logisticsRuleRepository.InsertRange(logisticsRuleInfoModels);
-                            if (insertRange) {
-                                EventAggregator.Instance.Publish(ruleInfoModels);
-                                LogisticsSortingMessageQueue.Enqueue("保存成功");
-                                RefreshData();
-                            }
-                            else {
-                                LogisticsSortingMessageQueue.Enqueue("保存失败");
-                            }
+                            })?.ToList()
+                        };
+                        var insert = await _logisticsSortingRepository.InsertDetailAsync(logisticsSortingInfoModel);
+                        if (insert) {
+                            EventAggregator.Instance.Publish(logisticsSortingInfoModel);
+                            LogisticsSortingMessageQueue.Enqueue("保存成功");
+                            RefreshData();
                         }
                         else {
                             LogisticsSortingMessageQueue.Enqueue("保存失败");
@@ -155,35 +135,18 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                             Remarks = model.LogisticsSortingItemInfo.Remarks,
                             SortingName = model.LogisticsSortingItemInfo.SortingName,
                             Id = model.LogisticsSortingItemInfo.Id,
-                        };
-                        var update = await _logisticsSortingRepository.Update(logisticsSortingInfoModel);
-                        if (update) {
-                            EventAggregator.Instance.Publish(logisticsSortingInfoModel);
-
-                            var logisticsRuleInfoModels = model.LogisticsRuleItems.Select(s => new LogisticsRuleInfoModel() {
+                            LogisticsRuleItems = model.LogisticsRuleItems.Select(s => new LogisticsRuleInfoModel() {
                                 CreateTime = s.CreateTime,
                                 ModifyTime = s.ModifyTime,
                                 LogisticsId = s.LogisticsId,
                                 Remarks = s.Remarks,
-                                LogisticsSortingId = model.LogisticsSortingItemInfo.Id
-                            })?.ToList() ?? new List<LogisticsRuleInfoModel>();
-
-                            var ruleInfoModels = await _logisticsRuleRepository.Select(s => s.LogisticsSortingId.Equals(model.LogisticsSortingItemInfo.Id),
-                            o => o.Id);
-
-                            if (ruleInfoModels?.Any() == true) {
-                                await _logisticsRuleRepository.DeleteRange(ruleInfoModels);
-                            }
-
-                            var insertRange = await _logisticsRuleRepository.InsertRange(logisticsRuleInfoModels);
-                            if (insertRange) {
-                                EventAggregator.Instance.Publish(ruleInfoModels);
-                                LogisticsSortingMessageQueue.Enqueue("保存成功");
-                                RefreshData();
-                            }
-                            else {
-                                LogisticsSortingMessageQueue.Enqueue("保存失败");
-                            }
+                            })?.ToList()
+                        };
+                        var update = await _logisticsSortingRepository.UpdateDetailAsync(logisticsSortingInfoModel);
+                        if (update) {
+                            EventAggregator.Instance.Publish(logisticsSortingInfoModel);
+                            LogisticsSortingMessageQueue.Enqueue("保存成功");
+                            RefreshData();
                         }
                         else {
                             LogisticsSortingMessageQueue.Enqueue("保存失败");
@@ -386,11 +349,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                                     }
                                 }
                             })
-                            .GroupBy(s => s.ExitId)
+                            .GroupBy(s => s.SortingName)
                             .Select(group => new LogisticsSortingInfoModel {
                                 CreateTime = group.First().CreateTime,
-                                ExitId = group.Key,
-                                SortingName = group.First().SortingName,
+                                ExitId = group.First().ExitId,
+                                SortingName = group.Key,
                                 ModifyTime = group.First().ModifyTime,
                                 Remarks = group.First().Remarks,
                                 LogisticsRuleItems = group.SelectMany(item => item.LogisticsRuleItems).ToList()
@@ -398,33 +361,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                             .ToList();
 
                         //批量添加
-                        var range = await _logisticsSortingRepository.InsertRange(logisticsSortingInfoModels);
+                        var range = await _logisticsSortingRepository.InsertRangeDetailAsync(logisticsSortingInfoModels);
                         if (range) {
-                            //取出数据库对应指令列表内容
-                            var infoModels = await _logisticsSortingRepository.SelectOrderByDescending(
-                                s => s.CreateTime.Equals(dateTime),
-                                o => o.CreateTime);
-                            foreach (var logisticsSorting in infoModels) {
-                                var logisticsRuleInfoModels = await _logisticsRuleRepository.Select(
-                                    s => s.LogisticsSortingId.Equals(logisticsSorting.Id),
-                                    o => o.Id);
-                                if (logisticsRuleInfoModels?.Any() == true) {
-                                    await _logisticsRuleRepository.DeleteRange(logisticsRuleInfoModels);
-                                }
-
-                                var logisticsSortingInfoModel = logisticsSortingInfoModels?.FirstOrDefault(f =>
-                                    f.ExitId.Equals(logisticsSorting.ExitId) &&
-                                    f.CreateTime.Equals(dateTime));
-                                if (logisticsSortingInfoModel is not null) {
-                                    var ruleInfoModels = logisticsSortingInfoModel?.LogisticsRuleItems?.Select(s =>
-                                        new LogisticsRuleInfoModel() {
-                                            LogisticsSortingId = logisticsSorting.Id,
-                                            LogisticsId = s.LogisticsId
-                                        })?.ToList();
-                                    await _logisticsRuleRepository.InsertRange(ruleInfoModels ?? new List<LogisticsRuleInfoModel>());
-                                }
-                            }
-
                             LogisticsSortingMessageQueue.Enqueue("保存成功");
                             RefreshData();
                         }

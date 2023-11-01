@@ -85,7 +85,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         }
 
                         //添加到数据库
-                        var insertOrUpdate = await _sortingInstructionBindingRepository.Insert(new SortingInstructionBindingInfoModel() {
+                        var insertOrUpdate = await _sortingInstructionBindingRepository.InsertDetailAsync(new SortingInstructionBindingInfoModel() {
                             CreateTime = DateTime.Now,
                             DelaySendMilliseconds = model.SortingInstructionBindingItemInfo.DelaySendMilliseconds,
                             ExitId = model.SelectExitDefinitionInfo.Id,
@@ -94,38 +94,17 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                             IsActive = canActive && model.SortingInstructionBindingItemInfo.IsActive,
                             ModifyTime = DateTime.Now,
                             Remarks = model.SortingInstructionBindingItemInfo.Remarks,
-                        });
-                        if (insertOrUpdate) {
-                            //取出数据库对应指令列表内容
-                            var infoModels = await _sortingInstructionBindingRepository.SelectOrderByDescending(
-                                s => s.ExitId.Equals(model.SelectExitDefinitionInfo.Id),
-                                o => o.CreateTime);
-                            var instructionBindingInfoModel = infoModels?.FirstOrDefault() ?? new SortingInstructionBindingInfoModel();
-                            //取出model指令列表内容
-                            var instructionInfoModels = model.SortingInstructionItems.Select(s => new SortingInstructionInfoModel {
+                            InstructionItems = model.SortingInstructionItems.Select(s => new SortingInstructionInfoModel {
                                 CreateTime = s.CreateTime,
                                 Remarks = s.Remarks,
                                 Instruction = s.Instruction,
                                 ReplyContent = s.ReplyContent,
-                                InstructionBindingId = instructionBindingInfoModel?.Id ?? 0,
                                 ModifyTime = s.ModifyTime,
-                            })?.ToList();
-                            //删除数据库指令列表对应内容
-                            var sortingInstructionInfoModels = await _sortingInstructionRepository.Select(
-                                s => s.InstructionBindingId.Equals(instructionBindingInfoModel.Id),
-                                o => o.Id);
-                            if (sortingInstructionInfoModels?.Any() == true) {
-                                await _sortingInstructionRepository.DeleteRange(sortingInstructionInfoModels);
-                            }
-
-                            var insertRange = await _sortingInstructionRepository.InsertRange(instructionInfoModels ?? new List<SortingInstructionInfoModel>());
-                            if (insertRange) {
-                                SortingInstructionBindingMessageQueue.Enqueue("保存成功");
-                                RefreshData();
-                            }
-                            else {
-                                SortingInstructionBindingMessageQueue.Enqueue("保存失败");
-                            }
+                            })?.ToList()
+                        });
+                        if (insertOrUpdate) {
+                            SortingInstructionBindingMessageQueue.Enqueue("保存成功");
+                            RefreshData();
                         }
                         else {
                             SortingInstructionBindingMessageQueue.Enqueue("保存失败");
@@ -178,7 +157,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         }
 
                         //添加到数据库
-                        var insertOrUpdate = await _sortingInstructionBindingRepository.Update(new SortingInstructionBindingInfoModel() {
+                        var insertOrUpdate = await _sortingInstructionBindingRepository.UpdateDetailAsync(new SortingInstructionBindingInfoModel() {
                             CreateTime = DateTime.Now,
                             DelaySendMilliseconds = model.SortingInstructionBindingItemInfo.DelaySendMilliseconds,
                             ExitId = model.SelectExitDefinitionInfo.Id,
@@ -188,38 +167,17 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                             ModifyTime = DateTime.Now,
                             Remarks = model.SortingInstructionBindingItemInfo.Remarks,
                             Id = model.SortingInstructionBindingItemInfo.Id,
-                        });
-                        if (insertOrUpdate) {
-                            //取出数据库对应指令列表内容
-                            var infoModels = await _sortingInstructionBindingRepository.SelectOrderByDescending(
-                                s => s.ExitId.Equals(model.SelectExitDefinitionInfo.Id),
-                                o => o.CreateTime);
-                            var instructionBindingInfoModel = infoModels?.FirstOrDefault() ?? new SortingInstructionBindingInfoModel();
-                            //取出model指令列表内容
-                            var instructionInfoModels = model.SortingInstructionItems.Select(s => new SortingInstructionInfoModel {
+                            InstructionItems = model.SortingInstructionItems.Select(s => new SortingInstructionInfoModel {
                                 CreateTime = s.CreateTime,
                                 Remarks = s.Remarks,
                                 Instruction = s.Instruction,
                                 ReplyContent = s.ReplyContent,
-                                InstructionBindingId = instructionBindingInfoModel?.Id ?? 0,
                                 ModifyTime = s.ModifyTime,
-                            })?.ToList();
-                            //删除数据库指令列表对应内容
-                            var sortingInstructionInfoModels = await _sortingInstructionRepository.Select(
-                                s => s.InstructionBindingId.Equals(instructionBindingInfoModel.Id),
-                                o => o.Id);
-                            if (sortingInstructionInfoModels?.Any() == true) {
-                                await _sortingInstructionRepository.DeleteRange(sortingInstructionInfoModels);
-                            }
-
-                            var insertRange = await _sortingInstructionRepository.InsertRange(instructionInfoModels ?? new List<SortingInstructionInfoModel>());
-                            if (insertRange) {
-                                SortingInstructionBindingMessageQueue.Enqueue("保存成功");
-                                RefreshData();
-                            }
-                            else {
-                                SortingInstructionBindingMessageQueue.Enqueue("保存失败");
-                            }
+                            })?.ToList()
+                        });
+                        if (insertOrUpdate) {
+                            SortingInstructionBindingMessageQueue.Enqueue("保存成功");
+                            RefreshData();
                         }
                         else {
                             SortingInstructionBindingMessageQueue.Enqueue("保存失败");
@@ -477,35 +435,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                             .ToList();
 
                         //批量添加
-                        var range = await _sortingInstructionBindingRepository.InsertRange(sortingInstructionBindingInfoModels);
+                        var range = await _sortingInstructionBindingRepository.InsertRangeDetailAsync(sortingInstructionBindingInfoModels);
                         if (range) {
-                            //取出数据库对应指令列表内容
-                            var infoModels = await _sortingInstructionBindingRepository.SelectOrderByDescending(
-                                s => s.CreateTime.Equals(dateTime),
-                                o => o.CreateTime);
-                            //取出对应指令表
-                            foreach (var sortingInstructionBindingInfoModel in infoModels) {
-                                //删除数据库指令列表对应内容
-                                var sortingInstructionInfoModels = await _sortingInstructionRepository.Select(
-                                    s => s.InstructionBindingId.Equals(sortingInstructionBindingInfoModel.Id),
-                                    o => o.Id);
-                                if (sortingInstructionInfoModels?.Any() == true) {
-                                    await _sortingInstructionRepository.DeleteRange(sortingInstructionInfoModels);
-                                }
-                                //插入指令
-                                var instructionInfoModel = sortingInstructionBindingInfoModels?.FirstOrDefault(f =>
-                                    f.ExitId.Equals(sortingInstructionBindingInfoModel.ExitId) &&
-                                    f.CreateTime.Equals(dateTime));
-                                if (instructionInfoModel is not null) {
-                                    var instructionInfoModels = instructionInfoModel?.InstructionItems.Select(s =>
-                                        new SortingInstructionInfoModel {
-                                            Instruction = s.Instruction,
-                                            InstructionBindingId = sortingInstructionBindingInfoModel.Id
-                                        })?.ToList();
-                                    await _sortingInstructionRepository.InsertRange(instructionInfoModels ?? new List<SortingInstructionInfoModel>());
-                                }
-                            }
-
                             SortingInstructionBindingMessageQueue.Enqueue("保存成功");
                             RefreshData();
                         }

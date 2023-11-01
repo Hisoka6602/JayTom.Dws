@@ -7,6 +7,7 @@ using JayTom.Dws.Plugin;
 using System.Windows.Input;
 using System.Threading.Tasks;
 using MaterialDesignThemes.Wpf;
+using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
 using JayTom.Dws.Client.Views.Dialog;
 using System.Collections.ObjectModel;
@@ -22,7 +23,6 @@ using JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration.SortingMethodE
 using JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.SortingMethodEditors;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration.SortingMethodPages {
-
     public class OcrSortingViewModel : BindableBase {
         private readonly IOcrSortingRepository _ocrSortingRepository;
         private readonly IOcrRuleRepository _ocrRuleRepository;
@@ -74,38 +74,18 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                             ExitId = model.SelectPackageExitDefinitionInfo.Id,
                             Remarks = model.OcrSortingItemInfo.Remarks,
                             SortingName = model.OcrSortingItemInfo.SortingName,
-                        };
-                        var insert = await _ocrSortingRepository.Insert(ocrSortingInfoModel);
-                        if (insert) {
-                            EventAggregator.Instance.Publish(ocrSortingInfoModel);
-
-                            var sortingInfoModel = await _ocrSortingRepository.FirstOrDefault(f =>
-                                f.ModifyTime.Equals(model.OcrSortingItemInfo.ModifyTime) &&
-                                f.ExitId.Equals(model.SelectPackageExitDefinitionInfo.Id));
-                            var ocrRuleInfoModels = model.OcrRuleItems.Select(s => new OcrRuleInfoModel() {
+                            OcrRuleItems = model.OcrRuleItems.Select(s => new OcrRuleInfoModel() {
                                 CreateTime = s.CreateTime,
                                 ModifyTime = s.ModifyTime,
-                                OcrSortingId = sortingInfoModel.Id,
                                 Remarks = s.Remarks,
                                 RegexPattern = s.RegexPattern
-                            })?.ToList() ?? new List<OcrRuleInfoModel>();
-
-                            var ruleInfoModels = await _ocrRuleRepository.Select(s =>
-                                    s.OcrSortingId.Equals(sortingInfoModel.Id),
-                                o => o.Id);
-                            if (ruleInfoModels?.Any() == true) {
-                                await _ocrRuleRepository.DeleteRange(ruleInfoModels);
-                            }
-
-                            var insertRange = await _ocrRuleRepository.InsertRange(ocrRuleInfoModels);
-                            if (insertRange) {
-                                EventAggregator.Instance.Publish(ruleInfoModels);
-                                OcrSortingMessageQueue.Enqueue("保存成功");
-                                RefreshData();
-                            }
-                            else {
-                                OcrSortingMessageQueue.Enqueue("保存失败");
-                            }
+                            })?.ToList()
+                        };
+                        var insert = await _ocrSortingRepository.InsertDetailAsync(ocrSortingInfoModel);
+                        if (insert) {
+                            EventAggregator.Instance.Publish(ocrSortingInfoModel);
+                            OcrSortingMessageQueue.Enqueue("保存成功");
+                            RefreshData();
                         }
                         else {
                             OcrSortingMessageQueue.Enqueue("保存失败");
@@ -150,36 +130,20 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                             ExitId = model.SelectPackageExitDefinitionInfo.Id,
                             Remarks = model.OcrSortingItemInfo.Remarks,
                             SortingName = model.OcrSortingItemInfo.SortingName,
-                            Id = model.OcrSortingItemInfo.Id
-                        };
-                        var insert = await _ocrSortingRepository.Update(ocrSortingInfoModel);
-                        if (insert) {
-                            EventAggregator.Instance.Publish(ocrSortingInfoModel);
-
-                            var ocrRuleInfoModels = model.OcrRuleItems.Select(s => new OcrRuleInfoModel() {
+                            Id = model.OcrSortingItemInfo.Id,
+                            OcrRuleItems = model.OcrRuleItems.Select(s => new OcrRuleInfoModel() {
                                 CreateTime = s.CreateTime,
                                 ModifyTime = s.ModifyTime,
                                 OcrSortingId = model.OcrSortingItemInfo.Id,
                                 Remarks = s.Remarks,
                                 RegexPattern = s.RegexPattern
-                            })?.ToList() ?? new List<OcrRuleInfoModel>();
-
-                            var ruleInfoModels = await _ocrRuleRepository.Select(s =>
-                                    s.OcrSortingId.Equals(model.OcrSortingItemInfo.Id),
-                                o => o.Id);
-                            if (ruleInfoModels?.Any() == true) {
-                                await _ocrRuleRepository.DeleteRange(ruleInfoModels);
-                            }
-
-                            var insertRange = await _ocrRuleRepository.InsertRange(ocrRuleInfoModels);
-                            if (insertRange) {
-                                EventAggregator.Instance.Publish(ruleInfoModels);
-                                OcrSortingMessageQueue.Enqueue("保存成功");
-                                RefreshData();
-                            }
-                            else {
-                                OcrSortingMessageQueue.Enqueue("保存失败");
-                            }
+                            })?.ToList()
+                        };
+                        var insert = await _ocrSortingRepository.UpdateDetailAsync(ocrSortingInfoModel);
+                        if (insert) {
+                            EventAggregator.Instance.Publish(ocrSortingInfoModel);
+                            OcrSortingMessageQueue.Enqueue("保存成功");
+                            RefreshData();
                         }
                         else {
                             OcrSortingMessageQueue.Enqueue("保存失败");
@@ -375,11 +339,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                                     }
                                 }
                             })
-                            .GroupBy(s => s.ExitId)
+                            .GroupBy(s => s.SortingName)
                             .Select(group => new OcrSortingInfoModel {
                                 CreateTime = group.First().CreateTime,
-                                ExitId = group.Key,
-                                SortingName = group.First().SortingName,
+                                ExitId = group.First().ExitId,
+                                SortingName = group.Key,
                                 ModifyTime = group.First().ModifyTime,
                                 Remarks = group.First().Remarks,
                                 OcrRuleItems = group.SelectMany(item => item.OcrRuleItems).ToList()
@@ -387,33 +351,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                             .ToList();
 
                         //批量添加
-                        var range = await _ocrSortingRepository.InsertRange(ocrSortingInfoModels);
+                        var range = await _ocrSortingRepository.InsertRangeDetailAsync(ocrSortingInfoModels);
                         if (range) {
                             //取出数据库对应指令列表内容
-                            var infoModels = await _ocrSortingRepository.SelectOrderByDescending(
-                                s => s.CreateTime.Equals(dateTime),
-                                o => o.CreateTime);
-                            foreach (var ocrSorting in infoModels) {
-                                var ocrRuleInfoModels = await _ocrRuleRepository.Select(
-                                    s => s.OcrSortingInfo.Equals(ocrSorting.Id),
-                                    o => o.Id);
-                                if (ocrRuleInfoModels?.Any() == true) {
-                                    await _ocrRuleRepository.DeleteRange(ocrRuleInfoModels);
-                                }
-
-                                var ocrSortingInfoModel = ocrSortingInfoModels?.FirstOrDefault(f =>
-                                    f.ExitId.Equals(ocrSorting.ExitId) &&
-                                    f.CreateTime.Equals(dateTime));
-                                if (ocrSortingInfoModel is not null) {
-                                    var ruleInfoModels = ocrSortingInfoModel?.OcrRuleItems.Select(s =>
-                                        new OcrRuleInfoModel() {
-                                            RegexPattern = s.RegexPattern,
-                                            OcrSortingId = ocrSorting.Id,
-                                        })?.ToList();
-                                    await _ocrRuleRepository.InsertRange(ruleInfoModels ?? new List<OcrRuleInfoModel>());
-                                }
-                            }
-
                             OcrSortingMessageQueue.Enqueue("保存成功");
                             RefreshData();
                         }

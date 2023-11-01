@@ -7,6 +7,7 @@ using JayTom.Dws.Plugin;
 using System.Windows.Input;
 using System.Threading.Tasks;
 using MaterialDesignThemes.Wpf;
+using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
 using JayTom.Dws.Client.Views.Dialog;
 using System.Collections.ObjectModel;
@@ -76,36 +77,18 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                             ExitId = model.SelectPackageExitDefinitionInfo.Id,
                             Remarks = model.VolumeSortingItemInfo.Remarks,
                             SortingName = model.VolumeSortingItemInfo.SortingName,
-                        };
-                        var insert = await _volumeSortingRepository.Insert(volumeSortingInfoModel);
-                        if (insert) {
-                            EventAggregator.Instance.Publish(volumeSortingInfoModel);
-
-                            var sortingInfoModel = await _volumeSortingRepository.FirstOrDefault(f =>
-                                f.ModifyTime.Equals(model.VolumeSortingItemInfo.ModifyTime) &&
-                                f.ExitId.Equals(model.SelectPackageExitDefinitionInfo.Id));
-                            var volumeRuleInfoModels = model.VolumeRuleItems?.Select(s => new VolumeRuleInfoModel() {
+                            VolumeRuleItems = model.VolumeRuleItems?.Select(s => new VolumeRuleInfoModel() {
                                 CreateTime = s.CreateTime,
                                 Formula = s.Formula,
                                 ModifyTime = s.ModifyTime,
                                 Remarks = s.Remarks,
-                                VolumeSortingId = sortingInfoModel.Id,
-                            })?.ToList() ?? new List<VolumeRuleInfoModel>();
-                            var ruleInfoModels = await _volumeRuleRepository.Select(s =>
-                                s.VolumeSortingId.Equals(sortingInfoModel.Id), o => o.Id);
-                            if (ruleInfoModels?.Any() == true) {
-                                await _volumeRuleRepository.DeleteRange(ruleInfoModels);
-                            }
-
-                            var insertRange = await _volumeRuleRepository.InsertRange(volumeRuleInfoModels);
-                            if (insertRange) {
-                                EventAggregator.Instance.Publish(ruleInfoModels);
-                                VolumeSortingMessageQueue.Enqueue("保存成功");
-                                RefreshData();
-                            }
-                            else {
-                                VolumeSortingMessageQueue.Enqueue("保存失败");
-                            }
+                            })?.ToList()
+                        };
+                        var insert = await _volumeSortingRepository.InsertDetailAsync(volumeSortingInfoModel);
+                        if (insert) {
+                            EventAggregator.Instance.Publish(volumeSortingInfoModel);
+                            VolumeSortingMessageQueue.Enqueue("保存成功");
+                            RefreshData();
                         }
                         else {
                             VolumeSortingMessageQueue.Enqueue("保存失败");
@@ -151,33 +134,19 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                             Remarks = model.VolumeSortingItemInfo.Remarks,
                             SortingName = model.VolumeSortingItemInfo.SortingName,
                             Id = model.VolumeSortingItemInfo.Id,
-                        };
-                        var insert = await _volumeSortingRepository.Update(volumeSortingInfoModel);
-                        if (insert) {
-                            EventAggregator.Instance.Publish(insert);
-
-                            var volumeRuleInfoModels = model.VolumeRuleItems?.Select(s => new VolumeRuleInfoModel() {
+                            VolumeRuleItems = model.VolumeRuleItems?.Select(s => new VolumeRuleInfoModel() {
                                 CreateTime = s.CreateTime,
                                 Formula = s.Formula,
                                 ModifyTime = s.ModifyTime,
                                 Remarks = s.Remarks,
                                 VolumeSortingId = model.VolumeSortingItemInfo.Id,
-                            })?.ToList() ?? new List<VolumeRuleInfoModel>();
-                            var ruleInfoModels = await _volumeRuleRepository.Select(s =>
-                                s.VolumeSortingId.Equals(model.VolumeSortingItemInfo.Id), o => o.Id);
-                            if (ruleInfoModels?.Any() == true) {
-                                await _volumeRuleRepository.DeleteRange(ruleInfoModels);
-                            }
-
-                            var insertRange = await _volumeRuleRepository.InsertRange(volumeRuleInfoModels);
-                            if (insertRange) {
-                                EventAggregator.Instance.Publish(ruleInfoModels);
-                                VolumeSortingMessageQueue.Enqueue("保存成功");
-                                RefreshData();
-                            }
-                            else {
-                                VolumeSortingMessageQueue.Enqueue("保存失败");
-                            }
+                            })?.ToList()
+                        };
+                        var insert = await _volumeSortingRepository.UpdateDetailAsync(volumeSortingInfoModel);
+                        if (insert) {
+                            EventAggregator.Instance.Publish(volumeSortingInfoModel);
+                            VolumeSortingMessageQueue.Enqueue("保存成功");
+                            RefreshData();
                         }
                         else {
                             VolumeSortingMessageQueue.Enqueue("保存失败");
@@ -373,11 +342,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                                     }
                                 }
                             })
-                            .GroupBy(s => s.ExitId)
+                            .GroupBy(s => s.SortingName)
                             .Select(group => new VolumeSortingInfoModel {
                                 CreateTime = group.First().CreateTime,
-                                ExitId = group.Key,
-                                SortingName = group.First().SortingName,
+                                ExitId = group.First().ExitId,
+                                SortingName = group.Key,
                                 ModifyTime = group.First().ModifyTime,
                                 Remarks = group.First().Remarks,
                                 VolumeRuleItems = group.SelectMany(item => item.VolumeRuleItems).ToList()
@@ -385,32 +354,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                             .ToList();
 
                         //批量添加
-                        var range = await _volumeSortingRepository.InsertRange(volumeSortingInfoModels);
+                        var range = await _volumeSortingRepository.InsertRangeDetailAsync(volumeSortingInfoModels);
                         if (range) {
                             //取出数据库对应指令列表内容
-                            var infoModels = await _volumeSortingRepository.SelectOrderByDescending(
-                                s => s.CreateTime.Equals(dateTime),
-                                o => o.CreateTime);
-                            foreach (var volumeSorting in infoModels) {
-                                var volumeRuleInfoModels = await _volumeRuleRepository.Select(
-                                    s => s.VolumeSortingId.Equals(volumeSorting.Id),
-                                    o => o.Id);
-                                if (volumeRuleInfoModels?.Any() == true) {
-                                    await _volumeRuleRepository.DeleteRange(volumeRuleInfoModels);
-                                }
-
-                                var volumeSortingInfoModel = volumeSortingInfoModels?.FirstOrDefault(f =>
-                                    f.ExitId.Equals(volumeSorting.ExitId) &&
-                                    f.CreateTime.Equals(dateTime));
-                                if (volumeSortingInfoModel is not null) {
-                                    var ruleInfoModels = volumeSortingInfoModel?.VolumeRuleItems.Select(s =>
-                                        new VolumeRuleInfoModel() {
-                                            Formula = s.Formula,
-                                            VolumeSortingId = volumeSorting.Id
-                                        })?.ToList();
-                                    await _volumeRuleRepository.InsertRange(ruleInfoModels ?? new List<VolumeRuleInfoModel>());
-                                }
-                            }
 
                             VolumeSortingMessageQueue.Enqueue("保存成功");
                             RefreshData();

@@ -81,35 +81,18 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                             Remarks = model.LogisticsCodeRecognitionItemInfo.Remarks,
                             SoundName = model.LogisticsCodeRecognitionItemInfo.SoundName,
                             SoundBytes = model.LogisticsCodeRecognitionItemInfo.SoundBytes,
-                        };
-                        var insertOrUpdate = await _logisticsCodeRecognitionRepository.InsertOrUpdate(infoModel);
-                        if (insertOrUpdate) {
-                            EventAggregator.Instance.Publish(infoModel);
-                            var logisticsCodeRecognitionInfoModel = await _logisticsCodeRecognitionRepository.FirstOrDefault(f =>
-                                f.LogisticsCode.Equals(infoModel.LogisticsCode));
-                            var logisticsRegexInfoModels = model.LogisticsRegexItems.Select(s => new LogisticsRegexInfoModel {
+                            LogisticsRegexItems = model.LogisticsRegexItems.Select(s => new LogisticsRegexInfoModel {
                                 CreateTime = s.CreateTime,
                                 ModifyTime = s.ModifyTime,
-                                LogisticsId = logisticsCodeRecognitionInfoModel.Id,
                                 RegexPattern = s.RegexPattern,
-                            })?.ToList();
-                            var regexInfoModels = await _logisticsRegexRepository.Select(s =>
-                                s.LogisticsId.Equals(logisticsCodeRecognitionInfoModel.Id), o => o.Id);
+                            })?.ToList()
+                        };
+                        var insertOrUpdate = await _logisticsCodeRecognitionRepository.InsertDetailAsync(infoModel);
+                        if (insertOrUpdate) {
+                            EventAggregator.Instance.Publish(infoModel);
+                            LogisticsCodeRecognitionMessageQueue.Enqueue("保存成功");
+                            RefreshData();
 
-                            if (regexInfoModels?.Any() == true) {
-                                //删除
-                                await _logisticsRegexRepository.DeleteRange(regexInfoModels);
-                            }
-                            //添加
-                            var syncEntities = await _logisticsRegexRepository.InsertRange(logisticsRegexInfoModels ?? new List<LogisticsRegexInfoModel>());
-                            if (syncEntities) {
-                                EventAggregator.Instance.Publish(logisticsRegexInfoModels);
-                                LogisticsCodeRecognitionMessageQueue.Enqueue("保存成功");
-                                RefreshData();
-                            }
-                            else {
-                                LogisticsCodeRecognitionMessageQueue.Enqueue("保存失败");
-                            }
                         }
                         else {
                             LogisticsCodeRecognitionMessageQueue.Enqueue("保存失败");
@@ -154,6 +137,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                     if (model.IsOk) {
                         //添加到数据库
                         var infoModel = new LogisticsCodeRecognitionInfoModel() {
+                            Id = model.LogisticsCodeRecognitionItemInfo.Id,
                             CreateTime = DateTime.Now,
                             IconName = model.LogisticsCodeRecognitionItemInfo.IconName,
                             IconBytes = model.LogisticsCodeRecognitionItemInfo.Icon?.ImageSourceToByteArray(),
@@ -163,34 +147,16 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                             Remarks = model.LogisticsCodeRecognitionItemInfo.Remarks,
                             SoundName = model.LogisticsCodeRecognitionItemInfo.SoundName,
                             SoundBytes = model.LogisticsCodeRecognitionItemInfo.SoundBytes,
-                        };
-                        var insertOrUpdate = await _logisticsCodeRecognitionRepository.InsertOrUpdate(infoModel);
-                        if (insertOrUpdate) {
-                            var logisticsCodeRecognitionInfoModel = await _logisticsCodeRecognitionRepository.FirstOrDefault(f =>
-                                f.LogisticsCode.Equals(infoModel.LogisticsCode));
-                            var logisticsRegexInfoModels = model.LogisticsRegexItems.Select(s => new LogisticsRegexInfoModel {
+                            LogisticsRegexItems = model.LogisticsRegexItems.Select(s => new LogisticsRegexInfoModel {
                                 CreateTime = s.CreateTime,
                                 ModifyTime = s.ModifyTime,
-                                LogisticsId = logisticsCodeRecognitionInfoModel.Id,
                                 RegexPattern = s.RegexPattern,
-                            })?.ToList();
-
-                            var regexInfoModels = await _logisticsRegexRepository.Select(s =>
-                                s.LogisticsId.Equals(logisticsCodeRecognitionInfoModel.Id), o => o.Id);
-
-                            if (regexInfoModels?.Any() == true) {
-                                //删除
-                                await _logisticsRegexRepository.DeleteRange(regexInfoModels);
-                            }
-                            //添加
-                            var syncEntities = await _logisticsRegexRepository.InsertRange(logisticsRegexInfoModels ?? new List<LogisticsRegexInfoModel>());
-                            if (syncEntities) {
-                                LogisticsCodeRecognitionMessageQueue.Enqueue("保存成功");
-                                RefreshData();
-                            }
-                            else {
-                                LogisticsCodeRecognitionMessageQueue.Enqueue("保存失败");
-                            }
+                            })?.ToList()
+                        };
+                        var insertOrUpdate = await _logisticsCodeRecognitionRepository.UpdateDetailAsync(infoModel);
+                        if (insertOrUpdate) {
+                            LogisticsCodeRecognitionMessageQueue.Enqueue("保存成功");
+                            RefreshData();
                         }
                         else {
                             LogisticsCodeRecognitionMessageQueue.Enqueue("保存失败");

@@ -12,13 +12,13 @@ namespace JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig {
 
         Task<List<OcrSortingInfoModel>> OcrSortingItems(Expression<Func<OcrSortingInfoModel, bool>> @where, CancellationToken token = default);
 
-        /*//插入
+        //插入
         Task<bool> InsertDetailAsync(OcrSortingInfoModel entity, CancellationToken token = default);
 
         //批量插入
         Task<bool> InsertRangeDetailAsync(List<OcrSortingInfoModel> entities, CancellationToken token = default);
 
         //更新
-        Task<bool> UpdateDetailAsync(OcrSortingInfoModel entity, CancellationToken token = default);*/
+        Task<bool> UpdateDetailAsync(OcrSortingInfoModel entity, CancellationToken token = default);
     }
 }

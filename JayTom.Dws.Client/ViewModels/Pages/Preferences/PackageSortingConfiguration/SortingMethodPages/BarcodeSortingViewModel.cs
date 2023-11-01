@@ -75,37 +75,19 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                             ExitId = model.SelectPackageExitDefinitionInfo.Id,
                             ModifyTime = model.BarCodeSortingItemInfo.ModifyTime,
                             Remarks = model.BarCodeSortingItemInfo.Remarks,
-                            SortingName = model.BarCodeSortingItemInfo.SortingName
-                        };
-                        var insertOrUpdate = await _barCodeSortingRepository.Insert(infoModel);
-                        if (insertOrUpdate) {
-                            EventAggregator.Instance.Publish(infoModel);
-                            var barCodeSortingInfoModel = await _barCodeSortingRepository.FirstOrDefault(f =>
-                                f.ModifyTime.Equals(model.BarCodeSortingItemInfo.ModifyTime) &&
-                                f.ExitId.Equals(model.SelectPackageExitDefinitionInfo.Id));
-
-                            var codeRegexInfoModels = model.BarCodeRegexItems.Select(s => new BarCodeRegexInfoModel {
-                                BarCodeSortingId = barCodeSortingInfoModel.Id,
+                            SortingName = model.BarCodeSortingItemInfo.SortingName,
+                            BarCodeRegexItems = model.BarCodeRegexItems.Select(s => new BarCodeRegexInfoModel() {
                                 CreateTime = s.CreateTime,
                                 ModifyTime = s.ModifyTime,
                                 Remarks = s.Remarks,
-                                RegexPattern = s.RegexPattern,
-                            })?.ToList() ?? new List<BarCodeRegexInfoModel>();
-                            var barCodeRegexInfoModels = await _barCodeRegexRepository.Select(s =>
-                                s.BarCodeSortingId.Equals(barCodeSortingInfoModel.Id), o => o.Id);
-                            if (barCodeRegexInfoModels?.Any() == true) {
-                                await _barCodeRegexRepository.DeleteRange(barCodeRegexInfoModels);
-                            }
-
-                            var insertRange = await _barCodeRegexRepository.InsertRange(codeRegexInfoModels);
-                            if (insertRange) {
-                                EventAggregator.Instance.Publish(codeRegexInfoModels);
-                                BarcodeSortingMessageQueue.Enqueue("保存成功");
-                                RefreshData();
-                            }
-                            else {
-                                BarcodeSortingMessageQueue.Enqueue("保存失败");
-                            }
+                                RegexPattern = s.RegexPattern
+                            })?.ToList()
+                        };
+                        var insertOrUpdate = await _barCodeSortingRepository.InsertDetailAsync(infoModel);
+                        if (insertOrUpdate) {
+                            EventAggregator.Instance.Publish(infoModel);
+                            BarcodeSortingMessageQueue.Enqueue("保存成功");
+                            RefreshData();
                         }
                         else {
                             BarcodeSortingMessageQueue.Enqueue("保存失败");
@@ -150,37 +132,19 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                             ModifyTime = model.BarCodeSortingItemInfo.ModifyTime,
                             Remarks = model.BarCodeSortingItemInfo.Remarks,
                             SortingName = model.BarCodeSortingItemInfo.SortingName,
-                            Id = model.BarCodeSortingItemInfo.Id
-                        };
-                        var insertOrUpdate = await _barCodeSortingRepository.Update(infoModel);
-                        if (insertOrUpdate) {
-                            EventAggregator.Instance.Publish(infoModel);
-                            var barCodeSortingInfoModel = await _barCodeSortingRepository.FirstOrDefault(f =>
-                                f.ModifyTime.Equals(model.BarCodeSortingItemInfo.ModifyTime) &&
-                                f.ExitId.Equals(model.SelectPackageExitDefinitionInfo.Id));
-
-                            var codeRegexInfoModels = model.BarCodeRegexItems.Select(s => new BarCodeRegexInfoModel {
-                                BarCodeSortingId = barCodeSortingInfoModel.Id,
+                            Id = model.BarCodeSortingItemInfo.Id,
+                            BarCodeRegexItems = model.BarCodeRegexItems.Select(s => new BarCodeRegexInfoModel {
                                 CreateTime = s.CreateTime,
                                 ModifyTime = s.ModifyTime,
                                 Remarks = s.Remarks,
                                 RegexPattern = s.RegexPattern,
-                            })?.ToList() ?? new List<BarCodeRegexInfoModel>();
-                            var barCodeRegexInfoModels = await _barCodeRegexRepository.Select(s =>
-                                s.BarCodeSortingId.Equals(barCodeSortingInfoModel.Id), o => o.Id);
-                            if (barCodeRegexInfoModels?.Any() == true) {
-                                await _barCodeRegexRepository.DeleteRange(barCodeRegexInfoModels);
-                            }
-
-                            var insertRange = await _barCodeRegexRepository.InsertRange(codeRegexInfoModels);
-                            if (insertRange) {
-                                EventAggregator.Instance.Publish(codeRegexInfoModels);
-                                BarcodeSortingMessageQueue.Enqueue("保存成功");
-                                RefreshData();
-                            }
-                            else {
-                                BarcodeSortingMessageQueue.Enqueue("保存失败");
-                            }
+                            })?.ToList()
+                        };
+                        var insertOrUpdate = await _barCodeSortingRepository.UpdateDetailAsync(infoModel);
+                        if (insertOrUpdate) {
+                            EventAggregator.Instance.Publish(infoModel);
+                            BarcodeSortingMessageQueue.Enqueue("保存成功");
+                            RefreshData();
                         }
                         else {
                             BarcodeSortingMessageQueue.Enqueue("保存失败");
@@ -376,11 +340,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                                     }
                                 }
                             })
-                            .GroupBy(s => s.ExitId)
+                            .GroupBy(s => s.SortingName)
                             .Select(group => new BarCodeSortingInfoModel {
                                 CreateTime = group.First().CreateTime,
-                                ExitId = group.Key,
-                                SortingName = group.First().SortingName,
+                                ExitId = group.First().ExitId,
+                                SortingName = group.Key,
                                 ModifyTime = group.First().ModifyTime,
                                 Remarks = group.First().Remarks,
                                 BarCodeRegexItems = group.SelectMany(item => item.BarCodeRegexItems).ToList()
@@ -388,34 +352,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                             .ToList();
 
                         //批量添加
-                        var range = await _barCodeSortingRepository.InsertRange(barCodeSortingInfoModels);
+                        var range = await _barCodeSortingRepository.InsertRangeDetailAsync(barCodeSortingInfoModels);
                         if (range) {
-                            //取出数据库对应指令列表内容
-                            var infoModels = await _barCodeSortingRepository.SelectOrderByDescending(
-                                s => s.CreateTime.Equals(dateTime),
-                                o => o.CreateTime);
-
-                            foreach (var barCodeSorting in infoModels) {
-                                var barCodeRegexInfoModels = await _barCodeRegexRepository.Select(
-                                    s => s.BarCodeSortingId.Equals(barCodeSorting.Id),
-                                    o => o.Id);
-                                if (barCodeRegexInfoModels?.Any() == true) {
-                                    await _barCodeRegexRepository.DeleteRange(barCodeRegexInfoModels);
-                                }
-
-                                var barCodeSortingInfoModel = barCodeSortingInfoModels?.FirstOrDefault(f =>
-                                    f.ExitId.Equals(barCodeSorting.ExitId) &&
-                                    f.CreateTime.Equals(dateTime));
-                                if (barCodeSortingInfoModel is not null) {
-                                    var instructionInfoModels = barCodeSortingInfoModel?.BarCodeRegexItems.Select(s =>
-                                        new BarCodeRegexInfoModel {
-                                            RegexPattern = s.RegexPattern,
-                                            BarCodeSortingId = barCodeSorting.Id
-                                        })?.ToList();
-                                    await _barCodeRegexRepository.InsertRange(instructionInfoModels ?? new List<BarCodeRegexInfoModel>());
-                                }
-                            }
-
                             BarcodeSortingMessageQueue.Enqueue("保存成功");
                             RefreshData();
                         }

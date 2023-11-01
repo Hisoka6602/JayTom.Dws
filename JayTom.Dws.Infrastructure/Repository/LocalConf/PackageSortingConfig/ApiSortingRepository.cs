@@ -15,7 +15,6 @@ using JayTom.Dws.Data.LocalConf.PackageSortingConfig.RuleConfig;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
 
 namespace JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig {
-
     public class ApiSortingRepository : LocalRepositoryBase<ApiSortingInfoModel>, IApiSortingRepository {
 
         public ApiSortingRepository(IDbContextFactory<SqliteConfContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
@@ -71,32 +70,8 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig {
                     await using (contextTransaction = await concardContext.Database.BeginTransactionAsync(token)) {
                         if (contextTransaction is not null) {
                             var apiSortingInfoModels = concardContext?.Set<ApiSortingInfoModel>();
-                            var apiRuleInfoModels = concardContext?.Set<ApiRuleInfoModel>();
-                            var apiSortingInfoModel = new ApiSortingInfoModel() {
-                                CreateTime = entity.CreateTime,
-                                ModifyTime = entity.ModifyTime,
-                                ExitId = entity.ExitId,
-                                Remarks = entity.Remarks,
-                                SortingName = entity.SortingName,
-                            };
-                            await apiSortingInfoModels.AddAsync(apiSortingInfoModel, token);
+                            await apiSortingInfoModels.AddAsync(entity, token);
                             await concardContext?.SaveChangesAsync(token);
-                            //先删除原有的
-                            apiRuleInfoModels.RemoveRange(
-                                apiRuleInfoModels.Where(w => w.ApiSortingId.Equals(apiSortingInfoModel.Id)));
-                            if (entity.ApiRuleItems != null) {
-                                foreach (var item in entity.ApiRuleItems) {
-                                    var apiRuleInfoModel = new ApiRuleInfoModel() {
-                                        CreateTime = item.CreateTime,
-                                        ModifyTime = item.ModifyTime,
-                                        Remarks = item.Remarks,
-                                        JsonContent = item.JsonContent,
-                                        ApiSortingInfo = apiSortingInfoModel // 将对象与引用的ApiSortingInfoModel关联
-                                    };
-                                    apiRuleInfoModels?.AddAsync(apiRuleInfoModel, token);
-                                }
-                                await concardContext?.SaveChangesAsync(token);
-                            }
                             await contextTransaction.CommitAsync(token);
 
                             return true;
@@ -127,32 +102,9 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig {
                 return await strategy.ExecuteAsync(async () => {
                     await using (contextTransaction = await concardContext.Database.BeginTransactionAsync(token)) {
                         if (contextTransaction is not null) {
-                            foreach (var entity in entities) {
-                                var apiSortingInfoModels = concardContext?.Set<ApiSortingInfoModel>();
-                                var apiRuleInfoModels = concardContext?.Set<ApiRuleInfoModel>();
-                                var apiSortingInfoModel = new ApiSortingInfoModel() {
-                                    CreateTime = entity.CreateTime,
-                                    ModifyTime = entity.ModifyTime,
-                                    ExitId = entity.ExitId,
-                                    Remarks = entity.Remarks,
-                                    SortingName = entity.SortingName,
-                                };
-                                await apiSortingInfoModels.AddAsync(apiSortingInfoModel, token);
-                                await concardContext?.SaveChangesAsync(token);
-                                if (entity.ApiRuleItems != null) {
-                                    foreach (var item in entity.ApiRuleItems) {
-                                        var apiRuleInfoModel = new ApiRuleInfoModel() {
-                                            CreateTime = item.CreateTime,
-                                            ModifyTime = item.ModifyTime,
-                                            Remarks = item.Remarks,
-                                            JsonContent = item.JsonContent,
-                                            ApiSortingInfo = apiSortingInfoModel // 将对象与引用的ApiSortingInfoModel关联
-                                        };
-                                        apiRuleInfoModels?.AddAsync(apiRuleInfoModel, token);
-                                    }
-                                    await concardContext?.SaveChangesAsync(token);
-                                }
-                            }
+                            var apiSortingInfoModels = concardContext?.Set<ApiSortingInfoModel>();
+                            await apiSortingInfoModels.AddRangeAsync(entities, token);
+                            await concardContext?.SaveChangesAsync(token);
                             await contextTransaction.CommitAsync(token);
                             return true;
                         }

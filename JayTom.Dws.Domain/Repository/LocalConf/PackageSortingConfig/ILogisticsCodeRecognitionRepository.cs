@@ -19,13 +19,13 @@ namespace JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig {
         /// <returns></returns>
         Task<List<LogisticsCodeRecognitionInfoModel>> LogisticsCodes(Expression<Func<LogisticsCodeRecognitionInfoModel, bool>> @where, CancellationToken token = default);
 
-        /*//插入
+        //插入
         Task<bool> InsertDetailAsync(LogisticsCodeRecognitionInfoModel entity, CancellationToken token = default);
 
         //批量插入
         Task<bool> InsertRangeDetailAsync(List<LogisticsCodeRecognitionInfoModel> entities, CancellationToken token = default);
 
         //更新
-        Task<bool> UpdateDetailAsync(LogisticsCodeRecognitionInfoModel entity, CancellationToken token = default);*/
+        Task<bool> UpdateDetailAsync(LogisticsCodeRecognitionInfoModel entity, CancellationToken token = default);
     }
 }

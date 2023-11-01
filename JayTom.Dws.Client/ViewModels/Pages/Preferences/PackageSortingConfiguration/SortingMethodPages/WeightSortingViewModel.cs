@@ -7,6 +7,7 @@ using JayTom.Dws.Plugin;
 using System.Windows.Input;
 using System.Threading.Tasks;
 using MaterialDesignThemes.Wpf;
+using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
 using JayTom.Dws.Client.Views.Dialog;
 using System.Collections.ObjectModel;
@@ -74,38 +75,18 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                             ModifyTime = model.WeightSortingItemInfo.ModifyTime,
                             Remarks = model.WeightSortingItemInfo.Remarks,
                             SortingName = model.WeightSortingItemInfo.SortingName,
-                        };
-                        var insert = await _weightSortingRepository.Insert(weightSortingInfoModel);
-                        if (insert) {
-                            EventAggregator.Instance.Publish(weightSortingInfoModel);
-
-                            var sortingInfoModel = await _weightSortingRepository.FirstOrDefault(f =>
-                                f.ModifyTime.Equals(model.WeightSortingItemInfo.ModifyTime) &&
-                                f.ExitId.Equals(model.SelectPackageExitDefinitionInfo.Id));
-
-                            var weightRuleInfoModels = model.WeightRuleItems.Select(s => new WeightRuleInfoModel {
+                            WeightRuleItems = model.WeightRuleItems.Select(s => new WeightRuleInfoModel {
                                 CreateTime = s.CreateTime,
                                 Formula = s.Formula,
                                 ModifyTime = s.ModifyTime,
                                 Remarks = s.Remarks,
-                                WeightSortingId = sortingInfoModel.Id,
-                            })?.ToList() ?? new List<WeightRuleInfoModel>();
-
-                            var ruleInfoModels = await _weightRuleRepository.Select(s =>
-                                s.WeightSortingId.Equals(sortingInfoModel.Id), o => o.Id);
-                            if (ruleInfoModels?.Any() == true) {
-                                await _weightRuleRepository.DeleteRange(ruleInfoModels);
-                            }
-
-                            var insertRange = await _weightRuleRepository.InsertRange(weightRuleInfoModels);
-                            if (insertRange) {
-                                EventAggregator.Instance.Publish(ruleInfoModels);
-                                WeightSortingMessageQueue.Enqueue("保存成功");
-                                RefreshData();
-                            }
-                            else {
-                                WeightSortingMessageQueue.Enqueue("保存失败");
-                            }
+                            })?.ToList()
+                        };
+                        var insert = await _weightSortingRepository.InsertDetailAsync(weightSortingInfoModel);
+                        if (insert) {
+                            EventAggregator.Instance.Publish(weightSortingInfoModel);
+                            WeightSortingMessageQueue.Enqueue("保存成功");
+                            RefreshData();
                         }
                         else {
                             WeightSortingMessageQueue.Enqueue("保存失败");
@@ -150,37 +131,20 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                             ModifyTime = model.WeightSortingItemInfo.ModifyTime,
                             Remarks = model.WeightSortingItemInfo.Remarks,
                             SortingName = model.WeightSortingItemInfo.SortingName,
-                            Id = model.WeightSortingItemInfo.Id
-                        };
-                        var insert = await _weightSortingRepository.Update(weightSortingInfoModel);
-                        if (insert) {
-                            EventAggregator.Instance.Publish(insert);
-
-                            ;
-
-                            var weightRuleInfoModels = model.WeightRuleItems.Select(s => new WeightRuleInfoModel {
+                            Id = model.WeightSortingItemInfo.Id,
+                            WeightRuleItems = model.WeightRuleItems.Select(s => new WeightRuleInfoModel {
                                 CreateTime = s.CreateTime,
                                 Formula = s.Formula,
                                 ModifyTime = s.ModifyTime,
                                 Remarks = s.Remarks,
                                 WeightSortingId = model.WeightSortingItemInfo.Id,
-                            })?.ToList() ?? new List<WeightRuleInfoModel>();
-
-                            var ruleInfoModels = await _weightRuleRepository.Select(s =>
-                                s.WeightSortingId.Equals(model.WeightSortingItemInfo.Id), o => o.Id);
-                            if (ruleInfoModels?.Any() == true) {
-                                await _weightRuleRepository.DeleteRange(ruleInfoModels);
-                            }
-
-                            var insertRange = await _weightRuleRepository.InsertRange(weightRuleInfoModels);
-                            if (insertRange) {
-                                EventAggregator.Instance.Publish(ruleInfoModels);
-                                WeightSortingMessageQueue.Enqueue("保存成功");
-                                RefreshData();
-                            }
-                            else {
-                                WeightSortingMessageQueue.Enqueue("保存失败");
-                            }
+                            })?.ToList()
+                        };
+                        var insert = await _weightSortingRepository.UpdateDetailAsync(weightSortingInfoModel);
+                        if (insert) {
+                            EventAggregator.Instance.Publish(weightSortingInfoModel);
+                            WeightSortingMessageQueue.Enqueue("保存成功");
+                            RefreshData();
                         }
                     }
                 }
@@ -373,11 +337,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                                     }
                                 }
                             })
-                            .GroupBy(s => s.ExitId)
+                            .GroupBy(s => s.SortingName)
                             .Select(group => new WeightSortingInfoModel {
                                 CreateTime = group.First().CreateTime,
-                                ExitId = group.Key,
-                                SortingName = group.First().SortingName,
+                                ExitId = group.First().ExitId,
+                                SortingName = group.Key,
                                 ModifyTime = group.First().ModifyTime,
                                 Remarks = group.First().Remarks,
                                 WeightRuleItems = group.SelectMany(item => item.WeightRuleItems).ToList()
@@ -385,33 +349,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                             .ToList();
 
                         //批量添加
-                        var range = await _weightSortingRepository.InsertRange(weightSortingInfoModels);
+                        var range = await _weightSortingRepository.InsertRangeDetailAsync(weightSortingInfoModels);
                         if (range) {
-                            //取出数据库对应指令列表内容
-                            var infoModels = await _weightSortingRepository.SelectOrderByDescending(
-                                s => s.CreateTime.Equals(dateTime),
-                                o => o.CreateTime);
-                            foreach (var weightSorting in infoModels) {
-                                var weightRuleInfoModels = await _weightRuleRepository.Select(
-                                    s => s.WeightSortingId.Equals(weightSorting.Id),
-                                    o => o.Id);
-                                if (weightRuleInfoModels?.Any() == true) {
-                                    await _weightRuleRepository.DeleteRange(weightRuleInfoModels);
-                                }
-
-                                var weightSortingInfoModel = weightSortingInfoModels?.FirstOrDefault(f =>
-                                    f.ExitId.Equals(weightSorting.ExitId) &&
-                                    f.CreateTime.Equals(dateTime));
-                                if (weightSortingInfoModel is not null) {
-                                    var ruleInfoModels = weightSortingInfoModel?.WeightRuleItems.Select(s =>
-                                        new WeightRuleInfoModel {
-                                            Formula = s.Formula,
-                                            WeightSortingId = weightSorting.Id
-                                        })?.ToList();
-                                    await _weightRuleRepository.InsertRange(ruleInfoModels ?? new List<WeightRuleInfoModel>());
-                                }
-                            }
-
                             WeightSortingMessageQueue.Enqueue("保存成功");
                             RefreshData();
                         }
