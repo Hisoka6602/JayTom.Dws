@@ -1,15 +1,13 @@
 ﻿using System;
 using Prism.Mvvm;
 using System.Linq;
-using System.Text;
 using Prism.Commands;
-using System.Windows;
-using System.IO.Ports;
 using Newtonsoft.Json;
+using System.IO.Ports;
 using System.Windows.Input;
 using JayTom.Dws.Domain.Dto;
-using System.Threading.Tasks;
 using JayTom.Dws.Client.Models;
+using JayTom.Dws.Data.LocalLog;
 using MaterialDesignThemes.Wpf;
 using JayTom.Dws.Data.LocalConf;
 using System.Collections.Generic;
@@ -23,6 +21,7 @@ using JayTom.Dws.Client.Models.VolumeSettingsModel;
 using JayTom.Dws.Client.Models.SettingsCommomModels;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
+
     public class VolumeSettingsViewModel : BindableBase {
         private readonly IConfigRepository _configRepository;
         private VolumeSettingsInfoModel _volumeSettingsInfo = new();

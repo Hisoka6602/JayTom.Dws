@@ -1,13 +1,9 @@
 ﻿using System;
 using Prism.Mvvm;
-using System.Linq;
-using System.Text;
 using Prism.Commands;
 using System.Windows.Input;
-using System.Threading.Tasks;
 using Prism.Services.Dialogs;
 using JayTom.Dws.Data.LocalData;
-using System.Collections.Generic;
 using JayTom.Dws.Client.Models.DataModels;
 
 namespace JayTom.Dws.Client.ViewModels.Dialog {

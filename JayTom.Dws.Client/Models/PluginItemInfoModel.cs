@@ -1,12 +1,8 @@
-﻿using System;
+﻿using JayTom.Dws.PluginInterface;
 using Prism.Mvvm;
-using System.Linq;
-using System.Text;
-using System.Windows.Media;
+using System;
 using System.Windows.Input;
-using System.Threading.Tasks;
-using System.Collections.Generic;
-using JayTom.Dws.PluginInterface;
+using System.Windows.Media;
 
 namespace JayTom.Dws.Client.Models {
     public class PluginItemInfoModel : BindableBase {

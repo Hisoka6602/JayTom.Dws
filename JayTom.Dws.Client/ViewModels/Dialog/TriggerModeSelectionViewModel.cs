@@ -1,14 +1,9 @@
-﻿using System;
-using Prism.Mvvm;
-using System.Linq;
-using System.Text;
+﻿using JayTom.Dws.Camera;
 using Prism.Commands;
-using JayTom.Dws.Camera;
-using System.Windows.Input;
-using System.Threading.Tasks;
+using Prism.Mvvm;
 using Prism.Services.Dialogs;
-using JayTom.Dws.Client.Models;
-using System.Collections.Generic;
+using System;
+using System.Windows.Input;
 
 namespace JayTom.Dws.Client.ViewModels.Dialog {
 

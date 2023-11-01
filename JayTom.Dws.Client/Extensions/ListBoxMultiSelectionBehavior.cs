@@ -1,12 +1,7 @@
-﻿using System;
-using System.Linq;
-using System.Text;
-using System.Windows;
+﻿using Microsoft.Xaml.Behaviors;
 using System.Collections;
-using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Controls;
-using Microsoft.Xaml.Behaviors;
-using System.Collections.Generic;
 
 namespace JayTom.Dws.Client.Extensions {
 

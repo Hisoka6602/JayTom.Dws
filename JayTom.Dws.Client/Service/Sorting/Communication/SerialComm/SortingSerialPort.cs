@@ -2,7 +2,6 @@
 using System.Linq;
 using System.IO.Ports;
 using System.Threading;
-using JayTom.Dws.Plugin.Tcp;
 using System.Threading.Tasks;
 using System.Collections.Concurrent;
 

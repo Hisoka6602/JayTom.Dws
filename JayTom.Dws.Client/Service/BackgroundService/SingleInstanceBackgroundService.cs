@@ -1,12 +1,8 @@
-﻿using System;
-using System.IO;
-using System.Linq;
-using System.Text;
+﻿using System.IO;
 using System.Windows;
 using System.IO.Pipes;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Collections.Generic;
 
 namespace JayTom.Dws.Client.Service.BackgroundService {
 

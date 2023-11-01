@@ -1,15 +1,12 @@
 ﻿using System;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
 using JayTom.Dws.Data.LocalData;
-using System.Collections.Generic;
 using System.Collections.Concurrent;
 using JayTom.Dws.Client.EventMediators;
-using JayTom.Dws.Domain.Repository.LocalData;
 using JayTom.Dws.Client.Service.ImageStorage;
+using JayTom.Dws.Domain.Repository.LocalData;
 using static JayTom.Dws.Client.Service.BackgroundService.SubmitApiBackgroundService;
 
 namespace JayTom.Dws.Client.Service.BackgroundService {

@@ -27,6 +27,11 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig {
                         .Where(where)
                         .OrderByDescending(o => o.CreateTime)
                         .Include(b => b.LogisticsRuleItems)
+                       .ToListAsync(cancellationToken: token);
+                    /*return await dbSet.AsNoTracking()
+                        .Where(where)
+                        .OrderByDescending(o => o.CreateTime)
+                        .Include(b => b.LogisticsRuleItems)
                         .AsSingleQuery() // 添加AsSingleQuery
                         .Select(b => new LogisticsSortingInfoModel {
                             Remarks = b.Remarks,
@@ -45,7 +50,7 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig {
                                     LogisticsId = n.LogisticsId,
                                 }).ToList()
                         })
-                        .ToListAsync(cancellationToken: token);
+                        .ToListAsync(cancellationToken: token);*/
                 }
             }
             catch (Exception e) {

@@ -1,14 +1,10 @@
-﻿using System;
-using Prism.Mvvm;
-using System.Linq;
-using System.Text;
-using Prism.Commands;
-using System.Windows.Input;
-using System.Threading.Tasks;
-using JayTom.Dws.Client.Models;
-using System.Collections.Generic;
+﻿using JayTom.Dws.Client.Models;
 using JayTom.Dws.PluginInterface;
+using Prism.Commands;
+using Prism.Mvvm;
+using System;
 using System.Collections.ObjectModel;
+using System.Windows.Input;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
 

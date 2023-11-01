@@ -1,11 +1,5 @@
-﻿using System;
+﻿using JayTom.Dws.Domain.Dto;
 using Prism.Mvvm;
-using System.Linq;
-using System.Text;
-using System.IO.Ports;
-using JayTom.Dws.Domain.Dto;
-using System.Threading.Tasks;
-using System.Collections.Generic;
 
 namespace JayTom.Dws.Client.Models {
 

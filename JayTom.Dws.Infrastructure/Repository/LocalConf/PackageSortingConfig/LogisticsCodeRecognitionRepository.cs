@@ -28,6 +28,11 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig {
                         .Where(where)
                         .OrderByDescending(o => o.CreateTime)
                         .Include(b => b.LogisticsRegexItems)
+                        .ToListAsync(cancellationToken: token);
+                    /*return await dbSet.AsNoTracking()
+                        .Where(where)
+                        .OrderByDescending(o => o.CreateTime)
+                        .Include(b => b.LogisticsRegexItems)
                         .AsSingleQuery() // 添加AsSingleQuery
                         .Select(b => new LogisticsCodeRecognitionInfoModel {
                             Remarks = b.Remarks,
@@ -50,7 +55,7 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig {
                                     RegexPattern = n.RegexPattern
                                 }).ToList()
                         })
-                        .ToListAsync(cancellationToken: token);
+                        .ToListAsync(cancellationToken: token);*/
                 }
             }
             catch (Exception e) {

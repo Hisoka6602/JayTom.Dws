@@ -1,28 +1,20 @@
 ﻿using Polly;
 using System;
 using System.Linq;
-using System.Text;
 using Newtonsoft.Json;
-using System.Net.Http;
 using System.Threading;
-using TouchSocket.Sockets;
 using System.Globalization;
-using JayTom.Dws.Plugin.Tcp;
 using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Plugin.Tcp;
 using System.Threading.Tasks;
-using JayTom.Dws.Plugin.Scale;
+using JayTom.Dws.Data.LocalLog;
 using JayTom.Dws.Plugin.Speech;
-using JayTom.Dws.Data.LocalData;
-using System.Collections.Generic;
 using System.Collections.Concurrent;
 using JayTom.Dws.Client.EventMediators;
-using NetTopologySuite.GeometriesGraph;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Repository.LocalData;
-using JayTom.Dws.Plugin.Scale.ScaleValueParameters;
 using JayTom.Dws.Client.Service.ResultOutput.Communication.TcpComm;
-using JayTom.Dws.Client.Service.ExternalDataService.Communication.TcpComm;
 
 namespace JayTom.Dws.Client.Service.ResultOutput {
 

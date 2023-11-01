@@ -22,7 +22,13 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig {
                 await using (var concardContext = _contextFactory.CreateDbContext()) {
                     var dbSet = concardContext?.Set<BarCodeSortingInfoModel>();
                     if (dbSet is null) return new List<BarCodeSortingInfoModel>();
+
                     return await dbSet.AsNoTracking()
+                        .Where(where)
+                        .OrderByDescending(o => o.CreateTime)
+                        .Include(b => b.BarCodeRegexItems)
+                        .ToListAsync(cancellationToken: token);
+                    /*return await dbSet.AsNoTracking()
                         .Where(where)
                         .OrderByDescending(o => o.CreateTime)
                         .Include(b => b.BarCodeRegexItems)
@@ -44,7 +50,7 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig {
                                     RegexPattern = n.RegexPattern
                                 }).ToList()
                         })
-                        .ToListAsync(cancellationToken: token);
+                        .ToListAsync(cancellationToken: token);*/
                 }
             }
             catch (Exception e) {

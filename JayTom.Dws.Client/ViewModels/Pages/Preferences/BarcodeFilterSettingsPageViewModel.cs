@@ -1,22 +1,16 @@
-﻿using System;
-using ImTools;
-using Prism.Mvvm;
-using System.Linq;
-using System.Text;
-using Prism.Commands;
-using Newtonsoft.Json;
-using Mono.Unix.Native;
-using System.Threading;
-using System.Windows.Input;
-using JayTom.Dws.Domain.Dto;
-using System.Threading.Tasks;
-using MaterialDesignThemes.Wpf;
+﻿using ImTools;
+using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Data.LocalConf;
+using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Domain.Repository.LocalConf;
+using MaterialDesignThemes.Wpf;
+using Newtonsoft.Json;
+using Prism.Commands;
+using Prism.Mvvm;
+using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using JayTom.Dws.Client.EventMediators;
-using JayTom.Dws.Domain.Repository.LocalConf;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.StartPanel;
+using System.Windows.Input;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
 

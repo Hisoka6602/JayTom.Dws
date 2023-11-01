@@ -1,12 +1,5 @@
-﻿using System;
-using Prism.Mvvm;
-using System.Linq;
-using System.Text;
-using JayTom.Dws.Domain.Dto;
-using System.Threading.Tasks;
+﻿using Prism.Mvvm;
 using JayTom.Dws.Data.LocalData;
-using System.Collections.Generic;
-using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 
 namespace JayTom.Dws.Client.Models.PackageSorting {
 

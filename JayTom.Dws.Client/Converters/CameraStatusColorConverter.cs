@@ -1,13 +1,8 @@
-﻿using System;
-using System.Linq;
-using System.Text;
-using System.Windows.Data;
+﻿using JayTom.Dws.Client.Models;
+using System;
 using System.Globalization;
+using System.Windows.Data;
 using System.Windows.Media;
-using System.Threading.Tasks;
-using JayTom.Dws.Client.Models;
-using System.Collections.Generic;
-using JayTom.Dws.PluginInterface;
 
 namespace JayTom.Dws.Client.Converters {
 

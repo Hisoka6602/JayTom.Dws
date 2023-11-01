@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Linq;
-using System.Text;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Collections.Generic;
 
 namespace JayTom.Dws.Client.Service.ExternalDataService {
 

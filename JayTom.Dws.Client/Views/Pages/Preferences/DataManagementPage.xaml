@@ -14,6 +14,7 @@
     xmlns:mvvm="http://prismlibrary.com/"
     xmlns:system="clr-namespace:System;assembly=System.Runtime"
     xmlns:unitConverter="clr-namespace:JayTom.Dws.Client.Converters.UnitConverter"
+    xmlns:dataModels="clr-namespace:JayTom.Dws.Client.Models.DataModels"
     Name="DataManagementPageView"
     Title="DataManagementPage"
     d:DesignHeight="450"
@@ -33,7 +34,7 @@
         <materialDesign:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
         <unitConverter:VolumeConverter x:Key="VolumeConverter" />
         <!--  全景图模板  -->
-        <DataTemplate x:Key="PanoramicImageTemplate" DataType="{x:Type models:PanoramaImageItemModel}">
+        <DataTemplate x:Key="PanoramicImageTemplate" DataType="{x:Type dataModels:PanoramaImageItemModel}">
             <!--  横向列表，读全景图列数据  -->
             <!--  查看按钮  -->
             <Button

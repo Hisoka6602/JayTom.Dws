@@ -1,29 +1,21 @@
 ﻿using System;
-using DryIoc;
 using System.Linq;
-using System.Text;
 using System.Drawing;
 using Newtonsoft.Json;
 using System.Threading;
 using JayTom.Dws.Camera;
-using JayTom.Dws.Interface;
 using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
 using JayTom.Dws.Data.LocalConf;
-using NPOI.SS.Formula.Functions;
 using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
-using JayTom.Dws.Domain.Dto.ApiDto;
-using JayTom.Dws.Interface.Szjy188;
 using System.Collections.Concurrent;
-using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Client.EventMediators;
+using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Client.Service.Sorting;
 using JayTom.Dws.Client.Service.ImageStorage;
 using JayTom.Dws.Client.Service.ResultOutput;
 using JayTom.Dws.Domain.Repository.LocalConf;
-using static JayTom.Dws.Interface.DefaultApi;
-using static JayTom.Dws.Interface.Szjy188.SzjyApi;
 using JayTom.Dws.Client.Service.ExternalDataService;
 
 namespace JayTom.Dws.Client.Service.BackgroundService {

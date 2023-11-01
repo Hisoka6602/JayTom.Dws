@@ -1,12 +1,8 @@
-﻿using System;
-using System.Linq;
-using System.Text;
+﻿using JayTom.Dws.Client.Models.OcrSettingsModel;
+using System;
+using System.Globalization;
 using System.Windows;
 using System.Windows.Data;
-using System.Globalization;
-using System.Threading.Tasks;
-using System.Collections.Generic;
-using JayTom.Dws.Client.Models.OcrSettingsModel;
 
 namespace JayTom.Dws.Client.Converters {
 

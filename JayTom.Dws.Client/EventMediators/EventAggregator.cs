@@ -1,7 +1,7 @@
-﻿using System;
-using JayTom.Dws.Domain.Dto;
-using System.Collections.Generic;
+﻿using JayTom.Dws.Domain.Dto;
 using JayTom.Dws.PluginInterface;
+using System;
+using System.Collections.Generic;
 
 namespace JayTom.Dws.Client.EventMediators {
 

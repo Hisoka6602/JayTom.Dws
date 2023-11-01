@@ -1,11 +1,6 @@
-﻿using System;
-using Prism.Mvvm;
-using System.Linq;
-using System.Text;
+﻿using JayTom.Dws.Client.Models.SettingsCommomModels;
 using JayTom.Dws.Domain.Dto;
-using System.Threading.Tasks;
-using System.Collections.Generic;
-using JayTom.Dws.Client.Models.SettingsCommomModels;
+using Prism.Mvvm;
 
 namespace JayTom.Dws.Client.Models.WeightSettingsModel {
 

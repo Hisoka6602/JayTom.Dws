@@ -1,11 +1,8 @@
-﻿using System;
-using System.Linq;
-using System.Text;
+﻿using JayTom.Dws.Domain.Dto;
+using System;
 using System.Drawing;
 using System.Threading;
-using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
-using System.Collections.Generic;
 
 namespace JayTom.Dws.Client.Service.ImageStorage {
 

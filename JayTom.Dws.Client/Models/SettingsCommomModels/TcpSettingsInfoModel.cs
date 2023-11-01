@@ -1,10 +1,5 @@
-﻿using System;
+﻿using JayTom.Dws.Domain.Dto.BaseInfoModels;
 using Prism.Mvvm;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Collections.Generic;
-using JayTom.Dws.Domain.Dto.BaseInfoModels;
 
 namespace JayTom.Dws.Client.Models.SettingsCommomModels {
 

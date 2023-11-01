@@ -1,11 +1,4 @@
-﻿using System;
-using System.Linq;
-using System.Text;
-using System.ComponentModel;
-using System.Threading.Tasks;
-using System.Collections.Generic;
-
-namespace JayTom.Dws.Client.Models.Cameras {
+﻿namespace JayTom.Dws.Client.Models.Cameras {
 
     public class CameraFinderItemInfoModel : BaseCameraItemInfoModel {
         private bool _hasBinding;

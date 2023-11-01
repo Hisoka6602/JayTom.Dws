@@ -1,14 +1,10 @@
-﻿using System;
-using System.Linq;
-using System.Text;
-using System.ComponentModel;
-using System.Threading.Tasks;
+﻿using System.ComponentModel;
 using JayTom.Dws.Data.LocalData;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using JayTom.Dws.Plugin.Excel.Attributes;
 
 namespace JayTom.Dws.Client.Models.PackageSorting.Excel {
+
     public class ExcelApiSortingItemInfoModel : BasePackageSortingItemInfoModel {
         private long? _exitId;
         private string? _exitName;

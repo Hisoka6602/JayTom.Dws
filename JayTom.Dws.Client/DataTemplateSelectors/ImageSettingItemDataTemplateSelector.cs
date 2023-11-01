@@ -1,11 +1,6 @@
-﻿using System;
-using System.Linq;
-using System.Text;
+﻿using JayTom.Dws.Client.Models.ImageSettingModels;
 using System.Windows;
-using System.Threading.Tasks;
 using System.Windows.Controls;
-using System.Collections.Generic;
-using JayTom.Dws.Client.Models.ImageSettingModels;
 
 namespace JayTom.Dws.Client.DataTemplateSelectors {
 

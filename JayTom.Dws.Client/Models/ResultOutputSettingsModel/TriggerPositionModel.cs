@@ -1,5 +1,5 @@
-﻿using Prism.Mvvm;
-using JayTom.Dws.Domain.Dto;
+﻿using JayTom.Dws.Domain.Dto;
+using Prism.Mvvm;
 
 namespace JayTom.Dws.Client.Models.ResultOutputSettingsModel {
 

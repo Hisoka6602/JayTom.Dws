@@ -1,21 +1,15 @@
-﻿using System;
-using Prism.Mvvm;
-using System.Linq;
-using System.Text;
-using Prism.Commands;
-using NPOI.SS.Formula;
-using System.Windows.Input;
-using System.Threading.Tasks;
-using MaterialDesignThemes.Wpf;
-using System.Collections.Generic;
-using LibreHardwareMonitor.Hardware;
-using System.Collections.ObjectModel;
-using Microsoft.AspNetCore.Mvc.Filters;
-using JayTom.Dws.Domain.Dto.BaseInfoModels;
+﻿using JayTom.Dws.Client.Models.ImageSettingModels;
 using JayTom.Dws.Client.Models.PackageSorting;
-using JayTom.Dws.Client.Models.ImageSettingModels;
 using JayTom.Dws.Client.Models.PackageSorting.Rule;
+using JayTom.Dws.Domain.Dto.BaseInfoModels;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
+using MaterialDesignThemes.Wpf;
+using Prism.Commands;
+using Prism.Mvvm;
+using System;
+using System.Collections.ObjectModel;
+using System.Linq;
+using System.Windows.Input;
 
 namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.SortingMethodEditors {
     public class VolumeSortingRuleEditorViewModel : BindableBase {

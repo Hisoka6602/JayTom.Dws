@@ -9,6 +9,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace JayTom.Dws.Data.LocalConf.PackageSortingConfig.RuleConfig {
 
+    [Table("Conf_ApiRuleInfo", Schema = "dbo")]
     public class ApiRuleInfoModel : BasePackageSortingConfig {
 
         /// <summary>

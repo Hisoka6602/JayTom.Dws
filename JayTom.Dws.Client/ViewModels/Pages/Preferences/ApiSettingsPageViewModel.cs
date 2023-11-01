@@ -1,24 +1,17 @@
 ﻿using System;
 using Prism.Mvvm;
 using System.Linq;
-using System.Text;
 using Prism.Commands;
 using Newtonsoft.Json;
 using System.Windows.Input;
-using System.Net.Http.Json;
 using JayTom.Dws.Domain.Dto;
-using System.Threading.Tasks;
 using System.Windows.Controls;
 using MaterialDesignThemes.Wpf;
 using JayTom.Dws.Data.LocalConf;
-using System.Collections.Generic;
-using JayTom.Dws.Domain.Dto.ApiDto;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Client.Models.ApiSettingsModel;
-using JayTom.Dws.Client.Models.ImageSettingModels;
-using JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
 

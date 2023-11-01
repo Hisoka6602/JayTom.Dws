@@ -1,38 +1,26 @@
-﻿using Polly;
-using System;
-using DryIoc;
+﻿using System;
 using System.Linq;
 using System.Text;
 using Newtonsoft.Json;
-using System.Threading;
 using System.Text.Json;
+using System.Threading;
 using JayTom.Dws.Interface;
 using JayTom.Dws.Domain.Dto;
-using JayTom.Dws.Plugin.Tcp;
 using System.Threading.Tasks;
 using System.Linq.Expressions;
-using System.Windows.Controls;
 using System.Linq.Dynamic.Core;
-using JayTom.Dws.Data.LocalConf;
 using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
-using Org.BouncyCastle.Utilities;
-using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
 using JayTom.Dws.Client.EventMediators;
-using JayTom.Dws.Domain.Dto.BaseInfoModels;
 using JayTom.Dws.Domain.DownstreamProtocols;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Client.Service.BackgroundService;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
-using JayTom.Dws.Client.Service.Sorting.Communication.TcpComm;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig.RuleConfig;
-using JayTom.Dws.Client.Service.Sorting.Communication.SerialComm;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
-using JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig.RuleConfig;
 using static JayTom.Dws.Client.Service.BackgroundService.SubmitApiBackgroundService;
-using JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig.RuleConfig;
 
 namespace JayTom.Dws.Client.Service.Sorting {
 

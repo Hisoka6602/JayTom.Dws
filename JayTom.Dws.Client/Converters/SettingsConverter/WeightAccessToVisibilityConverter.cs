@@ -1,12 +1,9 @@
-﻿using System;
+﻿using JayTom.Dws.Client.Models;
+using System;
+using System.Globalization;
 using System.Linq;
-using System.Text;
 using System.Windows;
 using System.Windows.Data;
-using System.Globalization;
-using System.Threading.Tasks;
-using JayTom.Dws.Client.Models;
-using System.Collections.Generic;
 
 namespace JayTom.Dws.Client.Converters.SettingsConverter {
 

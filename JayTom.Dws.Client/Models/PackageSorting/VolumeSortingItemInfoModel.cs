@@ -1,16 +1,11 @@
-﻿using System;
-using Prism.Mvvm;
-using System.Linq;
-using System.Text;
-using System.ComponentModel;
-using System.Threading.Tasks;
-using System.Collections.Generic;
+﻿using System.ComponentModel;
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
 using JayTom.Dws.Plugin.Excel.Attributes;
 using JayTom.Dws.Client.Models.PackageSorting.Rule;
 
 namespace JayTom.Dws.Client.Models.PackageSorting {
+
     public class VolumeSortingItemInfoModel : BasePackageSortingItemInfoModel {
         private long? _exitId;
         private string? _exitName;

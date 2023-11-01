@@ -1,13 +1,13 @@
-﻿using System;
-using Prism.Mvvm;
-using Prism.Commands;
-using System.Windows.Input;
-using System.Threading.Tasks;
-using JayTom.Dws.Client.Models;
-using System.Windows.Threading;
+﻿using JayTom.Dws.Client.Models;
 using JayTom.Dws.Client.Service;
+using Prism.Commands;
+using Prism.Mvvm;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Threading.Tasks;
+using System.Windows.Input;
+using System.Windows.Threading;
 
 namespace JayTom.Dws.Client.ViewModels {
 

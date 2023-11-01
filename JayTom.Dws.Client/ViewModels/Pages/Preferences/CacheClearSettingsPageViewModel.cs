@@ -1,27 +1,20 @@
-﻿using System;
-using System.IO;
-using NPOI.HPSF;
-using Prism.Mvvm;
-using System.Linq;
-using System.Text;
-using Prism.Commands;
-using Newtonsoft.Json;
-using System.Diagnostics;
-using System.Windows.Media;
-using System.Windows.Input;
-using JayTom.Dws.Domain.Dto;
-using JayTom.Dws.Plugin.Ftp;
-using System.Threading.Tasks;
-using MaterialDesignThemes.Wpf;
+﻿using JayTom.Dws.Client.EventMediators;
+using JayTom.Dws.Client.Models.CacheClearSettings;
 using JayTom.Dws.Data.LocalConf;
-using System.Collections.Generic;
-using NetTopologySuite.Algorithm;
-using System.Collections.ObjectModel;
-using JayTom.Dws.Client.EventMediators;
-using JayTom.Dws.Infrastructure.IComputer;
+using JayTom.Dws.Domain.Dto;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Service.CacheCleanup;
-using JayTom.Dws.Client.Models.CacheClearSettings;
+using JayTom.Dws.Infrastructure.IComputer;
+using JayTom.Dws.Plugin.Ftp;
+using MaterialDesignThemes.Wpf;
+using Newtonsoft.Json;
+using Prism.Commands;
+using Prism.Mvvm;
+using System;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Windows.Input;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
 

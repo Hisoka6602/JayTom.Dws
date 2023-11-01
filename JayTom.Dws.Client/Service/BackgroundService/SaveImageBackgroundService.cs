@@ -1,11 +1,8 @@
 ﻿using System;
-using System.Linq;
-using System.Text;
 using Newtonsoft.Json;
 using System.Threading;
 using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
-using System.Collections.Generic;
 using System.Collections.Concurrent;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Service.ImageStorage;

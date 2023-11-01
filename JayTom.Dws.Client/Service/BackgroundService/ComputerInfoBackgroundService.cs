@@ -1,13 +1,12 @@
-﻿using System;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Diagnostics;
-using System.Threading.Tasks;
-using JayTom.Dws.Client.Models;
-using System.Collections.Generic;
-using Microsoft.Extensions.Configuration;
+﻿using JayTom.Dws.Client.Models;
 using JayTom.Dws.Infrastructure.IComputer;
+using Microsoft.Extensions.Configuration;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using NetworkType = JayTom.Dws.Client.Models.NetworkType;
 
 namespace JayTom.Dws.Client.Service.BackgroundService {

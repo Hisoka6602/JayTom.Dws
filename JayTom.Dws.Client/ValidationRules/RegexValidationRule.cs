@@ -1,11 +1,7 @@
 ﻿using System;
-using System.Linq;
-using System.Text;
 using System.Globalization;
-using System.Threading.Tasks;
-using System.Windows.Controls;
-using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using System.Windows.Controls;
 
 namespace JayTom.Dws.Client.ValidationRules {
 

@@ -1,21 +1,16 @@
-﻿using System;
-using DryIoc;
+﻿using JayTom.Dws.Camera;
 using Prism.Mvvm;
-using System.Linq;
-using System.Text;
-using System.Drawing;
-using System.Windows;
-using System.Threading;
-using JayTom.Dws.Camera;
-using System.Windows.Media;
-using System.Windows.Input;
-using System.Threading.Tasks;
-using System.Drawing.Imaging;
-using System.Windows.Threading;
-using System.Collections.Generic;
-using System.Windows.Media.Imaging;
 using System.Collections.Concurrent;
 using System.Collections.Specialized;
+using System.Drawing;
+using System.Drawing.Imaging;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Threading;
 using Image = System.Windows.Controls.Image;
 
 namespace JayTom.Dws.Client.Models {

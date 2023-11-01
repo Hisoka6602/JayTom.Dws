@@ -1,18 +1,10 @@
 ﻿using System;
 using Prism.Mvvm;
 using System.Linq;
-using System.Text;
 using Prism.Commands;
-using System.Net.Http.Json;
 using System.Windows.Input;
-using System.Threading.Tasks;
 using MaterialDesignThemes.Wpf;
-using NPOI.SS.Formula.Functions;
-using System.Collections.Generic;
-using LibreHardwareMonitor.Hardware;
 using System.Collections.ObjectModel;
-using System.Text.RegularExpressions;
-using Microsoft.AspNetCore.Mvc.Filters;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
 using JayTom.Dws.Client.Models.PackageSorting;
 using JayTom.Dws.Client.Models.ImageSettingModels;
@@ -20,6 +12,7 @@ using JayTom.Dws.Client.Models.PackageSorting.Rule;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
 
 namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.SortingMethodEditors {
+
     public class WeightSortingRuleEditorViewModel : BindableBase {
         private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
         private string _identifier = string.Empty;

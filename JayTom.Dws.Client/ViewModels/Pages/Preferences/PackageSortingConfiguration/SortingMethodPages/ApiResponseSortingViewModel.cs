@@ -1,20 +1,18 @@
 ﻿using System;
 using Prism.Mvvm;
 using System.Linq;
-using System.Text;
 using Prism.Commands;
 using System.Windows;
 using Newtonsoft.Json;
 using JayTom.Dws.Plugin;
 using System.Windows.Input;
-using System.Net.Http.Json;
 using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
 using MaterialDesignThemes.Wpf;
 using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Views.Dialog;
+using System.Collections.ObjectModel;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.ViewModels.Dialog;
 using JayTom.Dws.Client.Models.PackageSorting;
@@ -23,9 +21,7 @@ using JayTom.Dws.Client.Models.PackageSorting.Excel;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig.RuleConfig;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
-using JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig.RuleConfig;
-using JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig.RuleConfig;
 using JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration.SortingMethodEditors;
 using JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.SortingMethodEditors;
 
@@ -81,35 +77,18 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                             ExitId = model.SelectPackageExitDefinitionInfo.Id,
                             Remarks = model.ApiSortingItemInfo.Remarks,
                             SortingName = model.ApiSortingItemInfo.SortingName,
-                        };
-                        var insert = await _apiSortingRepository.Insert(apiSortingInfoModel);
-                        if (insert) {
-                            EventAggregator.Instance.Publish(apiSortingInfoModel);
-                            var sortingInfoModel = await _apiSortingRepository.FirstOrDefault(f =>
-                                f.ModifyTime.Equals(model.ApiSortingItemInfo.ModifyTime) &&
-                                f.ExitId.Equals(model.SelectPackageExitDefinitionInfo.Id));
-                            var apiRuleInfoModels = model.ApiRuleItems.Select(s => new ApiRuleInfoModel() {
+                            ApiRuleItems = model.ApiRuleItems.Select(s => new ApiRuleInfoModel() {
                                 CreateTime = s.CreateTime,
                                 ModifyTime = s.ModifyTime,
-                                ApiSortingId = sortingInfoModel.Id,
                                 Remarks = s.Remarks,
-                                JsonContent = s.JsonContent
-                            })?.ToList() ?? new List<ApiRuleInfoModel>();
-                            var ruleInfoModels = await _apiRuleRepository.Select(s =>
-                                    s.ApiSortingId.Equals(sortingInfoModel.Id),
-                                o => o.Id);
-                            if (ruleInfoModels?.Any() == true) {
-                                await _apiRuleRepository.DeleteRange(ruleInfoModels);
-                            }
-                            var insertRange = await _apiRuleRepository.InsertRange(apiRuleInfoModels);
-                            if (insertRange) {
-                                EventAggregator.Instance.Publish(ruleInfoModels);
-                                ApiSortingMessageQueue.Enqueue("保存成功");
-                                RefreshData();
-                            }
-                            else {
-                                ApiSortingMessageQueue.Enqueue("保存失败");
-                            }
+                                JsonContent = s.JsonContent,
+                            })?.ToList()
+                        };
+                        var insert = await _apiSortingRepository.InsertDetailAsync(apiSortingInfoModel);
+                        if (insert) {
+                            EventAggregator.Instance.Publish(apiSortingInfoModel);
+                            RefreshData();
+                            ApiSortingMessageQueue.Enqueue("保存成功");
                         }
                         else {
                             ApiSortingMessageQueue.Enqueue("保存失败");
@@ -155,33 +134,19 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                             Remarks = model.ApiSortingItemInfo.Remarks,
                             SortingName = model.ApiSortingItemInfo.SortingName,
                             Id = model.ApiSortingItemInfo.Id,
-                        };
-                        var insert = await _apiSortingRepository.Update(apiSortingInfoModel);
-                        if (insert) {
-                            EventAggregator.Instance.Publish(apiSortingInfoModel);
-
-                            var apiRuleInfoModels = model.ApiRuleItems.Select(s => new ApiRuleInfoModel() {
+                            ApiRuleItems = model.ApiRuleItems.Select(s => new ApiRuleInfoModel() {
                                 CreateTime = s.CreateTime,
                                 ModifyTime = s.ModifyTime,
                                 ApiSortingId = model.ApiSortingItemInfo.Id,
                                 Remarks = s.Remarks,
                                 JsonContent = s.JsonContent,
-                            })?.ToList() ?? new List<ApiRuleInfoModel>();
-                            var ruleInfoModels = await _apiRuleRepository.Select(s =>
-                                    s.ApiSortingId.Equals(model.ApiSortingItemInfo.Id),
-                                o => o.Id);
-                            if (ruleInfoModels?.Any() == true) {
-                                await _apiRuleRepository.DeleteRange(ruleInfoModels);
-                            }
-                            var insertRange = await _apiRuleRepository.InsertRange(apiRuleInfoModels);
-                            if (insertRange) {
-                                EventAggregator.Instance.Publish(ruleInfoModels);
-                                ApiSortingMessageQueue.Enqueue("保存成功");
-                                RefreshData();
-                            }
-                            else {
-                                ApiSortingMessageQueue.Enqueue("保存失败");
-                            }
+                            })?.ToList()
+                        };
+                        var insert = await _apiSortingRepository.UpdateDetailAsync(apiSortingInfoModel);
+                        if (insert) {
+                            EventAggregator.Instance.Publish(apiSortingInfoModel);
+                            ApiSortingMessageQueue.Enqueue("保存成功");
+                            RefreshData();
                         }
                         else {
                             ApiSortingMessageQueue.Enqueue("保存失败");
@@ -348,7 +313,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         }
 
         private async void ImportDelegate(object obj) {
-
             //导入
             var openFileDialog = new Microsoft.Win32.OpenFileDialog() {
                 Title = "Please select the file to import.",
@@ -414,46 +378,19 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                                         }
                                     }
                                 })
-                                .GroupBy(s => s.ExitId)
+                                .GroupBy(s => s.SortingName) // 根据 SortingName 进行分组
                                 .Select(group => new ApiSortingInfoModel() {
                                     CreateTime = group.First().CreateTime,
-                                    ExitId = group.Key,
-                                    SortingName = group.First().SortingName,
+                                    ExitId = group.First().ExitId,
+                                    SortingName = group.Key,
                                     ModifyTime = group.First().ModifyTime,
                                     Remarks = group.First().Remarks,
                                     ApiRuleItems = group.SelectMany(item => item.ApiRuleItems).ToList()
                                 })
                                 .ToList();
-
-
                             //批量添加
-                            var range = await _apiSortingRepository.InsertRange(apiSortingInfoModels);
+                            var range = await _apiSortingRepository.InsertRangeDetailAsync(apiSortingInfoModels);
                             if (range) {
-                                //取出数据库对应指令列表内容
-                                var infoModels = await _apiSortingRepository.SelectOrderByDescending(
-                                    s => s.CreateTime.Equals(dateTime),
-                                    o => o.CreateTime);
-                                foreach (var apiSorting in infoModels) {
-                                    var apiRuleInfoModels = await _apiRuleRepository.Select(
-                                        s => s.ApiSortingId.Equals(apiSorting.Id),
-                                        o => o.Id);
-                                    if (apiRuleInfoModels?.Any() == true) {
-                                        await _apiRuleRepository.DeleteRange(apiRuleInfoModels);
-                                    }
-
-                                    var apiSortingInfoModel = apiSortingInfoModels?.FirstOrDefault(f =>
-                                        f.ExitId.Equals(apiSorting.ExitId) &&
-                                        f.CreateTime.Equals(dateTime));
-                                    if (apiSortingInfoModel is not null) {
-                                        var ruleInfoModels = apiSortingInfoModel?.ApiRuleItems?.Select(s =>
-                                            new ApiRuleInfoModel() {
-                                                ApiSortingId = apiSorting.Id,
-                                                JsonContent = s.JsonContent,
-
-                                            })?.ToList();
-                                        await _apiRuleRepository.InsertRange(ruleInfoModels ?? new List<ApiRuleInfoModel>());
-                                    }
-                                }
 
                                 ApiSortingMessageQueue.Enqueue("保存成功");
                                 RefreshData();
@@ -463,10 +400,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                             }
                         }
                         catch (Exception e) {
-
                             ApiSortingMessageQueue.Enqueue(e.Message);
                         }
-
                     }
                 }
             }

@@ -1,7 +1,6 @@
 ﻿using System;
 using Prism.Mvvm;
 using System.Linq;
-using System.Text;
 using Prism.Commands;
 using System.Windows;
 using JayTom.Dws.Plugin;
@@ -9,8 +8,8 @@ using System.Windows.Input;
 using System.Threading.Tasks;
 using MaterialDesignThemes.Wpf;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Views.Dialog;
+using System.Collections.ObjectModel;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.ViewModels.Dialog;
 using JayTom.Dws.Client.Models.PackageSorting;
@@ -18,13 +17,12 @@ using JayTom.Dws.Client.Models.PackageSorting.Rule;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig.RuleConfig;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
-using JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig.RuleConfig;
-using JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig.RuleConfig;
 using JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration.SortingMethodEditors;
 using JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.SortingMethodEditors;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration.SortingMethodPages {
+
     public class LogisticsSortingViewModel : BindableBase {
         private readonly ILogisticsSortingRepository _logisticsSortingRepository;
         private readonly ILogisticsRuleRepository _logisticsRuleRepository;
@@ -264,7 +262,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         }
 
         private async void ExportDelegate(object obj) {
-
             //导出
             if (LogisticsSortingItems?.Any() != true) {
                 LogisticsSortingMessageQueue?.Enqueue(Languages.Language.ResourceManager.GetString("列表中没有数据") ?? string.Empty);
@@ -332,7 +329,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         }
 
         private async void ImportDelegate(object obj) {
-
             //导入
             var openFileDialog = new Microsoft.Win32.OpenFileDialog() {
                 Title = "Please select the file to import.",
@@ -384,7 +380,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                                 {
                                     new()
                                     {
-
                                         CreateTime = dateTime,
                                         ModifyTime = dateTime,
                                         LogisticsId = logisticsCodeRecognitionInfoModels?.FirstOrDefault(f=>f.LogisticsName.Equals(s.SortingRuleGroup))?.Id??0,

@@ -240,7 +240,7 @@ namespace JayTom.Dws.Infrastructure.Repository {
             return false;
         }
 
-        public async Task<bool> InsertOrUpdateRange(List<T> entitys,
+        public async Task<bool> InsertOrUpdateRange(List<T> entities,
             CancellationToken token) {
             IDbContextTransaction? contextTransaction = null;
             try {
@@ -251,7 +251,7 @@ namespace JayTom.Dws.Infrastructure.Repository {
                 var strategy = concardContext.Database.CreateExecutionStrategy();
                 return await strategy.ExecuteAsync(async () => {
                     await using (contextTransaction = await concardContext.Database.BeginTransactionAsync(token)) {
-                        await concardContext.BulkInsertOrUpdateAsync(entitys, new BulkConfig() {
+                        await concardContext.BulkInsertOrUpdateAsync(entities, new BulkConfig() {
                             UseTempDB = true,
                             UniqueTableNameTempDb = false,
                             PropertiesToIncludeOnUpdate = propertyInfos?.Where(

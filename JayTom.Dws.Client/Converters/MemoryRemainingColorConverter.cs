@@ -1,11 +1,7 @@
 ﻿using System;
-using System.Linq;
-using System.Text;
-using System.Windows.Data;
 using System.Globalization;
+using System.Windows.Data;
 using System.Windows.Media;
-using System.Threading.Tasks;
-using System.Collections.Generic;
 
 namespace JayTom.Dws.Client.Converters {
 

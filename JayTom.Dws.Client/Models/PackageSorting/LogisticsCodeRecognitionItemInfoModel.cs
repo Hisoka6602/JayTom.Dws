@@ -1,14 +1,9 @@
-﻿using System;
-using Prism.Mvvm;
-using System.Linq;
-using System.Text;
-using System.Windows.Media;
-using System.Threading.Tasks;
-using System.Collections.Generic;
+﻿using System.Windows.Media;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Models.PackageSorting.Rule;
 
 namespace JayTom.Dws.Client.Models.PackageSorting {
+
     public class LogisticsCodeRecognitionItemInfoModel : BasePackageSortingItemInfoModel {
         private string _logisticsCode = string.Empty;
         private string _logisticsName = string.Empty;
@@ -66,6 +61,7 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
             get => _iconName;
             set => SetProperty(ref _iconName, value);
         }
+
         /// <summary>
         /// 正则表达式
         /// </summary>

@@ -1,7 +1,4 @@
 ﻿using System;
-using DryIoc;
-using System.Linq;
-using System.Text;
 using System.Drawing;
 using Newtonsoft.Json;
 using System.Net.Http;
@@ -10,7 +7,6 @@ using JayTom.Dws.Interface;
 using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
 using JayTom.Dws.Interface.Wdt;
-using System.Collections.Generic;
 using JayTom.Dws.PluginInterface;
 using JayTom.Dws.Interface.Sunnen;
 using JayTom.Dws.Domain.Dto.ApiDto;

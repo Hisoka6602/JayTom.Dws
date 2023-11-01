@@ -1,20 +1,16 @@
 ﻿using System;
 using Prism.Mvvm;
 using System.Linq;
-using System.Text;
 using Prism.Commands;
 using System.Windows;
 using System.Windows.Input;
 using System.Threading.Tasks;
-using System.Windows.Controls;
 using JayTom.Dws.Client.Models;
 using MaterialDesignThemes.Wpf;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Models.Cameras;
-using JayTom.Dws.PluginInterface.Utils;
 using JayTom.Dws.Client.Service.Device;
-using JayTom.Dws.Infrastructure.Repository.LocalConf;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {

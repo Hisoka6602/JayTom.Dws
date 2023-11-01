@@ -1,12 +1,8 @@
-﻿using System;
-using System.Linq;
-using System.Text;
-using System.Windows.Data;
+﻿using JayTom.Dws.Client.HomeToolPlugin.SunnenPlugin.ViewModels;
+using System;
 using System.Globalization;
+using System.Windows.Data;
 using System.Windows.Media;
-using System.Threading.Tasks;
-using System.Collections.Generic;
-using JayTom.Dws.Client.HomeToolPlugin.SunnenPlugin.ViewModels;
 
 namespace JayTom.Dws.Client.HomeToolPlugin.SunnenPlugin.Converters {
 

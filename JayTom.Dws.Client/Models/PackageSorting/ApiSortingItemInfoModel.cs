@@ -1,12 +1,8 @@
-﻿using System;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Models.PackageSorting.Rule;
 
 namespace JayTom.Dws.Client.Models.PackageSorting {
+
     public class ApiSortingItemInfoModel : BasePackageSortingItemInfoModel {
         private long? _exitId;
         private string? _exitName;

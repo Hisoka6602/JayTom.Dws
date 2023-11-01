@@ -1,14 +1,4 @@
-﻿using System;
-using Prism.Mvvm;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Collections.Generic;
-using JayTom.Dws.Data.Attributes;
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-
-namespace JayTom.Dws.Client.Models.PackageSorting.Rule {
+﻿namespace JayTom.Dws.Client.Models.PackageSorting.Rule {
 
     public class LogisticsRegexItemInfoModel : BasePackageSortingItemInfoModel {
         private long _logisticsId;

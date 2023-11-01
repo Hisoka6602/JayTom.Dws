@@ -1,20 +1,13 @@
-﻿using System;
-using Prism.Mvvm;
-using System.Linq;
-using System.Text;
-using Prism.Regions;
-using System.Windows;
-using Prism.Commands;
-using System.Threading;
-using System.Diagnostics;
-using System.Windows.Input;
-using System.Threading.Tasks;
-using Prism.Services.Dialogs;
-using System.Windows.Controls;
-using System.Collections.Generic;
+﻿using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.PluginInterface;
-using JayTom.Dws.Client.EventMediators;
-using JayTom.Dws.PluginInterface.Utils;
+using Prism.Commands;
+using Prism.Mvvm;
+using Prism.Services.Dialogs;
+using System;
+using System.Linq;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
 
 namespace JayTom.Dws.Client.HomeToolPlugin.SunnenPlugin.ViewModels {
 

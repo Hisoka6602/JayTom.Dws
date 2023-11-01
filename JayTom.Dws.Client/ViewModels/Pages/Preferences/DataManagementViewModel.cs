@@ -2,7 +2,6 @@
 using System.IO;
 using Prism.Mvvm;
 using System.Linq;
-using System.Text;
 using Prism.Commands;
 using System.Windows;
 using Newtonsoft.Json;
@@ -11,27 +10,24 @@ using JayTom.Dws.Plugin;
 using System.Diagnostics;
 using System.Windows.Input;
 using JayTom.Dws.Domain.Dto;
-using System.Threading.Tasks;
 using Prism.Services.Dialogs;
+using System.Threading.Tasks;
 using System.Windows.Controls;
-using JayTom.Dws.Plugin.Excel;
 using MaterialDesignThemes.Wpf;
 using System.Windows.Threading;
 using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
-using NetTopologySuite.Algorithm;
 using JayTom.Dws.Domain.Converters;
-using System.Collections.ObjectModel;
-using System.Text.RegularExpressions;
 using JayTom.Dws.Client.Views.Dialog;
+using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Views.Editors;
-using JayTom.Dws.PluginInterface.Utils;
 using JayTom.Dws.Client.EventMediators;
-using JayTom.Dws.Client.ViewModels.Dialog;
+using JayTom.Dws.PluginInterface.Utils;
 using JayTom.Dws.Client.Models.DataModels;
+using JayTom.Dws.Client.ViewModels.Dialog;
 using JayTom.Dws.Client.ViewModels.Editors;
-using JayTom.Dws.Domain.Repository.LocalData;
 using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Domain.Repository.LocalData;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
 

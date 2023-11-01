@@ -1,14 +1,10 @@
-﻿using System;
-using Prism.Mvvm;
-using System.Linq;
-using System.Text;
-using Prism.Commands;
+﻿using JayTom.Dws.Interface;
 using Newtonsoft.Json;
-using System.Windows.Input;
-using JayTom.Dws.Interface;
-using System.Threading.Tasks;
+using Prism.Commands;
+using Prism.Mvvm;
 using Prism.Services.Dialogs;
-using System.Collections.Generic;
+using System;
+using System.Windows.Input;
 
 namespace JayTom.Dws.Client.ViewModels.Dialog {
     public class ApiTestViewModel : BindableBase, IDialogAware {

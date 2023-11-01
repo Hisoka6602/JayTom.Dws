@@ -1,34 +1,28 @@
-﻿using System;
-using DryIoc;
+﻿using DryIoc;
+using System;
 using Prism.Ioc;
 using System.IO;
 using Prism.Mvvm;
-using System.Data;
-using System.Linq;
 using Prism.DryIoc;
 using System.Windows;
-using System.Net.Http;
 using Newtonsoft.Json;
 using System.IO.Pipes;
+using System.Net.Http;
 using System.Threading;
-using JayTom.Dws.Plugin;
 using JayTom.Dws.Camera;
-using System.Configuration;
-using System.Windows.Media;
+using JayTom.Dws.Plugin;
 using JayTom.Dws.Interface;
 using System.Globalization;
+using System.Windows.Media;
 using JayTom.Dws.Plugin.Ftp;
-using JayTom.Dws.Plugin.Tcp;
 using System.Threading.Tasks;
 using System.Windows.Interop;
 using JayTom.Dws.Client.Views;
 using JayTom.Dws.Plugin.Excel;
-using System.Windows.Threading;
 using JayTom.Dws.Plugin.Speech;
-using JayTom.Dws.Client.Models;
-using JayTom.Dws.Infrastructure;
+using System.Windows.Threading;
 using JayTom.Dws.Client.Service;
-using System.Collections.Generic;
+using JayTom.Dws.Infrastructure;
 using JayTom.Dws.Plugin.SaveImage;
 using JayTom.Dws.Client.ViewModels;
 using Microsoft.Extensions.Hosting;
@@ -39,25 +33,25 @@ using JayTom.Dws.Client.Views.Editors;
 using JayTom.Dws.Plugin.Tcp.TcpClient;
 using JayTom.Dws.Plugin.Tcp.TcpServer;
 using JayTom.Dws.Client.Service.Device;
-using JayTom.Dws.Infrastructure.Service;
 using JayTom.Dws.Client.Service.Sorting;
+using JayTom.Dws.Infrastructure.Service;
 using JayTom.Dws.Client.ViewModels.Pages;
-using JayTom.Dws.Infrastructure.IComputer;
 using JayTom.Dws.Client.ViewModels.Dialog;
+using JayTom.Dws.Infrastructure.IComputer;
 using JayTom.Dws.Plugin.Scale.StaticScale;
 using JayTom.Dws.Client.ViewModels.Editors;
 using JayTom.Dws.Plugin.Scale.DynamicScale;
-using JayTom.Dws.Domain.Repository.LocalData;
-using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Client.Service.ImageStorage;
 using JayTom.Dws.Client.Service.ResultOutput;
+using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Domain.Repository.LocalData;
 using JayTom.Dws.Domain.Service.CacheCleanup;
 using Microsoft.Extensions.DependencyInjection;
 using JayTom.Dws.Client.Views.Pages.Preferences;
 using JayTom.Dws.Client.Service.BackgroundService;
 using JayTom.Dws.Client.Service.ExternalDataService;
-using JayTom.Dws.Client.ViewModels.Pages.Preferences;
 using DryIoc.Microsoft.DependencyInjection.Extension;
+using JayTom.Dws.Client.ViewModels.Pages.Preferences;
 using JayTom.Dws.Infrastructure.Repository.LocalConf;
 using JayTom.Dws.Infrastructure.Repository.LocalData;
 using JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision;
@@ -65,8 +59,8 @@ using JayTom.Dws.Client.HomeToolPlugin.SunnenPlugin.Views;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 using JayTom.Dws.Client.Service.Sorting.Communication.TcpComm;
 using JayTom.Dws.Client.HomeToolPlugin.SunnenPlugin.ViewModels;
-using JayTom.Dws.Client.Views.Pages.Preferences.ApiConfiguration;
 using JayTom.Dws.Client.Service.Sorting.Communication.SerialComm;
+using JayTom.Dws.Client.Views.Pages.Preferences.ApiConfiguration;
 using JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Infrastructure.Repository.LocalConf.CameraConfig;
@@ -154,12 +148,16 @@ namespace JayTom.Dws.Client {
                             builder.CommandTimeout(100); //180秒超时
                             builder.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
                         }).UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
+                }, 300);
+                services.AddPooledDbContextFactory<SqliteConfContext>(options => {
                     options.UseSqlite(
                         $"Data Source={System.AppDomain.CurrentDomain.BaseDirectory}Configuration.db",
                         builder => {
                             builder.CommandTimeout(100); //180秒超时
                             builder.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
                         }).UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
+                }, 300);
+                services.AddPooledDbContextFactory<SqliteLogsContext>(options => {
                     options.UseSqlite(
                         $"Data Source={System.AppDomain.CurrentDomain.BaseDirectory}ClientLogs.db",
                         builder => {
@@ -185,47 +183,43 @@ namespace JayTom.Dws.Client {
                 services.AddMemoryCache();
                 //本地数据表注册
                 //data
-                {
-                    services.AddScoped<IBarCodeRepository, BarCodeRepository>();
-                    services.AddScoped<IPanoramaImageRepository, PanoramaImageRepository>();
-                    services.AddScoped<ISoundRepository, SoundRepository>();
-                    services.AddScoped<IVolumeRepository, VolumeRepository>();
-                    services.AddScoped<IWeightRepository, WeightRepository>();
-                    services.AddScoped<IUploadRepository, UploadRepository>();
-                    services.AddScoped<ISortingRepository, SortingRepository>();
-                    services.AddScoped<IOcrRepository, OcrRepository>();
-                }
+
+                services.AddScoped<IBarCodeRepository, BarCodeRepository>();
+                services.AddScoped<IPanoramaImageRepository, PanoramaImageRepository>();
+                services.AddScoped<ISoundRepository, SoundRepository>();
+                services.AddScoped<IVolumeRepository, VolumeRepository>();
+                services.AddScoped<IWeightRepository, WeightRepository>();
+                services.AddScoped<IUploadRepository, UploadRepository>();
+                services.AddScoped<ISortingRepository, SortingRepository>();
+                services.AddScoped<IOcrRepository, OcrRepository>();
                 //config
-                {
-                    services.AddScoped<IBarcodeScannerCameraConfigRepository, BarcodeScannerCameraConfigRepository>();
-                    services.AddScoped<IPanoramaCameraConfigRepository, PanoramaCameraConfigRepository>();
-                    services.AddScoped<IVolumeCameraConfigRepository, VolumeCameraConfigRepository>();
+                services.AddScoped<IBarcodeScannerCameraConfigRepository, BarcodeScannerCameraConfigRepository>();
+                services.AddScoped<IPanoramaCameraConfigRepository, PanoramaCameraConfigRepository>();
+                services.AddScoped<IVolumeCameraConfigRepository, VolumeCameraConfigRepository>();
+                services.AddScoped<IConfigRepository, ConfigRepository>();
+                services.AddScoped<ILogisticsCodeRecognitionRepository, LogisticsCodeRecognitionRepository>();
+                services.AddScoped<IPackageExitDefinitionRepository, PackageExitDefinitionRepository>();
+                services.AddScoped<ISortingInstructionBindingRepository, SortingInstructionBindingRepository>();
+                services.AddScoped<ILogisticsRegexRepository, LogisticsRegexRepository>();
+                services.AddScoped<ISortingInstructionRepository, SortingInstructionRepository>();
 
-                    services.AddScoped<IConfigRepository, ConfigRepository>();
+                services.AddScoped<IBarCodeSortingRepository, BarCodeSortingRepository>();
+                services.AddScoped<IBarCodeRegexRepository, BarCodeRegexRepository>();
 
-                    services.AddScoped<ILogisticsCodeRecognitionRepository, LogisticsCodeRecognitionRepository>();
-                    services.AddScoped<IPackageExitDefinitionRepository, PackageExitDefinitionRepository>();
-                    services.AddScoped<ISortingInstructionBindingRepository, SortingInstructionBindingRepository>();
-                    services.AddScoped<ILogisticsRegexRepository, LogisticsRegexRepository>();
-                    services.AddScoped<ISortingInstructionRepository, SortingInstructionRepository>();
+                services.AddScoped<IWeightSortingRepository, WeightSortingRepository>();
+                services.AddScoped<IWeightRuleRepository, WeightRuleRepository>();
 
-                    services.AddScoped<IBarCodeSortingRepository, BarCodeSortingRepository>();
-                    services.AddScoped<IBarCodeRegexRepository, BarCodeRegexRepository>();
+                services.AddScoped<IVolumeSortingRepository, VolumeSortingRepository>();
+                services.AddScoped<IVolumeRuleRepository, VolumeRuleRepository>();
 
-                    services.AddScoped<IWeightSortingRepository, WeightSortingRepository>();
-                    services.AddScoped<IWeightRuleRepository, WeightRuleRepository>();
+                services.AddScoped<ILogisticsSortingRepository, LogisticsSortingRepository>();
+                services.AddScoped<ILogisticsRuleRepository, LogisticsRuleRepository>();
 
-                    services.AddScoped<IVolumeSortingRepository, VolumeSortingRepository>();
-                    services.AddScoped<IVolumeRuleRepository, VolumeRuleRepository>();
+                services.AddScoped<IOcrSortingRepository, OcrSortingRepository>();
+                services.AddScoped<IOcrRuleRepository, OcrRuleRepository>();
 
-                    services.AddScoped<ILogisticsSortingRepository, LogisticsSortingRepository>();
-                    services.AddScoped<ILogisticsRuleRepository, LogisticsRuleRepository>();
-
-                    services.AddScoped<IOcrSortingRepository, OcrSortingRepository>();
-                    services.AddScoped<IOcrRuleRepository, OcrRuleRepository>();
-                    services.AddScoped<IApiSortingRepository, ApiSortingRepository>();
-                    services.AddScoped<IApiRuleRepository, ApiRuleRepository>();
-                }
+                services.AddScoped<IApiSortingRepository, ApiSortingRepository>();
+                services.AddScoped<IApiRuleRepository, ApiRuleRepository>();
 
                 //插件注册
                 services.AddScoped<IExcel, NpoiExport>();
@@ -239,7 +233,7 @@ namespace JayTom.Dws.Client {
                 services.AddScoped<ISortingSerialPort, SortingSerialPort>();
                 services.AddSingleton<ISortingTcp>(provider => new SortingTcp(new TouchSocketTcpClient(), new TouchSocketTcpServer()));
                 //电脑注册
-                services.AddScoped<IComputer, Computer>();
+                services.AddScoped<IComputer, Infrastructure.IComputer.Computer>();
                 //电脑信息上报
                 services.AddScoped<IComputerInfoReporter, ComputerInfoReporter>();
                 //设备注册
@@ -309,22 +303,46 @@ namespace JayTom.Dws.Client {
                         services.AddSingleton(container1.Resolve<IHttpClientFactory>());
 
                         //data
-                        {
-                            services.AddSingleton(container1.Resolve<IBarCodeRepository>());
-                            services.AddSingleton(container1.Resolve<IPanoramaCameraConfigRepository>());
-                            services.AddSingleton(container1.Resolve<ISoundRepository>());
-                        }
+
+                        services.AddSingleton(container1.Resolve<IBarCodeRepository>());
+                        services.AddSingleton(container1.Resolve<IPanoramaCameraConfigRepository>());
+                        services.AddSingleton(container1.Resolve<ISoundRepository>());
+
+                        services.AddSingleton(container1.Resolve<IVolumeRepository>());
+                        services.AddSingleton(container1.Resolve<IWeightRepository>());
+                        services.AddSingleton(container1.Resolve<IUploadRepository>());
+                        services.AddSingleton(container1.Resolve<ISortingRepository>());
+                        services.AddSingleton(container1.Resolve<IOcrRepository>());
                         //config
-                        {
-                            services.AddSingleton(container1.Resolve<IBarcodeScannerCameraConfigRepository>());
-                            services.AddSingleton(container1.Resolve<IVolumeCameraConfigRepository>());
-                            services.AddSingleton(container1.Resolve<IConfigRepository>());
-                            services.AddSingleton(container1.Resolve<IPanoramaImageRepository>());
-                            services.AddSingleton(container1.Resolve<ILogisticsCodeRecognitionRepository>());
-                            services.AddSingleton(container1.Resolve<IPackageExitDefinitionRepository>());
-                            services.AddSingleton(container1.Resolve<ISortingInstructionBindingRepository>());
-                            services.AddSingleton(container1.Resolve<ILogisticsRegexRepository>());
-                        }
+                        services.AddSingleton(container1.Resolve<IBarcodeScannerCameraConfigRepository>());
+                        services.AddSingleton(container1.Resolve<IPanoramaCameraConfigRepository>());
+                        services.AddSingleton(container1.Resolve<IVolumeCameraConfigRepository>());
+                        services.AddSingleton(container1.Resolve<IConfigRepository>());
+                        services.AddSingleton(container1.Resolve<ILogisticsCodeRecognitionRepository>());
+                        services.AddSingleton(container1.Resolve<ILogisticsCodeRecognitionRepository>());
+                        services.AddSingleton(container1.Resolve<IPackageExitDefinitionRepository>());
+                        services.AddSingleton(container1.Resolve<ISortingInstructionBindingRepository>());
+
+                        services.AddSingleton(container1.Resolve<ILogisticsRegexRepository>());
+                        services.AddSingleton(container1.Resolve<ISortingInstructionRepository>());
+
+                        services.AddSingleton(container1.Resolve<IBarCodeSortingRepository>());
+                        services.AddSingleton(container1.Resolve<IBarCodeRegexRepository>());
+
+                        services.AddSingleton(container1.Resolve<IWeightSortingRepository>());
+                        services.AddSingleton(container1.Resolve<IWeightRuleRepository>());
+
+                        services.AddSingleton(container1.Resolve<IVolumeSortingRepository>());
+                        services.AddSingleton(container1.Resolve<IVolumeRuleRepository>());
+
+                        services.AddSingleton(container1.Resolve<ILogisticsSortingRepository>());
+                        services.AddSingleton(container1.Resolve<ILogisticsRuleRepository>());
+
+                        services.AddSingleton(container1.Resolve<IOcrSortingRepository>());
+                        services.AddSingleton(container1.Resolve<IOcrRuleRepository>());
+
+                        services.AddSingleton(container1.Resolve<IApiSortingRepository>());
+                        services.AddSingleton(container1.Resolve<IApiRuleRepository>());
 
                         //Api接口注册
 
@@ -337,6 +355,7 @@ namespace JayTom.Dws.Client {
                         services.AddSingleton(container1.Resolve<IComputer>());
                         services.AddSingleton(container1.Resolve<IComputerInfoReporter>());
                         services.AddSingleton(container1.Resolve<IFtp>());
+                        services.AddSingleton(container1.Resolve<IExcel>());
                         services.AddSingleton(container1.Resolve<ISaveImage>());
                         services.AddSingleton(container1.Resolve<ISpeech>());
                         services.AddSingleton(container1.Resolve<ITcpCommClient>());
@@ -481,6 +500,7 @@ namespace JayTom.Dws.Client {
             ViewModelLocationProvider.Register<DefaultApiPage, DefaultApiPageViewModel>();
             ViewModelLocationProvider.Register<SzjyApiPage, SzjyApiPageViewModel>();
             ViewModelLocationProvider.Register<WdtFlagshipApiPage, WdtFlagshipApiPageViewModel>();
+            ViewModelLocationProvider.Register<WdtWmsApiPage, WdtWmsApiPageViewModel>();
             //其他插件
             {
                 ViewModelLocationProvider.Register<SunnenInputBarcodeControl, SunnenInputBarcodeViewModel>();

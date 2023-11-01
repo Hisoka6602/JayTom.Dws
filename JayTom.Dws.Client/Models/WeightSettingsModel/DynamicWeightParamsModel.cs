@@ -1,9 +1,4 @@
-﻿using System;
-using Prism.Mvvm;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Collections.Generic;
+﻿using Prism.Mvvm;
 
 namespace JayTom.Dws.Client.Models.WeightSettingsModel {
 

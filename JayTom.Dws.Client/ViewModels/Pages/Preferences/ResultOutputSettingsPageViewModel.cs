@@ -2,33 +2,28 @@
 using System.IO;
 using Prism.Mvvm;
 using System.Linq;
-using System.Text;
 using Prism.Commands;
 using Newtonsoft.Json;
 using System.IO.Ports;
-using Mono.Unix.Native;
-using System.Threading;
-using System.Windows.Input;
 using System.Windows.Forms;
+using System.Windows.Input;
 using JayTom.Dws.Domain.Dto;
-using System.Threading.Tasks;
 using JayTom.Dws.Client.Models;
+using JayTom.Dws.Data.LocalLog;
 using MaterialDesignThemes.Wpf;
-using NPOI.SS.Formula.Functions;
-using JayTom.Dws.Data.LocalData;
 using JayTom.Dws.Data.LocalConf;
-using System.Collections.Generic;
+using JayTom.Dws.Data.LocalData;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
-using JayTom.Dws.Domain.Repository.LocalData;
 using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Domain.Repository.LocalData;
 using JayTom.Dws.Client.Models.ImageSettingModels;
 using JayTom.Dws.Client.Models.SettingsCommomModels;
 using JayTom.Dws.Client.Models.ResultOutputSettingsModel;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.StartPanel;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
+
     public class ResultOutputSettingsPageViewModel : BindableBase {
         private readonly ISoundRepository _soundRepository;
         private readonly IConfigRepository _configRepository;
@@ -322,14 +317,17 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             get => _selectedTriggerPositionResult;
             set => SetProperty(ref _selectedTriggerPositionResult, value);
         }
+
         public DataFormatTypeInfoModel SelectDataFormat {
             get => _selectDataFormat;
             set => SetProperty(ref _selectDataFormat, value);
         }
+
         public ObservableCollection<DataFormatTypeInfoModel> DataFormatTypeItems {
             get => _dataFormatTypeItems;
             set => SetProperty(ref _dataFormatTypeItems, value);
         }
+
         /// <summary>
         /// 串口内容
         /// </summary>
@@ -734,7 +732,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                                     WeightOutputKey = settingsDto.LocationOutputSettingsInfo.WeightOutputKey,
                                     WeightOutputPosition = settingsDto.LocationOutputSettingsInfo.WeightOutputPosition,
                                 };
-
                             }
                         }
                         catch (Exception e) {

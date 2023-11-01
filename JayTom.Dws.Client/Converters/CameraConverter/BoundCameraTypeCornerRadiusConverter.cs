@@ -1,13 +1,8 @@
-﻿using System;
-using System.Linq;
-using System.Text;
+﻿using JayTom.Dws.Client.Models;
+using System;
+using System.Globalization;
 using System.Windows;
 using System.Windows.Data;
-using System.Globalization;
-using System.Threading.Tasks;
-using JayTom.Dws.Client.Models;
-using MaterialDesignThemes.Wpf;
-using System.Collections.Generic;
 
 namespace JayTom.Dws.Client.Converters.CameraConverter {
     public class BoundCameraTypeCornerRadiusConverter : IValueConverter {

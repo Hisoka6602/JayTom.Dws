@@ -1,14 +1,10 @@
-﻿using System;
-using System.Linq;
-using System.Text;
-using System.ComponentModel;
-using System.Threading.Tasks;
-using System.Collections.Generic;
+﻿using System.ComponentModel;
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
 using JayTom.Dws.Plugin.Excel.Attributes;
 
 namespace JayTom.Dws.Client.Models.PackageSorting {
+
     public class SortingInstructionBindingItemInfoModel : BasePackageSortingItemInfoModel {
         private ObservableCollection<SortingInstructionItemInfoModel> _sortingInstructionItems = new();
         private string _sortingInstructionGroup = string.Empty;

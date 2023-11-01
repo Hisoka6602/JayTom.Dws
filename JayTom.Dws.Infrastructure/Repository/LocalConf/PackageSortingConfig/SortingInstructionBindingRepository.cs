@@ -26,6 +26,11 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig {
                         .Where(where)
                         .OrderByDescending(o => o.CreateTime)
                         .Include(b => b.InstructionItems)
+                        .ToListAsync(cancellationToken: token);
+                    /*return await dbSet.AsNoTracking()
+                        .Where(where)
+                        .OrderByDescending(o => o.CreateTime)
+                        .Include(b => b.InstructionItems)
                         .AsSingleQuery() // 添加AsSingleQuery
                         .Select(b => new SortingInstructionBindingInfoModel {
                             Remarks = b.Remarks,
@@ -47,7 +52,7 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig {
                                     ReplyContent = n.ReplyContent,
                                 }).ToList()
                         })
-                        .ToListAsync(cancellationToken: token);
+                        .ToListAsync(cancellationToken: token);*/
                 }
             }
             catch (Exception e) {

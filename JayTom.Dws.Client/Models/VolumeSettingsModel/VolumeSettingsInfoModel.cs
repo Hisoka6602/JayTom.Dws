@@ -1,15 +1,8 @@
-﻿using System;
-using Prism.Mvvm;
-using System.Linq;
-using System.Text;
-using JayTom.Dws.Domain.Dto;
-using System.Threading.Tasks;
-using System.Collections.Generic;
-using JayTom.Dws.Domain.Converters;
-using System.Collections.ObjectModel;
-using JayTom.Dws.Domain.Dto.BaseInfoModels;
-using JayTom.Dws.Client.Models.ImageSettingModels;
+﻿using JayTom.Dws.Client.Models.ImageSettingModels;
 using JayTom.Dws.Client.Models.SettingsCommomModels;
+using JayTom.Dws.Domain.Converters;
+using Prism.Mvvm;
+using System.Collections.ObjectModel;
 
 namespace JayTom.Dws.Client.Models.VolumeSettingsModel {
     public class VolumeSettingsInfoModel : BindableBase {

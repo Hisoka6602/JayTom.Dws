@@ -1,12 +1,6 @@
-﻿using System;
-using Prism.Mvvm;
-using System.Linq;
-using System.Text;
+﻿using Prism.Mvvm;
 using System.IO.Ports;
-using JayTom.Dws.Domain.Dto;
-using System.Threading.Tasks;
 using JayTom.Dws.Data.LocalLog;
-using System.Collections.Generic;
 
 namespace JayTom.Dws.Client.Models.SettingsCommomModels {
 

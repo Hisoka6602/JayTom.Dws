@@ -1,18 +1,14 @@
-﻿using System;
-using Prism.Mvvm;
-using System.Linq;
-using System.Text;
-using Prism.Commands;
-using Newtonsoft.Json;
-using System.Windows.Input;
-using JayTom.Dws.Domain.Dto;
-using System.Threading.Tasks;
-using MaterialDesignThemes.Wpf;
-using JayTom.Dws.Data.LocalConf;
-using System.Collections.Generic;
-using JayTom.Dws.Client.EventMediators;
-using JayTom.Dws.Domain.Repository.LocalConf;
+﻿using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Models.OcrSettingsModel;
+using JayTom.Dws.Data.LocalConf;
+using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Domain.Repository.LocalConf;
+using MaterialDesignThemes.Wpf;
+using Newtonsoft.Json;
+using Prism.Commands;
+using Prism.Mvvm;
+using System;
+using System.Windows.Input;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
 

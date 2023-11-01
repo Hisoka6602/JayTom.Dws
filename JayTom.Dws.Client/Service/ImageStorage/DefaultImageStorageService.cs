@@ -1,21 +1,17 @@
-﻿using System;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Drawing;
-using Newtonsoft.Json;
-using System.Threading;
-using System.Globalization;
+﻿using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.Dto;
-using JayTom.Dws.Plugin.Ftp;
-using System.Threading.Tasks;
-using JayTom.Dws.Data.LocalConf;
-using System.Collections.Generic;
-using JayTom.Dws.Plugin.SaveImage;
-using JayTom.Dws.Client.EventMediators;
-using JayTom.Dws.PluginInterface.Utils;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
 using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Plugin.Ftp;
+using JayTom.Dws.Plugin.SaveImage;
+using Newtonsoft.Json;
+using System;
+using System.Drawing;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using WatermarkPosition = JayTom.Dws.Plugin.SaveImage.WatermarkPosition;
 
 namespace JayTom.Dws.Client.Service.ImageStorage {

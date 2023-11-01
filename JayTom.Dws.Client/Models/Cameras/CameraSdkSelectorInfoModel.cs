@@ -1,11 +1,7 @@
-﻿using System;
-using Prism.Mvvm;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Collections.Generic;
+﻿using Prism.Mvvm;
 
 namespace JayTom.Dws.Client.Models.Cameras {
+
     public class CameraSdkSelectorInfoModel : BindableBase {
         private bool _isUseHikvisionSmartCameraSdk;
         private bool _isUseHikvisionIndustrialCameraSdk;
@@ -63,6 +59,7 @@ namespace JayTom.Dws.Client.Models.Cameras {
             get => _isUseWayzimIndustrialCameraSdk;
             set => SetProperty(ref _isUseWayzimIndustrialCameraSdk, value);
         }
+
         /// <summary>
         /// 是否使用海康体积相机
         /// </summary>
@@ -70,6 +67,7 @@ namespace JayTom.Dws.Client.Models.Cameras {
             get => _isUseHikvisionVolumeCameraSdk;
             set => SetProperty(ref _isUseHikvisionVolumeCameraSdk, value);
         }
+
         /// <summary>
         /// 是否使用大华体积相机
         /// </summary>

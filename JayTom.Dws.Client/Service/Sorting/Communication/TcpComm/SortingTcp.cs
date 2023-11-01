@@ -1,14 +1,12 @@
-﻿using System;
-using System.Linq;
-using System.Text;
-using Newtonsoft.Json;
-using System.Threading;
-using JayTom.Dws.Plugin.Tcp;
-using System.Threading.Tasks;
-using System.Collections.Generic;
-using System.Collections.Concurrent;
+﻿using JayTom.Dws.Plugin.Tcp;
 using JayTom.Dws.Plugin.Tcp.TcpClient;
 using JayTom.Dws.Plugin.Tcp.TcpServer;
+using Newtonsoft.Json;
+using System;
+using System.Collections.Concurrent;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace JayTom.Dws.Client.Service.Sorting.Communication.TcpComm {
 

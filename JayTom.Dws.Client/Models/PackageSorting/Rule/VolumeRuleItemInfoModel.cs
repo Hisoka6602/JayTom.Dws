@@ -1,11 +1,4 @@
-﻿using System;
-using System.Linq;
-using System.Text;
-using NPOI.SS.Formula;
-using System.Threading.Tasks;
-using System.Collections.Generic;
-
-namespace JayTom.Dws.Client.Models.PackageSorting.Rule {
+﻿namespace JayTom.Dws.Client.Models.PackageSorting.Rule {
 
     public class VolumeRuleItemInfoModel : BasePackageSortingItemInfoModel {
         private long _volumeSortingId;

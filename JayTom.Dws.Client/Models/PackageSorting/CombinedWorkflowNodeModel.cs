@@ -1,12 +1,6 @@
-﻿using System;
-using Prism.Mvvm;
-using System.Linq;
-using System.Text;
+﻿using Prism.Mvvm;
 using System.Windows;
 using System.Windows.Input;
-using System.Threading.Tasks;
-using System.Collections.Generic;
-using GongSolutions.Wpf.DragDrop;
 
 namespace JayTom.Dws.Client.Models.PackageSorting {
     public class CombinedWorkflowNodeModel : BindableBase {

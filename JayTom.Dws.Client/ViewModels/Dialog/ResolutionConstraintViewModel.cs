@@ -1,13 +1,7 @@
-﻿using System;
-using Prism.Mvvm;
-using System.Linq;
-using System.Text;
+﻿using MaterialDesignThemes.Wpf;
 using Prism.Commands;
+using Prism.Mvvm;
 using System.Windows.Input;
-using System.Threading.Tasks;
-using MaterialDesignThemes.Wpf;
-using System.Collections.Generic;
-using LibreHardwareMonitor.Hardware;
 
 namespace JayTom.Dws.Client.ViewModels.Dialog {
     public class ResolutionConstraintViewModel : BindableBase {

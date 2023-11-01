@@ -7,11 +7,9 @@ using System.Collections.Generic;
 using JayTom.Dws.Data.LocalConf.CameraConfig;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 
-namespace JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig
-{
+namespace JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig {
 
-    public interface ILogisticsCodeRecognitionRepository : IRepository<LogisticsCodeRecognitionInfoModel>
-    {
+    public interface ILogisticsCodeRecognitionRepository : IRepository<LogisticsCodeRecognitionInfoModel> {
 
         /// <summary>
         /// 查询(包含正则)
@@ -20,5 +18,14 @@ namespace JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig
         /// <param name="token"></param>
         /// <returns></returns>
         Task<List<LogisticsCodeRecognitionInfoModel>> LogisticsCodes(Expression<Func<LogisticsCodeRecognitionInfoModel, bool>> @where, CancellationToken token = default);
+
+        /*//插入
+        Task<bool> InsertDetailAsync(LogisticsCodeRecognitionInfoModel entity, CancellationToken token = default);
+
+        //批量插入
+        Task<bool> InsertRangeDetailAsync(List<LogisticsCodeRecognitionInfoModel> entities, CancellationToken token = default);
+
+        //更新
+        Task<bool> UpdateDetailAsync(LogisticsCodeRecognitionInfoModel entity, CancellationToken token = default);*/
     }
 }

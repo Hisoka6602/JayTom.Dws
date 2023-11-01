@@ -1,16 +1,12 @@
-﻿using System;
-using Prism.Mvvm;
-using System.Linq;
-using System.Text;
-using Prism.Commands;
-using System.Windows.Input;
-using System.Threading.Tasks;
-using MaterialDesignThemes.Wpf;
-using System.Collections.Generic;
-using LibreHardwareMonitor.Hardware;
-using System.Collections.ObjectModel;
-using JayTom.Dws.Client.Models.PackageSorting;
+﻿using JayTom.Dws.Client.Models.PackageSorting;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
+using MaterialDesignThemes.Wpf;
+using Prism.Commands;
+using Prism.Mvvm;
+using System;
+using System.Collections.ObjectModel;
+using System.Linq;
+using System.Windows.Input;
 
 namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
     public class PackageExitDefinitionEditorViewModel : BindableBase {

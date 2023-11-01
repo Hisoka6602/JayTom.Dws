@@ -1,10 +1,4 @@
-﻿using System;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Collections.Generic;
-
-namespace JayTom.Dws.Client.Models.PackageSorting.Rule {
+﻿namespace JayTom.Dws.Client.Models.PackageSorting.Rule {
 
     public class OcrRuleItemInfoModel : BasePackageSortingItemInfoModel {
         private long _ocrSortingId;

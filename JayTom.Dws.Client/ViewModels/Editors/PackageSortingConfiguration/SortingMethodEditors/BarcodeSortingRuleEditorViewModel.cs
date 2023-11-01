@@ -1,22 +1,16 @@
-﻿using System;
-using ImTools;
-using Prism.Mvvm;
-using System.Linq;
-using System.Text;
-using Prism.Commands;
-using System.Windows.Input;
-using JayTom.Dws.Domain.Dto;
-using System.Threading.Tasks;
-using MaterialDesignThemes.Wpf;
-using System.Collections.Generic;
-using LibreHardwareMonitor.Hardware;
-using System.Collections.ObjectModel;
-using System.Text.RegularExpressions;
-using Microsoft.AspNetCore.Mvc.Filters;
+﻿using ImTools;
 using JayTom.Dws.Client.Models.PackageSorting;
 using JayTom.Dws.Client.Models.PackageSorting.Rule;
-using Microsoft.Extensions.FileSystemGlobbing.Internal;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
+using MaterialDesignThemes.Wpf;
+using Prism.Commands;
+using Prism.Mvvm;
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
+using System.Text.RegularExpressions;
+using System.Windows.Input;
 
 namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.SortingMethodEditors {
     public class BarcodeSortingRuleEditorViewModel : BindableBase {

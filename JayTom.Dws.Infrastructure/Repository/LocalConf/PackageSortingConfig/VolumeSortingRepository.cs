@@ -26,6 +26,11 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig {
                         .Where(where)
                         .OrderByDescending(o => o.CreateTime)
                         .Include(b => b.VolumeRuleItems)
+                        .ToListAsync(cancellationToken: token);
+                    /*return await dbSet.AsNoTracking()
+                        .Where(where)
+                        .OrderByDescending(o => o.CreateTime)
+                        .Include(b => b.VolumeRuleItems)
                         .AsSingleQuery() // 添加AsSingleQuery
                         .Select(b => new VolumeSortingInfoModel {
                             Remarks = b.Remarks,
@@ -44,7 +49,7 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig {
                                     Formula = n.Formula,
                                 }).ToList()
                         })
-                        .ToListAsync(cancellationToken: token);
+                        .ToListAsync(cancellationToken: token);*/
                 }
             }
             catch (Exception e) {

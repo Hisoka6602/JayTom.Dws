@@ -3,25 +3,21 @@ using ImTools;
 using System.IO;
 using Prism.Mvvm;
 using System.Linq;
-using System.Text;
 using Prism.Commands;
-using Microsoft.Win32;
-using System.Windows.Input;
 using System.Windows.Forms;
+using System.Windows.Input;
 using JayTom.Dws.Domain.Dto;
-using System.Threading.Tasks;
 using MaterialDesignThemes.Wpf;
 using System.Collections.Generic;
 using System.Windows.Media.Imaging;
-using LibreHardwareMonitor.Hardware;
 using System.Collections.ObjectModel;
-using Microsoft.AspNetCore.Mvc.Filters;
 using JayTom.Dws.Client.Models.PackageSorting;
 using JayTom.Dws.Client.Models.PackageSorting.Rule;
 using OpenFileDialog = System.Windows.Forms.OpenFileDialog;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
 
 namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
+
     public class LogisticsCodeRecognitionEditorViewModel : BindableBase {
         private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
         private string _identifier = string.Empty;
@@ -133,7 +129,6 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
             get => _endCharacterType;
             set => SetProperty(ref _endCharacterType, value);
         }
-
 
         public bool IsOk {
             get => _isOk;

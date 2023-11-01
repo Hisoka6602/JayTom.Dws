@@ -1,23 +1,16 @@
-﻿using System;
-using Prism.Mvvm;
-using System.Linq;
-using System.Text;
-using Prism.Regions;
-using System.Drawing;
-using Prism.Commands;
-using System.Windows;
-using System.Windows.Media;
-using System.Windows.Input;
-using System.Threading.Tasks;
-using System.Windows.Controls;
-using JayTom.Dws.Client.Models;
-using System.Windows.Threading;
-using MaterialDesignThemes.Wpf;
-using System.Collections.Generic;
-using System.Security.AccessControl;
-using System.Collections.ObjectModel;
-using JayTom.Dws.Client.Views.Dialog;
+﻿using JayTom.Dws.Client.Models;
 using JayTom.Dws.Client.ViewModels.Dialog;
+using JayTom.Dws.Client.Views.Dialog;
+using MaterialDesignThemes.Wpf;
+using Prism.Commands;
+using Prism.Mvvm;
+using Prism.Regions;
+using System;
+using System.Collections.ObjectModel;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
 
 namespace JayTom.Dws.Client.ViewModels.Pages {
     public class SettingsViewModel : BindableBase {

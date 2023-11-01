@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using JayTom.Dws.Interface;
 using System.Threading.Tasks;

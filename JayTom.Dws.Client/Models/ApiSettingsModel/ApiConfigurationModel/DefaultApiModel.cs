@@ -1,7 +1,7 @@
-﻿using Prism.Mvvm;
+﻿using JayTom.Dws.Client.Models.ImageSettingModels;
 using JayTom.Dws.Domain.Dto.ApiDto;
+using Prism.Mvvm;
 using System.Collections.ObjectModel;
-using JayTom.Dws.Client.Models.ImageSettingModels;
 
 namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
 

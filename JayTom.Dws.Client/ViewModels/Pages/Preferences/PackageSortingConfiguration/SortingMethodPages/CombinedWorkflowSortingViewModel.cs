@@ -1,24 +1,17 @@
-﻿using System;
-using Prism.Mvvm;
-using System.Linq;
-using System.Text;
-using Prism.Commands;
-using System.Windows;
-using System.Diagnostics;
-using System.Windows.Input;
-using System.Windows.Forms;
-using System.Threading.Tasks;
-using System.Windows.Controls;
-using System.Collections.Generic;
-using GongSolutions.Wpf.DragDrop;
-using System.Collections.ObjectModel;
-using Panel = System.Windows.Controls.Panel;
+﻿using GongSolutions.Wpf.DragDrop;
 using JayTom.Dws.Client.Models.PackageSorting;
-using ListView = System.Windows.Controls.ListView;
-using DragDrop = GongSolutions.Wpf.DragDrop.DragDrop;
+using Prism.Commands;
+using Prism.Mvvm;
+using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.Linq;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
 using DragDropEffects = System.Windows.DragDropEffects;
-using ListViewItem = System.Windows.Controls.ListViewItem;
 using IDropTarget = GongSolutions.Wpf.DragDrop.IDropTarget;
+using ListView = System.Windows.Controls.ListView;
+using Panel = System.Windows.Controls.Panel;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration.SortingMethodPages {
     public class CombinedWorkflowSortingViewModel : BindableBase, IDropTarget {

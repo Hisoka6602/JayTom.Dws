@@ -1,12 +1,7 @@
-﻿using System;
-using System.Linq;
-using System.Text;
-using System.Windows.Data;
+﻿using JayTom.Dws.Domain.Converters;
+using System;
 using System.Globalization;
-using System.Threading.Tasks;
-using System.Collections.Generic;
-using JayTom.Dws.Domain.Converters;
-using static Microsoft.WindowsAPICodePack.Shell.PropertySystem.SystemProperties.System;
+using System.Windows.Data;
 
 namespace JayTom.Dws.Client.Converters.UnitConverter {
 

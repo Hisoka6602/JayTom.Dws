@@ -1,10 +1,6 @@
 ﻿using System;
-using System.Linq;
-using System.Text;
-using System.Windows.Data;
 using System.Globalization;
-using System.Threading.Tasks;
-using System.Collections.Generic;
+using System.Windows.Data;
 
 namespace JayTom.Dws.Client.Converters.SettingsConverter {
     public class ShortcutMacroConverter : IValueConverter {

@@ -1,8 +1,8 @@
-﻿using System;
+﻿using Prism.Commands;
 using Prism.Mvvm;
-using Prism.Commands;
-using System.Threading;
+using System;
 using System.Diagnostics;
+using System.Threading;
 using System.Windows.Input;
 
 namespace JayTom.Dws.Client.ViewModels.Dialog {
