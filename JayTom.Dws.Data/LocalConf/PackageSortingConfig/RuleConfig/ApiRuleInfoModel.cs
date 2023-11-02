@@ -25,6 +25,6 @@ namespace JayTom.Dws.Data.LocalConf.PackageSortingConfig.RuleConfig {
         public string JsonContent { get; set; } = string.Empty;
 
         [ForeignKey("Id")]
-        public virtual ApiSortingInfoModel ApiSortingInfo { get; set; } = new();
+        public virtual ApiSortingInfoModel? ApiSortingInfo { get; set; }
     }
 }

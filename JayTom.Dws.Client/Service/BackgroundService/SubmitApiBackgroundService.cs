@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using JayTom.Dws.Interface.Wdt;
 using JayTom.Dws.PluginInterface;
 using JayTom.Dws.Interface.Sunnen;
+using JayTom.Dws.Interface.JdyWms;
 using JayTom.Dws.Domain.Dto.ApiDto;
 using JayTom.Dws.Interface.Szjy188;
 using System.Collections.Concurrent;
@@ -290,6 +291,16 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                     }
                                     break;
                                 }
+                            case ApiType.JdyWms: {
+                                    uploader = new JdyWmsApi(_httpClientFactory);
+                                    uploadResponse = await uploader.UploadData(info.Barcode ?? string.Empty,
+                                        info.Weight, info.ScanTime,
+                                        info.Length, info.Width,
+                                        info.Height, info.Volume,
+                                        info.Image, info.PanoramaImage,
+                                        null, stoppingToken);
+                                    break;
+                                }
                         }
                         if (_apiSettingsDto?.Type is not null &&
                             _apiSettingsDto.Type != ApiType.None) {
@@ -471,6 +482,21 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         /// </summary>
         public class ApiResponseReceived {
             public long Guid { get; set; }
+
+            /// <summary>
+            /// 创建包裹时间
+            /// </summary>
+            public DateTime PackageCreationTime { get; set; }
+
+            /// <summary>
+            /// 创建包裹指令
+            /// </summary>
+            public string PackageCreationInstruction { get; set; } = string.Empty;
+
+            /// <summary>
+            /// 是否由下位机创建
+            /// </summary>
+            public bool IsCreatedByLowerMachine { get; set; }
 
             /// <summary>
             /// 条码

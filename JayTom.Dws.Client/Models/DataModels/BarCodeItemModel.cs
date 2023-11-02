@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using JayTom.Dws.Plugin.Excel.Attributes;
 
 namespace JayTom.Dws.Client.Models.DataModels {
-
     public class BarCodeItemModel : BindableBase {
         private float _volume;
         private bool _isInserting;
@@ -20,10 +19,6 @@ namespace JayTom.Dws.Client.Models.DataModels {
         private float _height;
         private DateTime _scanTime = DateTime.MinValue;
         private UploadStatus _requestStatus = UploadStatus.NotUploaded;
-        private DateTime _requestTime;
-        private string _requestContent = string.Empty;
-        private DateTime _responseTime;
-        private string _responseContent = string.Empty;
         private string? _barcodeImagePath = string.Empty;
         private bool _isBarcodeImageExists;
         private List<PanoramaImageItemModel> _panoramaImageItems = new();
@@ -32,6 +27,7 @@ namespace JayTom.Dws.Client.Models.DataModels {
         private UploadItemModel _uploadInfo = new();
         private SortingItemModel _sortingInfo = new();
         private OcrItemInfo _ocrInfo = new();
+        private string _exitName = string.Empty;
 
         [DisplayName("No."), ExcelInfo(Width = 3000)]
         public int Num {
@@ -119,43 +115,14 @@ namespace JayTom.Dws.Client.Models.DataModels {
             get => _requestStatus;
             set => SetProperty(ref _requestStatus, value);
         }
-
-        /*
         /// <summary>
-        /// 上传时间
+        /// 格口名称
         /// </summary>
-        [DisplayName("RequestTime"), ExcelInfo(Width = 4000)]
-        public DateTime RequestTime {
-            get => _requestTime;
-            set => SetProperty(ref _requestTime, value);
+        [DisplayName("ExitName"), ExcelInfo(Width = 3000)]
+        public string ExitName {
+            get => _exitName;
+            set => SetProperty(ref _exitName, value);
         }
-
-        /// <summary>
-        /// 上传内容
-        /// </summary>
-        [DisplayName("RequestContent"), ExcelInfo(Width = 8000)]
-        public string RequestContent {
-            get => _requestContent;
-            set => SetProperty(ref _requestContent, value);
-        }
-
-        /// <summary>
-        /// 接口响应时间
-        /// </summary>
-        [DisplayName("ResponseTime"), ExcelInfo(Width = 4000)]
-        public DateTime ResponseTime {
-            get => _responseTime;
-            set => SetProperty(ref _responseTime, value);
-        }
-
-        /// <summary>
-        /// 接口响应内容
-        /// </summary>
-        [DisplayName("ResponseContent"), ExcelInfo(Width = 8000)]
-        public string ResponseContent {
-            get => _responseContent;
-            set => SetProperty(ref _responseContent, value);
-        }*/
 
         /// <summary>
         /// 条码图片保存路径
@@ -173,25 +140,6 @@ namespace JayTom.Dws.Client.Models.DataModels {
             get => _panoramaImageItems;
             set => SetProperty(ref _panoramaImageItems, value);
         }
-
-        /*
-        /// <summary>
-        /// 下位机指令内容
-        /// </summary>
-        [DisplayName("InstructionContent"), ExcelInfo(Width = 8000)]
-        public string? InstructionContent { get; set; }
-
-        /// <summary>
-        /// 指令发送时间
-        /// </summary>
-        [DisplayName("InstructionSentTime"), ExcelInfo(Width = 4000)]
-        public DateTime? InstructionSentTime { get; set; }
-
-        /// <summary>
-        /// 指令发送目标地址
-        /// </summary>
-        [DisplayName("DestinationAddress"), ExcelInfo(Width = 4000)]
-        public string? DestinationAddress { get; set; }*/
 
         /// <summary>
         /// 其他项

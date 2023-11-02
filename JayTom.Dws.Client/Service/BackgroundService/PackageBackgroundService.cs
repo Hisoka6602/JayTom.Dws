@@ -180,23 +180,24 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 }
             };
             //下位机(创建包裹)
-            _sortingService.CreatePackageEvent += delegate (object? sender, string o) {
+            _sortingService.CreatePackageEvent += delegate (object? sender, PackageInstructionEventArgs args) {
                 if (_communicationsSettingsDto.Protocol == CommunicationProtocol.Wxkc) {
-                    var tryParse = int.TryParse(o, out var num);
+                    var tryParse = int.TryParse(args.Keyword, out var num);
                     if (tryParse) {
                         //创建包裹
                         var packageInfo = new PackageInfo() {
-                            Guid = num
+                            Guid = num,
+                            IsCreatedByLowerMachine = true,
+                            PackageCreationInstruction = args.Instruction,
                         };
                         _packageInfos.Enqueue(packageInfo);
                     }
                 }
                 //其他协议
             };
-            //下位机(移除包裹)
-            _sortingService.RemovePackageEvent += delegate (object? sender, string o) {
+            _sortingService.RemovePackageEvent += delegate (object? sender, PackageInstructionEventArgs args) {
                 if (_communicationsSettingsDto.Protocol == CommunicationProtocol.Wxkc) {
-                    var tryParse = int.TryParse(o, out var num);
+                    var tryParse = int.TryParse(args.Keyword, out var num);
                     if (tryParse) {
                         var count = _packageInfos.Count;
                         while (count-- > 0) {
@@ -210,6 +211,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 }
                 //其他协议
             };
+            //下位机(移除包裹)
+
             //下位机(清空异常)
             _sortingService.ClearExceptionEvent += delegate (object? sender, string o) {
                 _packageInfos.Clear();
@@ -230,6 +233,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             WidthToDeduct = args.WidthToDeduct,
                             LengthToDeduct = args.LengthToDeduct,
                             VolumeToDeduct = args.VolumeToDeduct,
+                            CreateTime = DateTime.Now,
+                            IsCreatedByLowerMachine = false,
                         };
                         _packageInfos.Enqueue(packageInfo);
                         //触发全景拍照
@@ -569,6 +574,16 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         /// 需要扣除的体积
         /// </summary>
         public float VolumeToDeduct { get; set; }
+
+        /// <summary>
+        /// 创建包裹指令
+        /// </summary>
+        public string PackageCreationInstruction { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 是否由下位机创建
+        /// </summary>
+        public bool IsCreatedByLowerMachine { get; set; }
     }
 
     public class CameraImageInfo {

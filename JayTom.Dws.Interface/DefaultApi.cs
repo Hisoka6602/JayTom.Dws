@@ -15,7 +15,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Reflection.PortableExecutable;
 
 namespace JayTom.Dws.Interface {
-
     public class DefaultApi : IDataUploader {
         private readonly IHttpClientFactory _httpClientFactory;
         private DefaultApiParameters _parameters = new();
@@ -83,23 +82,23 @@ namespace JayTom.Dws.Interface {
             }
             catch (HttpRequestException e) {
                 isSuccess = false;
-                exceptionMsg = e.Message;
+                resultContent += exceptionMsg = e.Message;
             }
             catch (AggregateException) {
                 isSuccess = false;
-                exceptionMsg = "接口访问异常!";
+                resultContent += exceptionMsg = "接口访问异常!";
             }
             catch (JsonException) {
                 isSuccess = false;
-                exceptionMsg = "报文解析异常!";
+                resultContent += exceptionMsg = "报文解析异常!";
             }
             catch (TaskCanceledException) {
                 isSuccess = false;
-                exceptionMsg = "接口访问返回超时!";
+                resultContent += exceptionMsg = "接口访问返回超时!";
             }
             catch (Exception e) {
                 isSuccess = false;
-                exceptionMsg = e.Message;
+                resultContent += exceptionMsg = e.Message;
             }
             finally {
                 stopwatch.Stop();

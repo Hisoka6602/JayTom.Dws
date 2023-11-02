@@ -30,7 +30,6 @@ using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Repository.LocalData;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
-
     public class DataManagementViewModel : BindableBase {
         private readonly IDialogService _dialogService;
         private readonly IExcel _excel;
@@ -382,7 +381,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         private void UploadStatusDelegate(BarCodeItemModel obj) {
             //判断状态是否已上传再获进行弹窗
             if (obj.RequestStatus != UploadStatus.NotUploaded) {
-                _dialogService.ShowDialog("ApiAccessDialog", new DialogParameters { { "BarCodeItem", obj } }, null);
+                _dialogService.Show("ApiAccessDialog", new DialogParameters { { "BarCodeItem", obj } }, null);
             }
         }
 
@@ -601,51 +600,51 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                                         PanoramaImagePath = ps.PanoramaImagePath
                                     })?.ToList() ?? new List<PanoramaImageItemModel>(),
                                 UploadInfo = new UploadItemModel {
-                                    DurationInSeconds = s.UploadInfo.DurationInSeconds,
-                                    ExceptionMessage = s.UploadInfo.ExceptionMessage,
-                                    InterfaceParameters = s.UploadInfo.InterfaceParameters,
-                                    IsSuccess = s.UploadInfo.IsSuccess,
-                                    RequestContent = s.UploadInfo.RequestContent,
-                                    RequestTime = s.UploadInfo.RequestTime,
-                                    RequestUrl = s.UploadInfo.RequestUrl,
-                                    ResponseContent = s.UploadInfo.ResponseContent,
-                                    ResponseTime = s.UploadInfo.ResponseTime
+                                    DurationInSeconds = s.UploadInfo?.DurationInSeconds ?? 0,
+                                    ExceptionMessage = s.UploadInfo?.ExceptionMessage ?? string.Empty,
+                                    InterfaceParameters = s.UploadInfo?.InterfaceParameters ?? string.Empty,
+                                    IsSuccess = s.UploadInfo?.IsSuccess ?? false,
+                                    RequestContent = s.UploadInfo?.RequestContent ?? string.Empty,
+                                    RequestTime = s.UploadInfo?.RequestTime,
+                                    RequestUrl = s.UploadInfo?.RequestUrl ?? string.Empty,
+                                    ResponseContent = s.UploadInfo?.ResponseContent ?? string.Empty,
+                                    ResponseTime = s.UploadInfo?.ResponseTime
                                 },
                                 WeightInfo = new WeightItemModel() {
-                                    CreateTime = s.WeightInfo.CreateTime,
-                                    FormattedWeight = s.WeightInfo.FormattedWeight,
-                                    OriginalText = s.WeightInfo.OriginalText,
-                                    SerialPortName = s.WeightInfo.SerialPortName,
-                                    SourceType = s.WeightInfo.SourceType
+                                    CreateTime = s.WeightInfo?.CreateTime,
+                                    FormattedWeight = s.WeightInfo?.FormattedWeight ?? 0,
+                                    OriginalText = s.WeightInfo?.OriginalText ?? string.Empty,
+                                    SerialPortName = s.WeightInfo?.SerialPortName ?? string.Empty,
+                                    SourceType = s.WeightInfo?.SourceType ?? SourceType.SerialPort
                                 },
                                 SortingInfo = new SortingItemModel {
-                                    ChecksumProtocolName = s.SortingInfo.ChecksumProtocolName,
-                                    CommandTarget = s.SortingInfo.CommandTarget,
-                                    CommunicationMethod = s.SortingInfo.CommunicationMethod,
-                                    IsCreatedByLowerMachine = s.SortingInfo.IsCreatedByLowerMachine,
-                                    PackageCreationCommand = s.SortingInfo.PackageCreationCommand,
-                                    PackageCreationTime = s.SortingInfo.PackageCreationTime,
-                                    ReceivedCommand = s.SortingInfo.ReceivedCommand,
-                                    SentCommand = s.SortingInfo.SentCommand,
-                                    ExitId = s.SortingInfo.ExitId,
-                                    IsSortingUsed = s.SortingInfo.IsSortingUsed,
-                                    LogisticsId = s.SortingInfo.LogisticsId,
-                                    SortingMode = s.SortingInfo.SortingMode,
+                                    ChecksumProtocolName = s.SortingInfo?.ChecksumProtocolName ?? string.Empty,
+                                    CommandTarget = s.SortingInfo?.CommandTarget ?? string.Empty,
+                                    CommunicationMethod = s.SortingInfo?.CommunicationMethod ?? CommunicationsType.None,
+                                    IsCreatedByLowerMachine = s.SortingInfo?.IsCreatedByLowerMachine ?? false,
+                                    PackageCreationInstruction = s.SortingInfo?.PackageCreationInstruction ?? string.Empty,
+                                    PackageCreationTime = s.SortingInfo?.PackageCreationTime ?? DateTime.MinValue,
+                                    ReceivedInstruction = s.SortingInfo?.ReceivedInstruction ?? string.Empty,
+                                    SentInstruction = s.SortingInfo?.SentInstruction ?? string.Empty,
+                                    ExitId = s.SortingInfo?.ExitId ?? 0,
+                                    IsSortingUsed = s.SortingInfo?.IsSortingUsed ?? false,
+                                    LogisticsId = s.SortingInfo?.LogisticsId ?? 0,
+                                    SortingMode = s.SortingInfo?.SortingMode ?? SortMode.None,
                                 },
                                 VolumeInfo = new VolumeItemModel() {
-                                    CreateTime = s.VolumeInfo.CreateTime,
-                                    FormattedHeight = s.VolumeInfo.FormattedHeight,
-                                    FormattedLength = s.VolumeInfo.FormattedLength,
-                                    FormattedVolume = s.VolumeInfo.FormattedVolume,
-                                    FormattedWidth = s.VolumeInfo.FormattedWidth,
-                                    OriginalText = s.VolumeInfo.OriginalText,
-                                    SourceType = s.VolumeInfo.SourceType
+                                    CreateTime = s.VolumeInfo?.CreateTime,
+                                    FormattedHeight = s.VolumeInfo?.FormattedHeight ?? 0,
+                                    FormattedLength = s.VolumeInfo?.FormattedLength ?? 0,
+                                    FormattedVolume = s.VolumeInfo?.FormattedVolume ?? 0,
+                                    FormattedWidth = s.VolumeInfo?.FormattedWidth ?? 0,
+                                    OriginalText = s.VolumeInfo?.OriginalText ?? string.Empty,
+                                    SourceType = s.VolumeInfo?.SourceType ?? SourceType.Camera
                                 },
                                 OcrInfo = new OcrItemInfo() {
-                                    CreateTime = s.OcrInfo.CreateTime,
-                                    OcrInterfaceName = s.OcrInfo.OcrInterfaceName,
-                                    OriginalContent = s.OcrInfo.OriginalContent,
-                                    ParsedContent = s.OcrInfo.ParsedContent
+                                    CreateTime = s.OcrInfo?.CreateTime,
+                                    OcrInterfaceName = s.OcrInfo?.OcrInterfaceName ?? string.Empty,
+                                    OriginalContent = s.OcrInfo?.OriginalContent ?? string.Empty,
+                                    ParsedContent = s.OcrInfo?.ParsedContent ?? string.Empty
                                 }
                             })?.ToList();
                             await Task.Delay(100);

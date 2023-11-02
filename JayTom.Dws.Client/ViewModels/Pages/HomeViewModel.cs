@@ -38,7 +38,6 @@ using ExceptionEventArgs = JayTom.Dws.Client.Service.Sorting.ExceptionEventArgs;
 using static JayTom.Dws.Client.Service.BackgroundService.SubmitApiBackgroundService;
 
 namespace JayTom.Dws.Client.ViewModels.Pages {
-
     public class HomeViewModel : BindableBase {
         private readonly IDialogService _dialogService;
         private readonly IComputerInfoReporter _computerInfoReporter;
@@ -417,9 +416,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                         if (barCodeItemModel is not null) {
                             await Application.Current.Dispatcher.BeginInvoke(() => {
                                 //更新数据
-
                                 barCodeItemModel.RequestStatus = model.UploadResponse?.IsSuccess == true ? UploadStatus.Succeeded : UploadStatus.Failed;
-
                                 barCodeItemModel.UploadInfo = new UploadItemModel() {
                                     DurationInSeconds = model.UploadResponse?.Duration ?? 0,
                                     ExceptionMessage = model.UploadResponse?.ExceptionMsg ?? string.Empty,
@@ -437,6 +434,39 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                                 if (barCodeItemModel.RequestStatus == UploadStatus.Failed) {
                                     AbnormalDataCount += 1;
                                 }
+                            }, DispatcherPriority.Background);
+                        }
+                    }
+                    finally {
+                        _updateSlim.Release();
+                    }
+                }
+            });
+            //更新分拣状态
+            EventAggregator.Instance.Subscribe<InstructionReceived>(async item => {
+                if (item is InstructionReceived model) {
+                    try {
+                        //设置分拣状态参数
+                        await _updateSlim.WaitAsync();
+                        var barCodeItemModel = BarCodeItems.FirstOrDefault(f => f.Barcode.Equals(model.BarCode) &&
+                            f.ScanTime.Equals(model.ScanTime));
+                        if (barCodeItemModel is not null) {
+                            await Application.Current.Dispatcher.BeginInvoke(() => {
+                                //更新数据
+                                barCodeItemModel.ExitName = model.ExitName;
+                                barCodeItemModel.SortingInfo = new SortingItemModel() {
+                                    IsSortingUsed = true,
+                                    ExitId = model.ExitId,
+                                    LogisticsId = model.LogisticsId,
+                                    SortingMode = model.SortingMode,
+                                    SentInstruction = model.SentInstruction,
+                                    PackageCreationTime = model.PackageCreationTime,
+                                    PackageCreationInstruction = model.PackageCreationInstruction,
+                                    IsCreatedByLowerMachine = model.IsCreatedByLowerMachine,
+                                    CommandTarget = model.CommandTarget,
+                                    CommunicationMethod = model.CommunicationMethod,
+                                    ChecksumProtocolName = model.ChecksumProtocolName,
+                                };
                             }, DispatcherPriority.Background);
                         }
                     }
@@ -543,7 +573,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         private void UploadStatusDelegate(BarCodeItemModel obj) {
             //判断状态是否已上传再获进行弹窗
             if (obj.RequestStatus != UploadStatus.NotUploaded) {
-                _dialogService.ShowDialog("ApiAccessDialog", new DialogParameters { { "BarCodeItem", obj } }, null);
+                _dialogService.Show("ApiAccessDialog", new DialogParameters { { "BarCodeItem", obj } }, null);
             }
         }
 

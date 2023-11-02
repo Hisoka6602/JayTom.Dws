@@ -1,6 +1,6 @@
-﻿using JayTom.Dws.Data.LocalData;
+﻿using System;
 using Prism.Mvvm;
-using System;
+using JayTom.Dws.Data.LocalData;
 
 namespace JayTom.Dws.Client.Models.DataModels {
 
@@ -9,10 +9,10 @@ namespace JayTom.Dws.Client.Models.DataModels {
         private long _exitId;
         private long _logisticsId;
         private SortMode _sortingMode;
-        private string _sentCommand = string.Empty;
-        private string _receivedCommand = string.Empty;
+        private string _sentInstruction = string.Empty;
+        private string _receivedInstruction = string.Empty;
         private DateTime _packageCreationTime;
-        private string _packageCreationCommand = string.Empty;
+        private string _packageCreationInstruction = string.Empty;
         private bool _isCreatedByLowerMachine;
         private string _commandTarget = string.Empty;
         private CommunicationsType _communicationMethod = CommunicationsType.None;
@@ -53,17 +53,17 @@ namespace JayTom.Dws.Client.Models.DataModels {
         /// <summary>
         /// 发送的指令
         /// </summary>
-        public string SentCommand {
-            get => _sentCommand;
-            set => SetProperty(ref _sentCommand, value);
+        public string SentInstruction {
+            get => _sentInstruction;
+            set => SetProperty(ref _sentInstruction, value);
         }
 
         /// <summary>
         /// 接收的指令
         /// </summary>
-        public string ReceivedCommand {
-            get => _receivedCommand;
-            set => SetProperty(ref _receivedCommand, value);
+        public string ReceivedInstruction {
+            get => _receivedInstruction;
+            set => SetProperty(ref _receivedInstruction, value);
         }
 
         /// <summary>
@@ -77,9 +77,9 @@ namespace JayTom.Dws.Client.Models.DataModels {
         /// <summary>
         /// 创建包裹指令
         /// </summary>
-        public string PackageCreationCommand {
-            get => _packageCreationCommand;
-            set => SetProperty(ref _packageCreationCommand, value);
+        public string PackageCreationInstruction {
+            get => _packageCreationInstruction;
+            set => SetProperty(ref _packageCreationInstruction, value);
         }
 
         /// <summary>

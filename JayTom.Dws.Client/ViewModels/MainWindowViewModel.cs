@@ -21,7 +21,6 @@ using JayTom.Dws.Client.ViewModels.Dialog;
 using JayTom.Dws.Domain.Repository.LocalConf;
 
 namespace JayTom.Dws.Client.ViewModels {
-
     public class MainWindowViewModel : BindableBase {
         private readonly IRegionManager _regionManager;
         private readonly IDialogService _dialogService;
@@ -217,9 +216,9 @@ namespace JayTom.Dws.Client.ViewModels {
                 if (languageInfoModel is not null) {
                     SelectedLanguage = languageInfoModel;
                 }
-                //判断分辨率
-                // 获取当前屏幕分辨率
-                if (System.Windows.Forms.Screen.PrimaryScreen != null &&
+
+                //暂时先不提示分辨率
+                /*if (System.Windows.Forms.Screen.PrimaryScreen != null &&
                     System.Windows.Forms.Screen.PrimaryScreen?.Bounds is not null) {
                     var screenWidth = System.Windows.Forms.Screen.PrimaryScreen.Bounds.Width;
                     var screenHeight = System.Windows.Forms.Screen.PrimaryScreen.Bounds.Height;
@@ -244,7 +243,7 @@ namespace JayTom.Dws.Client.ViewModels {
                             }
                         }
                     }
-                }
+                }*/
 
                 IsLoaded = true;
             });

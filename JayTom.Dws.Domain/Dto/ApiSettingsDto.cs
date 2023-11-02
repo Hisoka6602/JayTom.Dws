@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 
 namespace JayTom.Dws.Domain.Dto {
+
     public class ApiSettingsDto {
         public ApiType Type { get; set; } = ApiType.None;
     }
@@ -45,5 +46,10 @@ namespace JayTom.Dws.Domain.Dto {
         /// 神州集运后台
         /// </summary>
         SzjyApi = 6,
+
+        /// <summary>
+        /// 筋斗云Wms
+        /// </summary>
+        JdyWms = 7,
     }
 }

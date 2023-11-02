@@ -2,23 +2,30 @@
     x:Class="JayTom.Dws.Client.Views.Dialog.ApiAccessDialog"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:languages="clr-namespace:JayTom.Dws.Client.Languages"
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:mvvm="http://prismlibrary.com/"
+    Name="ApiAccessView"
     d:DesignHeight="450"
     d:DesignWidth="800"
     mvvm:ViewModelLocator.AutoWireViewModel="True"
     Background="Transparent"
     FontFamily="{StaticResource CustomFontFamily}"
     mc:Ignorable="d">
+    <b:Interaction.Triggers>
+        <b:EventTrigger EventName="Loaded" SourceName="ApiAccessView">
+            <b:InvokeCommandAction Command="{Binding LoadedCommand, IsAsync=False}" CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type UserControl}}}" />
+        </b:EventTrigger>
+    </b:Interaction.Triggers>
     <mvvm:Dialog.WindowStyle>
         <Style TargetType="Window">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="ResizeMode" Value="NoResize" />
             <Setter Property="WindowStyle" Value="None" />
-            <Setter Property="Width" Value="800" />
+            <Setter Property="Width" Value="700" />
             <Setter Property="Height" Value="600" />
             <Setter Property="SizeToContent" Value="Manual" />
             <Setter Property="WindowChrome.WindowChrome">
@@ -79,7 +86,7 @@
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
-                <!--  条码、提交状态  -->
+                <!--  条码、耗时、提交状态  -->
                 <StackPanel
                     Grid.Row="0"
                     HorizontalAlignment="Center"
@@ -136,6 +143,26 @@
                         TextTrimming="WordEllipsis">
                         <Run Text="{Binding RequestStatus, Converter={StaticResource UploadStatusConverter}, ConverterParameter=Text, UpdateSourceTrigger=PropertyChanged}" />
                     </TextBlock>
+                    <TextBlock
+                        Margin="10,0,0,0"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        FontFamily="{StaticResource CustomFontFamily}"
+                        FontSize="16"
+                        FontWeight="Bold"
+                        Foreground="DimGray"
+                        IsEnabled="False"
+                        Text="耗时(ms):" />
+                    <TextBlock
+                        Margin="5,0,20,0"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        FontFamily="{StaticResource CustomFontFamily}"
+                        FontSize="16"
+                        FontWeight="Bold"
+                        Foreground="White"
+                        IsEnabled="False"
+                        Text="{Binding Duration, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:F1}}" />
                 </StackPanel>
                 <!--  提交时间  -->
                 <StackPanel
@@ -163,6 +190,8 @@
                         IsEnabled="False"
                         Text="{Binding RequestTime, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:yyyy-MM-dd HH:mm:ss.fff}}" />
                 </StackPanel>
+                <!--  提交的Url  -->
+
                 <!--  提交信息  -->
                 <StackPanel
                     Grid.Row="2"

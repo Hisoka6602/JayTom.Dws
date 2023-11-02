@@ -66,32 +66,6 @@ namespace JayTom.Dws.Data.LocalData {
         [Column("RequestStatus")]
         public UploadStatus RequestStatus { get; set; } = UploadStatus.NotUploaded;
 
-        /*
-        /// <summary>
-        /// 上传时间
-        /// </summary>
-        [Column("RequestTime")]
-        public DateTime RequestTime { get; set; }
-
-        /// <summary>
-        /// 上传内容
-        /// </summary>
-        [Column("RequestContent")]
-        public string RequestContent { get; set; } = string.Empty;
-
-        /// <summary>
-        /// 接口响应时间
-        /// </summary>
-        [Column("ResponseTime")]
-        public DateTime ResponseTime { get; set; }
-
-        /// <summary>
-        /// 接口响应内容
-        /// </summary>
-        [Column("ResponseContent")]
-        public string ResponseContent { get; set; } = string.Empty;
-        */
-
         /// <summary>
         /// 条码图片保存路径
         /// </summary>
@@ -112,27 +86,27 @@ namespace JayTom.Dws.Data.LocalData {
         /// <summary>
         /// 分拣信息
         /// </summary>
-        public virtual SortingInfoModel SortingInfo { get; set; } = new();
+        public virtual SortingInfoModel? SortingInfo { get; set; }
 
         /// <summary>
         /// 上传信息
         /// </summary>
-        public virtual UploadInfoModel UploadInfo { get; set; } = new();
+        public virtual UploadInfoModel? UploadInfo { get; set; }
 
         /// <summary>
         /// 体积信息
         /// </summary>
-        public virtual VolumeInfoModel VolumeInfo { get; set; } = new();
+        public virtual VolumeInfoModel? VolumeInfo { get; set; }
 
         /// <summary>
         /// 称重信息
         /// </summary>
-        public virtual WeightInfoModel WeightInfo { get; set; } = new();
+        public virtual WeightInfoModel? WeightInfo { get; set; }
 
         /// <summary>
         /// Ocr信息
         /// </summary>
-        public virtual OcrInfoModel OcrInfo { get; set; } = new();
+        public virtual OcrInfoModel? OcrInfo { get; set; }
     }
 
     public enum UploadStatus {

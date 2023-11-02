@@ -2,9 +2,9 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:converters="clr-namespace:JayTom.Dws.Client.Converters"
+    xmlns:dataModels="clr-namespace:JayTom.Dws.Client.Models.DataModels"
     xmlns:models="clr-namespace:JayTom.Dws.Client.Models"
-    xmlns:pages="clr-namespace:JayTom.Dws.Client.ViewModels.Pages"
-    xmlns:dataModels="clr-namespace:JayTom.Dws.Client.Models.DataModels">
+    xmlns:pages="clr-namespace:JayTom.Dws.Client.ViewModels.Pages">
     <converters:UploadStatusConverter x:Key="UploadStatusConverter" />
     <DataTemplate x:Key="UploadStatusTemplate" DataType="{x:Type dataModels:BarCodeItemModel}">
         <DataTemplate.Resources>

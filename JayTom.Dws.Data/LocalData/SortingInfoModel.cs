@@ -37,14 +37,14 @@ namespace JayTom.Dws.Data.LocalData {
         /// <summary>
         /// 发送的指令
         /// </summary>
-        [Column("SentCommand")]
-        public string SentCommand { get; set; } = string.Empty;
+        [Column("SentInstruction")]
+        public string SentInstruction { get; set; } = string.Empty;
 
         /// <summary>
         /// 接收的指令
         /// </summary>
-        [Column("SentCommand")]
-        public string ReceivedCommand { get; set; } = string.Empty;
+        [Column("SentInstruction")]
+        public string ReceivedInstruction { get; set; } = string.Empty;
 
         /// <summary>
         /// 创建包裹时间
@@ -55,8 +55,8 @@ namespace JayTom.Dws.Data.LocalData {
         /// <summary>
         /// 创建包裹指令
         /// </summary>
-        [Column("PackageCreationCommand")]
-        public string PackageCreationCommand { get; set; } = string.Empty;
+        [Column("PackageCreationInstruction")]
+        public string PackageCreationInstruction { get; set; } = string.Empty;
 
         /// <summary>
         /// 是否有下位机创建

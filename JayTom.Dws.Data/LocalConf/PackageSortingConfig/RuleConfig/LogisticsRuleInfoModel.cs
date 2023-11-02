@@ -31,6 +31,6 @@ namespace JayTom.Dws.Data.LocalConf.PackageSortingConfig.RuleConfig {
         public string RuleName { get; set; } = string.Empty;*/
 
         [ForeignKey("Id")]
-        public virtual LogisticsSortingInfoModel LogisticsSortingInfo { get; set; } = new();
+        public virtual LogisticsSortingInfoModel? LogisticsSortingInfo { get; set; }
     }
 }

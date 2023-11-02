@@ -990,7 +990,8 @@
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
-                                <GridViewColumn Width="90" Header="{x:Static languages:Language.TableHeaderVolume}">
+                                <!--  隐藏体积(后续看选择调整宽度)  -->
+                                <!--<GridViewColumn Width="90" Header="{x:Static languages:Language.TableHeaderVolume}">
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBlock
@@ -1007,6 +1008,17 @@
                                                     </MultiBinding>
                                                 </TextBlock.Text>
                                             </TextBlock>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>-->
+                                <GridViewColumn Width="90" Header="格口">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock
+                                                Width="90"
+                                                MinWidth="90"
+                                                Style="{StaticResource CustomGridViewTextBlockCellStyle}"
+                                                Text="{Binding ExitName}" />
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>

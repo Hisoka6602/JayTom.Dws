@@ -11,19 +11,20 @@ using System.Linq.Expressions;
 using System.Linq.Dynamic.Core;
 using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
+using JayTom.Dws.PluginInterface;
 using System.Text.RegularExpressions;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.DownstreamProtocols;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Client.Service.BackgroundService;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
+using UploadResponse = JayTom.Dws.Interface.UploadResponse;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig.RuleConfig;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig.RuleConfig;
 using static JayTom.Dws.Client.Service.BackgroundService.SubmitApiBackgroundService;
 
 namespace JayTom.Dws.Client.Service.Sorting {
-
     public class DefaultSortingService : ISortingService {
         private readonly IConfigRepository _configRepository;
         private readonly ILogisticsRegexRepository _logisticsRegexRepository;
@@ -80,9 +81,9 @@ namespace JayTom.Dws.Client.Service.Sorting {
 
         public event EventHandler<ExceptionEventArgs>? SendError;
 
-        public event EventHandler<string>? CreatePackageEvent;
+        public event EventHandler<PackageInstructionEventArgs>? CreatePackageEvent;
 
-        public event EventHandler<string>? RemovePackageEvent;
+        public event EventHandler<PackageInstructionEventArgs>? RemovePackageEvent;
 
         public event EventHandler<string>? ClearExceptionEvent;
 
@@ -140,15 +141,22 @@ namespace JayTom.Dws.Client.Service.Sorting {
             _inventoryManagementService.ReceivedInstructionsEvent += delegate (object? sender, DeviceDecodeResult result) {
                 if (result.Type == FunctionType.CreatePackage) {
                     //创建包裹
-                    OnCreatePackageEvent(result.Keyword);
+                    OnCreatePackageEvent(new PackageInstructionEventArgs() {
+                        Keyword = result.Keyword,
+                        Instruction = result.RawContent
+                    });
                 }
                 else if (result.Type == FunctionType.RemovePackage) {
                     //移除包裹
-                    OnCreatePackageEvent(result.Keyword);
+                    OnCreatePackageEvent(new PackageInstructionEventArgs() {
+                        Keyword = result.Keyword,
+                        Instruction = result.RawContent
+                    });
                 }
                 else if (result.Type == FunctionType.Heartbeat) {
                     //心跳包
-                    OnCreatePackageEvent(result.Keyword);
+
+                    //OnCreatePackageEvent(result.Keyword);
                 }
                 else if (result.Type == FunctionType.ClearException) {
                     //清空异常
@@ -210,7 +218,11 @@ namespace JayTom.Dws.Client.Service.Sorting {
                             Width = (float)(model.Width ?? 0),
                             Weight = (float)(model.Weight ?? 0),
                             //三段码未完成
-                            OcrCode = string.Empty
+                            OcrCode = string.Empty,
+                            PackageCreationTime = model.CreateTime,
+                            PackageCreationInstruction = model.PackageCreationInstruction,
+                            IsCreatedByLowerMachine = model.IsCreatedByLowerMachine
+
                         });
                     }
                 }
@@ -224,6 +236,9 @@ namespace JayTom.Dws.Client.Service.Sorting {
                             BarCode = model.Barcode ?? string.Empty,
                             ScanTime = model.ScanTime,
                             OcrCode = string.Empty,
+                            PackageCreationTime = model.PackageCreationTime,
+                            PackageCreationInstruction = model.PackageCreationInstruction,
+                            IsCreatedByLowerMachine = model.IsCreatedByLowerMachine,
                             ApiResponse = model.UploadResponse ?? new UploadResponse()
                         });
                     }
@@ -408,8 +423,17 @@ namespace JayTom.Dws.Client.Service.Sorting {
                             Timestamp = param.Timestamp,
                             Volume = param.Volume,
                             Width = param.Width,
-                            Weight = param.Weight
+                            Weight = param.Weight,
+                            ScanTime = param.ScanTime,
+                            ExitId = param.ExitId,
+                            //先忽略物流
+                            SortingMode = _sortingMethodDto?.SortMode ?? SortMode.None,
+                            PackageCreationTime = param.PackageCreationTime,
+                            PackageCreationInstruction = param.PackageCreationInstruction ?? string.Empty,
+                            IsCreatedByLowerMachine = param.IsCreatedByLowerMachine,
                         });
+                    //回调分拣消息
+
                 }
             }
         }
@@ -628,8 +652,18 @@ namespace JayTom.Dws.Client.Service.Sorting {
                             Timestamp = param.Timestamp,
                             Volume = param.Volume,
                             Width = param.Width,
-                            Weight = param.Weight
+                            Weight = param.Weight,
+                            ScanTime = param.ScanTime,
+                            ExitId = param.ExitId,
+                            //先忽略物流
+                            SortingMode = _sortingMethodDto?.SortMode ?? SortMode.None,
+                            PackageCreationTime = param.PackageCreationTime,
+                            PackageCreationInstruction = param.PackageCreationInstruction ?? string.Empty,
+                            IsCreatedByLowerMachine = param.IsCreatedByLowerMachine,
+
                         });
+
+                    //回调分拣消息
                 }
                 else {
                     //走异常口
@@ -744,12 +778,12 @@ namespace JayTom.Dws.Client.Service.Sorting {
             return null;
         }
 
-        protected virtual async void OnCreatePackageEvent(string e) {
+        protected virtual async void OnCreatePackageEvent(PackageInstructionEventArgs e) {
             await Task.Yield();
             CreatePackageEvent?.Invoke(this, e);
         }
 
-        protected virtual async void OnRemovePackageEvent(string e) {
+        protected virtual async void OnRemovePackageEvent(PackageInstructionEventArgs e) {
             await Task.Yield();
             RemovePackageEvent?.Invoke(this, e);
         }

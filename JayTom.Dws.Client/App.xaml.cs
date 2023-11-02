@@ -303,10 +303,10 @@ namespace JayTom.Dws.Client {
                         services.AddSingleton(container1.Resolve<IHttpClientFactory>());
 
                         //data
-
                         services.AddSingleton(container1.Resolve<IBarCodeRepository>());
                         services.AddSingleton(container1.Resolve<IPanoramaCameraConfigRepository>());
                         services.AddSingleton(container1.Resolve<ISoundRepository>());
+                        services.AddSingleton(container1.Resolve<IPanoramaImageRepository>());
 
                         services.AddSingleton(container1.Resolve<IVolumeRepository>());
                         services.AddSingleton(container1.Resolve<IWeightRepository>());

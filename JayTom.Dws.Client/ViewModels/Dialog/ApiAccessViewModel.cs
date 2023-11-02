@@ -1,13 +1,17 @@
 ﻿using System;
 using Prism.Mvvm;
+using System.Linq;
 using Prism.Commands;
+using System.Windows;
 using System.Windows.Input;
 using Prism.Services.Dialogs;
+using System.Windows.Controls;
 using JayTom.Dws.Data.LocalData;
+using JayTom.Dws.PluginInterface;
+using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Models.DataModels;
 
 namespace JayTom.Dws.Client.ViewModels.Dialog {
-
     public class ApiAccessViewModel : BindableBase, IDialogAware {
         private UploadStatus _requestStatus = UploadStatus.NotUploaded;
         private DateTime? _requestTime;
@@ -15,6 +19,8 @@ namespace JayTom.Dws.Client.ViewModels.Dialog {
         private DateTime? _responseTime;
         private string _responseContent = string.Empty;
         private string _barcode = string.Empty;
+        private float _duration;
+        private string _url = string.Empty;
 
         /// <summary>
         /// 上传状态
@@ -64,6 +70,22 @@ namespace JayTom.Dws.Client.ViewModels.Dialog {
             set => SetProperty(ref _barcode, value);
         }
 
+        /// <summary>
+        /// 耗时
+        /// </summary>
+        public float Duration {
+            get => _duration;
+            set => SetProperty(ref _duration, value);
+        }
+
+        /// <summary>
+        /// Url
+        /// </summary>
+        public string Url {
+            get => _url;
+            set => SetProperty(ref _url, value);
+        }
+
         public ICommand CloseWinCommand {
             get => new DelegateCommand<object>(CloseWinDelegate);
         }
@@ -85,23 +107,40 @@ namespace JayTom.Dws.Client.ViewModels.Dialog {
             ResponseContent = string.Empty;
         }
 
-        public async void OnDialogOpened(IDialogParameters parameters) {
+        public void OnDialogOpened(IDialogParameters parameters) {
+            foreach (Window window in Application.Current.Windows) {
+                if (window.Name.Equals("ApiAccessWindows")) {
+                    window.Close();
+                }
+            }
+
             var itemModel = parameters.GetValue<BarCodeItemModel>("BarCodeItem");
             if (itemModel is not null) {
                 Barcode = itemModel.Barcode;
                 RequestStatus = itemModel.RequestStatus;
-
-                /*
-                RequestTime = itemModel.RequestTime;
-                RequestContent = itemModel.RequestContent;
-                ResponseTime = itemModel.ResponseTime;
-                ResponseContent = itemModel.ResponseContent;*/
-                //需要显示访问耗时
+                Duration = (float)itemModel.UploadInfo.DurationInSeconds * 1000;
+                RequestTime = itemModel.UploadInfo.RequestTime;
+                RequestContent = itemModel.UploadInfo.RequestContent;
+                ResponseTime = itemModel.UploadInfo.ResponseTime;
+                ResponseContent = itemModel.UploadInfo.ResponseContent;
+                Url = itemModel.UploadInfo.RequestUrl;
             }
         }
 
         public string Title { get; } = "ApiAccessDialog";
 
         public event Action<IDialogResult>? RequestClose;
+
+        public ICommand LoadedCommand {
+            get => new DelegateCommand<UserControl>(LoadedDelegate);
+        }
+
+        private void LoadedDelegate(UserControl obj) {
+            var dialogWindow = Application.Current.Windows.OfType<Window>().SingleOrDefault(x => x.IsActive);
+            if (dialogWindow is not null) {
+                dialogWindow.Owner = null;
+                dialogWindow.Name = "ApiAccessWindows";
+            }
+        }
     }
 }

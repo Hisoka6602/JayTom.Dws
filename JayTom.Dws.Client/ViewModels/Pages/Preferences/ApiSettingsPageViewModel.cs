@@ -50,6 +50,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                 Name = "神州集运后台接口",
                 Value = ApiType.SzjyApi
             },
+            new ApiTypeInfoModel()
+            {
+                Name = "筋斗云Wms",
+                Value = ApiType.JdyWms
+            },
         };
 
         private ApiTypeInfoModel? _selectApiType = new();

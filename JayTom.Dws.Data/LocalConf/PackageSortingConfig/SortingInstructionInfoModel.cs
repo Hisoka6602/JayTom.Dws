@@ -1,9 +1,4 @@
-﻿using System;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Collections.Generic;
-using JayTom.Dws.Data.Attributes;
+﻿using JayTom.Dws.Data.Attributes;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -31,6 +26,6 @@ namespace JayTom.Dws.Data.LocalConf.PackageSortingConfig {
         public string ReplyContent { get; set; } = string.Empty;
 
         [ForeignKey("Id")]
-        public virtual SortingInstructionBindingInfoModel SortingInstructionBindingInfo { get; set; }
+        public virtual SortingInstructionBindingInfoModel? SortingInstructionBindingInfo { get; set; }
     }
 }

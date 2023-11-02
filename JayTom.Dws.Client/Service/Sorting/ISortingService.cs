@@ -2,11 +2,13 @@
 using System.Threading;
 using JayTom.Dws.Interface;
 using System.Threading.Tasks;
+using JayTom.Dws.Data.LocalLog;
+using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
+using System.Diagnostics.Tracing;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 
 namespace JayTom.Dws.Client.Service.Sorting {
-
     public interface ISortingService {
 
         /// <summary>
@@ -32,12 +34,12 @@ namespace JayTom.Dws.Client.Service.Sorting {
         /// <summary>
         /// 创建包裹
         /// </summary>
-        event EventHandler<string> CreatePackageEvent;
+        event EventHandler<PackageInstructionEventArgs> CreatePackageEvent;
 
         /// <summary>
         /// 移除包裹
         /// </summary>
-        event EventHandler<string> RemovePackageEvent;
+        event EventHandler<PackageInstructionEventArgs> RemovePackageEvent;
 
         /// <summary>
         /// 解除异常
@@ -166,6 +168,16 @@ namespace JayTom.Dws.Client.Service.Sorting {
         public List<string> Instructions { get; set; } = new();
     }
 
+    public class PackageInstructionEventArgs : EventArgs {
+        /// <summary>
+        /// 关键字
+        /// </summary>
+        public string Keyword { get; set; } = string.Empty;
+        /// <summary>
+        /// 指令
+        /// </summary>
+        public string Instruction { get; set; } = string.Empty;
+    }
     public class LogEventArgs : EventArgs {
         public string LogContent { get; set; } = string.Empty;
 
@@ -202,7 +214,18 @@ namespace JayTom.Dws.Client.Service.Sorting {
 
     public class SortingParam {
         public object? Tag { get; set; }
-
+        /// <summary>
+        /// 是否由下位机创建包裹
+        /// </summary>
+        public bool IsCreatedByLowerMachine { get; set; } = false;
+        /// <summary>
+        /// 创建包裹的时间
+        /// </summary>
+        public DateTime PackageCreationTime { get; set; }
+        /// <summary>
+        /// 创建包裹的指令
+        /// </summary>
+        public string? PackageCreationInstruction { get; set; }
         /// <summary>
         /// 条码关联时间戳
         /// </summary>
@@ -262,5 +285,76 @@ namespace JayTom.Dws.Client.Service.Sorting {
         /// 格口Id
         /// </summary>
         public long ExitId { get; set; }
+    }
+    /// <summary>
+    /// 执行指令回传类
+    /// </summary>
+    public class InstructionReceived {
+        /// <summary>
+        /// 条码关联时间戳
+        /// </summary>
+        public long Timestamp { get; set; }
+        /// <summary>
+        /// 条码
+        /// </summary>
+        public string BarCode { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 扫码时间
+        /// </summary>
+        public DateTime? ScanTime { get; set; }
+        /// <summary>
+        /// 格口Id
+        /// </summary>
+        public long ExitId { get; set; }
+        /// <summary>
+        /// 格口名称
+        /// </summary>
+        public string ExitName { get; set; } = string.Empty;
+        /// <summary>
+        /// 物流Id
+        /// </summary>
+        public long LogisticsId { get; set; }
+        /// <summary>
+        /// 物流名称
+        /// </summary>
+        public string LogisticsName { get; set; } = string.Empty;
+        /// <summary>
+        /// 分拣模式
+        /// </summary>
+        public SortMode SortingMode { get; set; }
+        /// <summary>
+        /// 发送的指令
+        /// </summary>
+        public string SentInstruction { get; set; } = string.Empty;
+        /// <summary>
+        /// 指令发送时间
+        /// </summary>
+        public DateTime SendTime { get; set; }
+        /// <summary>
+        /// 创建包裹时间
+        /// </summary>
+        public DateTime PackageCreationTime { get; set; }
+
+        /// <summary>
+        /// 创建包裹指令
+        /// </summary>
+        public string PackageCreationInstruction { get; set; } = string.Empty;
+        /// <summary>
+        /// 是否由下位机创建
+        /// </summary>
+        public bool IsCreatedByLowerMachine { get; set; }
+        /// <summary>
+        /// 指令目标
+        /// </summary>
+        public string CommandTarget { get; set; } = string.Empty;
+        /// <summary>
+        /// 通讯方式
+        /// </summary>
+        public CommunicationsType CommunicationMethod { get; set; }
+        /// <summary>
+        /// 效验协议名称
+        /// </summary>
+        public string ChecksumProtocolName { get; set; } = string.Empty;
     }
 }

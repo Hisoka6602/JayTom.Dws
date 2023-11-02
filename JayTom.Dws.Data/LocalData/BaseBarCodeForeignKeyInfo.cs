@@ -13,6 +13,6 @@ namespace JayTom.Dws.Data.LocalData {
         public long BarcodeId { get; set; }
 
         [ForeignKey("Id")]
-        public virtual BarCodeInfoModel BarCodeInfo { get; set; } = new();
+        public virtual BarCodeInfoModel? BarCodeInfo { get; set; }
     }
 }
