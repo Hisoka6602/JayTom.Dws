@@ -21,6 +21,7 @@ using JayTom.Dws.Client.ViewModels.Dialog;
 using JayTom.Dws.Domain.Repository.LocalConf;
 
 namespace JayTom.Dws.Client.ViewModels {
+
     public class MainWindowViewModel : BindableBase {
         private readonly IRegionManager _regionManager;
         private readonly IDialogService _dialogService;
@@ -217,8 +218,7 @@ namespace JayTom.Dws.Client.ViewModels {
                     SelectedLanguage = languageInfoModel;
                 }
 
-                //暂时先不提示分辨率
-                /*if (System.Windows.Forms.Screen.PrimaryScreen != null &&
+                if (System.Windows.Forms.Screen.PrimaryScreen != null &&
                     System.Windows.Forms.Screen.PrimaryScreen?.Bounds is not null) {
                     var screenWidth = System.Windows.Forms.Screen.PrimaryScreen.Bounds.Width;
                     var screenHeight = System.Windows.Forms.Screen.PrimaryScreen.Bounds.Height;
@@ -237,13 +237,17 @@ namespace JayTom.Dws.Client.ViewModels {
                             model.Identifier = "MainDialog";
                             model.MinimumWidth = 1820;
                             model.MinimumHeight = 900;
-                            await DialogHost.Show(resolutionConstraintDialog, model.Identifier);
+                            //暂时先不提示分辨率
+                            /*await DialogHost.Show(resolutionConstraintDialog, model.Identifier);
                             if (!model.ContinueRunning) {
                                 System.Windows.Application.Current.Shutdown();//关闭
+                            }*/
+                            if (obj is Window windows) {
+                                windows.WindowState = WindowState.Maximized;
                             }
                         }
                     }
-                }*/
+                }
 
                 IsLoaded = true;
             });

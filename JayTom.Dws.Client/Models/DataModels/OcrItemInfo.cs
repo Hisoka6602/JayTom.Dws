@@ -2,7 +2,6 @@
 using Prism.Mvvm;
 
 namespace JayTom.Dws.Client.Models.DataModels {
-
     public class OcrItemInfo : BindableBase {
         private string _originalContent = string.Empty;
         private string _ocrInterfaceName = string.Empty;

@@ -28,13 +28,16 @@ using JayTom.Dws.Client.ViewModels.Dialog;
 using JayTom.Dws.Client.ViewModels.Editors;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Repository.LocalData;
+using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
+
     public class DataManagementViewModel : BindableBase {
         private readonly IDialogService _dialogService;
         private readonly IExcel _excel;
         private readonly IBarCodeRepository _barCodeRepository;
         private readonly IConfigRepository _configRepository;
+        private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
         private DateTime _startTime = DateTime.Today;
         private DateTime _endTime = DateTime.Now;
         private int _pageCount;
@@ -98,11 +101,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
 
         public DataManagementViewModel(IDialogService dialogService,
             IExcel excel, IBarCodeRepository barCodeRepository,
-            IConfigRepository configRepository) {
+            IConfigRepository configRepository, IPackageExitDefinitionRepository packageExitDefinitionRepository) {
             _dialogService = dialogService;
             _excel = excel;
             _barCodeRepository = barCodeRepository;
             _configRepository = configRepository;
+            _packageExitDefinitionRepository = packageExitDefinitionRepository;
             EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async info => {
                 if (info is SettingsChangedEvent model) {
                     if (model.SettingsName.Equals("VolumeSettings")) {
@@ -557,6 +561,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     DialogHost.Show(loadingDialog, model.Identifier).ConfigureAwait(false);
                     await Task.Delay(500);
                     BarCodeItems.Clear();
+                    //获取格口集合
+                    var exitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0, o => o.CreateTime);
                     //获取条数
                     var total = await _barCodeRepository.Total(s =>
                             (s.ScanTime.CompareTo(StartTime) >= 0) &&
@@ -594,11 +600,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                                 BarcodeImagePath = s.BarcodeImagePath ?? string.Empty,
                                 IsBarcodeImageExists = s.BarcodeImagePath?.IsFileExists() ?? false,
                                 Other = s.Other ?? string.Empty,
+                                ExitName = exitDefinitionInfoModels?.FirstOrDefault(f => f.Id.Equals(s.SortingInfo?.ExitId ?? 0))?.ExitName ?? string.Empty,
                                 PanoramaImageItems = s.PanoramaImagePaths?.Select(ps =>
-                                    new PanoramaImageItemModel() {
-                                        IsPanoramaImageExists = ps.PanoramaImagePath?.IsFileExists() ?? false,
-                                        PanoramaImagePath = ps.PanoramaImagePath
-                                    })?.ToList() ?? new List<PanoramaImageItemModel>(),
+                                new PanoramaImageItemModel() {
+                                    IsPanoramaImageExists = ps.PanoramaImagePath?.IsFileExists() ?? false,
+                                    PanoramaImagePath = ps.PanoramaImagePath
+                                })?.ToList() ?? new List<PanoramaImageItemModel>(),
                                 UploadInfo = new UploadItemModel {
                                     DurationInSeconds = s.UploadInfo?.DurationInSeconds ?? 0,
                                     ExceptionMessage = s.UploadInfo?.ExceptionMessage ?? string.Empty,
@@ -663,6 +670,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     }
                 }
             }, DispatcherPriority.Background);
+        }
+
+        public ICommand ShowDetailsCommand {
+            get => new DelegateCommand<object>(ShowDetailsDelegate);
+        }
+
+        private void ShowDetailsDelegate(object obj) {
+            _dialogService.Show("BarCodeDetailsDialog", new DialogParameters { { "BarCodeItem", obj } }, null);
         }
     }
 }

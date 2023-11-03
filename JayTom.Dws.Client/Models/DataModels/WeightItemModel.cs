@@ -3,7 +3,6 @@ using Prism.Mvvm;
 using JayTom.Dws.Data.LocalData;
 
 namespace JayTom.Dws.Client.Models.DataModels {
-
     public class WeightItemModel : BindableBase {
         private SourceType _sourceType;
         private string _serialPortName = string.Empty;

@@ -2,7 +2,6 @@
 using Prism.Mvvm;
 
 namespace JayTom.Dws.Client.Models.DataModels {
-
     public class UploadItemModel : BindableBase {
         private bool _isSuccess;
         private string _requestContent = string.Empty;

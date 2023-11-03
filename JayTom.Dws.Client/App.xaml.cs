@@ -95,6 +95,7 @@ namespace JayTom.Dws.Client {
             //注册窗口
             containerRegistry.RegisterDialog<ApiAccessDialog>();
             containerRegistry.RegisterDialog<ApiTestDialog>();
+            containerRegistry.RegisterDialog<BarCodeDetailsDialog>();
             //插件窗口
             {
                 containerRegistry.RegisterDialog<SunnenInputBarcodeControl>();
@@ -455,6 +456,8 @@ namespace JayTom.Dws.Client {
             ViewModelLocationProvider.Register<HomePage, HomeViewModel>();
             ViewModelLocationProvider.Register<StatusBarPage, StatusBarViewModel>();
             ViewModelLocationProvider.Register<ApiAccessDialog, ApiAccessViewModel>();
+            ViewModelLocationProvider.Register<BarCodeDetailsDialog, BarCodeDetailsDialogViewModel>();
+
             ViewModelLocationProvider.Register<ApiTestDialog, ApiTestViewModel>();
             ViewModelLocationProvider.Register<DataManagementPage, DataManagementViewModel>();
             ViewModelLocationProvider.Register<CameraConfigurationPage, CameraConfigurationViewModel>();

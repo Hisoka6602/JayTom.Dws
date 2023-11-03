@@ -127,7 +127,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog {
             }
         }
 
-        public string Title { get; } = "ApiAccessDialog";
+        public string Title { get; } = "Api访问内容";
 
         public event Action<IDialogResult>? RequestClose;
 
