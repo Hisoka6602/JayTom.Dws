@@ -17,6 +17,7 @@ using Org.BouncyCastle.Utilities;
 using JayTom.Dws.Interface.Sunnen;
 using JayTom.Dws.Interface.Szjy188;
 using static System.Text.Json.JsonElement;
+using JayTom.Dws.Infrastructure.IComputer;
 using JayTom.Dws.Domain.DownstreamProtocols;
 using static JayTom.Dws.Interface.Szjy188.SzjyApi;
 using JayTom.Dws.Camera.Cameras.VolumeCamera.Irayple;
@@ -25,16 +26,7 @@ using JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols;
 internal class Program {
 
     private static async Task Main(string[] args) {
-        var wdtWmsApi = new WdtWmsApi(null);
-        await wdtWmsApi.SetParameters(new WdtWmsApi.ApiParameter() {
-            AppKey = "yscc-wdt-weight",
-            AppSecret = "a6e8bd8450f0e16405328e7edd02057d",
-            Sid = "yscc",
-            Method = "trade.weight",
-            Url = "https://openapi.wdtwms.com/open_api/service.php",
-            TimeOut = 5000
-        });
-        await wdtWmsApi.UploadData("12121", 1.1);
+        var generateMachineCode = await new Computer().GenerateMachineCode();
         return;
         var daHuaVolumeCamera = new DaHuaVolumeCamera();
         daHuaVolumeCamera.VolumeCaptured += delegate (object? sender, VolumeCapturedEventArgs eventArgs) {

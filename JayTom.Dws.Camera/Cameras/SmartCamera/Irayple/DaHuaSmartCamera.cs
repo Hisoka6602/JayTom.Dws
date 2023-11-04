@@ -372,7 +372,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
                 }
                 if (barcodeInfo?.Any() != true) {
                     //返回触发但没有条码
-                    if (IsUseTriggerMode && TriggerMode == TriggerMode.Software) {
+                    if (IsUseTriggerMode && TriggerMode == TriggerMode.Hardware) {
                         OnNotBarcodeHitEvent(new BarcodeReadEventArgs() {
                             Timestamp = timestamp,
                             Barcode = "NoRead",

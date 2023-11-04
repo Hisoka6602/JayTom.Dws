@@ -28,6 +28,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Machine\" />
     <Folder Include="Speech\Container\" />
   </ItemGroup>
 

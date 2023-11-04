@@ -23,6 +23,7 @@ using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Client.Service.Sorting;
 using JayTom.Dws.Client.Models.DataModels;
+using JayTom.Dws.Infrastructure.IComputer;
 using JayTom.Dws.Client.Service.ImageStorage;
 using JayTom.Dws.Client.Service.ResultOutput;
 using JayTom.Dws.Domain.Repository.LocalConf;
@@ -50,6 +51,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         private readonly IConfigRepository _configRepository;
         private readonly IBarcodeScannerCameraConfigRepository _barcodeScannerCameraConfigRepository;
         private readonly ISortingService _sortingService;
+        private readonly IComputer _computer;
         private ObservableCollection<CameraItemInfoModel> _cameraItems = new();
 
         private ObservableCollection<BarCodeItemModel> _barCodeItems = new();
@@ -204,7 +206,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             IExternalDataService externalDataService,
             IConfigRepository configRepository,
             IBarcodeScannerCameraConfigRepository barcodeScannerCameraConfigRepository,
-            ISortingService sortingService) {
+            ISortingService sortingService,
+            IComputer computer) {
             _dialogService = dialogService;
             _computerInfoReporter = computerInfoReporter;
             _barCodeRepository = barCodeRepository;
@@ -215,6 +218,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             _configRepository = configRepository;
             _barcodeScannerCameraConfigRepository = barcodeScannerCameraConfigRepository;
             _sortingService = sortingService;
+            _computer = computer;
             CameraItems = new() {
                 /*new CameraItemInfoModel()
                 {
@@ -663,6 +667,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     try {
                         await _runningSemaphoreSlim.WaitAsync();
                         IsSwitchingState = true;
+                        var machineCode = await _computer.GenerateMachineCode();
+                        //判断机器码
+
                         if (!RunningStatus) {
                             //启动
                             await _externalDataService.Start();

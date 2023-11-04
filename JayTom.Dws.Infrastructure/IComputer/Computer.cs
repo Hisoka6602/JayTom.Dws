@@ -6,7 +6,9 @@ using System.Management;
 using System.Diagnostics;
 using Microsoft.VisualBasic;
 using System.Threading.Tasks;
+using NPOI.SS.Formula.Functions;
 using System.Collections.Generic;
+using System.Security.Cryptography;
 using LibreHardwareMonitor.Hardware;
 using System.Net.NetworkInformation;
 using System.Runtime.InteropServices;
@@ -623,6 +625,45 @@ namespace JayTom.Dws.Infrastructure.IComputer {
                 }
             });
             return connectionInfos;
+        }
+
+        public async Task<string> GenerateMachineCode() {
+            await Task.Yield();
+            var cpuSerialNumber = string.Empty;
+            var hardDiskId = string.Empty;
+            var machineName = string.Empty;
+            var versionString = string.Empty;
+            var machineCode = string.Empty;
+            try {
+                var searcher = new ManagementObjectSearcher("SELECT * FROM Win32_Processor");
+                var collection = searcher.Get();
+                foreach (var o in collection) {
+                    var obj = (ManagementObject)o;
+                    cpuSerialNumber += obj?["ProcessorId"].ToString();
+                }
+                searcher = new ManagementObjectSearcher("SELECT * FROM Win32_DiskDrive");
+                collection = searcher.Get();
+                foreach (var o in collection) {
+                    var obj = (ManagementObject)o;
+                    hardDiskId += obj?["SerialNumber"].ToString();
+                }
+
+                machineName = Environment.MachineName;
+                versionString = Environment.OSVersion.VersionString;
+
+                machineCode = $"{cpuSerialNumber}{hardDiskId}{machineName}{versionString}";
+
+                using (var md5 = MD5.Create()) {
+                    var result = md5.ComputeHash(Encoding.UTF8.GetBytes($"{machineCode}Hisoka"));
+                    var strResult = BitConverter.ToString(result);
+                    machineCode = strResult.Replace("-", "");
+                }
+            }
+            catch (Exception e) {
+                NLog.LogManager.GetCurrentClassLogger().Error(e);
+            }
+            NLog.LogManager.GetCurrentClassLogger().Error(machineCode);
+            return machineCode;
         }
 
         private string? GetComputerSystemUuid() {

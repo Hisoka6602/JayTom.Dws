@@ -105,6 +105,12 @@ namespace JayTom.Dws.Infrastructure.IComputer {
         /// </summary>
         /// <returns></returns>
         public Task<List<LocalNetworkConnectionInfo>?> GetLocalNetworkConnectionInfosAsync();
+
+        /// <summary>
+        /// 获取机器码
+        /// </summary>
+        /// <returns></returns>
+        public Task<string> GenerateMachineCode();
     }
 
     public class CpuInfo {
