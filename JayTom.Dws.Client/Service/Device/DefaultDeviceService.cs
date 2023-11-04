@@ -14,6 +14,7 @@ using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Models.Cameras;
 using JayTom.Dws.Plugin.Scale.StaticScale;
 using JayTom.Dws.Plugin.Scale.DynamicScale;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using JayTom.Dws.Data.LocalConf.CameraConfig;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using CameraType = JayTom.Dws.Camera.CameraType;
@@ -785,7 +786,7 @@ namespace JayTom.Dws.Client.Service.Device {
                 case not null when (brand.Contains("Dahua") || brand.Contains("Huaray")):
                     if (modelName.Contains("IPC"))
                         return CameraType.VideoCamera;
-                    if (modelName.Contains("DH-MV-S") || modelName.Contains("DH-SL") || modelName.StartsWith("R"))
+                    if (modelName.Contains("DH-MV-S") || modelName.Contains("DH-MV-R") || modelName.Contains("DH-SL") || modelName.StartsWith("R"))
                         return CameraType.SmartCamera;
                     if (modelName.Contains("DH-MV-D"))
                         return CameraType.VolumeCamera;
@@ -817,7 +818,7 @@ namespace JayTom.Dws.Client.Service.Device {
                 case not null when (info.Brand.Contains("Dahua") || info.Brand.Contains("Huaray")):
                     if (info.Model.Contains("IPC"))
                         return new DaHuatechSecurityCamera(info);
-                    if (info.Model.Contains("DH-MV-S") || info.Model.Contains("DH-SL") || info.Model.StartsWith("R"))
+                    if (info.Model.Contains("DH-MV-S") || info.Model.Contains("DH-MV-R") || info.Model.Contains("DH-SL") || info.Model.StartsWith("R"))
                         return new DaHuaSmartCamera(info);
                     if (info.Model.Contains("DH-MV-D"))
                         return new DaHuaVolumeCamera(info);

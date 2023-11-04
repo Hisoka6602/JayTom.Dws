@@ -264,7 +264,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
         public Color BarcodeBorderColor { get; set; } = Color.LawnGreen;
         public bool IsShowBarcodeBorder { get; set; } = true;
         public bool IsUseTriggerMode { get; set; } = true;
-        public TriggerMode TriggerMode { get; set; }
+        public TriggerMode TriggerMode { get; set; } = TriggerMode.Hardware;
 
         public async void SoftwareTriggerOnce() {
             await Task.Yield();
@@ -372,7 +372,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
                 }
                 if (barcodeInfo?.Any() != true) {
                     //返回触发但没有条码
-                    if (IsUseTriggerMode) {
+                    if (IsUseTriggerMode && TriggerMode == TriggerMode.Software) {
                         OnNotBarcodeHitEvent(new BarcodeReadEventArgs() {
                             Timestamp = timestamp,
                             Barcode = "NoRead",

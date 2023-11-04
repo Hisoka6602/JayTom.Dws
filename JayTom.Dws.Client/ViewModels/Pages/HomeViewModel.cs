@@ -38,6 +38,7 @@ using ExceptionEventArgs = JayTom.Dws.Client.Service.Sorting.ExceptionEventArgs;
 using static JayTom.Dws.Client.Service.BackgroundService.SubmitApiBackgroundService;
 
 namespace JayTom.Dws.Client.ViewModels.Pages {
+
     public class HomeViewModel : BindableBase {
         private readonly IDialogService _dialogService;
         private readonly IComputerInfoReporter _computerInfoReporter;
@@ -447,6 +448,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                 if (item is InstructionReceived model) {
                     try {
                         //设置分拣状态参数
+                        await Task.Delay(500);
                         await _updateSlim.WaitAsync();
                         var barCodeItemModel = BarCodeItems.FirstOrDefault(f => f.Barcode.Equals(model.BarCode) &&
                             f.ScanTime.Equals(model.ScanTime));

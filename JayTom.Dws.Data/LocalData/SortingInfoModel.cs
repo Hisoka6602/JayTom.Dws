@@ -43,7 +43,7 @@ namespace JayTom.Dws.Data.LocalData {
         /// <summary>
         /// 接收的指令
         /// </summary>
-        [Column("SentInstruction")]
+        [Column("ReceivedInstruction")]
         public string ReceivedInstruction { get; set; } = string.Empty;
 
         /// <summary>

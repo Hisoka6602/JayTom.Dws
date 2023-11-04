@@ -1,29 +1,29 @@
-﻿using JayTom.Dws.Camera;
-using JayTom.Dws.Client.EventMediators;
-using JayTom.Dws.Client.Models;
-using JayTom.Dws.Client.Models.Cameras;
-using JayTom.Dws.Client.Service.Device;
-using JayTom.Dws.Data.LocalConf;
-using JayTom.Dws.Data.LocalConf.CameraConfig;
-using JayTom.Dws.Domain.Dto;
-using JayTom.Dws.Domain.Repository.LocalConf;
-using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
-using MaterialDesignThemes.Wpf;
-using Newtonsoft.Json;
-using Prism.Commands;
+﻿using System;
+using System.IO;
 using Prism.Mvvm;
+using System.Linq;
+using Prism.Commands;
+using System.Windows;
+using Newtonsoft.Json;
+using JayTom.Dws.Camera;
+using System.Diagnostics;
+using System.Windows.Input;
+using JayTom.Dws.Domain.Dto;
 using Prism.Services.Dialogs;
-using System;
+using System.Threading.Tasks;
+using JayTom.Dws.Client.Models;
+using MaterialDesignThemes.Wpf;
+using System.Windows.Threading;
+using JayTom.Dws.Data.LocalConf;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Input;
-using System.Windows.Threading;
+using JayTom.Dws.Client.EventMediators;
+using JayTom.Dws.Client.Models.Cameras;
+using JayTom.Dws.Client.Service.Device;
+using JayTom.Dws.Data.LocalConf.CameraConfig;
+using JayTom.Dws.Domain.Repository.LocalConf;
 using CameraType = JayTom.Dws.Client.Models.CameraType;
+using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
 
@@ -332,8 +332,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
             //CameraSdkSelectorInfo
             var cameraConnectionParameters = string.Empty;
             var result = ButtonResult.No;
-            if (obj.CameraType == CameraType.SmartCamera &&
-                obj.Brand.Contains("Hik")) {
+            if (obj.CameraType == CameraType.SmartCamera /*&&
+                (obj.Brand.Contains("Hik") || obj.Brand.Contains("Dahua") || obj.Model.Contains("DH"))*/) {
                 //弹出触发选择
                 _dialogService.ShowDialog("TriggerModeSelectionPage", callback => {
                     //获取参数

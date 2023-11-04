@@ -21,6 +21,7 @@ using CommunicationType = JayTom.Dws.Plugin.Tcp.CommunicationType;
 using JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols;
 
 namespace JayTom.Dws.Client.Service.Sorting {
+
     public class DefaultInventoryManagementService : IInventoryManagementService {
         private readonly ISortingSerialPort _sortingSerialPort;
         private readonly ISortingTcp _sortingTcp;
@@ -110,14 +111,16 @@ namespace JayTom.Dws.Client.Service.Sorting {
 
         public async void SendInstructions(object tag, List<string> instructions, TimeSpan interval, InstructionsAttach attach) {
             //判断是否连接，如果未连接则连接
+            var isSend = false;
+
             if (!IsConnected) {
                 await Connect();
             }
+            var sendTime = DateTime.Now;
             if (_communicationsSettingsDto.Type == CommunicationsType.SerialPort) {
                 //串口
                 if (_sortingSerialPort.Status == SortingSerialPortStatus.Running &&
                     instructions?.Any() == true) {
-                    var sendTime = DateTime.Now;
                     foreach (var instruction in instructions) {
                         //效验协议
                         var message = instruction;
@@ -138,25 +141,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                         });
                         await Task.Delay(interval);
                     }
-                    EventAggregator.Instance.Publish(new InstructionReceived() {
-
-                        Timestamp = attach.Timestamp,
-                        BarCode = attach.BarCode ?? string.Empty,
-                        ScanTime = attach.ScanTime,
-                        ExitId = attach.ExitId,
-                        ExitName = attach.ExitName,
-                        //先忽略快递
-                        LogisticsName = attach.LogisticsName,
-                        SortingMode = attach.SortingMode,
-                        SentInstruction = string.Join("\n", instructions),
-                        PackageCreationInstruction = attach.PackageCreationInstruction,
-                        PackageCreationTime = attach.PackageCreationTime,
-                        IsCreatedByLowerMachine = attach.IsCreatedByLowerMachine,
-                        CommunicationMethod = _communicationsSettingsDto?.Type ?? CommunicationsType.None,
-                        ChecksumProtocolName = _communicationsSettingsDto?.Protocol.ToString() ?? string.Empty,
-                        SendTime = sendTime
-
-                    });
+                    isSend = true;
                 }
                 else {
                     OnCommunicationExceptionEvent(new Exception("下位机未连接!"));
@@ -166,7 +151,6 @@ namespace JayTom.Dws.Client.Service.Sorting {
                 //tcp
                 if (_sortingTcp.ConnectionStatus == ConnectionStatus.Connected &&
                     instructions?.Any() == true) {
-                    var sendTime = DateTime.Now;
                     foreach (var instruction in instructions) {
                         //效验协议
 
@@ -192,42 +176,45 @@ namespace JayTom.Dws.Client.Service.Sorting {
                         }
                         await Task.Delay(interval);
                     }
-                    EventAggregator.Instance.Publish(new InstructionReceived() {
-
-                        Timestamp = attach.Timestamp,
-                        BarCode = attach.BarCode ?? string.Empty,
-                        ScanTime = attach.ScanTime,
-                        ExitId = attach.ExitId,
-                        ExitName = attach.ExitName,
-                        //先忽略快递
-                        LogisticsName = attach.LogisticsName,
-                        SortingMode = attach.SortingMode,
-                        SentInstruction = string.Join("\n", instructions),
-                        PackageCreationInstruction = attach.PackageCreationInstruction,
-                        PackageCreationTime = attach.PackageCreationTime,
-                        IsCreatedByLowerMachine = attach.IsCreatedByLowerMachine,
-                        CommunicationMethod = _communicationsSettingsDto?.Type ?? CommunicationsType.None,
-                        ChecksumProtocolName = _communicationsSettingsDto?.Protocol.ToString() ?? string.Empty,
-                        SendTime = sendTime
-
-                    });
+                    isSend = true;
                 }
                 else {
                     OnCommunicationExceptionEvent(new Exception("下位机未连接!"));
                 }
             }
+            if (isSend) {
+                EventAggregator.Instance.Publish(new InstructionReceived() {
+                    Timestamp = attach.Timestamp,
+                    BarCode = attach.BarCode ?? string.Empty,
+                    ScanTime = attach.ScanTime,
+                    ExitId = attach.ExitId,
+                    ExitName = attach.ExitName,
+                    //先忽略快递
+                    LogisticsName = attach.LogisticsName,
+                    SortingMode = attach.SortingMode,
+                    SentInstruction = string.Join("\n", instructions?.Select(s => _deviceCommunicationProtocol?.EncodeData(FunctionType.SendExit, tag,
+                        s, attach))?.ToList() ?? new List<string?>()),
+                    PackageCreationInstruction = attach.PackageCreationInstruction,
+                    PackageCreationTime = attach.PackageCreationTime,
+                    IsCreatedByLowerMachine = attach.IsCreatedByLowerMachine,
+                    CommunicationMethod = _communicationsSettingsDto?.Type ?? CommunicationsType.None,
+                    ChecksumProtocolName = _communicationsSettingsDto?.Protocol.ToString() ?? string.Empty,
+                    SendTime = sendTime
+                });
+            }
         }
 
         public async void SendInstructions(object tag, List<SortingInstructionInfoModel> instructions, TimeSpan interval, InstructionsAttach attach) {
             //判断是否连接，如果未连接则连接
+            var isSend = false;
             if (!IsConnected) {
                 await Connect();
             }
+            var sendTime = DateTime.Now;
             if (_communicationsSettingsDto.Type == CommunicationsType.SerialPort) {
                 //串口
                 if (_sortingSerialPort.Status == SortingSerialPortStatus.Running &&
                     instructions?.Any() == true) {
-                    var sendTime = DateTime.Now;
                     foreach (var instruction in instructions) {
                         if (_communicationsSettingsDto.MachineReplyInfo.IsVerificationEnabled) {
                             var retryPolicy = Policy.HandleResult<bool>(result => !result)
@@ -265,7 +252,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                             var message = instruction.Instruction;
                             if (_deviceCommunicationProtocol is not null) {
                                 message = _deviceCommunicationProtocol.EncodeData(FunctionType.SendExit, tag,
-                                    instruction.Instruction, null);
+                                    instruction.Instruction, attach);
                             }
                             _sortingSerialPort.Send(message);
                             OnCommunicationInfoEvent(new CommunicationMessageInfo() {
@@ -281,25 +268,8 @@ namespace JayTom.Dws.Client.Service.Sorting {
                         }
                         await Task.Delay(interval);
                     }
-                    EventAggregator.Instance.Publish(new InstructionReceived() {
 
-                        Timestamp = attach.Timestamp,
-                        BarCode = attach.BarCode ?? string.Empty,
-                        ScanTime = attach.ScanTime,
-                        ExitId = attach.ExitId,
-                        ExitName = attach.ExitName,
-                        //先忽略快递
-                        LogisticsName = attach.LogisticsName,
-                        SortingMode = attach.SortingMode,
-                        SentInstruction = string.Join("\n", instructions?.Select(s => s.Instruction)?.ToList() ?? new List<string>()),
-                        PackageCreationInstruction = attach.PackageCreationInstruction,
-                        PackageCreationTime = attach.PackageCreationTime,
-                        IsCreatedByLowerMachine = attach.IsCreatedByLowerMachine,
-                        CommunicationMethod = _communicationsSettingsDto?.Type ?? CommunicationsType.None,
-                        ChecksumProtocolName = _communicationsSettingsDto?.Protocol.ToString() ?? string.Empty,
-                        SendTime = sendTime
-
-                    });
+                    isSend = true;
                 }
                 else {
                     OnCommunicationExceptionEvent(new Exception("下位机未连接!"));
@@ -309,7 +279,6 @@ namespace JayTom.Dws.Client.Service.Sorting {
                 //tcp
                 if (_sortingTcp.ConnectionStatus == ConnectionStatus.Connected &&
                     instructions?.Any() == true) {
-                    var sendTime = DateTime.Now;
                     foreach (var instruction in instructions) {
                         //使用应答
                         if (_communicationsSettingsDto.MachineReplyInfo.IsVerificationEnabled) {
@@ -322,7 +291,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                                 var message = instruction.Instruction;
                                 if (_deviceCommunicationProtocol is not null) {
                                     message = _deviceCommunicationProtocol.EncodeData(FunctionType.SendExit, tag,
-                                        instruction.Instruction, null);
+                                        instruction.Instruction, attach);
                                 }
 
                                 var sendMessage = await _sortingTcp.SendMessage(HexStringToByteArray(message));
@@ -354,7 +323,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                             var message = instruction.Instruction;
                             if (_deviceCommunicationProtocol is not null) {
                                 message = _deviceCommunicationProtocol.EncodeData(FunctionType.SendExit, tag,
-                                    instruction.Instruction, null);
+                                    instruction.Instruction, attach);
                             }
 
                             var sendMessage = await _sortingTcp.SendMessage(HexStringToByteArray(message));
@@ -375,29 +344,32 @@ namespace JayTom.Dws.Client.Service.Sorting {
                         }
                         await Task.Delay(interval);
                     }
-                    EventAggregator.Instance.Publish(new InstructionReceived() {
-
-                        Timestamp = attach.Timestamp,
-                        BarCode = attach.BarCode ?? string.Empty,
-                        ScanTime = attach.ScanTime,
-                        ExitId = attach.ExitId,
-                        ExitName = attach.ExitName,
-                        //先忽略快递
-                        LogisticsName = attach.LogisticsName,
-                        SortingMode = attach.SortingMode,
-                        SentInstruction = string.Join("\n", instructions),
-                        PackageCreationInstruction = attach.PackageCreationInstruction,
-                        PackageCreationTime = attach.PackageCreationTime,
-                        IsCreatedByLowerMachine = attach.IsCreatedByLowerMachine,
-                        CommunicationMethod = _communicationsSettingsDto?.Type ?? CommunicationsType.None,
-                        ChecksumProtocolName = _communicationsSettingsDto?.Protocol.ToString() ?? string.Empty,
-                        SendTime = sendTime
-
-                    });
+                    isSend = true;
                 }
                 else {
                     OnCommunicationExceptionEvent(new Exception("下位机未连接!"));
                 }
+            }
+
+            if (isSend) {
+                EventAggregator.Instance.Publish(new InstructionReceived() {
+                    Timestamp = attach.Timestamp,
+                    BarCode = attach.BarCode ?? string.Empty,
+                    ScanTime = attach.ScanTime,
+                    ExitId = attach.ExitId,
+                    ExitName = attach.ExitName,
+                    //先忽略快递
+                    LogisticsName = attach.LogisticsName,
+                    SortingMode = attach.SortingMode,
+                    SentInstruction = string.Join("\n", instructions?.Select(s => _deviceCommunicationProtocol?.EncodeData(FunctionType.SendExit, tag,
+                        s.Instruction, attach))?.ToList() ?? new List<string?>()),
+                    PackageCreationInstruction = attach.PackageCreationInstruction,
+                    PackageCreationTime = attach.PackageCreationTime,
+                    IsCreatedByLowerMachine = attach.IsCreatedByLowerMachine,
+                    CommunicationMethod = _communicationsSettingsDto?.Type ?? CommunicationsType.None,
+                    ChecksumProtocolName = _communicationsSettingsDto?.Protocol.ToString() ?? string.Empty,
+                    SendTime = sendTime
+                });
             }
         }
 
