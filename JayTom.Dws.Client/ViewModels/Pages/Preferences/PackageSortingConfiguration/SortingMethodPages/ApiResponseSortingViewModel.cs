@@ -26,6 +26,7 @@ using JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration.SortingMethodE
 using JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.SortingMethodEditors;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration.SortingMethodPages {
+
     public class ApiResponseSortingViewModel : BindableBase {
         private readonly IApiSortingRepository _apiSortingRepository;
         private readonly IApiRuleRepository _apiRuleRepository;
@@ -69,7 +70,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         ApiSortingMessageQueue.Enqueue(model.ExceptionContent);
                         return;
                     }
-
                     if (model.IsOk) {
                         var apiSortingInfoModel = new ApiSortingInfoModel() {
                             CreateTime = model.ApiSortingItemInfo.CreateTime,
@@ -87,13 +87,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         var insert = await _apiSortingRepository.InsertDetailAsync(apiSortingInfoModel);
                         if (insert) {
                             EventAggregator.Instance.Publish(apiSortingInfoModel);
-                            RefreshData();
                             ApiSortingMessageQueue.Enqueue("保存成功");
                         }
                         else {
                             ApiSortingMessageQueue.Enqueue("保存失败");
                         }
                     }
+                    RefreshData();
                 }
             });
         }
@@ -123,6 +123,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                     await DialogHost.Show(apiSortingRuleEditor, model.Identifier);
                     if (!string.IsNullOrEmpty(model.ExceptionContent)) {
                         ApiSortingMessageQueue.Enqueue(model.ExceptionContent);
+                        RefreshData();
                         return;
                     }
 
@@ -146,12 +147,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         if (insert) {
                             EventAggregator.Instance.Publish(apiSortingInfoModel);
                             ApiSortingMessageQueue.Enqueue("保存成功");
-                            RefreshData();
                         }
                         else {
                             ApiSortingMessageQueue.Enqueue("保存失败");
                         }
                     }
+                    RefreshData();
                 }
             });
         }
@@ -391,7 +392,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                             //批量添加
                             var range = await _apiSortingRepository.InsertRangeDetailAsync(apiSortingInfoModels);
                             if (range) {
-
                                 ApiSortingMessageQueue.Enqueue("保存成功");
                                 RefreshData();
                             }

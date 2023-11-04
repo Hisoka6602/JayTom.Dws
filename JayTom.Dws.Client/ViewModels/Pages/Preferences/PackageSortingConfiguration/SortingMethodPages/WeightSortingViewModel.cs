@@ -86,12 +86,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         if (insert) {
                             EventAggregator.Instance.Publish(weightSortingInfoModel);
                             WeightSortingMessageQueue.Enqueue("保存成功");
-                            RefreshData();
                         }
                         else {
                             WeightSortingMessageQueue.Enqueue("保存失败");
                         }
                     }
+                    RefreshData();
                 }
             });
         }
@@ -121,6 +121,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                     await DialogHost.Show(weightSortingRuleEditor, model.Identifier);
                     if (!string.IsNullOrEmpty(model.ExceptionContent)) {
                         WeightSortingMessageQueue.Enqueue(model.ExceptionContent);
+                        RefreshData();
                         return;
                     }
                     if (model.IsOk) {
@@ -144,9 +145,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         if (insert) {
                             EventAggregator.Instance.Publish(weightSortingInfoModel);
                             WeightSortingMessageQueue.Enqueue("保存成功");
-                            RefreshData();
+                        }
+                        else {
+                            WeightSortingMessageQueue.Enqueue("保存失败");
                         }
                     }
+                    RefreshData();
                 }
             });
         }

@@ -169,7 +169,7 @@
                 <!--  正则列表  -->
                 <DataGrid
                     Height="300"
-                    MinWidth="500"
+                    MinWidth="460"
                     Margin="20"
                     Padding="10,0"
                     VerticalAlignment="Stretch"
@@ -210,7 +210,7 @@
                         <!--  Json规则  -->
                         <DataGridTextColumn
                             MinWidth="230"
-                            MaxWidth="300"
+                            MaxWidth="280"
                             Binding="{Binding JsonContent, UpdateSourceTrigger=PropertyChanged}"
                             CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                             EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">

@@ -169,7 +169,7 @@
                 <!--  正则列表  -->
                 <DataGrid
                     Height="300"
-                    MinWidth="500"
+                    MinWidth="400"
                     Margin="20"
                     Padding="10,0"
                     VerticalAlignment="Stretch"
@@ -210,7 +210,7 @@
                         <!--  表达式  -->
                         <DataGridTextColumn
                             MinWidth="230"
-                            MaxWidth="380"
+                            MaxWidth="280"
                             Binding="{Binding RegexPattern, UpdateSourceTrigger=PropertyChanged}"
                             CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                             EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
@@ -220,8 +220,7 @@
                         </DataGridTextColumn>
                         <!--  操作  -->
                         <DataGridTemplateColumn
-                            Width="100"
-                            MinWidth="100"
+                            MinWidth="80"
                             MaxWidth="100"
                             CellStyle="{StaticResource CustomDataGridTextCellStyle}">
                             <DataGridTemplateColumn.Header>

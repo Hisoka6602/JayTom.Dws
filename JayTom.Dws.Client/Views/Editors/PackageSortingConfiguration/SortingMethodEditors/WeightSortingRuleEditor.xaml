@@ -322,7 +322,7 @@
                         <!--  表达式  -->
                         <DataGridTextColumn
                             MinWidth="400"
-                            MaxWidth="410"
+                            MaxWidth="400"
                             Binding="{Binding Formula, UpdateSourceTrigger=PropertyChanged}"
                             CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                             EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
@@ -332,7 +332,6 @@
                         </DataGridTextColumn>
                         <!--  操作  -->
                         <DataGridTemplateColumn
-                            Width="100"
                             MinWidth="100"
                             MaxWidth="100"
                             CellStyle="{StaticResource CustomDataGridTextCellStyle}">
@@ -639,9 +638,9 @@
                         CornerRadius="5"
                         Visibility="{Binding ElementName=RegularExpressionRadioButton, Path=IsChecked, Converter={StaticResource BooleanToVisibilityConverter}}">
                         <TextBox
-                            Width="580"
+                            Width="530"
                             MinHeight="350"
-                            MaxWidth="580"
+                            MaxWidth="530"
                             MaxHeight="350"
                             Margin="5,0"
                             VerticalContentAlignment="Top"

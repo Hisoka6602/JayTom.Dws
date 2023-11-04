@@ -88,12 +88,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         if (insert) {
                             EventAggregator.Instance.Publish(volumeSortingInfoModel);
                             VolumeSortingMessageQueue.Enqueue("保存成功");
-                            RefreshData();
                         }
                         else {
                             VolumeSortingMessageQueue.Enqueue("保存失败");
                         }
                     }
+                    RefreshData();
                 }
             });
         }
@@ -123,6 +123,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                     await DialogHost.Show(volumeSortingRuleEditor, model.Identifier);
                     if (!string.IsNullOrEmpty(model.ExceptionContent)) {
                         VolumeSortingMessageQueue.Enqueue(model.ExceptionContent);
+                        RefreshData();
                         return;
                     }
                     if (model.IsOk) {
@@ -146,12 +147,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         if (insert) {
                             EventAggregator.Instance.Publish(volumeSortingInfoModel);
                             VolumeSortingMessageQueue.Enqueue("保存成功");
-                            RefreshData();
                         }
                         else {
                             VolumeSortingMessageQueue.Enqueue("保存失败");
                         }
                     }
+                    RefreshData();
                 }
             });
         }

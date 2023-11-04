@@ -23,6 +23,7 @@ using JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration.SortingMethodE
 using JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.SortingMethodEditors;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration.SortingMethodPages {
+
     public class OcrSortingViewModel : BindableBase {
         private readonly IOcrSortingRepository _ocrSortingRepository;
         private readonly IOcrRuleRepository _ocrRuleRepository;
@@ -85,12 +86,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         if (insert) {
                             EventAggregator.Instance.Publish(ocrSortingInfoModel);
                             OcrSortingMessageQueue.Enqueue("保存成功");
-                            RefreshData();
                         }
                         else {
                             OcrSortingMessageQueue.Enqueue("保存失败");
                         }
                     }
+                    RefreshData();
                 }
             });
         }
@@ -120,6 +121,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                     await DialogHost.Show(ocrSortingRuleEditor, model.Identifier);
                     if (!string.IsNullOrEmpty(model.ExceptionContent)) {
                         OcrSortingMessageQueue.Enqueue(model.ExceptionContent);
+                        RefreshData();
                         return;
                     }
 
@@ -143,12 +145,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         if (insert) {
                             EventAggregator.Instance.Publish(ocrSortingInfoModel);
                             OcrSortingMessageQueue.Enqueue("保存成功");
-                            RefreshData();
                         }
                         else {
                             OcrSortingMessageQueue.Enqueue("保存失败");
                         }
                     }
+                    RefreshData();
                 }
             });
         }

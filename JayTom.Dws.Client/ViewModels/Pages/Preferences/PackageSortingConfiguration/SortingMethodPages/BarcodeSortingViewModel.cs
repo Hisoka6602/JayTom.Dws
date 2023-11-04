@@ -87,12 +87,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         if (insertOrUpdate) {
                             EventAggregator.Instance.Publish(infoModel);
                             BarcodeSortingMessageQueue.Enqueue("保存成功");
-                            RefreshData();
                         }
                         else {
                             BarcodeSortingMessageQueue.Enqueue("保存失败");
                         }
                     }
+                    RefreshData();
                 }
             });
         }
@@ -122,6 +122,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                     await DialogHost.Show(barcodeSortingRuleEditor, model.Identifier);
                     if (!string.IsNullOrEmpty(model.ExceptionContent)) {
                         BarcodeSortingMessageQueue.Enqueue(model.ExceptionContent);
+                        RefreshData();
                         return;
                     }
                     if (model.IsOk) {
@@ -144,12 +145,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         if (insertOrUpdate) {
                             EventAggregator.Instance.Publish(infoModel);
                             BarcodeSortingMessageQueue.Enqueue("保存成功");
-                            RefreshData();
                         }
                         else {
                             BarcodeSortingMessageQueue.Enqueue("保存失败");
                         }
                     }
+                    RefreshData();
                 }
             });
         }
