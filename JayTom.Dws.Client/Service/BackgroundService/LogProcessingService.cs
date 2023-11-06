@@ -66,6 +66,14 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             _ftpLogRepository = ftpLogRepository;
             _cleanupLogRepository = cleanupLogRepository;
             _exceptionLogRepository = exceptionLogRepository;
+            EventAggregator.Instance.Subscribe<SettingsChangedEvent>(item => {
+                if (item is SettingsChangedEvent model) {
+                    _appLogItems.Enqueue(new AppLogInfoModel() {
+                        Type = LogType.Information,
+                        Message = $"更改配置:{model.SettingsName}"
+                    });
+                }
+            });
             //异常日志
             EventAggregator.Instance.Subscribe<ExceptionLogInfoModel>(item => {
                 if (item is ExceptionLogInfoModel model) {

@@ -12,11 +12,13 @@ using System.Threading.Tasks;
 using System.Windows.Controls;
 using JayTom.Dws.Client.Models;
 using MaterialDesignThemes.Wpf;
+using JayTom.Dws.Data.LocalLog;
 using JayTom.Dws.Data.LocalConf;
 using System.Windows.Media.Imaging;
 using JayTom.Dws.Client.Views.Dialog;
 using System.Collections.ObjectModel;
 using System.Runtime.InteropServices;
+using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.ViewModels.Dialog;
 using JayTom.Dws.Domain.Repository.LocalConf;
 
@@ -328,6 +330,12 @@ namespace JayTom.Dws.Client.ViewModels {
                     }
                     MainMessageQueue.Enqueue(insertOrUpdate ? Languages.Language.ResourceManager.GetString("切换语言成功提示") : Languages.Language.ResourceManager.GetString("切换语言失败提示"));
                 }
+
+                EventAggregator.Instance.Publish(new AppLogInfoModel {
+                    CreateTime = DateTime.Now,
+                    Message = $"切换语言:{model.DisplayName}",
+                    Type = LogType.Information
+                });
             }
         }
 
