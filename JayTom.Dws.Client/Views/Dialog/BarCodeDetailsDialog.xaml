@@ -23,6 +23,7 @@
         <converters:SourceTypeConverter x:Key="SourceTypeConverter" />
         <converters:UploadStatusToVisibilityConverter x:Key="UploadStatusToVisibilityConverter" />
         <converters:BooleanNegatedToVisibilityConverter x:Key="BooleanNegatedToVisibilityConverter" />
+        <converters:UploadStatusNegatedToVisibilityConverter x:Key="UploadStatusNegatedToVisibilityConverter" />
     </UserControl.Resources>
     <b:Interaction.Triggers>
         <b:EventTrigger EventName="Loaded" SourceName="BarCodeDetailsView">
@@ -811,10 +812,7 @@
                             StrokeThickness="1" />
                     </StackPanel>
                     <!--  上传信息  -->
-                    <StackPanel
-                        Margin="5,10"
-                        Orientation="Vertical"
-                        Visibility="{Binding BarCodeItem.RequestStatus, Converter={StaticResource UploadStatusToVisibilityConverter}}">
+                    <StackPanel Margin="5,10" Orientation="Vertical">
                         <StackPanel Orientation="Horizontal">
                             <!--  图标  -->
                             <TextBlock
@@ -825,7 +823,7 @@
                                 FontSize="23"
                                 Foreground="DimGray"
                                 Text="&#xe664;" />
-                            <!--  称重信息  -->
+                            <!--  Api信息  -->
                             <TextBlock
                                 MaxWidth="450"
                                 HorizontalAlignment="Center"
@@ -839,386 +837,413 @@
                                 TextAlignment="Center"
                                 TextTrimming="WordEllipsis" />
                         </StackPanel>
-                        <Grid Margin="12,5,0,0">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="40" />
-                                <RowDefinition Height="40" />
-                                <RowDefinition Height="100" />
-                                <RowDefinition Height="40" />
-                                <RowDefinition Height="100" />
-                                <RowDefinition Height="100" />
-                                <RowDefinition Height="100" />
-                                <RowDefinition Height="100" />
-                            </Grid.RowDefinitions>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="50*" />
-                                <ColumnDefinition Width="50*" />
-                            </Grid.ColumnDefinitions>
-                            <!--  是否判定成功  -->
-                            <Grid
-                                Grid.Row="0"
-                                Grid.Column="0"
-                                Margin="14,0,0,0">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="45" />
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <!--  图标  -->
-                                <TextBlock
-                                    Grid.Column="0"
-                                    Margin="10,2"
+                        <Grid>
+                            <!--  空数据底图  -->
+                            <Border Visibility="{Binding BarCodeItem.RequestStatus, Converter={StaticResource UploadStatusNegatedToVisibilityConverter}}">
+                                <StackPanel
+                                    Margin="10"
                                     HorizontalAlignment="Center"
                                     VerticalAlignment="Center"
-                                    FontFamily="{StaticResource IconFontFamily}"
-                                    FontSize="23"
-                                    Foreground="DimGray"
-                                    Text="&#xe76b;" />
-                                <!--  信息  -->
-                                <TextBlock
-                                    Grid.Column="1"
-                                    MaxWidth="200"
-                                    HorizontalAlignment="Left"
-                                    VerticalAlignment="Center"
-                                    FontFamily="{StaticResource CustomFontFamily}"
-                                    FontSize="12"
-                                    FontWeight="Bold"
-                                    Foreground="DimGray"
-                                    IsEnabled="False"
-                                    TextAlignment="Justify"
-                                    TextTrimming="WordEllipsis">
-                                    <Run Text="是否判定成功:" />
-                                </TextBlock>
-                                <CheckBox
-                                    Grid.Column="2"
-                                    Margin="5,0"
-                                    IsChecked="{Binding BarCodeItem.UploadInfo.IsSuccess}"
-                                    IsEnabled="False"
-                                    Style="{StaticResource CustomCheckBoxStyle}" />
-                            </Grid>
-                            <!--  耗时(毫秒)  -->
-                            <Grid
-                                Grid.Row="0"
-                                Grid.Column="1"
-                                Margin="14,0,0,0">
+                                    Orientation="Vertical">
+                                    <TextBlock
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        FontFamily="{StaticResource IconFontFamily}"
+                                        FontSize="50"
+                                        Foreground="White"
+                                        Text="&#xe63d;" />
+                                    <TextBlock
+                                        Margin="0,10"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        FontFamily="{StaticResource CustomFontFamily}"
+                                        FontSize="16"
+                                        Foreground="White"
+                                        Text="{x:Static languages:Language.NoData}" />
+                                </StackPanel>
+                            </Border>
+                            <Grid Margin="12,5,0,0" Visibility="{Binding BarCodeItem.RequestStatus, Converter={StaticResource UploadStatusToVisibilityConverter}}">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="40" />
+                                    <RowDefinition Height="40" />
+                                    <RowDefinition Height="100" />
+                                    <RowDefinition Height="40" />
+                                    <RowDefinition Height="100" />
+                                    <RowDefinition Height="100" />
+                                    <RowDefinition Height="100" />
+                                    <RowDefinition Height="100" />
+                                </Grid.RowDefinitions>
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="45" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="20" />
+                                    <ColumnDefinition Width="50*" />
+                                    <ColumnDefinition Width="50*" />
                                 </Grid.ColumnDefinitions>
-                                <!--  图标  -->
-                                <TextBlock
+                                <!--  是否判定成功  -->
+                                <Grid
+                                    Grid.Row="0"
                                     Grid.Column="0"
-                                    Margin="10,2"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    FontFamily="{StaticResource IconFontFamily}"
-                                    FontSize="23"
-                                    Foreground="DimGray"
-                                    Text="&#xe711;" />
-                                <!--  信息  -->
-                                <TextBlock
+                                    Margin="14,0,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="45" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <!--  图标  -->
+                                    <TextBlock
+                                        Grid.Column="0"
+                                        Margin="10,2"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        FontFamily="{StaticResource IconFontFamily}"
+                                        FontSize="23"
+                                        Foreground="DimGray"
+                                        Text="&#xe76b;" />
+                                    <!--  信息  -->
+                                    <TextBlock
+                                        Grid.Column="1"
+                                        MaxWidth="200"
+                                        HorizontalAlignment="Left"
+                                        VerticalAlignment="Center"
+                                        FontFamily="{StaticResource CustomFontFamily}"
+                                        FontSize="12"
+                                        FontWeight="Bold"
+                                        Foreground="DimGray"
+                                        IsEnabled="False"
+                                        TextAlignment="Justify"
+                                        TextTrimming="WordEllipsis">
+                                        <Run Text="是否判定成功:" />
+                                    </TextBlock>
+                                    <CheckBox
+                                        Grid.Column="2"
+                                        Margin="5,0"
+                                        IsChecked="{Binding BarCodeItem.UploadInfo.IsSuccess}"
+                                        IsEnabled="False"
+                                        Style="{StaticResource CustomCheckBoxStyle}" />
+                                </Grid>
+                                <!--  耗时(毫秒)  -->
+                                <Grid
+                                    Grid.Row="0"
                                     Grid.Column="1"
-                                    HorizontalAlignment="Left"
-                                    VerticalAlignment="Center"
-                                    FontFamily="{StaticResource CustomFontFamily}"
-                                    FontSize="12"
-                                    FontWeight="Bold"
-                                    Foreground="DimGray"
-                                    IsEnabled="False"
-                                    TextAlignment="Center"
-                                    TextTrimming="WordEllipsis">
-                                    <Run Text="耗时(毫秒):" /> <Run Foreground="#BFFFFFFF" Text="{Binding BarCodeItem.UploadInfo.DurationInSeconds, StringFormat={}{0:F3}}" />
-                                </TextBlock>
-                            </Grid>
-                            <!--  请求时间  -->
-                            <Grid
-                                Grid.Row="1"
-                                Grid.Column="0"
-                                Margin="14,0,0,0">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="45" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="20" />
-                                </Grid.ColumnDefinitions>
-                                <!--  图标  -->
-                                <TextBlock
+                                    Margin="14,0,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="45" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="20" />
+                                    </Grid.ColumnDefinitions>
+                                    <!--  图标  -->
+                                    <TextBlock
+                                        Grid.Column="0"
+                                        Margin="10,2"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        FontFamily="{StaticResource IconFontFamily}"
+                                        FontSize="23"
+                                        Foreground="DimGray"
+                                        Text="&#xe711;" />
+                                    <!--  信息  -->
+                                    <TextBlock
+                                        Grid.Column="1"
+                                        HorizontalAlignment="Left"
+                                        VerticalAlignment="Center"
+                                        FontFamily="{StaticResource CustomFontFamily}"
+                                        FontSize="12"
+                                        FontWeight="Bold"
+                                        Foreground="DimGray"
+                                        IsEnabled="False"
+                                        TextAlignment="Center"
+                                        TextTrimming="WordEllipsis">
+                                        <Run Text="耗时(毫秒):" /> <Run Foreground="#BFFFFFFF" Text="{Binding BarCodeItem.UploadInfo.DurationInSeconds, StringFormat={}{0:F3}}" />
+                                    </TextBlock>
+                                </Grid>
+                                <!--  请求时间  -->
+                                <Grid
+                                    Grid.Row="1"
                                     Grid.Column="0"
-                                    Margin="10,2"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    FontFamily="{StaticResource IconFontFamily}"
-                                    FontSize="23"
-                                    FontWeight="Light"
-                                    Foreground="DimGray"
-                                    Text="&#xe82f;" />
-                                <!--  信息  -->
-                                <TextBlock
-                                    Grid.Column="1"
-                                    HorizontalAlignment="Left"
-                                    VerticalAlignment="Center"
-                                    FontFamily="{StaticResource CustomFontFamily}"
-                                    FontSize="12"
-                                    FontWeight="Bold"
-                                    Foreground="DimGray"
-                                    IsEnabled="False"
-                                    TextAlignment="Center"
-                                    TextTrimming="WordEllipsis">
-                                    <Run Text="请求时间:" /> <Run Foreground="#BFFFFFFF" Text="{Binding BarCodeItem.UploadInfo.RequestTime, StringFormat='yyyy-MM-dd HH:mm:ss.fff'}" />
-                                </TextBlock>
-                            </Grid>
-                            <!--  上传内容  -->
-                            <StackPanel
-                                Grid.Row="2"
-                                Grid.Column="0"
-                                Grid.ColumnSpan="2"
-                                Margin="5"
-                                HorizontalAlignment="Center"
-                                Orientation="Vertical">
-                                <TextBlock
-                                    Margin="5,0"
-                                    VerticalAlignment="Center"
-                                    FontSize="13"
-                                    FontWeight="Bold"
-                                    Foreground="DimGray"
-                                    Text="上传内容:" />
-                                <Border
-                                    MinHeight="70"
-                                    MaxHeight="100"
-                                    Margin="0,5"
-                                    HorizontalAlignment="Left"
-                                    VerticalAlignment="Center"
-                                    Background="#202020"
-                                    CornerRadius="5">
-                                    <TextBox
-                                        Width="580"
-                                        MinHeight="70"
-                                        MaxWidth="580"
-                                        MaxHeight="70"
-                                        Margin="5,0"
-                                        VerticalContentAlignment="Top"
-                                        Background="Transparent"
-                                        BorderThickness="0"
-                                        FontSize="13"
+                                    Margin="14,0,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="45" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="20" />
+                                    </Grid.ColumnDefinitions>
+                                    <!--  图标  -->
+                                    <TextBlock
+                                        Grid.Column="0"
+                                        Margin="10,2"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        FontFamily="{StaticResource IconFontFamily}"
+                                        FontSize="23"
+                                        FontWeight="Light"
+                                        Foreground="DimGray"
+                                        Text="&#xe82f;" />
+                                    <!--  信息  -->
+                                    <TextBlock
+                                        Grid.Column="1"
+                                        HorizontalAlignment="Left"
+                                        VerticalAlignment="Center"
+                                        FontFamily="{StaticResource CustomFontFamily}"
+                                        FontSize="12"
                                         FontWeight="Bold"
-                                        Foreground="White"
-                                        InputMethod.IsInputMethodEnabled="False"
-                                        IsReadOnly="True"
-                                        Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                                        Text="{Binding BarCodeItem.UploadInfo.RequestContent}"
-                                        TextWrapping="Wrap"
-                                        VerticalScrollBarVisibility="Auto" />
-                                </Border>
-                            </StackPanel>
-                            <!--  响应时间  -->
-                            <Grid
-                                Grid.Row="3"
-                                Grid.Column="0"
-                                Margin="14,0,0,0">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="45" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="20" />
-                                </Grid.ColumnDefinitions>
-                                <!--  图标  -->
-                                <TextBlock
+                                        Foreground="DimGray"
+                                        IsEnabled="False"
+                                        TextAlignment="Center"
+                                        TextTrimming="WordEllipsis">
+                                        <Run Text="请求时间:" /> <Run Foreground="#BFFFFFFF" Text="{Binding BarCodeItem.UploadInfo.RequestTime, StringFormat='yyyy-MM-dd HH:mm:ss.fff'}" />
+                                    </TextBlock>
+                                </Grid>
+                                <!--  上传内容  -->
+                                <StackPanel
+                                    Grid.Row="2"
                                     Grid.Column="0"
-                                    Margin="10,2"
+                                    Grid.ColumnSpan="2"
+                                    Margin="5"
                                     HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    FontFamily="{StaticResource IconFontFamily}"
-                                    FontSize="23"
-                                    FontWeight="Light"
-                                    Foreground="DimGray"
-                                    Text="&#xe82f;" />
-                                <!--  信息  -->
-                                <TextBlock
-                                    Grid.Column="1"
-                                    HorizontalAlignment="Left"
-                                    VerticalAlignment="Center"
-                                    FontFamily="{StaticResource CustomFontFamily}"
-                                    FontSize="12"
-                                    FontWeight="Bold"
-                                    Foreground="DimGray"
-                                    IsEnabled="False"
-                                    TextAlignment="Center"
-                                    TextTrimming="WordEllipsis">
-                                    <Run Text="响应时间:" /> <Run Foreground="#BFFFFFFF" Text="{Binding BarCodeItem.UploadInfo.ResponseTime, StringFormat='yyyy-MM-dd HH:mm:ss.fff'}" />
-                                </TextBlock>
+                                    Orientation="Vertical">
+                                    <TextBlock
+                                        Margin="5,0"
+                                        VerticalAlignment="Center"
+                                        FontSize="13"
+                                        FontWeight="Bold"
+                                        Foreground="DimGray"
+                                        Text="上传内容:" />
+                                    <Border
+                                        MinHeight="70"
+                                        MaxHeight="100"
+                                        Margin="0,5"
+                                        HorizontalAlignment="Left"
+                                        VerticalAlignment="Center"
+                                        Background="#202020"
+                                        CornerRadius="5">
+                                        <TextBox
+                                            Width="580"
+                                            MinHeight="70"
+                                            MaxWidth="580"
+                                            MaxHeight="70"
+                                            Margin="5,0"
+                                            VerticalContentAlignment="Top"
+                                            Background="Transparent"
+                                            BorderThickness="0"
+                                            FontSize="13"
+                                            FontWeight="Bold"
+                                            Foreground="White"
+                                            InputMethod.IsInputMethodEnabled="False"
+                                            IsReadOnly="True"
+                                            Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                            Text="{Binding BarCodeItem.UploadInfo.RequestContent}"
+                                            TextWrapping="Wrap"
+                                            VerticalScrollBarVisibility="Auto" />
+                                    </Border>
+                                </StackPanel>
+                                <!--  响应时间  -->
+                                <Grid
+                                    Grid.Row="3"
+                                    Grid.Column="0"
+                                    Margin="14,0,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="45" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="20" />
+                                    </Grid.ColumnDefinitions>
+                                    <!--  图标  -->
+                                    <TextBlock
+                                        Grid.Column="0"
+                                        Margin="10,2"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        FontFamily="{StaticResource IconFontFamily}"
+                                        FontSize="23"
+                                        FontWeight="Light"
+                                        Foreground="DimGray"
+                                        Text="&#xe82f;" />
+                                    <!--  信息  -->
+                                    <TextBlock
+                                        Grid.Column="1"
+                                        HorizontalAlignment="Left"
+                                        VerticalAlignment="Center"
+                                        FontFamily="{StaticResource CustomFontFamily}"
+                                        FontSize="12"
+                                        FontWeight="Bold"
+                                        Foreground="DimGray"
+                                        IsEnabled="False"
+                                        TextAlignment="Center"
+                                        TextTrimming="WordEllipsis">
+                                        <Run Text="响应时间:" /> <Run Foreground="#BFFFFFFF" Text="{Binding BarCodeItem.UploadInfo.ResponseTime, StringFormat='yyyy-MM-dd HH:mm:ss.fff'}" />
+                                    </TextBlock>
+                                </Grid>
+                                <!--  响应内容  -->
+                                <StackPanel
+                                    Grid.Row="4"
+                                    Grid.Column="0"
+                                    Grid.ColumnSpan="2"
+                                    Margin="5"
+                                    HorizontalAlignment="Center"
+                                    Orientation="Vertical">
+                                    <TextBlock
+                                        Margin="5,0"
+                                        VerticalAlignment="Center"
+                                        FontSize="13"
+                                        FontWeight="Bold"
+                                        Foreground="DimGray"
+                                        Text="响应内容:" />
+                                    <Border
+                                        MinHeight="70"
+                                        MaxHeight="100"
+                                        Margin="0,5"
+                                        HorizontalAlignment="Left"
+                                        VerticalAlignment="Center"
+                                        Background="#202020"
+                                        CornerRadius="5">
+                                        <TextBox
+                                            Width="580"
+                                            MinHeight="70"
+                                            MaxWidth="580"
+                                            MaxHeight="70"
+                                            Margin="5,0"
+                                            VerticalContentAlignment="Top"
+                                            Background="Transparent"
+                                            BorderThickness="0"
+                                            FontSize="13"
+                                            FontWeight="Bold"
+                                            Foreground="White"
+                                            InputMethod.IsInputMethodEnabled="False"
+                                            IsReadOnly="True"
+                                            Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                            Text="{Binding BarCodeItem.UploadInfo.ResponseContent}"
+                                            TextWrapping="Wrap"
+                                            VerticalScrollBarVisibility="Auto" />
+                                    </Border>
+                                </StackPanel>
+                                <!--  接口参数  -->
+                                <StackPanel
+                                    Grid.Row="5"
+                                    Grid.Column="0"
+                                    Grid.ColumnSpan="2"
+                                    Margin="5"
+                                    HorizontalAlignment="Center"
+                                    Orientation="Vertical">
+                                    <TextBlock
+                                        Margin="5,0"
+                                        VerticalAlignment="Center"
+                                        FontSize="13"
+                                        FontWeight="Bold"
+                                        Foreground="DimGray"
+                                        Text="接口参数:" />
+                                    <Border
+                                        MinHeight="70"
+                                        MaxHeight="100"
+                                        Margin="0,5"
+                                        HorizontalAlignment="Left"
+                                        VerticalAlignment="Center"
+                                        Background="#202020"
+                                        CornerRadius="5">
+                                        <TextBox
+                                            Width="580"
+                                            MinHeight="70"
+                                            MaxWidth="580"
+                                            MaxHeight="70"
+                                            Margin="5,0"
+                                            VerticalContentAlignment="Top"
+                                            Background="Transparent"
+                                            BorderThickness="0"
+                                            FontSize="13"
+                                            FontWeight="Bold"
+                                            Foreground="White"
+                                            InputMethod.IsInputMethodEnabled="False"
+                                            IsReadOnly="True"
+                                            Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                            Text="{Binding BarCodeItem.UploadInfo.InterfaceParameters}"
+                                            TextWrapping="Wrap"
+                                            VerticalScrollBarVisibility="Auto" />
+                                    </Border>
+                                </StackPanel>
+                                <!--  请求地址  -->
+                                <StackPanel
+                                    Grid.Row="6"
+                                    Grid.Column="0"
+                                    Grid.ColumnSpan="2"
+                                    Margin="5"
+                                    HorizontalAlignment="Center"
+                                    Orientation="Vertical">
+                                    <TextBlock
+                                        Margin="5,0"
+                                        VerticalAlignment="Center"
+                                        FontSize="13"
+                                        FontWeight="Bold"
+                                        Foreground="DimGray"
+                                        Text="请求地址:" />
+                                    <Border
+                                        MinHeight="70"
+                                        MaxHeight="100"
+                                        Margin="0,5"
+                                        HorizontalAlignment="Left"
+                                        VerticalAlignment="Center"
+                                        Background="#202020"
+                                        CornerRadius="5">
+                                        <TextBox
+                                            Width="580"
+                                            MinHeight="70"
+                                            MaxWidth="580"
+                                            MaxHeight="70"
+                                            Margin="5,0"
+                                            VerticalContentAlignment="Top"
+                                            Background="Transparent"
+                                            BorderThickness="0"
+                                            FontSize="13"
+                                            FontWeight="Bold"
+                                            Foreground="White"
+                                            InputMethod.IsInputMethodEnabled="False"
+                                            IsReadOnly="True"
+                                            Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                            Text="{Binding BarCodeItem.UploadInfo.RequestUrl}"
+                                            TextWrapping="Wrap"
+                                            VerticalScrollBarVisibility="Auto" />
+                                    </Border>
+                                </StackPanel>
+                                <!--  异常信息  -->
+                                <StackPanel
+                                    Grid.Row="7"
+                                    Grid.Column="0"
+                                    Grid.ColumnSpan="2"
+                                    Margin="5"
+                                    HorizontalAlignment="Center"
+                                    Orientation="Vertical">
+                                    <TextBlock
+                                        Margin="5,0"
+                                        VerticalAlignment="Center"
+                                        FontSize="13"
+                                        FontWeight="Bold"
+                                        Foreground="DimGray"
+                                        Text="异常信息:" />
+                                    <Border
+                                        MinHeight="70"
+                                        MaxHeight="100"
+                                        Margin="0,5"
+                                        HorizontalAlignment="Left"
+                                        VerticalAlignment="Center"
+                                        Background="#202020"
+                                        CornerRadius="5">
+                                        <TextBox
+                                            Width="580"
+                                            MinHeight="70"
+                                            MaxWidth="580"
+                                            MaxHeight="70"
+                                            Margin="5,0"
+                                            VerticalContentAlignment="Top"
+                                            Background="Transparent"
+                                            BorderThickness="0"
+                                            FontSize="13"
+                                            FontWeight="Bold"
+                                            Foreground="White"
+                                            InputMethod.IsInputMethodEnabled="False"
+                                            IsReadOnly="True"
+                                            Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                            Text="{Binding BarCodeItem.UploadInfo.ExceptionMessage}"
+                                            TextWrapping="Wrap"
+                                            VerticalScrollBarVisibility="Auto" />
+                                    </Border>
+                                </StackPanel>
                             </Grid>
-                            <!--  响应内容  -->
-                            <StackPanel
-                                Grid.Row="4"
-                                Grid.Column="0"
-                                Grid.ColumnSpan="2"
-                                Margin="5"
-                                HorizontalAlignment="Center"
-                                Orientation="Vertical">
-                                <TextBlock
-                                    Margin="5,0"
-                                    VerticalAlignment="Center"
-                                    FontSize="13"
-                                    FontWeight="Bold"
-                                    Foreground="DimGray"
-                                    Text="响应内容:" />
-                                <Border
-                                    MinHeight="70"
-                                    MaxHeight="100"
-                                    Margin="0,5"
-                                    HorizontalAlignment="Left"
-                                    VerticalAlignment="Center"
-                                    Background="#202020"
-                                    CornerRadius="5">
-                                    <TextBox
-                                        Width="580"
-                                        MinHeight="70"
-                                        MaxWidth="580"
-                                        MaxHeight="70"
-                                        Margin="5,0"
-                                        VerticalContentAlignment="Top"
-                                        Background="Transparent"
-                                        BorderThickness="0"
-                                        FontSize="13"
-                                        FontWeight="Bold"
-                                        Foreground="White"
-                                        InputMethod.IsInputMethodEnabled="False"
-                                        IsReadOnly="True"
-                                        Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                                        Text="{Binding BarCodeItem.UploadInfo.ResponseContent}"
-                                        TextWrapping="Wrap"
-                                        VerticalScrollBarVisibility="Auto" />
-                                </Border>
-                            </StackPanel>
-                            <!--  接口参数  -->
-                            <StackPanel
-                                Grid.Row="5"
-                                Grid.Column="0"
-                                Grid.ColumnSpan="2"
-                                Margin="5"
-                                HorizontalAlignment="Center"
-                                Orientation="Vertical">
-                                <TextBlock
-                                    Margin="5,0"
-                                    VerticalAlignment="Center"
-                                    FontSize="13"
-                                    FontWeight="Bold"
-                                    Foreground="DimGray"
-                                    Text="接口参数:" />
-                                <Border
-                                    MinHeight="70"
-                                    MaxHeight="100"
-                                    Margin="0,5"
-                                    HorizontalAlignment="Left"
-                                    VerticalAlignment="Center"
-                                    Background="#202020"
-                                    CornerRadius="5">
-                                    <TextBox
-                                        Width="580"
-                                        MinHeight="70"
-                                        MaxWidth="580"
-                                        MaxHeight="70"
-                                        Margin="5,0"
-                                        VerticalContentAlignment="Top"
-                                        Background="Transparent"
-                                        BorderThickness="0"
-                                        FontSize="13"
-                                        FontWeight="Bold"
-                                        Foreground="White"
-                                        InputMethod.IsInputMethodEnabled="False"
-                                        IsReadOnly="True"
-                                        Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                                        Text="{Binding BarCodeItem.UploadInfo.InterfaceParameters}"
-                                        TextWrapping="Wrap"
-                                        VerticalScrollBarVisibility="Auto" />
-                                </Border>
-                            </StackPanel>
-                            <!--  请求地址  -->
-                            <StackPanel
-                                Grid.Row="6"
-                                Grid.Column="0"
-                                Grid.ColumnSpan="2"
-                                Margin="5"
-                                HorizontalAlignment="Center"
-                                Orientation="Vertical">
-                                <TextBlock
-                                    Margin="5,0"
-                                    VerticalAlignment="Center"
-                                    FontSize="13"
-                                    FontWeight="Bold"
-                                    Foreground="DimGray"
-                                    Text="请求地址:" />
-                                <Border
-                                    MinHeight="70"
-                                    MaxHeight="100"
-                                    Margin="0,5"
-                                    HorizontalAlignment="Left"
-                                    VerticalAlignment="Center"
-                                    Background="#202020"
-                                    CornerRadius="5">
-                                    <TextBox
-                                        Width="580"
-                                        MinHeight="70"
-                                        MaxWidth="580"
-                                        MaxHeight="70"
-                                        Margin="5,0"
-                                        VerticalContentAlignment="Top"
-                                        Background="Transparent"
-                                        BorderThickness="0"
-                                        FontSize="13"
-                                        FontWeight="Bold"
-                                        Foreground="White"
-                                        InputMethod.IsInputMethodEnabled="False"
-                                        IsReadOnly="True"
-                                        Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                                        Text="{Binding BarCodeItem.UploadInfo.RequestUrl}"
-                                        TextWrapping="Wrap"
-                                        VerticalScrollBarVisibility="Auto" />
-                                </Border>
-                            </StackPanel>
-                            <!--  异常信息  -->
-                            <StackPanel
-                                Grid.Row="7"
-                                Grid.Column="0"
-                                Grid.ColumnSpan="2"
-                                Margin="5"
-                                HorizontalAlignment="Center"
-                                Orientation="Vertical">
-                                <TextBlock
-                                    Margin="5,0"
-                                    VerticalAlignment="Center"
-                                    FontSize="13"
-                                    FontWeight="Bold"
-                                    Foreground="DimGray"
-                                    Text="异常信息:" />
-                                <Border
-                                    MinHeight="70"
-                                    MaxHeight="100"
-                                    Margin="0,5"
-                                    HorizontalAlignment="Left"
-                                    VerticalAlignment="Center"
-                                    Background="#202020"
-                                    CornerRadius="5">
-                                    <TextBox
-                                        Width="580"
-                                        MinHeight="70"
-                                        MaxWidth="580"
-                                        MaxHeight="70"
-                                        Margin="5,0"
-                                        VerticalContentAlignment="Top"
-                                        Background="Transparent"
-                                        BorderThickness="0"
-                                        FontSize="13"
-                                        FontWeight="Bold"
-                                        Foreground="White"
-                                        InputMethod.IsInputMethodEnabled="False"
-                                        IsReadOnly="True"
-                                        Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                                        Text="{Binding BarCodeItem.UploadInfo.ExceptionMessage}"
-                                        TextWrapping="Wrap"
-                                        VerticalScrollBarVisibility="Auto" />
-                                </Border>
-                            </StackPanel>
                         </Grid>
+
                         <Rectangle
                             Height="1"
                             Opacity="0.15"
@@ -1480,7 +1505,33 @@
                                 TextAlignment="Center"
                                 TextTrimming="WordEllipsis" />
                         </StackPanel>
-                        <Grid Margin="12,5,0,0">
+                        <Grid>
+
+                            <Border Visibility="{Binding BarCodeItem.OcrInfo.IsUseOcr, Converter={StaticResource BooleanNegatedToVisibilityConverter}}">
+                                <StackPanel
+                                    Margin="10"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Orientation="Vertical">
+                                    <TextBlock
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        FontFamily="{StaticResource IconFontFamily}"
+                                        FontSize="50"
+                                        Foreground="White"
+                                        Text="&#xe63d;" />
+                                    <TextBlock
+                                        Margin="0,10"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        FontFamily="{StaticResource CustomFontFamily}"
+                                        FontSize="16"
+                                        Foreground="White"
+                                        Text="{x:Static languages:Language.NoData}" />
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+                        <Grid Margin="12,5,0,0" Visibility="{Binding BarCodeItem.OcrInfo.IsUseOcr, Converter={StaticResource BooleanToVisibilityConverter}}">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="40" />
                                 <RowDefinition Height="100" />

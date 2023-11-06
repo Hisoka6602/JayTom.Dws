@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace JayTom.Dws.Data.LocalData {
-
     [Table("Data_OcrInfo", Schema = "dbo")]
     public class OcrInfoModel : BaseBarCodeForeignKeyInfo {
 
@@ -29,5 +28,9 @@ namespace JayTom.Dws.Data.LocalData {
         /// 创建时间
         /// </summary>
         public DateTime CreateTime { get; set; } = DateTime.Now;
+        /// <summary>
+        /// 是否使用Ocr
+        /// </summary>
+        public bool IsUseOcr { get; set; }
     }
 }

@@ -7,6 +7,7 @@ namespace JayTom.Dws.Client.Models.DataModels {
         private string _ocrInterfaceName = string.Empty;
         private string _parsedContent = string.Empty;
         private DateTime? _createTime;
+        private bool _isUseOcr;
 
         /// <summary>
         /// 原始内容
@@ -38,6 +39,14 @@ namespace JayTom.Dws.Client.Models.DataModels {
         public DateTime? CreateTime {
             get => _createTime;
             set => SetProperty(ref _createTime, value);
+        }
+
+        /// <summary>
+        /// 是否使用Ocr
+        /// </summary>
+        public bool IsUseOcr {
+            get => _isUseOcr;
+            set => SetProperty(ref _isUseOcr, value);
         }
     }
 }

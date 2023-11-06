@@ -662,7 +662,6 @@ namespace JayTom.Dws.Infrastructure.IComputer {
             catch (Exception e) {
                 NLog.LogManager.GetCurrentClassLogger().Error(e);
             }
-            NLog.LogManager.GetCurrentClassLogger().Error(machineCode);
             return machineCode;
         }
 

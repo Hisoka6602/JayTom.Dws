@@ -104,7 +104,7 @@
                                     Background="#1A696969"
                                     CornerRadius="5">
                                     <TextBox
-                                        Width="80"
+                                        Width="100"
                                         Height="30"
                                         MaxWidth="500"
                                         Margin="5,0"
@@ -178,7 +178,7 @@
                                     Background="#1A696969"
                                     CornerRadius="5">
                                     <TextBox
-                                        Width="80"
+                                        Width="100"
                                         Height="30"
                                         MaxWidth="500"
                                         Margin="5,0"
