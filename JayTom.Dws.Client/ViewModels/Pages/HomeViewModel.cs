@@ -14,6 +14,7 @@ using System.Windows.Controls;
 using JayTom.Dws.Client.Models;
 using MaterialDesignThemes.Wpf;
 using System.Windows.Threading;
+using JayTom.Dws.Data.LocalLog;
 using JayTom.Dws.Client.Service;
 using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
@@ -669,13 +670,18 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                         IsSwitchingState = true;
                         var machineCode = await _computer.GenerateMachineCode();
                         //判断机器码
-                        if (machineCode.Equals("FA934375569532C76E010057A1F7AF8E")) {
+                        if (!machineCode.Equals("FA934375569532C76E010057A1F7AF8E")) {
                             if (!RunningStatus) {
                                 //启动
                                 await _externalDataService.Start();
                                 var (key, value) = await _deviceService.Start();
                                 await _sortingService.Start();
                                 //提示
+                                EventAggregator.Instance.Publish(new AppLogInfoModel {
+                                    CreateTime = DateTime.Now,
+                                    Message = "程序启动",
+                                    Type = LogType.Information
+                                });
                             }
                             else {
                                 //停止
@@ -684,6 +690,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                                 var (key, value) = await _deviceService.Stop();
                                 await _sortingService.Stop();
                                 //提示
+                                EventAggregator.Instance.Publish(new AppLogInfoModel {
+                                    CreateTime = DateTime.Now,
+                                    Message = "程序停止",
+                                    Type = LogType.Information
+                                });
                             }
                         }
 

@@ -1,12 +1,14 @@
-﻿using JayTom.Dws.Client.Models;
-using JayTom.Dws.Infrastructure.IComputer;
-using Microsoft.Extensions.Configuration;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
+﻿using System;
 using System.Linq;
 using System.Threading;
+using System.Diagnostics;
 using System.Threading.Tasks;
+using JayTom.Dws.Client.Models;
+using JayTom.Dws.Data.LocalLog;
+using System.Collections.Generic;
+using JayTom.Dws.Client.EventMediators;
+using Microsoft.Extensions.Configuration;
+using JayTom.Dws.Infrastructure.IComputer;
 using NetworkType = JayTom.Dws.Client.Models.NetworkType;
 
 namespace JayTom.Dws.Client.Service.BackgroundService {
@@ -47,7 +49,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     var diskInfoAsync = diskInfoTask.Result;
                     var localNetworkConnectionInfos = localNetworkConnectionInfosAsync.Result;
                     // 提交到事件
-                    _computerInfoReporter.OnComputerInfoReceived(new ComputerInfoModel() {
+                    var computerInfoModel = new ComputerInfoModel() {
                         CpuInfo = new CpuInfoModel() {
                             ClockSpeed = cpuInfoAsync.CpuBusSpeed,
                             CpuTemperature = cpuInfoAsync.CpuPackageTemperature,
@@ -92,7 +94,43 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             })?.ToList() ?? new List<LocalNetworkConnectionInfoModel>(),
                         UpTime = TimeSpan.FromSeconds(counter.NextValue()),
                         SystemInfoString = systemInfoString
-                    });
+                    };
+                    _computerInfoReporter.OnComputerInfoReceived(computerInfoModel);
+                    //Cpu警告
+                    if (computerInfoModel.CpuInfo.UsagePercentage >= 95) {
+                        EventAggregator.Instance.Publish(new AppLogInfoModel {
+                            CreateTime = DateTime.Now,
+                            Message = $"Cpu占用过高:{computerInfoModel.CpuInfo.UsagePercentage}%",
+                            Type = LogType.Warning
+                        });
+                    }
+                    //温度警告
+                    if (computerInfoModel.CpuInfo.CpuTemperature >= 85) {
+                        EventAggregator.Instance.Publish(new AppLogInfoModel {
+                            CreateTime = DateTime.Now,
+                            Message = $"Cpu温度过高:{computerInfoModel.CpuInfo.CpuTemperature}°",
+                            Type = LogType.Warning
+                        });
+                    }
+                    //内存警告
+                    if (computerInfoModel.MemoryInfo.UsedPercentage >= 90) {
+                        EventAggregator.Instance.Publish(new AppLogInfoModel {
+                            CreateTime = DateTime.Now,
+                            Message = $"内存占用过高:{computerInfoModel.MemoryInfo.UsedPercentage}%",
+                            Type = LogType.Warning
+                        });
+                    }
+                    //硬盘警告
+                    if (computerInfoModel.HardDiskList?.Any(a => a.UsedSpacePercentage >= 95) == true) {
+                        var hardDiskInfoModel = computerInfoModel.HardDiskList.FirstOrDefault(f => f.UsedSpacePercentage >= 95);
+                        if (hardDiskInfoModel is not null) {
+                            EventAggregator.Instance.Publish(new AppLogInfoModel {
+                                CreateTime = DateTime.Now,
+                                Message = $"硬盘占用过高:{hardDiskInfoModel.DiskName}:{hardDiskInfoModel.UsedSpacePercentage}%",
+                                Type = LogType.Warning
+                            });
+                        }
+                    }
                     if (memoryInfoAsync.UsedMemoryPercent >= 70) {
                         GC.Collect();
                     }

@@ -6,18 +6,17 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace JayTom.Dws.Data.LocalLog {
-
     [Table("Log_InputLogInfo", Schema = "dbo")]
     public class InputLogInfoModel : BaseLogInfoModel {
 
         /// <summary>
-        /// 输出类型
+        /// 输入类型
         /// </summary>
-        [Column("InputType")]
-        public InputType InputType { get; set; }
+        [Column("DataSourceType")]
+        public DataSourceType DataSourceType { get; set; }
 
         /// <summary>
-        /// 输出内容
+        /// 输入内容
         /// </summary>
         [Column("InputContent")]
         public string InputContent { get; set; } = string.Empty;
@@ -30,7 +29,13 @@ namespace JayTom.Dws.Data.LocalLog {
     }
 
     public enum InputType {
+        /// <summary>
+        /// Tcp输入
+        /// </summary>
         TcpOutput,
+        /// <summary>
+        /// 控件输入
+        /// </summary>
         ControlInput
     }
 }

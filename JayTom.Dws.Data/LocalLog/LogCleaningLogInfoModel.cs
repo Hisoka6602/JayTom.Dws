@@ -38,14 +38,34 @@ namespace JayTom.Dws.Data.LocalLog {
     public enum LogDataType {
 
         /// <summary>
-        /// 收发日志
+        /// 程序运行日志
         /// </summary>
-        MessageLog,
+        AppLog,
 
         /// <summary>
-        /// Ocr日志
+        /// 相机日志
         /// </summary>
-        OcrLog,
+        CameraLog,
+
+        /// <summary>
+        /// 分拣日志
+        /// </summary>
+        SortingLog,
+
+        /// <summary>
+        /// 称重日志
+        /// </summary>
+        WeighingLog,
+
+        /// <summary>
+        /// 体积日志
+        /// </summary>
+        VolumeLog,
+
+        /// <summary>
+        /// API日志
+        /// </summary>
+        ApiLog,
 
         /// <summary>
         /// 输出日志
@@ -58,13 +78,18 @@ namespace JayTom.Dws.Data.LocalLog {
         InputLog,
 
         /// <summary>
-        /// 指令日志
+        /// OCR日志
         /// </summary>
-        InstructionLog,
+        OcrLog,
 
         /// <summary>
-        /// 设备日志
+        /// FTP日志
         /// </summary>
-        DeviceLogInfo
+        FtpLog,
+
+        /// <summary>
+        /// 异常日志
+        /// </summary>
+        ExceptionLog
     }
 }

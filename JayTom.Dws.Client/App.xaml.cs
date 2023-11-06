@@ -21,6 +21,7 @@ using JayTom.Dws.Client.Views;
 using JayTom.Dws.Plugin.Excel;
 using JayTom.Dws.Plugin.Speech;
 using System.Windows.Threading;
+using JayTom.Dws.Data.LocalLog;
 using JayTom.Dws.Client.Service;
 using JayTom.Dws.Infrastructure;
 using JayTom.Dws.Plugin.SaveImage;
@@ -33,6 +34,7 @@ using JayTom.Dws.Client.Views.Editors;
 using JayTom.Dws.Plugin.Tcp.TcpClient;
 using JayTom.Dws.Plugin.Tcp.TcpServer;
 using JayTom.Dws.Client.Service.Device;
+using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Service.Sorting;
 using JayTom.Dws.Infrastructure.Service;
 using JayTom.Dws.Client.ViewModels.Pages;
@@ -41,6 +43,7 @@ using JayTom.Dws.Infrastructure.IComputer;
 using JayTom.Dws.Plugin.Scale.StaticScale;
 using JayTom.Dws.Client.ViewModels.Editors;
 using JayTom.Dws.Plugin.Scale.DynamicScale;
+using JayTom.Dws.Domain.Repository.LocalLog;
 using JayTom.Dws.Client.Service.ImageStorage;
 using JayTom.Dws.Client.Service.ResultOutput;
 using JayTom.Dws.Domain.Repository.LocalConf;
@@ -50,6 +53,7 @@ using Microsoft.Extensions.DependencyInjection;
 using JayTom.Dws.Client.Views.Pages.Preferences;
 using JayTom.Dws.Client.Service.BackgroundService;
 using JayTom.Dws.Client.Service.ExternalDataService;
+using JayTom.Dws.Infrastructure.Repository.LocalLog;
 using DryIoc.Microsoft.DependencyInjection.Extension;
 using JayTom.Dws.Client.ViewModels.Pages.Preferences;
 using JayTom.Dws.Infrastructure.Repository.LocalConf;
@@ -150,6 +154,7 @@ namespace JayTom.Dws.Client {
                             builder.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
                         }).UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
                 }, 300);
+
                 services.AddPooledDbContextFactory<SqliteConfContext>(options => {
                     options.UseSqlite(
                         $"Data Source={System.AppDomain.CurrentDomain.BaseDirectory}Configuration.db",
@@ -221,7 +226,19 @@ namespace JayTom.Dws.Client {
 
                 services.AddScoped<IApiSortingRepository, ApiSortingRepository>();
                 services.AddScoped<IApiRuleRepository, ApiRuleRepository>();
-
+                //logs
+                services.AddScoped<IAppLogRepository, AppLogRepository>();
+                services.AddScoped<ICameraLogRepository, CameraLogRepository>();
+                services.AddScoped<ISortingLogRepository, SortingLogRepository>();
+                services.AddScoped<IWeighingLogRepository, WeighingLogRepository>();
+                services.AddScoped<IVolumeLogRepository, VolumeLogRepository>();
+                services.AddScoped<IApiLogRepository, ApiLogRepository>();
+                services.AddScoped<IOutputLogRepository, OutputLogRepository>();
+                services.AddScoped<IInputLogRepository, InputLogRepository>();
+                services.AddScoped<IOcrLogRepository, OcrLogRepository>();
+                services.AddScoped<IFtpLogRepository, FtpLogRepository>();
+                services.AddScoped<ICleanupLogRepository, CleanupLogRepository>();
+                services.AddScoped<IExceptionLogRepository, ExceptionLogRepository>();
                 //插件注册
                 services.AddScoped<IExcel, NpoiExport>();
                 services.AddScoped<IFtp, FluentFtpClient>();
@@ -271,10 +288,20 @@ namespace JayTom.Dws.Client {
             this.DispatcherUnhandledException += delegate (object sender, DispatcherUnhandledExceptionEventArgs args) {
                 //异常触发
                 NLog.LogManager.GetCurrentClassLogger().Error($"{JsonConvert.SerializeObject(args.Exception)}");
+                EventAggregator.Instance.Publish(new AppLogInfoModel {
+                    CreateTime = DateTime.Now,
+                    Message = args.Exception.Message,
+                    Type = LogType.Exception
+                });
             };
             AppDomain.CurrentDomain.UnhandledException += delegate (object sender, UnhandledExceptionEventArgs args) {
                 //异常触发
                 NLog.LogManager.GetCurrentClassLogger().Error($"{JsonConvert.SerializeObject(args.ExceptionObject)}");
+                EventAggregator.Instance.Publish(new AppLogInfoModel {
+                    CreateTime = DateTime.Now,
+                    Message = args.ExceptionObject.ToString(),
+                    Type = LogType.Exception
+                });
             };
 
             base.OnStartup(e);
@@ -344,7 +371,19 @@ namespace JayTom.Dws.Client {
 
                         services.AddSingleton(container1.Resolve<IApiSortingRepository>());
                         services.AddSingleton(container1.Resolve<IApiRuleRepository>());
-
+                        //logs
+                        services.AddSingleton(container1.Resolve<IAppLogRepository>());
+                        services.AddSingleton(container1.Resolve<ICameraLogRepository>());
+                        services.AddSingleton(container1.Resolve<ISortingLogRepository>());
+                        services.AddSingleton(container1.Resolve<IWeighingLogRepository>());
+                        services.AddSingleton(container1.Resolve<IVolumeLogRepository>());
+                        services.AddSingleton(container1.Resolve<IApiLogRepository>());
+                        services.AddSingleton(container1.Resolve<IOutputLogRepository>());
+                        services.AddSingleton(container1.Resolve<IInputLogRepository>());
+                        services.AddSingleton(container1.Resolve<IOcrLogRepository>());
+                        services.AddSingleton(container1.Resolve<IFtpLogRepository>());
+                        services.AddSingleton(container1.Resolve<ICleanupLogRepository>());
+                        services.AddSingleton(container1.Resolve<IExceptionLogRepository>());
                         //Api接口注册
 
                         services.AddSingleton<IDataUploader, DefaultApi>();
@@ -387,9 +426,16 @@ namespace JayTom.Dws.Client {
                         services.AddHostedService<CleanupService>();//清理
                         services.AddHostedService<ComputerInfoBackgroundService>(); // 注册后台服务
                         services.AddHostedService<SingleInstanceBackgroundService>(); // 注册单开激活服务
+                        services.AddHostedService<LogProcessingService>();//日志管理器
                     })
                     .Build();
                 _host.Start();
+            });
+
+            EventAggregator.Instance.Publish(new AppLogInfoModel {
+                CreateTime = DateTime.Now,
+                Message = "程序开始运行",
+                Type = LogType.Information
             });
         }
 
@@ -417,6 +463,12 @@ namespace JayTom.Dws.Client {
                 _singleInstanceMutex.ReleaseMutex();
                 _singleInstanceMutex.Close();
             }
+
+            EventAggregator.Instance.Publish(new AppLogInfoModel {
+                CreateTime = DateTime.Now,
+                Message = "程序关闭",
+                Type = LogType.Information
+            });
             base.OnExit(e);
         }
 

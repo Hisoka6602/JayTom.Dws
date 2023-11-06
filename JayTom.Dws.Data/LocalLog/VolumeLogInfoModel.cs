@@ -6,14 +6,13 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace JayTom.Dws.Data.LocalLog {
-
-    [Table("Log_OcrLogInfo", Schema = "dbo")]
-    public class OcrLogInfoModel : BaseLogInfoModel {
-
+    [Table("Log_VolumeLogInfo", Schema = "dbo")]
+    public class VolumeLogInfoModel : BaseLogInfoModel {
         /// <summary>
-        /// 提交的信息
+        /// 数据来源类型
         /// </summary>
-        [Column("SubmitContent")]
-        public string SubmitContent { get; set; } = string.Empty;
+        [Column("DataSourceType")]
+        public DataSourceType DataSourceType { get; set; }
     }
+
 }
