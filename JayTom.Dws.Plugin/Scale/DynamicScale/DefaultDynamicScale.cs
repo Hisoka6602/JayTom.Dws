@@ -10,7 +10,6 @@ using System.Text.RegularExpressions;
 using JayTom.Dws.Plugin.Scale.ScaleValueParameters;
 
 namespace JayTom.Dws.Plugin.Scale.DynamicScale {
-
     public class DefaultDynamicScale : IDynamicScale {
         private System.IO.Ports.SerialPort? _serialPort { get; set; }
         private DefaultDynamicScaleValueParameters _defaultDynamicScaleValueParameters = new();
@@ -29,6 +28,7 @@ namespace JayTom.Dws.Plugin.Scale.DynamicScale {
         public ScaleWeightFormat WeightFormat { get; set; }
 
         public event EventHandler<float>? StabledWeight;
+        public event EventHandler<WeightChangedEventArgs>? WeightStabilized;
 
         public event EventHandler<string>? Received;
 
@@ -91,6 +91,13 @@ namespace JayTom.Dws.Plugin.Scale.DynamicScale {
                                         if (tryParse) {
                                             //输出重量
                                             OnStabledWeight(result);
+                                            //输出重量原文
+                                            OnWeightStabilized(new WeightChangedEventArgs() {
+                                                Format = WeightFormat,
+                                                FormattedWeight = result,
+                                                OriginalContent = receivedData,
+                                                Type = WeightType.Static
+                                            });
                                         }
                                     }
                                 }
@@ -106,6 +113,13 @@ namespace JayTom.Dws.Plugin.Scale.DynamicScale {
                                         var weightFromHex = ExtractWeightFromHex(receivedData);
                                         //输出重量
                                         OnStabledWeight(weightFromHex);
+                                        //输出重量原文
+                                        OnWeightStabilized(new WeightChangedEventArgs() {
+                                            Format = WeightFormat,
+                                            FormattedWeight = weightFromHex,
+                                            OriginalContent = receivedData,
+                                            Type = WeightType.Static
+                                        });
                                     }
                                 }
 
@@ -207,6 +221,11 @@ namespace JayTom.Dws.Plugin.Scale.DynamicScale {
         protected virtual async void OnExcepted(Exception e) {
             await Task.Yield();
             Excepted?.Invoke(this, e);
+        }
+
+        protected virtual async void OnWeightStabilized(WeightChangedEventArgs e) {
+            await Task.Yield();
+            WeightStabilized?.Invoke(this, e);
         }
     }
 }

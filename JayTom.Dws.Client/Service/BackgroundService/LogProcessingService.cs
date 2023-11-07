@@ -1,14 +1,20 @@
 ﻿using System;
+using DryIoc;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using JayTom.Dws.Camera;
 using System.Threading.Tasks;
+using JayTom.Dws.Plugin.Scale;
 using JayTom.Dws.Data.LocalLog;
 using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using JayTom.Dws.Client.EventMediators;
+using JayTom.Dws.Client.Models.Cameras;
+using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Domain.Repository.LocalLog;
+using static JayTom.Dws.Client.Service.BackgroundService.SubmitApiBackgroundService;
 
 namespace JayTom.Dws.Client.Service.BackgroundService {
 
@@ -28,6 +34,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private readonly IFtpLogRepository _ftpLogRepository;
         private readonly ICleanupLogRepository _cleanupLogRepository;
         private readonly IExceptionLogRepository _exceptionLogRepository;
+        private readonly IDeviceService _deviceService;
         private ConcurrentQueue<ExceptionLogInfoModel> _exceptionItems = new();
         private ConcurrentQueue<AppLogInfoModel> _appLogItems = new();
         private ConcurrentQueue<CameraLogInfoModel> _cameraLogItems = new();
@@ -53,7 +60,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             IOcrLogRepository ocrLogRepository,
             IFtpLogRepository ftpLogRepository,
             ICleanupLogRepository cleanupLogRepository,
-            IExceptionLogRepository exceptionLogRepository) {
+            IExceptionLogRepository exceptionLogRepository,
+            IDeviceService deviceService) {
             _appLogRepository = appLogRepository;
             _cameraLogRepository = cameraLogRepository;
             _sortingLogRepository = sortingLogRepository;
@@ -66,6 +74,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             _ftpLogRepository = ftpLogRepository;
             _cleanupLogRepository = cleanupLogRepository;
             _exceptionLogRepository = exceptionLogRepository;
+            _deviceService = deviceService;
             EventAggregator.Instance.Subscribe<SettingsChangedEvent>(item => {
                 if (item is SettingsChangedEvent model) {
                     _appLogItems.Enqueue(new AppLogInfoModel() {
@@ -169,6 +178,113 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     _logCleaningLogItems.Enqueue(model);
                 }
             });
+            _deviceService.BarcodeScanned += delegate (object? sender, BarcodeReadEventArgs args) {
+                EventAggregator.Instance.Publish(new CameraLogInfoModel() {
+                    Type = LogType.Information,
+                    Message = $"相机:{args.CameraSerialNumber}获取到条码[{args.Barcode}]",
+                    CameraSerialNumber = args.CameraSerialNumber,
+                });
+            };
+            _deviceService.VolumeCaptured += delegate (object? sender, VolumeCapturedEventArgs args) {
+                EventAggregator.Instance.Publish(new CameraLogInfoModel() {
+                    Type = LogType.Information,
+                    Message = $"相机,获取体积信息:{args.Length},{args.Width},{args.Height}",
+                });
+                EventAggregator.Instance.Publish(new VolumeLogInfoModel() {
+                    Type = LogType.Information,
+                    Message = $"获取体积信息:{args.Length},{args.Width},{args.Height}",
+                    DataSourceType = DataSourceType.DeviceInput
+                });
+            };
+            _deviceService.CameraBound += delegate (object? sender, CameraFinderItemInfoModel model) {
+                EventAggregator.Instance.Publish(new CameraLogInfoModel() {
+                    Type = LogType.Information,
+                    Message = $"相机:{model.SerialNumber},绑定到{model.BoundType}",
+                    CameraSerialNumber = model.SerialNumber
+                });
+            };
+            _deviceService.CameraEnumerationRefreshed += delegate (object? sender, List<CameraFinderItemInfoModel> list) {
+                EventAggregator.Instance.Publish(new CameraLogInfoModel() {
+                    Type = LogType.Information,
+                    Message = $"枚举相机",
+                });
+            };
+            _deviceService.CameraDisconnected += delegate (object? sender, List<ICamera> list) {
+                EventAggregator.Instance.Publish(new CameraLogInfoModel() {
+                    Type = LogType.Warning,
+                    Message = $"相机断开连接",
+                });
+            };
+            _deviceService.CameraFault += delegate (object? sender, List<ICamera> list) {
+                EventAggregator.Instance.Publish(new CameraLogInfoModel() {
+                    Type = LogType.Exception,
+                    Message = $"相机故障",
+                });
+            };
+            _deviceService.CameraUnbound += delegate (object? sender, CameraFinderItemInfoModel model) {
+                EventAggregator.Instance.Publish(new CameraLogInfoModel() {
+                    Type = LogType.Information,
+                    Message = $"相机已解绑",
+                    CameraSerialNumber = model.SerialNumber
+                });
+            };
+            _deviceService.NotBarcodeHitEvent += delegate (object? sender, BarcodeReadEventArgs args) {
+                EventAggregator.Instance.Publish(new CameraLogInfoModel() {
+                    Type = LogType.Warning,
+                    Message = $"相机光电触发但未识别到条码",
+                    CameraSerialNumber = args.CameraSerialNumber
+                });
+            };
+            _deviceService.PanoramaCaptured += delegate (object? sender, PanoramaCaptureEventArgs args) {
+                EventAggregator.Instance.Publish(new CameraLogInfoModel() {
+                    Type = LogType.Information,
+                    Message = $"相机截取到全景图",
+                    CameraSerialNumber = args.CameraSerialNumber
+                });
+            };
+            //磅秤
+            _deviceService.ScaleConnected += delegate (object? sender, ScaleConnectedEventArgs args) {
+                EventAggregator.Instance.Publish(new WeighingLogInfoModel() {
+                    Type = LogType.Information,
+                    Message = $"磅秤已连接",
+                    DataSourceType = DataSourceType.DeviceInput
+                });
+            };
+            _deviceService.ScaleDisconnected += delegate (object? sender, ScaleDisconnectedEventArgs args) {
+                EventAggregator.Instance.Publish(new WeighingLogInfoModel() {
+                    Type = LogType.Warning,
+                    Message = $"磅秤已断开",
+                    DataSourceType = DataSourceType.DeviceInput
+                });
+            };
+            _deviceService.WeightStabilized += delegate (object? sender, WeightChangedEventArgs args) {
+                EventAggregator.Instance.Publish(new WeighingLogInfoModel() {
+                    Type = LogType.Information,
+                    FormatWeight = args.FormattedWeight,
+                    Source = args.OriginalContent,
+                    Message = $"获取到重量,原内容[{args.OriginalContent}],格式化后重量:{args.FormattedWeight}",
+                    DataSourceType = DataSourceType.DeviceInput
+                });
+            };
+            //http
+            EventAggregator.Instance.Subscribe<ApiResponseReceived>(item => {
+                if (item is ApiResponseReceived model) {
+                    EventAggregator.Instance.Publish(new ApiLogInfoModel() {
+                        Type = LogType.Information,
+                        ApiParameters = model.UploadResponse?.ApiParameters ?? string.Empty,
+                        CreateTime = model.UploadResponse?.RequestTime ?? DateTime.Now,
+                        Duration = model.UploadResponse?.Duration ?? 0,
+                        ExceptionMsg = model.UploadResponse?.ExceptionMsg ?? string.Empty,
+                        RequestContent = model.UploadResponse?.RequestContent ?? string.Empty,
+                        RequestTime = model.UploadResponse?.RequestTime ?? DateTime.Now,
+                        ResponseContent = model.UploadResponse?.ResponseContent ?? string.Empty,
+                        ResponseTime = model.UploadResponse?.ResponseTime ?? DateTime.Now,
+
+                    });
+
+                }
+            });
+
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken) {

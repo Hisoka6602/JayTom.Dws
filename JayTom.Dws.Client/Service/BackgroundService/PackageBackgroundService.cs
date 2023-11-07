@@ -6,6 +6,7 @@ using System.Threading;
 using JayTom.Dws.Camera;
 using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
+using JayTom.Dws.Data.LocalLog;
 using JayTom.Dws.Data.LocalConf;
 using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
@@ -19,7 +20,6 @@ using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Client.Service.ExternalDataService;
 
 namespace JayTom.Dws.Client.Service.BackgroundService {
-
     public class PackageBackgroundService : Microsoft.Extensions.Hosting.BackgroundService {
         private readonly IDeviceService _deviceService;
         private readonly IResultOutputService _resultOutputService;
@@ -178,6 +178,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     info.Height = args.Height - info.HeightToDeduct;
                     info.Volume = args.Volume - info.VolumeToDeduct;
                 }
+                EventAggregator.Instance.Publish(new VolumeLogInfoModel() {
+                    Type = LogType.Information,
+                    Message = $"获取体积信息:{args.Length},{args.Width},{args.Height}",
+                    DataSourceType = DataSourceType.ExternalInput
+                });
             };
             //下位机(创建包裹)
             _sortingService.CreatePackageEvent += delegate (object? sender, PackageInstructionEventArgs args) {

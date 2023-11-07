@@ -1,5 +1,6 @@
 ﻿using Polly;
 using System;
+using DryIoc;
 using System.Linq;
 using Newtonsoft.Json;
 using System.Threading;
@@ -17,7 +18,6 @@ using JayTom.Dws.Domain.Repository.LocalData;
 using JayTom.Dws.Client.Service.ResultOutput.Communication.TcpComm;
 
 namespace JayTom.Dws.Client.Service.ResultOutput {
-
     public class DefaultResultOutputService : IResultOutputService {
         private readonly IConfigRepository _configRepository;
         private readonly ISpeech _speech;
@@ -192,6 +192,13 @@ namespace JayTom.Dws.Client.Service.ResultOutput {
                             IsSuccess = isSend,
                             TriggerPosition = TriggerPositionEnum.TcpOutput
                         });
+                        EventAggregator.Instance.Publish(new OutputLogInfoModel() {
+                            Type = LogType.Information,
+                            CreateTime = DateTime.Now,
+                            OutputContent = message,
+                            OutputType = OutputType.TcpOutput,
+                            Message = $"Tcp输出:{message}"
+                        });
                     }
                 }
             }
@@ -213,11 +220,25 @@ namespace JayTom.Dws.Client.Service.ResultOutput {
                         switch (_outputSettingsDto.SerialPortSettingsInfo.DataFormat) {
                             case DataFormatType.Ascii:
                                 _serialPort?.WriteLine(message);
+                                EventAggregator.Instance.Publish(new OutputLogInfoModel() {
+                                    Type = LogType.Information,
+                                    CreateTime = DateTime.Now,
+                                    OutputContent = message,
+                                    OutputType = OutputType.SerialPortOutput,
+                                    Message = $"串口输出:{message}"
+                                });
                                 return true;
 
                             case DataFormatType.Hex: {
                                     var toByteArray = HexStringToByteArray(message);
                                     _serialPort?.Write(toByteArray, 0, toByteArray.Length);
+                                    EventAggregator.Instance.Publish(new OutputLogInfoModel() {
+                                        Type = LogType.Information,
+                                        CreateTime = DateTime.Now,
+                                        OutputContent = message,
+                                        OutputType = OutputType.SerialPortOutput,
+                                        Message = $"串口输出:{message}"
+                                    });
                                     return true;
                                 }
                         }
@@ -238,7 +259,7 @@ namespace JayTom.Dws.Client.Service.ResultOutput {
         /// <param name="cancellationToken"></param>
         private async void SoundOutput(bool isSuccess, CancellationToken cancellationToken = default) {
             try {
-                if (_outputSettingsDto is not null) {
+                if (_outputSettingsDto is not null && _sounds is not null) {
                     if (_outputSettingsDto.IsUseAudioOutput) {
                         if (isSuccess) {
                             var tryGetValue = _sounds.TryGetValue(
@@ -246,6 +267,13 @@ namespace JayTom.Dws.Client.Service.ResultOutput {
                             if (tryGetValue && file is not null) {
                                 await _speech.PlayCacheByteFile(
                                     _outputSettingsDto.AudioOutputSettingsInfo.SuccessAudio ?? string.Empty, file);
+                                EventAggregator.Instance.Publish(new OutputLogInfoModel() {
+                                    Type = LogType.Information,
+                                    CreateTime = DateTime.Now,
+                                    OutputContent = _outputSettingsDto?.AudioOutputSettingsInfo?.SuccessAudio ?? string.Empty,
+                                    OutputType = OutputType.AudioOutput,
+                                    Message = $"声音输出:{_outputSettingsDto?.AudioOutputSettingsInfo?.SuccessAudio ?? string.Empty}"
+                                });
                             }
                             else {
                                 NLog.LogManager.GetCurrentClassLogger().Error("找不到声音信息对象");
@@ -257,6 +285,13 @@ namespace JayTom.Dws.Client.Service.ResultOutput {
                             if (tryGetValue && file is not null) {
                                 await _speech.PlayCacheByteFile(
                                     _outputSettingsDto.AudioOutputSettingsInfo.FailureAudio ?? string.Empty, file);
+                                EventAggregator.Instance.Publish(new OutputLogInfoModel() {
+                                    Type = LogType.Information,
+                                    CreateTime = DateTime.Now,
+                                    OutputContent = _outputSettingsDto?.AudioOutputSettingsInfo?.SuccessAudio ?? string.Empty,
+                                    OutputType = OutputType.AudioOutput,
+                                    Message = $"声音输出:{_outputSettingsDto?.AudioOutputSettingsInfo?.SuccessAudio ?? string.Empty}"
+                                });
                             }
                             else {
                                 NLog.LogManager.GetCurrentClassLogger().Error("找不到声音信息对象");

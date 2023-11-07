@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO.Ports;
+using JayTom.Dws.Plugin.Tcp;
 
 namespace JayTom.Dws.Client.Service.Sorting.Communication.SerialComm {
     public interface ISortingSerialPort : IDisposable {
@@ -22,7 +23,8 @@ namespace JayTom.Dws.Client.Service.Sorting.Communication.SerialComm {
         event EventHandler<ExceptionEventArgs> ErrorOccurred; // 异常发生事件
 
         event EventHandler<ExceptionEventArgs> SendError; //发送异常
-
+        //收发事件
+        public event EventHandler<CommunicationInfo>? Communication;
         /// <summary>
         /// 心跳包异常事件
         /// </summary>

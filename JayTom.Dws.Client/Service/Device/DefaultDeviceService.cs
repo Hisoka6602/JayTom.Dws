@@ -177,7 +177,21 @@ namespace JayTom.Dws.Client.Service.Device {
                     Weight = f
                 });
             };
-
+            _dynamicScale.WeightStabilized += delegate (object? sender, WeightChangedEventArgs args) {
+                OnWeightStabilized(args);
+            };
+            _dynamicScale.Connected += delegate (object? sender, IScale scale) {
+                OnScaleConnected(new ScaleConnectedEventArgs() {
+                    ConnectionParameters = new BaseScaleConnectParam() {
+                        BaudRate = _weightSettingsDto?.Connection?.BaudRate ?? 0,
+                        DataBits = _weightSettingsDto?.Connection?.DataBits ?? 0,
+                        Parity = _weightSettingsDto?.Connection?.Parity ?? 0,
+                        PortName = _weightSettingsDto?.Connection?.PortName ?? string.Empty,
+                        StopBits = _weightSettingsDto?.Connection?.StopBits ?? 0
+                    },
+                    ScaleType = ScaleType.Dynamic
+                });
+            };
             _dynamicScale.Excepted += delegate (object? sender, Exception exception) {
                 OnDeviceException(new DeviceExceptionEventArgs() {
                     ExceptionMessage = exception
@@ -195,17 +209,8 @@ namespace JayTom.Dws.Client.Service.Device {
                     ExceptionMessage = exception
                 });
             };
-            _dynamicScale.Connected += delegate (object? sender, IScale scale) {
-                OnScaleConnected(new ScaleConnectedEventArgs() {
-                    ConnectionParameters = new BaseScaleConnectParam() {
-                        BaudRate = _weightSettingsDto?.Connection?.BaudRate ?? 0,
-                        DataBits = _weightSettingsDto?.Connection?.DataBits ?? 0,
-                        Parity = _weightSettingsDto?.Connection?.Parity ?? 0,
-                        PortName = _weightSettingsDto?.Connection?.PortName ?? string.Empty,
-                        StopBits = _weightSettingsDto?.Connection?.StopBits ?? 0
-                    },
-                    ScaleType = ScaleType.Dynamic
-                });
+            _staticScale.WeightStabilized += delegate (object? sender, WeightChangedEventArgs args) {
+                OnWeightStabilized(args);
             };
             _staticScale.Connected += delegate (object? sender, IScale scale) {
                 OnScaleConnected(new ScaleConnectedEventArgs() {
@@ -319,6 +324,8 @@ namespace JayTom.Dws.Client.Service.Device {
         public event EventHandler<RealTimeWeightEventArgs>? RealTimeWeight;
 
         public event EventHandler<StableWeightEventArgs>? StableWeight;
+
+        public event EventHandler<WeightChangedEventArgs>? WeightStabilized;
 
         public event EventHandler<DeviceExceptionEventArgs>? DeviceException;
 
@@ -855,6 +862,11 @@ namespace JayTom.Dws.Client.Service.Device {
         protected virtual async void OnStableWeight(StableWeightEventArgs e) {
             await Task.Yield();
             StableWeight?.Invoke(this, e);
+        }
+
+        protected virtual async void OnWeightStabilized(WeightChangedEventArgs e) {
+            await Task.Yield();
+            WeightStabilized?.Invoke(this, e);
         }
     }
 }

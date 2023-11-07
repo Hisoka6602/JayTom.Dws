@@ -138,6 +138,11 @@ namespace JayTom.Dws.Client.Service.Device {
         event EventHandler<StableWeightEventArgs> StableWeight;
 
         /// <summary>
+        /// 稳定重量(含原文)
+        /// </summary>
+        event EventHandler<WeightChangedEventArgs> WeightStabilized;
+
+        /// <summary>
         /// 当设备发生异常时触发的事件
         /// </summary>
         event EventHandler<DeviceExceptionEventArgs> DeviceException;

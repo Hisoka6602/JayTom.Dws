@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace JayTom.Dws.Data.LocalLog {
+
     public class BaseLogInfoModel : BaseModel {
 
         /// <summary>
@@ -13,11 +14,13 @@ namespace JayTom.Dws.Data.LocalLog {
         /// </summary>
         [Column("CreateTime")]
         public DateTime CreateTime { get; set; } = DateTime.Now;
+
         /// <summary>
         /// 类型
         /// </summary>
         [Column("Type")]
         public LogType Type { get; set; }
+
         /// <summary>
         /// 信息
         /// </summary>
@@ -50,8 +53,7 @@ namespace JayTom.Dws.Data.LocalLog {
 
     // 通讯类型枚举
     public enum CommunicationType {
-        Receive,  // 接收
-        Send      // 发送
+        Send, Receive
     }
 
     // 类型枚举（信息、警告、异常）
@@ -60,22 +62,27 @@ namespace JayTom.Dws.Data.LocalLog {
         Warning,
         Exception
     }
+
     /// <summary>
     /// 输入类型
     /// </summary>
     public enum DataSourceType {
+
         /// <summary>
         /// 无
         /// </summary>
         None,
+
         /// <summary>
         /// 外部输入
         /// </summary>
         ExternalInput,
+
         /// <summary>
         /// 控件输入
         /// </summary>
         ControlInput,
+
         /// <summary>
         /// 设备输入
         /// </summary>

@@ -12,7 +12,6 @@ using JayTom.Dws.Plugin.Scale.ScaleValueParameters;
 using static JayTom.Dws.Plugin.WeighingScale.WeighingScale;
 
 namespace JayTom.Dws.Plugin.Scale.StaticScale {
-
     public class DefaultStaticScale : IStaticScale {
         private System.IO.Ports.SerialPort? _serialPort { get; set; }
         private readonly ConcurrentQueue<float> _weightQueue = new();
@@ -36,6 +35,7 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
         public ScaleWeightFormat WeightFormat { get; set; } = ScaleWeightFormat.Ascii;
 
         public event EventHandler<float>? StabledWeight;
+        public event EventHandler<WeightChangedEventArgs>? WeightStabilized;
 
         public event EventHandler<string>? Received;
 
@@ -196,10 +196,18 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
                     if (_weightQueue.Max() - _weightQueue.Min() <= _defaultStaticScaleValueParameters.BalanceQty &&
                         _weightQueue.Max() <= _defaultStaticScaleValueParameters.MaxWeight && _weightQueue.Min() >= _defaultStaticScaleValueParameters.MinWeight) {
                         StabledTime = DateTime.Now;
-                        OnStabledWeight(_weightQueue.GroupBy(x => x)
+                        var weight = _weightQueue.GroupBy(x => x)
                             .OrderByDescending(g => g.Count())
                             .Select(g => g.Key)
-                            .FirstOrDefault());
+                            .FirstOrDefault();
+                        OnStabledWeight(weight);
+                        //返回原文
+                        OnWeightStabilized(new WeightChangedEventArgs() {
+                            Format = WeightFormat,
+                            FormattedWeight = weight,
+                            OriginalContent = string.Join(",", _weightQueue.ToList()),
+                            Type = WeightType.Static
+                        });
                         _weightQueue.Clear();
                     }
 
@@ -208,10 +216,17 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
                             _weightQueue.Max() - _weightQueue.Min() <= _defaultStaticScaleValueParameters.BalanceQty &&
                             _weightQueue.Max() <= _defaultStaticScaleValueParameters.MaxWeight && _weightQueue.Min() >= _defaultStaticScaleValueParameters.MinWeight) {
                             StabledTime = DateTime.Now;
-                            OnStabledWeight(_weightQueue.GroupBy(x => x)
+                            var weight = _weightQueue.GroupBy(x => x)
                                 .OrderByDescending(g => g.Count())
                                 .Select(g => g.Key)
-                                .FirstOrDefault());
+                                .FirstOrDefault();
+                            OnStabledWeight(weight);
+                            OnWeightStabilized(new WeightChangedEventArgs() {
+                                Format = WeightFormat,
+                                FormattedWeight = weight,
+                                OriginalContent = string.Join(",", _weightQueue.ToList()),
+                                Type = WeightType.Static
+                            });
                             _weightQueue.Clear();
                         }
                     }
@@ -304,6 +319,11 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
             }
 
             return bytes;
+        }
+
+        protected virtual async void OnWeightStabilized(WeightChangedEventArgs e) {
+            await Task.Yield();
+            WeightStabilized?.Invoke(this, e);
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using Polly;
 using System;
+using DryIoc;
 using System.Linq;
 using Newtonsoft.Json;
 using System.Threading;
@@ -21,7 +22,6 @@ using CommunicationType = JayTom.Dws.Plugin.Tcp.CommunicationType;
 using JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols;
 
 namespace JayTom.Dws.Client.Service.Sorting {
-
     public class DefaultInventoryManagementService : IInventoryManagementService {
         private readonly ISortingSerialPort _sortingSerialPort;
         private readonly ISortingTcp _sortingTcp;
@@ -51,13 +51,31 @@ namespace JayTom.Dws.Client.Service.Sorting {
             //事件
             _sortingSerialPort.Disconnected += delegate (object? sender, ISortingSerialPort port) {
                 IsConnected = false;
+                EventAggregator.Instance.Publish(new SortingLogInfoModel {
+                    CommunicationType = Data.LocalLog.CommunicationType.Send,
+                    CreateTime = DateTime.Now,
+                    Message = $"串口已断开",
+                    Type = LogType.Warning
+                });
             };
             _sortingSerialPort.ConnectionChanged += delegate (object? sender, ISortingSerialPort port) {
                 IsConnected = true;
+                EventAggregator.Instance.Publish(new SortingLogInfoModel {
+                    CommunicationType = Data.LocalLog.CommunicationType.Send,
+                    CreateTime = DateTime.Now,
+                    Message = $"串口已连接",
+                    Type = LogType.Information
+                });
             };
             _sortingSerialPort.ErrorOccurred +=
                 delegate (object? sender, Communication.SerialComm.ExceptionEventArgs args) {
                     OnCommunicationExceptionEvent(args.Exception);
+                    EventAggregator.Instance.Publish(new SortingLogInfoModel {
+                        CommunicationType = Data.LocalLog.CommunicationType.Send,
+                        CreateTime = DateTime.Now,
+                        Message = $"串口通讯异常:{args.Exception.Message}",
+                        Type = LogType.Exception
+                    });
                 };
             _sortingSerialPort.DataReceived += delegate (object? sender, MessageEventArgs args) {
                 //接收的数据
@@ -69,24 +87,69 @@ namespace JayTom.Dws.Client.Service.Sorting {
             };
             _sortingSerialPort.HeartbeatError += delegate (object? sender, Exception exception) {
                 OnHeartbeatError(exception);
+                EventAggregator.Instance.Publish(new SortingLogInfoModel {
+                    CommunicationType = Data.LocalLog.CommunicationType.Send,
+                    CreateTime = DateTime.Now,
+                    Message = $"串口心跳包异常:{exception.Message}",
+                    Type = LogType.Exception
+                });
             };
             _sortingSerialPort.SendError += delegate (object? sender, Communication.SerialComm.ExceptionEventArgs args) {
                 OnSendError(new ExceptionEventArgs() {
                     ExceptionMessage = args.Exception.Message
                 });
+                EventAggregator.Instance.Publish(new SortingLogInfoModel {
+                    CommunicationType = Data.LocalLog.CommunicationType.Send,
+                    CreateTime = DateTime.Now,
+                    Message = $"串口发送消息失败:{args.Exception.Message}",
+                    Type = LogType.Exception
+                });
+            };
+            _sortingSerialPort.Communication += delegate (object? sender, CommunicationInfo info) {
+                EventAggregator.Instance.Publish(new SortingLogInfoModel {
+                    CommunicationType = (Data.LocalLog.CommunicationType)info.Type,
+                    CreateTime = info.Time,
+                    DataFormatType = (DataFormatType)info.FormatType,
+                    Message = info.Content,
+                    Type = LogType.Information
+                });
             };
             //TCP
             _sortingTcp.Exception += delegate (object? sender, Exception exception) {
                 OnCommunicationExceptionEvent(exception);
+                EventAggregator.Instance.Publish(new SortingLogInfoModel {
+                    CommunicationType = Data.LocalLog.CommunicationType.Send,
+                    CreateTime = DateTime.Now,
+                    Message = $"Tcp通讯异常:{exception.Message}",
+                    Type = LogType.Exception
+                });
             };
             _sortingTcp.Disconnected += delegate (object? sender, string s) {
                 IsConnected = false;
+                EventAggregator.Instance.Publish(new SortingLogInfoModel {
+                    CommunicationType = Data.LocalLog.CommunicationType.Send,
+                    CreateTime = DateTime.Now,
+                    Message = "Tcp已断开",
+                    Type = LogType.Warning
+                });
             };
             _sortingTcp.Connected += delegate (object? sender, string s) {
                 IsConnected = true;
+                EventAggregator.Instance.Publish(new SortingLogInfoModel {
+                    CommunicationType = Data.LocalLog.CommunicationType.Send,
+                    CreateTime = DateTime.Now,
+                    Message = "Tcp已连接",
+                    Type = LogType.Information
+                });
             };
             _sortingTcp.ConnectionException += delegate (object? sender, string s) {
                 IsConnected = false;
+                EventAggregator.Instance.Publish(new SortingLogInfoModel {
+                    CommunicationType = Data.LocalLog.CommunicationType.Send,
+                    CreateTime = DateTime.Now,
+                    Message = "Tcp连接异常",
+                    Type = LogType.Exception
+                });
             };
             _sortingTcp.Communication += delegate (object? sender, CommunicationInfo info) {
                 if (info.Type == CommunicationType.Receive) {
@@ -98,13 +161,32 @@ namespace JayTom.Dws.Client.Service.Sorting {
                     }
                     _replyContentQueue.Enqueue(info.Content);
                 }
+                EventAggregator.Instance.Publish(new SortingLogInfoModel {
+                    CommunicationType = (Data.LocalLog.CommunicationType)info.Type,
+                    CreateTime = info.Time,
+                    DataFormatType = (DataFormatType)info.FormatType,
+                    Message = info.Content,
+                    Type = LogType.Information
+                });
             };
             _sortingTcp.HeartbeatError += delegate (object? sender, Exception exception) {
                 OnHeartbeatError(exception);
+                EventAggregator.Instance.Publish(new SortingLogInfoModel {
+                    CommunicationType = Data.LocalLog.CommunicationType.Send,
+                    CreateTime = DateTime.Now,
+                    Message = $"Tcp心跳包异常:{exception.Message}",
+                    Type = LogType.Exception
+                });
             };
             _sortingTcp.SendError += delegate (object? sender, Exception exception) {
                 OnSendError(new ExceptionEventArgs() {
                     ExceptionMessage = exception.Message
+                });
+                EventAggregator.Instance.Publish(new SortingLogInfoModel {
+                    CommunicationType = Data.LocalLog.CommunicationType.Send,
+                    CreateTime = DateTime.Now,
+                    Message = $"Tcp消息发送失败:{exception.Message}",
+                    Type = LogType.Exception
                 });
             };
         }

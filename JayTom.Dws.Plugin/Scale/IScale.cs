@@ -23,7 +23,10 @@ namespace JayTom.Dws.Plugin.Scale {
         /// 稳定重量
         /// </summary>
         event EventHandler<float> StabledWeight;
-
+        /// <summary>
+        /// 稳定重量(含原文)
+        /// </summary>
+        event EventHandler<WeightChangedEventArgs> WeightStabilized;
         /// <summary>
         /// 接收内容
         /// </summary>
@@ -136,4 +139,24 @@ namespace JayTom.Dws.Plugin.Scale {
         /// </summary>
         public int MergedWeightTimeout { get; set; } = 300;
     }
+
+    public class WeightChangedEventArgs : EventArgs {
+        public string OriginalContent { get; set; } = string.Empty;
+        public DateTime Time { get; set; } = DateTime.Now;
+        public double FormattedWeight { get; set; }
+        public WeightType Type { get; set; }
+        public ScaleWeightFormat Format { get; set; }
+
+    }
+    public enum WeightType {
+        /// <summary>
+        /// 动态称重
+        /// </summary>
+        Dynamic,
+        /// <summary>
+        /// 静态称重
+        /// </summary>
+        Static
+    }
+
 }

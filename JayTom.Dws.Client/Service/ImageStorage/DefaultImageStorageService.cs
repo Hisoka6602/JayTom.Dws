@@ -1,21 +1,21 @@
-﻿using JayTom.Dws.Client.EventMediators;
-using JayTom.Dws.Domain.Dto;
-using JayTom.Dws.Domain.Dto.BaseInfoModels;
-using JayTom.Dws.Domain.Repository.LocalConf;
-using JayTom.Dws.Plugin.Ftp;
-using JayTom.Dws.Plugin.SaveImage;
-using Newtonsoft.Json;
-using System;
-using System.Drawing;
-using System.Globalization;
+﻿using System;
 using System.IO;
 using System.Linq;
+using System.Drawing;
+using Newtonsoft.Json;
 using System.Threading;
+using System.Globalization;
+using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Plugin.Ftp;
 using System.Threading.Tasks;
+using JayTom.Dws.Data.LocalLog;
+using JayTom.Dws.Plugin.SaveImage;
+using JayTom.Dws.Client.EventMediators;
+using JayTom.Dws.Domain.Dto.BaseInfoModels;
+using JayTom.Dws.Domain.Repository.LocalConf;
 using WatermarkPosition = JayTom.Dws.Plugin.SaveImage.WatermarkPosition;
 
 namespace JayTom.Dws.Client.Service.ImageStorage {
-
     public class DefaultImageStorageService : IImageStorageService {
         private readonly ISaveImage _saveImage;
         private readonly IConfigRepository _configRepository;
@@ -181,6 +181,14 @@ namespace JayTom.Dws.Client.Service.ImageStorage {
                             cancellationToken);
                         if (!key) {
                             OnImageSaveFailed(new Exception(value));
+                        }
+                        else {
+                            EventAggregator.Instance.Publish(new FtpLogInfoModel() {
+                                Type = LogType.Information,
+                                CreateTime = DateTime.Now,
+                                Message = $"FTP上传:{path.Replace(ImageSettingsDto.ImageRootDirectory, string.Empty)}",
+                                FtpCommunicationType = FtpCommunicationType.Upload
+                            });
                         }
                     }
                     else {

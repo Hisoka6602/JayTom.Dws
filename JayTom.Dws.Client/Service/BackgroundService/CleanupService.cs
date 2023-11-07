@@ -117,7 +117,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 if (DateTime.Now.Subtract(_lastCleanupTime).TotalMinutes >= 10) {
                     //删除指定日期前数据(小于等于0则不删除)
                     if (_cacheClearSettingsDto?.BarcodeDataAgoDays > 0) {
-                        await _cacheCleanupService.DeleteBarcodeDataOlderThanDays(_cacheClearSettingsDto.BarcodeDataAgoDays);
+                        var (key, value) = await _cacheCleanupService.DeleteBarcodeDataOlderThanDays(_cacheClearSettingsDto.BarcodeDataAgoDays);
                     }
                     if (_cacheClearSettingsDto?.ScanImageAgoDays > 0) {
                         await _cacheCleanupService.DeleteScanImagesOlderThanDays(_cacheClearSettingsDto.ScanImageAgoDays);

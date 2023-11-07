@@ -2,11 +2,11 @@
 using System.Linq;
 using System.IO.Ports;
 using System.Threading;
+using JayTom.Dws.Plugin.Tcp;
 using System.Threading.Tasks;
 using System.Collections.Concurrent;
 
 namespace JayTom.Dws.Client.Service.Sorting.Communication.SerialComm {
-
     public class SortingSerialPort : ISortingSerialPort {
         private System.IO.Ports.SerialPort? _serialPort;
         private SortingSerialPortFormat _dataFormat = SortingSerialPortFormat.Ascii;
@@ -37,6 +37,7 @@ namespace JayTom.Dws.Client.Service.Sorting.Communication.SerialComm {
         public event EventHandler<ExceptionEventArgs>? ErrorOccurred;
 
         public event EventHandler<ExceptionEventArgs>? SendError;
+        public event EventHandler<CommunicationInfo>? Communication;
 
         public event EventHandler<Exception>? HeartbeatError;
 
@@ -125,6 +126,12 @@ namespace JayTom.Dws.Client.Service.Sorting.Communication.SerialComm {
                         var toByteArray = HexStringToByteArray(message);
                         _serialPort?.Write(toByteArray, 0, toByteArray.Length);
                     }
+
+                    OnCommunication(new CommunicationInfo() {
+                        Content = message,
+                        FormatType = (FormatType)_dataFormat,
+                        Type = CommunicationType.Send
+                    });
                 }
             }
             catch (Exception e) {
@@ -181,6 +188,11 @@ namespace JayTom.Dws.Client.Service.Sorting.Communication.SerialComm {
                 }
             }
             await Task.Yield();
+            OnCommunication(new CommunicationInfo() {
+                Content = e.AsciiMessage,
+                FormatType = (FormatType)_dataFormat,
+                Type = CommunicationType.Send
+            });
             DataReceived?.Invoke(this, e);
         }
 
@@ -214,6 +226,11 @@ namespace JayTom.Dws.Client.Service.Sorting.Communication.SerialComm {
         protected virtual async void OnSendError(ExceptionEventArgs e) {
             await Task.Yield();
             SendError?.Invoke(this, e);
+        }
+
+        protected virtual async void OnCommunication(CommunicationInfo e) {
+            await Task.Yield();
+            Communication?.Invoke(this, e);
         }
     }
 }
