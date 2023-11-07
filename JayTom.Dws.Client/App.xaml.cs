@@ -61,6 +61,7 @@ using JayTom.Dws.Infrastructure.Repository.LocalData;
 using JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision;
 using JayTom.Dws.Client.HomeToolPlugin.SunnenPlugin.Views;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
+using JayTom.Dws.Client.Views.Pages.Preferences.LogsViews;
 using JayTom.Dws.Client.Service.Sorting.Communication.TcpComm;
 using JayTom.Dws.Client.HomeToolPlugin.SunnenPlugin.ViewModels;
 using JayTom.Dws.Client.Service.Sorting.Communication.SerialComm;
@@ -69,6 +70,7 @@ using JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Infrastructure.Repository.LocalConf.CameraConfig;
 using JayTom.Dws.Client.Service.ResultOutput.Communication.TcpComm;
+using JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel;
 using JayTom.Dws.Client.Views.Pages.Preferences.CameraConfiguration;
 using JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration;
 using JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration;
@@ -551,6 +553,16 @@ namespace JayTom.Dws.Client {
             ViewModelLocationProvider.Register<OcrSortingPage, OcrSortingViewModel>();
             ViewModelLocationProvider.Register<ApiResponseSortingPage, ApiResponseSortingViewModel>();
             ViewModelLocationProvider.Register<CombinedWorkflowSortingPage, CombinedWorkflowSortingViewModel>();
+            //日志
+            ViewModelLocationProvider.Register<AppLogPage, AppLogPageViewModel>();
+            ViewModelLocationProvider.Register<CameraLogPage, CameraLogPageViewModel>();
+            ViewModelLocationProvider.Register<SortingLogPage, SortingLogPageViewModel>();
+            ViewModelLocationProvider.Register<WeighingLogPage, WeighingLogPageViewModel>();
+            ViewModelLocationProvider.Register<VolumeLogPage, VolumeLogPageViewModel>();
+            ViewModelLocationProvider.Register<APILogPage, ApiLogPageViewModel>();
+            ViewModelLocationProvider.Register<OutputLogPage, OutputLogPageViewModel>();
+            ViewModelLocationProvider.Register<FTPLogPage, FtpLogPageViewModel>();
+            ViewModelLocationProvider.Register<ExceptionLogPage, ExceptionLogPageViewModel>();
             //接口
             ViewModelLocationProvider.Register<DefaultApiPage, DefaultApiPageViewModel>();
             ViewModelLocationProvider.Register<SzjyApiPage, SzjyApiPageViewModel>();

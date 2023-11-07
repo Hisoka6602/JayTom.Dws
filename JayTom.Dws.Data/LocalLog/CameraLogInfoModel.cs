@@ -6,8 +6,10 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace JayTom.Dws.Data.LocalLog {
+
     [Table("Log_CameraLogInfo", Schema = "dbo")]
     public class CameraLogInfoModel : BaseLogInfoModel {
+
         /// <summary>
         /// 相机序列号
         /// </summary>

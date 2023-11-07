@@ -9,6 +9,8 @@ namespace JayTom.Dws.Data.LocalLog {
 
     [Table("Log_ExceptionLogInfo", Schema = "dbo")]
     public class ExceptionLogInfoModel : BaseLogInfoModel {
+
+        [Column("ExceptionSource")]
         public ExceptionSource ExceptionSource { get; set; }
     }
 

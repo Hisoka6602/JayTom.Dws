@@ -1,0 +1,63 @@
+﻿<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:logConverters="clr-namespace:JayTom.Dws.Client.Converters.LogConverters"
+    xmlns:logsItemModels="clr-namespace:JayTom.Dws.Client.Models.LogsItemModels"
+    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
+    <logConverters:LogTypeConverter x:Key="LogTypeConverter" />
+    <DataTemplate x:Key="AppLogItemTemplate" DataType="{x:Type logsItemModels:AppLogItemModel}">
+        <Button
+            Height="40"
+            Margin="0,2"
+            Padding="3,0"
+            HorizontalAlignment="Stretch"
+            HorizontalContentAlignment="Left"
+            materialDesign:ButtonAssist.CornerRadius="5"
+            Background="#2E2E2E"
+            BorderBrush="Transparent"
+            Command="{Binding ClickCommand}"
+            CommandParameter="{Binding}"
+            Style="{StaticResource MaterialDesignFlatAccentBgButton}">
+            <Grid MinHeight="30">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="4" />
+                    <ColumnDefinition Width="220" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <!--  柱状条  -->
+                <Border
+                    Grid.Column="0"
+                    Width="4"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Stretch"
+                    Background="{Binding Type, Converter={StaticResource LogTypeConverter}, ConverterParameter=Color}"
+                    CornerRadius="2,2,2,2"
+                    Visibility="Visible" />
+                <!--  时间  -->
+                <TextBlock
+                    Grid.Column="1"
+                    Margin="10,0"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                    FontSize="16"
+                    Foreground="White"
+                    Text="{Binding CreateTime, StringFormat={}{0:yyyy-MM-dd HH:mm:ss.fff}, UpdateSourceTrigger=PropertyChanged}" />
+                <!--  信息  -->
+                <Border
+                    Grid.Column="2"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center">
+                    <TextBlock
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch"
+                        FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                        FontSize="16"
+                        Foreground="DarkGray"
+                        Text="{Binding Message, UpdateSourceTrigger=PropertyChanged}"
+                        TextAlignment="Center" />
+                </Border>
+            </Grid>
+        </Button>
+    </DataTemplate>
+</ResourceDictionary>

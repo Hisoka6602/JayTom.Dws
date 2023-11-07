@@ -13,6 +13,7 @@ namespace JayTom.Dws.Data.LocalLog {
         /// <summary>
         /// Ftp通讯类型
         /// </summary>
+        [Column("FtpCommunicationType")]
         public FtpCommunicationType FtpCommunicationType { get; set; }
     }
 

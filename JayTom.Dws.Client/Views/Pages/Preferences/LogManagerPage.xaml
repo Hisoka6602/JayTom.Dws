@@ -35,14 +35,21 @@
             Style="{StaticResource MaterialDesignUniformTabControl}"
             TabStripPlacement="Top">
             <TabItem Foreground="White" Header="程序运行日志">
-                <!--<Frame
-             Margin="0"
-             Padding="0"
-             Focusable="False"
-             NavigationUIVisibility="Hidden"
-             Source="ApiConfiguration/DefaultApiPage.xaml" />-->
+                <Frame
+                    Margin="0"
+                    Padding="0"
+                    Focusable="False"
+                    NavigationUIVisibility="Hidden"
+                    Source="LogsViews/AppLogPage.xaml" />
             </TabItem>
-            <TabItem Foreground="White" Header="相机日志" />
+            <TabItem Foreground="White" Header="相机日志">
+                <Frame
+                    Margin="0"
+                    Padding="0"
+                    Focusable="False"
+                    NavigationUIVisibility="Hidden"
+                    Source="LogsViews/CameraLogPage.xaml" />
+            </TabItem>
             <TabItem Foreground="White" Header="分拣日志" />
             <TabItem Foreground="White" Header="称重日志" />
             <TabItem Foreground="White" Header="体积日志" />
@@ -55,5 +62,4 @@
             <TabItem Foreground="White" Header="异常日志" />
         </TabControl>
     </materialDesign:DialogHost>
-
 </Page>

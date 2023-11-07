@@ -206,6 +206,11 @@
                 <ResourceDictionary Source="Template/CameraFinderTemplate.xaml" />
                 <!--  列表样式  -->
                 <ResourceDictionary Source="/Styles/VirtualizingDataGridStyle.xaml" />
+                <!--  日志列表模板  -->
+                <!--  程序日志列表模板  -->
+                <ResourceDictionary Source="Template/AppLogItemTemplate.xaml" />
+                <!--  相机列表模板  -->
+                <ResourceDictionary Source="Template/CameraLogItemTemplate.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </prism:PrismApplication.Resources>
