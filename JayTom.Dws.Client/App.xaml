@@ -211,6 +211,8 @@
                 <ResourceDictionary Source="Template/AppLogItemTemplate.xaml" />
                 <!--  相机列表模板  -->
                 <ResourceDictionary Source="Template/CameraLogItemTemplate.xaml" />
+                <!--  分拣信息列表模板  -->
+                <ResourceDictionary Source="Template/SortingLogItemTemplate.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </prism:PrismApplication.Resources>

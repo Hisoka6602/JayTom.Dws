@@ -6,7 +6,7 @@ using System.Collections.Generic;
 
 namespace JayTom.Dws.Client.Models.LogsItemModels {
 
-    public class CameraLogItemModel : AppLogItemModel {
+    public class CameraLogItemModel : BaseLogItemModel {
         private string _cameraSerialNumber = string.Empty;
 
         public string CameraSerialNumber {

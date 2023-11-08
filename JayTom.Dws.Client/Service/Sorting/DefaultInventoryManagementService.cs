@@ -22,6 +22,7 @@ using CommunicationType = JayTom.Dws.Plugin.Tcp.CommunicationType;
 using JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols;
 
 namespace JayTom.Dws.Client.Service.Sorting {
+
     public class DefaultInventoryManagementService : IInventoryManagementService {
         private readonly ISortingSerialPort _sortingSerialPort;
         private readonly ISortingTcp _sortingTcp;
@@ -52,7 +53,6 @@ namespace JayTom.Dws.Client.Service.Sorting {
             _sortingSerialPort.Disconnected += delegate (object? sender, ISortingSerialPort port) {
                 IsConnected = false;
                 EventAggregator.Instance.Publish(new SortingLogInfoModel {
-                    CommunicationType = Data.LocalLog.CommunicationType.Send,
                     CreateTime = DateTime.Now,
                     Message = $"串口已断开",
                     Type = LogType.Warning
@@ -61,7 +61,6 @@ namespace JayTom.Dws.Client.Service.Sorting {
             _sortingSerialPort.ConnectionChanged += delegate (object? sender, ISortingSerialPort port) {
                 IsConnected = true;
                 EventAggregator.Instance.Publish(new SortingLogInfoModel {
-                    CommunicationType = Data.LocalLog.CommunicationType.Send,
                     CreateTime = DateTime.Now,
                     Message = $"串口已连接",
                     Type = LogType.Information
@@ -71,7 +70,6 @@ namespace JayTom.Dws.Client.Service.Sorting {
                 delegate (object? sender, Communication.SerialComm.ExceptionEventArgs args) {
                     OnCommunicationExceptionEvent(args.Exception);
                     EventAggregator.Instance.Publish(new SortingLogInfoModel {
-                        CommunicationType = Data.LocalLog.CommunicationType.Send,
                         CreateTime = DateTime.Now,
                         Message = $"串口通讯异常:{args.Exception.Message}",
                         Type = LogType.Exception
@@ -88,7 +86,6 @@ namespace JayTom.Dws.Client.Service.Sorting {
             _sortingSerialPort.HeartbeatError += delegate (object? sender, Exception exception) {
                 OnHeartbeatError(exception);
                 EventAggregator.Instance.Publish(new SortingLogInfoModel {
-                    CommunicationType = Data.LocalLog.CommunicationType.Send,
                     CreateTime = DateTime.Now,
                     Message = $"串口心跳包异常:{exception.Message}",
                     Type = LogType.Exception
@@ -99,7 +96,6 @@ namespace JayTom.Dws.Client.Service.Sorting {
                     ExceptionMessage = args.Exception.Message
                 });
                 EventAggregator.Instance.Publish(new SortingLogInfoModel {
-                    CommunicationType = Data.LocalLog.CommunicationType.Send,
                     CreateTime = DateTime.Now,
                     Message = $"串口发送消息失败:{args.Exception.Message}",
                     Type = LogType.Exception
@@ -118,7 +114,6 @@ namespace JayTom.Dws.Client.Service.Sorting {
             _sortingTcp.Exception += delegate (object? sender, Exception exception) {
                 OnCommunicationExceptionEvent(exception);
                 EventAggregator.Instance.Publish(new SortingLogInfoModel {
-                    CommunicationType = Data.LocalLog.CommunicationType.Send,
                     CreateTime = DateTime.Now,
                     Message = $"Tcp通讯异常:{exception.Message}",
                     Type = LogType.Exception
@@ -127,7 +122,6 @@ namespace JayTom.Dws.Client.Service.Sorting {
             _sortingTcp.Disconnected += delegate (object? sender, string s) {
                 IsConnected = false;
                 EventAggregator.Instance.Publish(new SortingLogInfoModel {
-                    CommunicationType = Data.LocalLog.CommunicationType.Send,
                     CreateTime = DateTime.Now,
                     Message = "Tcp已断开",
                     Type = LogType.Warning
@@ -136,7 +130,6 @@ namespace JayTom.Dws.Client.Service.Sorting {
             _sortingTcp.Connected += delegate (object? sender, string s) {
                 IsConnected = true;
                 EventAggregator.Instance.Publish(new SortingLogInfoModel {
-                    CommunicationType = Data.LocalLog.CommunicationType.Send,
                     CreateTime = DateTime.Now,
                     Message = "Tcp已连接",
                     Type = LogType.Information
@@ -145,7 +138,6 @@ namespace JayTom.Dws.Client.Service.Sorting {
             _sortingTcp.ConnectionException += delegate (object? sender, string s) {
                 IsConnected = false;
                 EventAggregator.Instance.Publish(new SortingLogInfoModel {
-                    CommunicationType = Data.LocalLog.CommunicationType.Send,
                     CreateTime = DateTime.Now,
                     Message = "Tcp连接异常",
                     Type = LogType.Exception
@@ -172,7 +164,6 @@ namespace JayTom.Dws.Client.Service.Sorting {
             _sortingTcp.HeartbeatError += delegate (object? sender, Exception exception) {
                 OnHeartbeatError(exception);
                 EventAggregator.Instance.Publish(new SortingLogInfoModel {
-                    CommunicationType = Data.LocalLog.CommunicationType.Send,
                     CreateTime = DateTime.Now,
                     Message = $"Tcp心跳包异常:{exception.Message}",
                     Type = LogType.Exception
@@ -183,7 +174,6 @@ namespace JayTom.Dws.Client.Service.Sorting {
                     ExceptionMessage = exception.Message
                 });
                 EventAggregator.Instance.Publish(new SortingLogInfoModel {
-                    CommunicationType = Data.LocalLog.CommunicationType.Send,
                     CreateTime = DateTime.Now,
                     Message = $"Tcp消息发送失败:{exception.Message}",
                     Type = LogType.Exception

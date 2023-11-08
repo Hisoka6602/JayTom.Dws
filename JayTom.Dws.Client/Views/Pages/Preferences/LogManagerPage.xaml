@@ -50,7 +50,14 @@
                     NavigationUIVisibility="Hidden"
                     Source="LogsViews/CameraLogPage.xaml" />
             </TabItem>
-            <TabItem Foreground="White" Header="分拣日志" />
+            <TabItem Foreground="White" Header="分拣日志">
+                <Frame
+                    Margin="0"
+                    Padding="0"
+                    Focusable="False"
+                    NavigationUIVisibility="Hidden"
+                    Source="LogsViews/SortingLogPage.xaml" />
+            </TabItem>
             <TabItem Foreground="White" Header="称重日志" />
             <TabItem Foreground="White" Header="体积日志" />
             <TabItem Foreground="White" Header="Api日志" />

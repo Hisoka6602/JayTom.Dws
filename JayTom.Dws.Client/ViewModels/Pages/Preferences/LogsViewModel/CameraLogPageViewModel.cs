@@ -31,23 +31,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel {
         private ObservableCollection<LogType> _logTypeItems = new(Enum.GetValues(typeof(LogType)).Cast<LogType>());
         private SnackbarMessageQueue _cameraLogMessageQueue = new(TimeSpan.FromSeconds(2));
 
-        private ObservableCollection<CameraLogItemModel> _cameraLogItems = new()
-        {
-            new CameraLogItemModel()
-            {
-                CameraSerialNumber = "1212121212",
-                CreateTime = DateTime.Now,
-                Message = "XXX信息",
-                Type = LogType.Exception
-            },
-            new CameraLogItemModel()
-            {
-                CameraSerialNumber = string.Empty,
-                CreateTime = DateTime.Now,
-                Message = "XXX信息",
-                Type = LogType.Exception
-            },
-        };
+        private ObservableCollection<CameraLogItemModel> _cameraLogItems = new();
 
         private string? _cameraSerialNumber;
 
@@ -254,7 +238,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel {
                     var total = await _cameraLogRepository.Total(s => s.Id > 0);
                     await _cameraLogRepository.DeleteCount(total);
                     CameraLogItems.Clear();
-                    Message = null;
+                    Details = string.Empty;
                     PageIndex = PageCount = 0;
                     if (DialogHost.IsDialogOpen(model.Identifier)) {
                         DialogHost.Close(model.Identifier);

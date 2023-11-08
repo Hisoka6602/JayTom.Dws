@@ -298,7 +298,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel {
                     var total = await _appLogRepository.Total(s => s.Id > 0);
                     await _appLogRepository.DeleteCount(total);
                     AppLogItems.Clear();
-                    Message = null;
+                    Details = string.Empty;
                     PageIndex = PageCount = 0;
                     if (DialogHost.IsDialogOpen(model.Identifier)) {
                         DialogHost.Close(model.Identifier);
