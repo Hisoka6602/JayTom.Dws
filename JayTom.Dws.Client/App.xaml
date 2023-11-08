@@ -209,10 +209,16 @@
                 <!--  日志列表模板  -->
                 <!--  程序日志列表模板  -->
                 <ResourceDictionary Source="Template/AppLogItemTemplate.xaml" />
-                <!--  相机列表模板  -->
+                <!--  相机日志列表模板  -->
                 <ResourceDictionary Source="Template/CameraLogItemTemplate.xaml" />
-                <!--  分拣信息列表模板  -->
+                <!--  分拣日志信息列表模板  -->
                 <ResourceDictionary Source="Template/SortingLogItemTemplate.xaml" />
+                <!--  重量日志信息列表模板  -->
+                <ResourceDictionary Source="Template/WeighingLogItemTemplate.xaml" />
+                <!--  体积日志信息列表模板  -->
+                <ResourceDictionary Source="Template/VolumeLogItemTemplate.xaml" />
+                <!--  Api日志信息列表模板  -->
+                <ResourceDictionary Source="Template/ApiLogItemTemplate.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </prism:PrismApplication.Resources>

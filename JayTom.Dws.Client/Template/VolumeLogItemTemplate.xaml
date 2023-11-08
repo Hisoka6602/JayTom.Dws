@@ -1,11 +1,11 @@
 ﻿<ResourceDictionary
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:converters="clr-namespace:JayTom.Dws.Client.Converters"
+    xmlns:logConverters="clr-namespace:JayTom.Dws.Client.Converters.LogConverters"
     xmlns:logsItemModels="clr-namespace:JayTom.Dws.Client.Models.LogsItemModels"
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
-    <converters:StringNullToVisibilityConverter x:Key="StringNullToVisibilityConverter" />
-    <DataTemplate x:Key="CameraLogItemTemplate" DataType="{x:Type logsItemModels:CameraLogItemModel}">
+    <logConverters:LogTypeConverter x:Key="LogTypeConverter" />
+    <DataTemplate x:Key="VolumeLogItemTemplate" DataType="{x:Type logsItemModels:VolumeLogItemModel}">
         <Button
             Height="40"
             Margin="0,2"
@@ -22,7 +22,6 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="4" />
                     <ColumnDefinition Width="220" />
-                    <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
                 <!--  柱状条  -->
@@ -44,25 +43,12 @@
                     FontSize="16"
                     Foreground="White"
                     Text="{Binding CreateTime, StringFormat={}{0:yyyy-MM-dd HH:mm:ss.fff}, UpdateSourceTrigger=PropertyChanged}" />
-                <!--  相机序列号  -->
-                <TextBlock
-                    Grid.Column="2"
-                    HorizontalAlignment="Center"
-                    VerticalAlignment="Center"
-                    FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
-                    FontSize="16"
-                    Foreground="DarkGray"
-                    TextAlignment="Center"
-                    Visibility="{Binding CameraSerialNumber, Converter={StaticResource StringNullToVisibilityConverter}}">
-                    <Run Text="序列号:" /><Run Foreground="White" Text="{Binding CameraSerialNumber}" />
-                </TextBlock>
                 <!--  信息  -->
                 <Border
-                    Grid.Column="3"
+                    Grid.Column="2"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center">
                     <TextBlock
-                        Margin="20,0,0,0"
                         HorizontalAlignment="Stretch"
                         VerticalAlignment="Stretch"
                         FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"

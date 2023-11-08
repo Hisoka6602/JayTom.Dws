@@ -1,0 +1,120 @@
+﻿<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:logConverters="clr-namespace:JayTom.Dws.Client.Converters.LogConverters"
+    xmlns:logsItemModels="clr-namespace:JayTom.Dws.Client.Models.LogsItemModels"
+    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
+    <logConverters:LogTypeConverter x:Key="LogTypeConverter" />
+    <DataTemplate x:Key="ApiLogItemTemplate" DataType="{x:Type logsItemModels:ApiLogItemModel}">
+        <Button
+            Height="90"
+            Margin="0,2"
+            Padding="3,0"
+            HorizontalAlignment="Stretch"
+            HorizontalContentAlignment="Left"
+            materialDesign:ButtonAssist.CornerRadius="5"
+            Background="#2E2E2E"
+            BorderBrush="Transparent"
+            Command="{Binding ClickCommand}"
+            CommandParameter="{Binding}"
+            Style="{StaticResource MaterialDesignFlatAccentBgButton}">
+            <Grid MinHeight="80">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="4" />
+                    <ColumnDefinition Width="220" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="50*" />
+                    <RowDefinition Height="50*" />
+                </Grid.RowDefinitions>
+                <!--  柱状条  -->
+                <Border
+                    Grid.Row="0"
+                    Grid.RowSpan="2"
+                    Grid.Column="0"
+                    Width="4"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Stretch"
+                    Background="{Binding Type, Converter={StaticResource LogTypeConverter}, ConverterParameter=Color}"
+                    CornerRadius="2,2,2,2"
+                    Visibility="Visible" />
+                <!--  时间  -->
+                <TextBlock
+                    Grid.Row="0"
+                    Grid.RowSpan="2"
+                    Grid.Column="1"
+                    Margin="10,0"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                    FontSize="16"
+                    Foreground="White"
+                    Text="{Binding CreateTime, StringFormat={}{0:yyyy-MM-dd HH:mm:ss.fff}, UpdateSourceTrigger=PropertyChanged}" />
+                <!--  详细内容  -->
+                <StackPanel
+                    Grid.Row="0"
+                    Grid.Column="2"
+                    Margin="20,0,0,0"
+                    VerticalAlignment="Center"
+                    Orientation="Horizontal">
+                    <!--  耗时  -->
+                    <TextBlock
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch"
+                        FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                        FontSize="16"
+                        FontWeight="UltraLight"
+                        Foreground="DarkGray"
+                        TextAlignment="Center">
+                        <Run Text="耗时:" /> <Run Foreground="White" Text="{Binding Duration, StringFormat={}{0:F2},UpdateSourceTrigger=PropertyChanged}" /><Run Text="(ms)" />
+                    </TextBlock>
+                    <!--  Url  -->
+                    <TextBlock
+                        Margin="20,0"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch"
+                        FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                        FontSize="16"
+                        FontWeight="UltraLight"
+                        Foreground="DarkGray"
+                        TextAlignment="Center">
+                        <Run Text="Url:" /> <Run Foreground="White" Text="{Binding Url, UpdateSourceTrigger=PropertyChanged}" />
+                    </TextBlock>
+                </StackPanel>
+                <StackPanel
+                    Grid.Row="1"
+                    Grid.Column="2"
+                    Margin="20,0,0,0"
+                    VerticalAlignment="Center"
+                    Orientation="Horizontal">
+                    <!--  响应时间  -->
+                    <TextBlock
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch"
+                        FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                        FontSize="16"
+                        FontWeight="UltraLight"
+                        Foreground="DarkGray"
+                        TextAlignment="Center">
+                        <Run Text="响应时间:" /> <Run Foreground="White" Text="{Binding ResponseTime, StringFormat={}{0:yyyy-MM-dd HH:mm:ss.fff}, UpdateSourceTrigger=PropertyChanged}" />
+                    </TextBlock>
+                    <!--  响应内容  -->
+                    <TextBlock
+                        Margin="20,0"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch"
+                        FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                        FontSize="16"
+                        FontWeight="UltraLight"
+                        Foreground="DarkGray"
+                        TextAlignment="Center"
+                        TextTrimming="WordEllipsis"
+                        TextWrapping="Wrap">
+                        <Run Text="响应内容:" /> <Run Foreground="White" Text="{Binding ResponseContent, UpdateSourceTrigger=PropertyChanged}" />
+                    </TextBlock>
+                </StackPanel>
+            </Grid>
+        </Button>
+    </DataTemplate>
+</ResourceDictionary>

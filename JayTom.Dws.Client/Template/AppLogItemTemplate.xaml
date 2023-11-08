@@ -53,6 +53,7 @@
                         VerticalAlignment="Stretch"
                         FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
                         FontSize="16"
+                        FontWeight="UltraLight"
                         Foreground="DarkGray"
                         Text="{Binding Message, UpdateSourceTrigger=PropertyChanged}"
                         TextAlignment="Center" />

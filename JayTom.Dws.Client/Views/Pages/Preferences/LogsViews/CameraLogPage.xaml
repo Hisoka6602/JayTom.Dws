@@ -435,7 +435,7 @@
                         <TextBox
                             MinHeight="70"
                             Margin="5,0"
-                            HorizontalContentAlignment="Left"
+                            HorizontalContentAlignment="Stretch"
                             VerticalContentAlignment="Top"
                             Background="Transparent"
                             BorderThickness="0"

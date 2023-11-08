@@ -19,6 +19,7 @@ using JayTom.Dws.Client.Models.LogsItemModels;
 using JayTom.Dws.Infrastructure.Repository.LocalLog;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel {
+
     public class SortingLogPageViewModel : BindableBase {
         private readonly ISortingLogRepository _sortingLogRepository;
         private ObservableCollection<SortingLogItemModel> _sortingLogItems = new();
@@ -31,9 +32,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel {
         private LogType? _selectLogType;
         private string? _message;
         private ObservableCollection<LogType> _logTypeItems = new(Enum.GetValues(typeof(LogType)).Cast<LogType>());
-        private SnackbarMessageQueue _sortingLogMessageQueue = new(TimeSpan.FromSeconds(2));
         private CommunicationType? _selectCommunicationType;
         private ObservableCollection<CommunicationType> _communicationTypeItems = new(Enum.GetValues(typeof(CommunicationType)).Cast<CommunicationType>());
+        private SnackbarMessageQueue _sortingLogMessageQueue = new(TimeSpan.FromSeconds(2));
 
         public SortingLogPageViewModel(ISortingLogRepository sortingLogRepository) {
             _sortingLogRepository = sortingLogRepository;

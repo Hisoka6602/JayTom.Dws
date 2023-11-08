@@ -7,8 +7,10 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace JayTom.Dws.Data.LocalLog {
+
     [Table("Log_ApiLogInfo", Schema = "dbo")]
     public class ApiLogInfoModel : BaseLogInfoModel {
+
         /// <summary>
         /// 请求内容
         /// </summary>
@@ -20,7 +22,6 @@ namespace JayTom.Dws.Data.LocalLog {
         /// </summary>
         [Column("ResponseContent")]
         public string ResponseContent { get; set; } = string.Empty;
-
 
         /// <summary>
         /// 上传时间
@@ -46,11 +47,16 @@ namespace JayTom.Dws.Data.LocalLog {
         [Column("ApiParameters")]
         public string ApiParameters { get; set; } = string.Empty;
 
-
         /// <summary>
         /// 异常信息
         /// </summary>
         [Column("ExceptionMsg")]
         public string ExceptionMsg { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Url
+        /// </summary>
+        [Column("Url")]
+        public string Url { get; set; } = string.Empty;
     }
 }

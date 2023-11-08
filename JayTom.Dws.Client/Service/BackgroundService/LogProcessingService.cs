@@ -262,15 +262,16 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     Type = LogType.Information,
                     FormatWeight = args.FormattedWeight,
                     Source = args.OriginalContent,
-                    Message = $"获取到重量,原内容[{args.OriginalContent}],格式化后重量:{args.FormattedWeight}",
-                    DataSourceType = DataSourceType.DeviceInput
+                    Message = $"获取到重量,原内容[{args.OriginalContent}],格式化后重量:{args.FormattedWeight:F3}",
+                    DataSourceType = DataSourceType.DeviceInput,
+                    CommunicationType = CommunicationType.Receive,
                 });
             };
             //http
             EventAggregator.Instance.Subscribe<ApiResponseReceived>(item => {
                 if (item is ApiResponseReceived model) {
                     EventAggregator.Instance.Publish(new ApiLogInfoModel() {
-                        Type = LogType.Information,
+                        Type = model.UploadResponse?.IsSuccess == true ? LogType.Information : LogType.Exception,
                         ApiParameters = model.UploadResponse?.ApiParameters ?? string.Empty,
                         CreateTime = model.UploadResponse?.RequestTime ?? DateTime.Now,
                         Duration = model.UploadResponse?.Duration ?? 0,
@@ -279,12 +280,10 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         RequestTime = model.UploadResponse?.RequestTime ?? DateTime.Now,
                         ResponseContent = model.UploadResponse?.ResponseContent ?? string.Empty,
                         ResponseTime = model.UploadResponse?.ResponseTime ?? DateTime.Now,
-
+                        Url = model.UploadResponse?.RequestUrl ?? string.Empty,
                     });
-
                 }
             });
-
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
