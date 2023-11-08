@@ -82,10 +82,26 @@
                     NavigationUIVisibility="Hidden"
                     Source="LogsViews/APILogPage.xaml" />
             </TabItem>
-            <TabItem Foreground="White" Header="输出日志" />
+            <TabItem Foreground="White" Header="输出日志">
+
+                <Frame
+                    Margin="0"
+                    Padding="0"
+                    Focusable="False"
+                    NavigationUIVisibility="Hidden"
+                    Source="LogsViews/OutputLogPage.xaml" />
+            </TabItem>
             <TabItem Foreground="White" Header="输入日志" />
             <TabItem Foreground="White" Header="Ocr日志" />
-            <TabItem Foreground="White" Header="Ftp日志" />
+            <TabItem Foreground="White" Header="Ftp日志">
+
+                <Frame
+                    Margin="0"
+                    Padding="0"
+                    Focusable="False"
+                    NavigationUIVisibility="Hidden"
+                    Source="LogsViews/FTPLogPage.xaml" />
+            </TabItem>
             <TabItem Foreground="White" Header="清理记录" />
             <TabItem Foreground="White" Header="异常日志" />
         </TabControl>

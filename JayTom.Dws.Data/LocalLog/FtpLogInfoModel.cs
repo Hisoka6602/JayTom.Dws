@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace JayTom.Dws.Data.LocalLog {
-
     [Table("Log_FtpLogInfo", Schema = "dbo")]
     public class FtpLogInfoModel : BaseLogInfoModel {
 

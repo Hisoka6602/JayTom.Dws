@@ -219,6 +219,10 @@
                 <ResourceDictionary Source="Template/VolumeLogItemTemplate.xaml" />
                 <!--  Api日志信息列表模板  -->
                 <ResourceDictionary Source="Template/ApiLogItemTemplate.xaml" />
+                <!--  输出日志信息列表模板  -->
+                <ResourceDictionary Source="Template/OutputLogItemTemplate.xaml" />
+                <!--  Ftp日志信息列表模板  -->
+                <ResourceDictionary Source="Template/FtpLogItemTemplate.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </prism:PrismApplication.Resources>
