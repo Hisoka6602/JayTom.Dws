@@ -568,6 +568,8 @@ namespace JayTom.Dws.Client {
             ViewModelLocationProvider.Register<SzjyApiPage, SzjyApiPageViewModel>();
             ViewModelLocationProvider.Register<WdtFlagshipApiPage, WdtFlagshipApiPageViewModel>();
             ViewModelLocationProvider.Register<WdtWmsApiPage, WdtWmsApiPageViewModel>();
+            //实时日志
+            ViewModelLocationProvider.Register<RealTimeLogPage, RealTimeLogViewModel>();
             //其他插件
             {
                 ViewModelLocationProvider.Register<SunnenInputBarcodeControl, SunnenInputBarcodeViewModel>();

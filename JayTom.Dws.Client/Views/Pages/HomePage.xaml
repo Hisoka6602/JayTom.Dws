@@ -27,6 +27,8 @@
         <converters:CameraListBoxWidthConverter x:Key="CameraListBoxWidthConverter" />
         <converters:EllipseCenterConverter x:Key="EllipseCenterConverter" />
         <converters:RunningStatusConverter x:Key="RunningStatusConverter" />
+        <converters:HalfHeightConverter x:Key="HalfHeightConverter" />
+
         <converters:OcrInfoShowToVisibilityConverter x:Key="OcrInfoShowToVisibilityConverter" />
 
         <settingsConverter:VolumeUnitConverter x:Key="VolumeUnitConverter" />
@@ -208,8 +210,6 @@
                             </TextBlock>
                         </StackPanel>
                     </Grid>
-
-
 
                     <Rectangle
                         Grid.Column="1"
@@ -547,7 +547,6 @@
                             Stroke="DimGray"
                             StrokeDashArray="8"
                             StrokeThickness="1" />
-
 
                         <!--  耗时  -->
                         <StackPanel
@@ -1091,6 +1090,35 @@
                             </GridView>
                         </ListView.View>
                     </ListView>
+                    <!--  实时日志  -->
+
+                    <Expander
+                        Grid.Row="0"
+                        HorizontalAlignment="Right"
+                        HorizontalContentAlignment="Right"
+                        VerticalContentAlignment="Center"
+                        materialDesign:ExpanderAssist.HeaderBackground="Transparent"
+                        materialDesign:ExpanderAssist.VerticalHeaderPadding="{Binding ActualHeight, RelativeSource={RelativeSource Self}, Converter={StaticResource HalfHeightConverter}}"
+                        Background="Transparent"
+                        ExpandDirection="Right"
+                        Foreground="White"
+                        IsExpanded="False">
+                        <Border
+                            Width="800"
+                            Height="{Binding ActualHeight, RelativeSource={RelativeSource FindAncestor, AncestorType=Expander}}"
+                            Margin="1"
+                            Padding="10"
+                            Background="#202020"
+                            CornerRadius="10">
+                            <!--  实时日志页面  -->
+                            <Frame
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Focusable="False"
+                                NavigationUIVisibility="Hidden"
+                                Source="Preferences/RealTimeLogPage.xaml" />
+                        </Border>
+                    </Expander>
                     <!--  统计  -->
                     <Border Grid.Row="1">
                         <StackPanel Orientation="Horizontal">

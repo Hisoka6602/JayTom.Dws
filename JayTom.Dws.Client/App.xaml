@@ -171,6 +171,8 @@
                 <ResourceDictionary Source="Styles/CustomProgressBarStyle.xaml" />
                 <!--  下拉框按需更新样式  -->
                 <ResourceDictionary Source="Styles/LazyUpdatePopupStyle.xaml" />
+                <!--  展开控件自定义样式  -->
+                <ResourceDictionary Source="Styles/CustomExpanderStyle.xaml" />
 
                 <!--  模板  -->
                 <!--  语言选择模板  -->
