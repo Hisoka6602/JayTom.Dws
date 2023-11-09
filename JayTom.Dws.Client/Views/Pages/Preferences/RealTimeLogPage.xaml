@@ -22,6 +22,7 @@
     </b:Interaction.Triggers>
     <!--  实时页面  -->
     <ListBox
+        Width="780"
         MinHeight="100"
         Margin="0,5"
         HorizontalAlignment="Stretch"
@@ -65,7 +66,10 @@
                     <!--  时间  -->
                     <TextBox
                         Grid.Column="0"
-                        MinHeight="50"
+                        MinHeight="30"
+                        Margin="0"
+                        Padding="0"
+                        VerticalAlignment="Center"
                         HorizontalContentAlignment="Left"
                         VerticalContentAlignment="Center"
                         BorderThickness="0"
@@ -83,9 +87,12 @@
                     <!--  内容  -->
                     <TextBox
                         Grid.Column="2"
-                        MinHeight="50"
+                        MinHeight="30"
+                        Margin="0"
+                        Padding="0"
+                        VerticalAlignment="Center"
                         HorizontalContentAlignment="Stretch"
-                        VerticalContentAlignment="Top"
+                        VerticalContentAlignment="Center"
                         BorderThickness="0"
                         Foreground="White"
                         IsReadOnly="True"
@@ -94,9 +101,7 @@
                         TextWrapping="Wrap"
                         VerticalScrollBarVisibility="Auto" />
                 </Grid>
-
             </DataTemplate>
         </ListBox.ItemTemplate>
     </ListBox>
-
 </Page>

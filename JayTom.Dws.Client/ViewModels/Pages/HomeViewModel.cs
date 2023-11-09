@@ -670,32 +670,32 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                         IsSwitchingState = true;
                         var machineCode = await _computer.GenerateMachineCode();
                         //判断机器码
-                        if (!machineCode.Equals("FA934375569532C76E010057A1F7AF8E")) {
-                            if (!RunningStatus) {
-                                //启动
-                                await _externalDataService.Start();
-                                var (key, value) = await _deviceService.Start();
-                                await _sortingService.Start();
-                                //提示
-                                EventAggregator.Instance.Publish(new AppLogInfoModel {
-                                    CreateTime = DateTime.Now,
-                                    Message = "程序启动",
-                                    Type = LogType.Information
-                                });
-                            }
-                            else {
-                                //停止
-                                HomeMessageQueue.Clear();
-                                await _externalDataService.Stop();
-                                var (key, value) = await _deviceService.Stop();
-                                await _sortingService.Stop();
-                                //提示
-                                EventAggregator.Instance.Publish(new AppLogInfoModel {
-                                    CreateTime = DateTime.Now,
-                                    Message = "程序停止",
-                                    Type = LogType.Information
-                                });
-                            }
+                        /*if (!machineCode.Equals("FA934375569532C76E010057A1F7AF8E")) {
+                        }*/
+                        if (!RunningStatus) {
+                            //启动
+                            await _externalDataService.Start();
+                            var (key, value) = await _deviceService.Start();
+                            await _sortingService.Start();
+                            //提示
+                            EventAggregator.Instance.Publish(new AppLogInfoModel {
+                                CreateTime = DateTime.Now,
+                                Message = "程序启动",
+                                Type = LogType.Information
+                            });
+                        }
+                        else {
+                            //停止
+                            HomeMessageQueue.Clear();
+                            await _externalDataService.Stop();
+                            var (key, value) = await _deviceService.Stop();
+                            await _sortingService.Stop();
+                            //提示
+                            EventAggregator.Instance.Publish(new AppLogInfoModel {
+                                CreateTime = DateTime.Now,
+                                Message = "程序停止",
+                                Type = LogType.Information
+                            });
                         }
 
                         await Application.Current.Dispatcher.InvokeAsync(() => {

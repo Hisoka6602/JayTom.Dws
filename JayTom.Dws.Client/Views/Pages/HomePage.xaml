@@ -1101,6 +1101,7 @@
                         materialDesign:ExpanderAssist.VerticalHeaderPadding="{Binding ActualHeight, RelativeSource={RelativeSource Self}, Converter={StaticResource HalfHeightConverter}}"
                         Background="Transparent"
                         ExpandDirection="Right"
+                        Focusable="False"
                         Foreground="White"
                         IsExpanded="False">
                         <Border
