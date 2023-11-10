@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Collections.Concurrent;
 
 namespace JayTom.Dws.Client.Service.Sorting.Communication.SerialComm {
+
     public class SortingSerialPort : ISortingSerialPort {
         private System.IO.Ports.SerialPort? _serialPort;
         private SortingSerialPortFormat _dataFormat = SortingSerialPortFormat.Ascii;
@@ -37,6 +38,7 @@ namespace JayTom.Dws.Client.Service.Sorting.Communication.SerialComm {
         public event EventHandler<ExceptionEventArgs>? ErrorOccurred;
 
         public event EventHandler<ExceptionEventArgs>? SendError;
+
         public event EventHandler<CommunicationInfo>? Communication;
 
         public event EventHandler<Exception>? HeartbeatError;
@@ -130,7 +132,8 @@ namespace JayTom.Dws.Client.Service.Sorting.Communication.SerialComm {
                     OnCommunication(new CommunicationInfo() {
                         Content = message,
                         FormatType = (FormatType)_dataFormat,
-                        Type = CommunicationType.Send
+                        Type = CommunicationType.Send,
+                        Time = DateTime.Now
                     });
                 }
             }
@@ -191,7 +194,8 @@ namespace JayTom.Dws.Client.Service.Sorting.Communication.SerialComm {
             OnCommunication(new CommunicationInfo() {
                 Content = e.AsciiMessage,
                 FormatType = (FormatType)_dataFormat,
-                Type = CommunicationType.Send
+                Type = CommunicationType.Receive,
+                Time = DateTime.Now
             });
             DataReceived?.Invoke(this, e);
         }

@@ -1,12 +1,16 @@
 ﻿using System;
+using System.IO;
 using Prism.Mvvm;
 using System.Linq;
 using Prism.Regions;
 using Prism.Commands;
 using System.Windows;
+using System.Drawing;
+using Newtonsoft.Json;
 using System.Threading;
 using System.Globalization;
 using System.Windows.Input;
+using System.Windows.Media;
 using Prism.Services.Dialogs;
 using System.Threading.Tasks;
 using System.Windows.Controls;
@@ -14,13 +18,18 @@ using JayTom.Dws.Client.Models;
 using MaterialDesignThemes.Wpf;
 using JayTom.Dws.Data.LocalLog;
 using JayTom.Dws.Data.LocalConf;
+using Size = System.Windows.Size;
 using System.Windows.Media.Imaging;
+using JayTom.Dws.Domain.Dto.AppDto;
+using Point = System.Windows.Point;
 using JayTom.Dws.Client.Views.Dialog;
 using System.Collections.ObjectModel;
 using System.Runtime.InteropServices;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.ViewModels.Dialog;
 using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Client.Models.AppSettingModel;
+using JayTom.Dws.Infrastructure.Repository.LocalConf;
 
 namespace JayTom.Dws.Client.ViewModels {
 
@@ -47,6 +56,9 @@ namespace JayTom.Dws.Client.ViewModels {
                 DecodePixelWidth = 25,
             }
         };
+
+        private string _programTitle = "DWS";
+        private ImageSource? _logoSource = null;
 
         public MainWindowViewModel(IRegionManager regionManager,
             IDialogService dialogService,
@@ -87,6 +99,16 @@ namespace JayTom.Dws.Client.ViewModels {
         public double UniformCornerRadius {
             get => _uniformCornerRadius;
             set => SetProperty(ref _uniformCornerRadius, value);
+        }
+
+        public string ProgramTitle {
+            get => _programTitle;
+            set => SetProperty(ref _programTitle, value);
+        }
+
+        public ImageSource? LogoSource {
+            get => _logoSource;
+            set => SetProperty(ref _logoSource, value);
         }
 
         /// <summary>
@@ -209,6 +231,35 @@ namespace JayTom.Dws.Client.ViewModels {
             var language = (await _configRepository.
                 FirstOrDefault(f => f.ConfigName.Equals("SelectedLanguage")))
                 ?.Value;
+            //加载程序设置
+            var configInfoModel = await _configRepository.FirstOrDefault(f =>
+                f.ConfigName.Equals("OtherSettings"));
+            if (configInfoModel is not null) {
+                try {
+                    var otherSettingsDto = JsonConvert.DeserializeObject<OtherSettingsDto>(configInfoModel.Value);
+                    if (otherSettingsDto is not null) {
+                        //加载图片
+                        if (File.Exists(otherSettingsDto.ProgramLogoPath)) {
+                            LogoSource = JayTom.Dws.PluginInterface.Utils.Utils.CreateBitmapImage(new Uri(otherSettingsDto.ProgramLogoPath), 148, 148);
+                        }
+                        ProgramTitle = otherSettingsDto.ProgramTitle;
+                        //最大化
+                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                            if (obj is Window windows && otherSettingsDto.IsAutoMaximize) {
+                                windows.WindowState = WindowState.Maximized;
+                            }
+                        });
+                    }
+                }
+                catch (Exception e) {
+                    EventAggregator.Instance.Publish(new AppLogInfoModel {
+                        CreateTime = DateTime.Now,
+                        Message = $"加载程序配置错误:{e.Message}",
+                        Type = LogType.Information
+                    });
+                }
+            }
+
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
                 await Task.Delay(TimeSpan.FromSeconds(5));
                 //加载配置需要有一个事件通知各个模块

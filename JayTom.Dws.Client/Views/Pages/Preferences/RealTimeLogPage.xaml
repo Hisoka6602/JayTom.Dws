@@ -15,11 +15,6 @@
     mvvm:ViewModelLocator.AutoWireViewModel="True"
     FontFamily="{StaticResource CustomFontFamily}"
     mc:Ignorable="d">
-    <b:Interaction.Triggers>
-        <b:EventTrigger EventName="Loaded" SourceName="RealTimeLogView">
-            <b:InvokeCommandAction Command="{Binding LoadedCommand, IsAsync=False}" CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Page}}}" />
-        </b:EventTrigger>
-    </b:Interaction.Triggers>
     <!--  实时页面  -->
     <ListBox
         Width="780"
@@ -98,8 +93,7 @@
                         IsReadOnly="True"
                         Style="{StaticResource MaterialDesignOutlinedTextBox}"
                         Text="{Binding Message, UpdateSourceTrigger=PropertyChanged}"
-                        TextWrapping="Wrap"
-                        VerticalScrollBarVisibility="Auto" />
+                        TextWrapping="Wrap" />
                 </Grid>
             </DataTemplate>
         </ListBox.ItemTemplate>

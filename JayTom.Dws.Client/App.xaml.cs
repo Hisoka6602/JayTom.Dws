@@ -62,10 +62,12 @@ using JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision;
 using JayTom.Dws.Client.HomeToolPlugin.SunnenPlugin.Views;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 using JayTom.Dws.Client.Views.Pages.Preferences.LogsViews;
+using JayTom.Dws.Client.Views.Pages.Preferences.AppSettings;
 using JayTom.Dws.Client.Service.Sorting.Communication.TcpComm;
 using JayTom.Dws.Client.HomeToolPlugin.SunnenPlugin.ViewModels;
 using JayTom.Dws.Client.Service.Sorting.Communication.SerialComm;
 using JayTom.Dws.Client.Views.Pages.Preferences.ApiConfiguration;
+using JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings;
 using JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Infrastructure.Repository.LocalConf.CameraConfig;
@@ -131,7 +133,7 @@ namespace JayTom.Dws.Client {
                 containerRegistry.RegisterForNavigation<PackageSortingSettingsPage>();
                 containerRegistry.RegisterForNavigation<OcrSettingsPage>();
                 containerRegistry.RegisterForNavigation<WorkflowSettingsPage>();
-
+                containerRegistry.RegisterForNavigation<AppSettingsPage>();
                 //LogManagerPage
                 //相机
                 containerRegistry.RegisterForNavigation<BarcodeScannerCameraConfigPage>();
@@ -145,6 +147,9 @@ namespace JayTom.Dws.Client {
                 containerRegistry.RegisterForNavigation<SortingSchemeSettingsPage>();
                 containerRegistry.RegisterForNavigation<CommunicationsSettingsPage>();
                 containerRegistry.RegisterForNavigation<SortingMethodPage>();
+                //程序设置
+                containerRegistry.RegisterForNavigation<GridSettingsPage>();
+                containerRegistry.RegisterForNavigation<OtherSettingsPage>();
             }
             //其他注册
             containerRegistry.GetContainer().RegisterServices(services => {
@@ -529,6 +534,7 @@ namespace JayTom.Dws.Client {
             ViewModelLocationProvider.Register<BarcodeFilterSettingsPage, BarcodeFilterSettingsPageViewModel>();
             ViewModelLocationProvider.Register<WeightSettingPages, WeightSettingViewModel>();
             ViewModelLocationProvider.Register<VolumeSettingsPage, VolumeSettingsViewModel>();
+            ViewModelLocationProvider.Register<AppSettingsPage, AppSettingsViewModel>();
             ViewModelLocationProvider.Register<LogManagerPage, LogManagerViewModel>();
             ViewModelLocationProvider.Register<VideoCameraSettingsDialog, VideoCameraSettingsViewModel>();
             ViewModelLocationProvider.Register<TriggerModeSelectionPage, TriggerModeSelectionViewModel>();
@@ -553,6 +559,9 @@ namespace JayTom.Dws.Client {
             ViewModelLocationProvider.Register<OcrSortingPage, OcrSortingViewModel>();
             ViewModelLocationProvider.Register<ApiResponseSortingPage, ApiResponseSortingViewModel>();
             ViewModelLocationProvider.Register<CombinedWorkflowSortingPage, CombinedWorkflowSortingViewModel>();
+            //程序设置
+            ViewModelLocationProvider.Register<GridSettingsPage, GridSettingsViewModel>();
+            ViewModelLocationProvider.Register<OtherSettingsPage, OtherSettingsViewModel>();
             //日志
             ViewModelLocationProvider.Register<AppLogPage, AppLogPageViewModel>();
             ViewModelLocationProvider.Register<CameraLogPage, CameraLogPageViewModel>();

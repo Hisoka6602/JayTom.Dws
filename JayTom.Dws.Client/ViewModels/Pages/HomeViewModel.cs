@@ -574,6 +574,19 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                 EventAggregator.Instance.Publish(new SettingsChangedEvent {
                     SettingsName = "OcrSettings"
                 });
+
+                var configInfoModel = await _configRepository.FirstOrDefault(f =>
+                    f.ConfigName.Equals("OtherSettings"));
+                //自动启动
+                /*if (configInfoModel is not null) {
+                    try {
+                        var serializeObject = JsonConvert.SerializeObject(configInfoModel.Value);
+                        if (serializeObject is not null) {
+                        }
+                    }
+                    catch (Exception e) {
+                    }
+                }*/
             });
         }
 
@@ -659,10 +672,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         /// 开始按钮点击
         /// </summary>
         public ICommand StartCommand {
-            get => new DelegateCommand<CameraItemInfoModel>(StartDelegate);
+            get => new DelegateCommand<object>(StartDelegate);
         }
 
-        private async void StartDelegate(CameraItemInfoModel obj) {
+        private async void StartDelegate(object obj) {
             await Task.Run(async () => {
                 if (!IsSwitchingState) {
                     try {

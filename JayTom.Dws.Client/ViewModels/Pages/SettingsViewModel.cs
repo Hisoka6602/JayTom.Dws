@@ -1,18 +1,19 @@
-﻿using JayTom.Dws.Client.Models;
-using JayTom.Dws.Client.ViewModels.Dialog;
-using JayTom.Dws.Client.Views.Dialog;
-using MaterialDesignThemes.Wpf;
-using Prism.Commands;
+﻿using System;
 using Prism.Mvvm;
 using Prism.Regions;
-using System;
-using System.Collections.ObjectModel;
-using System.Threading.Tasks;
+using Prism.Commands;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Input;
+using System.Threading.Tasks;
+using System.Windows.Controls;
+using JayTom.Dws.Client.Models;
+using MaterialDesignThemes.Wpf;
+using JayTom.Dws.Client.Views.Dialog;
+using System.Collections.ObjectModel;
+using JayTom.Dws.Client.ViewModels.Dialog;
 
 namespace JayTom.Dws.Client.ViewModels.Pages {
+
     public class SettingsViewModel : BindableBase {
         private readonly IRegionManager _regionManager;
 
@@ -179,7 +180,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     ClickCommand = ClickCommand,
                     PageClassName = "OcrSettingsPage"
                 },
-                new MenuItemInfoModel()
+                /*new MenuItemInfoModel()
                 {
                     IconFont = new IconInfoModel()
                     {
@@ -191,8 +192,20 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     Description = "工作流相关设置" ?? string.Empty,
                     ClickCommand = ClickCommand,
                     PageClassName = "WorkflowSettingsPage"
+                },*/
+                new MenuItemInfoModel()
+                {
+                    IconFont = new IconInfoModel()
+                    {
+                        IconFont = "pack://application:,,,/Fonts/#iconfont",
+                        IconCode = "\xe713",
+                        IconSize = 30
+                    },
+                    Title = "程序设置"??string.Empty,
+                    Description = "程序设置" ?? string.Empty,
+                    ClickCommand = ClickCommand,
+                    PageClassName = "AppSettingsPage"
                 },
-
                 new MenuItemInfoModel()
                 {
                     IconFont = new IconInfoModel()

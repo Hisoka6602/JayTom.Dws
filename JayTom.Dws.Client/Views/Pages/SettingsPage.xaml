@@ -94,7 +94,7 @@
                 FontWeight="Bold"
                 Foreground="White"
                 Opacity="0.1"
-                Visibility="Collapsed">
+                Visibility="Visible">
                 Hisoka
             </TextBlock>
         </Grid>

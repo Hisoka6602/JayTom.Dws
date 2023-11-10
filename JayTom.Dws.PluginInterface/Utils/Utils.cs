@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Windows.Media.Imaging;
 
 namespace JayTom.Dws.PluginInterface.Utils {
+
     public static class Utils {
 
         public static T? GetVisualChild<T>(DependencyObject parent, Func<T, bool> predicate) where T : Visual {
@@ -74,6 +75,7 @@ namespace JayTom.Dws.PluginInterface.Utils {
             encoder.Save(memoryStream);
             return Image.FromStream(memoryStream);
         }
+
         public static byte[]? ImageSourceToByteArray(this ImageSource imageSource) {
             try {
                 var bitmapSource = (BitmapSource)imageSource;
@@ -87,9 +89,7 @@ namespace JayTom.Dws.PluginInterface.Utils {
             }
             catch (Exception e) {
                 return null;
-
             }
-
         }
 
         public static ImageSource? ByteArrayToImageSource(this byte[] byteArray) {
@@ -106,9 +106,25 @@ namespace JayTom.Dws.PluginInterface.Utils {
             }
             catch (Exception e) {
                 return null;
+            }
+        }
 
+        public static BitmapImage? CreateBitmapImage(Uri uri, int width, int height) {
+            try {
+                var image = new BitmapImage();
+                image.BeginInit();
+                image.UriSource = uri;
+                image.DecodePixelHeight = height;
+                image.DecodePixelWidth = width;
+                image.CacheOption = BitmapCacheOption.OnLoad;
+                image.EndInit();
+                return image;
+            }
+            catch {
+                // ignored
             }
 
+            return null;
         }
     }
 }

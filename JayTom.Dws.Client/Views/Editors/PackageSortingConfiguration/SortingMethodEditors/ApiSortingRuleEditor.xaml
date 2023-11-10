@@ -511,7 +511,6 @@
                                     FontSize="13"
                                     FontWeight="Bold"
                                     Foreground="White"
-                                    InputMethod.IsInputMethodEnabled="False"
                                     Text="{Binding JsonFieldValue, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                             </Border>
                         </StackPanel>

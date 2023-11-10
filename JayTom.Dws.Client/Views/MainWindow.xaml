@@ -3,6 +3,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
+    xmlns:converters="clr-namespace:JayTom.Dws.Client.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="clr-namespace:JayTom.Dws.Client"
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
@@ -39,6 +40,7 @@
             UseAeroCaptionButtons="True" />
     </WindowChrome.WindowChrome>
     <Window.Resources>
+        <converters:ImageConverter x:Key="ImageConverter" />
         <materialDesign:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
         <Storyboard x:Key="ShowFrameStoryboard">
             <ObjectAnimationUsingKeyFrames
@@ -53,6 +55,11 @@
                 </DiscreteObjectKeyFrame>
             </ObjectAnimationUsingKeyFrames>
         </Storyboard>
+        <BitmapImage
+            x:Key="DefaultImage"
+            DecodePixelHeight="148"
+            DecodePixelWidth="148"
+            UriSource="pack://application:,,,/Image/Logo/logobw.png" />
     </Window.Resources>
     <!--  任务栏  -->
     <!--<Window.TaskbarItemInfo>
@@ -118,7 +125,7 @@
                                     FontSize="18"
                                     FontWeight="Bold"
                                     Foreground="White"
-                                    Text="DWS分拣系统" />
+                                    Text="{Binding ProgramTitle, UpdateSourceTrigger=PropertyChanged}" />
                                 <!--  工具  Visibility="Collapsed"  -->
                                 <ComboBox
                                     Name="HomeToolComboBox"
@@ -296,14 +303,14 @@
                                     Width="296"
                                     Height="296"
                                     CornerRadius="148"
-                                    Opacity="0.8">
+                                    Opacity="0.9">
                                     <Border.Background>
                                         <ImageBrush>
                                             <ImageBrush.ImageSource>
-                                                <BitmapImage
-                                                    DecodePixelHeight="148"
-                                                    DecodePixelWidth="148"
-                                                    UriSource="pack://application:,,,/Image/Logo/logobw.png" />
+                                                <MultiBinding Converter="{StaticResource ImageConverter}">
+                                                    <Binding Path="LogoSource" UpdateSourceTrigger="PropertyChanged" />
+                                                    <Binding Source="{StaticResource DefaultImage}" />
+                                                </MultiBinding>
                                             </ImageBrush.ImageSource>
                                         </ImageBrush>
                                     </Border.Background>
@@ -331,10 +338,10 @@
                                 <Border.Background>
                                     <ImageBrush Opacity="0.1">
                                         <ImageBrush.ImageSource>
-                                            <BitmapImage
-                                                DecodePixelHeight="148"
-                                                DecodePixelWidth="148"
-                                                UriSource="pack://application:,,,/Image/Logo/logobw.png" />
+                                            <MultiBinding Converter="{StaticResource ImageConverter}">
+                                                <Binding Path="LogoSource" UpdateSourceTrigger="PropertyChanged" />
+                                                <Binding Source="{StaticResource DefaultImage}" />
+                                            </MultiBinding>
                                         </ImageBrush.ImageSource>
                                     </ImageBrush>
                                 </Border.Background>
