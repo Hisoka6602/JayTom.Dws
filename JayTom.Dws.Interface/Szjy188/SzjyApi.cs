@@ -76,7 +76,7 @@ namespace JayTom.Dws.Interface.Szjy188 {
             Dictionary<string, object> param = new()
             {
                 {"sendcode",barcode},
-                {"weight",Convert.ToSingle(Math.Round(weight, 3))},
+                {"weight",Math.Round(Convert.ToDecimal(weight), 3)},
                 {"length",length},
                 {"width",width},
                 {"height",height},

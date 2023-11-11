@@ -30,7 +30,7 @@ namespace JayTom.Dws.Interface.Wdt {
             var isSuccess = false;
             var data = new {
                 logistics_no = barcode,
-                weight = Convert.ToSingle(Math.Round(weight, 3)),
+                weight = Math.Round(Convert.ToDecimal(weight), 3),
                 is_weight = "Y"
             };
             var timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
@@ -137,7 +137,7 @@ namespace JayTom.Dws.Interface.Wdt {
             var isSuccess = false;
             var data = new {
                 logistics_no = barcode,
-                weight = weight,
+                weight = Math.Round(Convert.ToDecimal(weight), 3),
                 is_weight = "Y"
             };
             var timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");

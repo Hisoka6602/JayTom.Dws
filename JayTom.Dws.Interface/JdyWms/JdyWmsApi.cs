@@ -42,7 +42,7 @@ namespace JayTom.Dws.Interface.JdyWms {
             var data = new {
                 ticketsNum = barcode,
                 length = length,
-                width = Convert.ToSingle(Math.Round(weight, 3)),
+                width = Math.Round(Convert.ToDecimal(weight), 3),
                 height = height,
                 weight = weight,
                 workConsole = "分拣机",

@@ -29,9 +29,10 @@ namespace JayTom.Dws.Interface.Wdt {
             var resultContent = string.Empty;
             var exceptionMsg = string.Empty;
             var isSuccess = false;
+            var roundedWeight = Math.Round(Convert.ToDecimal(weight), 3);
             var objects = ApiParameters.Method.Equals("wms.stockout.Sales.weighingExt") ?
-                new object[] { barcode, string.Empty, Convert.ToSingle(Math.Round(weight, 3)), ApiParameters.PackagerId, ApiParameters.Force }
-                : new object[] { barcode, string.Empty, Convert.ToSingle(Math.Round(weight, 3)), ApiParameters.PackagerId, ApiParameters.OperateTableName, ApiParameters.Force };
+                new object[] { barcode, string.Empty, roundedWeight, ApiParameters.PackagerId, ApiParameters.Force }
+                : new object[] { barcode, string.Empty, roundedWeight, ApiParameters.PackagerId, ApiParameters.OperateTableName, ApiParameters.Force };
 
             var dictionary = new Dictionary<string, object>()
             {
@@ -130,9 +131,10 @@ namespace JayTom.Dws.Interface.Wdt {
             var exceptionMsg = string.Empty;
             var isSuccess = false;
 
+            var roundedWeight = Math.Round(Convert.ToDecimal(weight), 3);
             var objects = ApiParameters.Method.Equals("wms.stockout.Sales.weighingExt") ?
-                new object[] { barcode, string.Empty, weight, ApiParameters.PackagerId, ApiParameters.Force }
-                : new object[] { barcode, string.Empty, weight, ApiParameters.PackagerId, ApiParameters.OperateTableName, ApiParameters.Force };
+                new object[] { barcode, string.Empty, roundedWeight, ApiParameters.PackagerId, ApiParameters.Force }
+                : new object[] { barcode, string.Empty, roundedWeight, ApiParameters.PackagerId, ApiParameters.OperateTableName, ApiParameters.Force };
 
             var dictionary = new Dictionary<string, object>()
             {
