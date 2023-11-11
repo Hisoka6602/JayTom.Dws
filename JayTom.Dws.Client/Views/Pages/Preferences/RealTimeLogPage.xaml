@@ -6,6 +6,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="clr-namespace:JayTom.Dws.Client.Views.Pages.Preferences"
     xmlns:logsItemModels="clr-namespace:JayTom.Dws.Client.Models.LogsItemModels"
+    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:mvvm="http://prismlibrary.com/"
     Name="RealTimeLogView"
@@ -15,87 +16,112 @@
     mvvm:ViewModelLocator.AutoWireViewModel="True"
     FontFamily="{StaticResource CustomFontFamily}"
     mc:Ignorable="d">
-    <!--  实时页面  -->
-    <ListBox
-        Width="780"
-        MinHeight="100"
-        Margin="0,5"
-        HorizontalAlignment="Stretch"
-        VerticalAlignment="Top"
-        HorizontalContentAlignment="Stretch"
-        VerticalContentAlignment="Top"
-        Foreground="White"
-        ItemsSource="{Binding LogItems}">
-        <ListBox.ItemContainerStyle>
-            <Style TargetType="ListBoxItem">
-                <Setter Property="Height" Value="Auto" />
-                <Setter Property="Margin" Value="0" />
-                <Setter Property="Padding" Value="0" />
-                <Setter Property="Focusable" Value="False" />
-                <Setter Property="IsSelected" Value="False" />
-                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                <Setter Property="Background" Value="Transparent" />
-                <Setter Property="Foreground" Value="White" />
-                <Setter Property="SnapsToDevicePixels" Value="True" />
-                <!--  去掉焦点框  -->
-                <Setter Property="Template">
-                    <Setter.Value>
-                        <ControlTemplate TargetType="{x:Type ListBoxItem}">
-                            <ContentPresenter
-                                Content="{TemplateBinding Content}"
-                                ContentStringFormat="{TemplateBinding ContentStringFormat}"
-                                ContentTemplate="{TemplateBinding ContentTemplate}" />
-                        </ControlTemplate>
-                    </Setter.Value>
-                </Setter>
-            </Style>
-        </ListBox.ItemContainerStyle>
-        <ListBox.ItemTemplate>
-            <DataTemplate DataType="{x:Type logsItemModels:BaseLogItemModel}">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-                    <!--  时间  -->
-                    <TextBox
-                        Grid.Column="0"
-                        MinHeight="30"
-                        Margin="0"
-                        Padding="0"
-                        VerticalAlignment="Center"
-                        HorizontalContentAlignment="Left"
-                        VerticalContentAlignment="Center"
-                        BorderThickness="0"
-                        Foreground="White"
-                        IsReadOnly="True"
-                        Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                        Text="{Binding CreateTime, StringFormat={}{0:yyyy-MM-dd HH:mm:ss.fff}, UpdateSourceTrigger=PropertyChanged}"
-                        TextWrapping="Wrap" />
-                    <TextBlock
-                        Grid.Column="1"
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Center"
-                        Foreground="White"
-                        Text="-&gt;" />
-                    <!--  内容  -->
-                    <TextBox
-                        Grid.Column="2"
-                        MinHeight="30"
-                        Margin="0"
-                        Padding="0"
-                        VerticalAlignment="Center"
-                        HorizontalContentAlignment="Stretch"
-                        VerticalContentAlignment="Center"
-                        BorderThickness="0"
-                        Foreground="White"
-                        IsReadOnly="True"
-                        Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                        Text="{Binding Message, UpdateSourceTrigger=PropertyChanged}"
-                        TextWrapping="Wrap" />
-                </Grid>
-            </DataTemplate>
-        </ListBox.ItemTemplate>
-    </ListBox>
+    <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <Button
+            Grid.Row="0"
+            Width="25"
+            Height="25"
+            HorizontalAlignment="Right"
+            VerticalAlignment="Center"
+            Command="{Binding ClearLogCommand}"
+            Style="{StaticResource MaterialDesignIconButton}"
+            ToolTip="清空">
+            <TextBlock
+                VerticalAlignment="Center"
+                FontFamily="{StaticResource IconFontFamily}"
+                FontSize="13"
+                Foreground="DarkGray"
+                Text="&#xe601;" />
+        </Button>
+        <!--  实时页面  -->
+        <ListBox
+            Grid.Row="1"
+            Width="780"
+            MinHeight="100"
+            Margin="0,5"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Top"
+            HorizontalContentAlignment="Stretch"
+            VerticalContentAlignment="Top"
+            Foreground="White"
+            ItemsSource="{Binding LogItems}">
+            <ListBox.ItemContainerStyle>
+                <Style TargetType="ListBoxItem">
+                    <Setter Property="Height" Value="Auto" />
+                    <Setter Property="Margin" Value="0" />
+                    <Setter Property="Padding" Value="0" />
+                    <Setter Property="Focusable" Value="False" />
+                    <Setter Property="IsSelected" Value="False" />
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                    <Setter Property="Background" Value="Transparent" />
+                    <Setter Property="Foreground" Value="White" />
+                    <Setter Property="SnapsToDevicePixels" Value="True" />
+                    <!--  去掉焦点框  -->
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="{x:Type ListBoxItem}">
+                                <ContentPresenter
+                                    Content="{TemplateBinding Content}"
+                                    ContentStringFormat="{TemplateBinding ContentStringFormat}"
+                                    ContentTemplate="{TemplateBinding ContentTemplate}" />
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </ListBox.ItemContainerStyle>
+            <ListBox.ItemTemplate>
+                <DataTemplate DataType="{x:Type logsItemModels:BaseLogItemModel}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <!--  时间  -->
+                        <TextBox
+                            Grid.Column="0"
+                            MinHeight="30"
+                            Margin="0"
+                            Padding="0"
+                            VerticalAlignment="Center"
+                            HorizontalContentAlignment="Left"
+                            VerticalContentAlignment="Center"
+                            BorderThickness="0"
+                            Foreground="White"
+                            IsReadOnly="True"
+                            Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                            Text="{Binding CreateTime, StringFormat={}{0:yyyy-MM-dd HH:mm:ss.fff}, UpdateSourceTrigger=PropertyChanged}"
+                            TextWrapping="Wrap" />
+                        <TextBlock
+                            Grid.Column="1"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Foreground="White"
+                            Text="-&gt;" />
+                        <!--  内容  -->
+                        <TextBox
+                            Grid.Column="2"
+                            MinHeight="30"
+                            Margin="0"
+                            Padding="0"
+                            VerticalAlignment="Center"
+                            HorizontalContentAlignment="Stretch"
+                            VerticalContentAlignment="Center"
+                            BorderThickness="0"
+                            Foreground="White"
+                            IsReadOnly="True"
+                            Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                            Text="{Binding Message, UpdateSourceTrigger=PropertyChanged}"
+                            TextWrapping="Wrap" />
+                    </Grid>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+    </Grid>
+
+
 </Page>

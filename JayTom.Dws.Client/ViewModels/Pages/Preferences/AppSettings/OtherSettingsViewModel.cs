@@ -4,6 +4,8 @@ using Prism.Mvvm;
 using Prism.Commands;
 using Newtonsoft.Json;
 using Microsoft.Win32;
+using System.Reflection;
+using System.Diagnostics;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Forms;
@@ -20,6 +22,7 @@ using JayTom.Dws.Client.Models.OcrSettingsModel;
 using OpenFileDialog = System.Windows.Forms.OpenFileDialog;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings {
+
     public class OtherSettingsViewModel : BindableBase {
         private readonly IConfigRepository _configRepository;
         private OtherSettingsModel _otherSettingsInfo = new();
@@ -92,13 +95,15 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings {
                                 IsAutoMaximize = OtherSettingsInfo.IsAutoMaximize,
                                 IsAutoStart = OtherSettingsInfo.IsAutoStart,
                                 ProgramTitle = OtherSettingsInfo.ProgramTitle,
-                                ProgramLogoPath = dest
+                                ProgramLogoPath = dest,
+                                IsAutoRunEnabled = OtherSettingsInfo.IsAutoRunEnabled
                             })
                         });
                         if (insertOrUpdate) {
                             EventAggregator.Instance.Publish(new SettingsChangedEvent {
                                 SettingsName = "OtherSettings"
                             });
+                            SetAutoRun(OtherSettingsInfo.IsAutoRunEnabled);
                             OtherSettingsMessageQueue.Enqueue($"保存成功!");
                         }
                         else {
@@ -135,7 +140,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings {
                                     IsAutoMaximize = otherSettingsDto.IsAutoMaximize,
                                     IsAutoStart = otherSettingsDto.IsAutoStart,
                                     ProgramLogoPath = otherSettingsDto.ProgramLogoPath,
-                                    ProgramTitle = otherSettingsDto.ProgramTitle
+                                    ProgramTitle = otherSettingsDto.ProgramTitle,
+                                    IsAutoRunEnabled = otherSettingsDto.IsAutoRunEnabled
                                 };
                             }
                             //检查图片是否存在
@@ -192,6 +198,22 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings {
             }
 
             return null;
+        }
+
+        private void SetAutoRun(bool enable) {
+            var mainModuleFileName = Process.GetCurrentProcess().MainModule?.FileName;
+            if (!string.IsNullOrEmpty(mainModuleFileName)) {
+                using (var key = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true)) {
+                    if (enable) {
+                        // 设置开机自动运行
+                        key?.SetValue(mainModuleFileName, System.Reflection.Assembly.GetExecutingAssembly().Location);
+                    }
+                    else {
+                        // 取消开机自动运行
+                        key?.DeleteValue(mainModuleFileName, false);
+                    }
+                }
+            }
         }
     }
 }

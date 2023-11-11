@@ -515,7 +515,7 @@
                             FontWeight="Bold"
                             Foreground="DarkGray"
                             IsChecked="{Binding DefaultApiInfo.ValidationMode, Converter={StaticResource ResponseValidationModeToBooleanConverter}, ConverterParameter=CompleteMatch}"
-                            Style="{StaticResource MaterialDesignRadioButton}" />
+                            Template="{StaticResource CustomRadioButtonTemplate}" />
                         <StackPanel
                             Margin="50,0,0,0"
                             IsEnabled="{Binding ElementName=ExactMatchRadioButton, Path=IsChecked}"
@@ -554,13 +554,15 @@
                         <!--  包含字符串  -->
                         <RadioButton
                             Name="ContainsStringRadioButton"
+                            BorderBrush="White"
+                            BorderThickness="3"
                             Content="{x:Static languages:Language.ContainString}"
                             Focusable="False"
                             FontSize="13"
                             FontWeight="Bold"
                             Foreground="DarkGray"
                             IsChecked="{Binding DefaultApiInfo.ValidationMode, Converter={StaticResource ResponseValidationModeToBooleanConverter}, ConverterParameter=StringContains}"
-                            Style="{StaticResource MaterialDesignRadioButton}" />
+                            Template="{StaticResource CustomRadioButtonTemplate}" />
                         <StackPanel
                             Margin="50,0,0,0"
                             IsEnabled="{Binding ElementName=ContainsStringRadioButton, Path=IsChecked}"
@@ -605,7 +607,7 @@
                             FontWeight="Bold"
                             Foreground="DarkGray"
                             IsChecked="{Binding DefaultApiInfo.ValidationMode, Converter={StaticResource ResponseValidationModeToBooleanConverter}, ConverterParameter=RegularExpression}"
-                            Style="{StaticResource MaterialDesignRadioButton}" />
+                            Template="{StaticResource CustomRadioButtonTemplate}" />
                         <StackPanel
                             Margin="50,0,0,0"
                             IsEnabled="{Binding ElementName=RegularExpressionRadioButton, Path=IsChecked}"

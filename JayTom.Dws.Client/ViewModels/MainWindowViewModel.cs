@@ -255,7 +255,7 @@ namespace JayTom.Dws.Client.ViewModels {
                     EventAggregator.Instance.Publish(new AppLogInfoModel {
                         CreateTime = DateTime.Now,
                         Message = $"加载程序配置错误:{e.Message}",
-                        Type = LogType.Information
+                        Type = LogType.Exception
                     });
                 }
             }

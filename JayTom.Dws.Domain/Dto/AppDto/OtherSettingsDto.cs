@@ -19,6 +19,11 @@ namespace JayTom.Dws.Domain.Dto.AppDto {
         public bool IsAutoStart { get; set; }
 
         /// <summary>
+        /// 是否开机自动运行
+        /// </summary>
+        public bool IsAutoRunEnabled { get; set; }
+
+        /// <summary>
         /// 程序标题
         /// </summary>
         public string ProgramTitle { get; set; } = string.Empty;

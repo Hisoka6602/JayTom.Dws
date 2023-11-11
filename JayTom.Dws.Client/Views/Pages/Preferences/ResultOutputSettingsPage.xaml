@@ -456,7 +456,7 @@
                             FontWeight="Bold"
                             Foreground="DarkGray"
                             IsChecked="{Binding TcpSettingsInfo.ConnectionMode, Converter={StaticResource TcpConnectionModeToBooleanConverter}, ConverterParameter=Server}"
-                            Style="{StaticResource MaterialDesignRadioButton}" />
+                            Template="{StaticResource CustomRadioButtonTemplate}" />
                         <StackPanel Margin="50,0,0,0" Orientation="Horizontal">
                             <StackPanel Orientation="Horizontal">
                                 <!--  图标  -->
@@ -530,7 +530,7 @@
                             FontWeight="Bold"
                             Foreground="DarkGray"
                             IsChecked="{Binding TcpSettingsInfo.ConnectionMode, Converter={StaticResource TcpConnectionModeToBooleanConverter}, ConverterParameter=Client}"
-                            Style="{StaticResource MaterialDesignRadioButton}" />
+                            Template="{StaticResource CustomRadioButtonTemplate}" />
                         <StackPanel Margin="50,0,0,0" Orientation="Horizontal">
                             <StackPanel Orientation="Horizontal">
                                 <!--  图标  -->
@@ -863,7 +863,7 @@
                         FontWeight="Bold"
                         Foreground="DarkGray"
                         IsChecked="{Binding SerialPortResultOutput.IsUseDataTemplateOutput, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                        Style="{StaticResource MaterialDesignRadioButton}" />
+                        Template="{StaticResource CustomRadioButtonTemplate}" />
                     <!--  使用自定义输出  -->
                     <RadioButton
                         Name="IsUseCustomSerialPortOutputRadioButton"
@@ -873,7 +873,7 @@
                         FontWeight="Bold"
                         Foreground="DarkGray"
                         IsChecked="{Binding SerialPortResultOutput.IsUseCustomContentOutput, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                        Style="{StaticResource MaterialDesignRadioButton}" />
+                        Template="{StaticResource CustomRadioButtonTemplate}" />
                     <StackPanel
                         Margin="50,0,0,0"
                         IsEnabled="{Binding ElementName=IsUseCustomSerialPortOutputRadioButton, Path=IsChecked}"

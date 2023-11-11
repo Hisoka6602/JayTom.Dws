@@ -12,6 +12,7 @@ namespace JayTom.Dws.Client.Models.AppSettingModel {
         private bool _isAutoStart;
         private string _programTitle = string.Empty;
         private string _programLogoPath = string.Empty;
+        private bool _isAutoRunEnabled;
 
         /// <summary>
         /// 是否自动最大化
@@ -27,6 +28,14 @@ namespace JayTom.Dws.Client.Models.AppSettingModel {
         public bool IsAutoStart {
             get => _isAutoStart;
             set => SetProperty(ref _isAutoStart, value);
+        }
+
+        /// <summary>
+        /// 是否开机自动运行
+        /// </summary>
+        public bool IsAutoRunEnabled {
+            get => _isAutoRunEnabled;
+            set => SetProperty(ref _isAutoRunEnabled, value);
         }
 
         /// <summary>

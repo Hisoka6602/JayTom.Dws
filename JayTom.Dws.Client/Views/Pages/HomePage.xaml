@@ -1096,7 +1096,7 @@
                         Grid.Row="0"
                         HorizontalAlignment="Right"
                         HorizontalContentAlignment="Right"
-                        VerticalContentAlignment="Center"
+                        VerticalContentAlignment="Stretch"
                         materialDesign:ExpanderAssist.HeaderBackground="Transparent"
                         materialDesign:ExpanderAssist.VerticalHeaderPadding="{Binding ActualHeight, RelativeSource={RelativeSource Self}, Converter={StaticResource HalfHeightConverter}}"
                         Background="Transparent"
@@ -1114,7 +1114,7 @@
                             <!--  实时日志页面  -->
                             <Frame
                                 HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
+                                VerticalAlignment="Stretch"
                                 Focusable="False"
                                 NavigationUIVisibility="Hidden"
                                 Source="Preferences/RealTimeLogPage.xaml" />

@@ -96,6 +96,34 @@
                             Style="{StaticResource CustomCheckBoxStyle}" />
                     </StackPanel>
                 </StackPanel>
+                <!--  自动启动  -->
+                <StackPanel
+                    Margin="5,5"
+                    VerticalAlignment="Center"
+                    Orientation="Vertical">
+                    <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
+                        <TextBlock
+                            Margin="-3,0,0,1"
+                            VerticalAlignment="Center"
+                            FontFamily="{StaticResource IconFontFamily}"
+                            FontSize="25"
+                            Foreground="DarkGray"
+                            Text="&#xe85c;" />
+                        <TextBlock
+                            Margin="5,0"
+                            VerticalAlignment="Center"
+                            FontSize="16"
+                            FontWeight="Bold"
+                            Foreground="DarkGray"
+                            Text="是否开机自动运行:" />
+                        <CheckBox
+                            BorderBrush="DodgerBlue"
+                            BorderThickness="2"
+                            Foreground="#2E2E2E"
+                            IsChecked="{Binding OtherSettingsInfo.IsAutoRunEnabled, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                            Style="{StaticResource CustomCheckBoxStyle}" />
+                    </StackPanel>
+                </StackPanel>
                 <!--  程序标题  -->
                 <StackPanel
                     Margin="5,0"

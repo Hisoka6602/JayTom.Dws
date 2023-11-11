@@ -204,7 +204,7 @@
                                         FontWeight="Bold"
                                         Foreground="White"
                                         IsChecked="{Binding StartCharacterType, Converter={StaticResource CharacterTypeToBooleanConverter}, ConverterParameter=Alphanumeric}"
-                                        Style="{StaticResource MaterialDesignRadioButton}" />
+                                        Template="{StaticResource CustomRadioButtonTemplate}" />
                                     <RadioButton
                                         Margin="10,0"
                                         Command="{Binding StartCharacterTypeChangedCommand}"
@@ -213,7 +213,7 @@
                                         FontWeight="Bold"
                                         Foreground="White"
                                         IsChecked="{Binding StartCharacterType, Converter={StaticResource CharacterTypeToBooleanConverter}, ConverterParameter=Letter}"
-                                        Style="{StaticResource MaterialDesignRadioButton}" />
+                                        Template="{StaticResource CustomRadioButtonTemplate}" />
                                     <RadioButton
                                         Margin="10,0"
                                         Command="{Binding StartCharacterTypeChangedCommand}"
@@ -222,7 +222,7 @@
                                         FontWeight="Bold"
                                         Foreground="White"
                                         IsChecked="{Binding StartCharacterType, Converter={StaticResource CharacterTypeToBooleanConverter}, ConverterParameter=Number}"
-                                        Style="{StaticResource MaterialDesignRadioButton}" />
+                                        Template="{StaticResource CustomRadioButtonTemplate}" />
                                 </StackPanel>
                             </Border>
                         </StackPanel>
@@ -252,7 +252,7 @@
                                         FontWeight="Bold"
                                         Foreground="White"
                                         IsChecked="{Binding EndCharacterType, Converter={StaticResource CharacterTypeToBooleanConverter}, ConverterParameter=Alphanumeric}"
-                                        Style="{StaticResource MaterialDesignRadioButton}" />
+                                        Template="{StaticResource CustomRadioButtonTemplate}" />
                                     <RadioButton
                                         Margin="10,0"
                                         Command="{Binding EndCharacterTypeChangedCommand}"
@@ -261,7 +261,7 @@
                                         FontWeight="Bold"
                                         Foreground="White"
                                         IsChecked="{Binding EndCharacterType, Converter={StaticResource CharacterTypeToBooleanConverter}, ConverterParameter=Letter}"
-                                        Style="{StaticResource MaterialDesignRadioButton}" />
+                                        Template="{StaticResource CustomRadioButtonTemplate}" />
                                     <RadioButton
                                         Margin="10,0"
                                         Command="{Binding EndCharacterTypeChangedCommand}"
@@ -270,7 +270,7 @@
                                         FontWeight="Bold"
                                         Foreground="White"
                                         IsChecked="{Binding EndCharacterType, Converter={StaticResource CharacterTypeToBooleanConverter}, ConverterParameter=Number}"
-                                        Style="{StaticResource MaterialDesignRadioButton}" />
+                                        Template="{StaticResource CustomRadioButtonTemplate}" />
                                 </StackPanel>
                             </Border>
                         </StackPanel>

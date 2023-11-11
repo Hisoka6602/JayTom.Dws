@@ -285,7 +285,7 @@
                         FontWeight="Bold"
                         Foreground="DarkGray"
                         IsChecked="{Binding IsUseRules, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                        Style="{StaticResource MaterialDesignRadioButton}" />
+                        Template="{StaticResource CustomRadioButtonTemplate}" />
 
                     <StackPanel
                         Margin="50,5,0,0"
@@ -401,7 +401,7 @@
                         FontWeight="Bold"
                         Foreground="DarkGray"
                         IsChecked="{Binding IsUseRegex, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                        Style="{StaticResource MaterialDesignRadioButton}" />
+                        Template="{StaticResource CustomRadioButtonTemplate}" />
                     <Border
                         MinHeight="60"
                         MaxHeight="200"

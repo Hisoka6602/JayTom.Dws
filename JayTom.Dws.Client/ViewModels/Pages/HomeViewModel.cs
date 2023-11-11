@@ -19,6 +19,7 @@ using JayTom.Dws.Client.Service;
 using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
 using JayTom.Dws.Domain.Converters;
+using JayTom.Dws.Domain.Dto.AppDto;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Service.Device;
@@ -578,15 +579,21 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                 var configInfoModel = await _configRepository.FirstOrDefault(f =>
                     f.ConfigName.Equals("OtherSettings"));
                 //自动启动
-                /*if (configInfoModel is not null) {
+                if (configInfoModel is not null) {
                     try {
-                        var serializeObject = JsonConvert.SerializeObject(configInfoModel.Value);
-                        if (serializeObject is not null) {
+                        var settingsDto = JsonConvert.DeserializeObject<OtherSettingsDto>(configInfoModel.Value);
+                        if (settingsDto is not null && settingsDto.IsAutoStart) {
+                            StartDelegate(new object());
                         }
                     }
                     catch (Exception e) {
+                        EventAggregator.Instance.Publish(new AppLogInfoModel {
+                            CreateTime = DateTime.Now,
+                            Message = e.Message,
+                            Type = LogType.Exception
+                        });
                     }
-                }*/
+                }
             });
         }
 

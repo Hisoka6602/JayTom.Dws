@@ -86,7 +86,7 @@
                             FontWeight="Bold"
                             Foreground="DarkGray"
                             IsChecked="{Binding TcpSettingsInfo.ConnectionMode, Converter={StaticResource TcpConnectionModeToBooleanConverter}, ConverterParameter=Server}"
-                            Style="{StaticResource MaterialDesignRadioButton}" />
+                            Template="{StaticResource CustomRadioButtonTemplate}" />
                         <StackPanel Margin="50,0,0,0" Orientation="Horizontal">
                             <StackPanel Orientation="Horizontal">
                                 <!--  图标  -->
@@ -160,7 +160,7 @@
                             FontWeight="Bold"
                             Foreground="DarkGray"
                             IsChecked="{Binding TcpSettingsInfo.ConnectionMode, Converter={StaticResource TcpConnectionModeToBooleanConverter}, ConverterParameter=Client}"
-                            Style="{StaticResource MaterialDesignRadioButton}" />
+                            Template="{StaticResource CustomRadioButtonTemplate}" />
                         <StackPanel Margin="50,0,0,0" Orientation="Horizontal">
                             <StackPanel Orientation="Horizontal">
                                 <!--  图标  -->

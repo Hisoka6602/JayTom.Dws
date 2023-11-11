@@ -2,8 +2,10 @@
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
+using Prism.Commands;
 using System.IO.Ports;
 using System.Threading;
+using System.Windows.Input;
 using System.Threading.Tasks;
 using JayTom.Dws.Data.LocalLog;
 using System.Collections.Generic;
@@ -12,7 +14,6 @@ using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Models.LogsItemModels;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
-
     public class RealTimeLogViewModel : BindableBase {
         private ObservableCollection<BaseLogItemModel> _logItems = new();
         private SemaphoreSlim _addSlim = new(1);
@@ -101,6 +102,17 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             finally {
                 _addSlim.Release();
             }
+        }
+
+        public ICommand ClearLogCommand {
+            get => new DelegateCommand<object>(ClearLogDelegate);
+        }
+
+        private async void ClearLogDelegate(object obj) {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                LogItems.Clear();
+            });
+
         }
     }
 }

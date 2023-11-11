@@ -30,8 +30,8 @@ namespace JayTom.Dws.Interface.Wdt {
             var exceptionMsg = string.Empty;
             var isSuccess = false;
             var objects = ApiParameters.Method.Equals("wms.stockout.Sales.weighingExt") ?
-                new object[] { barcode, string.Empty, weight, ApiParameters.PackagerId, ApiParameters.Force }
-                : new object[] { barcode, string.Empty, weight, ApiParameters.PackagerId, ApiParameters.OperateTableName, ApiParameters.Force };
+                new object[] { barcode, string.Empty, Convert.ToSingle(Math.Round(weight, 3)), ApiParameters.PackagerId, ApiParameters.Force }
+                : new object[] { barcode, string.Empty, Convert.ToSingle(Math.Round(weight, 3)), ApiParameters.PackagerId, ApiParameters.OperateTableName, ApiParameters.Force };
 
             var dictionary = new Dictionary<string, object>()
             {

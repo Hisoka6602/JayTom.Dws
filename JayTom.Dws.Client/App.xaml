@@ -225,6 +225,8 @@
                 <ResourceDictionary Source="Template/OutputLogItemTemplate.xaml" />
                 <!--  Ftp日志信息列表模板  -->
                 <ResourceDictionary Source="Template/FtpLogItemTemplate.xaml" />
+                <!--  自定义单选模板  -->
+                <ResourceDictionary Source="Template/CustomRadioButtonTemplate.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </prism:PrismApplication.Resources>

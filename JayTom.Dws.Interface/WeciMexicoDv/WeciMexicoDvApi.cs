@@ -60,7 +60,7 @@ namespace JayTom.Dws.Interface.WeciMexicoDv {
                 size_width = width,
                 size_long = length,
                 size_heigth = height,
-                weigth_kg = weight,
+                weigth_kg = Convert.ToSingle(Math.Round(weight, 3)),
                 date_tran = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss}",
                 time_tran = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss}",
                 machine_no = MachineNo,
