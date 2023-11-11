@@ -58,6 +58,7 @@ using DryIoc.Microsoft.DependencyInjection.Extension;
 using JayTom.Dws.Client.ViewModels.Pages.Preferences;
 using JayTom.Dws.Infrastructure.Repository.LocalConf;
 using JayTom.Dws.Infrastructure.Repository.LocalData;
+using JayTom.Dws.Client.Service.DefaultConfiguration;
 using JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision;
 using JayTom.Dws.Client.HomeToolPlugin.SunnenPlugin.Views;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
@@ -261,6 +262,8 @@ namespace JayTom.Dws.Client {
                 services.AddScoped<IComputer, Infrastructure.IComputer.Computer>();
                 //电脑信息上报
                 services.AddScoped<IComputerInfoReporter, ComputerInfoReporter>();
+                //写默认配置
+                services.AddScoped<IDefaultConfigurationService, DefaultConfigurationService>();
                 //设备注册
                 services.AddScoped<ICamera, HikvisionSmartCamera>();
                 //磅秤
@@ -306,26 +309,28 @@ namespace JayTom.Dws.Client {
                 NLog.LogManager.GetCurrentClassLogger().Error($"{JsonConvert.SerializeObject(args.ExceptionObject)}");
                 EventAggregator.Instance.Publish(new AppLogInfoModel {
                     CreateTime = DateTime.Now,
-                    Message = args.ExceptionObject.ToString(),
+                    Message = args?.ExceptionObject?.ToString() ?? string.Empty,
                     Type = LogType.Exception
                 });
             };
 
             base.OnStartup(e);
 
-            //加载语言
-
             var container = Container.GetContainer();
 
+            {
+                //在这里写默认配置
+                var service = container.GetService<IDefaultConfigurationService>();
+                service?.WriteDefaultConfiguration().ConfigureAwait(false).GetAwaiter().GetResult();
+            }
+            //加载语言
             var configRepository = container.Resolve<IConfigRepository>();
-            if (configRepository is not null) {
-                var configInfoModel = configRepository.FirstOrDefault(f =>
-                    f.ConfigName.Equals("Language")).GetAwaiter().GetResult();
-                if (configInfoModel is not null) {
-                    var culture = new CultureInfo(configInfoModel.Value);
-                    Thread.CurrentThread.CurrentCulture = culture;
-                    Thread.CurrentThread.CurrentUICulture = culture;
-                }
+            var configInfoModel = configRepository?.FirstOrDefault(f =>
+                f.ConfigName.Equals("Language")).GetAwaiter().GetResult();
+            if (configInfoModel != null) {
+                var culture = new CultureInfo(configInfoModel.Value);
+                Thread.CurrentThread.CurrentCulture = culture;
+                Thread.CurrentThread.CurrentUICulture = culture;
             }
 
             // 创建主机并注册后台服务
@@ -437,12 +442,6 @@ namespace JayTom.Dws.Client {
                     })
                     .Build();
                 _host.Start();
-            });
-
-            EventAggregator.Instance.Publish(new AppLogInfoModel {
-                CreateTime = DateTime.Now,
-                Message = "程序开始运行",
-                Type = LogType.Information
             });
         }
 

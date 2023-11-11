@@ -519,7 +519,7 @@
                                             FontWeight="Bold"
                                             Foreground="White"
                                             IsChecked="{Binding CharacterType, Converter={StaticResource CharacterTypeToBooleanConverter}, ConverterParameter=Alphanumeric}"
-                                            Style="{StaticResource MaterialDesignRadioButton}" />
+                                            Template="{StaticResource CustomRadioButtonTemplate}" />
                                         <RadioButton
                                             Margin="10,0"
                                             Content="{x:Static languages:Language.Letters}"
@@ -527,7 +527,7 @@
                                             FontWeight="Bold"
                                             Foreground="White"
                                             IsChecked="{Binding CharacterType, Converter={StaticResource CharacterTypeToBooleanConverter}, ConverterParameter=Letter}"
-                                            Style="{StaticResource MaterialDesignRadioButton}" />
+                                            Template="{StaticResource CustomRadioButtonTemplate}" />
                                         <RadioButton
                                             Margin="10,0"
                                             Content="{x:Static languages:Language.Numbers}"
@@ -535,7 +535,7 @@
                                             FontWeight="Bold"
                                             Foreground="White"
                                             IsChecked="{Binding CharacterType, Converter={StaticResource CharacterTypeToBooleanConverter}, ConverterParameter=Number}"
-                                            Style="{StaticResource MaterialDesignRadioButton}" />
+                                            Template="{StaticResource CustomRadioButtonTemplate}" />
                                     </StackPanel>
                                 </Border>
                             </StackPanel>
