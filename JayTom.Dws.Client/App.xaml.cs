@@ -258,6 +258,9 @@ namespace JayTom.Dws.Client {
                 services.AddSingleton<ITcpVolumeInput>(provider => new TcpVolumeInput(new TouchSocketTcpClient(), new TouchSocketTcpServer()));
                 services.AddScoped<ISortingSerialPort, SortingSerialPort>();
                 services.AddSingleton<ISortingTcp>(provider => new SortingTcp(new TouchSocketTcpClient(), new TouchSocketTcpServer()));
+                //效验注册
+                services.AddScoped<INetworkTime, NetworkTime>();
+                services.AddScoped<ICertificateValidationService, CertificateValidationService>();
                 //电脑注册
                 services.AddScoped<IComputer, Infrastructure.IComputer.Computer>();
                 //电脑信息上报

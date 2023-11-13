@@ -54,6 +54,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         private readonly IBarcodeScannerCameraConfigRepository _barcodeScannerCameraConfigRepository;
         private readonly ISortingService _sortingService;
         private readonly IComputer _computer;
+        private readonly ICertificateValidationService _certificateValidationService;
         private ObservableCollection<CameraItemInfoModel> _cameraItems = new();
 
         private ObservableCollection<BarCodeItemModel> _barCodeItems = new();
@@ -209,7 +210,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             IConfigRepository configRepository,
             IBarcodeScannerCameraConfigRepository barcodeScannerCameraConfigRepository,
             ISortingService sortingService,
-            IComputer computer) {
+            IComputer computer,
+            ICertificateValidationService certificateValidationService) {
             _dialogService = dialogService;
             _computerInfoReporter = computerInfoReporter;
             _barCodeRepository = barCodeRepository;
@@ -221,6 +223,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             _barcodeScannerCameraConfigRepository = barcodeScannerCameraConfigRepository;
             _sortingService = sortingService;
             _computer = computer;
+            _certificateValidationService = certificateValidationService;
             CameraItems = new() {
                 /*new CameraItemInfoModel()
                 {
@@ -688,11 +691,18 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     try {
                         await _runningSemaphoreSlim.WaitAsync();
                         IsSwitchingState = true;
-                        var machineCode = await _computer.GenerateMachineCode();
-                        //判断机器码
-                        /*if (!machineCode.Equals("FA934375569532C76E010057A1F7AF8E")) {
-                        }*/
                         if (!RunningStatus) {
+                            //效验
+                            var machineCode = await _computer.GenerateMachineCode();
+                            //判断机器码
+                            /*if (!machineCode.Equals("FA934375569532C76E010057A1F7AF8E")) {
+                            }*/
+                            //判断时间
+                            var validateTime = await _certificateValidationService.ValidateTime();
+                            if (!validateTime) {
+                                return;
+                            }
+
                             //启动
                             await _externalDataService.Start();
                             var (key, value) = await _deviceService.Start();
