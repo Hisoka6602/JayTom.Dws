@@ -11,7 +11,9 @@ using JayTom.Dws.Plugin.Scale;
 using JayTom.Dws.Client.Models;
 using JayTom.Dws.Data.LocalLog;
 using MaterialDesignThemes.Wpf;
+using System.Windows.Threading;
 using System.Collections.ObjectModel;
+using System.Text.RegularExpressions;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Plugin.Scale.StaticScale;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
@@ -154,6 +156,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         private SnackbarMessageQueue _weightSettingsMessageQueue = new(TimeSpan.FromSeconds(2));
         private bool _isLoaded;
         private string _receivedData = string.Empty;
+        private string _weightSourceContent;
+        private float _parsedWeight;
 
         public WeightSettingViewModel(IDynamicScale dynamicScale,
             IStaticScale staticScale, IConfigRepository configRepository) {
@@ -170,11 +174,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             _dynamicScale.Received += async delegate (object? sender, string s) {
                 if (SelectWeightMode.Value == WeightMode.Dynamic && IsRealtimeDataEnabled) {
                     await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                        ReceivedData ??= string.Empty;
                         if (ReceivedData.Length >= 5000) {
                             ReceivedData = string.Empty;
                         }
                         ReceivedData += s;
-                    });
+                    }, DispatcherPriority.Background);
                 }
             };
             _staticScale.CurrentWeight += async delegate (object? sender, float f) {
@@ -187,11 +192,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             _staticScale.Received += async delegate (object? sender, string s) {
                 if (SelectWeightMode.Value == WeightMode.Static && IsRealtimeDataEnabled) {
                     await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                        ReceivedData ??= string.Empty;
                         if (ReceivedData.Length >= 5000) {
                             ReceivedData = string.Empty;
                         }
                         ReceivedData += s;
-                    });
+                    }, DispatcherPriority.Background);
                 }
             };
             _dynamicScale.Excepted += async delegate (object? sender, Exception exception) {
@@ -352,6 +358,22 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         public bool IsSavingInProgress {
             get => _isSavingInProgress;
             set => SetProperty(ref _isSavingInProgress, value);
+        }
+
+        /// <summary>
+        /// 重量源内容
+        /// </summary>
+        public string WeightSourceContent {
+            get => _weightSourceContent;
+            set => SetProperty(ref _weightSourceContent, value);
+        }
+
+        /// <summary>
+        /// 解析后的重量
+        /// </summary>
+        public float ParsedWeight {
+            get => _parsedWeight;
+            set => SetProperty(ref _parsedWeight, value);
         }
 
         /// <summary>
@@ -611,6 +633,126 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     }
                 });
             }
+        }
+
+        public ICommand WeightParserCommand {
+            get => new DelegateCommand<object>(WeightParserDelegate);
+        }
+
+        private async void WeightParserDelegate(object obj) {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                if (!string.IsNullOrEmpty(WeightSourceContent) && ParsedWeight > 0) {
+                    var identifier = string.Empty;
+                    bool? isReversed = null;
+                    int integerStartPosition, integerEndPosition, decimalStartPosition, decimalEndPosition;
+                    var orDefault = WeightSourceContent
+                        .Where(c => !char.IsDigit(c) && c != '.' && c != '-' && c != '+')
+                        .GroupBy(c => c)
+                        .Where(group => group.Count() == 1)
+                        .Select(group => group.Key)
+                        .FirstOrDefault();
+                    if (orDefault == 0) {
+                        WeightSettingsMessageQueue.Enqueue($"获取不到标识符,请检查源内容中是否有唯一标识,或在标识符位置填写标识符");
+                    }
+                    else {
+                        identifier = orDefault.ToString();
+                    }
+                    //获取小数点位置
+                    var indexOf = WeightSourceContent.IndexOf('.');
+                    if (indexOf == 0 || indexOf == WeightSourceContent.Length - 1) {
+                        WeightSettingsMessageQueue.Enqueue($"源内容中小数点不能在最前或者最后");
+                        return;
+                    }
+                    //左边
+                    var left = Regex.Match(WeightSourceContent, @"(([0-9]|-|\+)+)(?=\.)");
+                    if (left.Success) {
+                        var leftResult = left.Value.Trim();
+                        var right = Regex.Match(WeightSourceContent, @"(?<=\.)(([0-9]|-\+)+)");
+                        if (right.Success) {
+                            var rightResult = right.Value.Trim();
+                            //组合判断是否反转
+                            var weightStr = $"{leftResult}.{rightResult}";
+                            if (Math.Abs(Convert.ToSingle(weightStr) - ParsedWeight) == 0) {
+                                //不用反转
+                                isReversed = false;
+                            }
+                            else {
+                                var reversedString = new string(weightStr.Reverse().ToArray());
+                                if (Math.Abs(Convert.ToSingle(reversedString) - ParsedWeight) == 0) {
+                                    isReversed = true;
+                                }
+                            }
+
+                            if (isReversed is null) {
+                                WeightSettingsMessageQueue.Enqueue($"重量和源内容无法匹配");
+                                return;
+                            }
+                            else {
+                                if (isReversed == true) {
+                                    if (indexOf > WeightSourceContent.IndexOf(identifier, StringComparison.Ordinal)) {
+                                        //标识符在左
+
+                                        decimalStartPosition = WeightSourceContent.IndexOf(identifier, StringComparison.Ordinal) + 1;
+                                        decimalEndPosition = indexOf - 1;
+                                        integerStartPosition = indexOf + 1;
+                                        integerEndPosition = WeightSourceContent.Length - 1;
+                                    }
+                                    else {
+                                        //标识符在右
+                                        decimalStartPosition = 0;
+                                        decimalEndPosition = indexOf - 1;
+                                        integerStartPosition = indexOf + 1;
+                                        integerEndPosition = WeightSourceContent.IndexOf(identifier, StringComparison.Ordinal) - 1;
+                                    }
+                                }
+                                else {
+                                    //不反转
+                                    if (indexOf > WeightSourceContent.IndexOf(identifier, StringComparison.Ordinal)) {
+                                        //标识符在左
+
+                                        integerStartPosition = WeightSourceContent.IndexOf(identifier, StringComparison.Ordinal) + 1;
+                                        integerEndPosition = indexOf - 1;
+                                        decimalStartPosition = indexOf + 1;
+                                        decimalEndPosition = WeightSourceContent.Length - 1;
+                                    }
+                                    else {
+                                        //标识符在右
+                                        integerStartPosition = 0;
+                                        integerEndPosition = indexOf - 1;
+                                        decimalStartPosition = indexOf + 1;
+                                        decimalEndPosition = WeightSourceContent.IndexOf(identifier, StringComparison.Ordinal) - 1;
+                                    }
+                                }
+
+                                WeightSettingsInfo.StaticWeight.CharacterLength = WeightSourceContent.Length;
+
+                                WeightSettingsInfo.StaticWeight.Identifier = identifier;
+                                WeightSettingsInfo.StaticWeight.IdentifierPosition =
+                                    WeightSourceContent.IndexOf(identifier, StringComparison.Ordinal);
+                                WeightSettingsInfo.StaticWeight.IsReversed = isReversed ?? false;
+                                WeightSettingsInfo.StaticWeight.IntegerStartPosition = integerStartPosition;
+                                WeightSettingsInfo.StaticWeight.IntegerEndPosition = integerEndPosition;
+                                WeightSettingsInfo.StaticWeight.DecimalStartPosition = decimalStartPosition;
+                                WeightSettingsInfo.StaticWeight.DecimalEndPosition = decimalEndPosition;
+                                WeightSettingsMessageQueue.Enqueue($"规则解析成功");
+                            }
+                        }
+                        else {
+                            WeightSettingsMessageQueue.Enqueue($"匹配不到小数点右边数据");
+                        }
+                    }
+                    else {
+                        WeightSettingsMessageQueue.Enqueue($"源内容未找到小数点");
+                    }
+                    //判断是否反转
+
+                    //获取小数位置(小数最多3位)
+                }
+                else {
+                    WeightSettingsMessageQueue.Enqueue($"源内容不能为空,重量不能等于0");
+                }
+                PortItems.AddRange(SerialPort.GetPortNames());
+            });
         }
     }
 }

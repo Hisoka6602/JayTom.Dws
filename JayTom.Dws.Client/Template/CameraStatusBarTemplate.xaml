@@ -20,7 +20,7 @@
                 Foreground="DimGray"
                 Text="{Binding Type, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource CameraTypeFontConverter}}"
                 ToolTip="{Binding Type, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource CameraTypeToolTipConverter}}" />
-            <!--  相机名称  -->
+            <!--  相机序列号  -->
             <TextBlock
                 Grid.Column="1"
                 MaxWidth="140"
@@ -31,7 +31,7 @@
                 FontWeight="Bold"
                 Foreground="DimGray"
                 IsEnabled="False"
-                Text="{Binding CameraName, UpdateSourceTrigger=PropertyChanged}"
+                Text="{Binding SerialNumber, UpdateSourceTrigger=PropertyChanged}"
                 TextAlignment="Center"
                 TextTrimming="WordEllipsis" />
             <!--  状态  -->

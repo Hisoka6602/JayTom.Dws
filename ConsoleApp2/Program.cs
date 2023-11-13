@@ -26,7 +26,7 @@ using JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols;
 internal class Program {
 
     private static async Task Main(string[] args) {
-        var generateMachineCode = await new Computer().GenerateMachineCode();
+        var tryParse = float.TryParse("+1.288", out var result);
         return;
         var daHuaVolumeCamera = new DaHuaVolumeCamera();
         daHuaVolumeCamera.VolumeCaptured += delegate (object? sender, VolumeCapturedEventArgs eventArgs) {
@@ -48,8 +48,8 @@ internal class Program {
         daHuaVolumeCamera.Dispose();
         return;
         var data = new JtstCommunicationProtocol().
-            EncodeData(FunctionType.SendExit,
-                0, "05", "9720074634557");
+              EncodeData(FunctionType.SendExit,
+                  0, "05", "9720074634557");
 
         return;
 

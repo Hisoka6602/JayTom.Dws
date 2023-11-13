@@ -462,7 +462,7 @@
                             </StackPanel>
                         </StackPanel>
                     </StackPanel>
-                    <!--  动态容器  -->
+                    <!--  参数容器  -->
                     <ScrollViewer
                         MaxHeight="170"
                         VerticalScrollBarVisibility="Auto"
@@ -473,6 +473,102 @@
                                 Margin="50,5,0,0"
                                 Orientation="Vertical"
                                 Visibility="{Binding SelectWeightMode, Converter={StaticResource WeightModeToVisibilityConverter}, ConverterParameter=Static}">
+                                <!--  参数设置解析  -->
+                                <StackPanel Width="Auto" Orientation="Horizontal">
+                                    <StackPanel Orientation="Horizontal">
+                                        <!--  图标  -->
+                                        <TextBlock
+                                            Margin="5,0"
+                                            VerticalAlignment="Center"
+                                            FontSize="13"
+                                            FontWeight="Bold"
+                                            Foreground="DarkGray"
+                                            Text="源内容:" />
+                                        <Border
+                                            Margin="5"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            Background="#1A696969"
+                                            CornerRadius="5">
+                                            <TextBox
+                                                Width="120"
+                                                Height="30"
+                                                MaxWidth="500"
+                                                Margin="5,0"
+                                                materialDesign:TextFieldAssist.HasClearButton="False"
+                                                materialDesign:TextFieldAssist.HasFilledTextField="True"
+                                                Background="Transparent"
+                                                BorderThickness="0"
+                                                FontSize="13"
+                                                FontWeight="Bold"
+                                                Foreground="White"
+                                                Text="{Binding WeightSourceContent, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                                        </Border>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal">
+                                        <!--  图标  -->
+                                        <TextBlock
+                                            Margin="5,0"
+                                            VerticalAlignment="Center"
+                                            FontSize="13"
+                                            FontWeight="Bold"
+                                            Foreground="DarkGray"
+                                            Text="重量:" />
+                                        <Border
+                                            Margin="5"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            Background="#1A696969"
+                                            CornerRadius="5">
+                                            <TextBox
+                                                Width="78"
+                                                Height="30"
+                                                MaxWidth="500"
+                                                Margin="5,0"
+                                                materialDesign:TextFieldAssist.HasClearButton="False"
+                                                materialDesign:TextFieldAssist.HasFilledTextField="True"
+                                                Background="Transparent"
+                                                BorderThickness="0"
+                                                FontSize="13"
+                                                FontWeight="Bold"
+                                                Foreground="White"
+                                                InputMethod.IsInputMethodEnabled="False"
+                                                Text="{Binding ParsedWeight, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, StringFormat={}{0:F3}}" />
+                                        </Border>
+                                    </StackPanel>
+                                    <Button
+                                        MinWidth="50"
+                                        MinHeight="30"
+                                        Margin="5,0"
+                                        Padding="10,0"
+                                        HorizontalAlignment="Left"
+                                        materialDesign:ButtonAssist.CornerRadius="5"
+                                        Background="#2E2E2E"
+                                        BorderThickness="0"
+                                        Command="{Binding WeightParserCommand}"
+                                        Cursor="Hand"
+                                        FocusVisualStyle="{x:Null}"
+                                        Style="{StaticResource MaterialDesignFlatAccentBgButton}">
+
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock
+                                                Margin="0,0,0,0"
+                                                VerticalAlignment="Center"
+                                                FontFamily="{StaticResource CustomFontFamily}"
+                                                FontSize="14"
+                                                Foreground="DarkGray"
+                                                Text="解析" />
+                                        </StackPanel>
+                                    </Button>
+                                </StackPanel>
+                                <!--  分割线  -->
+                                <Rectangle
+                                    Height="1"
+                                    Margin="0,5"
+                                    Opacity="0.15"
+                                    Stroke="DimGray"
+                                    StrokeDashArray="15 15"
+                                    StrokeThickness="1" />
                                 <!--  反转、字符长度  -->
                                 <StackPanel Orientation="Horizontal">
                                     <StackPanel
@@ -1268,6 +1364,7 @@
                             Margin="5,0"
                             HorizontalAlignment="Left"
                             VerticalAlignment="Top"
+                            materialDesign:TextFieldAssist.HasClearButton="True"
                             Background="Transparent"
                             BorderThickness="0"
                             FontSize="13"
@@ -1276,7 +1373,7 @@
                             IsReadOnly="True"
                             Opacity="0.8"
                             Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                            Text="{Binding ReceivedData, UpdateSourceTrigger=PropertyChanged}"
+                            Text="{Binding ReceivedData, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                             TextWrapping="Wrap"
                             VerticalScrollBarVisibility="Auto" />
                     </Border>

@@ -67,7 +67,7 @@
                         FontWeight="UltraLight"
                         Foreground="DarkGray"
                         TextAlignment="Center">
-                        <Run Text="耗时:" /> <Run Foreground="White" Text="{Binding Duration, StringFormat={}{0:F2},UpdateSourceTrigger=PropertyChanged}" /><Run Text="(ms)" />
+                        <Run Text="耗时:" /> <Run Foreground="White" Text="{Binding Duration, StringFormat={}{0:F2}, UpdateSourceTrigger=PropertyChanged}" /><Run Text="(ms)" />
                     </TextBlock>
                     <!--  Url  -->
                     <TextBlock

@@ -1,48 +1,36 @@
-﻿using JayTom.Dws.Client.Models;
-using JayTom.Dws.Client.Service;
-using Prism.Commands;
+﻿using System;
 using Prism.Mvvm;
-using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Threading.Tasks;
+using System.Linq;
+using Prism.Commands;
+using System.Threading;
+using JayTom.Dws.Camera;
 using System.Windows.Input;
+using System.Threading.Tasks;
+using JayTom.Dws.Client.Models;
 using System.Windows.Threading;
+using JayTom.Dws.Client.Service;
+using System.Collections.Generic;
+using JayTom.Dws.Domain.Dto.Timer;
+using System.Collections.ObjectModel;
+using JayTom.Dws.Client.EventMediators;
+using JayTom.Dws.Client.Models.Cameras;
+using JayTom.Dws.Client.Service.Device;
+using CameraType = JayTom.Dws.Client.Models.CameraType;
+using CameraStatus = JayTom.Dws.Client.Models.CameraStatus;
 
 namespace JayTom.Dws.Client.ViewModels {
 
     public class StatusBarViewModel : BindableBase {
         private readonly IComputerInfoReporter _computerInfoReporter;
+        private readonly IDeviceService _deviceService;
+        private static SemaphoreSlim _updateSlim = new(1, 1);
 
         private ObservableCollection<string> _exceptionItems = new()
         {
             "默认异常信息1","默认异常信息2","默认异常信息3这是很长的信息，会自动换行",
         };
 
-        private ObservableCollection<CameraItemInfoModel> _cameraItems = new()
-        {
-            new CameraItemInfoModel()
-            {
-                CameraName = "海康工业相机.1",
-                Status = CameraStatus.Failure,
-                Type = CameraType.IndustrialCamera,
-                ConnectionType = ConnectionType.Bluetooth,
-            },
-            new CameraItemInfoModel()
-            {
-                CameraName = "海康工业相机.2",
-                Status = CameraStatus.Running,
-                Type = CameraType.PanoramicCamera,
-                ConnectionType = ConnectionType.Ethernet,
-            },
-            new CameraItemInfoModel()
-            {
-                CameraName = "海康工业相机.2",
-                Status = CameraStatus.Running,
-                Type = CameraType.PanoramicCamera,
-                ConnectionType = ConnectionType.Ethernet,
-            },
-        };
+        private ObservableCollection<CameraItemInfoModel> _cameraItems = new();
 
         private ObservableCollection<SerialPortInfoModel> _serialPortItems = new()
         {
@@ -101,11 +89,12 @@ namespace JayTom.Dws.Client.ViewModels {
             }
         };
 
-        public StatusBarViewModel() {
-        }
+        private string _formattedElapsed = string.Empty;
 
-        public StatusBarViewModel(IComputerInfoReporter computerInfoReporter) {
+        public StatusBarViewModel(IComputerInfoReporter computerInfoReporter,
+            IDeviceService deviceService) {
             _computerInfoReporter = computerInfoReporter;
+            _deviceService = deviceService;
             _computerInfoReporter.ComputerInfoReceived += async delegate (object? sender, ComputerInfoModel model) {
                 await Task.Run(async () => {
                     try {
@@ -123,6 +112,131 @@ namespace JayTom.Dws.Client.ViewModels {
                     }
                 });
             };
+            EventAggregator.Instance.Subscribe<TimerDto>(async item => {
+                if (item is TimerDto model) {
+                    try {
+                        if (System.Windows.Application.Current?.Dispatcher is not null) {
+                            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                                //加载到界面内容
+                                FormattedElapsed = model.FormattedElapsed;
+                            }, DispatcherPriority.Background);
+                        }
+                    }
+                    catch (TaskCanceledException) {
+                        //
+                    }
+                    catch (Exception e) {
+                    }
+                }
+            });
+            EventAggregator.Instance.Subscribe<CameraItemInfoModel>(async item => {
+                if (item is CameraItemInfoModel model) {
+                    try {
+                        await _updateSlim.WaitAsync();
+                        if (System.Windows.Application.Current?.Dispatcher is not null) {
+                            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                                var cameraItemInfoModel = CameraItems?.FirstOrDefault(f => f.SerialNumber.Equals(model.SerialNumber));
+                                if (cameraItemInfoModel is not null) {
+                                    cameraItemInfoModel.Status = model.Status;
+                                }
+                                else {
+                                    CameraItems?.Add(model);
+                                }
+                            }, DispatcherPriority.Background);
+                        }
+                    }
+                    finally {
+                        _updateSlim.Release();
+                    }
+                }
+            });
+            //解绑
+            _deviceService.CameraUnbound += async delegate (object? sender, CameraFinderItemInfoModel model) {
+                try {
+                    await _updateSlim.WaitAsync();
+                    if (System.Windows.Application.Current?.Dispatcher is not null) {
+                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                            var cameraItemInfoModel = CameraItems?.FirstOrDefault(f => f.SerialNumber.Equals(model.SerialNumber));
+                            if (cameraItemInfoModel is not null) {
+                                CameraItems?.Remove(cameraItemInfoModel);
+                            }
+                        }, DispatcherPriority.Background);
+                    }
+                }
+                finally {
+                    _updateSlim.Release();
+                }
+            };
+            //断开
+            _deviceService.CameraDisconnected += async delegate (object? sender, List<ICamera> list) {
+                try {
+                    await _updateSlim.WaitAsync();
+                    if (System.Windows.Application.Current?.Dispatcher is not null) {
+                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                            foreach (var camera in list) {
+                                var cameraItemInfoModel = CameraItems?.FirstOrDefault(f => f.SerialNumber.Equals(camera.Info.SerialNumber));
+                                if (cameraItemInfoModel is not null) {
+                                    cameraItemInfoModel.Status = CameraStatus.Disconnected;
+                                }
+                            }
+                        }, DispatcherPriority.Background);
+                    }
+                }
+                finally {
+                    _updateSlim.Release();
+                }
+            };
+            //异常
+            _deviceService.CameraFault += async delegate (object? sender, List<ICamera> list) {
+                try {
+                    await _updateSlim.WaitAsync();
+                    if (System.Windows.Application.Current?.Dispatcher is not null) {
+                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                            foreach (var camera in list) {
+                                var cameraItemInfoModel = CameraItems?.FirstOrDefault(f => f.SerialNumber.Equals(camera.Info.SerialNumber));
+                                if (cameraItemInfoModel is not null) {
+                                    cameraItemInfoModel.Status = CameraStatus.Disconnected;
+                                }
+                            }
+                        }, DispatcherPriority.Background);
+                    }
+                }
+                finally {
+                    _updateSlim.Release();
+                }
+            };
+            //相机初始化
+            _deviceService.CameraInitialized += async delegate (object? sender, List<ICamera> list) {
+                try {
+                    await _updateSlim.WaitAsync();
+                    if (System.Windows.Application.Current?.Dispatcher is not null) {
+                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                            foreach (var camera in list) {
+                                var cameraItemInfoModel = CameraItems?.FirstOrDefault(f => f.SerialNumber.Equals(camera.Info.SerialNumber));
+                                if (cameraItemInfoModel is not null) {
+                                    cameraItemInfoModel.Status = CameraStatus.Running;
+                                }
+                                else {
+                                    CameraItems?.Add(new CameraItemInfoModel() {
+                                        SerialNumber = camera?.Info?.SerialNumber ?? string.Empty,
+                                        Type = (CameraType)(camera?.Info?.Type ?? Camera.CameraType.IndustrialCamera),
+                                        ConnectionType = (ConnectionType)(camera?.Info?.ConnectionType ?? CameraConnectionType.Unknown),
+                                        Status = CameraStatus.Running
+                                    });
+                                }
+                            }
+                        }, DispatcherPriority.Background);
+                    }
+                }
+                finally {
+                    _updateSlim.Release();
+                }
+            };
+        }
+
+        public string FormattedElapsed {
+            get => _formattedElapsed;
+            set => SetProperty(ref _formattedElapsed, value);
         }
 
         public ObservableCollection<string> ExceptionItems {

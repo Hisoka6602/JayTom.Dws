@@ -442,6 +442,7 @@ namespace JayTom.Dws.Client {
                         services.AddHostedService<ComputerInfoBackgroundService>(); // 注册后台服务
                         services.AddHostedService<SingleInstanceBackgroundService>(); // 注册单开激活服务
                         services.AddHostedService<LogProcessingService>();//日志管理器
+                        services.AddHostedService<TimerBackgroundService>();//计时
                     })
                     .Build();
                 _host.Start();

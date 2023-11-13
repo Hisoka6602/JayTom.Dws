@@ -206,7 +206,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings {
                 using (var key = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true)) {
                     if (enable) {
                         // 设置开机自动运行
-                        key?.SetValue(mainModuleFileName, System.Reflection.Assembly.GetExecutingAssembly().Location);
+                        key?.SetValue(mainModuleFileName, System.Reflection.Assembly.GetExecutingAssembly().Location.Replace(".dll", ".exe"));
                     }
                     else {
                         // 取消开机自动运行

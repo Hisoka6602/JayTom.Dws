@@ -40,7 +40,8 @@
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
                 Focusable="False"
-                Style="{StaticResource MaterialDesignFlatButton}">
+                Style="{StaticResource MaterialDesignFlatButton}"
+                Visibility="Collapsed">
                 <StackPanel Orientation="Horizontal">
 
                     <TextBlock
@@ -198,6 +199,7 @@
 
                                     <!--  相机信息列表  -->
                                     <ListBox
+                                        Name="CameraListBox"
                                         Grid.Row="0"
                                         Background="Transparent"
                                         BorderThickness="0"
@@ -209,7 +211,7 @@
                                     <Border
                                         Grid.Row="0"
                                         Background="#303030"
-                                        Visibility="Hidden">
+                                        Visibility="{Binding Items.Count, ElementName=CameraListBox, Converter={StaticResource ListBackgroundVisibleConverter}}">
                                         <StackPanel
                                             HorizontalAlignment="Center"
                                             VerticalAlignment="Center"
@@ -242,7 +244,8 @@
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
                 Focusable="False"
-                Style="{StaticResource MaterialDesignFlatButton}">
+                Style="{StaticResource MaterialDesignFlatButton}"
+                Visibility="Collapsed">
                 <StackPanel Orientation="Horizontal">
 
                     <TextBlock
@@ -487,7 +490,7 @@
                 FontSize="14"
                 FontWeight="Bold"
                 Foreground="DimGray"
-                Text="0天-00:00:00" />
+                Text="{Binding FormattedElapsed, UpdateSourceTrigger=PropertyChanged}" />
         </StackPanel>
     </Grid>
 </Page>

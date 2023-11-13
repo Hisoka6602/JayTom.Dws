@@ -12,6 +12,7 @@ using JayTom.Dws.Plugin.Scale.ScaleValueParameters;
 using static JayTom.Dws.Plugin.WeighingScale.WeighingScale;
 
 namespace JayTom.Dws.Plugin.Scale.StaticScale {
+
     public class DefaultStaticScale : IStaticScale {
         private System.IO.Ports.SerialPort? _serialPort { get; set; }
         private readonly ConcurrentQueue<float> _weightQueue = new();
@@ -35,6 +36,7 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
         public ScaleWeightFormat WeightFormat { get; set; } = ScaleWeightFormat.Ascii;
 
         public event EventHandler<float>? StabledWeight;
+
         public event EventHandler<WeightChangedEventArgs>? WeightStabilized;
 
         public event EventHandler<string>? Received;
@@ -186,7 +188,7 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
 
         private void ProcessDataPackage(string data) {
             try {
-                if (float.TryParse(data, out var result)) {
+                if (float.TryParse(data.Replace(" ", string.Empty), out var result)) {
                     _weightQueue.Enqueue(result);
                     if (_weightQueue.Count > 0 && _weightQueue.Count > _defaultStaticScaleValueParameters.BalanceCount) {
                         //删除一个
