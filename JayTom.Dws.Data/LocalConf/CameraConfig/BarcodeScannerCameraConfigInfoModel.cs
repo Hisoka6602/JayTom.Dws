@@ -22,5 +22,7 @@ namespace JayTom.Dws.Data.LocalConf.CameraConfig {
         /// </summary>
         [Column("CameraConnectionParameters"), InsertOrUpdata]
         public string CameraConnectionParameters { get; set; } = string.Empty;
+
+        //扫码类型
     }
 }

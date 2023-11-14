@@ -18,10 +18,12 @@ using static MVIDCodeReaderNet.MVIDCodeReader;
 using JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision;
 
 namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
+
     public class HikvisionSmartCamera : ISmartCamera {
         private static MvCodeReader.MV_CODEREADER_DEVICE_INFO_LIST _sdkDeviceList = new();
         private MvCodeReader? _mvCodeReader;
-
+        private Task? _barcodeThread;
+        private Task? _continuousSoftTriggerThread;
         private byte[] _bufForDriver = new byte[1024 * 1024 * 20];
         private MvCodeReader.MV_CODEREADER_DEVICE_INFO _structure;
         private CancellationTokenSource _tokenSource = new();
@@ -206,14 +208,14 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                     //获取参数AcquisitionFrameRate
                     //注册回调函数
                     _tokenSource = new CancellationTokenSource();
-                    new TaskFactory(TaskCreationOptions.LongRunning, TaskContinuationOptions.LongRunning)
-                       .StartNew(async () => await BarcodeCallbackThread(_tokenSource.Token))
-                       .ConfigureAwait(false).GetAwaiter();
+                    _barcodeThread = new TaskFactory(TaskCreationOptions.LongRunning,
+                            TaskContinuationOptions.LongRunning)
+                        .StartNew(async () => await BarcodeCallbackThread(_tokenSource.Token));
 
                     if (TriggerMode == TriggerMode.Software) {
-                        new TaskFactory(TaskCreationOptions.LongRunning, TaskContinuationOptions.LongRunning)
-                            .StartNew(async () => await ContinuousSoftTrigger(500, _tokenSource.Token))
-                            .ConfigureAwait(false).GetAwaiter();
+                        _continuousSoftTriggerThread = new TaskFactory(TaskCreationOptions.LongRunning,
+                                TaskContinuationOptions.LongRunning)
+                            .StartNew(async () => await ContinuousSoftTrigger(500, _tokenSource.Token));
                     }
 
                     OnCameraInitialized(new CameraInitializedEventArgs() {
@@ -257,7 +259,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
             return Task.FromResult(new KeyValuePair<bool, string>(true, string.Empty));
         }
 
-        public void Dispose() {
+        public async void Dispose() {
             if (Status != CameraStatus.Uninitialized) {
                 //注销线程
                 _tokenSource.Cancel();
@@ -265,6 +267,17 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                 _mvCodeReader?.MV_CODEREADER_StopGrabbing_NET();
                 _mvCodeReader?.MV_CODEREADER_CloseDevice_NET();
                 _mvCodeReader?.MV_CODEREADER_DestroyHandle_NET();
+                if (_continuousSoftTriggerThread is not null) {
+                    await _continuousSoftTriggerThread;
+                    _continuousSoftTriggerThread?.Dispose();
+                    _continuousSoftTriggerThread = null;
+                }
+
+                if (_barcodeThread is not null) {
+                    await _barcodeThread;
+                    _barcodeThread?.Dispose();
+                    _barcodeThread = null;
+                }
                 //置空对象
                 _mvCodeReader = null;
                 OnCameraDisconnected(new CameraConnectionEventArgs() {
@@ -353,19 +366,27 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                 intervalTime = 50;
             }
             while (!token.IsCancellationRequested) {
-                if (IsUseTriggerMode && TriggerMode == TriggerMode.Software) {
-                    var nRet = _mvCodeReader?.MV_CODEREADER_SetCommandValue_NET("TriggerSoftware") ?? 0;
-                    if (MvCodeReader.MV_CODEREADER_OK != nRet) {
+                try {
+                    if (IsUseTriggerMode && TriggerMode == TriggerMode.Software) {
+                        var nRet = _mvCodeReader?.MV_CODEREADER_SetCommandValue_NET("TriggerSoftware") ?? 0;
+                        if (MvCodeReader.MV_CODEREADER_OK != nRet) {
+                            OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
+                                Exception = new Exception($"软触发异常:{nRet:X}")
+                            });
+                        }
+                    }
+                    else {
                         OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
-                            Exception = new Exception($"软触发异常:{nRet:X}")
+                            Exception = new Exception($"需要初始化时使用触发模式，并且使用软触发才能生效")
                         });
                     }
                 }
-                else {
+                catch (Exception e) {
                     OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
-                        Exception = new Exception($"需要初始化时使用触发模式，并且使用软触发才能生效")
+                        Exception = e
                     });
                 }
+
                 await Task.Delay(intervalTime, token);
             }
         }

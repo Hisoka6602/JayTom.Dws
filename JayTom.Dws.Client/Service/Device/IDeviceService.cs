@@ -67,6 +67,11 @@ namespace JayTom.Dws.Client.Service.Device {
         event EventHandler<List<CameraFinderItemInfoModel>> CameraEnumerationRefreshed;
 
         /// <summary>
+        /// 相机异常事件
+        /// </summary>
+        event EventHandler<DeviceExceptionEventArgs> CameraException;
+
+        /// <summary>
         /// 相机枚举刷新
         /// </summary>
         /// <param name="token"></param>

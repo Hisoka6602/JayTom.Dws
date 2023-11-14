@@ -221,6 +221,12 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     Message = $"相机故障",
                 });
             };
+            _deviceService.CameraException += delegate (object? sender, DeviceExceptionEventArgs args) {
+                EventAggregator.Instance.Publish(new CameraLogInfoModel() {
+                    Type = LogType.Exception,
+                    Message = args.ExceptionMessage?.Message ?? string.Empty,
+                });
+            };
             _deviceService.CameraUnbound += delegate (object? sender, CameraFinderItemInfoModel model) {
                 EventAggregator.Instance.Publish(new CameraLogInfoModel() {
                     Type = LogType.Information,

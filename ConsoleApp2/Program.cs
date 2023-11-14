@@ -2,6 +2,8 @@
 using System.Linq;
 using ConsoleApp2;
 using System.Text;
+using System.Drawing;
+using JayTom.Dws.Ocr;
 using Newtonsoft.Json;
 using System.Text.Json;
 using JayTom.Dws.Camera;
@@ -14,6 +16,7 @@ using System.Linq.Dynamic.Core;
 using JayTom.Dws.Interface.Wdt;
 using System.Collections.Generic;
 using Org.BouncyCastle.Utilities;
+using JayTom.Dws.Ocr.ExpressBill;
 using JayTom.Dws.Interface.Sunnen;
 using JayTom.Dws.Interface.Szjy188;
 using static System.Text.Json.JsonElement;
@@ -26,7 +29,15 @@ using JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols;
 internal class Program {
 
     private static async Task Main(string[] args) {
-        var tryParse = float.TryParse("+1.288", out var result);
+        var expressBill = new ExpressBill();
+        expressBill.OcrContentRecognized += delegate (object? sender, OcrContentRecognizedEventArgs eventArgs) {
+            Console.WriteLine(JsonConvert.SerializeObject(eventArgs, Formatting.Indented));
+        };
+        var (key1, value1) = await expressBill.Initialize();
+        Debug.WriteLine(value1);
+        expressBill.SubmitImage((Bitmap)Image.FromFile(".\\images\\1.jpg"));
+        Console.WriteLine(value1);
+        await Task.Delay(TimeSpan.FromSeconds(50));
         return;
         var daHuaVolumeCamera = new DaHuaVolumeCamera();
         daHuaVolumeCamera.VolumeCaptured += delegate (object? sender, VolumeCapturedEventArgs eventArgs) {

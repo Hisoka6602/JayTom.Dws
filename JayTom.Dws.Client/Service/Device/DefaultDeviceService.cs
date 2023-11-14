@@ -70,6 +70,8 @@ namespace JayTom.Dws.Client.Service.Device {
 
         public event EventHandler<List<CameraFinderItemInfoModel>>? CameraEnumerationRefreshed;
 
+        public event EventHandler<DeviceExceptionEventArgs>? CameraException;
+
         public async Task<KeyValuePair<bool, string>> OnCameraEnumerationRefreshed(CancellationToken token = default) {
             await Task.Yield();
             _cameraInfos.Clear();
@@ -498,12 +500,15 @@ namespace JayTom.Dws.Client.Service.Device {
                                 }
                             };
                             camera.CameraExceptionOccurred += delegate (object? sender, CameraExceptionEventArgs args) {
-                                string mCameraInfo = string.Empty;
+                                var mCameraInfo = string.Empty;
                                 if (sender is ICamera mCamera) {
                                     mCameraInfo =
                                         $"ID:{mCamera.Info?.Id},SerialNumber:{mCamera?.Info?.SerialNumber},SdkType:{mCamera?.SdkType}";
                                 }
                                 NLog.LogManager.GetCurrentClassLogger().Error($"{JsonConvert.SerializeObject(args.Exception)}");
+                                OnCameraException(new DeviceExceptionEventArgs() {
+                                    ExceptionMessage = new Exception($"{args.Exception?.Message}")
+                                });
                                 OnDeviceException(new DeviceExceptionEventArgs() {
                                     ExceptionMessage = new Exception($"{mCameraInfo}-{args.Exception?.Message}")
                                 });
@@ -867,6 +872,11 @@ namespace JayTom.Dws.Client.Service.Device {
         protected virtual async void OnWeightStabilized(WeightChangedEventArgs e) {
             await Task.Yield();
             WeightStabilized?.Invoke(this, e);
+        }
+
+        protected virtual async void OnCameraException(DeviceExceptionEventArgs e) {
+            await Task.Yield();
+            CameraException?.Invoke(this, e);
         }
     }
 }

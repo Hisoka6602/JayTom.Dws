@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Drawing;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Net.NetworkInformation;
@@ -74,6 +75,28 @@ namespace JayTom.Dws.Ocr {
         }
 
         public void SetParameter(string key, object value) {
+            throw new NotImplementedException();
+        }
+
+        public event EventHandler<OcrExceptionEventArgs>? OcrExceptionOccurred;
+
+        public event EventHandler<OcrInitializationExceptionEventArgs>? OcrInitializationExceptionOccurred;
+
+        public event EventHandler<OcrContentRecognizedEventArgs>? OcrContentRecognized;
+
+        public event EventHandler<AuthenticationExceptionEventArgs>? AuthenticationExceptionOccurred;
+
+        public OcrStatus Status { get; }
+
+        public void SubmitImage(Bitmap imageBytes) {
+            throw new NotImplementedException();
+        }
+
+        public void SetOcrParameters(Dictionary<string, object> parameters) {
+            throw new NotImplementedException();
+        }
+
+        Task<KeyValuePair<bool, string>> IOcr.Initialize() {
             throw new NotImplementedException();
         }
 
