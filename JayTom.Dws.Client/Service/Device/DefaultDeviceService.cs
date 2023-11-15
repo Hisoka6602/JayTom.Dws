@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using JayTom.Dws.Ocr;
 using Newtonsoft.Json;
 using System.Threading;
 using JayTom.Dws.Camera;
@@ -320,6 +321,14 @@ namespace JayTom.Dws.Client.Service.Device {
         public event EventHandler<string>? CameraReleased;
 
         public event EventHandler<ScaleConnectedEventArgs>? ScaleConnected;
+
+        public event EventHandler<OcrExceptionEventArgs>? OcrExceptionOccurred;
+
+        public event EventHandler<OcrInitializationExceptionEventArgs>? OcrInitializationExceptionOccurred;
+
+        public event EventHandler<OcrContentRecognizedEventArgs>? OcrContentRecognized;
+
+        public event EventHandler<AuthenticationExceptionEventArgs>? AuthenticationExceptionOccurred;
 
         public event EventHandler<ScaleDisconnectedEventArgs>? ScaleDisconnected;
 
@@ -877,6 +886,26 @@ namespace JayTom.Dws.Client.Service.Device {
         protected virtual async void OnCameraException(DeviceExceptionEventArgs e) {
             await Task.Yield();
             CameraException?.Invoke(this, e);
+        }
+
+        protected virtual async void OnOcrExceptionOccurred(OcrExceptionEventArgs e) {
+            await Task.Yield();
+            OcrExceptionOccurred?.Invoke(this, e);
+        }
+
+        protected virtual async void OnOcrInitializationExceptionOccurred(OcrInitializationExceptionEventArgs e) {
+            await Task.Yield();
+            OcrInitializationExceptionOccurred?.Invoke(this, e);
+        }
+
+        protected virtual async void OnOcrContentRecognized(OcrContentRecognizedEventArgs e) {
+            await Task.Yield();
+            OcrContentRecognized?.Invoke(this, e);
+        }
+
+        protected virtual async void OnAuthenticationExceptionOccurred(AuthenticationExceptionEventArgs e) {
+            await Task.Yield();
+            AuthenticationExceptionOccurred?.Invoke(this, e);
         }
     }
 }

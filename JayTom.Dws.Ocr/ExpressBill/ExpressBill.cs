@@ -10,10 +10,15 @@ using System.Diagnostics;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using System.Drawing.Imaging;
+using System.Windows.Documents;
 using System.Collections.Generic;
+using System.Reflection.Metadata;
+using System.Security.AccessControl;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Text.Json.Serialization;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration.Ini;
 using System.Text.Json.Serialization.Metadata;
 using JsonSerializer = Newtonsoft.Json.JsonSerializer;
 
@@ -52,6 +57,7 @@ namespace JayTom.Dws.Ocr.ExpressBill {
 
         public void Dispose() {
             uninit();
+            OcrStatus = OcrStatus.Uninitialized;
         }
 
         public event EventHandler<OcrExceptionEventArgs>? OcrExceptionOccurred;
@@ -62,7 +68,7 @@ namespace JayTom.Dws.Ocr.ExpressBill {
 
         public event EventHandler<AuthenticationExceptionEventArgs>? AuthenticationExceptionOccurred;
 
-        public OcrStatus Status { get; private set; }
+        public OcrStatus OcrStatus { get; private set; }
 
         public void SubmitImage(Bitmap bitmap) {
             if (!_isOnline) {
@@ -91,15 +97,6 @@ namespace JayTom.Dws.Ocr.ExpressBill {
                         NumberHandling = JsonNumberHandling.AllowReadingFromString | JsonNumberHandling.WriteAsString,
                         WriteIndented = false,
                     });
-
-                    /*var result = JsonConvert.DeserializeObject<RootResult>(unescape, new JsonSerializerSettings() {
-                        MaxDepth = 5, // 设置为适当的深度
-                        TypeNameHandling = TypeNameHandling.None,
-                        CheckAdditionalContent = false,
-                        NullValueHandling = NullValueHandling.Ignore, // 忽略 null 值
-                        DefaultValueHandling = DefaultValueHandling.Ignore, // 忽略默认值
-                        TypeNameAssemblyFormatHandling = TypeNameAssemblyFormatHandling.Simple, // 使用简单格式
-                    });*/
 
                     var recognitionTime = DateTime.Now;
                     var recognitionTimestamp = new DateTimeOffset(recognitionTime).ToUnixTimeMilliseconds();
@@ -142,14 +139,63 @@ namespace JayTom.Dws.Ocr.ExpressBill {
             }
         }
 
-        public void SetOcrParameters(Dictionary<string, object> parameters) {
-            throw new NotImplementedException();
+        public async Task<KeyValuePair<bool, string>> SetOcrParameters(Dictionary<string, object> parameters) {
+            //设置配置
+            //定位文件位置
+            await Task.Yield();
+            if (!Directory.Exists($"{AppDomain.CurrentDomain.BaseDirectory}ExpressBill\\Lib\\resource")) {
+                return new KeyValuePair<bool, string>(false, "路径不存在");
+            }
+            List<string> parameterNames = new()
+            {
+                "three_segment_code",//三段码开关控制参数
+                "recipient_name",//收件人姓名开关控制参数
+                "recipient_phone",//收件人手机号开关控制参数
+                "recipient_addr",//收件人地址开关控制参数
+                "sender_name",//寄件人姓名开关控制参数
+                "sender_phone",//寄件人手机号开关控制参数
+                "sender_addr",//寄件人地址开关控制参数
+                "virtual_number",//虚拟面单开关控制参数
+                "log_level",//选填，日志级别(TRACE, DEBUG, INFO, WARN, ERR, CRITICAL, OFF)
+                "log_path ",//选填，日志输出路径
+                "console_log",//选填，是否输出控制台（Android下为logcat）日志
+            };
+            try {
+                var list = parameters?.Where(w => !parameterNames.Contains(w.Key))?
+                    .Select(s => s.Key)?.ToList();
+                if (list?.Any() == true) {
+                    return new KeyValuePair<bool, string>(false, $"参数不存在:{string.Join(",", list)}");
+                }
+
+                var lines = (await File.ReadAllLinesAsync(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ExpressBill", "Lib", "resource", "configure.ini")))
+                    // 过滤注释行和不符合预期格式的行
+                    .ToList();
+                lines = lines.Select(line => {
+                    foreach (var parameter in (parameters ?? new Dictionary<string, object>()).Where(parameter => line.StartsWith(parameter.Key))) {
+                        // 修改 log_level 的值
+                        line = $"{parameter.Key}{(line.Contains("=") ? "=" : ":")}{parameter.Value.ToString()}";
+                    }
+
+                    return line;
+                }).ToList();
+                await File.WriteAllLinesAsync(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ExpressBill", "Lib", "resource", "configure.ini"), lines);
+                return new KeyValuePair<bool, string>(true, string.Empty);
+            }
+            catch (Exception e) {
+                OnOcrExceptionOccurred(new OcrExceptionEventArgs() {
+                    Exception = e,
+                    ExceptionTime = DateTime.Now
+                });
+                return new KeyValuePair<bool, string>(false, e.Message);
+            }
         }
 
         public async Task<KeyValuePair<bool, string>> Initialize() {
             await Task.Yield();
             //初始化
-
+            if (OcrStatus == OcrStatus.Initialized) {
+                return new KeyValuePair<bool, string>(true, string.Empty);
+            }
             var modelFolder = $"{System.AppDomain.CurrentDomain.BaseDirectory}ExpressBill\\Lib";
             var n = init(modelFolder);
             if (n != 0) {
@@ -161,6 +207,7 @@ namespace JayTom.Dws.Ocr.ExpressBill {
                 return new KeyValuePair<bool, string>(false, $"sdk init fail and errcode is {n:D}");
             }
             else {
+                OcrStatus = OcrStatus.Initialized;
                 return new KeyValuePair<bool, string>(true, string.Empty);
             }
         }

@@ -10,13 +10,6 @@ namespace JayTom.Dws.Ocr {
 
     public interface IOcr : IDisposable {
 
-        //Ocr异常事件
-        //Ocr初始化异常事件
-        //Ocr识别到内容事件
-        //鉴权异常事件
-        //提交图片方法
-        //设置参数方法
-        //状态字段(未初始化、已断开、异常、运行中)
         /// <summary>
         /// 当发生OCR异常时触发的事件
         /// </summary>
@@ -40,7 +33,7 @@ namespace JayTom.Dws.Ocr {
         /// <summary>
         /// 状态
         /// </summary>
-        OcrStatus Status { get; }
+        OcrStatus OcrStatus { get; }
 
         /// <summary>
         /// 提交图片进行OCR处理
@@ -52,7 +45,7 @@ namespace JayTom.Dws.Ocr {
         /// 设置OCR参数
         /// </summary>
         /// <param name="parameters"></param>
-        void SetOcrParameters(Dictionary<string, object> parameters);
+        Task<KeyValuePair<bool, string>> SetOcrParameters(Dictionary<string, object> parameters);
 
         /// <summary>
         /// 初始化
@@ -188,6 +181,16 @@ namespace JayTom.Dws.Ocr {
         /// 获取或设置识别时间戳。
         /// </summary>
         public long RecognitionTimestamp { get; set; }
+
+        /// <summary>
+        /// 相机序列号
+        /// </summary>
+        public string CameraSerialNumber { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 提交图时间
+        /// </summary>
+        public long SubmitTimestamp { get; set; }
     }
 
     public class AuthenticationExceptionEventArgs : OcrExceptionEventArgs {

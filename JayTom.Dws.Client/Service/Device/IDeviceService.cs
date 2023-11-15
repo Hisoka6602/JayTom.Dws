@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Drawing;
+using JayTom.Dws.Ocr;
 using System.Threading;
 using JayTom.Dws.Camera;
 using System.Threading.Tasks;
@@ -8,7 +9,6 @@ using System.Collections.Generic;
 using JayTom.Dws.Client.Models.Cameras;
 
 namespace JayTom.Dws.Client.Service.Device {
-
     public interface IDeviceService {
 
         /// <summary>
@@ -126,6 +126,34 @@ namespace JayTom.Dws.Client.Service.Device {
         /// 当磅秤连接时触发的事件
         /// </summary>
         event EventHandler<ScaleConnectedEventArgs> ScaleConnected;
+
+
+        //Ocr相关
+
+        /// <summary>
+        /// 当发生OCR异常时触发的事件
+        /// </summary>
+        event EventHandler<OcrExceptionEventArgs> OcrExceptionOccurred;
+
+        /// <summary>
+        /// 当发生OCR初始化异常时触发的事件
+        /// </summary>
+        event EventHandler<OcrInitializationExceptionEventArgs> OcrInitializationExceptionOccurred;
+
+        /// <summary>
+        /// 当OCR识别到内容时触发的事件
+        /// </summary>
+        event EventHandler<OcrContentRecognizedEventArgs> OcrContentRecognized;
+
+        /// <summary>
+        /// 当发生鉴权异常时触发的事件
+        /// </summary>
+        event EventHandler<AuthenticationExceptionEventArgs> AuthenticationExceptionOccurred;
+
+
+
+
+
 
         /// <summary>
         /// 当磅秤断开连接时触发的事件

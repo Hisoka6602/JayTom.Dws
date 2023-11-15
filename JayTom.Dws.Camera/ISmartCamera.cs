@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Text;
+using JayTom.Dws.Ocr;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -11,6 +12,11 @@ namespace JayTom.Dws.Camera {
     /// 智能相机接口
     /// </summary>
     public interface ISmartCamera : ICamera {
+
+        /// <summary>
+        /// Ocr对象
+        /// </summary>
+        public IOcr Ocr { get; set; }
 
         /// <summary>
         /// 条码边框大小

@@ -3,6 +3,7 @@ using CamSDK;
 using System.Linq;
 using System.Text;
 using System.Drawing;
+using JayTom.Dws.Ocr;
 using Newtonsoft.Json;
 using MVIDCodeReaderNet;
 using MvCodeReaderSDKNet;
@@ -16,14 +17,6 @@ using JayTom.Dws.Camera.FilterContainer;
 namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim {
 
     public class WayzimIndustrialCamera : IIndustrialCamera {
-        /*private static void ReceiveCameraState(IntPtr name, int len, bool state, IntPtr userdata) {
-            byte[] namebytes = new byte[len];
-            Marshal.Copy(name, namebytes, 0, len);
-            if (!state)
-            {
-            }
-            Console.WriteLine($"接收到相机:{Encoding.ASCII.GetString(namebytes)} 状态:{state}");
-        }*/
         private SemaphoreSlim _semaphoreSlim = new(1, 1);
         private SemaphoreSlim _takeSlim = new(1, 1);
 
@@ -350,6 +343,12 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim {
         }
 
         public int TakePhotoDelay { get; set; }
+
+        /// <summary>
+        /// Ocr
+        /// </summary>
+        public IOcr Ocr { get; set; }
+
         public int BarcodeBorderSize { get; set; } = 5;
         public System.Drawing.Color BarcodeBorderColor { get; set; } = System.Drawing.Color.LawnGreen;
         public bool IsShowBarcodeBorder { get; set; } = true;

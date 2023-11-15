@@ -37,6 +37,12 @@ internal class Program {
         Debug.WriteLine(value1);
         expressBill.SubmitImage((Bitmap)Image.FromFile(".\\images\\1.jpg"));
         Console.WriteLine(value1);
+        await Task.Delay(TimeSpan.FromSeconds(5));
+        expressBill.Dispose();
+        await expressBill.SetOcrParameters(new Dictionary<string, object>()
+         {
+            { "recipient_name", "aa" }
+        });
         await Task.Delay(TimeSpan.FromSeconds(50));
         return;
         var daHuaVolumeCamera = new DaHuaVolumeCamera();

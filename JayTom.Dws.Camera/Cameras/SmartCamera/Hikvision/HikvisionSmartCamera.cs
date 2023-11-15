@@ -3,6 +3,7 @@ using System.Net;
 using System.Linq;
 using System.Text;
 using System.Drawing;
+using JayTom.Dws.Ocr;
 using Newtonsoft.Json;
 using MVIDCodeReaderNet;
 using MvCodeReaderSDKNet;
@@ -320,6 +321,11 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
 
         public int TakePhotoDelay { get; set; }
 
+        /// <summary>
+        /// Ocr
+        /// </summary>
+        public IOcr Ocr { get; set; }
+
         public int BarcodeBorderSize { get; set; } = 5;
         public Color BarcodeBorderColor { get; set; } = Color.LawnGreen;
         public bool IsShowBarcodeBorder { get; set; } = true;
@@ -403,16 +409,18 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                         await Task.Delay(500, token);
                         continue;
                     }
+
                     try {
-                        var nRet = _mvCodeReader?.MV_CODEREADER_GetOneFrameTimeoutEx2_NET(ref pData, pstFrameInfoEx2, 1000) ??
+                        var nRet = _mvCodeReader?.MV_CODEREADER_GetOneFrameTimeoutEx2_NET(ref pData, pstFrameInfoEx2,
+                                       1000) ??
                                    0;
                         if (nRet == MvCodeReader.MV_CODEREADER_OK) {
                             stFrameInfoEx2 =
                                 (MvCodeReader.MV_CODEREADER_IMAGE_OUT_INFO_EX2)(Marshal.PtrToStructure(pstFrameInfoEx2,
-                                                                                    typeof(MvCodeReader.
-                                                                                        MV_CODEREADER_IMAGE_OUT_INFO_EX2)) ??
-                                                                                new MvCodeReader.
-                                                                                    MV_CODEREADER_IMAGE_OUT_INFO_EX2());
+                                        typeof(MvCodeReader.
+                                            MV_CODEREADER_IMAGE_OUT_INFO_EX2)) ??
+                                    new MvCodeReader.
+                                        MV_CODEREADER_IMAGE_OUT_INFO_EX2());
                             if (0 >= stFrameInfoEx2.nFrameLen) {
                                 continue;
                             }
@@ -424,12 +432,12 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                                 var thumbnailImage = GenerateThumbnail(bmp);
                                 var stBcrResultEx2 =
                                     (MvCodeReader.MV_CODEREADER_RESULT_BCR_EX2)(Marshal.PtrToStructure(
-                                                                                    stFrameInfoEx2.UnparsedBcrList
-                                                                                        .pstCodeListEx2,
-                                                                                    typeof(MvCodeReader.
-                                                                                        MV_CODEREADER_RESULT_BCR_EX2)) ??
-                                                                                new MvCodeReader.
-                                                                                    MV_CODEREADER_RESULT_BCR_EX2());
+                                            stFrameInfoEx2.UnparsedBcrList
+                                                .pstCodeListEx2,
+                                            typeof(MvCodeReader.
+                                                MV_CODEREADER_RESULT_BCR_EX2)) ??
+                                        new MvCodeReader.
+                                            MV_CODEREADER_RESULT_BCR_EX2());
                                 //返回条码
                                 var localTime = DateTimeOffset.Now.ToLocalTime();
                                 var timestamp = localTime.ToUnixTimeMilliseconds();
@@ -498,6 +506,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                                                 });
                                             }
                                         }
+
                                         await Task.Delay(1, token);
                                     }
                                 }
@@ -524,10 +533,13 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
 
                         await Task.Delay(10, token);
                     }
-                    catch (Exception e) {
+                    /*catch (Exception e) {
                         OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
                             Exception = new Exception($"取码回调线程异常:{JsonConvert.SerializeObject(e)}")
                         });
+                    }*/
+                    finally {
+                        await Task.Delay(10, token);
                     }
                 }
             }

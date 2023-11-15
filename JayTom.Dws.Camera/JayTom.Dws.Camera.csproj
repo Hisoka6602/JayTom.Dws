@@ -13,6 +13,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\JayTom.Dws.Ocr\JayTom.Dws.Ocr.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Reference Include="CamSDK">
       <HintPath>Cameras\SmartCamera\Wayzim\Dll\CamSDK.dll</HintPath>
     </Reference>

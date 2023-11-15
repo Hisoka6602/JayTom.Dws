@@ -4,6 +4,7 @@ using System.Net;
 using System.Linq;
 using System.Text;
 using System.Drawing;
+using JayTom.Dws.Ocr;
 using Newtonsoft.Json;
 using Microsoft.Win32;
 using MVIDCodeReaderNet;
@@ -60,6 +61,9 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
             this.Info = info;
             this.Info.Type = CameraType.IndustrialCamera;
         }
+
+        /*public HikvisionIndustrialCamera(IOcr ocr) {
+        }*/
 
         public HikvisionIndustrialCamera() {
         }
@@ -364,6 +368,11 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
             //设置限定读码之类的参数
             throw new NotImplementedException();
         }
+
+        /// <summary>
+        /// Ocr
+        /// </summary>
+        public IOcr Ocr { get; set; }
 
         public int BarcodeBorderSize { get; set; } = 5;
         public System.Drawing.Color BarcodeBorderColor { get; set; } = System.Drawing.Color.LawnGreen;

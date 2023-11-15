@@ -3,6 +3,7 @@ using CamSDK;
 using System.Linq;
 using System.Text;
 using System.Drawing;
+using JayTom.Dws.Ocr;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Threading.Tasks;
@@ -333,6 +334,11 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
         }
 
         public int TakePhotoDelay { get; set; }
+
+        /// <summary>
+        /// Ocr
+        /// </summary>
+        public IOcr Ocr { get; set; }
 
         public int BarcodeBorderSize { get; set; } = 5;
         public Color BarcodeBorderColor { get; set; } = Color.LawnGreen;

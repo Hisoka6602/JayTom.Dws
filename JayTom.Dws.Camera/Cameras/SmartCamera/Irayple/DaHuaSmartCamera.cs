@@ -3,6 +3,7 @@ using System.Linq;
 using System.Text;
 using ThridLibray;
 using System.Drawing;
+using JayTom.Dws.Ocr;
 using Newtonsoft.Json;
 using MVIDCodeReaderNet;
 using System.Diagnostics;
@@ -259,6 +260,11 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
         }
 
         public int TakePhotoDelay { get; set; }
+
+        /// <summary>
+        /// Ocr
+        /// </summary>
+        public IOcr Ocr { get; set; }
 
         public int BarcodeBorderSize { get; set; } = 5;
         public Color BarcodeBorderColor { get; set; } = Color.LawnGreen;
