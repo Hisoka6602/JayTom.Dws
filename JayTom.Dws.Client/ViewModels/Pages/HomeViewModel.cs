@@ -528,6 +528,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                             OcrItemInfo.RecipientPhone = args?.RecipientPhone ?? string.Empty;
                             OcrItemInfo.SenderName = args?.SenderName ?? string.Empty;
                             OcrItemInfo.SenderPhone = args?.SenderPhone ?? string.Empty;
+                            OcrItemInfo.SenderAddress = args?.SenderAddress ?? string.Empty;
                             OcrItemInfo.ThreeSegmentCode = args?.ThreeSegmentCode ?? string.Empty;
                         });
                     }

@@ -22,6 +22,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Configuration.Ini;
 using System.Text.Json.Serialization.Metadata;
 using JsonSerializer = Newtonsoft.Json.JsonSerializer;
+using Microsoft.Extensions.FileSystemGlobbing.Internal;
 
 namespace JayTom.Dws.Ocr.ExpressBill {
 
@@ -78,17 +79,16 @@ namespace JayTom.Dws.Ocr.ExpressBill {
                 try {
                     var submitTimestamp = DateTime.Now;
                     var stopwatch = new Stopwatch();
+                    var matBgr = new Mat();
                     stopwatch.Start();
                     using var stream = new MemoryStream();
                     bitmap.Save(stream, System.Drawing.Imaging.ImageFormat.Bmp);
                     var array = stream.ToArray();
-                    var mat = Cv2.ImDecode(array, ImreadModes.Color);
-                    var ptr = process(mat.CvPtr);
-
+                    var mat = Cv2.ImDecode(array, ImreadModes.Unchanged);
+                    Cv2.CvtColor(mat, matBgr, ColorConversionCodes.RGB2BGR);
+                    var ptr = process(matBgr.CvPtr);
                     var buf = Marshal.PtrToStringAnsi(ptr);
-
                     var unescape = Regex.Unescape(buf ?? string.Empty);
-
                     var result = System.Text.Json.JsonSerializer.Deserialize<RootResult>(unescape, new JsonSerializerOptions {
                         ReferenceHandler = ReferenceHandler.Preserve,
                         PropertyNameCaseInsensitive = true,
@@ -106,13 +106,17 @@ namespace JayTom.Dws.Ocr.ExpressBill {
                     stopwatch.Stop();
                     if (result is not null) {
                         //回调识别到的内容
-                        OnOcrContentRecognized(new OcrContentRecognizedEventArgs() {
+                        OnOcrContentRecognized(GetFilteredResults(new OcrContentRecognizedEventArgs() {
                             BarCode = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("waybill_number") == true)
                                 ?.Str ?? string.Empty,
+                            BarcodeArea = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("waybill_number") == true)
+                                ?.Coord,
                             ElapsedTime = stopwatch.ElapsedMilliseconds,
                             Image = bitmap,
                             RecipientAddress = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("recipient_addr") == true)
                                 ?.Str ?? string.Empty,
+                            RecipientAddressArea = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("recipient_addr") == true)
+                                ?.Coord,
                             RecipientName = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("recipient_name") == true)
                                 ?.Str ?? string.Empty,
                             RecipientPhone = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("recipient_phone") == true)
@@ -123,14 +127,20 @@ namespace JayTom.Dws.Ocr.ExpressBill {
                                 ?.Str ?? string.Empty,
                             SenderPhone = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("sender_phone") == true)
                                 ?.Str ?? string.Empty,
+                            SenderAddress = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("sender_addr") == true)
+                                ?.Str ?? string.Empty,
+                            SenderAddressArea = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("sender_addr") == true)
+                                ?.Coord,
                             ThreeSegmentCode = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("three_segment_code") == true)
                                 ?.Str ?? string.Empty,
+                            ThreeSegmentArea = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("three_segment_code") == true)
+                                ?.Coord,
                             VirtualNumber = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("virtual_number") == true)
                                 ?.Str ?? string.Empty,
                             VirtualNumberLast4 = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("virtual_number_last4") == true)?.Str ?? string.Empty,
+                            SubmitTimestamp = new DateTimeOffset(submitTimestamp).ToUnixTimeMilliseconds(),
                             CameraSerialNumber = cameraSerialNumber,
-                            SubmitTimestamp = new DateTimeOffset(submitTimestamp).ToUnixTimeMilliseconds()
-                        });
+                        }));
                     }
                 }
                 catch (Exception e) {
@@ -176,37 +186,40 @@ namespace JayTom.Dws.Ocr.ExpressBill {
                     var recognitionTimestamp = new DateTimeOffset(recognitionTime).ToUnixTimeMilliseconds();
                     stopwatch.Stop();
                     if (result is not null) {
-                        return new OcrResult {
+                        return GetFilteredResults(new OcrResult {
                             BarCode = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("waybill_number") == true)
-                                  ?.Str ?? string.Empty,
+                                ?.Str ?? string.Empty,
+                            BarcodeArea = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("waybill_number") == true)
+                                ?.Coord,
                             ElapsedTime = stopwatch.ElapsedMilliseconds,
                             Image = bitmap,
-                            RecipientAddress = result.Data
-                                  ?.FirstOrDefault(f => f.Title?.Key?.Equals("recipient_addr") == true)
-                                  ?.Str ?? string.Empty,
-                            RecipientName = result.Data
-                                  ?.FirstOrDefault(f => f.Title?.Key?.Equals("recipient_name") == true)
-                                  ?.Str ?? string.Empty,
-                            RecipientPhone = result.Data
-                                  ?.FirstOrDefault(f => f.Title?.Key?.Equals("recipient_phone") == true)
-                                  ?.Str ?? string.Empty,
+                            RecipientAddress = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("recipient_addr") == true)
+                                ?.Str ?? string.Empty,
+                            RecipientAddressArea = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("recipient_addr") == true)
+                            ?.Coord,
+                            RecipientName = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("recipient_name") == true)
+                                ?.Str ?? string.Empty,
+                            RecipientPhone = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("recipient_phone") == true)
+                                ?.Str ?? string.Empty,
                             RecognitionTime = recognitionTime,
                             RecognitionTimestamp = recognitionTimestamp,
                             SenderName = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("sender_name") == true)
-                                  ?.Str ?? string.Empty,
+                                ?.Str ?? string.Empty,
                             SenderPhone = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("sender_phone") == true)
-                                  ?.Str ?? string.Empty,
-                            ThreeSegmentCode = result.Data
-                                  ?.FirstOrDefault(f => f.Title?.Key?.Equals("three_segment_code") == true)
-                                  ?.Str ?? string.Empty,
-                            VirtualNumber = result.Data
-                                  ?.FirstOrDefault(f => f.Title?.Key?.Equals("virtual_number") == true)
-                                  ?.Str ?? string.Empty,
-                            VirtualNumberLast4 =
-                                  result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("virtual_number_last4") == true)
-                                      ?.Str ?? string.Empty,
-                            SubmitTimestamp = new DateTimeOffset(submitTimestamp).ToUnixTimeMilliseconds()
-                        };
+                                ?.Str ?? string.Empty,
+                            SenderAddress = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("sender_addr") == true)
+                                ?.Str ?? string.Empty,
+                            SenderAddressArea = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("sender_addr") == true)
+                                ?.Coord,
+                            ThreeSegmentCode = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("three_segment_code") == true)
+                                ?.Str ?? string.Empty,
+                            ThreeSegmentArea = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("three_segment_code") == true)
+                                ?.Coord,
+                            VirtualNumber = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("virtual_number") == true)
+                                ?.Str ?? string.Empty,
+                            VirtualNumberLast4 = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("virtual_number_last4") == true)?.Str ?? string.Empty,
+                            SubmitTimestamp = new DateTimeOffset(submitTimestamp).ToUnixTimeMilliseconds(),
+                        });
                     }
                 }
                 catch (Exception e) {
@@ -218,6 +231,36 @@ namespace JayTom.Dws.Ocr.ExpressBill {
             }
 
             return null;
+        }
+
+        public OcrResult GetFilteredResults(OcrResult source) {
+            try {
+                source.ThreeSegmentCode = Regex.Replace(source.ThreeSegmentCode, @"[^0-9-]", "");
+                source.RecipientPhone = Regex.Replace(source.RecipientPhone, @"[^0-9-]", "");
+                source.SenderPhone = Regex.Replace(source.SenderPhone, @"[^0-9-]", "");
+                return source;
+            }
+            catch (Exception e) {
+                OnOcrExceptionOccurred(new OcrExceptionEventArgs() {
+                    Exception = e
+                });
+            }
+            return source;
+        }
+
+        public OcrContentRecognizedEventArgs GetFilteredResults(OcrContentRecognizedEventArgs source) {
+            try {
+                source.ThreeSegmentCode = Regex.Replace(source.ThreeSegmentCode, @"[^0-9-]", "");
+                source.RecipientPhone = Regex.Replace(source.RecipientPhone, @"[^0-9-]", "");
+                source.SenderPhone = Regex.Replace(source.SenderPhone, @"[^0-9-]", "");
+                return source;
+            }
+            catch (Exception e) {
+                OnOcrExceptionOccurred(new OcrExceptionEventArgs() {
+                    Exception = e
+                });
+            }
+            return source;
         }
 
         public async Task<KeyValuePair<bool, string>> SetOcrParameters(Dictionary<string, object> parameters) {

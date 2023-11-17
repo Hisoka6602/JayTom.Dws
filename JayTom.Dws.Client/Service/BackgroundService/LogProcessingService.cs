@@ -2,8 +2,10 @@
 using DryIoc;
 using System.Linq;
 using System.Text;
+using JayTom.Dws.Ocr;
 using System.Threading;
 using JayTom.Dws.Camera;
+using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
 using JayTom.Dws.Plugin.Scale;
 using JayTom.Dws.Data.LocalLog;
@@ -246,6 +248,28 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     Type = LogType.Information,
                     Message = $"相机截取到全景图",
                     CameraSerialNumber = args.CameraSerialNumber
+                });
+            };
+            //Ocr
+            _deviceService.OcrContentRecognized += delegate (object? sender, OcrContentRecognizedEventArgs args) {
+                EventAggregator.Instance.Publish(new OcrLogInfoModel() {
+                    Type = LogType.Information,
+                    Message = $"Ocr获取到条码[{args.BarCode}]",
+                    CameraSerialNumber = args.CameraSerialNumber,
+                    BarCode = args.BarCode,
+                    ElapsedTime = args.ElapsedTime,
+                    RecipientAddress = args.RecipientAddress,
+                    RecipientName = args.RecipientName,
+                    RecipientPhone = args.RecipientPhone,
+                    RecognitionTimestamp = args.RecognitionTimestamp,
+                    RecognitionTime = args.RecognitionTime,
+                    SubmitTimestamp = args.SubmitTimestamp,
+                    SenderAddress = args.SenderAddress,
+                    SenderName = args.SenderName,
+                    SenderPhone = args.SenderPhone,
+                    ThreeSegmentCode = args.ThreeSegmentCode,
+                    VirtualNumber = args.VirtualNumber,
+                    VirtualNumberLast4 = args.VirtualNumberLast4,
                 });
             };
             //磅秤

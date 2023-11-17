@@ -11,19 +11,24 @@ using MVIDCodeReaderNet;
 using System.Reflection;
 using System.Diagnostics;
 using MvCodeReaderSDKNet;
+using System.Windows.Media;
 using System.Threading.Tasks;
 using System.Drawing.Imaging;
 using System.Drawing.Drawing2D;
+using Pen = System.Drawing.Pen;
 using System.Collections.Generic;
 using System.Reflection.Metadata;
 using Point = System.Drawing.Point;
 using Image = System.Drawing.Image;
+using Color = System.Drawing.Color;
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using JayTom.Dws.Camera.FilterContainer;
 using Rectangle = System.Drawing.Rectangle;
 using static System.Net.Mime.MediaTypeNames;
 using static MVIDCodeReaderNet.MVIDCodeReader;
+using PixelFormat = System.Drawing.Imaging.PixelFormat;
+using JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim;
 
 namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
 
@@ -291,38 +296,104 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                 //判断信号
                 if (_ocrSemaphoreSlim.CurrentCount > 0) {
                     try {
-                        //这里换成多线程
-                        await _ocrSemaphoreSlim.WaitAsync(token);
-                        var tryDequeue = _ocrBitmapQueue.TryDequeue(out var bitmap);
-                        if (tryDequeue && bitmap is not null) {
-                            //调用Ocr算法
-                            var thumbnail = GenerateThumbnail(bitmap);
-                            var result = Ocr?.ParseOcrResult(bitmap);
-                            if (result is not null &&
-                                !string.IsNullOrEmpty(result.BarCode)) {
-                                _ocrBitmapQueue.Clear();
-                                //过滤
-                                var validateData = _barCodeFilterContainer.ValidateData(new BarCodeFilterInfo() {
-                                    BarCode = result.BarCode,
-                                    ScanTime = DateTime.Now
-                                });
-                                if (validateData) {
-                                    result.CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty;
-                                    //需要画框
-                                    //需要显示信息
-                                    //需要显示三段码
-                                    result.Thumbnail = thumbnail;
-                                    OnOcrContentRecognized(result);
+                        await Task.Factory.StartNew(async () => {
+                            //这里换成多线程
+                            await _ocrSemaphoreSlim.WaitAsync(token);
+                            var tryDequeue = _ocrBitmapQueue.TryDequeue(out var bitmap);
+                            if (tryDequeue && bitmap is not null) {
+                                //调用Ocr算法
+                                var thumbnail = GenerateThumbnail(bitmap);
+                                var result = Ocr?.ParseOcrResult(bitmap);
+                                if (result is not null &&
+                                    !string.IsNullOrEmpty(result.BarCode)) {
+                                    _ocrBitmapQueue.Clear();
+                                    //过滤
+                                    var validateData = _barCodeFilterContainer.ValidateData(new BarCodeFilterInfo() {
+                                        BarCode = result.BarCode,
+                                        ScanTime = DateTime.Now
+                                    });
+                                    if (validateData) {
+                                        result.CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty;
+
+                                        //画框
+
+                                        if (IsShowBarcodeBorder && thumbnail is not null && thumbnail.PixelFormat != PixelFormat.Format8bppIndexed) {
+                                            //设置图像边框
+                                            using var g = Graphics.FromImage(thumbnail);
+                                            //条码
+                                            var imageWidth = bitmap.Width;
+                                            var imageHeight = bitmap.Height;
+
+                                            var convertPoints = ConvertPoint(result.BarcodeArea);
+                                            var points = new Point[4];
+                                            for (var i = 0; i < convertPoints.Count; i++) {
+                                                points[i].X = (int)(convertPoints[i].X *
+                                                                    ((float)(thumbnail.Size.Width) / (imageWidth > 0 ? imageWidth : 1)));
+                                                points[i].Y = (int)(convertPoints[i].Y *
+                                                                    ((float)(thumbnail.Size.Height) / (imageHeight > 0 ? imageHeight : 1)));
+                                            }
+                                            g.DrawPolygon(new Pen(BarcodeBorderColor, BarcodeBorderSize - 4), points);
+                                            var font = new Font("Arial", 12);
+                                            // 画自定义文字
+                                            var brush = new SolidBrush(BarcodeBorderColor);
+                                            g.DrawString(result.BarCode, font, brush, 3, 30);
+                                            // 获取文字的宽度和高度
+                                            var textWidth = (int)g.MeasureString(result.BarCode, font).Width;
+                                            var textHeight = (int)g.MeasureString(result.BarCode, font).Height;
+
+                                            // 计算水平线的起点和终点坐标
+                                            var lineStartX = 3;
+                                            var lineEndX = textWidth + 3;
+                                            var lineY = textHeight + 33;
+                                            // 画水平线
+                                            g.DrawLine(new Pen(BarcodeBorderColor), lineStartX, lineY, lineEndX, lineY);
+                                            //画延展线
+                                            g.DrawLine(new Pen(BarcodeBorderColor), lineEndX, lineY, points[0].X, points[0].Y);
+
+                                            //收件人地址
+
+                                            convertPoints = ConvertPoint(result.RecipientAddressArea);
+                                            points = new Point[4];
+                                            for (var i = 0; i < convertPoints.Count; i++) {
+                                                points[i].X = (int)(convertPoints[i].X *
+                                                                    ((float)(thumbnail.Size.Width) / (imageWidth > 0 ? imageWidth : 1)));
+                                                points[i].Y = (int)(convertPoints[i].Y *
+                                                                    ((float)(thumbnail.Size.Height) / (imageHeight > 0 ? imageHeight : 1)));
+                                            }
+                                            g.DrawPolygon(new Pen(Color.Orange, BarcodeBorderSize - 4), points);
+
+                                            brush = new SolidBrush(Color.Orange);
+                                            g.DrawString(result.RecipientAddress, font, brush, 3, 60);
+                                            // 获取文字的宽度和高度
+                                            textWidth = (int)g.MeasureString(result.RecipientAddress, font).Width;
+                                            textHeight = (int)g.MeasureString(result.RecipientAddress, font).Height;
+
+                                            // 计算水平线的起点和终点坐标
+                                            lineStartX = 3;
+                                            lineEndX = textWidth + 3;
+                                            lineY = textHeight + 63;
+                                            // 画水平线
+                                            g.DrawLine(new Pen(Color.Orange), lineStartX, lineY, lineEndX, lineY);
+                                            //画延展线
+                                            g.DrawLine(new Pen(Color.Orange), lineEndX, lineY, points[0].X, points[0].Y);
+                                        }
+
+                                        //需要画框
+                                        //需要显示信息
+                                        //需要显示三段码
+                                        result.Thumbnail = thumbnail;
+                                        OnOcrContentRecognized(result);
+                                    }
+                                }
+
+                                if (IsRealtimeImageEnabled) {
+                                    OnRealtimeImage(new RealtimeImageEventArgs() {
+                                        ThumbImage = thumbnail,
+                                        Timestamp = result?.SubmitTimestamp ?? 0
+                                    });
                                 }
                             }
-
-                            if (IsRealtimeImageEnabled) {
-                                OnRealtimeImage(new RealtimeImageEventArgs() {
-                                    ThumbImage = thumbnail,
-                                    Timestamp = result?.SubmitTimestamp ?? 0
-                                });
-                            }
-                        }
+                        }, token);
                     }
                     finally {
                         _ocrSemaphoreSlim.Release();
@@ -748,6 +819,33 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
             Array.Reverse(addressBytes);
 
             return new IPAddress(addressBytes);
+        }
+
+        private List<Point> ConvertPoint(List<double>? coord) {
+            var points = new List<Point>();
+            if (coord?.Count == 8) {
+                points = Enumerable.Range(0, coord.Count / 2)
+                    .Select(i => new Point((int)coord[i * 2], (int)coord[i * 2 + 1]))
+                    .ToList();
+
+                return SortPointsInCounterClockwiseOrder(points);
+            }
+
+            return points;
+        }
+
+        private List<Point> SortPointsInCounterClockwiseOrder(List<Point> points) {
+            // 计算多边形的中心点
+            var center = new Point(points.Sum(p => p.X) / points.Count, points.Sum(p => p.Y) / points.Count);
+
+            // 根据相对于中心点的极角排序点
+            points.Sort((p1, p2) => {
+                var angle1 = Math.Atan2(p1.Y - center.Y, p1.X - center.X);
+                var angle2 = Math.Atan2(p2.Y - center.Y, p2.X - center.X);
+                return angle1.CompareTo(angle2);
+            });
+
+            return points;
         }
 
         protected virtual async void OnCameraExceptionOccurred(CameraExceptionEventArgs e) {

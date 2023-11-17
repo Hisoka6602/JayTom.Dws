@@ -15,6 +15,7 @@ namespace JayTom.Dws.Client.Models {
         private string _senderPhone = string.Empty;
         private string _threeSegmentCode = string.Empty;
         private long _elapsedTime;
+        private string _senderAddress = string.Empty;
 
         /// <summary>
         /// 收件人地址。
@@ -46,6 +47,14 @@ namespace JayTom.Dws.Client.Models {
         public string SenderName {
             get => _senderName;
             set => SetProperty(ref _senderName, value);
+        }
+
+        /// <summary>
+        /// 寄件人地址。
+        /// </summary>
+        public string SenderAddress {
+            get => _senderAddress;
+            set => SetProperty(ref _senderAddress, value);
         }
 
         /// <summary>

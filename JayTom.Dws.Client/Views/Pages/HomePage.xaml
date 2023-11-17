@@ -790,7 +790,7 @@
                                 FontWeight="Bold"
                                 Opacity="0.7"
                                 Style="{StaticResource CustomGridViewTextBlockCellStyle}"
-                                Text="--"
+                                Text="{Binding OcrItemInfo.SenderAddress, UpdateSourceTrigger=PropertyChanged}"
                                 TextTrimming="WordEllipsis"
                                 Visibility="{Binding OcrSettingsInfo.IsShowSenderInfo, Converter={StaticResource BooleanToVisibilityConverter}}" />
                         </Grid>

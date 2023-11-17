@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Drawing;
+using JayTom.Dws.Ocr;
 using Newtonsoft.Json;
 using System.Threading;
 using JayTom.Dws.Camera;
@@ -20,6 +21,7 @@ using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Client.Service.ExternalDataService;
 
 namespace JayTom.Dws.Client.Service.BackgroundService {
+
     public class PackageBackgroundService : Microsoft.Extensions.Hosting.BackgroundService {
         private readonly IDeviceService _deviceService;
         private readonly IResultOutputService _resultOutputService;
@@ -221,6 +223,41 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             //下位机(清空异常)
             _sortingService.ClearExceptionEvent += delegate (object? sender, string o) {
                 _packageInfos.Clear();
+            };
+            //Ocr算法
+            _deviceService.OcrContentRecognized += async delegate (object? sender, OcrContentRecognizedEventArgs args) {
+                //创建条码
+                if (_communicationsSettingsDto.Type == CommunicationsType.None ||
+                    !_communicationsSettingsDto.DeviceControlSettingsInfo.IsUseCreatePackageByDevice) {
+                    var packageInfo = new PackageInfo() {
+                        Guid = args.RecognitionTimestamp,
+                        BarCode = args.BarCode,
+                        CameraSerialNumber = args.CameraSerialNumber,
+                        Image = args.Image,
+                        ScanTime = args.RecognitionTime,
+                        Timestamp = args.RecognitionTimestamp,
+                    };
+                    _packageInfos.Enqueue(packageInfo);
+                    EventAggregator.Instance.Publish(new TriggerPositionEvent() {
+                        IsSuccess = true,
+                        TriggerPosition = TriggerPositionEnum.PackageTrigger
+                    });
+                }
+                else {
+                    var info = _packageInfos.OrderBy(o => o.CreateTime).FirstOrDefault(f => f.BarCode == null);
+                    if (info != null) {
+                        info.BarCode = args.BarCode;
+                        info.CameraSerialNumber = args.CameraSerialNumber;
+                        info.Image = args.Image;
+                        info.ScanTime = args.RecognitionTime;
+                        info.Timestamp = args.RecognitionTimestamp;
+                    }
+                }
+                //获取外部数据
+                //体积
+                if (_externalDataSource.IsVolumeInput) {
+                    await _externalDataService.GetVolume(args.BarCode);
+                }
             };
             //手动输入条码
             EventAggregator.Instance.Subscribe<BarcodeTypeProviderEvent>(async barcodeInfo => {

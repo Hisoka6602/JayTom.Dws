@@ -156,6 +156,11 @@ namespace JayTom.Dws.Ocr {
         public string SenderPhone { get; set; } = string.Empty;
 
         /// <summary>
+        /// 发件人地址
+        /// </summary>
+        public string SenderAddress { get; set; } = string.Empty;
+
+        /// <summary>
         /// 获取或设置三段码。
         /// </summary>
         public string ThreeSegmentCode { get; set; } = string.Empty;
@@ -199,6 +204,26 @@ namespace JayTom.Dws.Ocr {
         /// 提交图时间
         /// </summary>
         public long SubmitTimestamp { get; set; }
+
+        /// <summary>
+        /// 条码区域
+        /// </summary>
+        public List<double>? BarcodeArea { get; set; }
+
+        /// <summary>
+        /// 三段码区域
+        /// </summary>
+        public List<double>? ThreeSegmentArea { get; set; }
+
+        /// <summary>
+        /// 收件人地址区域
+        /// </summary>
+        public List<double>? RecipientAddressArea { get; set; }
+
+        /// <summary>
+        /// 寄件人地址区域
+        /// </summary>
+        public List<double>? SenderAddressArea { get; set; }
     }
 
     public class OcrResult : OcrContentRecognizedEventArgs { }

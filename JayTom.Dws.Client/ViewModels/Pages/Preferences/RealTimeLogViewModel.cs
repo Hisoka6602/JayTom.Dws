@@ -14,6 +14,7 @@ using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Models.LogsItemModels;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
+
     public class RealTimeLogViewModel : BindableBase {
         private ObservableCollection<BaseLogItemModel> _logItems = new();
         private SemaphoreSlim _addSlim = new(1);
@@ -65,6 +66,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     OnAddLog(model.CreateTime, $"[Api]-{($"Url:{model.Url}\n耗时:{model.Duration * 1000:F2}ms")}");
                 }
             });
+            //Ocr日志
+            EventAggregator.Instance.Subscribe<OcrLogInfoModel>(item => {
+                if (item is OcrLogInfoModel model) {
+                    //添加
+                    OnAddLog(model.CreateTime, $"[Ocr]-{model.Message}");
+                }
+            });
             /*//输出日志队列
             EventAggregator.Instance.Subscribe<OutputLogInfoModel>(item => {
                 if (item is OutputLogInfoModel model) {
@@ -112,7 +120,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
                 LogItems.Clear();
             });
-
         }
     }
 }
