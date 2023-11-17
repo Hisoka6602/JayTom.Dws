@@ -16,7 +16,7 @@ namespace JayTom.Dws.Camera {
         /// <summary>
         /// Ocr对象
         /// </summary>
-        public IOcr Ocr { get; set; }
+        public IOcr? Ocr { get; set; }
 
         /// <summary>
         /// 条码边框大小

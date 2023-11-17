@@ -3,6 +3,7 @@
     public class CameraFinderItemInfoModel : BaseCameraItemInfoModel {
         private bool _hasBinding;
         private BoundCameraType _boundType;
+        private bool _isOcrSupported;
 
         /// <summary>
         /// 是否已被选择
@@ -18,6 +19,14 @@
         public BoundCameraType BoundType {
             get => _boundType;
             set => SetProperty(ref _boundType, value);
+        }
+
+        /// <summary>
+        /// 是否支持Ocr算法
+        /// </summary>
+        public bool IsOcrSupported {
+            get => _isOcrSupported;
+            set => SetProperty(ref _isOcrSupported, value);
         }
     }
 
@@ -36,6 +45,10 @@
         /// <summary>
         /// 体积相机
         /// </summary>
-        VolumeCamera
+        VolumeCamera,
+        /// <summary>
+        /// Ocr相机(算法)
+        /// </summary>
+        OcrCamera,
     }
 }

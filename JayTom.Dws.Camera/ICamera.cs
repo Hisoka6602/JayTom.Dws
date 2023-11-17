@@ -197,6 +197,11 @@ namespace JayTom.Dws.Camera {
         public bool IsAvailable { get; set; } = true;
 
         /// <summary>
+        /// 是否支持Ocr算法
+        /// </summary>
+        public bool IsOcrSupported { get; set; } = false;
+
+        /// <summary>
         /// 相机类型
         /// </summary>
         public CameraType Type { get; set; }
@@ -326,7 +331,12 @@ namespace JayTom.Dws.Camera {
         /// <summary>
         /// 录像相机
         /// </summary>
-        VideoCamera = 3
+        VideoCamera = 3,
+
+        /// <summary>
+        /// Ocr相机
+        /// </summary>
+        OcrCamera = 4,
     }
 
     /// <summary>

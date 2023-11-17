@@ -1,8 +1,10 @@
 ﻿using System;
+using DryIoc;
 using Prism.Mvvm;
 using System.Linq;
 using Prism.Commands;
 using System.Windows;
+using JayTom.Dws.Ocr;
 using Newtonsoft.Json;
 using System.Threading;
 using JayTom.Dws.Camera;
@@ -77,6 +79,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         private static SemaphoreSlim _imageSemaphoreSlim = new(1, 1);
         private static SemaphoreSlim _updateSlim = new(1, 1);
         private OcrSettingsInfoModel _ocrSettingsInfo = new();
+        private OcrInfoItemModel _ocrItemInfo = new();
 
         public SnackbarMessageQueue HomeMessageQueue {
             get => _homeMessageQueue;
@@ -94,11 +97,19 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         }
 
         /// <summary>
-        /// Ocr
+        /// Ocr设置
         /// </summary>
         public OcrSettingsInfoModel OcrSettingsInfo {
             get => _ocrSettingsInfo;
             set => SetProperty(ref _ocrSettingsInfo, value);
+        }
+
+        /// <summary>
+        /// Ocr显示信息
+        /// </summary>
+        public OcrInfoItemModel OcrItemInfo {
+            get => _ocrItemInfo;
+            set => SetProperty(ref _ocrItemInfo, value);
         }
 
         /// <summary>
@@ -322,6 +333,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     Weight = args.Weight;
                 });
             };
+            _deviceService.OcrContentRecognized += DeviceServiceOnOcrContentRecognized;
             _imageStorageService.ImageSaveFailed += async delegate (object? sender, Exception exception) {
                 await Application.Current.Dispatcher.InvokeAsync(() => {
                     HomeMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("图片保存异常") ?? string.Empty}:{exception.Message}");
@@ -486,6 +498,41 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     }
                 }
             });
+        }
+
+        /// <summary>
+        /// Ocr识别到内容触发
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="args"></param>
+        private async void DeviceServiceOnOcrContentRecognized(object? sender, OcrContentRecognizedEventArgs args) {
+            //更新图片
+
+            var model = CameraItems.FirstOrDefault(f => f.SerialNumber.Equals(args.CameraSerialNumber) &&
+                                                        f.Type is CameraType.IndustrialCamera or CameraType.SmartCamera);
+            if (model is not null) {
+                //图片转换
+                if (args?.Thumbnail is not null &&
+                    model.Image is not null) {
+                    if (args.RecognitionTimestamp != model.ImageTimestamp) {
+                        model.ImageTimestamp = args.RecognitionTimestamp;
+                        if (!model.IsRealtimeImageEnabled) {
+                            model.BitmapQueue.Enqueue(args.Thumbnail);
+                        }
+                        await Application.Current.Dispatcher.BeginInvoke(() => {
+                            //更新右边信息
+                            BarCode = args?.BarCode ?? "未识别到条码";
+                            OcrItemInfo.ElapsedTime = args?.ElapsedTime ?? 0;
+                            OcrItemInfo.RecipientAddress = args?.RecipientAddress ?? string.Empty;
+                            OcrItemInfo.RecipientName = args?.RecipientName ?? string.Empty;
+                            OcrItemInfo.RecipientPhone = args?.RecipientPhone ?? string.Empty;
+                            OcrItemInfo.SenderName = args?.SenderName ?? string.Empty;
+                            OcrItemInfo.SenderPhone = args?.SenderPhone ?? string.Empty;
+                            OcrItemInfo.ThreeSegmentCode = args?.ThreeSegmentCode ?? string.Empty;
+                        });
+                    }
+                }
+            }
         }
 
         private async void DeviceServiceOnVolumeCaptured(object? sender, VolumeCapturedEventArgs args) {

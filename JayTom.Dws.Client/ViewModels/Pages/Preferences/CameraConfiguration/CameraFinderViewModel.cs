@@ -15,6 +15,7 @@ using JayTom.Dws.Client.Models;
 using MaterialDesignThemes.Wpf;
 using System.Windows.Threading;
 using JayTom.Dws.Data.LocalConf;
+using NPOI.SS.Formula.Functions;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.EventMediators;
@@ -22,6 +23,7 @@ using JayTom.Dws.Client.Models.Cameras;
 using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Data.LocalConf.CameraConfig;
 using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Domain.Repository.LocalData;
 using CameraType = JayTom.Dws.Client.Models.CameraType;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 
@@ -38,7 +40,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
         private static bool _isLoaded;
 
         private ObservableCollection<CameraFinderItemInfoModel> _cameraFinderItems = new() {
-            /*new CameraFinderItemInfoModel() {
+            new CameraFinderItemInfoModel() {
                 Num = 1,
                 Name = "增加一个转换、如果是工业相机、智能相机则不显示体积绑定",
                 ConnectionType = ConnectionType.Ethernet,
@@ -64,7 +66,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                 SerialNumber = "测试序列号3",
                 IpAddress = "192.168.0.1",
                 Model = "HK-6565",
-                BoundType = BoundCameraType.BarcodeScannerCamera
+                IsOcrSupported = true
             },
             new CameraFinderItemInfoModel() {
                 Num = 4,
@@ -74,13 +76,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                 SerialNumber = "测试序列号4",
                 IpAddress = "192.168.0.1",
                 Model = "HK-6565",
-                BoundType = BoundCameraType.BarcodeScannerCamera
-            },*/
+                BoundType = BoundCameraType.BarcodeScannerCamera,
+            },
         };
 
         private SnackbarMessageQueue _cameraFinderMessageQueue = new(TimeSpan.FromSeconds(2));
         private bool _isRefreshing;
         private CameraSdkSelectorInfoModel _cameraSdkSelectorInfo = new();
+        private OcrSettingsDto _ocrSettingsDto = new();
 
         public CameraFinderViewModel(IDeviceService deviceService,
             IBarcodeScannerCameraConfigRepository barcodeScannerCameraConfigRepository,
@@ -94,6 +97,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
             _volumeCameraConfigRepository = volumeCameraConfigRepository;
             _configRepository = configRepository;
             _dialogService = dialogService;
+
             _deviceService.CameraUnbound += async delegate (object? sender, CameraFinderItemInfoModel model) {
                 await Application.Current.Dispatcher.InvokeAsync(() => {
                     var infoModel = CameraFinderItems.FirstOrDefault(f => f.SerialNumber.Equals(model.SerialNumber));
@@ -148,7 +152,18 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                         list = list.OrderBy(f => f.SerialNumber).ToList();
                         for (var i = 0; i < list.Count; i++) {
                             list[i].Num = i + 1;
-                            list[i].HasBinding = infoModels?.Any(a => a.SerialNumber.Equals(list[i].SerialNumber)) ?? false;
+                            bool? hasBinding = null;
+                            if (!_ocrSettingsDto.IsUseOcr) {
+                                //判断是否开启Ocr算法
+                                if (infoModels?.FirstOrDefault(f => f.SerialNumber.Equals(list[i].SerialNumber))
+                                        ?.BoundType == BoundCameraType.OcrCamera) {
+                                    UnbindDelegate(list[i]);
+                                }
+                                list[i].IsOcrSupported = false;
+                                hasBinding = false;
+                            }
+                            hasBinding ??= infoModels?.Any(a => a.SerialNumber.Equals(list[i].SerialNumber)) ?? false;
+                            list[i].HasBinding = hasBinding ?? false;
                             list[i].BoundType = infoModels?.FirstOrDefault(f => f.SerialNumber.Equals(list[i].SerialNumber))?.BoundType ??
                                                 BoundCameraType.BarcodeScannerCamera;
                         }
@@ -156,6 +171,17 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                     });
                 }).ConfigureAwait(false).GetAwaiter();
             };
+            EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async settings => {
+                if (settings is SettingsChangedEvent { SettingsName: "OcrSettings" }) {
+                    var configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("OcrSettings"));
+                    try {
+                        _ocrSettingsDto = JsonConvert.DeserializeObject<OcrSettingsDto>(configInfoModel.Value) ?? new OcrSettingsDto();
+                    }
+                    catch (Exception e) {
+                        _ocrSettingsDto ??= new OcrSettingsDto();
+                    }
+                }
+            });
         }
 
         /// <summary>
@@ -212,6 +238,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                             };
                         }
                     }
+                    configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("OcrSettings"));
+                    _ocrSettingsDto = JsonConvert.DeserializeObject<OcrSettingsDto>(configInfoModel.Value) ?? new OcrSettingsDto();
                 }
                 catch (Exception e) {
                     CameraFinderMessageQueue.Enqueue($"{e.Message}");
@@ -380,6 +408,66 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
             });
         }
 
+        public ICommand BindOcrScannerCameraCommand {
+            get => new DelegateCommand<CameraFinderItemInfoModel>(BindOcrScannerCameraDelegate);
+        }
+
+        private async void BindOcrScannerCameraDelegate(CameraFinderItemInfoModel obj) {
+            //绑定Ocr算法相机
+            if (_isExecuting || !CheckSdk(obj)) {
+                return;
+            }
+            //判断是否开启Ocr
+            var cameraConnectionParameters = string.Empty;
+            var result = ButtonResult.No;
+            if (obj.CameraType == CameraType.SmartCamera /*&&
+                (obj.Brand.Contains("Hik") || obj.Brand.Contains("Dahua") || obj.Model.Contains("DH"))*/) {
+                //弹出触发选择
+                _dialogService.ShowDialog("TriggerModeSelectionPage", callback => {
+                    //获取参数
+                    result = callback.Result;
+                    var triggerMode = callback.Parameters.GetValue<TriggerMode>("CameraTriggerMode");
+                    cameraConnectionParameters = JsonConvert.SerializeObject(new {
+                        TriggerMode = triggerMode,
+                    });
+                });
+                if (result != ButtonResult.OK) {
+                    return;
+                }
+            }
+            await Application.Current.Dispatcher.InvokeAsync(async () => {
+                _isExecuting = true;
+                var isSuccess = false;
+                var insertOrUpdate = await _barcodeScannerCameraConfigRepository.InsertOrUpdate(new BarcodeScannerCameraConfigInfoModel() {
+                    ConnectionType = (int)obj.ConnectionType,
+                    CameraType = (int)obj.CameraType,
+                    IpAddress = obj.IpAddress,
+                    Model = obj.Model,
+                    Name = obj.Name,
+                    SerialNumber = obj.SerialNumber,
+                    Version = obj.Version,
+                    IsShowRealTimeImage = true,
+                    CameraConnectionParameters = cameraConnectionParameters,
+                    IsOcrSupported = true
+                });
+                if (insertOrUpdate) {
+                    //从数据库修改或增加
+                    //触发修改事件
+                    obj.HasBinding = true;
+                    obj.BoundType = BoundCameraType.OcrCamera;
+                    var (key, value) = await _deviceService.OnCameraBound(obj);
+                    if (!key) {
+                        obj.HasBinding = false;
+                    }
+                    isSuccess = key;
+                }
+
+                CameraFinderMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("Camera")}:{obj.Name}, {Languages.Language.ResourceManager.GetString("Bind")}{(isSuccess ?
+                    Languages.Language.ResourceManager.GetString("Success") : Languages.Language.ResourceManager.GetString("Failure"))}");
+                _isExecuting = false;
+            });
+        }
+
         /// <summary>
         /// 绑定体积相机
         /// </summary>
@@ -442,7 +530,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
             var isSuccess = false;
             await Application.Current.Dispatcher.InvokeAsync(async () => {
                 _isExecuting = true;
-                if (obj.BoundType == BoundCameraType.BarcodeScannerCamera) {
+                if (obj.BoundType is BoundCameraType.BarcodeScannerCamera or BoundCameraType.OcrCamera) {
                     //从扫码相机删除
                     var model = await _barcodeScannerCameraConfigRepository.
                         FirstOrDefault(s =>

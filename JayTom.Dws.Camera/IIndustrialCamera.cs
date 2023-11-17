@@ -19,7 +19,7 @@ namespace JayTom.Dws.Camera {
         /// <summary>
         /// Ocr对象
         /// </summary>
-        public IOcr Ocr { get; set; }
+        public IOcr? Ocr { get; set; }
 
         /// <summary>
         /// 条码边框大小
@@ -40,6 +40,11 @@ namespace JayTom.Dws.Camera {
         /// 读取到条码事件
         /// </summary>
         event EventHandler<BarcodeReadEventArgs> BarcodeRead;
+
+        /// <summary>
+        /// 当OCR识别到内容时触发的事件
+        /// </summary>
+        event EventHandler<OcrContentRecognizedEventArgs> OcrContentRecognized;
 
         /// <summary>
         /// 设置扫码过滤参数

@@ -1,11 +1,10 @@
-﻿using JayTom.Dws.Client.Models.Cameras;
-using System;
-using System.Globalization;
+﻿using System;
 using System.Windows.Data;
+using System.Globalization;
 using System.Windows.Media;
+using JayTom.Dws.Client.Models.Cameras;
 
 namespace JayTom.Dws.Client.Converters.CameraConverter {
-
     public class BoundCameraTypeConverter : IValueConverter {
 
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
@@ -15,6 +14,7 @@ namespace JayTom.Dws.Client.Converters.CameraConverter {
                         BoundCameraType.PanoramicCamera => Languages.Language.ResourceManager.GetString("PanoramicCamera") ?? string.Empty,
                         BoundCameraType.BarcodeScannerCamera => Languages.Language.ResourceManager.GetString("ScannerCamera") ?? string.Empty,
                         BoundCameraType.VolumeCamera => Languages.Language.ResourceManager.GetString("VolumeCamera") ?? string.Empty,
+                        BoundCameraType.OcrCamera => "Ocr算法扫码",
                         _ => string.Empty
                     };
                 }
@@ -23,6 +23,7 @@ namespace JayTom.Dws.Client.Converters.CameraConverter {
                         BoundCameraType.PanoramicCamera => new SolidColorBrush(Colors.BlueViolet),
                         BoundCameraType.BarcodeScannerCamera => new SolidColorBrush(Colors.RoyalBlue),
                         BoundCameraType.VolumeCamera => new SolidColorBrush(Colors.DodgerBlue),
+                        BoundCameraType.OcrCamera => new SolidColorBrush(Colors.DarkOrange),
                         _ => string.Empty
                     };
                 }
@@ -31,6 +32,7 @@ namespace JayTom.Dws.Client.Converters.CameraConverter {
                         BoundCameraType.PanoramicCamera => "\xe605",
                         BoundCameraType.BarcodeScannerCamera => "\xe9f5",
                         BoundCameraType.VolumeCamera => "\xea1a",
+                        BoundCameraType.OcrCamera => "\xe7a3",
                         _ => string.Empty
                     };
                 }

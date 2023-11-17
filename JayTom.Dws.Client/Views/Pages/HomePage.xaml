@@ -502,11 +502,11 @@
                                 <Run Text="三段码:" /> <Run
                                     FontSize="22"
                                     Foreground="White"
-                                    Text="320-44-22" />
+                                    Text="{Binding OcrItemInfo.ThreeSegmentCode, UpdateSourceTrigger=PropertyChanged}" />
                             </TextBlock>
                         </StackPanel>
                         <!--  格口号  -->
-                        <StackPanel
+                        <!--<StackPanel
                             Grid.Row="0"
                             Grid.Column="1"
                             Margin="0,5"
@@ -533,7 +533,7 @@
                                     Foreground="White"
                                     Text="05" />
                             </TextBlock>
-                        </StackPanel>
+                        </StackPanel>-->
                         <!--  分割线  -->
                         <Rectangle
                             Grid.Row="1"
@@ -569,7 +569,7 @@
                                 FontWeight="Bold"
                                 Foreground="DimGray"
                                 Style="{StaticResource CustomGridViewTextBlockCellStyle}">
-                                <Run Text="识别耗时(ms):" /> <Run Foreground="White" Text="120" />
+                                <Run Text="识别耗时(ms):" /> <Run Foreground="White" Text="{Binding OcrItemInfo.ElapsedTime, UpdateSourceTrigger=PropertyChanged}" />
                             </TextBlock>
                         </StackPanel>
                         <!--  收寄件人信息  -->
@@ -723,7 +723,7 @@
                                 FontWeight="Bold"
                                 Opacity="0.7"
                                 Style="{StaticResource CustomGridViewTextBlockCellStyle}"
-                                Text="13800138000"
+                                Text="{Binding OcrItemInfo.RecipientPhone, UpdateSourceTrigger=PropertyChanged}"
                                 TextTrimming="WordEllipsis"
                                 Visibility="{Binding OcrSettingsInfo.IsShowReceiverInfo, Converter={StaticResource BooleanToVisibilityConverter}}" />
                             <!--  收件人名称  -->
@@ -736,7 +736,7 @@
                                 FontWeight="Bold"
                                 Opacity="0.7"
                                 Style="{StaticResource CustomGridViewTextBlockCellStyle}"
-                                Text="马化腾"
+                                Text="{Binding OcrItemInfo.RecipientName, UpdateSourceTrigger=PropertyChanged}"
                                 TextTrimming="WordEllipsis"
                                 Visibility="{Binding OcrSettingsInfo.IsShowReceiverInfo, Converter={StaticResource BooleanToVisibilityConverter}}" />
                             <!--  收件人地址  -->
@@ -749,7 +749,7 @@
                                 FontWeight="Bold"
                                 Opacity="0.7"
                                 Style="{StaticResource CustomGridViewTextBlockCellStyle}"
-                                Text="北京市东城区长安街"
+                                Text="{Binding OcrItemInfo.RecipientAddress, UpdateSourceTrigger=PropertyChanged}"
                                 TextTrimming="WordEllipsis"
                                 Visibility="{Binding OcrSettingsInfo.IsShowReceiverInfo, Converter={StaticResource BooleanToVisibilityConverter}}" />
 
@@ -764,7 +764,7 @@
                                 FontWeight="Bold"
                                 Opacity="0.7"
                                 Style="{StaticResource CustomGridViewTextBlockCellStyle}"
-                                Text="13800138000"
+                                Text="{Binding OcrItemInfo.SenderPhone, UpdateSourceTrigger=PropertyChanged}"
                                 TextTrimming="WordEllipsis"
                                 Visibility="{Binding OcrSettingsInfo.IsShowSenderInfo, Converter={StaticResource BooleanToVisibilityConverter}}" />
                             <!--  寄件人名称  -->
@@ -777,7 +777,7 @@
                                 FontWeight="Bold"
                                 Opacity="0.7"
                                 Style="{StaticResource CustomGridViewTextBlockCellStyle}"
-                                Text="马化腾"
+                                Text="{Binding OcrItemInfo.SenderName, UpdateSourceTrigger=PropertyChanged}"
                                 TextTrimming="WordEllipsis"
                                 Visibility="{Binding OcrSettingsInfo.IsShowSenderInfo, Converter={StaticResource BooleanToVisibilityConverter}}" />
                             <!--  寄件人地址  -->
@@ -790,7 +790,7 @@
                                 FontWeight="Bold"
                                 Opacity="0.7"
                                 Style="{StaticResource CustomGridViewTextBlockCellStyle}"
-                                Text="北京市东城区长安街"
+                                Text="--"
                                 TextTrimming="WordEllipsis"
                                 Visibility="{Binding OcrSettingsInfo.IsShowSenderInfo, Converter={StaticResource BooleanToVisibilityConverter}}" />
                         </Grid>

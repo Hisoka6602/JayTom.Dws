@@ -39,6 +39,7 @@ namespace JayTom.Dws.Client.Service.Device {
         private readonly IConfigRepository _configRepository;
         private readonly IDynamicScale _dynamicScale;
         private readonly IStaticScale _staticScale;
+        private readonly IOcr _ocr;
         private SemaphoreSlim _cameraSlim = new(1);
 
         //private List<string> CameraInitializationException { get; set; } = new();
@@ -149,7 +150,8 @@ namespace JayTom.Dws.Client.Service.Device {
                     ConnectionType = (ConnectionType)s.ConnectionType,
                     CameraType = (JayTom.Dws.Client.Models.CameraType)ConvertCameraType(s.Brand, s.Model),
                     Version = s.Version,
-                    Brand = s.Brand
+                    Brand = s.Brand,
+                    IsOcrSupported = s.IsOcrSupported
                 })?.ToList();
                 CameraEnumerationRefreshed?.Invoke(null, itemInfoModels ?? new List<CameraFinderItemInfoModel>());
 
@@ -166,13 +168,14 @@ namespace JayTom.Dws.Client.Service.Device {
             IPanoramaCameraConfigRepository panoramaCameraConfigRepository,
             IVolumeCameraConfigRepository volumeCameraConfigRepository,
             IConfigRepository configRepository, IDynamicScale dynamicScale,
-            IStaticScale staticScale) {
+            IStaticScale staticScale, IOcr ocr) {
             _barcodeScannerCameraConfigRepository = barcodeScannerCameraConfigRepository;
             _panoramaCameraConfigRepository = panoramaCameraConfigRepository;
             _volumeCameraConfigRepository = volumeCameraConfigRepository;
             _configRepository = configRepository;
             _dynamicScale = dynamicScale;
             _staticScale = staticScale;
+            _ocr = ocr;
             //注册磅秤事件
             _dynamicScale.StabledWeight += delegate (object? sender, float f) {
                 OnStableWeight(new StableWeightEventArgs() {
@@ -458,7 +461,13 @@ namespace JayTom.Dws.Client.Service.Device {
                                             camera = ConvertCamera(info);
                                             if (camera is not null) {
                                                 //设置绑定模式
-                                                camera.BindingType = CameraBindingType.ScannerCamera;
+                                                //判断是否使用Ocr
+                                                if (model.IsOcrSupported) {
+                                                    camera.BindingType = CameraBindingType.OcrCamera;
+                                                }
+                                                else {
+                                                    camera.BindingType = CameraBindingType.ScannerCamera;
+                                                }
                                             }
                                         }
                                     }
@@ -550,11 +559,19 @@ namespace JayTom.Dws.Client.Service.Device {
                                     industrialCamera.BarcodeRead += delegate (object? sender, BarcodeReadEventArgs args) {
                                         OnBarcodeScanned(args);
                                     };
+                                    industrialCamera.OcrContentRecognized += delegate (object? sender,
+                                        OcrContentRecognizedEventArgs args) {
+                                            OnOcrContentRecognized(args);
+                                        };
                                     var isShowRealTimeImage = scannerCameraConfigInfoModels?.FirstOrDefault(f =>
                                         f.SerialNumber.Equals(camera.Info?.SerialNumber))
                                         ?.IsShowRealTimeImage;
                                     if (isShowRealTimeImage == true) {
                                         industrialCamera.StartRealTimeImage();
+                                    }
+
+                                    if (industrialCamera.BindingType == CameraBindingType.OcrCamera) {
+                                        industrialCamera.Ocr = _ocr;
                                     }
                                     break;
 

@@ -23,6 +23,7 @@ using System.Runtime.InteropServices;
 using JayTom.Dws.Camera.FilterContainer;
 using Rectangle = System.Drawing.Rectangle;
 using static System.Net.Mime.MediaTypeNames;
+using static MVIDCodeReaderNet.MVIDCodeReader;
 
 namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
 
@@ -49,6 +50,15 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
         private double FrameRate { get; set; }
         private GCHandle? _imageBufferHandle;
 
+        /// <summary>
+        /// Ocr图像队列
+        /// </summary>
+        private ConcurrentQueue<Bitmap> _ocrBitmapQueue = new();
+
+        private Task? _ocrThread;
+        private CancellationTokenSource? _ocrCancellationTokenSource;
+        private SemaphoreSlim _ocrSemaphoreSlim = new(5);
+
         //过滤器
         private readonly BarCodeFilterContainer _barCodeFilterContainer = new();
 
@@ -61,9 +71,6 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
             this.Info = info;
             this.Info.Type = CameraType.IndustrialCamera;
         }
-
-        /*public HikvisionIndustrialCamera(IOcr ocr) {
-        }*/
 
         public HikvisionIndustrialCamera() {
         }
@@ -109,7 +116,11 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                             : (stDevInfo.nCamType == MVIDCodeReader.MVID_USB_CAM
                                 ? CameraConnectionType.Usb
                                 : CameraConnectionType.Unknown),
-                        Id = i
+                        Id = i,
+                        //如果是海康的工业相机则支持
+                        IsOcrSupported = ((stDevInfo.chManufacturerName?.Contains("Hikrobot") == true ||
+                                          stDevInfo.chManufacturerName?.Contains("Hikrobot") == true) &&
+                                          stDevInfo.chModelName?.Contains("MV-PD") == true)
                     };
                     _devInfo.AddOrUpdate(cameraInfo.SerialNumber, cameraInfo, (k, v) => cameraInfo);
                     cameraInfos.Add(cameraInfo);
@@ -224,6 +235,31 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                     //获取帧率
                     //FrameRate
 
+                    //注册Ocr线程
+                    if (this.BindingType is CameraBindingType.OcrCamera) {
+                        if (Ocr is not null) {
+                            var (key, value) = await Ocr.Initialize();
+                            if (key) {
+                                _ocrCancellationTokenSource = new CancellationTokenSource();
+                                _ocrThread = new TaskFactory(TaskCreationOptions.LongRunning,
+                                        TaskContinuationOptions.LongRunning)
+                                    .StartNew(async () => await OcrCallbackThread(_ocrCancellationTokenSource.Token));
+                            }
+                            else {
+                                OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
+                                    Exception = new Exception($"Ocr初始化失败:{value}!")
+                                });
+                                return new KeyValuePair<bool, string>(false, $"Ocr初始化失败:{value}!");
+                            }
+                        }
+                        else {
+                            OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
+                                Exception = new Exception("Ocr对象未初始化!")
+                            });
+                            return new KeyValuePair<bool, string>(false, "Ocr对象未初始化!");
+                        }
+                    }
+
                     OnCameraInitialized(new CameraInitializedEventArgs() {
                         CameraInfo = this.Info
                     });
@@ -244,12 +280,78 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
             }
         }
 
+        /// <summary>
+        /// Ocr回调处理逻辑
+        /// </summary>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        public async Task OcrCallbackThread(CancellationToken token) {
+            await Task.Yield();
+            while (!token.IsCancellationRequested) {
+                //判断信号
+                if (_ocrSemaphoreSlim.CurrentCount > 0) {
+                    try {
+                        //这里换成多线程
+                        await _ocrSemaphoreSlim.WaitAsync(token);
+                        var tryDequeue = _ocrBitmapQueue.TryDequeue(out var bitmap);
+                        if (tryDequeue && bitmap is not null) {
+                            //调用Ocr算法
+                            var thumbnail = GenerateThumbnail(bitmap);
+                            var result = Ocr?.ParseOcrResult(bitmap);
+                            if (result is not null &&
+                                !string.IsNullOrEmpty(result.BarCode)) {
+                                _ocrBitmapQueue.Clear();
+                                //过滤
+                                var validateData = _barCodeFilterContainer.ValidateData(new BarCodeFilterInfo() {
+                                    BarCode = result.BarCode,
+                                    ScanTime = DateTime.Now
+                                });
+                                if (validateData) {
+                                    result.CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty;
+                                    //需要画框
+                                    //需要显示信息
+                                    //需要显示三段码
+                                    result.Thumbnail = thumbnail;
+                                    OnOcrContentRecognized(result);
+                                }
+                            }
+
+                            if (IsRealtimeImageEnabled) {
+                                OnRealtimeImage(new RealtimeImageEventArgs() {
+                                    ThumbImage = thumbnail,
+                                    Timestamp = result?.SubmitTimestamp ?? 0
+                                });
+                            }
+                        }
+                    }
+                    finally {
+                        _ocrSemaphoreSlim.Release();
+                    }
+                }
+
+                await Task.Delay(50, token);
+            }
+        }
+
         //条码回调事件
         public async void ImageCallbackFunc(IntPtr pstOutput, IntPtr puser) {
             if (Status == CameraStatus.Running && IntPtr.Zero != pstOutput) {
                 var stOutput = (MVIDCodeReader.MVID_CAM_OUTPUT_INFO)(Marshal.PtrToStructure(pstOutput,
                     typeof(MVIDCodeReader.MVID_CAM_OUTPUT_INFO)) ?? new MVIDCodeReader.MVID_CAM_OUTPUT_INFO());
                 await ProcessImageAsync(stOutput, pstOutput);
+            }
+        }
+
+        /// <summary>
+        /// 无解码信息回调
+        /// </summary>
+        public async void ReadImageCallback(MVIDCodeReader.MVID_IMAGE_INFO output, IntPtr user) {
+            //解析图片
+            var image = await ConvertPointerToImage(output);
+            if (this.BindingType is CameraBindingType.OcrCamera &&
+                image is not null) {
+                //添加图片到识别队列
+                _ocrBitmapQueue.Enqueue(image);
             }
         }
 
@@ -288,10 +390,12 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                     }
                 }
             }
-            else if (BindingType is CameraBindingType.VideoCamera) {
+            else if (BindingType is CameraBindingType.VideoCamera or CameraBindingType.OcrCamera) {
                 //注册不包含解码信息的回调
                 if (_readImageCallback is null) {
-                    _readImageCallback = (ref MVIDCodeReader.MVID_IMAGE_INFO output, IntPtr user) => { };
+                    _readImageCallback = delegate (ref MVIDCodeReader.MVID_IMAGE_INFO output, IntPtr user) {
+                        ReadImageCallback(output, user);
+                    };
                     _nRet = _myCodeReader?.MVID_CR_CAM_RegisterImageBufferCallBack_NET(_readImageCallback, IntPtr.Zero) ?? 0;
                     if (_nRet != MVIDCodeReader.MVID_CR_OK) {
                         OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
@@ -325,7 +429,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                     });
                     return new KeyValuePair<bool, string>(false, $"停止识别失败:{_nRet:X}");
                 }
-
+                _ocrBitmapQueue.Clear();
                 Status = CameraStatus.Paused;
             }
             System.GC.Collect();
@@ -355,10 +459,16 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                 OnCameraUnregistered(new CameraUnregisteredEventArgs() {
                     CameraInfo = this.Info
                 });
+                _ocrCancellationTokenSource?.Cancel();
+                if (_ocrThread is not null) {
+                    await _ocrThread;
+                    _ocrThread.Dispose();
+                    _ocrThread = null;
+                }
                 _imageCallback = null;
                 _readImageCallback = null;
                 _myCodeReader = null;
-
+                _ocrBitmapQueue.Clear();
                 this.Info = null;
             }
             System.GC.Collect();
@@ -372,7 +482,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
         /// <summary>
         /// Ocr
         /// </summary>
-        public IOcr Ocr { get; set; }
+        public IOcr? Ocr { get; set; }
 
         public int BarcodeBorderSize { get; set; } = 5;
         public System.Drawing.Color BarcodeBorderColor { get; set; } = System.Drawing.Color.LawnGreen;
@@ -381,6 +491,8 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
         public int TakePhotoDelay { get; set; }
 
         public event EventHandler<BarcodeReadEventArgs>? BarcodeRead;
+
+        public event EventHandler<OcrContentRecognizedEventArgs>? OcrContentRecognized;
 
         public event EventHandler<RealtimeImageEventArgs>? RealtimeImage;
 
@@ -821,6 +933,11 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
             finally {
                 sourceImage.UnlockBits(sourceData);
             }
+        }
+
+        protected virtual async void OnOcrContentRecognized(OcrContentRecognizedEventArgs e) {
+            await Task.Yield();
+            OcrContentRecognized?.Invoke(this, e);
         }
     }
 }

@@ -355,6 +355,8 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim {
 
         public event EventHandler<BarcodeReadEventArgs>? BarcodeRead;
 
+        public event EventHandler<OcrContentRecognizedEventArgs>? OcrContentRecognized;
+
         public void SetScanCodeFilterParams(ScanCodeFilterParams @params) {
             _barCodeFilterContainer.Pattern = @params.RegularExpression;
             _barCodeFilterContainer.MaxSize = @params.DuplicateBarcodeFilterCount;

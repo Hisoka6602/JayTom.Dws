@@ -6,6 +6,7 @@ using OpenCvSharp;
 using System.Drawing;
 using Newtonsoft.Json;
 using System.Text.Json;
+using System.Threading;
 using System.Diagnostics;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
@@ -25,6 +26,7 @@ using JsonSerializer = Newtonsoft.Json.JsonSerializer;
 namespace JayTom.Dws.Ocr.ExpressBill {
 
     public class ExpressBill : IOcr {
+        private SemaphoreSlim _semaphoreSlim = new(1, 1);
         private const string DllPath = ".\\ExpressBill\\Lib\\Dll\\ExpressBillApi.dll";
 
         // sdk初始化
@@ -70,10 +72,11 @@ namespace JayTom.Dws.Ocr.ExpressBill {
 
         public OcrStatus OcrStatus { get; private set; }
 
-        public void SubmitImage(Bitmap bitmap) {
+        public void SubmitImage(Bitmap bitmap, string cameraSerialNumber = "") {
             if (!_isOnline) {
                 //本地识别
                 try {
+                    var submitTimestamp = DateTime.Now;
                     var stopwatch = new Stopwatch();
                     stopwatch.Start();
                     using var stream = new MemoryStream();
@@ -124,7 +127,9 @@ namespace JayTom.Dws.Ocr.ExpressBill {
                                 ?.Str ?? string.Empty,
                             VirtualNumber = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("virtual_number") == true)
                                 ?.Str ?? string.Empty,
-                            VirtualNumberLast4 = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("virtual_number_last4") == true)?.Str ?? string.Empty
+                            VirtualNumberLast4 = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("virtual_number_last4") == true)?.Str ?? string.Empty,
+                            CameraSerialNumber = cameraSerialNumber,
+                            SubmitTimestamp = new DateTimeOffset(submitTimestamp).ToUnixTimeMilliseconds()
                         });
                     }
                 }
@@ -137,6 +142,82 @@ namespace JayTom.Dws.Ocr.ExpressBill {
             else {
                 //网络识别
             }
+        }
+
+        public OcrResult? ParseOcrResult(Bitmap bitmap) {
+            if (!_isOnline) {
+                try {
+                    var submitTimestamp = DateTime.Now;
+                    var stopwatch = new Stopwatch();
+                    stopwatch.Start();
+                    using var stream = new MemoryStream();
+                    bitmap.Save(stream, System.Drawing.Imaging.ImageFormat.Bmp);
+                    var array = stream.ToArray();
+                    var mat = Cv2.ImDecode(array, ImreadModes.Color);
+                    var ptr = process(mat.CvPtr);
+
+                    var buf = Marshal.PtrToStringAnsi(ptr);
+
+                    var unescape = Regex.Unescape(buf ?? string.Empty);
+
+                    var result = System.Text.Json.JsonSerializer.Deserialize<RootResult>(unescape, new JsonSerializerOptions {
+                        ReferenceHandler = ReferenceHandler.Preserve,
+                        PropertyNameCaseInsensitive = true,
+                        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+                        DefaultBufferSize = 8192,
+                        MaxDepth = 4,
+                        AllowTrailingCommas = true,
+                        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+                        NumberHandling = JsonNumberHandling.AllowReadingFromString | JsonNumberHandling.WriteAsString,
+                        WriteIndented = false,
+                    });
+
+                    var recognitionTime = DateTime.Now;
+                    var recognitionTimestamp = new DateTimeOffset(recognitionTime).ToUnixTimeMilliseconds();
+                    stopwatch.Stop();
+                    if (result is not null) {
+                        return new OcrResult {
+                            BarCode = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("waybill_number") == true)
+                                  ?.Str ?? string.Empty,
+                            ElapsedTime = stopwatch.ElapsedMilliseconds,
+                            Image = bitmap,
+                            RecipientAddress = result.Data
+                                  ?.FirstOrDefault(f => f.Title?.Key?.Equals("recipient_addr") == true)
+                                  ?.Str ?? string.Empty,
+                            RecipientName = result.Data
+                                  ?.FirstOrDefault(f => f.Title?.Key?.Equals("recipient_name") == true)
+                                  ?.Str ?? string.Empty,
+                            RecipientPhone = result.Data
+                                  ?.FirstOrDefault(f => f.Title?.Key?.Equals("recipient_phone") == true)
+                                  ?.Str ?? string.Empty,
+                            RecognitionTime = recognitionTime,
+                            RecognitionTimestamp = recognitionTimestamp,
+                            SenderName = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("sender_name") == true)
+                                  ?.Str ?? string.Empty,
+                            SenderPhone = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("sender_phone") == true)
+                                  ?.Str ?? string.Empty,
+                            ThreeSegmentCode = result.Data
+                                  ?.FirstOrDefault(f => f.Title?.Key?.Equals("three_segment_code") == true)
+                                  ?.Str ?? string.Empty,
+                            VirtualNumber = result.Data
+                                  ?.FirstOrDefault(f => f.Title?.Key?.Equals("virtual_number") == true)
+                                  ?.Str ?? string.Empty,
+                            VirtualNumberLast4 =
+                                  result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("virtual_number_last4") == true)
+                                      ?.Str ?? string.Empty,
+                            SubmitTimestamp = new DateTimeOffset(submitTimestamp).ToUnixTimeMilliseconds()
+                        };
+                    }
+                }
+                catch (Exception e) {
+                    OnOcrExceptionOccurred(new OcrExceptionEventArgs() {
+                        Exception = e,
+                        ExceptionTime = DateTime.Now
+                    });
+                }
+            }
+
+            return null;
         }
 
         public async Task<KeyValuePair<bool, string>> SetOcrParameters(Dictionary<string, object> parameters) {
@@ -191,24 +272,30 @@ namespace JayTom.Dws.Ocr.ExpressBill {
         }
 
         public async Task<KeyValuePair<bool, string>> Initialize() {
-            await Task.Yield();
-            //初始化
-            if (OcrStatus == OcrStatus.Initialized) {
-                return new KeyValuePair<bool, string>(true, string.Empty);
+            //限制
+            try {
+                await _semaphoreSlim.WaitAsync();
+                //初始化
+                if (OcrStatus == OcrStatus.Initialized) {
+                    return new KeyValuePair<bool, string>(true, string.Empty);
+                }
+                var modelFolder = $"{System.AppDomain.CurrentDomain.BaseDirectory}ExpressBill\\Lib";
+                var n = init(modelFolder);
+                if (n != 0) {
+                    //Ocr初始化异常
+                    OnOcrInitializationExceptionOccurred(new OcrInitializationExceptionEventArgs() {
+                        Exception = new Exception($"sdk init fail and errcode is {n:D}"),
+                        ExceptionTime = DateTime.Now
+                    });
+                    return new KeyValuePair<bool, string>(false, $"sdk init fail and errcode is {n:D}");
+                }
+                else {
+                    OcrStatus = OcrStatus.Initialized;
+                    return new KeyValuePair<bool, string>(true, string.Empty);
+                }
             }
-            var modelFolder = $"{System.AppDomain.CurrentDomain.BaseDirectory}ExpressBill\\Lib";
-            var n = init(modelFolder);
-            if (n != 0) {
-                //Ocr初始化异常
-                OnOcrInitializationExceptionOccurred(new OcrInitializationExceptionEventArgs() {
-                    Exception = new Exception($"sdk init fail and errcode is {n:D}"),
-                    ExceptionTime = DateTime.Now
-                });
-                return new KeyValuePair<bool, string>(false, $"sdk init fail and errcode is {n:D}");
-            }
-            else {
-                OcrStatus = OcrStatus.Initialized;
-                return new KeyValuePair<bool, string>(true, string.Empty);
+            finally {
+                _semaphoreSlim.Release();
             }
         }
 

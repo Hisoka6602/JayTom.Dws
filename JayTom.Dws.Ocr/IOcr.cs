@@ -39,7 +39,15 @@ namespace JayTom.Dws.Ocr {
         /// 提交图片进行OCR处理
         /// </summary>
         /// <param name="imageBytes"></param>
-        void SubmitImage(Bitmap imageBytes);
+        /// <param name="cameraSerialNumber"></param>
+        void SubmitImage(Bitmap imageBytes, string cameraSerialNumber);
+
+        /// <summary>
+        /// 解析Ocr
+        /// </summary>
+        /// <param name="imageBytes"></param>
+        /// <returns></returns>
+        OcrResult? ParseOcrResult(Bitmap imageBytes);
 
         /// <summary>
         /// 设置OCR参数
@@ -192,6 +200,8 @@ namespace JayTom.Dws.Ocr {
         /// </summary>
         public long SubmitTimestamp { get; set; }
     }
+
+    public class OcrResult : OcrContentRecognizedEventArgs { }
 
     public class AuthenticationExceptionEventArgs : OcrExceptionEventArgs {
         // 添加与鉴权异常相关的任何必要属性或信息

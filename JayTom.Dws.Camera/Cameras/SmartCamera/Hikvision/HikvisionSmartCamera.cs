@@ -324,7 +324,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
         /// <summary>
         /// Ocr
         /// </summary>
-        public IOcr Ocr { get; set; }
+        public IOcr? Ocr { get; set; }
 
         public int BarcodeBorderSize { get; set; } = 5;
         public Color BarcodeBorderColor { get; set; } = Color.LawnGreen;

@@ -5,6 +5,7 @@ using System.IO;
 using Prism.Mvvm;
 using Prism.DryIoc;
 using System.Windows;
+using JayTom.Dws.Ocr;
 using Newtonsoft.Json;
 using System.IO.Pipes;
 using System.Net.Http;
@@ -24,6 +25,7 @@ using System.Windows.Threading;
 using JayTom.Dws.Data.LocalLog;
 using JayTom.Dws.Client.Service;
 using JayTom.Dws.Infrastructure;
+using JayTom.Dws.Ocr.ExpressBill;
 using JayTom.Dws.Plugin.SaveImage;
 using JayTom.Dws.Client.ViewModels;
 using Microsoft.Extensions.Hosting;
@@ -269,6 +271,8 @@ namespace JayTom.Dws.Client {
                 services.AddScoped<IDefaultConfigurationService, DefaultConfigurationService>();
                 //设备注册
                 services.AddScoped<ICamera, HikvisionSmartCamera>();
+                //Ocr
+                services.AddScoped<IOcr, ExpressBill>();
                 //磅秤
                 services.AddScoped<IDynamicScale, DefaultDynamicScale>();
                 services.AddScoped<IStaticScale, DefaultStaticScale>();
@@ -403,10 +407,9 @@ namespace JayTom.Dws.Client {
 
                         services.AddSingleton<IDataUploader, DefaultApi>();
 
-                        /*services.AddSingleton<IDataUploader, WeciMexicoDvApi>();
-                        services.AddSingleton<ITcpCommunication, TcpCommunication>();
-                        services.AddSingleton(container.Resolve<IBarcodeScannerService>());*/
+                        //OCR
 
+                        services.AddSingleton(container1.Resolve<IOcr>());
                         services.AddSingleton(container1.Resolve<IComputer>());
                         services.AddSingleton(container1.Resolve<IComputerInfoReporter>());
                         services.AddSingleton(container1.Resolve<IFtp>());
