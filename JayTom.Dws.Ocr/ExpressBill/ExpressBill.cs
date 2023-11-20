@@ -25,11 +25,10 @@ using JsonSerializer = Newtonsoft.Json.JsonSerializer;
 using Microsoft.Extensions.FileSystemGlobbing.Internal;
 
 namespace JayTom.Dws.Ocr.ExpressBill {
-
     public class ExpressBill : IOcr {
         private SemaphoreSlim _semaphoreSlim = new(1, 1);
+        private TimeSpan _recognitionTimeout = TimeSpan.FromSeconds(1);
         private const string DllPath = ".\\ExpressBill\\Lib\\Dll\\ExpressBillApi.dll";
-
         // sdk初始化
         [DllImport(DllPath, EntryPoint = "init", CharSet = CharSet.Ansi
             , CallingConvention = CallingConvention.Cdecl)]
@@ -297,7 +296,7 @@ namespace JayTom.Dws.Ocr.ExpressBill {
                 lines = lines.Select(line => {
                     foreach (var parameter in (parameters ?? new Dictionary<string, object>()).Where(parameter => line.StartsWith(parameter.Key))) {
                         // 修改 log_level 的值
-                        line = $"{parameter.Key}{(line.Contains("=") ? "=" : ":")}{parameter.Value.ToString()}";
+                        line = $"{parameter.Key}{(line.Contains("=") ? "=" : ":")}{parameter.Value?.ToString()?.ToLower()}";
                     }
 
                     return line;
@@ -312,6 +311,11 @@ namespace JayTom.Dws.Ocr.ExpressBill {
                 });
                 return new KeyValuePair<bool, string>(false, e.Message);
             }
+        }
+
+        public Task<KeyValuePair<bool, string>> SetRecognitionTimeout(TimeSpan timeout) {
+            _recognitionTimeout = timeout;
+            return Task.FromResult(new KeyValuePair<bool, string>(true, string.Empty));
         }
 
         public async Task<KeyValuePair<bool, string>> Initialize() {

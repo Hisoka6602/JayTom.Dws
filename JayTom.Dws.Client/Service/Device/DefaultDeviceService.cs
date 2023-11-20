@@ -415,7 +415,9 @@ namespace JayTom.Dws.Client.Service.Device {
             if (_cameraInfos.Count == 0) {
                 await OnCameraEnumerationRefreshed();
             }
+
             await Task.Run(async () => {
+                OcrSettingsDto ocrSettingsDto = new();
                 try {
                     var configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("BarcodeFilterSettings"));
                     try {
@@ -427,6 +429,15 @@ namespace JayTom.Dws.Client.Service.Device {
                         });
                     }
 
+                    configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("OcrSettings"));
+                    try {
+                        ocrSettingsDto = JsonConvert.DeserializeObject<OcrSettingsDto>(configInfoModel?.Value ?? string.Empty) ?? new OcrSettingsDto();
+                    }
+                    catch (Exception e) {
+                        OnDeviceException(new DeviceExceptionEventArgs() {
+                            ExceptionMessage = new Exception($"加载Ocr设置识别")
+                        });
+                    }
                     _cameras.Clear();
                     var scannerCameraConfigInfoModels = await _barcodeScannerCameraConfigRepository.Select(s => s.Id > 0, o => o.Id);
                     var panoramaCameraConfigInfoModels = await _panoramaCameraConfigRepository.Select(s => s.Id > 0, o => o.Id);
@@ -462,11 +473,10 @@ namespace JayTom.Dws.Client.Service.Device {
                                             if (camera is not null) {
                                                 //设置绑定模式
                                                 //判断是否使用Ocr
-                                                if (model.IsOcrSupported) {
-                                                    camera.BindingType = CameraBindingType.OcrCamera;
-                                                }
-                                                else {
-                                                    camera.BindingType = CameraBindingType.ScannerCamera;
+                                                camera.BindingType = model.IsOcrSupported ? CameraBindingType.OcrCamera : CameraBindingType.ScannerCamera;
+                                                if (camera.BindingType == CameraBindingType.OcrCamera &&
+                                                    !ocrSettingsDto.IsUseOcr) {
+                                                    camera = null;
                                                 }
                                             }
                                         }

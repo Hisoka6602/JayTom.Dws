@@ -47,7 +47,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
 
         private SemaphoreSlim _takePhotoSlim = new(1);
         private SemaphoreSlim _barCodeSlim = new(1);
-
+        private SemaphoreSlim _readImageSlim = new(1);
         private byte[] _imageBuffer = null;
         private MVIDCodeReader.cbOutputdelegate? _imageCallback = null;
 
@@ -318,64 +318,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                                         //画框
 
                                         if (IsShowBarcodeBorder && thumbnail is not null && thumbnail.PixelFormat != PixelFormat.Format8bppIndexed) {
-                                            //设置图像边框
-                                            using var g = Graphics.FromImage(thumbnail);
-                                            //条码
-                                            var imageWidth = bitmap.Width;
-                                            var imageHeight = bitmap.Height;
-
-                                            var convertPoints = ConvertPoint(result.BarcodeArea);
-                                            var points = new Point[4];
-                                            for (var i = 0; i < convertPoints.Count; i++) {
-                                                points[i].X = (int)(convertPoints[i].X *
-                                                                    ((float)(thumbnail.Size.Width) / (imageWidth > 0 ? imageWidth : 1)));
-                                                points[i].Y = (int)(convertPoints[i].Y *
-                                                                    ((float)(thumbnail.Size.Height) / (imageHeight > 0 ? imageHeight : 1)));
-                                            }
-                                            g.DrawPolygon(new Pen(BarcodeBorderColor, BarcodeBorderSize - 4), points);
-                                            var font = new Font("Arial", 12);
-                                            // 画自定义文字
-                                            var brush = new SolidBrush(BarcodeBorderColor);
-                                            g.DrawString(result.BarCode, font, brush, 3, 30);
-                                            // 获取文字的宽度和高度
-                                            var textWidth = (int)g.MeasureString(result.BarCode, font).Width;
-                                            var textHeight = (int)g.MeasureString(result.BarCode, font).Height;
-
-                                            // 计算水平线的起点和终点坐标
-                                            var lineStartX = 3;
-                                            var lineEndX = textWidth + 3;
-                                            var lineY = textHeight + 33;
-                                            // 画水平线
-                                            g.DrawLine(new Pen(BarcodeBorderColor), lineStartX, lineY, lineEndX, lineY);
-                                            //画延展线
-                                            g.DrawLine(new Pen(BarcodeBorderColor), lineEndX, lineY, points[0].X, points[0].Y);
-
-                                            //收件人地址
-
-                                            convertPoints = ConvertPoint(result.RecipientAddressArea);
-                                            points = new Point[4];
-                                            for (var i = 0; i < convertPoints.Count; i++) {
-                                                points[i].X = (int)(convertPoints[i].X *
-                                                                    ((float)(thumbnail.Size.Width) / (imageWidth > 0 ? imageWidth : 1)));
-                                                points[i].Y = (int)(convertPoints[i].Y *
-                                                                    ((float)(thumbnail.Size.Height) / (imageHeight > 0 ? imageHeight : 1)));
-                                            }
-                                            g.DrawPolygon(new Pen(Color.Orange, BarcodeBorderSize - 4), points);
-
-                                            brush = new SolidBrush(Color.Orange);
-                                            g.DrawString(result.RecipientAddress, font, brush, 3, 60);
-                                            // 获取文字的宽度和高度
-                                            textWidth = (int)g.MeasureString(result.RecipientAddress, font).Width;
-                                            textHeight = (int)g.MeasureString(result.RecipientAddress, font).Height;
-
-                                            // 计算水平线的起点和终点坐标
-                                            lineStartX = 3;
-                                            lineEndX = textWidth + 3;
-                                            lineY = textHeight + 63;
-                                            // 画水平线
-                                            g.DrawLine(new Pen(Color.Orange), lineStartX, lineY, lineEndX, lineY);
-                                            //画延展线
-                                            g.DrawLine(new Pen(Color.Orange), lineEndX, lineY, points[0].X, points[0].Y);
+                                            DrawIndicator(thumbnail, new Size(bitmap.Width, bitmap.Height), result);
                                         }
 
                                         //需要画框
@@ -418,11 +361,17 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
         /// </summary>
         public async void ReadImageCallback(MVIDCodeReader.MVID_IMAGE_INFO output, IntPtr user) {
             //解析图片
-            var image = await ConvertPointerToImage(output);
-            if (this.BindingType is CameraBindingType.OcrCamera &&
-                image is not null) {
-                //添加图片到识别队列
-                _ocrBitmapQueue.Enqueue(image);
+            try {
+                await _readImageSlim.WaitAsync();
+                var image = await ConvertPointerToImage(output);
+                if (this.BindingType is CameraBindingType.OcrCamera &&
+                    image is not null) {
+                    //添加图片到识别队列
+                    _ocrBitmapQueue.Enqueue(image);
+                }
+            }
+            finally {
+                _readImageSlim.Release();
             }
         }
 
@@ -630,6 +579,116 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
             _barCodeFilterContainer.Pattern = @params.RegularExpression;
             _barCodeFilterContainer.MaxSize = @params.DuplicateBarcodeFilterCount;
             _barCodeFilterContainer.ExpirationTime = TimeSpan.FromMilliseconds(@params.ScanInterval);
+        }
+
+        public Bitmap DrawIndicator(Bitmap thumbnail, Size originalSize,
+            OcrResult result) {
+            var sortedAreas = new List<List<double>>()
+            {
+                result.BarcodeArea ?? new List<double>(),
+                result.RecipientAddressArea ?? new List<double>(),
+                result.ThreeSegmentArea ?? new List<double>(),
+                result.SenderAddressArea ?? new List<double>()
+            };
+
+            sortedAreas.Sort((a, b) => a[1].CompareTo(b[1])); // 根据Y轴值进行排序
+
+            var yOffset = 30; // 初始偏移量
+            using var g = Graphics.FromImage(thumbnail);
+            foreach (var area in sortedAreas.Where(area => !(area[1] <= 0) && !string.IsNullOrEmpty(GetTextForArea(result, area)))) {
+                // 绘制指示器和文本
+                DrawIndicatorForArea(g, thumbnail, originalSize, area, GetTextForArea(result, area), GetColorForArea(result, area), yOffset);
+
+                yOffset += 40; // 每个指示器之间的间隔为40
+            }
+            return thumbnail;
+        }
+
+        private Color GetColorForArea(OcrResult result, List<double> area) {
+            if (area == result.BarcodeArea) {
+                return BarcodeBorderColor;
+            }
+            else if (area == result.RecipientAddressArea) {
+                return Color.Orange;
+            }
+            else if (area == result.ThreeSegmentArea) {
+                return Color.DodgerBlue;
+            }
+            else if (area == result.SenderAddressArea) {
+                return Color.OrangeRed;
+            }
+
+            return Color.Black; // 默认颜色为黑色
+        }
+
+        private string GetTextForArea(OcrResult result, List<double> area) {
+            if (area == result.BarcodeArea) {
+                return result.BarCode;
+            }
+            else if (area == result.RecipientAddressArea) {
+                return result.RecipientAddress;
+            }
+            else if (area == result.ThreeSegmentArea) {
+                return result.ThreeSegmentCode;
+            }
+            else if (area == result.SenderAddressArea) {
+                return result.SenderAddress;
+            }
+
+            return string.Empty;
+        }
+
+        private void DrawIndicatorForArea(Graphics g, Image thumbnail, Size originalSize, List<double> areaPoints, string text, Color color, int yOffset) {
+            try {
+                var imageWidth = originalSize.Width > 0 ? originalSize.Width : 1;
+                var imageHeight = originalSize.Height > 0 ? originalSize.Height : 1;
+
+                var convertPoints = ConvertPoint(areaPoints);
+                var points = new Point[4];
+                for (var i = 0; i < convertPoints.Count; i++) {
+                    points[i].X = (int)(convertPoints[i].X * ((float)thumbnail.Size.Width / imageWidth));
+                    points[i].Y = (int)(convertPoints[i].Y * ((float)thumbnail.Size.Height / imageHeight));
+                }
+
+                g.DrawPolygon(new Pen(color, BarcodeBorderSize - 4), points);
+
+                var font = new Font("Arial", 12);
+                var brush = new SolidBrush(color);
+
+                // 截断文本
+                if (text.Length >= 20) {
+                    text = text[..18] + "...";
+                }
+
+                //g.DrawString(text, font, brush, 3, yOffset);
+                var textWidth = (int)g.MeasureString(text, font).Width;
+                var textHeight = (int)g.MeasureString(text, font).Height;
+
+                var lineY = textHeight + yOffset + 3;
+
+                // 判断points[0]坐标在缩略图的左边还是右边
+                var isLeftSide = (points[0].X) < thumbnail.Size.Width / 2;
+
+                // 根据判断结果调整绘制位置
+                if (isLeftSide) // 如果在左边，靠右绘制
+                {
+                    var rightMargin = 210;
+                    g.DrawString(text, font, brush, thumbnail.Width - textWidth - rightMargin, yOffset);
+                    g.DrawLine(new Pen(color), thumbnail.Width - rightMargin, lineY, thumbnail.Width - textWidth - rightMargin, lineY);
+                    g.DrawLine(new Pen(color), thumbnail.Width - textWidth - rightMargin, lineY, points[0].X, points[0].Y);
+                }
+                else // 如果在右边，靠左绘制
+                {
+                    g.DrawString(text, font, brush, 3, yOffset);
+                    g.DrawLine(new Pen(color), 3, lineY, textWidth + 3, lineY);
+                    g.DrawLine(new Pen(color), textWidth + 3, lineY, points[0].X, points[0].Y);
+                }
+            }
+            catch (Exception e) {
+                OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
+                    Exception = e
+                });
+            }
         }
 
         private async Task ProcessImageAsync(MVIDCodeReader.MVID_CAM_OUTPUT_INFO stOutput, IntPtr ptr) {

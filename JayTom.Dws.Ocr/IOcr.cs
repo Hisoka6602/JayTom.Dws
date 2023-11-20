@@ -7,7 +7,6 @@ using System.Collections.Generic;
 using System.Windows.Media.Imaging;
 
 namespace JayTom.Dws.Ocr {
-
     public interface IOcr : IDisposable {
 
         /// <summary>
@@ -54,7 +53,12 @@ namespace JayTom.Dws.Ocr {
         /// </summary>
         /// <param name="parameters"></param>
         Task<KeyValuePair<bool, string>> SetOcrParameters(Dictionary<string, object> parameters);
-
+        /// <summary>
+        /// 设置解析超时时间
+        /// </summary>
+        /// <param name="timeout"></param>
+        /// <returns></returns>
+        Task<KeyValuePair<bool, string>> SetRecognitionTimeout(TimeSpan timeout);
         /// <summary>
         /// 初始化
         /// </summary>

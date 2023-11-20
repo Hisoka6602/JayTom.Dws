@@ -413,10 +413,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                                         OcrSettingsInfo = new OcrSettingsInfoModel() {
                                             IsShowSenderInfo = ocrSettingsDto.IsShowSenderInfo,
                                             IsUseOcr = ocrSettingsDto.IsUseOcr,
-                                            IsShowCompartmentNumber = ocrSettingsDto.IsShowCompartmentNumber,
-                                            IsShowLogisticsCompany = ocrSettingsDto.IsShowLogisticsCompany,
                                             IsShowReceiverInfo = ocrSettingsDto.IsShowReceiverInfo,
-                                            IsShowRecognitionTime = ocrSettingsDto.IsShowRecognitionTime
+                                            IsShowRecognitionTime = ocrSettingsDto.IsShowRecognitionTime,
+                                            IsThreeSegmentCode = ocrSettingsDto.IsThreeSegmentCode,
+                                            RecognitionTimeout = ocrSettingsDto.RecognitionTimeout
                                         };
                                     }
                                 }
@@ -432,6 +432,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             EventAggregator.Instance.Subscribe<ApiResponseReceived>(async item => {
                 if (item is ApiResponseReceived model) {
                     try {
+                        await Task.Delay(100);
                         await _updateSlim.WaitAsync();
                         var barCodeItemModel = BarCodeItems.FirstOrDefault(f => f.Barcode.Equals(model.Barcode) &&
                             f.ScanTime.Equals(model.ScanTime));

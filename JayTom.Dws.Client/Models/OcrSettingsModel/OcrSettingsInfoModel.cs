@@ -1,14 +1,13 @@
 ﻿using Prism.Mvvm;
 
 namespace JayTom.Dws.Client.Models.OcrSettingsModel {
-
     public class OcrSettingsInfoModel : BindableBase {
         private bool _isUseOcr;
-        private bool _isShowLogisticsCompany;
+        private bool _isThreeSegmentCode;
         private bool _isShowRecognitionTime;
         private bool _isShowReceiverInfo;
         private bool _isShowSenderInfo;
-        private bool _isShowCompartmentNumber;
+        private int _recognitionTimeout;
 
         /// <summary>
         /// 是否使用 OCR 识别
@@ -19,11 +18,11 @@ namespace JayTom.Dws.Client.Models.OcrSettingsModel {
         }
 
         /// <summary>
-        /// 是否显示物流公司
+        /// 是否识别三段码
         /// </summary>
-        public bool IsShowLogisticsCompany {
-            get => _isShowLogisticsCompany;
-            set => SetProperty(ref _isShowLogisticsCompany, value);
+        public bool IsThreeSegmentCode {
+            get => _isThreeSegmentCode;
+            set => SetProperty(ref _isThreeSegmentCode, value);
         }
 
         /// <summary>
@@ -51,11 +50,11 @@ namespace JayTom.Dws.Client.Models.OcrSettingsModel {
         }
 
         /// <summary>
-        /// 是否显示格口号
+        /// 识别超时时间
         /// </summary>
-        public bool IsShowCompartmentNumber {
-            get => _isShowCompartmentNumber;
-            set => SetProperty(ref _isShowCompartmentNumber, value);
+        public int RecognitionTimeout {
+            get => _recognitionTimeout;
+            set => SetProperty(ref _recognitionTimeout, value);
         }
     }
 }

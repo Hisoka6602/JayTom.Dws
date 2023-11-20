@@ -561,8 +561,7 @@
                                         materialDesign:ButtonAssist.CornerRadius="5,0,0,5"
                                         materialDesign:ShadowAssist.ShadowEdges="Right"
                                         Background="{Binding BoundType, Converter={StaticResource BoundCameraTypeConverter}, ConverterParameter=Color}"
-                                        Style="{StaticResource ButtonFocusEnlargeStyle}"
-                                        ToolTip="NextPage">
+                                        Style="{StaticResource ButtonFocusEnlargeStyle}">
                                         <TextBlock
                                             Margin="2"
                                             HorizontalAlignment="Center"
@@ -586,8 +585,7 @@
                                         Background="DarkRed"
                                         Command="{Binding ElementName=CameraFinderView, Path=DataContext.UnbindCommand}"
                                         CommandParameter="{Binding}"
-                                        Style="{StaticResource ButtonFocusEnlargeStyle}"
-                                        ToolTip="LastPage">
+                                        Style="{StaticResource ButtonFocusEnlargeStyle}">
                                         <TextBlock
                                             Margin="2"
                                             HorizontalAlignment="Center"

@@ -7,6 +7,7 @@ using JayTom.Dws.Data.Attributes;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace JayTom.Dws.Data.LocalConf.CameraConfig {
+
     [Table("Conf_BarcodeScannerCameraConfigInfo", Schema = "dbo")]
     public class BarcodeScannerCameraConfigInfoModel : BaseCameraConfigInfoModel {
 
@@ -21,6 +22,7 @@ namespace JayTom.Dws.Data.LocalConf.CameraConfig {
         /// </summary>
         [Column("CameraConnectionParameters"), InsertOrUpdata]
         public string CameraConnectionParameters { get; set; } = string.Empty;
+
         /// <summary>
         /// 是否使用Ocr算法
         /// </summary>

@@ -40,7 +40,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
         private static bool _isLoaded;
 
         private ObservableCollection<CameraFinderItemInfoModel> _cameraFinderItems = new() {
-            new CameraFinderItemInfoModel() {
+            /*new CameraFinderItemInfoModel() {
                 Num = 1,
                 Name = "增加一个转换、如果是工业相机、智能相机则不显示体积绑定",
                 ConnectionType = ConnectionType.Ethernet,
@@ -77,7 +77,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                 IpAddress = "192.168.0.1",
                 Model = "HK-6565",
                 BoundType = BoundCameraType.BarcodeScannerCamera,
-            },
+            },*/
         };
 
         private SnackbarMessageQueue _cameraFinderMessageQueue = new(TimeSpan.FromSeconds(2));
@@ -114,7 +114,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                     var panoramaCameraConfigInfoModels = await _panoramaCameraConfigRepository.Select(s => s.Id > 0, o => o.Id);
                     var volumeCameraConfigInfoModels = await _volumeCameraConfigRepository.Select(s => s.Id > 0, o => o.Id);
                     infoModels.AddRange(scannerCameraConfigInfoModels.Select(s => new CameraFinderItemInfoModel {
-                        BoundType = BoundCameraType.BarcodeScannerCamera,
+                        BoundType = s.IsOcrSupported ? BoundCameraType.OcrCamera : BoundCameraType.BarcodeScannerCamera,
                         ConnectionType = (ConnectionType)s.ConnectionType,
                         CameraType = (CameraType)s.CameraType,
                         HasBinding = true,
@@ -123,6 +123,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                         Name = s.Name,
                         SerialNumber = s.SerialNumber,
                         Version = s.Version,
+                        IsOcrSupported = s.IsOcrSupported,
                     })?.ToList() ?? new List<CameraFinderItemInfoModel>());
                     infoModels.AddRange(panoramaCameraConfigInfoModels.Select(s => new CameraFinderItemInfoModel {
                         BoundType = BoundCameraType.PanoramicCamera,
@@ -176,6 +177,17 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                     var configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("OcrSettings"));
                     try {
                         _ocrSettingsDto = JsonConvert.DeserializeObject<OcrSettingsDto>(configInfoModel.Value) ?? new OcrSettingsDto();
+                        if (!_ocrSettingsDto.IsUseOcr) {
+                            //判断有没有Ocr相机
+                            var itemInfoModels = CameraFinderItems.Where(w => w.BoundType == BoundCameraType.OcrCamera)?.ToList();
+                            if (itemInfoModels?.Any() == true) {
+                                foreach (var cameraFinderItemInfoModel in itemInfoModels) {
+                                    //解绑
+                                    cameraFinderItemInfoModel.IsOcrSupported = false;
+                                    UnbindDelegate(cameraFinderItemInfoModel);
+                                }
+                            }
+                        }
                     }
                     catch (Exception e) {
                         _ocrSettingsDto ??= new OcrSettingsDto();
