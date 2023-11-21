@@ -79,7 +79,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                                 CreateTime = s.CreateTime,
                                 ModifyTime = s.ModifyTime,
                                 Remarks = s.Remarks,
-                                RegexPattern = s.RegexPattern
+                                JsonContent = s.JsonContent
                             })?.ToList()
                         };
                         var insert = await _ocrSortingRepository.InsertDetailAsync(ocrSortingInfoModel);
@@ -138,7 +138,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                                 ModifyTime = s.ModifyTime,
                                 OcrSortingId = model.OcrSortingItemInfo.Id,
                                 Remarks = s.Remarks,
-                                RegexPattern = s.RegexPattern
+                                JsonContent = s.JsonContent
                             })?.ToList()
                         };
                         var insert = await _ocrSortingRepository.UpdateDetailAsync(ocrSortingInfoModel);
@@ -200,9 +200,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         ModifyTime = s1.ModifyTime,
                         Num = i1 + 1,
                         Remarks = s1.Remarks,
-                        RegexPattern = s1.RegexPattern
+                        JsonContent = s1.JsonContent
                     }).ToList() ?? new List<OcrRuleItemInfoModel>()),
-                    SortingRuleGroup = string.Join("\n", s.OcrRuleItems?.Select(s2 => s2.RegexPattern) ?? Array.Empty<string>())
+                    SortingRuleGroup = string.Join("\n", s.OcrRuleItems?.Select(s2 => s2.JsonContent) ?? Array.Empty<string>())
                 })?.ToList();
                 OcrSortingItems.AddRange(infoModels);
                 if (DialogHost.IsDialogOpen(model.Identifier)) {
@@ -337,7 +337,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                                     {
                                         CreateTime = dateTime,
                                         ModifyTime = dateTime,
-                                        RegexPattern = s.SortingRuleGroup,
+                                        JsonContent = s.SortingRuleGroup,
                                     }
                                 }
                             })

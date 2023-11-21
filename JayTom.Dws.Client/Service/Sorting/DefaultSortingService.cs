@@ -25,6 +25,7 @@ using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig.RuleConfig;
 using static JayTom.Dws.Client.Service.BackgroundService.SubmitApiBackgroundService;
 
 namespace JayTom.Dws.Client.Service.Sorting {
+
     public class DefaultSortingService : ISortingService {
         private readonly IConfigRepository _configRepository;
         private readonly ILogisticsRegexRepository _logisticsRegexRepository;
@@ -207,7 +208,8 @@ namespace JayTom.Dws.Client.Service.Sorting {
                     //不包含Api
                     if (_sortingMethodDto.SortMode != SortMode.None &&
                         _sortingMethodDto.SortMode != SortMode.ApiResponseSorting &&
-                        _sortingMethodDto.SortMode != SortMode.CombinedWorkflowSorting) {
+                        _sortingMethodDto.SortMode != SortMode.CombinedWorkflowSorting &&
+                        _sortingMethodDto.SortMode != SortMode.OcrSorting) {
                         ExecuteSorting(new SortingParam() {
                             Guid = model.Guid,
                             BarCode = model.BarCode ?? string.Empty,
@@ -217,12 +219,9 @@ namespace JayTom.Dws.Client.Service.Sorting {
                             Volume = (float)(model.Volume ?? 0),
                             Width = (float)(model.Width ?? 0),
                             Weight = (float)(model.Weight ?? 0),
-                            //三段码未完成
-                            OcrCode = string.Empty,
                             PackageCreationTime = model.CreateTime,
                             PackageCreationInstruction = model.PackageCreationInstruction,
                             IsCreatedByLowerMachine = model.IsCreatedByLowerMachine
-
                         });
                     }
                 }
@@ -235,11 +234,26 @@ namespace JayTom.Dws.Client.Service.Sorting {
                             Guid = model.Guid,
                             BarCode = model.Barcode ?? string.Empty,
                             ScanTime = model.ScanTime,
-                            OcrCode = string.Empty,
                             PackageCreationTime = model.PackageCreationTime,
                             PackageCreationInstruction = model.PackageCreationInstruction,
                             IsCreatedByLowerMachine = model.IsCreatedByLowerMachine,
                             ApiResponse = model.UploadResponse ?? new UploadResponse()
+                        });
+                    }
+                }
+            });
+            //Ocr触发
+            EventAggregator.Instance.Subscribe<PackageOcrInfo>(async item => {
+                if (item is PackageOcrInfo model) {
+                    if (_sortingMethodDto.SortMode == SortMode.OcrSorting) {
+                        ExecuteSorting(new SortingParam {
+                            Guid = model.RecognitionTimestamp,
+                            BarCode = model.BarCode ?? string.Empty,
+                            ScanTime = model.RecognitionTime,
+                            PackageCreationTime = model.RecognitionTime,
+                            PackageCreationInstruction = null,
+                            IsCreatedByLowerMachine = false,
+                            OcrInfo = model
                         });
                     }
                 }
@@ -433,7 +447,6 @@ namespace JayTom.Dws.Client.Service.Sorting {
                             IsCreatedByLowerMachine = param.IsCreatedByLowerMachine,
                         });
                     //回调分拣消息
-
                 }
             }
         }
@@ -557,7 +570,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
 
         public void OcrSorting(SortingParam param, CancellationToken token = default) {
             try {
-                var ocrRuleInfoModel = _ocrRuleInfoModels.FirstOrDefault(f => Regex.IsMatch(param.OcrCode, f.RegexPattern));
+                /*var ocrRuleInfoModel = _ocrRuleInfoModels.FirstOrDefault(f => Regex.IsMatch(param.OcrCode, f.RegexPattern));
                 if (ocrRuleInfoModel is not null) {
                     var ocrSortingInfoModel = _ocrSortingInfoModels.FirstOrDefault(f => f.Id.Equals(ocrRuleInfoModel.OcrSortingId));
                     if (ocrSortingInfoModel is not null) {
@@ -572,7 +585,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                 else {
                     //走异常口
                     ExceptionSorting(param, token);
-                }
+                }*/
             }
             catch (Exception e) {
                 OnExceptionOccurred(new ExceptionEventArgs() {
@@ -660,7 +673,6 @@ namespace JayTom.Dws.Client.Service.Sorting {
                             PackageCreationTime = param.PackageCreationTime,
                             PackageCreationInstruction = param.PackageCreationInstruction ?? string.Empty,
                             IsCreatedByLowerMachine = param.IsCreatedByLowerMachine,
-
                         });
 
                     //回调分拣消息
@@ -702,6 +714,37 @@ namespace JayTom.Dws.Client.Service.Sorting {
                             }
                         }
                     }
+                }
+            }
+            catch (Exception e) {
+                Console.WriteLine(e);
+            }
+            return false;
+        }
+
+        private bool ValidateOcrRule(PackageOcrInfo ocrInfo, string json) {
+            try {
+                var isValid = true;
+                var ocrRuleJsonDto = JsonConvert.DeserializeObject<OcrRuleJsonDto>(json);
+                if (ocrRuleJsonDto is not null) {
+                    //判断三段码
+                    if (isValid && ocrRuleJsonDto.IsUseThreeSegmentCodeValidation) {
+                        isValid = ocrInfo.ThreeSegmentCode.Contains(ocrRuleJsonDto.ThreeSegmentCodeContainsChars);
+                    }
+                    //是否使用发件人地址
+                    if (isValid && ocrRuleJsonDto.IsUseSenderAddressValidation) {
+                        isValid = ocrInfo.SenderAddress.Contains(ocrRuleJsonDto.SenderAddressContainsChars);
+                    }
+                    //是否使用收件人地址
+                    if (isValid && ocrRuleJsonDto.IsUseRecipientAddressValidation) {
+                        isValid = ocrInfo.RecipientAddress.Contains(ocrRuleJsonDto.RecipientAddressContainsChars);
+                    }
+                    //是否使用发件人手机号码
+                    if (isValid && ocrRuleJsonDto.IsUseSenderPhoneNumberValidation) {
+                        isValid = ocrInfo.SenderPhone.EndsWith(ocrRuleJsonDto.SenderPhoneNumberEndsWith);
+                    }
+
+                    return isValid;
                 }
             }
             catch (Exception e) {

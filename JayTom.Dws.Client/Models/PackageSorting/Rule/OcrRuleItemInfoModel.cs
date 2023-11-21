@@ -1,8 +1,10 @@
-﻿namespace JayTom.Dws.Client.Models.PackageSorting.Rule {
+﻿using System.Net.Http.Json;
+
+namespace JayTom.Dws.Client.Models.PackageSorting.Rule {
 
     public class OcrRuleItemInfoModel : BasePackageSortingItemInfoModel {
         private long _ocrSortingId;
-        private string _regexPattern = string.Empty;
+        private string _jsonContent = string.Empty;
 
         /// <summary>
         /// OcrId
@@ -13,11 +15,11 @@
         }
 
         /// <summary>
-        /// 正则表达式
+        /// 规则
         /// </summary>
-        public string RegexPattern {
-            get => _regexPattern;
-            set => SetProperty(ref _regexPattern, value);
+        public string JsonContent {
+            get => _jsonContent;
+            set => SetProperty(ref _jsonContent, value);
         }
     }
 }

@@ -1,17 +1,18 @@
-﻿using JayTom.Dws.Client.Models.PackageSorting;
+﻿using System;
+using Prism.Mvvm;
+using System.Linq;
+using Prism.Commands;
+using Newtonsoft.Json;
+using System.Windows.Input;
+using JayTom.Dws.Domain.Dto;
+using MaterialDesignThemes.Wpf;
+using System.Collections.ObjectModel;
+using System.Text.RegularExpressions;
+using JayTom.Dws.Client.Models.PackageSorting;
 using JayTom.Dws.Client.Models.PackageSorting.Rule;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
-using MaterialDesignThemes.Wpf;
-using Prism.Commands;
-using Prism.Mvvm;
-using System;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Text.RegularExpressions;
-using System.Windows.Input;
 
 namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.SortingMethodEditors {
-
     public class OcrSortingRuleEditorViewModel : BindableBase {
         private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
         private string _identifier = string.Empty;
@@ -21,12 +22,14 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
         private ObservableCollection<PackageExitDefinitionItemInfoModel> _packageExitDefinitionItems = new();
         private PackageExitDefinitionItemInfoModel _selectPackageExitDefinitionInfo = new();
         private OcrSortingItemInfoModel _ocrSortingItemInfo = new();
-        private bool _isUseRules = true;
-        private bool _isUseRegex;
-        private int _startPosition;
-        private int _endPosition;
-        private string _content = string.Empty;
-        private string? _regexPattern;
+        private bool _isUseThreeSegmentCodeValidation;
+        private string _threeSegmentCodeContainsChars = string.Empty;
+        private bool _isUseRecipientAddressValidation;
+        private string _recipientAddressContainsChars = string.Empty;
+        private bool _isUseSenderAddressValidation;
+        private string _senderAddressContainsChars = string.Empty;
+        private bool _isUseSenderPhoneNumberValidation;
+        private string _senderPhoneNumberEndsWith = string.Empty;
 
         public OcrSortingRuleEditorViewModel(IPackageExitDefinitionRepository packageExitDefinitionRepository) {
             _packageExitDefinitionRepository = packageExitDefinitionRepository;
@@ -79,53 +82,73 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
             set => SetProperty(ref _ocrSortingItemInfo, value);
         }
 
+        #region 条件
+
         /// <summary>
-        /// 是否使用规则
+        /// 是否使用三段码判断
         /// </summary>
-        public bool IsUseRules {
-            get => _isUseRules;
-            set => SetProperty(ref _isUseRules, value);
+        public bool IsUseThreeSegmentCodeValidation {
+            get => _isUseThreeSegmentCodeValidation;
+            set => SetProperty(ref _isUseThreeSegmentCodeValidation, value);
         }
 
         /// <summary>
-        /// 是否使用正则表达式
+        /// 三段码包含字符
         /// </summary>
-        public bool IsUseRegex {
-            get => _isUseRegex;
-            set => SetProperty(ref _isUseRegex, value);
+        public string ThreeSegmentCodeContainsChars {
+            get => _threeSegmentCodeContainsChars;
+            set => SetProperty(ref _threeSegmentCodeContainsChars, value);
         }
 
         /// <summary>
-        /// 字符开始位置
+        /// 是否使用收件人地址判断
         /// </summary>
-        public int StartPosition {
-            get => _startPosition;
-            set => SetProperty(ref _startPosition, value);
+        public bool IsUseRecipientAddressValidation {
+            get => _isUseRecipientAddressValidation;
+            set => SetProperty(ref _isUseRecipientAddressValidation, value);
         }
 
         /// <summary>
-        /// 字符结束位置
+        /// 收件人地址包含字符
         /// </summary>
-        public int EndPosition {
-            get => _endPosition;
-            set => SetProperty(ref _endPosition, value);
+        public string RecipientAddressContainsChars {
+            get => _recipientAddressContainsChars;
+            set => SetProperty(ref _recipientAddressContainsChars, value);
         }
 
         /// <summary>
-        /// 字符内容
+        /// 是否使用发件人地址判断
         /// </summary>
-        public string Content {
-            get => _content;
-            set => SetProperty(ref _content, value);
+        public bool IsUseSenderAddressValidation {
+            get => _isUseSenderAddressValidation;
+            set => SetProperty(ref _isUseSenderAddressValidation, value);
         }
 
         /// <summary>
-        /// 正则表达式
+        /// 发件人地址包含字符
         /// </summary>
-        public string? RegexPattern {
-            get => _regexPattern;
-            set => SetProperty(ref _regexPattern, value);
+        public string SenderAddressContainsChars {
+            get => _senderAddressContainsChars;
+            set => SetProperty(ref _senderAddressContainsChars, value);
         }
+
+        /// <summary>
+        /// 是否使用发件人手机尾号判断
+        /// </summary>
+        public bool IsUseSenderPhoneNumberValidation {
+            get => _isUseSenderPhoneNumberValidation;
+            set => SetProperty(ref _isUseSenderPhoneNumberValidation, value);
+        }
+
+        /// <summary>
+        /// 发件人手机尾号
+        /// </summary>
+        public string SenderPhoneNumberEndsWith {
+            get => _senderPhoneNumberEndsWith;
+            set => SetProperty(ref _senderPhoneNumberEndsWith, value);
+        }
+
+        #endregion 条件
 
         public ICommand DeleteRegexCommand {
             get => new DelegateCommand<OcrRuleItemInfoModel>(DeleteRegexDelegate);
@@ -149,38 +172,33 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
 
         private async void AddRegexDelegate(object obj) {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                if (IsUseRules) {
-                    if (EndPosition > StartPosition &&
-                        !string.IsNullOrEmpty(Content)) {
-                        try {
-                            var regular = $"(?<=^.{{{StartPosition}}})({Content})";
-                            if (!OcrRuleItems.Any(a => a.RegexPattern.Equals(regular))) {
-                                OcrRuleItems.Add(new OcrRuleItemInfoModel() {
-                                    CreateTime = DateTime.Now,
-                                    ModifyTime = DateTime.Now,
-                                    Num = OcrRuleItems.Count + 1,
-                                    OcrSortingId = OcrSortingItemInfo.Id,
-                                    RegexPattern = regular
-                                });
-                            }
-                        }
-                        catch (Exception e) {
-                            Console.WriteLine(e);
-                        }
-                    }
+                if (!IsUseRecipientAddressValidation &&
+                    !IsUseSenderAddressValidation &&
+                    !IsUseSenderPhoneNumberValidation &&
+                    !IsUseThreeSegmentCodeValidation) {
+                    return;
                 }
-                else {
-                    if (!string.IsNullOrEmpty(RegexPattern)) {
-                        if (!OcrRuleItems.Any(a => a.RegexPattern.Equals(RegexPattern))) {
-                            OcrRuleItems.Add(new OcrRuleItemInfoModel() {
-                                CreateTime = DateTime.Now,
-                                ModifyTime = DateTime.Now,
-                                Num = OcrRuleItems.Count + 1,
-                                OcrSortingId = OcrSortingItemInfo.Id,
-                                RegexPattern = RegexPattern
-                            });
-                        }
-                    }
+
+                var ocrRuleJsonDto = new OcrRuleJsonDto() {
+                    IsUseSenderPhoneNumberValidation = IsUseSenderPhoneNumberValidation,
+                    IsUseRecipientAddressValidation = IsUseRecipientAddressValidation,
+                    IsUseSenderAddressValidation = IsUseSenderAddressValidation,
+                    IsUseThreeSegmentCodeValidation = IsUseThreeSegmentCodeValidation,
+                    ThreeSegmentCodeContainsChars = ThreeSegmentCodeContainsChars,
+                    RecipientAddressContainsChars = RecipientAddressContainsChars,
+                    SenderAddressContainsChars = SenderAddressContainsChars,
+                    SenderPhoneNumberEndsWith = SenderPhoneNumberEndsWith
+                };
+
+                var serializeObject = JsonConvert.SerializeObject(ocrRuleJsonDto);
+                if (OcrRuleItems.Any(a => a.JsonContent.Equals(serializeObject)) != true) {
+                    OcrRuleItems.Add(new OcrRuleItemInfoModel() {
+                        OcrSortingId = OcrSortingItemInfo.Id,
+                        CreateTime = DateTime.Now,
+                        JsonContent = serializeObject,
+                        ModifyTime = DateTime.Now,
+                        Num = OcrRuleItems.Count + 1,
+                    });
                 }
             });
         }
@@ -191,9 +209,14 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
 
         private async void ClearConditionsDelegate(object obj) {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                StartPosition =
-                    EndPosition = 0;
-                Content = string.Empty;
+                IsUseSenderPhoneNumberValidation =
+                    IsUseRecipientAddressValidation =
+                        IsUseRecipientAddressValidation =
+                            IsUseThreeSegmentCodeValidation = false;
+                SenderAddressContainsChars =
+                    SenderPhoneNumberEndsWith =
+                        RecipientAddressContainsChars =
+                            ThreeSegmentCodeContainsChars = string.Empty;
             });
         }
 
@@ -208,9 +231,10 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
 
                 Pitcher.Throw.ArgumentNull.WhenNull(OcrSortingItemInfo, nameof(OcrSortingItemInfo));
                 Pitcher.Throw.ArgumentNull.WhenNullOrEmpty(OcrSortingItemInfo.SortingName, nameof(OcrSortingItemInfo.SortingName));
-                foreach (var ocrRuleItemInfoModel in OcrRuleItems) {
-                    Regex.IsMatch("aa", ocrRuleItemInfoModel.RegexPattern);
+                if (!OcrRuleItems.Any()) {
+                    throw new Exception("规则不能为空!");
                 }
+
                 if (SelectPackageExitDefinitionInfo.Id <= 0) {
                     throw new Exception("格口未选择!");
                 }
@@ -273,7 +297,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
 
         private async void StartPositionChangedDelegate(object obj) {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                EndPosition = StartPosition + Content.Length;
+                /*EndPosition = StartPosition + Content.Length;*/
             });
         }
 
@@ -283,7 +307,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
 
         private async void ContentChangedDelegate(object obj) {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                EndPosition = StartPosition + Content.Length;
+                /*EndPosition = StartPosition + Content.Length;*/
             });
         }
     }

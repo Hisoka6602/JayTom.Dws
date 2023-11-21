@@ -168,7 +168,7 @@
                 Orientation="Vertical">
                 <!--  正则列表  -->
                 <DataGrid
-                    Height="300"
+                    Height="250"
                     MinWidth="460"
                     Margin="20"
                     Padding="10,0"
@@ -211,7 +211,7 @@
                         <DataGridTextColumn
                             MinWidth="230"
                             MaxWidth="280"
-                            Binding="{Binding RegexPattern, UpdateSourceTrigger=PropertyChanged}"
+                            Binding="{Binding JsonContent, UpdateSourceTrigger=PropertyChanged}"
                             CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                             EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
                             <DataGridTextColumn.Header>
@@ -272,173 +272,243 @@
                     </DataGrid.Columns>
                 </DataGrid>
 
-                <!--  规则  -->
+
+                <!--  是否使用三段码判断  -->
                 <StackPanel
                     Margin="10,0"
                     VerticalAlignment="Center"
-                    Orientation="Vertical">
-                    <RadioButton
-                        Name="RuleRadioButton"
-                        Content="规则设置:"
-                        Focusable="False"
+                    Orientation="Horizontal">
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
                         FontSize="16"
                         FontWeight="Bold"
                         Foreground="DarkGray"
-                        IsChecked="{Binding IsUseRules, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                        Template="{StaticResource CustomRadioButtonTemplate}" />
-
-                    <StackPanel
-                        Margin="50,5,0,0"
-                        Orientation="Horizontal"
-                        Visibility="{Binding UpdateSourceTrigger=PropertyChanged, ElementName=RuleRadioButton, Path=IsChecked, Converter={StaticResource BooleanToVisibilityConverter}}">
-                        <StackPanel Orientation="Vertical">
-                            <StackPanel Orientation="Horizontal">
-                                <StackPanel Orientation="Horizontal">
-                                    <!--  图标  -->
-                                    <TextBlock
-                                        Margin="5,0"
-                                        VerticalAlignment="Center"
-                                        FontSize="13"
-                                        FontWeight="Bold"
-                                        Foreground="DarkGray"
-                                        Text="字符开始位置:" />
-                                    <Border
-                                        Margin="5"
-                                        HorizontalAlignment="Center"
-                                        VerticalAlignment="Center"
-                                        Background="#202020"
-                                        CornerRadius="5">
-                                        <TextBox
-                                            Width="80"
-                                            Height="30"
-                                            MaxWidth="500"
-                                            Margin="5,0"
-                                            materialDesign:TextFieldAssist.HasClearButton="False"
-                                            materialDesign:TextFieldAssist.HasFilledTextField="True"
-                                            Background="Transparent"
-                                            BorderThickness="0"
-                                            FontSize="13"
-                                            FontWeight="Bold"
-                                            Foreground="White"
-                                            InputMethod.IsInputMethodEnabled="False"
-                                            Text="{Binding StartPosition, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
-                                            <b:Interaction.Triggers>
-                                                <b:EventTrigger EventName="TextChanged">
-                                                    <mvvm:InvokeCommandAction Command="{Binding StartPositionChangedCommand}" />
-                                                </b:EventTrigger>
-                                            </b:Interaction.Triggers>
-                                        </TextBox>
-                                    </Border>
-                                </StackPanel>
-                                <StackPanel IsEnabled="False" Orientation="Horizontal">
-                                    <!--  图标  -->
-                                    <TextBlock
-                                        Margin="5,0"
-                                        VerticalAlignment="Center"
-                                        FontSize="13"
-                                        FontWeight="Bold"
-                                        Foreground="DarkGray"
-                                        Text="字符结束位置:" />
-                                    <Border
-                                        Margin="5"
-                                        HorizontalAlignment="Center"
-                                        VerticalAlignment="Center"
-                                        Background="#202020"
-                                        CornerRadius="5">
-                                        <TextBox
-                                            Width="80"
-                                            Height="30"
-                                            MaxWidth="500"
-                                            Margin="5,0"
-                                            materialDesign:TextFieldAssist.HasClearButton="False"
-                                            materialDesign:TextFieldAssist.HasFilledTextField="True"
-                                            Background="Transparent"
-                                            BorderThickness="0"
-                                            FontSize="13"
-                                            FontWeight="Bold"
-                                            Foreground="White"
-                                            InputMethod.IsInputMethodEnabled="False"
-                                            Text="{Binding EndPosition, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-                                    </Border>
-                                </StackPanel>
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal">
-                                <!--  图标  -->
-                                <TextBlock
+                        Text="是否使用三段码判断:" />
+                    <ToggleButton
+                        Name="IsUseThreeSegmentCodeValidationToggleButton"
+                        materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
+                        materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
+                        Focusable="False"
+                        IsChecked="{Binding IsUseThreeSegmentCodeValidation, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                        Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+                </StackPanel>
+                <StackPanel
+                    Margin="50,0,0,0"
+                    Orientation="Horizontal"
+                    Visibility="{Binding UpdateSourceTrigger=PropertyChanged, ElementName=IsUseThreeSegmentCodeValidationToggleButton, Path=IsChecked, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <StackPanel Orientation="Vertical">
+                        <StackPanel Orientation="Horizontal">
+                            <!--  图标  -->
+                            <TextBlock
+                                Margin="5,0"
+                                VerticalAlignment="Center"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                Text="三段码包含内容:" />
+                            <Border
+                                Width="280"
+                                Margin="5"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Background="#202020"
+                                CornerRadius="5">
+                                <TextBox
+                                    Width="280"
+                                    Height="30"
+                                    MaxWidth="500"
                                     Margin="5,0"
-                                    VerticalAlignment="Center"
+                                    materialDesign:TextFieldAssist.HasClearButton="False"
+                                    materialDesign:TextFieldAssist.HasFilledTextField="True"
+                                    Background="Transparent"
+                                    BorderThickness="0"
                                     FontSize="13"
                                     FontWeight="Bold"
-                                    Foreground="DarkGray"
-                                    Text="字符内容:" />
-                                <Border
-                                    Width="310"
-                                    Margin="5"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    Background="#202020"
-                                    CornerRadius="5">
-                                    <TextBox
-                                        Width="310"
-                                        Height="30"
-                                        MaxWidth="500"
-                                        Margin="5,0"
-                                        materialDesign:TextFieldAssist.HasClearButton="False"
-                                        materialDesign:TextFieldAssist.HasFilledTextField="True"
-                                        Background="Transparent"
-                                        BorderThickness="0"
-                                        FontSize="13"
-                                        FontWeight="Bold"
-                                        Foreground="White"
-                                        InputMethod.IsInputMethodEnabled="False"
-                                        Text="{Binding Content, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
-                                        <b:Interaction.Triggers>
-                                            <b:EventTrigger EventName="TextChanged">
-                                                <mvvm:InvokeCommandAction Command="{Binding ContentChangedCommand}" />
-                                            </b:EventTrigger>
-                                        </b:Interaction.Triggers>
-                                    </TextBox>
-                                </Border>
-                            </StackPanel>
+                                    Foreground="White"
+                                    Text="{Binding ThreeSegmentCodeContainsChars, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                            </Border>
                         </StackPanel>
                     </StackPanel>
-                    <RadioButton
-                        Name="RegularExpressionRadioButton"
-                        Content="{x:Static languages:Language.RegularExpression}"
-                        Focusable="False"
+                </StackPanel>
+
+                <!--  是否使用收件人地址判断  -->
+                <StackPanel
+                    Margin="10,0"
+                    VerticalAlignment="Center"
+                    Orientation="Horizontal">
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
                         FontSize="16"
                         FontWeight="Bold"
                         Foreground="DarkGray"
-                        IsChecked="{Binding IsUseRegex, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                        Template="{StaticResource CustomRadioButtonTemplate}" />
-                    <Border
-                        MinHeight="60"
-                        MaxHeight="200"
-                        Margin="50,5,0,0"
-                        HorizontalAlignment="Left"
-                        VerticalAlignment="Center"
-                        Background="#202020"
-                        CornerRadius="5"
-                        Visibility="{Binding ElementName=RegularExpressionRadioButton, Path=IsChecked, Converter={StaticResource BooleanToVisibilityConverter}}">
-                        <TextBox
-                            Width="380"
-                            MinHeight="100"
-                            MaxWidth="380"
-                            MaxHeight="190"
-                            Margin="5,0"
-                            VerticalContentAlignment="Top"
-                            AcceptsReturn="True"
-                            Background="Transparent"
-                            BorderThickness="0"
-                            FontSize="13"
-                            FontWeight="Bold"
-                            Foreground="White"
-                            Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                            Text="{Binding RegexPattern, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                            TextWrapping="Wrap"
-                            VerticalScrollBarVisibility="Auto" />
-                    </Border>
+                        Text="是否使用收件人地址判断:" />
+                    <ToggleButton
+                        Name="IsUseRecipientAddressValidationToggleButton"
+                        materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
+                        materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
+                        Focusable="False"
+                        IsChecked="{Binding IsUseRecipientAddressValidation, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                        Style="{StaticResource MaterialDesignSwitchToggleButton}" />
                 </StackPanel>
+                <StackPanel
+                    Margin="50,0,0,0"
+                    Orientation="Horizontal"
+                    Visibility="{Binding UpdateSourceTrigger=PropertyChanged, ElementName=IsUseRecipientAddressValidationToggleButton, Path=IsChecked, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <StackPanel Orientation="Vertical">
+                        <StackPanel Orientation="Horizontal">
+                            <!--  图标  -->
+                            <TextBlock
+                                Margin="5,0"
+                                VerticalAlignment="Center"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                Text="收件人地址包含字符:" />
+                            <Border
+                                Width="280"
+                                Margin="5"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Background="#202020"
+                                CornerRadius="5">
+                                <TextBox
+                                    Width="280"
+                                    Height="30"
+                                    MaxWidth="500"
+                                    Margin="5,0"
+                                    materialDesign:TextFieldAssist.HasClearButton="False"
+                                    materialDesign:TextFieldAssist.HasFilledTextField="True"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    FontSize="13"
+                                    FontWeight="Bold"
+                                    Foreground="White"
+                                    Text="{Binding RecipientAddressContainsChars, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                            </Border>
+                        </StackPanel>
+                    </StackPanel>
+                </StackPanel>
+
+                <!--  是否使用发件人地址判断  -->
+                <StackPanel
+                    Margin="10,0"
+                    VerticalAlignment="Center"
+                    Orientation="Horizontal">
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="16"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="是否使用发件人地址判断:" />
+                    <ToggleButton
+                        Name="IsUseSenderAddressValidationToggleButton"
+                        materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
+                        materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
+                        Focusable="False"
+                        IsChecked="{Binding IsUseSenderAddressValidation, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                        Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+                </StackPanel>
+                <StackPanel
+                    Margin="50,0,0,0"
+                    Orientation="Horizontal"
+                    Visibility="{Binding UpdateSourceTrigger=PropertyChanged, ElementName=IsUseSenderAddressValidationToggleButton, Path=IsChecked, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <StackPanel Orientation="Vertical">
+                        <StackPanel Orientation="Horizontal">
+                            <!--  图标  -->
+                            <TextBlock
+                                Margin="5,0"
+                                VerticalAlignment="Center"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                Text="发件人地址包含字符:" />
+                            <Border
+                                Width="280"
+                                Margin="5"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Background="#202020"
+                                CornerRadius="5">
+                                <TextBox
+                                    Width="280"
+                                    Height="30"
+                                    MaxWidth="500"
+                                    Margin="5,0"
+                                    materialDesign:TextFieldAssist.HasClearButton="False"
+                                    materialDesign:TextFieldAssist.HasFilledTextField="True"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    FontSize="13"
+                                    FontWeight="Bold"
+                                    Foreground="White"
+                                    Text="{Binding SenderAddressContainsChars, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                            </Border>
+                        </StackPanel>
+                    </StackPanel>
+                </StackPanel>
+
+                <!--  是否使用发件人手机尾号判断  -->
+                <StackPanel
+                    Margin="10,0"
+                    VerticalAlignment="Center"
+                    Orientation="Horizontal">
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="16"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="是否使用发件人手机尾号判断:" />
+                    <ToggleButton
+                        Name="IsUseSenderPhoneNumberValidationToggleButton"
+                        materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
+                        materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
+                        Focusable="False"
+                        IsChecked="{Binding IsUseSenderPhoneNumberValidation, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                        Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+                </StackPanel>
+                <StackPanel
+                    Margin="50,0,0,0"
+                    Orientation="Horizontal"
+                    Visibility="{Binding UpdateSourceTrigger=PropertyChanged, ElementName=IsUseSenderPhoneNumberValidationToggleButton, Path=IsChecked, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <StackPanel Orientation="Vertical">
+                        <StackPanel Orientation="Horizontal">
+                            <!--  图标  -->
+                            <TextBlock
+                                Margin="5,0"
+                                VerticalAlignment="Center"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                Text="发件人手机尾号:" />
+                            <Border
+                                Width="280"
+                                Margin="5"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Background="#202020"
+                                CornerRadius="5">
+                                <TextBox
+                                    Width="280"
+                                    Height="30"
+                                    MaxWidth="500"
+                                    Margin="5,0"
+                                    materialDesign:TextFieldAssist.HasClearButton="False"
+                                    materialDesign:TextFieldAssist.HasFilledTextField="True"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    FontSize="13"
+                                    FontWeight="Bold"
+                                    Foreground="White"
+                                    Text="{Binding SenderPhoneNumberEndsWith, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                            </Border>
+                        </StackPanel>
+                    </StackPanel>
+                </StackPanel>
+
                 <!--  保存规则、效验规则、清空条件  -->
                 <StackPanel
                     Margin="5"
