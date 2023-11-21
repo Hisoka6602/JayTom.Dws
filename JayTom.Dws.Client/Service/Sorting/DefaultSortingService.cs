@@ -246,6 +246,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
             EventAggregator.Instance.Subscribe<PackageOcrInfo>(async item => {
                 if (item is PackageOcrInfo model) {
                     if (_sortingMethodDto.SortMode == SortMode.OcrSorting) {
+                        NLog.LogManager.GetCurrentClassLogger().Error("进入");
                         ExecuteSorting(new SortingParam {
                             Guid = model.RecognitionTimestamp,
                             BarCode = model.BarCode ?? string.Empty,
@@ -570,9 +571,15 @@ namespace JayTom.Dws.Client.Service.Sorting {
 
         public void OcrSorting(SortingParam param, CancellationToken token = default) {
             try {
-                /*var ocrRuleInfoModel = _ocrRuleInfoModels.FirstOrDefault(f => Regex.IsMatch(param.OcrCode, f.RegexPattern));
-                if (ocrRuleInfoModel is not null) {
-                    var ocrSortingInfoModel = _ocrSortingInfoModels.FirstOrDefault(f => f.Id.Equals(ocrRuleInfoModel.OcrSortingId));
+                NLog.LogManager.GetCurrentClassLogger().Error("Ocr分拣方法");
+                var ocrRuleInfoModel = _ocrRuleInfoModels.FirstOrDefault(f =>
+                    ValidateOcrRule(param.OcrInfo, f.JsonContent));
+
+                if (ocrRuleInfoModel != null) {
+                    var ocrSortingInfoModel = _ocrSortingInfoModels.
+                        FirstOrDefault(f =>
+                            f.Id.Equals(ocrRuleInfoModel.OcrSortingId));
+
                     if (ocrSortingInfoModel is not null) {
                         param.ExitId = ocrSortingInfoModel.ExitId;
                         SubSorting(param, token);
@@ -585,7 +592,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                 else {
                     //走异常口
                     ExceptionSorting(param, token);
-                }*/
+                }
             }
             catch (Exception e) {
                 OnExceptionOccurred(new ExceptionEventArgs() {
