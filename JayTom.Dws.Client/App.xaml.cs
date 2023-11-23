@@ -85,8 +85,10 @@ using JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Client.Views.Pages.Preferences.PackageSortingConfiguration;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig.RuleConfig;
 using JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration;
+using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig.ConnectionParams;
 using JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig.RuleConfig;
 using JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration.SortingMethodEditors;
+using JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig.ConnectionParams;
 using JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.SortingMethodEditors;
 using JayTom.Dws.Client.Views.Pages.Preferences.PackageSortingConfiguration.SortingMethodPages;
 using JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration.SortingMethodPages;
@@ -236,6 +238,13 @@ namespace JayTom.Dws.Client {
 
                 services.AddScoped<IApiSortingRepository, ApiSortingRepository>();
                 services.AddScoped<IApiRuleRepository, ApiRuleRepository>();
+
+                services.AddScoped<ICommunicationConnectionConfigRepository, CommunicationConnectionConfigRepository>();
+                services.AddScoped<IDeviceExtensionConfigRepository, DeviceExtensionConfigRepository>();
+                services.AddScoped<IHeartbeatConfigRepository, HeartbeatConfigRepository>();
+                services.AddScoped<ISerialPortConfigRepository, SerialPortConfigRepository>();
+                services.AddScoped<ITcpConfigRepository, TcpConfigRepository>();
+                services.AddScoped<ITcpConnectionConfigRepository, TcpConnectionConfigRepository>();
                 //logs
                 services.AddScoped<IAppLogRepository, AppLogRepository>();
                 services.AddScoped<ICameraLogRepository, CameraLogRepository>();
@@ -390,6 +399,13 @@ namespace JayTom.Dws.Client {
 
                         services.AddSingleton(container1.Resolve<IApiSortingRepository>());
                         services.AddSingleton(container1.Resolve<IApiRuleRepository>());
+
+                        services.AddSingleton(container1.Resolve<ICommunicationConnectionConfigRepository>());
+                        services.AddSingleton(container1.Resolve<IDeviceExtensionConfigRepository>());
+                        services.AddSingleton(container1.Resolve<IHeartbeatConfigRepository>());
+                        services.AddSingleton(container1.Resolve<ISerialPortConfigRepository>());
+                        services.AddSingleton(container1.Resolve<ITcpConfigRepository>());
+                        services.AddSingleton(container1.Resolve<ITcpConnectionConfigRepository>());
                         //logs
                         services.AddSingleton(container1.Resolve<IAppLogRepository>());
                         services.AddSingleton(container1.Resolve<ICameraLogRepository>());
@@ -514,6 +530,7 @@ namespace JayTom.Dws.Client {
             ViewModelLocationProvider.Register<LogisticsSortingRuleEditor, LogisticsSortingRuleEditorViewModel>();
             ViewModelLocationProvider.Register<OcrSortingRuleEditor, OcrSortingRuleEditorViewModel>();
             ViewModelLocationProvider.Register<ApiSortingRuleEditor, ApiSortingRuleEditorViewModel>();
+            ViewModelLocationProvider.Register<CommunicationConnectionConfigEditor, CommunicationConnectionConfigEditorViewModel>();
 
             ViewModelLocationProvider.Register<MainWindow, MainWindowViewModel>();
             ViewModelLocationProvider.Register<SettingsPage, SettingsViewModel>();

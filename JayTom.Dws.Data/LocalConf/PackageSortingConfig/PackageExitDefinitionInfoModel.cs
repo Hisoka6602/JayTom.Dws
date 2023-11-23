@@ -16,6 +16,15 @@ namespace JayTom.Dws.Data.LocalConf.PackageSortingConfig {
     public class PackageExitDefinitionInfoModel : BasePackageSortingConfig {
 
         /// <summary>
+        /// 连接Id
+        /// </summary>
+        [Column("CommunicationConnectionId"), Required, InsertOrUpdata]
+        public long CommunicationConnectionId { get; set; }
+
+        [ForeignKey("Id")]
+        public virtual CommunicationConnectionConfigInfoModel? CommunicationConnectionConfigInfo { get; set; }
+
+        /// <summary>
         /// 出口名称
         /// </summary>
         [Column("ExitName"), Required, InsertOrUpdata]

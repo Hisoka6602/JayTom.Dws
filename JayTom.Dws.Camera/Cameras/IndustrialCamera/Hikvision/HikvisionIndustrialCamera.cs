@@ -41,6 +41,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
         private static MVIDCodeReader.MVID_CAMERA_INFO_LIST _sdkDevList = new();
 
         private SemaphoreSlim _semaphoreSlim = new(1, 1);
+        private SemaphoreSlim _drawSlim = new(1);
 
         //private MVIDCodeReader.MVID_CAM_OUTPUT_INFO _stOutput = new();
         private MVIDCodeReader? _myCodeReader;
@@ -314,16 +315,11 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                                     });
                                     if (validateData) {
                                         result.CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty;
-
                                         //画框
-
                                         if (IsShowBarcodeBorder && thumbnail is not null && thumbnail.PixelFormat != PixelFormat.Format8bppIndexed) {
-                                            DrawIndicator(thumbnail, new Size(bitmap.Width, bitmap.Height), result);
+                                            //暂时屏蔽画框
+                                            thumbnail = await DrawIndicator(thumbnail, new Size(bitmap.Width, bitmap.Height), result);
                                         }
-
-                                        //需要画框
-                                        //需要显示信息
-                                        //需要显示三段码
                                         result.Thumbnail = thumbnail;
                                         OnOcrContentRecognized(result);
                                     }
@@ -581,7 +577,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
             _barCodeFilterContainer.ExpirationTime = TimeSpan.FromMilliseconds(@params.ScanInterval);
         }
 
-        public Bitmap DrawIndicator(Bitmap thumbnail, Size originalSize,
+        public async Task<Bitmap> DrawIndicator(Bitmap thumbnail, Size originalSize,
             OcrResult result) {
             var sortedAreas = new List<List<double>>()
             {
@@ -594,14 +590,20 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
             sortedAreas.Sort((a, b) => a[1].CompareTo(b[1])); // 根据Y轴值进行排序
 
             var yOffset = 30; // 初始偏移量
-            using var g = Graphics.FromImage(thumbnail);
-            foreach (var area in sortedAreas.Where(area => !(area[1] <= 0) && !string.IsNullOrEmpty(GetTextForArea(result, area)))) {
-                // 绘制指示器和文本
-                DrawIndicatorForArea(g, thumbnail, originalSize, area, GetTextForArea(result, area), GetColorForArea(result, area), yOffset);
+            try {
+                await _drawSlim.WaitAsync();
+                using var g = Graphics.FromImage(thumbnail);
+                foreach (var area in sortedAreas.Where(area => !(area[1] <= 0) && !string.IsNullOrEmpty(GetTextForArea(result, area)))) {
+                    // 绘制指示器和文本
+                    DrawIndicatorForArea(g, thumbnail, originalSize, area, GetTextForArea(result, area), GetColorForArea(result, area), yOffset);
 
-                yOffset += 40; // 每个指示器之间的间隔为40
+                    yOffset += 40; // 每个指示器之间的间隔为40
+                }
+                return thumbnail;
             }
-            return thumbnail;
+            finally {
+                _drawSlim.Release();
+            }
         }
 
         private Color GetColorForArea(OcrResult result, List<double> area) {

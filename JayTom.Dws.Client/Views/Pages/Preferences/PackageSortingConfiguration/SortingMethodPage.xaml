@@ -152,14 +152,14 @@
                         NavigationUIVisibility="Hidden"
                         Source="SortingMethodPages/ApiResponseSortingPage.xaml" />
                 </TabItem>
-                <TabItem Header="组合工作流分拣">
+                <!--<TabItem Header="组合工作流分拣">
                     <Frame
                         Margin="0"
                         Padding="0"
                         Focusable="False"
                         NavigationUIVisibility="Hidden"
                         Source="SortingMethodPages/CombinedWorkflowSortingPage.xaml" />
-                </TabItem>
+                </TabItem>-->
             </TabControl>
             <!--  提示框  -->
             <materialDesign:Snackbar

@@ -2,6 +2,7 @@
 using Prism.Mvvm;
 using System.Linq;
 using Prism.Commands;
+using System.Windows;
 using Newtonsoft.Json;
 using System.IO.Ports;
 using System.Windows.Input;
@@ -13,12 +14,17 @@ using JayTom.Dws.Data.LocalConf;
 using JayTom.Dws.Data.LocalData;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.EventMediators;
+using JayTom.Dws.PluginInterface.Utils;
 using JayTom.Dws.Client.Service.Sorting;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Dto.CommunicationsSettings;
 using JayTom.Dws.Client.Models.SettingsCommomModels;
+using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Client.Models.CommunicationsSettingsModel;
+using JayTom.Dws.Data.LocalConf.PackageSortingConfig.RuleConfig;
+using JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration;
+using JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration {
 
@@ -474,6 +480,53 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         Languages.Language.ResourceManager.GetString("SaveFailed"))}");
                 });
             }
+        }
+
+        public ICommand AddCommand {
+            get => new DelegateCommand<object>(AddDelegate);
+        }
+
+        private async void AddDelegate(object obj) {
+            await Application.Current.Dispatcher.InvokeAsync(async () => {
+                var recognitionEditor = new CommunicationConnectionConfigEditor();
+                if (recognitionEditor.DataContext is CommunicationConnectionConfigEditorViewModel model) {
+                    model.Identifier = "CommunicationsSettingsDialog";
+                    await DialogHost.Show(recognitionEditor, model.Identifier);
+                    /*if (!string.IsNullOrEmpty(model.ExceptionContent)) {
+                        CommunicationsSettingsMessageQueue.Enqueue(model.ExceptionContent);
+                        return;
+                    }*/
+
+                    /*if (model.IsOk) {
+                        //添加到数据库
+                        var infoModel = new LogisticsCodeRecognitionInfoModel() {
+                            CreateTime = DateTime.Now,
+                            IconName = model.LogisticsCodeRecognitionItemInfo.IconName,
+                            IconBytes = model.LogisticsCodeRecognitionItemInfo.Icon?.ImageSourceToByteArray(),
+                            LogisticsCode = model.LogisticsCodeRecognitionItemInfo.LogisticsCode,
+                            LogisticsName = model.LogisticsCodeRecognitionItemInfo.LogisticsName,
+                            ModifyTime = model.LogisticsCodeRecognitionItemInfo.ModifyTime,
+                            Remarks = model.LogisticsCodeRecognitionItemInfo.Remarks,
+                            SoundName = model.LogisticsCodeRecognitionItemInfo.SoundName,
+                            SoundBytes = model.LogisticsCodeRecognitionItemInfo.SoundBytes,
+                            LogisticsRegexItems = model.LogisticsRegexItems.Select(s => new LogisticsRegexInfoModel {
+                                CreateTime = s.CreateTime,
+                                ModifyTime = s.ModifyTime,
+                                RegexPattern = s.RegexPattern,
+                            })?.ToList()
+                        };
+                        var insertOrUpdate = await _logisticsCodeRecognitionRepository.InsertDetailAsync(infoModel);
+                        if (insertOrUpdate) {
+                            EventAggregator.Instance.Publish(infoModel);
+                            LogisticsCodeRecognitionMessageQueue.Enqueue("保存成功");
+                            RefreshData();
+                        }
+                        else {
+                            LogisticsCodeRecognitionMessageQueue.Enqueue("保存失败");
+                        }
+                    }*/
+                }
+            });
         }
     }
 }

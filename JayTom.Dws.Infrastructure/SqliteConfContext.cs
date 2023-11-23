@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using JayTom.Dws.Data.LocalConf.CameraConfig;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig.RuleConfig;
+using JayTom.Dws.Data.LocalConf.PackageSortingConfig.ConnectionParams;
 
 namespace JayTom.Dws.Infrastructure {
 
@@ -167,6 +168,71 @@ namespace JayTom.Dws.Infrastructure {
                     .WithOne(n => n.ApiSortingInfo)
                     .HasForeignKey(n => new { n.ApiSortingId })
                     .OnDelete(DeleteBehavior.Cascade);
+
+                //分拣相关
+                //连接表
+                modelBuilder.Entity<CommunicationConnectionConfigInfoModel>()
+                    .HasKey(c => new {
+                        c.Id
+                    });
+                //关联出口
+                modelBuilder.Entity<CommunicationConnectionConfigInfoModel>()
+                    .HasMany(b => b.PackageExitDefinitionItems)
+                    .WithOne(n => n.CommunicationConnectionConfigInfo)
+                    .HasForeignKey(n => new { n.CommunicationConnectionId })
+                    .OnDelete(DeleteBehavior.Cascade);
+                //下位机信息
+                modelBuilder.Entity<CommunicationConnectionConfigInfoModel>()
+                    .HasOne(b => b.DeviceExtensionConfigInfo)
+                    .WithOne(n => n.CommunicationConnectionConfigInfo)
+                    .HasForeignKey<DeviceExtensionConfigInfoModel>(n => n.CommunicationConnectionId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                modelBuilder.Entity<DeviceExtensionConfigInfoModel>().HasKey(c => new {
+                    c.Id
+                });
+                //心跳信息
+                modelBuilder.Entity<CommunicationConnectionConfigInfoModel>()
+                    .HasOne(b => b.HeartbeatConfigInfo)
+                    .WithOne(n => n.CommunicationConnectionConfigInfo)
+                    .HasForeignKey<HeartbeatConfigInfoModel>(n => n.CommunicationConnectionId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                modelBuilder.Entity<HeartbeatConfigInfoModel>().HasKey(c => new {
+                    c.Id
+                });
+                //串口信息
+                modelBuilder.Entity<CommunicationConnectionConfigInfoModel>()
+                    .HasOne(b => b.SerialPortConfigInfo)
+                    .WithOne(n => n.CommunicationConnectionConfigInfo)
+                    .HasForeignKey<SerialPortConfigInfoModel>(n => n.CommunicationConnectionId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                modelBuilder.Entity<SerialPortConfigInfoModel>().HasKey(c => new {
+                    c.Id
+                });
+                //Tcp信息连接
+                modelBuilder.Entity<CommunicationConnectionConfigInfoModel>()
+                    .HasOne(b => b.TcpConnectionConfigInfo)
+                    .WithOne(n => n.CommunicationConnectionConfigInfo)
+                    .HasForeignKey<TcpConnectionConfigInfoModel>(n => n.CommunicationConnectionId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                modelBuilder.Entity<TcpConnectionConfigInfoModel>().HasKey(c => new {
+                    c.Id
+                });
+                //Tcp连接配置
+                //服务端
+                modelBuilder.Entity<TcpConnectionConfigInfoModel>()
+                    .HasOne(b => b.ServerParameter)
+                    .WithOne()
+                    .HasForeignKey<TcpConfigInfoModel>(n => n.TcpConnectionConfigId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                //客户端
+                modelBuilder.Entity<TcpConnectionConfigInfoModel>()
+                    .HasOne(b => b.ClientParameter)
+                    .WithOne()
+                    .HasForeignKey<TcpConfigInfoModel>(n => n.TcpConnectionConfigId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                modelBuilder.Entity<TcpConfigInfoModel>().HasKey(c => new {
+                    c.Id
+                });
             }
             base.OnModelCreating(modelBuilder);
         }
