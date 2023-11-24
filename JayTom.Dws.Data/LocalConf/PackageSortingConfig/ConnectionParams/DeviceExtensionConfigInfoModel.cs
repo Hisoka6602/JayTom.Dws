@@ -51,7 +51,7 @@ namespace JayTom.Dws.Data.LocalConf.PackageSortingConfig.ConnectionParams {
         /// 验证超时时间
         /// </summary>
         [Column("ValidationTimeout"), InsertOrUpdata]
-        public TimeSpan ValidationTimeout { get; set; }
+        public int ValidationTimeout { get; set; }
 
         /// <summary>
         /// 最大重试次数

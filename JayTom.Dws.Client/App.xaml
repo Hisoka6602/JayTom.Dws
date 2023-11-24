@@ -227,6 +227,8 @@
                 <ResourceDictionary Source="Template/FtpLogItemTemplate.xaml" />
                 <!--  自定义单选模板  -->
                 <ResourceDictionary Source="Template/CustomRadioButtonTemplate.xaml" />
+                <!--  连接模板  -->
+                <ResourceDictionary Source="Template/CommunicationConnectionTemplate.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </prism:PrismApplication.Resources>

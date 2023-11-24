@@ -19,6 +19,12 @@ namespace JayTom.Dws.Data.LocalConf.PackageSortingConfig.ConnectionParams {
         public virtual TcpConnectionConfigInfoModel? TcpConnectionConfigInfoInfo { get; set; }
 
         /// <summary>
+        /// 0=客户端、1=服务端
+        /// </summary>
+        [Column("Type"), InsertOrUpdata]
+        public int Type { get; set; }
+
+        /// <summary>
         /// IP地址
         /// </summary>
         [Column("IpAddress"), InsertOrUpdata]

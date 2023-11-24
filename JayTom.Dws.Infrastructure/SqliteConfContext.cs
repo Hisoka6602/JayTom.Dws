@@ -218,17 +218,10 @@ namespace JayTom.Dws.Infrastructure {
                     c.Id
                 });
                 //Tcp连接配置
-                //服务端
                 modelBuilder.Entity<TcpConnectionConfigInfoModel>()
-                    .HasOne(b => b.ServerParameter)
-                    .WithOne()
-                    .HasForeignKey<TcpConfigInfoModel>(n => n.TcpConnectionConfigId)
-                    .OnDelete(DeleteBehavior.Cascade);
-                //客户端
-                modelBuilder.Entity<TcpConnectionConfigInfoModel>()
-                    .HasOne(b => b.ClientParameter)
-                    .WithOne()
-                    .HasForeignKey<TcpConfigInfoModel>(n => n.TcpConnectionConfigId)
+                    .HasMany(b => b.TcpConfigItems)
+                    .WithOne(n => n.TcpConnectionConfigInfoInfo)
+                    .HasForeignKey(n => new { n.TcpConnectionConfigId })
                     .OnDelete(DeleteBehavior.Cascade);
                 modelBuilder.Entity<TcpConfigInfoModel>().HasKey(c => new {
                     c.Id

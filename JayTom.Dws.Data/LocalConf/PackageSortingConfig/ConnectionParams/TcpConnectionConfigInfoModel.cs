@@ -18,20 +18,15 @@ namespace JayTom.Dws.Data.LocalConf.PackageSortingConfig.ConnectionParams {
         [ForeignKey("Id")]
         public virtual CommunicationConnectionConfigInfoModel? CommunicationConnectionConfigInfo { get; set; }
 
-        [Column("IsUseServer"), Required, InsertOrUpdata]
-        public bool IsUseServer { get; set; }
+        /// <summary>
+        /// 连接模式 0=客户端、1=服务端
+        /// </summary>
+        [Column("ConnectionMode"), Required, InsertOrUpdata]
+        public int ConnectionMode { get; set; }
 
         /// <summary>
-        /// 服务端信息
+        /// Tcp信息
         /// </summary>
-        public virtual TcpConfigInfoModel? ServerParameter { get; set; }
-
-        [Column("IsUseClient"), Required, InsertOrUpdata]
-        public bool IsUseClient { get; set; }
-
-        /// <summary>
-        /// 客户端信息
-        /// </summary>
-        public virtual TcpConfigInfoModel? ClientParameter { get; set; }
+        public virtual ICollection<TcpConfigInfoModel>? TcpConfigItems { get; set; }
     }
 }

@@ -1132,7 +1132,7 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
             <!--  列表  -->
-            <DataGrid
+            <!--<DataGrid
                 Grid.Row="0"
                 MinWidth="500"
                 MinHeight="300"
@@ -1173,7 +1173,7 @@
                             <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="No." />
                         </DataGridTextColumn.Header>
                     </DataGridTextColumn>
-                    <!--  物流代码  -->
+                    ~1~  物流代码  @1@
                     <DataGridTextColumn
                         Width="100"
                         MinWidth="100"
@@ -1184,7 +1184,7 @@
                             <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="物流代码" />
                         </DataGridTextColumn.Header>
                     </DataGridTextColumn>
-                    <!--  物流名称  -->
+                    ~1~  物流名称  @1@
                     <DataGridTextColumn
                         Width="100"
                         MinWidth="100"
@@ -1195,7 +1195,7 @@
                             <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="物流名称" />
                         </DataGridTextColumn.Header>
                     </DataGridTextColumn>
-                    <!--  物流图标  -->
+                    ~1~  物流图标  @1@
                     <DataGridTemplateColumn Width="70" MinWidth="70">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
@@ -1208,7 +1208,7 @@
                                     materialDesign:TextFieldAssist.HasFilledTextField="True"
                                     Source="{Binding Icon, UpdateSourceTrigger=PropertyChanged}"
                                     Stretch="UniformToFill">
-                                    <!--  图标  -->
+                                    ~1~  图标  @1@
                                 </Image>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
@@ -1216,7 +1216,7 @@
                             <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="物流图标" />
                         </DataGridTemplateColumn.Header>
                     </DataGridTemplateColumn>
-                    <!--  备注  -->
+                    ~1~  备注  @1@
                     <DataGridTextColumn
                         Width="180"
                         MinWidth="180"
@@ -1227,7 +1227,7 @@
                             <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="备注" />
                         </DataGridTextColumn.Header>
                     </DataGridTextColumn>
-                    <!--  正则  -->
+                    ~1~  正则  @1@
                     <DataGridTextColumn
                         Width="100"
                         MinWidth="100"
@@ -1238,7 +1238,7 @@
                             <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="正则" />
                         </DataGridTextColumn.Header>
                     </DataGridTextColumn>
-                    <!--  添加时间  -->
+                    ~1~  添加时间  @1@
                     <DataGridTextColumn
                         Width="130"
                         MinWidth="130"
@@ -1249,7 +1249,7 @@
                             <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="添加时间" />
                         </DataGridTextColumn.Header>
                     </DataGridTextColumn>
-                    <!--  修改时间  -->
+                    ~1~  修改时间  @1@
                     <DataGridTextColumn
                         Width="130"
                         MinWidth="130"
@@ -1260,7 +1260,7 @@
                             <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="修改时间" />
                         </DataGridTextColumn.Header>
                     </DataGridTextColumn>
-                    <!--  操作  -->
+                    ~1~  操作  @1@
                     <DataGridTemplateColumn
                         Width="320"
                         MinWidth="320"
@@ -1379,7 +1379,55 @@
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
                 </DataGrid.Columns>
-            </DataGrid>
+            </DataGrid>-->
+            <ListView
+                Grid.Row="0"
+                Margin="5"
+                Focusable="False"
+                ItemTemplate="{StaticResource CommunicationConnectionTemplate}"
+                ItemsSource="{Binding CommunicationConnectionItems, UpdateSourceTrigger=PropertyChanged}"
+                ScrollViewer.HorizontalScrollBarVisibility="Hidden"
+                ScrollViewer.VerticalScrollBarVisibility="Auto"
+                SelectionMode="Extended">
+                <ListView.ItemContainerStyle>
+                    <Style TargetType="ListViewItem">
+                        <Setter Property="Background" Value="Transparent" />
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="ListViewItem">
+                                    <Border
+                                        x:Name="Border"
+                                        Background="{TemplateBinding Background}"
+                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                        BorderThickness="1"
+                                        SnapsToDevicePixels="True">
+                                        <ContentPresenter
+                                            HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                            SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsSelected" Value="True">
+                                            <Setter TargetName="Border" Property="Background" Value="Transparent" />
+                                            <Setter TargetName="Border" Property="BorderBrush" Value="Transparent" />
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </ListView.ItemContainerStyle>
+                <ListBox.Template>
+                    <ControlTemplate TargetType="{x:Type ListView}">
+                        <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+                            <WrapPanel
+                                IsItemsHost="True"
+                                Orientation="Horizontal"
+                                ScrollViewer.CanContentScroll="True" />
+                        </ScrollViewer>
+                    </ControlTemplate>
+                </ListBox.Template>
+            </ListView>
             <!--  按钮  -->
             <Button
                 Grid.Row="1"

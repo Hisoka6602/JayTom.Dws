@@ -12,25 +12,35 @@ using JayTom.Dws.Data.LocalLog;
 using MaterialDesignThemes.Wpf;
 using JayTom.Dws.Data.LocalConf;
 using JayTom.Dws.Data.LocalData;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using JayTom.Dws.Client.Views.Dialog;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.PluginInterface.Utils;
 using JayTom.Dws.Client.Service.Sorting;
+using JayTom.Dws.Client.ViewModels.Dialog;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
 using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Client.Models.PackageSorting;
 using JayTom.Dws.Domain.Dto.CommunicationsSettings;
+using JayTom.Dws.Client.Models.PackageSorting.Rule;
 using JayTom.Dws.Client.Models.SettingsCommomModels;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Client.Models.CommunicationsSettingsModel;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig.RuleConfig;
 using JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration;
+using JayTom.Dws.Data.LocalConf.PackageSortingConfig.ConnectionParams;
 using JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration;
+using JayTom.Dws.Client.Models.PackageSorting.CommunicationConnectionSub;
+using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig.ConnectionParams;
+using JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration.SortingMethodEditors;
+using JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.SortingMethodEditors;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration {
-
     public class CommunicationsSettingsViewModel : BindableBase {
         private readonly IConfigRepository _configRepository;
         private readonly ISortingService _sortingService;
+        private readonly ICommunicationConnectionConfigRepository _communicationConnectionConfigRepository;
         private CommunicationsSettingsInfoModel _communicationsSettingsInfo = new();
 
         private ObservableCollection<CommunicationsTypeInfoModel> _communicationsTypeItems = new()
@@ -195,10 +205,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         private bool _isSavingInProgress;
         private SnackbarMessageQueue _communicationsSettingsMessageQueue = new(TimeSpan.FromSeconds(2));
 
+        private ObservableCollection<CommunicationConnectionItemInfoModel> _communicationConnectionItems = new();
+
         public CommunicationsSettingsViewModel(IConfigRepository configRepository,
-            ISortingService sortingService) {
+            ISortingService sortingService, ICommunicationConnectionConfigRepository communicationConnectionConfigRepository) {
             _configRepository = configRepository;
             _sortingService = sortingService;
+            _communicationConnectionConfigRepository = communicationConnectionConfigRepository;
             _sortingService.ExceptionOccurred += delegate (object? sender, ExceptionEventArgs args) {
                 CommunicationsSettingsMessageQueue.Enqueue(args.ExceptionMessage);
             };
@@ -308,6 +321,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             set => SetProperty(ref _isSavingInProgress, value);
         }
 
+        public ObservableCollection<CommunicationConnectionItemInfoModel> CommunicationConnectionItems {
+            get => _communicationConnectionItems;
+            set => SetProperty(ref _communicationConnectionItems, value);
+        }
+
         /// <summary>
         /// 串口刷新
         /// </summary>
@@ -330,11 +348,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             get => new DelegateCommand<object>(LoadedDelegate);
         }
 
-        private async void LoadedDelegate(object obj) {
-            if (!_isLoaded) {
+        private void LoadedDelegate(object obj) {
+            RefreshData();
+            /*if (!_isLoaded) {
                 _isLoaded = true;
                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
-                    PortItems.Clear();
+                    /*PortItems.Clear();
                     PortItems.AddRange(SerialPort.GetPortNames());
                     //加载内容
                     var configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("CommunicationsSettings"));
@@ -406,9 +425,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         catch (Exception e) {
                             CommunicationsSettingsMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("加载设置失败")}:{e.Message}");
                         }
-                    }
+                    }#1#
                 });
-            }
+            }*/
         }
 
         /// <summary>
@@ -492,39 +511,335 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                 if (recognitionEditor.DataContext is CommunicationConnectionConfigEditorViewModel model) {
                     model.Identifier = "CommunicationsSettingsDialog";
                     await DialogHost.Show(recognitionEditor, model.Identifier);
-                    /*if (!string.IsNullOrEmpty(model.ExceptionContent)) {
+                    if (!string.IsNullOrEmpty(model.ExceptionContent)) {
                         CommunicationsSettingsMessageQueue.Enqueue(model.ExceptionContent);
                         return;
-                    }*/
+                    }
 
-                    /*if (model.IsOk) {
+                    if (model.IsOk) {
                         //添加到数据库
-                        var infoModel = new LogisticsCodeRecognitionInfoModel() {
-                            CreateTime = DateTime.Now,
-                            IconName = model.LogisticsCodeRecognitionItemInfo.IconName,
-                            IconBytes = model.LogisticsCodeRecognitionItemInfo.Icon?.ImageSourceToByteArray(),
-                            LogisticsCode = model.LogisticsCodeRecognitionItemInfo.LogisticsCode,
-                            LogisticsName = model.LogisticsCodeRecognitionItemInfo.LogisticsName,
-                            ModifyTime = model.LogisticsCodeRecognitionItemInfo.ModifyTime,
-                            Remarks = model.LogisticsCodeRecognitionItemInfo.Remarks,
-                            SoundName = model.LogisticsCodeRecognitionItemInfo.SoundName,
-                            SoundBytes = model.LogisticsCodeRecognitionItemInfo.SoundBytes,
-                            LogisticsRegexItems = model.LogisticsRegexItems.Select(s => new LogisticsRegexInfoModel {
-                                CreateTime = s.CreateTime,
-                                ModifyTime = s.ModifyTime,
-                                RegexPattern = s.RegexPattern,
-                            })?.ToList()
-                        };
-                        var insertOrUpdate = await _logisticsCodeRecognitionRepository.InsertDetailAsync(infoModel);
-                        if (insertOrUpdate) {
-                            EventAggregator.Instance.Publish(infoModel);
-                            LogisticsCodeRecognitionMessageQueue.Enqueue("保存成功");
+                        var insertDetailAsync = await _communicationConnectionConfigRepository.InsertDetailAsync(
+                            new CommunicationConnectionConfigInfoModel() {
+                                CommunicationProtocol =
+                                    model.CommunicationConnectionItem.CommunicationProtocol.Value.ToString(),
+                                CommunicationType = (int)model.CommunicationConnectionItem.CommunicationType.Value,
+                                ConnectionName = model.CommunicationConnectionItem.ConnectionName,
+                                CreateTime = DateTime.Now,
+                                DeviceExtensionConfigInfo = new DeviceExtensionConfigInfoModel() {
+                                    CreateTime = DateTime.Now,
+                                    CreatePackageByDevice = model.CommunicationConnectionItem.DeviceExtensionConfigInfo
+                                        ?.CreatePackageByDevice ?? false,
+                                    ModifyTime = DateTime.Now,
+                                    MaxRetryCount = model.CommunicationConnectionItem.DeviceExtensionConfigInfo
+                                        ?.MaxRetryCount ?? 0,
+                                    RemovePackageByDevice = model.CommunicationConnectionItem.DeviceExtensionConfigInfo
+                                        ?.RemovePackageByDevice ?? false,
+                                    ValidateDeviceResponse = model.CommunicationConnectionItem.DeviceExtensionConfigInfo
+                                        ?.ValidateDeviceResponse ?? false,
+                                    StartRunningByDevice = model.CommunicationConnectionItem.DeviceExtensionConfigInfo
+                                        ?.StartRunningByDevice ?? false,
+                                    StopRunningByDevice = model.CommunicationConnectionItem.DeviceExtensionConfigInfo
+                                        ?.StopRunningByDevice ?? false,
+                                },
+                                HeartbeatConfigInfo = new HeartbeatConfigInfoModel() {
+                                    CreateTime = DateTime.Now,
+                                    ModifyTime = DateTime.Now,
+                                    HeartbeatInterval = model.CommunicationConnectionItem.HeartbeatConfigInfo
+                                        ?.HeartbeatInterval ?? 0,
+                                    HeartbeatContent =
+                                        model.CommunicationConnectionItem.HeartbeatConfigInfo?.HeartbeatContent ??
+                                        string.Empty,
+                                    IsHeartbeatActive = model.CommunicationConnectionItem.HeartbeatConfigInfo
+                                        ?.IsHeartbeatActive ?? false,
+                                    IsHeartbeatEnabled = model.CommunicationConnectionItem.HeartbeatConfigInfo
+                                        ?.IsHeartbeatEnabled ?? false
+                                },
+                                IsActive = true,
+                                IsAutoReconnect = model.CommunicationConnectionItem.IsAutoReconnect,
+                                IsUsePackageValidityPeriod =
+                                    model.CommunicationConnectionItem.IsUsePackageValidityPeriod,
+                                ValidityPeriodInMilliseconds =
+                                    model.CommunicationConnectionItem.ValidityPeriodInMilliseconds,
+                                SerialPortConfigInfo = new SerialPortConfigInfoModel() {
+                                    BaudRate = model.CommunicationConnectionItem.SerialPortConfigInfo?.BaudRate ?? 0,
+                                    CreateTime = DateTime.Now,
+                                    DataBits = model.CommunicationConnectionItem.SerialPortConfigInfo?.DataBits ?? 0,
+                                    DataFormat = (int)(model.CommunicationConnectionItem.SerialPortConfigInfo
+                                        ?.DataFormat?.Value ?? 0),
+                                    ModifyTime = DateTime.Now,
+                                    Parity =
+                                        (int)(model.CommunicationConnectionItem.SerialPortConfigInfo?.Parity.Value ??
+                                              0),
+                                    PortName = model.CommunicationConnectionItem.SerialPortConfigInfo?.PortName ??
+                                               string.Empty,
+                                    StopBits = (int)(model.CommunicationConnectionItem.SerialPortConfigInfo?.StopBits
+                                        .Value ?? 0),
+                                },
+                                TcpConnectionConfigInfo = new TcpConnectionConfigInfoModel() {
+                                    CreateTime = DateTime.Now,
+                                    ModifyTime = DateTime.Now,
+                                    ConnectionMode = (int)(model.CommunicationConnectionItem.TcpConnectionConfigInfo
+                                        ?.ConnectionMode ?? 0),
+                                    TcpConfigItems = new List<TcpConfigInfoModel>()
+                                    {
+                                        new() {
+                                            IpAddress = model.CommunicationConnectionItem.TcpConnectionConfigInfo
+                                                ?.ServerParameter?.IpAddress ?? string.Empty,
+                                            Port = model.CommunicationConnectionItem.TcpConnectionConfigInfo
+                                                ?.ServerParameter?.Port ?? 0,
+                                            Type = 1
+                                        },
+                                        new() {
+                                            IpAddress = model.CommunicationConnectionItem.TcpConnectionConfigInfo
+                                                ?.ClientParameter?.IpAddress ?? string.Empty,
+                                            Port = model.CommunicationConnectionItem.TcpConnectionConfigInfo
+                                                ?.ClientParameter?.Port ?? 0,
+                                            Type = 0
+                                        }
+                                    }
+                                },
+                            });
+                        if (insertDetailAsync) {
+                            //EventAggregator.Instance.Publish(infoModel);
+                            CommunicationsSettingsMessageQueue.Enqueue("保存成功");
                             RefreshData();
                         }
                         else {
-                            LogisticsCodeRecognitionMessageQueue.Enqueue("保存失败");
+                            CommunicationsSettingsMessageQueue.Enqueue("保存失败");
                         }
-                    }*/
+                    }
+                }
+            });
+        }
+
+        /// <summary>
+        /// 修改
+        /// </summary>
+        public ICommand ModifyCommand {
+            get => new DelegateCommand<CommunicationConnectionItemInfoModel>(ModifyDelegate);
+        }
+
+        private async void ModifyDelegate(CommunicationConnectionItemInfoModel obj) {
+            await Application.Current.Dispatcher.InvokeAsync(async () => {
+                var recognitionEditor = new CommunicationConnectionConfigEditor();
+                if (recognitionEditor.DataContext is CommunicationConnectionConfigEditorViewModel model) {
+                    model.Identifier = "CommunicationsSettingsDialog";
+                    model.CommunicationProtocolItems = CommunicationProtocolItems;
+                    model.DataFormatTypeItems = DataFormatTypeItems;
+                    model.StopBitsItems = StopBitsItems;
+                    model.BaudRateItems = BaudRateItems;
+                    model.DataBitsItems = DataBitsItems;
+                    model.CommunicationsTypeItems = CommunicationsTypeItems;
+                    model.ParityItems = ParityItems;
+                    model.CommunicationConnectionItem = obj;
+                    await DialogHost.Show(recognitionEditor, model.Identifier);
+                    if (!string.IsNullOrEmpty(model.ExceptionContent)) {
+                        CommunicationsSettingsMessageQueue.Enqueue(model.ExceptionContent);
+                        RefreshData();
+                        return;
+                    }
+
+                    if (model.IsOk) {
+                        //更新到数据库
+                        var insertDetailAsync = await _communicationConnectionConfigRepository.UpdateDetailAsync(
+                            new CommunicationConnectionConfigInfoModel() {
+                                Id = model.CommunicationConnectionItem.Id,
+                                CommunicationProtocol =
+                                    model.CommunicationConnectionItem.CommunicationProtocol.Value.ToString(),
+                                CommunicationType = (int)model.CommunicationConnectionItem.CommunicationType.Value,
+                                ConnectionName = model.CommunicationConnectionItem.ConnectionName,
+                                DeviceExtensionConfigInfo = new DeviceExtensionConfigInfoModel() {
+                                    CreatePackageByDevice = model.CommunicationConnectionItem.DeviceExtensionConfigInfo
+                                        ?.CreatePackageByDevice ?? false,
+                                    ModifyTime = DateTime.Now,
+                                    MaxRetryCount = model.CommunicationConnectionItem.DeviceExtensionConfigInfo
+                                        ?.MaxRetryCount ?? 0,
+                                    RemovePackageByDevice = model.CommunicationConnectionItem.DeviceExtensionConfigInfo
+                                        ?.RemovePackageByDevice ?? false,
+                                    ValidateDeviceResponse = model.CommunicationConnectionItem.DeviceExtensionConfigInfo
+                                        ?.ValidateDeviceResponse ?? false,
+                                    StartRunningByDevice = model.CommunicationConnectionItem.DeviceExtensionConfigInfo
+                                        ?.StartRunningByDevice ?? false,
+                                    StopRunningByDevice = model.CommunicationConnectionItem.DeviceExtensionConfigInfo
+                                        ?.StopRunningByDevice ?? false,
+                                },
+                                HeartbeatConfigInfo = new HeartbeatConfigInfoModel() {
+                                    ModifyTime = DateTime.Now,
+                                    HeartbeatInterval = model.CommunicationConnectionItem.HeartbeatConfigInfo
+                                        ?.HeartbeatInterval ?? 0,
+                                    HeartbeatContent =
+                                        model.CommunicationConnectionItem.HeartbeatConfigInfo?.HeartbeatContent ??
+                                        string.Empty,
+                                    IsHeartbeatActive = model.CommunicationConnectionItem.HeartbeatConfigInfo
+                                        ?.IsHeartbeatActive ?? false,
+                                    IsHeartbeatEnabled = model.CommunicationConnectionItem.HeartbeatConfigInfo
+                                        ?.IsHeartbeatEnabled ?? false
+                                },
+                                IsActive = true,
+                                IsAutoReconnect = model.CommunicationConnectionItem.IsAutoReconnect,
+                                IsUsePackageValidityPeriod =
+                                    model.CommunicationConnectionItem.IsUsePackageValidityPeriod,
+                                ValidityPeriodInMilliseconds =
+                                    model.CommunicationConnectionItem.ValidityPeriodInMilliseconds,
+                                SerialPortConfigInfo = new SerialPortConfigInfoModel() {
+                                    BaudRate = model.CommunicationConnectionItem.SerialPortConfigInfo?.BaudRate ?? 0,
+                                    DataBits = model.CommunicationConnectionItem.SerialPortConfigInfo?.DataBits ?? 0,
+                                    DataFormat = (int)(model.CommunicationConnectionItem.SerialPortConfigInfo
+                                        ?.DataFormat?.Value ?? 0),
+                                    ModifyTime = DateTime.Now,
+                                    Parity =
+                                        (int)(model.CommunicationConnectionItem.SerialPortConfigInfo?.Parity.Value ??
+                                              0),
+                                    PortName = model.CommunicationConnectionItem.SerialPortConfigInfo?.PortName ??
+                                               string.Empty,
+                                    StopBits = (int)(model.CommunicationConnectionItem.SerialPortConfigInfo?.StopBits
+                                        .Value ?? 0),
+                                },
+                                TcpConnectionConfigInfo = new TcpConnectionConfigInfoModel() {
+                                    ModifyTime = DateTime.Now,
+                                    ConnectionMode = (int)(model.CommunicationConnectionItem.TcpConnectionConfigInfo
+                                        ?.ConnectionMode ?? 0),
+                                    TcpConfigItems = new List<TcpConfigInfoModel>()
+                                    {
+                                        new() {
+                                            IpAddress = model.CommunicationConnectionItem.TcpConnectionConfigInfo
+                                                ?.ServerParameter?.IpAddress ?? string.Empty,
+                                            Port = model.CommunicationConnectionItem.TcpConnectionConfigInfo
+                                                ?.ServerParameter?.Port ?? 0,
+                                            Type = 1
+                                        },
+                                        new() {
+                                            IpAddress = model.CommunicationConnectionItem.TcpConnectionConfigInfo
+                                                ?.ClientParameter?.IpAddress ?? string.Empty,
+                                            Port = model.CommunicationConnectionItem.TcpConnectionConfigInfo
+                                                ?.ClientParameter?.Port ?? 0,
+                                            Type = 0
+                                        }
+                                    }
+                                },
+                            });
+                        if (insertDetailAsync) {
+                            //EventAggregator.Instance.Publish(infoModel);
+                            CommunicationsSettingsMessageQueue.Enqueue("保存成功");
+                        }
+                        else {
+                            CommunicationsSettingsMessageQueue.Enqueue("保存失败");
+                        }
+                        RefreshData();
+                    }
+                }
+            });
+        }
+
+        /// <summary>
+        /// 删除
+        /// </summary>
+        public ICommand DeleteCommand {
+            get => new DelegateCommand<CommunicationConnectionItemInfoModel>(DeleteDelegate);
+        }
+
+        private async void DeleteDelegate(CommunicationConnectionItemInfoModel obj) {
+            var communicationConnectionConfigInfoModel = await _communicationConnectionConfigRepository.
+                FirstOrDefault(f =>
+                    f.Id.Equals(obj.Id));
+            if (communicationConnectionConfigInfoModel is not null) {
+                var delete = await _communicationConnectionConfigRepository.Delete(communicationConnectionConfigInfoModel);
+                if (delete) {
+                    //刷新列表
+                    RefreshData();
+                }
+            }
+        }
+
+        private async void RefreshData() {
+            var loadingDialog = new LoadingDialog();
+            if (loadingDialog.DataContext is not LoadingDialogViewModel model) return;
+            await Application.Current.Dispatcher.InvokeAsync(() => {
+                model.Identifier = "CommunicationsSettingsDialog";
+                DialogHost.Show(loadingDialog, model.Identifier).ConfigureAwait(false);
+            });
+            var models = await _communicationConnectionConfigRepository.
+                CommunicationConnectionConfigItems(s => s.Id > 0);
+
+            await Application.Current.Dispatcher.InvokeAsync(() => {
+                CommunicationConnectionItems.Clear();
+                var infoModels = models?.Select((s, i) => new CommunicationConnectionItemInfoModel {
+                    ModifyCommand = ModifyCommand,
+                    DeleteCommand = DeleteCommand,
+                    CreateTime = s.CreateTime,
+                    Id = s.Id,
+                    ModifyTime = s.ModifyTime,
+                    Num = i + 1,
+                    Remarks = s.Remarks,
+                    CommunicationProtocol = CommunicationProtocolItems.FirstOrDefault(f => f.Value.ToString().Equals(s.CommunicationProtocol)) ?? new CommunicationProtocolInfoModel(),
+                    CommunicationType = CommunicationsTypeItems.FirstOrDefault(f => (int)f.Value == s.CommunicationType) ?? new CommunicationsTypeInfoModel(),
+                    ConnectionName = s.ConnectionName,
+                    DeviceExtensionConfigInfo = new DeviceExtensionConfigItemInfoModel() {
+                        CreateTime = s.CreateTime,
+                        CreatePackageByDevice = s.DeviceExtensionConfigInfo
+                            ?.CreatePackageByDevice ?? false,
+                        ModifyTime = s.ModifyTime,
+                        MaxRetryCount = s.DeviceExtensionConfigInfo
+                            ?.MaxRetryCount ?? 0,
+                        RemovePackageByDevice = s.DeviceExtensionConfigInfo
+                            ?.RemovePackageByDevice ?? false,
+                        ValidateDeviceResponse = s.DeviceExtensionConfigInfo
+                            ?.ValidateDeviceResponse ?? false,
+                        StartRunningByDevice = s.DeviceExtensionConfigInfo
+                            ?.StartRunningByDevice ?? false,
+                        StopRunningByDevice = s.DeviceExtensionConfigInfo
+                            ?.StopRunningByDevice ?? false,
+                    },
+                    HeartbeatConfigInfo = new HeartbeatConfigItemInfoModel() {
+                        CreateTime = s.CreateTime,
+                        ModifyTime = s.ModifyTime,
+                        HeartbeatInterval = s.HeartbeatConfigInfo
+                            ?.HeartbeatInterval ?? 0,
+                        HeartbeatContent =
+                           s.HeartbeatConfigInfo?.HeartbeatContent ??
+                            string.Empty,
+                        IsHeartbeatActive = s.HeartbeatConfigInfo
+                            ?.IsHeartbeatActive ?? false,
+                        IsHeartbeatEnabled = s.HeartbeatConfigInfo
+                            ?.IsHeartbeatEnabled ?? false
+                    },
+                    IsActive = s.IsActive,
+                    IsAutoReconnect = s.IsAutoReconnect,
+                    IsUsePackageValidityPeriod =
+                                    s.IsUsePackageValidityPeriod,
+                    ValidityPeriodInMilliseconds =
+                                    s.ValidityPeriodInMilliseconds,
+                    SerialPortConfigInfo = new SerialPortConfigItemInfoModel() {
+                        BaudRate = s.SerialPortConfigInfo?.BaudRate ?? 0,
+                        CreateTime = s.CreateTime,
+                        DataBits = s.SerialPortConfigInfo?.DataBits ?? 0,
+                        DataFormat = DataFormatTypeItems.FirstOrDefault(f => (int)f.Value == s.SerialPortConfigInfo
+                            .DataFormat) ?? new DataFormatTypeInfoModel(),
+                        ModifyTime = DateTime.Now,
+                        Parity = ParityItems.FirstOrDefault(f => (int)f.Value == s.SerialPortConfigInfo.Parity) ?? new ParityInfoModel(),
+
+                        PortName = s.SerialPortConfigInfo?.PortName ??
+                                   string.Empty,
+                        StopBits = StopBitsItems.FirstOrDefault(f => (int)f.Value == s.SerialPortConfigInfo?.StopBits) ?? new StopBitsInfoModel(),
+                    },
+                    TcpConnectionConfigInfo = new TcpConnectionConfigItemInfoModel() {
+                        ConnectionMode = (TcpConnectionMode)(s.TcpConnectionConfigInfo
+                            ?.ConnectionMode ?? 0),
+                        ServerParameter = new TcpConfigItemInfoModel() {
+                            IpAddress = s.TcpConnectionConfigInfo?.TcpConfigItems?.FirstOrDefault(f => f.Type == 1)?.IpAddress ?? string.Empty,
+                            Port = s.TcpConnectionConfigInfo?.TcpConfigItems?.FirstOrDefault(f => f.Type == 1)?.Port ?? 0,
+                        },
+                        ClientParameter = new TcpConfigItemInfoModel() {
+                            IpAddress = s.TcpConnectionConfigInfo?.TcpConfigItems?.FirstOrDefault(f => f.Type == 0)?.IpAddress ?? string.Empty,
+                            Port = s.TcpConnectionConfigInfo?.TcpConfigItems?.FirstOrDefault(f => f.Type == 0)?.Port ?? 0,
+                        },
+                    },
+                    //连接数
+                    /*ConnectionCount = */
+                })?.ToList();
+                CommunicationConnectionItems.AddRange(infoModels);
+                if (DialogHost.IsDialogOpen(model.Identifier)) {
+                    DialogHost.Close(model.Identifier);
                 }
             });
         }

@@ -4,21 +4,28 @@ using System.Linq;
 using System.Text;
 using Prism.Commands;
 using System.IO.Ports;
+using Newtonsoft.Json;
 using System.Windows.Input;
+using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
 using JayTom.Dws.Client.Models;
 using JayTom.Dws.Data.LocalLog;
+using MaterialDesignThemes.Wpf;
 using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
 using LibreHardwareMonitor.Hardware;
 using System.Collections.ObjectModel;
+using Microsoft.AspNetCore.Mvc.Filters;
+using JayTom.Dws.Client.Models.PackageSorting;
+using JayTom.Dws.Client.Models.SettingsCommomModels;
 using JayTom.Dws.Client.Models.CommunicationsSettingsModel;
 
 namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
+
     public class CommunicationConnectionConfigEditorViewModel : BindableBase {
         private string _identifier = string.Empty;
         private ObservableCollection<string> _portItems = new();
-        private CommunicationsTypeInfoModel _selectCommunicationsType = new();
+
         private ObservableCollection<CommunicationProtocolInfoModel> _communicationProtocolItems = new()
         {
             new CommunicationProtocolInfoModel()
@@ -62,6 +69,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
                 Value = CommunicationProtocol.JT_ST,
             },
         };
+
         private ObservableCollection<CommunicationsTypeInfoModel> _communicationsTypeItems = new()
         {
             new CommunicationsTypeInfoModel()
@@ -91,6 +99,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
                 Value = CommunicationsType.CAN,
             },
         };
+
         private ObservableCollection<ParityInfoModel> _parityItems = new()
         {
             new ParityInfoModel()
@@ -171,6 +180,14 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
         private bool _isSavingInProgress;
         private ParityInfoModel _selectParity = new();
         private StopBitsInfoModel _selectStopBits = new();
+        private CommunicationConnectionItemInfoModel _communicationConnectionItem = new();
+        private bool _isOk;
+        private string _exceptionContent = string.Empty;
+
+        public CommunicationConnectionItemInfoModel CommunicationConnectionItem {
+            get => _communicationConnectionItem;
+            set => SetProperty(ref _communicationConnectionItem, value);
+        }
 
         /// <summary>
         /// 窗口标识
@@ -179,17 +196,20 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
             get => _identifier;
             set => SetProperty(ref _identifier, value);
         }
+
         public ObservableCollection<CommunicationProtocolInfoModel> CommunicationProtocolItems {
             get => _communicationProtocolItems;
             set => SetProperty(ref _communicationProtocolItems, value);
         }
+
         public ObservableCollection<CommunicationsTypeInfoModel> CommunicationsTypeItems {
             get => _communicationsTypeItems;
             set => SetProperty(ref _communicationsTypeItems, value);
         }
-        public CommunicationsTypeInfoModel SelectCommunicationsType {
-            get => _selectCommunicationsType;
-            set => SetProperty(ref _selectCommunicationsType, value);
+
+        public ObservableCollection<DataFormatTypeInfoModel> DataFormatTypeItems {
+            get => _dataFormatTypeItems;
+            set => SetProperty(ref _dataFormatTypeItems, value);
         }
 
         /// <summary>
@@ -209,27 +229,11 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
         }
 
         /// <summary>
-        /// 效验位
-        /// </summary>
-        public ParityInfoModel SelectParity {
-            get => _selectParity;
-            set => SetProperty(ref _selectParity, value);
-        }
-
-        /// <summary>
         /// 停止位下拉选项
         /// </summary>
         public ObservableCollection<StopBitsInfoModel> StopBitsItems {
             get => _stopBitsItems;
             set => SetProperty(ref _stopBitsItems, value);
-        }
-
-        /// <summary>
-        /// 停止位
-        /// </summary>
-        public StopBitsInfoModel SelectStopBits {
-            get => _selectStopBits;
-            set => SetProperty(ref _selectStopBits, value);
         }
 
         /// <summary>
@@ -256,6 +260,19 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
             set => SetProperty(ref _isSavingInProgress, value);
         }
 
+        public bool IsOk {
+            get => _isOk;
+            set => SetProperty(ref _isOk, value);
+        }
+
+        /// <summary>
+        /// 异常内容
+        /// </summary>
+        public string ExceptionContent {
+            get => _exceptionContent;
+            set => SetProperty(ref _exceptionContent, value);
+        }
+
         /// <summary>
         /// 串口刷新
         /// </summary>
@@ -268,6 +285,61 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
                 PortItems.Clear();
                 PortItems.AddRange(SerialPort.GetPortNames());
+            });
+        }
+
+        /// <summary>
+        /// 保存
+        /// </summary>
+        public ICommand SaveCommand {
+            get => new DelegateCommand(SaveDelegate);
+        }
+
+        private void SaveDelegate() {
+            //保存返回
+            try {
+                if (CommunicationConnectionItem.CommunicationType.Value == CommunicationsType.None) {
+                    throw new Exception("CommunicationType is None");
+                }
+                Pitcher.Throw.ArgumentNull.WhenNullOrEmpty(CommunicationConnectionItem.ConnectionName, nameof(CommunicationConnectionItem.ConnectionName));
+                IsOk = true;
+            }
+            catch (Exception e) {
+                IsOk = false;
+                ExceptionContent = e.Message;
+            }
+
+            if (DialogHost.IsDialogOpen(Identifier)) {
+                DialogHost.Close(Identifier);
+            }
+        }
+
+        /// <summary>
+        /// 取消
+        /// </summary>
+        public ICommand CancelCommand {
+            get => new DelegateCommand(CancelDelegate);
+        }
+
+        private void CancelDelegate() {
+            IsOk = false;
+            if (DialogHost.IsDialogOpen(Identifier)) {
+                DialogHost.Close(Identifier);
+            }
+        }
+
+        /// <summary>
+        /// 加载方法
+        /// </summary>
+        public ICommand LoadedCommand {
+            get => new DelegateCommand<object>(LoadedDelegate);
+        }
+
+        private async void LoadedDelegate(object obj) {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                PortItems.Clear();
+                PortItems.AddRange(SerialPort.GetPortNames());
+                //加载内容
             });
         }
     }

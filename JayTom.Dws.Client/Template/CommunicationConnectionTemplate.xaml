@@ -1,0 +1,226 @@
+﻿<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:converters="clr-namespace:JayTom.Dws.Client.Converters"
+    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+    xmlns:packageSorting="clr-namespace:JayTom.Dws.Client.Models.PackageSorting"
+    xmlns:packageSortingConfiguration="clr-namespace:JayTom.Dws.Client.Converters.PackageSortingConfiguration">
+    <packageSortingConfiguration:CommunicationsTypeFontConverter x:Key="CommunicationsTypeFontConverter" />
+    <DataTemplate x:Key="CommunicationConnectionTemplate" DataType="{x:Type packageSorting:CommunicationConnectionItemInfoModel}">
+        <materialDesign:Card
+            Width="180"
+            Height="200"
+            Margin="5,0"
+            Padding="10"
+            materialDesign:ElevationAssist.Elevation="Dp2"
+            materialDesign:ShadowAssist.Darken="True"
+            materialDesign:ShadowAssist.ShadowEdges="Bottom,Right,Top,Left"
+            UniformCornerRadius="15">
+            <materialDesign:Card.Background>
+                <LinearGradientBrush Opacity="1" StartPoint="0.3,0" EndPoint="0.7,1">
+                    <LinearGradientBrush.RelativeTransform>
+                        <TransformGroup>
+                            <ScaleTransform CenterX="0.5" CenterY="0.5" />
+                            <SkewTransform CenterX="0.5" CenterY="0.5" />
+                            <RotateTransform CenterX="0.5" CenterY="0.5" />
+                            <TranslateTransform X="0" Y="0" />
+                        </TransformGroup>
+                    </LinearGradientBrush.RelativeTransform>
+                    <GradientStop Offset="1" Color="#6583FF" />
+                    <GradientStop Offset="0.5" Color="#4169E1" />
+                </LinearGradientBrush>
+            </materialDesign:Card.Background>
+            <!--  内容  -->
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="50" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <!--  连接名称  -->
+                <StackPanel
+                    Grid.Row="0"
+                    Grid.Column="0"
+                    Grid.ColumnSpan="2"
+                    Margin="0,10"
+                    HorizontalAlignment="Center"
+                    Orientation="Horizontal">
+                    <TextBlock
+                        Margin="2,0"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        FontFamily="pack://application:,,,/Fonts/#iconfont"
+                        FontSize="23"
+                        Foreground="White"
+                        Text="&#xe7f6;" />
+                    <TextBlock
+                        MaxWidth="140"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                        FontSize="13"
+                        Foreground="White"
+                        IsEnabled="False"
+                        Text="{Binding ConnectionName, UpdateSourceTrigger=PropertyChanged}"
+                        TextAlignment="Center"
+                        TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+                <!--  协议名称、连接数  -->
+                <StackPanel
+                    Grid.Row="1"
+                    Grid.Column="1"
+                    Margin="0,10,0,0"
+                    VerticalAlignment="Top"
+                    Orientation="Vertical">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Margin="2,0"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontFamily="pack://application:,,,/Fonts/#iconfont"
+                            FontSize="18"
+                            Foreground="White"
+                            Text="&#xe7f8;" />
+                        <TextBlock
+                            MaxWidth="90"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                            FontSize="13"
+                            Foreground="White"
+                            IsEnabled="False"
+                            Text="{Binding CommunicationProtocol.Name}"
+                            TextAlignment="Center"
+                            TextTrimming="CharacterEllipsis"
+                            TextWrapping="WrapWithOverflow" />
+                    </StackPanel>
+                    <!--  连接数  -->
+                    <TextBlock
+                        MaxWidth="140"
+                        Margin="10"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                        FontSize="50"
+                        FontWeight="Bold"
+                        Foreground="White"
+                        IsEnabled="False"
+                        Text="{Binding ConnectionCount}"
+                        TextAlignment="Center"
+                        TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+                <!--  左边图标  -->
+                <StackPanel Grid.Row="1" Grid.Column="0">
+                    <!--  通讯类型  -->
+                    <TextBlock
+                        Margin="0,5"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        FontFamily="pack://application:,,,/Fonts/#iconfont"
+                        FontSize="23"
+                        Foreground="White"
+                        Text="{Binding CommunicationType.Value, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource CommunicationsTypeFontConverter}}" />
+                    <!--  心跳  -->
+                    <TextBlock
+                        Margin="0,5"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        FontFamily="pack://application:,,,/Fonts/#iconfont"
+                        FontSize="20"
+                        Foreground="White"
+                        Text="&#xe800;"
+                        Visibility="{Binding HeartbeatConfigInfo.IsHeartbeatActive, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                    <!--  应答  -->
+                    <TextBlock
+                        Margin="0,5"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        FontFamily="pack://application:,,,/Fonts/#iconfont"
+                        FontSize="23"
+                        Foreground="White"
+                        Text="&#xe803;"
+                        Visibility="{Binding DeviceExtensionConfigInfo.ValidateDeviceResponse, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                    <!--  包裹周期  -->
+                    <TextBlock
+                        Margin="0,5"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        FontFamily="pack://application:,,,/Fonts/#iconfont"
+                        FontSize="23"
+                        Foreground="White"
+                        Text="&#xe89a;"
+                        Visibility="{Binding IsUsePackageValidityPeriod, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                </StackPanel>
+                <!--  删除、编辑  -->
+                <StackPanel
+                    Grid.Row="1"
+                    Grid.Column="1"
+                    Margin="0,10,0,0"
+                    VerticalAlignment="Bottom"
+                    Orientation="Horizontal">
+                    <Button
+                        Width="50"
+                        Height="26"
+                        Margin="2,0"
+                        Padding="2"
+                        materialDesign:ButtonAssist.CornerRadius="13"
+                        Background="Transparent"
+                        BorderBrush="White"
+                        BorderThickness="1"
+                        Command="{Binding ModifyCommand}"
+                        CommandParameter="{Binding}"
+                        Style="{StaticResource MaterialDesignRaisedDarkButton}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock
+                                MaxWidth="90"
+                                Margin="0"
+                                Padding="0"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                                FontSize="12"
+                                Foreground="White"
+                                IsEnabled="False"
+                                Text="修改"
+                                TextAlignment="Center"
+                                TextTrimming="CharacterEllipsis"
+                                TextWrapping="WrapWithOverflow" />
+                        </StackPanel>
+                    </Button>
+                    <Button
+                        Width="50"
+                        Height="26"
+                        Margin="2,0"
+                        Padding="2"
+                        materialDesign:ButtonAssist.CornerRadius="13"
+                        Background="Transparent"
+                        BorderBrush="White"
+                        BorderThickness="1"
+                        Command="{Binding DeleteCommand}"
+                        CommandParameter="{Binding}"
+                        Style="{StaticResource MaterialDesignRaisedDarkButton}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock
+                                MaxWidth="90"
+                                Margin="0"
+                                Padding="0"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                                FontSize="12"
+                                Foreground="White"
+                                IsEnabled="False"
+                                Text="删除"
+                                TextAlignment="Center"
+                                TextTrimming="CharacterEllipsis"
+                                TextWrapping="WrapWithOverflow" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </materialDesign:Card>
+    </DataTemplate>
+</ResourceDictionary>
