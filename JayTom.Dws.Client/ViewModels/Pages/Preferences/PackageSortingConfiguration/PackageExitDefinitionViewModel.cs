@@ -18,6 +18,7 @@ using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration;
+using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig.ConnectionParams;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration {
 
@@ -25,14 +26,16 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
     public class PackageExitDefinitionViewModel : BindableBase {
         private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
         private readonly IExcel _excel;
+        private readonly ICommunicationConnectionConfigRepository _communicationConnectionConfigRepository;
         private ObservableCollection<PackageExitDefinitionItemInfoModel> _packageExitDefinitionItems = new();
         private SnackbarMessageQueue _packageExitDefinitionMessageQueue = new(TimeSpan.FromSeconds(2));
         private bool _isLoaded;
 
         public PackageExitDefinitionViewModel(IPackageExitDefinitionRepository packageExitDefinitionRepository,
-            IExcel excel) {
+            IExcel excel, ICommunicationConnectionConfigRepository communicationConnectionConfigRepository) {
             _packageExitDefinitionRepository = packageExitDefinitionRepository;
             _excel = excel;
+            _communicationConnectionConfigRepository = communicationConnectionConfigRepository;
         }
 
         public ObservableCollection<PackageExitDefinitionItemInfoModel> PackageExitDefinitionItems {
@@ -68,6 +71,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                             ModifyTime = DateTime.Now,
                             Remarks = model.Remarks,
                             Type = model.Type,
+                            CommunicationConnectionId = model.SelectConnectionItem.Id
                         };
                         var insertOrUpdate = await _packageExitDefinitionRepository.Insert(packageExitDefinitionInfoModel);
                         if (insertOrUpdate) {
@@ -98,6 +102,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                     model.IsActive = obj.IsActive;
                     model.Id = obj.Id;
                     model.Remarks = obj.Remarks;
+                    model.CommunicationConnectionId = obj.CommunicationConnectionId;
                     await DialogHost.Show(packageExitDefinitionEditor, model.Identifier);
                     if (!string.IsNullOrEmpty(model.ExceptionContent)) {
                         PackageExitDefinitionMessageQueue.Enqueue(model.ExceptionContent);
@@ -164,10 +169,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         }
 
         private void LoadedDelegate(object obj) {
-            if (!_isLoaded) {
+            /*if (!_isLoaded) {
                 _isLoaded = true;
                 RefreshData();
-            }
+            }*/
+            RefreshData();
         }
 
         private async void RefreshData() {
@@ -177,6 +183,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                 model.Identifier = "PackageExitDefinitionDialog";
                 DialogHost.Show(loadingDialog, model.Identifier).ConfigureAwait(false);
             });
+            var configInfoModels = await _communicationConnectionConfigRepository.Select(s => s.Id > 0,
+                o => o.Id);
             var models = await _packageExitDefinitionRepository.
                 Select(s => s.Id > 0,
                     o => o.ModifyTime);
@@ -192,6 +200,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                     Num = i + 1,
                     Remarks = s.Remarks,
                     Type = s.Type,
+                    CommunicationConnectionId = configInfoModels?.FirstOrDefault(f => f.Id.Equals(s.CommunicationConnectionId))?.Id ?? 0,
+                    CommunicationConnectionName = configInfoModels?.FirstOrDefault(f => f.Id.Equals(s.CommunicationConnectionId))?.ConnectionName ?? string.Empty
                 })?.ToList();
                 PackageExitDefinitionItems.AddRange(infoModels);
                 if (DialogHost.IsDialogOpen(model.Identifier)) {

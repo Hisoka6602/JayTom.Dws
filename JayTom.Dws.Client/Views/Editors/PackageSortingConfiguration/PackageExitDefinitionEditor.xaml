@@ -35,15 +35,46 @@
                 <RowDefinition Height="*" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
-            <!--  格口Id(不可变)  -->
-            <TextBlock
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center"
-                FontSize="16"
-                FontWeight="Bold"
-                Foreground="DarkGray">
-                <Run Text="格口Id:" /><Run Text="{Binding Id, UpdateSourceTrigger=PropertyChanged}" />
-            </TextBlock>
+            <!--  绑定连接  -->
+            <StackPanel
+                Grid.Row="0"
+                Margin="5"
+                Orientation="Horizontal">
+                <TextBlock
+                    Margin="5,0"
+                    VerticalAlignment="Center"
+                    FontSize="13"
+                    FontWeight="Bold"
+                    Foreground="DarkGray"
+                    Text="绑定连接:" />
+                <Border
+                    Margin="5"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Background="#202020"
+                    CornerRadius="5">
+                    <ComboBox
+                        Width="300"
+                        Height="30"
+                        MinWidth="190"
+                        Padding="5,0"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        HorizontalContentAlignment="Center"
+                        VerticalContentAlignment="Center"
+                        materialDesign:ButtonAssist.CornerRadius="15"
+                        materialDesign:ColorZoneAssist.Mode="Dark"
+                        BorderThickness="0"
+                        DisplayMemberPath="ConnectionName"
+                        FontSize="12"
+                        FontWeight="Bold"
+                        Foreground="White"
+                        ItemsSource="{Binding CommunicationConnectionItems, UpdateSourceTrigger=PropertyChanged}"
+                        SelectedItem="{Binding SelectConnectionItem, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                        SelectedValuePath="Id"
+                        Style="{StaticResource MaterialDesignComboBox}" />
+                </Border>
+            </StackPanel>
             <!--  格口名称  -->
             <StackPanel
                 Grid.Row="1"

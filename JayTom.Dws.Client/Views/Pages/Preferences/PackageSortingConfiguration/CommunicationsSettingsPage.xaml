@@ -1400,6 +1400,7 @@
                                         Background="{TemplateBinding Background}"
                                         BorderBrush="{TemplateBinding BorderBrush}"
                                         BorderThickness="1"
+                                        Focusable="False"
                                         SnapsToDevicePixels="True">
                                         <ContentPresenter
                                             HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
@@ -1419,7 +1420,10 @@
                 </ListView.ItemContainerStyle>
                 <ListBox.Template>
                     <ControlTemplate TargetType="{x:Type ListView}">
-                        <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+                        <ScrollViewer
+                            Focusable="False"
+                            HorizontalScrollBarVisibility="Disabled"
+                            VerticalScrollBarVisibility="Auto">
                             <WrapPanel
                                 IsItemsHost="True"
                                 Orientation="Horizontal"

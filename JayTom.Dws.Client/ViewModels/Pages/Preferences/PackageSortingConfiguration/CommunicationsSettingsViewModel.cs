@@ -29,6 +29,7 @@ using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Client.Models.CommunicationsSettingsModel;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig.RuleConfig;
 using JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration;
+using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig.ConnectionParams;
 using JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration;
 using JayTom.Dws.Client.Models.PackageSorting.CommunicationConnectionSub;
@@ -37,10 +38,12 @@ using JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration.SortingMethodE
 using JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.SortingMethodEditors;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration {
+
     public class CommunicationsSettingsViewModel : BindableBase {
         private readonly IConfigRepository _configRepository;
         private readonly ISortingService _sortingService;
         private readonly ICommunicationConnectionConfigRepository _communicationConnectionConfigRepository;
+        private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
         private CommunicationsSettingsInfoModel _communicationsSettingsInfo = new();
 
         private ObservableCollection<CommunicationsTypeInfoModel> _communicationsTypeItems = new()
@@ -198,7 +201,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             },
         };
 
-        private bool _isLoaded;
         private ParityInfoModel _selectParity = new();
         private StopBitsInfoModel _selectStopBits = new();
         private DataFormatTypeInfoModel _selectDataFormat = new();
@@ -208,10 +210,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         private ObservableCollection<CommunicationConnectionItemInfoModel> _communicationConnectionItems = new();
 
         public CommunicationsSettingsViewModel(IConfigRepository configRepository,
-            ISortingService sortingService, ICommunicationConnectionConfigRepository communicationConnectionConfigRepository) {
+            ISortingService sortingService,
+            ICommunicationConnectionConfigRepository communicationConnectionConfigRepository,
+            IPackageExitDefinitionRepository packageExitDefinitionRepository) {
             _configRepository = configRepository;
             _sortingService = sortingService;
             _communicationConnectionConfigRepository = communicationConnectionConfigRepository;
+            _packageExitDefinitionRepository = packageExitDefinitionRepository;
             _sortingService.ExceptionOccurred += delegate (object? sender, ExceptionEventArgs args) {
                 CommunicationsSettingsMessageQueue.Enqueue(args.ExceptionMessage);
             };
@@ -758,6 +763,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                 model.Identifier = "CommunicationsSettingsDialog";
                 DialogHost.Show(loadingDialog, model.Identifier).ConfigureAwait(false);
             });
+            var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0,
+                o => o.Id);
+
             var models = await _communicationConnectionConfigRepository.
                 CommunicationConnectionConfigItems(s => s.Id > 0);
 
@@ -834,8 +842,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                             Port = s.TcpConnectionConfigInfo?.TcpConfigItems?.FirstOrDefault(f => f.Type == 0)?.Port ?? 0,
                         },
                     },
-                    //连接数
-                    /*ConnectionCount = */
+                    ConnectionCount = packageExitDefinitionInfoModels?.Where(w => w.CommunicationConnectionId.Equals(s.Id))?.Count() ?? 0
                 })?.ToList();
                 CommunicationConnectionItems.AddRange(infoModels);
                 if (DialogHost.IsDialogOpen(model.Identifier)) {

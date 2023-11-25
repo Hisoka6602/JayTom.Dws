@@ -1,20 +1,22 @@
-﻿using JayTom.Dws.Client.Models.PackageSorting;
-using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
-using MaterialDesignThemes.Wpf;
-using Prism.Commands;
+﻿using System;
 using Prism.Mvvm;
-using System;
-using System.Collections.ObjectModel;
 using System.Linq;
+using Prism.Commands;
 using System.Windows.Input;
+using MaterialDesignThemes.Wpf;
+using System.Collections.ObjectModel;
+using JayTom.Dws.Client.Models.PackageSorting;
+using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
+using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig.ConnectionParams;
 
 namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
     public class PackageExitDefinitionEditorViewModel : BindableBase {
+        private readonly ICommunicationConnectionConfigRepository _communicationConnectionConfigRepository;
         private string _identifier = string.Empty;
         private long _id;
         private string _exitName = string.Empty;
         private ExitType _type = ExitType.PackageExit;
-        private bool _isActive;
+        private bool _isActive = true;
         private string _remarks = string.Empty;
         private bool _isOk;
         private string _exceptionContent = string.Empty;
@@ -34,6 +36,23 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
         };
 
         private ExitTypeInfoModel _selectExitType = new();
+        private ObservableCollection<CommunicationConnectionItemInfoModel> _communicationConnectionItems = new();
+        private CommunicationConnectionItemInfoModel _selectConnectionItem = new();
+        private long _communicationConnectionId;
+
+        public PackageExitDefinitionEditorViewModel(ICommunicationConnectionConfigRepository communicationConnectionConfigRepository) {
+            _communicationConnectionConfigRepository = communicationConnectionConfigRepository;
+        }
+
+        public ObservableCollection<CommunicationConnectionItemInfoModel> CommunicationConnectionItems {
+            get => _communicationConnectionItems;
+            set => SetProperty(ref _communicationConnectionItems, value);
+        }
+
+        public CommunicationConnectionItemInfoModel SelectConnectionItem {
+            get => _selectConnectionItem;
+            set => SetProperty(ref _selectConnectionItem, value);
+        }
 
         /// <summary>
         /// 窗口标识
@@ -65,6 +84,14 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
         public ExitType Type {
             get => _type;
             set => SetProperty(ref _type, value);
+        }
+
+        /// <summary>
+        /// 连接Id
+        /// </summary>
+        public long CommunicationConnectionId {
+            get => _communicationConnectionId;
+            set => SetProperty(ref _communicationConnectionId, value);
         }
 
         /// <summary>
@@ -118,6 +145,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
                 Type = SelectExitType.Value;
                 Pitcher.Throw.ArgumentNull.WhenNullOrEmpty(ExitName, nameof(ExitName));
                 Pitcher.Throw.ArgumentNull.WhenNull(Type, nameof(Type));
+                Pitcher.Throw.ArgumentNull.WhenNull(SelectConnectionItem, nameof(SelectConnectionItem));
                 IsOk = true;
             }
             catch (Exception e) {
@@ -147,11 +175,21 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
         }
 
         private async void LoadedDelegate(object obj) {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
                 var exitTypeInfoModel = ExitTypeItems?.FirstOrDefault(f => f.Value.Equals(Type));
                 if (exitTypeInfoModel is not null) {
                     SelectExitType = exitTypeInfoModel;
                 }
+                CommunicationConnectionItems.Clear();
+                var models = await _communicationConnectionConfigRepository.Select(s => s.Id > 0,
+                    o => o.Id);
+                var itemInfoModels = models.Select(s => new CommunicationConnectionItemInfoModel() {
+                    Id = s.Id,
+                    ConnectionName = s.ConnectionName,
+                }).ToList();
+                CommunicationConnectionItems.AddRange(itemInfoModels);
+
+                SelectConnectionItem = CommunicationConnectionItems.FirstOrDefault(f => f.Id.Equals(CommunicationConnectionId)) ?? new CommunicationConnectionItemInfoModel();
             });
         }
     }

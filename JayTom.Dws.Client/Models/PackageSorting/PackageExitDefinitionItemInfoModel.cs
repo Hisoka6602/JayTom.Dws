@@ -5,11 +5,29 @@ using System.ComponentModel.DataAnnotations;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 
 namespace JayTom.Dws.Client.Models.PackageSorting {
-
     public class PackageExitDefinitionItemInfoModel : BasePackageSortingItemInfoModel {
         private string _exitName = string.Empty;
         private ExitType _type = ExitType.PackageExit;
-        private bool _isActive;
+        private bool _isActive = true;
+        private long _communicationConnectionId;
+        private string? _communicationConnectionName;
+
+        /// <summary>
+        /// 连接Id
+        /// </summary>
+        public long CommunicationConnectionId {
+            get => _communicationConnectionId;
+            set => SetProperty(ref _communicationConnectionId, value);
+        }
+
+        /// <summary>
+        /// 连接名称
+        /// </summary>
+        [DisplayName("连接名称"), MemberNotNull, ExcelInfo(Width = 4000)]
+        public string? CommunicationConnectionName {
+            get => _communicationConnectionName;
+            set => SetProperty(ref _communicationConnectionName, value);
+        }
 
         /// <summary>
         /// 格口名称

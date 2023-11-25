@@ -148,7 +148,8 @@ namespace JayTom.Dws.Infrastructure.Service {
                         if (!string.IsNullOrEmpty(imageSettingsDto.FtpInfo.IpAddress) &&
                             imageSettingsDto.FtpInfo.Port > 0 &&
                             !string.IsNullOrEmpty(imageSettingsDto.FtpInfo.Username) &&
-                            !string.IsNullOrEmpty(imageSettingsDto.FtpInfo.Password)) {
+                            !string.IsNullOrEmpty(imageSettingsDto.FtpInfo.Password) &&
+                            imageSettingsDto.IsFtpUploadEnabled) {
                             if (!_ftp.IsConnected) {
                                 var (key, value) = await _ftp.Connect(imageSettingsDto.FtpInfo.IpAddress,
                                     imageSettingsDto.FtpInfo.Port, imageSettingsDto.FtpInfo.Username,

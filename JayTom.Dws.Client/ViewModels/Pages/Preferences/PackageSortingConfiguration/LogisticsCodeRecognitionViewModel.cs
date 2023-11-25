@@ -107,10 +107,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         }
 
         private void LoadedDelegate(object obj) {
-            if (!_isLoaded) {
+            /*if (!_isLoaded) {
                 _isLoaded = true;
                 RefreshData();
-            }
+            }*/
+            RefreshData();
         }
 
         /// <summary>
