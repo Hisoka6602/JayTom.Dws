@@ -22,6 +22,7 @@ using UploadResponse = JayTom.Dws.Interface.UploadResponse;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig.RuleConfig;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig.RuleConfig;
+using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig.ConnectionParams;
 using static JayTom.Dws.Client.Service.BackgroundService.SubmitApiBackgroundService;
 
 namespace JayTom.Dws.Client.Service.Sorting {
@@ -44,9 +45,14 @@ namespace JayTom.Dws.Client.Service.Sorting {
         private readonly IVolumeRuleRepository _volumeRuleRepository;
         private readonly IWeightRuleRepository _weightRuleRepository;
         private readonly IApiSortingRepository _apiSortingRepository;
+        private readonly ISortingConnectionService _sortingConnectionService;
+        private readonly ICommunicationConnectionConfigRepository _communicationConnectionConfigRepository;
+
         private readonly IApiRuleRepository _apiRuleRepository;
-        private readonly IInventoryManagementService _inventoryManagementService;
+
+        //private readonly IInventoryManagementService _inventoryManagementService;
         private SemaphoreSlim _semaphore = new(1);
+
         private CommunicationsSettingsDto _communicationsSettingsDto = new();
         private SortingMethodDto _sortingMethodDto = new();
 
@@ -71,6 +77,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
         private List<WeightRuleInfoModel> _weightRuleInfoModels = new();
         private List<ApiRuleInfoModel> _apiRuleInfoModels = new();
         private List<ApiSortingInfoModel> _apiSortingInfoModels = new();
+        private List<CommunicationConnectionConfigInfoModel> _connectionConfigInfoModels = new();
 
         #endregion 配置
 
@@ -105,7 +112,9 @@ namespace JayTom.Dws.Client.Service.Sorting {
             IVolumeRuleRepository volumeRuleRepository,
             IWeightRuleRepository weightRuleRepository,
             IApiSortingRepository apiSortingRepository,
-            IApiRuleRepository apiRuleRepository, IInventoryManagementService inventoryManagementService) {
+           ISortingConnectionService sortingConnectionService,
+           ICommunicationConnectionConfigRepository communicationConnectionConfigRepository,
+            IApiRuleRepository apiRuleRepository) {
             _configRepository = configRepository;
             _logisticsRegexRepository = logisticsRegexRepository;
             _logisticsCodeRecognitionRepository = logisticsCodeRecognitionRepository;
@@ -123,23 +132,25 @@ namespace JayTom.Dws.Client.Service.Sorting {
             _volumeRuleRepository = volumeRuleRepository;
             _weightRuleRepository = weightRuleRepository;
             _apiSortingRepository = apiSortingRepository;
+            _sortingConnectionService = sortingConnectionService;
+            _communicationConnectionConfigRepository = communicationConnectionConfigRepository;
             _apiRuleRepository = apiRuleRepository;
-            _inventoryManagementService = inventoryManagementService;
+
             //事件
-            _inventoryManagementService.HeartbeatError += delegate (object? sender, Exception exception) {
+            _sortingConnectionService.HeartbeatError += delegate (object? sender, Exception exception) {
                 OnHeartbeatError(exception);
             };
-            _inventoryManagementService.SendError += delegate (object? sender, ExceptionEventArgs args) {
+            _sortingConnectionService.SendError += delegate (object? sender, ExceptionEventArgs args) {
                 OnSendError(new ExceptionEventArgs() {
                     ExceptionMessage = args.ExceptionMessage,
                 });
             };
-            _inventoryManagementService.CommunicationExceptionEvent += delegate (object? sender, Exception exception) {
+            _sortingConnectionService.CommunicationExceptionEvent += delegate (object? sender, Exception exception) {
                 OnExceptionOccurred(new ExceptionEventArgs() {
                     ExceptionMessage = exception.ToString() ?? string.Empty
                 });
             };
-            _inventoryManagementService.ReceivedInstructionsEvent += delegate (object? sender, DeviceDecodeResult result) {
+            _sortingConnectionService.ReceivedInstructionsEvent += delegate (object? sender, DeviceDecodeResult result) {
                 if (result.Type == FunctionType.CreatePackage) {
                     //创建包裹
                     OnCreatePackageEvent(new PackageInstructionEventArgs() {
@@ -165,7 +176,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
             };
 
             //判断通讯方式
-            EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async settings => {
+            /*EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async settings => {
                 if (settings is SettingsChangedEvent { SettingsName: "CommunicationsSettings" }) {
                     try {
                         await _semaphore.WaitAsync();
@@ -187,7 +198,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                         _semaphore.Release();
                     }
                 }
-            });
+            });*/
             //格口更改
             EventAggregator.Instance.Subscribe<LogisticsCodeRecognitionInfoModel>(async models => {
                 _logisticsCodeRecognitionInfos = await _logisticsCodeRecognitionRepository.Select(s => s.Id > 0,
@@ -295,7 +306,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
             }
         }
 
-        public bool IsConnected => _inventoryManagementService.IsConnected;
+        public bool IsConnected => true;
 
         public bool IsSortingEnabled { get; private set; }
 
@@ -388,6 +399,10 @@ namespace JayTom.Dws.Client.Service.Sorting {
                     _weightRuleInfoModels = await _weightRuleRepository.Select(s => s.Id > 0, o => o.CreateTime, token);
                     _apiRuleInfoModels = await _apiRuleRepository.Select(s => s.Id > 0, o => o.CreateTime, token);
                     _apiSortingInfoModels = await _apiSortingRepository.Select(s => s.Id > 0, o => o.CreateTime, token);
+
+                    _connectionConfigInfoModels = await _communicationConnectionConfigRepository.CommunicationConnectionConfigItems(
+                        s => s.Id > 0, token);
+                    await _sortingConnectionService.ConfigurationInitializer();
                 }
                 catch (Exception e) {
                     OnExceptionOccurred(new ExceptionEventArgs() {
@@ -397,8 +412,20 @@ namespace JayTom.Dws.Client.Service.Sorting {
 
                 #endregion 读取配置信息
 
-                await _inventoryManagementService.Disconnect(token);
-                await _inventoryManagementService.Connect(token);
+                await _sortingConnectionService.DisconnectAll();
+                foreach (var infoModel in _connectionConfigInfoModels) {
+                    var communicationsType = (CommunicationsType)Enum.Parse(typeof(CommunicationsType), infoModel.CommunicationType.ToString());
+                    var communicationProtocol = (CommunicationProtocol)Enum.Parse(typeof(CommunicationProtocol), infoModel.CommunicationProtocol.ToString());
+                    if (communicationsType == CommunicationsType.SerialPort) {
+                        await _sortingConnectionService.AddConnection(communicationsType, communicationProtocol,
+                             infoModel.ConnectionName, infoModel.SerialPortConfigInfo);
+                    }
+                    else if (communicationsType == CommunicationsType.TCP) {
+                        await _sortingConnectionService.AddConnection(communicationsType, communicationProtocol,
+                            infoModel.ConnectionName, infoModel.TcpConnectionConfigInfo);
+                    }
+                }
+
                 RunningStatus = true;
                 return new KeyValuePair<bool, string>(true, "已启动");
             }
@@ -408,7 +435,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
         public async Task<KeyValuePair<bool, string>> Stop(CancellationToken token = default) {
             //停止
             //关闭心跳包
-            await _inventoryManagementService.Connect(token);
+            await _sortingConnectionService.DisconnectAll();
             RunningStatus = false;
             return new KeyValuePair<bool, string>(true, "已停止");
         }
@@ -426,7 +453,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                     f.ExitId.Equals(packageExitDefinitionInfoModel.Id));
                 if (sortingInstructionBindingInfoModel is not null) {
                     await Task.Delay(sortingInstructionBindingInfoModel.DelaySendMilliseconds, token);
-                    _inventoryManagementService.SendInstructions(param.Tag ?? new object(),
+                    _sortingConnectionService.SendInstructions(param.Tag ?? new object(),
                         sortingInstructionInfoModels ?? new List<SortingInstructionInfoModel>(),
                         TimeSpan.FromMilliseconds(sortingInstructionBindingInfoModel.SendIntervalMilliseconds),
                         new InstructionsAttach {
@@ -660,7 +687,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                         ?.ToList();
                     await Task.Delay(sortingInstructionBindingInfoModel.DelaySendMilliseconds, token);
 
-                    _inventoryManagementService.SendInstructions(param.Tag ?? new object(),
+                    _sortingConnectionService.SendInstructions(param.Tag ?? new object(),
                         sortingInstructionInfoModels ?? new List<SortingInstructionInfoModel>(),
                         TimeSpan.FromMilliseconds(sortingInstructionBindingInfoModel.SendIntervalMilliseconds),
                         new InstructionsAttach {

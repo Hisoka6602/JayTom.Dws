@@ -1,5 +1,6 @@
 ﻿using System;
-using System.Threading;
+using System.Linq;
+using System.Text;
 using JayTom.Dws.Plugin.Tcp;
 using System.Threading.Tasks;
 using JayTom.Dws.Data.LocalData;
@@ -11,20 +12,33 @@ using JayTom.Dws.Client.Service.Sorting.Communication.SerialComm;
 
 namespace JayTom.Dws.Client.Service.Sorting {
 
-    /// <summary>
-    /// 指令服务(在这里效验通讯)
-    /// </summary>
-    public interface IInventoryManagementService1 {
+    public interface ISortingConnectionService {
 
         /// <summary>
-        /// 是否连接
+        /// 配置初始化
         /// </summary>
-        public bool IsConnected { get; }
+        /// <returns></returns>
+        Task ConfigurationInitializer();
+
+        /// <summary>
+        /// 添加连接
+        /// </summary>
+        Task<KeyValuePair<bool, string>> AddConnection(CommunicationsType type, CommunicationProtocol communicationProtocol, string connectionName, object? connectionParam);
+
+        /// <summary>
+        /// 释放连接
+        /// </summary>
+        Task<KeyValuePair<bool, string>> ReleaseConnection(string connectionName);
+
+        /// <summary>
+        /// 断开全部
+        /// </summary>
+        Task<KeyValuePair<bool, string>> DisconnectAll();
 
         /// <summary>
         /// 通讯信息事件
         /// </summary>
-        event EventHandler<CommunicationMessageInfo> CommunicationInfoEvent;
+        event EventHandler<ConnectionCommunicationMessageInfo> CommunicationInfoEvent;
 
         /// <summary>
         /// 通讯异常事件
@@ -47,6 +61,11 @@ namespace JayTom.Dws.Client.Service.Sorting {
         event EventHandler<ExceptionEventArgs> SendError;
 
         /// <summary>
+        /// 断开事件
+        /// </summary>
+        event EventHandler<ConnectionInfo> Disconnected;
+
+        /// <summary>
         /// 发送指令(多用于测试)
         /// </summary>
         /// <param name="tag"></param>
@@ -63,23 +82,14 @@ namespace JayTom.Dws.Client.Service.Sorting {
         /// <param name="interval"></param>
         /// <param name="attach"></param>
         void SendInstructions(object tag, List<SortingInstructionInfoModel> instructions, TimeSpan interval, InstructionsAttach attach);
-
-        /// <summary>
-        /// 连接方法
-        /// </summary>
-        /// <param name="token"></param>
-        /// <returns></returns>
-        Task<KeyValuePair<bool, string>> Connect(CancellationToken token = default);
-
-        /// <summary>
-        /// 断开方法
-        /// </summary>
-        /// <param name="token"></param>
-        /// <returns></returns>
-        Task<KeyValuePair<bool, string>> Disconnect(CancellationToken token = default);
     }
 
-    public class CommunicationMessageInfo : CommunicationInfo {
+    public class ConnectionCommunicationMessageInfo : CommunicationInfo {
+
+        /// <summary>
+        /// 连接名称
+        /// </summary>
+        public string ConnectionName { get; set; } = string.Empty;
 
         /// <summary>
         /// 条码关联时间戳
@@ -110,5 +120,33 @@ namespace JayTom.Dws.Client.Service.Sorting {
         /// 获取或设置分拣的唯一标识符（Guid）。
         /// </summary>
         public long? Guid { get; set; }
+    }
+
+    public class ConnectionInfo {
+
+        /// <summary>
+        /// 连接名称
+        /// </summary>
+        public string ConnectionName { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 通讯类型
+        /// </summary>
+        public CommunicationsType Type { get; set; }
+
+        /// <summary>
+        /// 协议对象
+        /// </summary>
+        public IDeviceCommunicationProtocol? DeviceCommunicationProtocol { get; set; }
+
+        /// <summary>
+        /// 串口对象
+        /// </summary>
+        public ISortingSerialPort? SortingSerialPort { get; set; }
+
+        /// <summary>
+        /// Tcp对象
+        /// </summary>
+        public ISortingTcp? SortingTcp { get; set; }
     }
 }

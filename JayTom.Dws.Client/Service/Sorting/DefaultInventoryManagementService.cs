@@ -15,23 +15,27 @@ using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
 using JayTom.Dws.Domain.DownstreamProtocols;
 using JayTom.Dws.Domain.Repository.LocalConf;
+using SixLabors.ImageSharp.Metadata.Profiles.Iptc;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Client.Service.Sorting.Communication.TcpComm;
 using JayTom.Dws.Client.Service.Sorting.Communication.SerialComm;
 using CommunicationType = JayTom.Dws.Plugin.Tcp.CommunicationType;
 using JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols;
+using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig.ConnectionParams;
+using JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig.ConnectionParams;
 
 namespace JayTom.Dws.Client.Service.Sorting {
 
-    public class DefaultInventoryManagementService : IInventoryManagementService {
+    public class DefaultInventoryManagementService : IInventoryManagementService1 {
         private readonly ISortingSerialPort _sortingSerialPort;
         private readonly ISortingTcp _sortingTcp;
         private readonly IConfigRepository _configRepository;
+        private readonly ICommunicationConnectionConfigRepository _communicationConnectionConfigRepository;
         private CommunicationsSettingsDto _communicationsSettingsDto = new();
         private IDeviceCommunicationProtocol? _deviceCommunicationProtocol = null;
         private SemaphoreSlim _semaphore = new(1);
         private ConcurrentQueue<string> _replyContentQueue = new();
-
+        private ConcurrentDictionary<string, ConnectionInfo> _connectionInfos = new();
         public bool IsConnected { get; private set; }
 
         public event EventHandler<CommunicationMessageInfo>? CommunicationInfoEvent;
@@ -45,10 +49,12 @@ namespace JayTom.Dws.Client.Service.Sorting {
         public event EventHandler<ExceptionEventArgs>? SendError;
 
         public DefaultInventoryManagementService(ISortingSerialPort sortingSerialPort,
-            ISortingTcp sortingTcp, IConfigRepository configRepository) {
+            ISortingTcp sortingTcp, IConfigRepository configRepository,
+            ICommunicationConnectionConfigRepository communicationConnectionConfigRepository) {
             _sortingSerialPort = sortingSerialPort;
             _sortingTcp = sortingTcp;
             _configRepository = configRepository;
+            _communicationConnectionConfigRepository = communicationConnectionConfigRepository;
             //事件
             _sortingSerialPort.Disconnected += delegate (object? sender, ISortingSerialPort port) {
                 IsConnected = false;
@@ -447,6 +453,38 @@ namespace JayTom.Dws.Client.Service.Sorting {
 
         public async Task<KeyValuePair<bool, string>> Connect(CancellationToken token = default) {
             try {
+                //读取所有连接
+                //ICommunicationConnectionConfigRepository
+
+                /*var connectionConfigInfoModels = await _communicationConnectionConfigRepository.Select(s =>
+                    s.Id > 0, o => o.Id, token);
+                foreach (var connectionConfigInfoModel in connectionConfigInfoModels) {
+                    var communicationsType = (CommunicationsType)Enum.Parse(typeof(CommunicationsType), connectionConfigInfoModel.CommunicationType.ToString());
+                    //判断连接方式，创建不同对象
+                    if (communicationsType == CommunicationsType.SerialPort) {
+                        connectionConfigInfoModels[0].TcpConnectionConfigInfo.
+                        //创建串口对象
+                        var sortingSerialPort = new SortingSerialPort();
+                        //注册事件
+                        sortingSerialPort.Disconnected += delegate (object? sender, ISortingSerialPort port) {
+                        };
+
+                        new ConnectionInfo() {
+                            Type = communicationsType,
+                            SortingSerialPort = new SortingSerialPort(),
+                            ConnectionName =
+                        }
+
+                        //创建事件
+                        //_connectionDictionary
+                    }
+                    else if (communicationsType == CommunicationsType.TCP) {
+                        //创建Tcp对象
+                    }
+
+                    //添加到队列
+                }*/
+
                 //从数据库读取_communicationsSettingsDto
                 var configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("CommunicationsSettings"), token);
                 _communicationsSettingsDto =

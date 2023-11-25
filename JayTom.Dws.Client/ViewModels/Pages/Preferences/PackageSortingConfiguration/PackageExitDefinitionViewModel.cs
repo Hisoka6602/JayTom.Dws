@@ -183,8 +183,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                 model.Identifier = "PackageExitDefinitionDialog";
                 DialogHost.Show(loadingDialog, model.Identifier).ConfigureAwait(false);
             });
-            var configInfoModels = await _communicationConnectionConfigRepository.Select(s => s.Id > 0,
-                o => o.Id);
+            var configInfoModels = await _communicationConnectionConfigRepository.CommunicationConnectionConfigItems(s => s.Id > 0);
             var models = await _packageExitDefinitionRepository.
                 Select(s => s.Id > 0,
                     o => o.ModifyTime);
