@@ -21,6 +21,7 @@ using System.Reflection.Metadata;
 using Point = System.Drawing.Point;
 using Image = System.Drawing.Image;
 using Color = System.Drawing.Color;
+using System.Windows.Media.Media3D;
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using JayTom.Dws.Camera.FilterContainer;
@@ -126,8 +127,12 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                         //如果是海康的工业相机则支持
                         IsOcrSupported = ((stDevInfo.chManufacturerName?.Contains("Hikrobot") == true ||
                                           stDevInfo.chManufacturerName?.Contains("Hikrobot") == true) &&
-                                          stDevInfo.chModelName?.Contains("MV-PD") == true)
+                                          stDevInfo.chModelName?.StartsWith("MV-PD") == true)
                     };
+                    if (cameraInfo.Model.StartsWith("MV-PD")) {
+                        _devInfo.AddOrUpdate(cameraInfo.SerialNumber, cameraInfo, (k, v) => cameraInfo);
+                        cameraInfos.Add(cameraInfo);
+                    }
                     _devInfo.AddOrUpdate(cameraInfo.SerialNumber, cameraInfo, (k, v) => cameraInfo);
                     cameraInfos.Add(cameraInfo);
                 }

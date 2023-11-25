@@ -593,6 +593,10 @@ namespace JayTom.Dws.Client.Service.Device {
                                     smartCamera.NotBarcodeHitEvent += delegate (object? sender, BarcodeReadEventArgs args) {
                                         OnNotBarcodeHitEvent(args);
                                     };
+                                    smartCamera.OcrContentRecognized += delegate (object? sender,
+                                        OcrContentRecognizedEventArgs args) {
+                                            OnOcrContentRecognized(args);
+                                        };
                                     try {
                                         var scannerCameraConfigInfoModel = scannerCameraConfigInfoModels?.FirstOrDefault(f =>
                                             f.SerialNumber.Equals(camera.Info?.SerialNumber));
@@ -606,6 +610,9 @@ namespace JayTom.Dws.Client.Service.Device {
 
                                         if (scannerCameraConfigInfoModel?.IsShowRealTimeImage == true) {
                                             smartCamera.StartRealTimeImage();
+                                        }
+                                        if (smartCamera.BindingType == CameraBindingType.OcrCamera) {
+                                            smartCamera.Ocr = _ocr;
                                         }
                                     }
                                     catch (Exception e) {

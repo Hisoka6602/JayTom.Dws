@@ -60,6 +60,11 @@ namespace JayTom.Dws.Camera {
         event EventHandler<BarcodeReadEventArgs> NotBarcodeHitEvent;
 
         /// <summary>
+        /// 当OCR识别到内容时触发的事件
+        /// </summary>
+        event EventHandler<OcrContentRecognizedEventArgs> OcrContentRecognized;
+
+        /// <summary>
         /// 设置扫码过滤参数
         /// </summary>
         /// <param name="params"></param>

@@ -25,10 +25,12 @@ using JsonSerializer = Newtonsoft.Json.JsonSerializer;
 using Microsoft.Extensions.FileSystemGlobbing.Internal;
 
 namespace JayTom.Dws.Ocr.ExpressBill {
+
     public class ExpressBill : IOcr {
         private SemaphoreSlim _semaphoreSlim = new(1, 1);
         private TimeSpan _recognitionTimeout = TimeSpan.FromSeconds(1);
         private const string DllPath = ".\\ExpressBill\\Lib\\Dll\\ExpressBillApi.dll";
+
         // sdk初始化
         [DllImport(DllPath, EntryPoint = "init", CharSet = CharSet.Ansi
             , CallingConvention = CallingConvention.Cdecl)]
@@ -160,6 +162,7 @@ namespace JayTom.Dws.Ocr.ExpressBill {
                     var stopwatch = new Stopwatch();
                     stopwatch.Start();
                     using var stream = new MemoryStream();
+                    stream.Position = 0;
                     bitmap.Save(stream, System.Drawing.Imaging.ImageFormat.Bmp);
                     var array = stream.ToArray();
                     var mat = Cv2.ImDecode(array, ImreadModes.Color);
@@ -169,6 +172,7 @@ namespace JayTom.Dws.Ocr.ExpressBill {
 
                     var unescape = Regex.Unescape(buf ?? string.Empty);
 
+                    NLog.LogManager.GetCurrentClassLogger().Error(unescape);
                     var result = System.Text.Json.JsonSerializer.Deserialize<RootResult>(unescape, new JsonSerializerOptions {
                         ReferenceHandler = ReferenceHandler.Preserve,
                         PropertyNameCaseInsensitive = true,
@@ -226,6 +230,7 @@ namespace JayTom.Dws.Ocr.ExpressBill {
                         Exception = e,
                         ExceptionTime = DateTime.Now
                     });
+                    NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
                 }
             }
 
