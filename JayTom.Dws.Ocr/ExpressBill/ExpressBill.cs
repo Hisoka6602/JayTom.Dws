@@ -171,8 +171,6 @@ namespace JayTom.Dws.Ocr.ExpressBill {
                     var buf = Marshal.PtrToStringAnsi(ptr);
 
                     var unescape = Regex.Unescape(buf ?? string.Empty);
-
-                    NLog.LogManager.GetCurrentClassLogger().Error(unescape);
                     var result = System.Text.Json.JsonSerializer.Deserialize<RootResult>(unescape, new JsonSerializerOptions {
                         ReferenceHandler = ReferenceHandler.Preserve,
                         PropertyNameCaseInsensitive = true,

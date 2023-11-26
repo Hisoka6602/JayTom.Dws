@@ -234,6 +234,16 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                         return new KeyValuePair<bool, string>(false, $"设置读码类型失败,{_nRet:X}!");
                     }
 
+                    /*//设置抠图
+
+                    _nRet = _myCodeReader?.MVID_CR_Algorithm_SetIntValue_NET(MVIDCodeReader.KEY_WAYBILL_ABILITY, MVIDCodeReader.MVID_WAYBILL) ?? 0;
+                    if (MVIDCodeReader.MVID_CR_OK != _nRet) {
+                        OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
+                            Exception = new Exception($"抠图设置失败,{_nRet:X}")
+                        });
+                        return new KeyValuePair<bool, string>(false, $"抠图设置失败,{_nRet:X}!");
+                    }*/
+
                     /*//设置图像输出模式
                     //MVIDCodeReader.MVID_IMAGE_OUTPUT_MODE.MVID_OUTPUT_RAW
                     _myCodeReader?.MVID_CR_CAM_SetImageOutPutMode_NET(MVIDCodeReader.MVID_IMAGE_OUTPUT_MODE.MVID_OUTPUT_NORMAL);
@@ -704,6 +714,8 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
             if (MVIDCodeReader.MVID_IMAGE_TYPE.MVID_IMAGE_BMP != stOutput.stImage.enImageType) {
                 var bitmap = await GetBitmapAsync(stOutput, ptr);
                 //1024*768
+                //面单图
+                //var bitmapWaybillAsync = await GetBitmapWaybillAsync(stOutput);
                 var thumbnailImage = GenerateThumbnail(bitmap);
                 if (0 != stOutput.stCodeList.nCodeNum && BindingType != CameraBindingType.PanoramicCamera) {
                     if (IsShowBarcodeBorder && thumbnailImage is not null && thumbnailImage.PixelFormat != PixelFormat.Format8bppIndexed &&
@@ -775,6 +787,44 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
             }
         }
 
+        private async Task<Bitmap?> GetBitmapWaybillAsync(MVIDCodeReader.MVID_CAM_OUTPUT_INFO stOutput) {
+            Bitmap? bitmap = null;
+            try {
+                await _semaphoreSlim.WaitAsync();
+                if (_imageBufferHandle is null) {
+                    _imageBufferHandle?.Free();
+                    _imageBufferHandle = GCHandle.Alloc(_imageBuffer, GCHandleType.Pinned);
+                }
+
+                Marshal.Copy(stOutput.pImageWaybill, _imageBuffer, 0, (int)stOutput.nImageWaybillLen);
+                var pImage = _imageBufferHandle.Value.AddrOfPinnedObject();
+                if (MVIDCodeReader.MVID_IMAGE_TYPE.MVID_IMAGE_MONO8 == stOutput.enWaybillImageType) {
+                    bitmap = new Bitmap(1920, 1080, 1920,
+                        PixelFormat.Format8bppIndexed, pImage);
+
+                    var cp = bitmap.Palette;
+                    for (var i = 0; i < 256; i++) {
+                        cp.Entries[i] = System.Drawing.Color.FromArgb(i, i, i);
+                    }
+
+                    bitmap.Palette = cp;
+                }
+                else {
+                    bitmap = new Bitmap(1920, 1080, 1920 * 3,
+                        PixelFormat.Format24bppRgb, pImage);
+                }
+            }
+            catch (Exception e) {
+                OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
+                    Exception = e
+                });
+            }
+            finally {
+                _semaphoreSlim.Release();
+            }
+            return bitmap;
+        }
+
         private async Task<Bitmap?> GetBitmapAsync(MVIDCodeReader.MVID_CAM_OUTPUT_INFO stOutput, IntPtr ptr) {
             /*Bitmap? bitmap = null;
             try {
@@ -799,49 +849,6 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
         }
 
         private async Task<Bitmap?> ConvertPointerToImage(MVIDCodeReader.MVID_IMAGE_INFO pFrameInfo) {
-            /*Bitmap? bitmap = null;
-            try {
-                await _semaphoreSlim.WaitAsync();
-
-                var handle = GCHandle.Alloc(_imageBuffer, GCHandleType.Pinned);
-                Marshal.Copy(pFrameInfo.pImageBuf, _imageBuffer, 0, (int)pFrameInfo.nImageLen);
-                var pImage = handle.AddrOfPinnedObject();
-                if (MVIDCodeReader.MVID_IMAGE_TYPE.MVID_IMAGE_MONO8 == pFrameInfo.enImageType) {
-                    bitmap = new Bitmap(pFrameInfo.nWidth, pFrameInfo.nHeight, pFrameInfo.nWidth,
-                        PixelFormat.Format8bppIndexed, pImage);
-
-                    var cp = bitmap.Palette;
-                    for (var i = 0; i < 256; i++) {
-                        cp.Entries[i] = System.Drawing.Color.FromArgb(i, i, i);
-                    }
-
-                    bitmap.Palette = cp;
-                }
-                else {
-                    bitmap = new Bitmap(pFrameInfo.nWidth, pFrameInfo.nHeight, pFrameInfo.nWidth * 3,
-                        PixelFormat.Format24bppRgb, pImage);
-                }
-
-                if (handle.IsAllocated) {
-                    try {
-                        handle.Free();
-                    }
-                    catch (Exception e) {
-                        OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
-                            Exception = e
-                        });
-                    }
-                }
-            }
-            catch (Exception e) {
-                OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
-                    Exception = e
-                });
-            }
-            finally {
-                _semaphoreSlim.Release();
-            }
-            return bitmap;*/
             Bitmap? bitmap = null;
             try {
                 await _semaphoreSlim.WaitAsync();

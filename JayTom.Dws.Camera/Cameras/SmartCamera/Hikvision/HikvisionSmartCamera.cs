@@ -26,6 +26,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
         private Task? _barcodeThread;
         private Task? _continuousSoftTriggerThread;
         private byte[] _bufForDriver = new byte[1024 * 1024 * 20];
+        private byte[] _bufForWaybill = new byte[1024 * 1024 * 20];
         private MvCodeReader.MV_CODEREADER_DEVICE_INFO _structure;
         private CancellationTokenSource _tokenSource = new();
         private SemaphoreSlim _barCodeSlim = new(1);
@@ -239,6 +240,8 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
 
                     //注册Ocr线程
                     if (this.BindingType is CameraBindingType.OcrCamera) {
+                        nRet = _mvCodeReader.MV_CODEREADER_SetWayBillEnable_NET(true);
+                        NLog.LogManager.GetCurrentClassLogger().Error($"设置抠图:{nRet:X2}");
                         if (Ocr is not null) {
                             var (key, value) = await Ocr.Initialize();
                             if (key) {
@@ -482,6 +485,11 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                                 if (this.BindingType is CameraBindingType.OcrCamera) {
                                     //调用Ocr
                                     //添加图片到识别队列
+                                    //抠图
+                                    /*var bitmapWaybillAsync = await GetBitmapWaybillAsync(_bufForWaybill, stFrameInfoEx2);
+
+                                    bitmapWaybillAsync?.Save($"{System.AppDomain.CurrentDomain.BaseDirectory}{pData:2X}.bmp");*/
+
                                     var bitmap = GenerateThumbnail(bmp, bmp.Width, bmp.Height);
                                     if (bitmap is not null) {
                                         _ocrBitmapQueue.Enqueue(bitmap);
@@ -849,6 +857,47 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
             }
 
             return bmp;
+        }
+
+        private async Task<Bitmap?> GetBitmapWaybillAsync(byte[] imageBuffBytes,
+            MvCodeReader.MV_CODEREADER_IMAGE_OUT_INFO_EX2 stFrameInfoEx2) {
+            await Task.Yield();
+            Bitmap? bmp = null;
+
+            var ptrToStructure = (MvCodeReader.MV_CODEREADER_WAYBILL_INFO)(Marshal.PtrToStructure(
+                                                                               stFrameInfoEx2.pstWaybillList,
+                                                                               typeof(MvCodeReader.
+                                                                                   MV_CODEREADER_WAYBILL_INFO)) ??
+                                                                           new MvCodeReader.
+                                                                               MV_CODEREADER_WAYBILL_INFO());
+
+            NLog.LogManager.GetCurrentClassLogger().Error($"{JsonConvert.SerializeObject(ptrToStructure)}");
+            if (ptrToStructure.pImageWaybill != IntPtr.Zero) {
+                // 绘制图像
+                Marshal.Copy(ptrToStructure.pImageWaybill, imageBuffBytes, 0, (int)stFrameInfoEx2.nFrameLen);
+                switch (stFrameInfoEx2.enPixelType) {
+                    case MvCodeReader.MvCodeReaderGvspPixelType.PixelType_CodeReader_Gvsp_Mono8: {
+                            var pImage = Marshal.UnsafeAddrOfPinnedArrayElement(imageBuffBytes, 0);
+                            bmp = new Bitmap(stFrameInfoEx2.nWidth, stFrameInfoEx2.nHeight, stFrameInfoEx2.nWidth, PixelFormat.Format8bppIndexed, pImage);
+                            var cp = bmp.Palette;
+                            for (var i = 0; i < 256; i++) {
+                                cp.Entries[i] = Color.FromArgb(i, i, i);
+                            }
+                            bmp.Palette = cp;
+                            break;
+                        }
+                    case MvCodeReader.MvCodeReaderGvspPixelType.PixelType_CodeReader_Gvsp_Jpeg: {
+                            GC.Collect();
+                            using var ms = new MemoryStream();
+                            ms.Write(imageBuffBytes, 0, (int)stFrameInfoEx2.nFrameLen);
+                            bmp = new Bitmap(ms);
+                            break;
+                        }
+                }
+                return bmp;
+            }
+
+            return null;
         }
 
         private string GetBarType(MvCodeReader.MV_CODEREADER_CODE_TYPE nBarType) {
