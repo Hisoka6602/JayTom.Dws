@@ -2,9 +2,11 @@
 using System.Net;
 using System.Linq;
 using System.Text;
+using ThridLibray;
 using System.Drawing;
 using JayTom.Dws.Ocr;
 using Newtonsoft.Json;
+using System.Threading;
 using MVIDCodeReaderNet;
 using MvCodeReaderSDKNet;
 using Newtonsoft.Json.Linq;
@@ -30,6 +32,8 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
         private MvCodeReader.MV_CODEREADER_DEVICE_INFO _structure;
         private CancellationTokenSource _tokenSource = new();
         private SemaphoreSlim _barCodeSlim = new(1);
+        private SemaphoreSlim _semaphoreSlim = new(1, 1);
+        private GCHandle? _imageBufferHandle;
 
         /// <summary>
         /// Ocr图像队列
@@ -176,6 +180,29 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                         });
                         return new KeyValuePair<bool, string>(false, $"打开设备失败,{nRet:X}!");
                     }
+                    //获取相机属性
+                    //("Width", ref nIntValue) ?? 0;
+
+                    var nIntValue = new MvCodeReader.MV_CODEREADER_INTVALUE_EX();
+                    nRet = _mvCodeReader.MV_CODEREADER_GetIntValue_NET("Width", ref nIntValue);
+                    if (nRet != MvCodeReader.MV_CODEREADER_OK) {
+                        OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
+                            Exception = new Exception($"初始化失败:获取相机属性值[Width]失败,{nRet:X}")
+                        });
+                        return new KeyValuePair<bool, string>(false, $"获取相机属性值[Width]失败,{nRet:X}!");
+                    }
+                    var nWidth = (int)nIntValue.nCurValue;
+                    nRet = _mvCodeReader.MV_CODEREADER_GetIntValue_NET("Height", ref nIntValue);
+                    if (nRet != MvCodeReader.MV_CODEREADER_OK) {
+                        OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
+                            Exception = new Exception($"初始化失败:获取相机属性值[Height]失败,{nRet:X}")
+                        });
+                        return new KeyValuePair<bool, string>(false, $"获取相机属性值[Height]失败,{nRet:X}!");
+                    }
+                    var nHeight = (int)nIntValue.nCurValue;
+                    _bufForDriver = new byte[nWidth * nHeight * 3 + 4096];
+
+                    //("Width", ref nIntValue)
                     //设置采集模式
                     if (IsUseTriggerMode) {
                         nRet = _mvCodeReader.MV_CODEREADER_SetEnumValue_NET("TriggerMode", (uint)MvCodeReader.MV_CODEREADER_TRIGGER_MODE.MV_CODEREADER_TRIGGER_MODE_ON);
@@ -231,7 +258,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                     if (TriggerMode == TriggerMode.Software) {
                         _continuousSoftTriggerThread = new TaskFactory(TaskCreationOptions.LongRunning,
                                 TaskContinuationOptions.LongRunning)
-                            .StartNew(async () => await ContinuousSoftTrigger(500, _tokenSource.Token));
+                            .StartNew(async () => await ContinuousSoftTrigger(200, _tokenSource.Token));
                     }
 
                     OnCameraInitialized(new CameraInitializedEventArgs() {
@@ -240,8 +267,8 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
 
                     //注册Ocr线程
                     if (this.BindingType is CameraBindingType.OcrCamera) {
-                        nRet = _mvCodeReader.MV_CODEREADER_SetWayBillEnable_NET(true);
-                        NLog.LogManager.GetCurrentClassLogger().Error($"设置抠图:{nRet:X2}");
+                        //nRet = _mvCodeReader.MV_CODEREADER_SetWayBillEnable_NET(true);
+                        //NLog.LogManager.GetCurrentClassLogger().Error($"设置抠图:{nRet:X2}");
                         if (Ocr is not null) {
                             var (key, value) = await Ocr.Initialize();
                             if (key) {
@@ -460,7 +487,6 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                         await Task.Delay(500, token);
                         continue;
                     }
-
                     try {
                         var nRet = _mvCodeReader?.MV_CODEREADER_GetOneFrameTimeoutEx2_NET(ref pData, pstFrameInfoEx2,
                                        1000) ??
@@ -486,13 +512,8 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                                     //调用Ocr
                                     //添加图片到识别队列
                                     //抠图
-                                    /*var bitmapWaybillAsync = await GetBitmapWaybillAsync(_bufForWaybill, stFrameInfoEx2);
-
-                                    bitmapWaybillAsync?.Save($"{System.AppDomain.CurrentDomain.BaseDirectory}{pData:2X}.bmp");*/
-
-                                    var bitmap = GenerateThumbnail(bmp, bmp.Width, bmp.Height);
-                                    if (bitmap is not null) {
-                                        _ocrBitmapQueue.Enqueue(bitmap);
+                                    if (bmp is not null) {
+                                        _ocrBitmapQueue.Enqueue(bmp);
                                     }
                                 }
                                 else {
@@ -598,8 +619,6 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                                 }
                             }
                         }
-
-                        await Task.Delay(10, token);
                     }
                     /*catch (Exception e) {
                         OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
@@ -637,8 +656,9 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                             var tryDequeue = _ocrBitmapQueue.TryDequeue(out var bitmap);
                             if (tryDequeue && bitmap is not null) {
                                 //调用Ocr算法
-                                var thumbnail = GenerateThumbnail(bitmap);
+
                                 var result = Ocr?.ParseOcrResult(bitmap);
+                                var thumbnail = GenerateThumbnail(bitmap);
                                 if (result is not null &&
                                     !string.IsNullOrEmpty(result.BarCode)) {
                                     _ocrBitmapQueue.Clear();
@@ -657,6 +677,9 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                                         result.Thumbnail = thumbnail;
                                         OnOcrContentRecognized(result);
                                     }
+                                }
+                                else {
+                                    NLog.LogManager.GetCurrentClassLogger().Error($"process返回内容为空,图片:{bitmap.Width}x{bitmap.Height}");
                                 }
 
                                 if (IsRealtimeImageEnabled) {
@@ -832,30 +855,44 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
             await Task.Yield();
             Bitmap? bmp = null;
             // 绘制图像
-            Marshal.Copy(pData, imageBuffBytes, 0, (int)stFrameInfoEx2.nFrameLen);
-            switch (stFrameInfoEx2.enPixelType) {
-                case MvCodeReader.MvCodeReaderGvspPixelType.PixelType_CodeReader_Gvsp_Mono8: {
-                        var pImage = Marshal.UnsafeAddrOfPinnedArrayElement(imageBuffBytes, 0);
-                        bmp = new Bitmap(stFrameInfoEx2.nWidth, stFrameInfoEx2.nHeight, stFrameInfoEx2.nWidth, PixelFormat.Format8bppIndexed, pImage);
-                        var cp = bmp.Palette;
-                        for (var i = 0; i < 256; i++) {
-                            cp.Entries[i] = Color.FromArgb(i, i, i);
+            try {
+                await _semaphoreSlim.WaitAsync();
+                Marshal.Copy(pData, imageBuffBytes, 0, (int)stFrameInfoEx2.nFrameLen);
+                switch (stFrameInfoEx2.enPixelType) {
+                    case MvCodeReader.MvCodeReaderGvspPixelType.PixelType_CodeReader_Gvsp_Mono8: {
+                            var pImage = Marshal.UnsafeAddrOfPinnedArrayElement(imageBuffBytes, 0);
+                            bmp = new Bitmap(stFrameInfoEx2.nWidth, stFrameInfoEx2.nHeight, stFrameInfoEx2.nWidth, PixelFormat.Format8bppIndexed, pImage);
+                            var cp = bmp.Palette;
+                            for (var i = 0; i < 256; i++) {
+                                cp.Entries[i] = Color.FromArgb(i, i, i);
+                            }
+                            bmp.Palette = cp;
+                            break;
                         }
-                        bmp.Palette = cp;
-                        break;
-                    }
-                case MvCodeReader.MvCodeReaderGvspPixelType.PixelType_CodeReader_Gvsp_Jpeg: {
-                        GC.Collect();
-                        using var ms = new MemoryStream();
-                        ms.Write(imageBuffBytes, 0, (int)stFrameInfoEx2.nFrameLen);
-                        bmp = new Bitmap(ms);
-                        break;
-                    }
+                    case MvCodeReader.MvCodeReaderGvspPixelType.PixelType_CodeReader_Gvsp_Jpeg: {
+                            using var ms = new MemoryStream();
+                            ms.Write(imageBuffBytes, 0, (int)stFrameInfoEx2.nFrameLen);
+                            bmp = new Bitmap(ms);
+                            bmp = bmp.Clone(new Rectangle(0, 0, bmp.Width, bmp.Height), PixelFormat.Format24bppRgb);
+                            break;
+                            /*var pImage = Marshal.UnsafeAddrOfPinnedArrayElement(imageBuffBytes, 0);
+                            bmp = new Bitmap(stFrameInfoEx2.nWidth, stFrameInfoEx2.nHeight, stFrameInfoEx2.nWidth * 3,
+                                PixelFormat.Format24bppRgb, pImage);
+                            break;*/
+                        }
+                }
+                if (!IsOriginalImageOut) {
+                    bmp = (Bitmap?)GenerateThumbnail(bmp);
+                }
             }
-            if (!IsOriginalImageOut) {
-                bmp = (Bitmap?)GenerateThumbnail(bmp);
+            catch (Exception e) {
+                OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
+                    Exception = e
+                });
             }
-
+            finally {
+                _semaphoreSlim.Release();
+            }
             return bmp;
         }
 

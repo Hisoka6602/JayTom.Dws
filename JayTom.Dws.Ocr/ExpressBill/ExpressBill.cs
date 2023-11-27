@@ -158,14 +158,16 @@ namespace JayTom.Dws.Ocr.ExpressBill {
         public OcrResult? ParseOcrResult(Bitmap bitmap) {
             if (!_isOnline) {
                 try {
+                    var matBgr = new Mat();
                     var submitTimestamp = DateTime.Now;
                     var stopwatch = new Stopwatch();
                     stopwatch.Start();
                     using var stream = new MemoryStream();
-                    stream.Position = 0;
-                    bitmap.Save(stream, System.Drawing.Imaging.ImageFormat.Bmp);
+                    bitmap.Save(stream, System.Drawing.Imaging.ImageFormat.Jpeg);
+                    //stream.Position = 0;
                     var array = stream.ToArray();
-                    var mat = Cv2.ImDecode(array, ImreadModes.Color);
+                    var mat = Cv2.ImDecode(array, ImreadModes.Unchanged);
+                    //Cv2.CvtColor(mat, matBgr, ColorConversionCodes.RGB2BGR);
                     var ptr = process(mat.CvPtr);
 
                     var buf = Marshal.PtrToStringAnsi(ptr);
@@ -182,7 +184,6 @@ namespace JayTom.Dws.Ocr.ExpressBill {
                         NumberHandling = JsonNumberHandling.AllowReadingFromString | JsonNumberHandling.WriteAsString,
                         WriteIndented = false,
                     });
-
                     var recognitionTime = DateTime.Now;
                     var recognitionTimestamp = new DateTimeOffset(recognitionTime).ToUnixTimeMilliseconds();
                     stopwatch.Stop();
@@ -228,7 +229,7 @@ namespace JayTom.Dws.Ocr.ExpressBill {
                         Exception = e,
                         ExceptionTime = DateTime.Now
                     });
-                    NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
+                    NLog.LogManager.GetCurrentClassLogger().Error($"Ocr识别异常:{e}");
                 }
             }
 
@@ -240,6 +241,7 @@ namespace JayTom.Dws.Ocr.ExpressBill {
                 source.ThreeSegmentCode = Regex.Replace(source.ThreeSegmentCode, @"[^0-9-]", "");
                 source.RecipientPhone = Regex.Replace(source.RecipientPhone, @"[^0-9-]", "");
                 source.SenderPhone = Regex.Replace(source.SenderPhone, @"[^0-9-]", "");
+                source.BarCode = Regex.Replace(source.BarCode, @"[^0-9A-Za-z-]", "");
                 return source;
             }
             catch (Exception e) {
@@ -356,10 +358,12 @@ namespace JayTom.Dws.Ocr.ExpressBill {
                 var targetFiles = Directory.GetFiles(targetDirectory);
 
                 // 使用 LINQ 过滤出尚未复制的文件并进行复制
-                var filesToCopy = sourceFiles.Except(targetFiles.Select(Path.GetFileName));
+                var list = sourceFiles?.Select(s => new FileInfo(s).Name)?.ToList()
+                    ?.Except(targetFiles?.Select(s1 => new FileInfo(s1).Name)?.ToList() ?? new List<string>())
+                    ?.ToList() ?? new List<string>();
 
                 // 复制文件
-                foreach (var file in filesToCopy) {
+                foreach (var file in list) {
                     File.Copy(file ?? string.Empty, Path.Combine(targetDirectory, Path.GetFileName(file) ?? string.Empty));
                 }
             }

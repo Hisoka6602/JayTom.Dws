@@ -1,0 +1,51 @@
+﻿{
+    "key_list" : [
+        "bar_code",
+        "waybill_number",
+        "three_segment_code",
+        "recipient_name",
+        "sender_name",
+        "recipient_addr",
+        "sender_addr",
+        "recipient_phone",
+        "sender_phone",
+        "commodity_list",
+        "qr_code",
+        "logo",
+        "is_virtual_number",
+        "virtual_number_last4",
+        "virtual_number"
+    ],
+    "extra_conf" : {
+        "qr_code": {
+            "expand_ratio_x": 0.1,
+            "expand_ratio_y": 0.1,
+            "recg_type": 3
+        },
+        "bar_code": {
+            "expand_ratio_x": 0.1,
+            "expand_ratio_y": 0.1,
+            "if_qrcode_tag" : 1,
+            "recg_type": 3
+        },
+        "waybill_number" : {
+            "expand_ratio_x": 0.05,
+            "expand_ratio_y": 0.1,
+            "recg_type": 0
+        },
+        "recipient_name":{
+       	   "expand_ratio_x": 0.05,
+            "expand_ratio_y": 0.1
+        },
+        "recipient_phone":{
+           "expand_ratio_x": 0.1,
+           "expand_ratio_y": 0.05,
+           "recg_type": 0
+        },
+        "sender_phone":{
+           "expand_ratio_x": 0.05,
+           "expand_ratio_y": 0.1,
+           "recg_type": 0
+        }
+    }
+}

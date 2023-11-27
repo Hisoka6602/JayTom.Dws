@@ -62,10 +62,16 @@
     <None Update="ExpressBill\Lib\Dll\ocrgve.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="ExpressBill\Lib\Dll\ocr_sdk.log">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="ExpressBill\Lib\Dll\onnxruntime.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="ExpressBill\Lib\Dll\openblas.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="ExpressBill\Lib\Dll\OpenCvSharp.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="ExpressBill\Lib\Dll\OpenCvSharpExtern.dll">
@@ -92,34 +98,88 @@
     <None Update="ExpressBill\Lib\license\license.key">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="ExpressBill\Lib\resource\alphabet_43_new.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="ExpressBill\Lib\resource\alphabet_46.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="ExpressBill\Lib\resource\class_conf.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Update="ExpressBill\Lib\resource\configure.ini">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="ExpressBill\Lib\resource\linedetect_23.paddle.encrypted">
+    <None Update="ExpressBill\Lib\resource\config_txt\ocr_model_v1_graph_waybill.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="ExpressBill\Lib\resource\linerecga.paddle.encrypted">
+    <None Update="ExpressBill\Lib\resource\config_txt\table_10784_val">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="ExpressBill\Lib\resource\linerecgb.paddle.encrypted">
+    <None Update="ExpressBill\Lib\resource\config_txt\table_21501_val">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="ExpressBill\Lib\resource\mainclassify.paddle.encrypted">
+    <None Update="ExpressBill\Lib\resource\config_txt\table_eng_95_val_from_shanshan">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="ExpressBill\Lib\resource\maindetect.paddle.encrypted">
+    <None Update="ExpressBill\Lib\resource\data\waybill_data\alphabet_43_new.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="ExpressBill\Lib\resource\ocr_model_v1_graph_waybill.json">
+    <None Update="ExpressBill\Lib\resource\data\waybill_data\class_conf.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="ExpressBill\Lib\resource\data\waybill_data\conf\first_veh_small_money_re.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="ExpressBill\Lib\resource\data\waybill_data\conf\phone_keep_char.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="ExpressBill\Lib\resource\data\waybill_data\conf\phone_replace_char.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="ExpressBill\Lib\resource\data\waybill_data\conf\price_tax_big_blank_names.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="ExpressBill\Lib\resource\data\waybill_data\conf\remove_c.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="ExpressBill\Lib\resource\data\waybill_data\conf\remove_recipient_name.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="ExpressBill\Lib\resource\data\waybill_data\conf\remove_recipient_phone.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="ExpressBill\Lib\resource\data\waybill_data\table_10784_half">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="ExpressBill\Lib\resource\ocrgvesdk_direct.paddle.dpmodel.encrypted">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="ExpressBill\Lib\resource\ocrgvesdk_head.paddle.dpmodel.encrypted">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="ExpressBill\Lib\resource\ocrgvesdk_linedetect.paddle.dpmodel.encrypted">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="ExpressBill\Lib\resource\ocrgvesdk_linedetect.paddle.dpmodel_tmp.encrypted">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="ExpressBill\Lib\resource\ocrgvesdk_linerecga.paddle.dpmodel.encrypted">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="ExpressBill\Lib\resource\ocrgvesdk_linerecgb.paddle.dpmodel.encrypted">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="ExpressBill\Lib\resource\ocrgvesdk_linerecgc.paddle.dpmodel.encrypted">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="ExpressBill\Lib\resource\ocrgvesdk_mainclassify.paddle.dpmodel.encrypted">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="ExpressBill\Lib\resource\ocrgvesdk_maindetect.paddle.dpmodel.encrypted">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="ExpressBill\Lib\resource\ocrgvesdk_postprocess.paddle.dpmodel.encrypted">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="ExpressBill\Lib\resource\ocrgvesdk_qrcode.paddle.dpmodel.encrypted">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="ExpressBill\Lib\resource\ocrgvesdk_quality.paddle.dpmodel.encrypted">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="ExpressBill\Lib\resource\ocrgvesdk_risk.paddle.dpmodel.encrypted">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="ExpressBill\Lib\resource\qrcode.paddle.encrypted">
@@ -132,6 +192,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="ExpressBill\Lib\resource\risk.paddle.encrypted">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="ExpressBill\Lib\resource\segmentdemo_segment.paddle.dpmodel.encrypted">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="ExpressBill\Lib\resource\table_10784_half">
