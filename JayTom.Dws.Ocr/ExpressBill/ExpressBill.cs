@@ -236,6 +236,20 @@ namespace JayTom.Dws.Ocr.ExpressBill {
             return null;
         }
 
+        public OcrContentRecognizedEventArgs GetFilteredResults(OcrContentRecognizedEventArgs source) {
+            try {
+                source.ThreeSegmentCode = Regex.Replace(source.ThreeSegmentCode, @"[^0-9-]", "");
+                source.RecipientPhone = Regex.Replace(source.RecipientPhone, @"[^0-9-]", "");
+                source.SenderPhone = Regex.Replace(source.SenderPhone, @"[^0-9-]", "");
+                source.BarCode = Regex.Replace(source.BarCode, @"[^0-9A-Za-z-]", "");
+                return source;
+            }
+            catch (Exception e) {
+                Console.WriteLine(e);
+            }
+            return source;
+        }
+
         public OcrResult GetFilteredResults(OcrResult source) {
             try {
                 source.ThreeSegmentCode = Regex.Replace(source.ThreeSegmentCode, @"[^0-9-]", "");
@@ -245,24 +259,7 @@ namespace JayTom.Dws.Ocr.ExpressBill {
                 return source;
             }
             catch (Exception e) {
-                OnOcrExceptionOccurred(new OcrExceptionEventArgs() {
-                    Exception = e
-                });
-            }
-            return source;
-        }
-
-        public OcrContentRecognizedEventArgs GetFilteredResults(OcrContentRecognizedEventArgs source) {
-            try {
-                source.ThreeSegmentCode = Regex.Replace(source.ThreeSegmentCode, @"[^0-9-]", "");
-                source.RecipientPhone = Regex.Replace(source.RecipientPhone, @"[^0-9-]", "");
-                source.SenderPhone = Regex.Replace(source.SenderPhone, @"[^0-9-]", "");
-                return source;
-            }
-            catch (Exception e) {
-                OnOcrExceptionOccurred(new OcrExceptionEventArgs() {
-                    Exception = e
-                });
+                Console.WriteLine(e);
             }
             return source;
         }
@@ -389,24 +386,5 @@ namespace JayTom.Dws.Ocr.ExpressBill {
             await Task.Yield();
             OcrContentRecognized?.Invoke(this, e);
         }
-    }
-
-    public class Title {
-        public string? Key { get; set; }
-        public string? Value { get; set; }
-    }
-
-    public class DataItem {
-        public List<double>? Coord { get; set; }
-        public double Score { get; set; }
-        public string? Str { get; set; }
-        public Title? Title { get; set; }
-    }
-
-    public class RootResult {
-        public List<DataItem>? Data { get; set; }
-        public int Errno { get; set; }
-
-        public string? Msg { get; set; }
     }
 }

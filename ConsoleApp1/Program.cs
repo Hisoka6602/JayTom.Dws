@@ -2,6 +2,7 @@
 using JayTom.Dws.Utils;
 using JayTom.Dws.Interface;
 using System.Drawing.Imaging;
+using JayTom.Dws.Interface.JdyWms;
 using Microsoft.Extensions.Hosting;
 using System.Net.NetworkInformation;
 using System.Security.Authentication;
@@ -38,7 +39,7 @@ internal class Program {
                 return handler;
             });
             services.AddHostedService<Worker>();
-            services.AddScoped<IDataUploader, WeciMexicoDvApi>();
+            services.AddScoped<IDataUploader, JdyWmsApi>();
             //services.AddScoped<IPackageUpload, WdtUltimateApi>();
         }).Build().Run();
         Console.WriteLine("Hello, World!");
@@ -52,6 +53,9 @@ internal class Program {
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
+            var uploadData = await _dataUploader.UploadData("1212", 1.2, token: stoppingToken);
+            return;
+
             NetworkInterface[] interfaces = NetworkInterface.GetAllNetworkInterfaces();
 
             foreach (NetworkInterface networkInterface in interfaces) {

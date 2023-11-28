@@ -4,11 +4,13 @@ using System.Text;
 using System.Drawing;
 using Newtonsoft.Json;
 using System.Net.Http;
+using System.Threading;
 using System.Diagnostics;
 using Newtonsoft.Json.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Configuration;
 
 namespace JayTom.Dws.Interface.JdyWms {
 
@@ -21,15 +23,32 @@ namespace JayTom.Dws.Interface.JdyWms {
         /// <summary>
         /// Url
         /// </summary>
-        public string Url { get; private set; } = "https://portal.syspex.com/api/dws-alcon";
+        public string? Url { get; private set; }
 
         /// <summary>
         /// 超时
         /// </summary>
-        public int TimeOut { get; private set; } = 3000;
+        public int? TimeOut { get; private set; }
 
         public JdyWmsApi(IHttpClientFactory httpClientFactory) {
-            _httpClientFactory = httpClientFactory;
+            //读取、设置
+            lock (httpClientFactory) {
+                if (Url is null || TimeOut is null) {
+                    try {
+                        IConfiguration configuration = new ConfigurationBuilder()
+                            .SetBasePath($"{AppContext.BaseDirectory}ApiSettingJson")
+                            .AddJsonFile("JdyApiSetting.json", optional: false, reloadOnChange: true)
+                            .Build();
+                        Url = configuration["Url"];
+                        TimeOut = Convert.ToInt32(configuration["TimeOut"]);
+                    }
+                    catch (Exception e) {
+                        Url = string.Empty;
+                        TimeOut = 3000;
+                    }
+                }
+                _httpClientFactory = httpClientFactory;
+            }
         }
 
         public async Task<UploadResponse> UploadData(string barcode, double weight, double length = default, double width = default, double height = default,
@@ -53,13 +72,13 @@ namespace JayTom.Dws.Interface.JdyWms {
             stopwatch.Start();
             try {
                 using (var httpClient = _httpClientFactory.CreateClient("INSURANCE")) {
-                    httpClient.Timeout = TimeSpan.FromMilliseconds(TimeOut);
+                    httpClient.Timeout = TimeSpan.FromMilliseconds(TimeOut ?? 3000);
                     HttpResponseMessage message;
                     using (Stream dataStream =
                            new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data)))) {
                         using (HttpContent content = new StreamContent(dataStream)) {
                             content.Headers.Add("Content-Type", "application/json");
-                            message = await httpClient.PostAsync(Url, content, token)
+                            message = await httpClient.PostAsync(Url ?? string.Empty, content, token)
                                 .ConfigureAwait(false);
                         }
                     }
@@ -134,13 +153,13 @@ namespace JayTom.Dws.Interface.JdyWms {
             stopwatch.Start();
             try {
                 using (var httpClient = _httpClientFactory.CreateClient("INSURANCE")) {
-                    httpClient.Timeout = TimeSpan.FromMilliseconds(TimeOut);
+                    httpClient.Timeout = TimeSpan.FromMilliseconds(TimeOut ?? 3000);
                     HttpResponseMessage message;
                     using (Stream dataStream =
                            new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data)))) {
                         using (HttpContent content = new StreamContent(dataStream)) {
                             content.Headers.Add("Content-Type", "application/json");
-                            message = await httpClient.PostAsync(Url, content, token)
+                            message = await httpClient.PostAsync(Url ?? string.Empty, content, token)
                                 .ConfigureAwait(false);
                         }
                     }
