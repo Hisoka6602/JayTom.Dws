@@ -44,7 +44,7 @@ namespace JayTom.Dws.Camera {
         /// <summary>
         /// 当OCR识别到内容时触发的事件
         /// </summary>
-        event EventHandler<OcrContentRecognizedEventArgs> OcrContentRecognized;
+        event EventHandler<OcrResult> OcrContentRecognized;
 
         /// <summary>
         /// 设置扫码过滤参数

@@ -26,10 +26,11 @@ using Microsoft.Extensions.FileSystemGlobbing.Internal;
 
 namespace JayTom.Dws.Ocr.ExpressBill {
 
-    public class ExpressBill : IOcr {
-        private SemaphoreSlim _semaphoreSlim = new(1, 1);
+    public sealed class ExpressBill : IDisposable {
         private TimeSpan _recognitionTimeout = TimeSpan.FromSeconds(1);
         private const string DllPath = ".\\ExpressBill\\Lib\\Dll\\ExpressBillApi.dll";
+        private readonly ExpressBillPool _pool;
+        public bool IsExecutingMethod { get; set; }
 
         // sdk初始化
         [DllImport(DllPath, EntryPoint = "init", CharSet = CharSet.Ansi
@@ -46,117 +47,31 @@ namespace JayTom.Dws.Ocr.ExpressBill {
             , CallingConvention = CallingConvention.Cdecl)]
         public static extern void uninit();
 
-        /*[DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-        public static extern bool SetDllDirectory(string lpPathName);*/
-
-        /// <summary>
-        /// 是否在线解析
-        /// </summary>
-        private bool _isOnline = false;
-
-        public ExpressBill() {
+        public ExpressBill(ExpressBillPool pool) {
             //释放文件
-            CopyFiles(".\\ExpressBill\\Lib\\Dll", AppDomain.CurrentDomain.BaseDirectory);
+
+            lock (pool) {
+                //初始化
+
+                _pool = pool;
+                var modelFolder = $"{System.AppDomain.CurrentDomain.BaseDirectory}ExpressBill\\Lib";
+                var n = init(modelFolder);
+                //Ocr初始化异常
+                OcrStatus = n != 0 ? OcrStatus.Uninitialized : OcrStatus.Initialized;
+                NLog.LogManager.GetCurrentClassLogger().Error($"初始化完成:{n}");
+            }
         }
 
         public void Dispose() {
-            uninit();
-            OcrStatus = OcrStatus.Uninitialized;
+            //uninit();
+            _pool?.ReturnObject(this);
         }
 
-        public event EventHandler<OcrExceptionEventArgs>? OcrExceptionOccurred;
+        public OcrStatus OcrStatus { get; private set; } = OcrStatus.Uninitialized;
 
-        public event EventHandler<OcrInitializationExceptionEventArgs>? OcrInitializationExceptionOccurred;
-
-        public event EventHandler<OcrContentRecognizedEventArgs>? OcrContentRecognized;
-
-        public event EventHandler<AuthenticationExceptionEventArgs>? AuthenticationExceptionOccurred;
-
-        public OcrStatus OcrStatus { get; private set; }
-
-        public void SubmitImage(Bitmap bitmap, string cameraSerialNumber = "") {
-            if (!_isOnline) {
-                //本地识别
-                try {
-                    var submitTimestamp = DateTime.Now;
-                    var stopwatch = new Stopwatch();
-                    var matBgr = new Mat();
-                    stopwatch.Start();
-                    using var stream = new MemoryStream();
-                    bitmap.Save(stream, System.Drawing.Imaging.ImageFormat.Bmp);
-                    var array = stream.ToArray();
-                    var mat = Cv2.ImDecode(array, ImreadModes.Unchanged);
-                    Cv2.CvtColor(mat, matBgr, ColorConversionCodes.RGB2BGR);
-                    var ptr = process(matBgr.CvPtr);
-                    var buf = Marshal.PtrToStringAnsi(ptr);
-                    var unescape = Regex.Unescape(buf ?? string.Empty);
-                    var result = System.Text.Json.JsonSerializer.Deserialize<RootResult>(unescape, new JsonSerializerOptions {
-                        ReferenceHandler = ReferenceHandler.Preserve,
-                        PropertyNameCaseInsensitive = true,
-                        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-                        DefaultBufferSize = 8192,
-                        MaxDepth = 4,
-                        AllowTrailingCommas = true,
-                        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-                        NumberHandling = JsonNumberHandling.AllowReadingFromString | JsonNumberHandling.WriteAsString,
-                        WriteIndented = false,
-                    });
-
-                    var recognitionTime = DateTime.Now;
-                    var recognitionTimestamp = new DateTimeOffset(recognitionTime).ToUnixTimeMilliseconds();
-                    stopwatch.Stop();
-                    if (result is not null) {
-                        //回调识别到的内容
-                        OnOcrContentRecognized(GetFilteredResults(new OcrContentRecognizedEventArgs() {
-                            BarCode = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("waybill_number") == true)
-                                ?.Str ?? string.Empty,
-                            BarcodeArea = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("waybill_number") == true)
-                                ?.Coord,
-                            ElapsedTime = stopwatch.ElapsedMilliseconds,
-                            Image = bitmap,
-                            RecipientAddress = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("recipient_addr") == true)
-                                ?.Str ?? string.Empty,
-                            RecipientAddressArea = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("recipient_addr") == true)
-                                ?.Coord,
-                            RecipientName = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("recipient_name") == true)
-                                ?.Str ?? string.Empty,
-                            RecipientPhone = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("recipient_phone") == true)
-                                ?.Str ?? string.Empty,
-                            RecognitionTime = recognitionTime,
-                            RecognitionTimestamp = recognitionTimestamp,
-                            SenderName = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("sender_name") == true)
-                                ?.Str ?? string.Empty,
-                            SenderPhone = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("sender_phone") == true)
-                                ?.Str ?? string.Empty,
-                            SenderAddress = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("sender_addr") == true)
-                                ?.Str ?? string.Empty,
-                            SenderAddressArea = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("sender_addr") == true)
-                                ?.Coord,
-                            ThreeSegmentCode = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("three_segment_code") == true)
-                                ?.Str ?? string.Empty,
-                            ThreeSegmentArea = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("three_segment_code") == true)
-                                ?.Coord,
-                            VirtualNumber = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("virtual_number") == true)
-                                ?.Str ?? string.Empty,
-                            VirtualNumberLast4 = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("virtual_number_last4") == true)?.Str ?? string.Empty,
-                            SubmitTimestamp = new DateTimeOffset(submitTimestamp).ToUnixTimeMilliseconds(),
-                            CameraSerialNumber = cameraSerialNumber,
-                        }));
-                    }
-                }
-                catch (Exception e) {
-                    OnOcrExceptionOccurred(new OcrExceptionEventArgs() {
-                        Exception = e
-                    });
-                }
-            }
-            else {
-                //网络识别
-            }
-        }
-
-        public OcrResult? ParseOcrResult(Bitmap bitmap) {
-            if (!_isOnline) {
+        public async Task<OcrResult?> ParseOcrResult(Bitmap bitmap) {
+            await Task.Yield();
+            if (OcrStatus == OcrStatus.Initialized) {
                 try {
                     var matBgr = new Mat();
                     var submitTimestamp = DateTime.Now;
@@ -195,13 +110,16 @@ namespace JayTom.Dws.Ocr.ExpressBill {
                                 ?.Coord,
                             ElapsedTime = stopwatch.ElapsedMilliseconds,
                             Image = bitmap,
-                            RecipientAddress = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("recipient_addr") == true)
+                            RecipientAddress = result.Data
+                                ?.FirstOrDefault(f => f.Title?.Key?.Equals("recipient_addr") == true)
                                 ?.Str ?? string.Empty,
-                            RecipientAddressArea = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("recipient_addr") == true)
-                            ?.Coord,
+                            RecipientAddressArea = result.Data
+                                ?.FirstOrDefault(f => f.Title?.Key?.Equals("recipient_addr") == true)
+                                ?.Coord,
                             RecipientName = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("recipient_name") == true)
                                 ?.Str ?? string.Empty,
-                            RecipientPhone = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("recipient_phone") == true)
+                            RecipientPhone = result.Data
+                                ?.FirstOrDefault(f => f.Title?.Key?.Equals("recipient_phone") == true)
                                 ?.Str ?? string.Empty,
                             RecognitionTime = recognitionTime,
                             RecognitionTimestamp = recognitionTimestamp,
@@ -211,24 +129,26 @@ namespace JayTom.Dws.Ocr.ExpressBill {
                                 ?.Str ?? string.Empty,
                             SenderAddress = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("sender_addr") == true)
                                 ?.Str ?? string.Empty,
-                            SenderAddressArea = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("sender_addr") == true)
+                            SenderAddressArea = result.Data
+                                ?.FirstOrDefault(f => f.Title?.Key?.Equals("sender_addr") == true)
                                 ?.Coord,
-                            ThreeSegmentCode = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("three_segment_code") == true)
+                            ThreeSegmentCode = result.Data
+                                ?.FirstOrDefault(f => f.Title?.Key?.Equals("three_segment_code") == true)
                                 ?.Str ?? string.Empty,
-                            ThreeSegmentArea = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("three_segment_code") == true)
+                            ThreeSegmentArea = result.Data
+                                ?.FirstOrDefault(f => f.Title?.Key?.Equals("three_segment_code") == true)
                                 ?.Coord,
                             VirtualNumber = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("virtual_number") == true)
                                 ?.Str ?? string.Empty,
-                            VirtualNumberLast4 = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("virtual_number_last4") == true)?.Str ?? string.Empty,
+                            VirtualNumberLast4 =
+                                result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("virtual_number_last4") == true)
+                                    ?.Str ?? string.Empty,
                             SubmitTimestamp = new DateTimeOffset(submitTimestamp).ToUnixTimeMilliseconds(),
+                            IsSuccess = true
                         });
                     }
                 }
                 catch (Exception e) {
-                    OnOcrExceptionOccurred(new OcrExceptionEventArgs() {
-                        Exception = e,
-                        ExceptionTime = DateTime.Now
-                    });
                     NLog.LogManager.GetCurrentClassLogger().Error($"Ocr识别异常:{e}");
                 }
             }
@@ -236,18 +156,96 @@ namespace JayTom.Dws.Ocr.ExpressBill {
             return null;
         }
 
-        public OcrContentRecognizedEventArgs GetFilteredResults(OcrContentRecognizedEventArgs source) {
-            try {
-                source.ThreeSegmentCode = Regex.Replace(source.ThreeSegmentCode, @"[^0-9-]", "");
-                source.RecipientPhone = Regex.Replace(source.RecipientPhone, @"[^0-9-]", "");
-                source.SenderPhone = Regex.Replace(source.SenderPhone, @"[^0-9-]", "");
-                source.BarCode = Regex.Replace(source.BarCode, @"[^0-9A-Za-z-]", "");
-                return source;
+        public async Task<OcrResult?> ParseOcrResult(Bitmap bitmap, string cameraSerialNumber) {
+            await Task.Yield();
+            var submitTimestamp = DateTime.Now;
+            if (OcrStatus == OcrStatus.Initialized) {
+                try {
+                    //var matBgr = new Mat();
+                    var stopwatch = new Stopwatch();
+                    stopwatch.Start();
+                    using var stream = new MemoryStream();
+                    bitmap.Save(stream, System.Drawing.Imaging.ImageFormat.Jpeg);
+                    //stream.Position = 0;
+                    var array = stream.ToArray();
+                    var mat = Cv2.ImDecode(array, ImreadModes.Unchanged);
+                    //Cv2.CvtColor(mat, matBgr, ColorConversionCodes.RGB2BGR);
+                    var ptr = process(mat.CvPtr);
+                    var buf = Marshal.PtrToStringAnsi(ptr);
+                    var unescape = Regex.Unescape(buf ?? string.Empty);
+                    var result = System.Text.Json.JsonSerializer.Deserialize<RootResult>(unescape, new JsonSerializerOptions {
+                        ReferenceHandler = ReferenceHandler.Preserve,
+                        PropertyNameCaseInsensitive = true,
+                        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+                        DefaultBufferSize = 8192,
+                        MaxDepth = 4,
+                        AllowTrailingCommas = true,
+                        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+                        NumberHandling = JsonNumberHandling.AllowReadingFromString | JsonNumberHandling.WriteAsString,
+                        WriteIndented = false,
+                    });
+                    var recognitionTime = DateTime.Now;
+                    var recognitionTimestamp = new DateTimeOffset(recognitionTime).ToUnixTimeMilliseconds();
+                    stopwatch.Stop();
+                    if (result is not null) {
+                        return GetFilteredResults(new OcrResult {
+                            BarCode = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("waybill_number") == true)
+                                ?.Str ?? string.Empty,
+                            BarcodeArea = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("waybill_number") == true)
+                                ?.Coord,
+                            ElapsedTime = stopwatch.ElapsedMilliseconds,
+                            Image = bitmap,
+                            RecipientAddress = result.Data
+                                ?.FirstOrDefault(f => f.Title?.Key?.Equals("recipient_addr") == true)
+                                ?.Str ?? string.Empty,
+                            RecipientAddressArea = result.Data
+                                ?.FirstOrDefault(f => f.Title?.Key?.Equals("recipient_addr") == true)
+                                ?.Coord,
+                            RecipientName = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("recipient_name") == true)
+                                ?.Str ?? string.Empty,
+                            RecipientPhone = result.Data
+                                ?.FirstOrDefault(f => f.Title?.Key?.Equals("recipient_phone") == true)
+                                ?.Str ?? string.Empty,
+                            RecognitionTime = recognitionTime,
+                            RecognitionTimestamp = recognitionTimestamp,
+                            SenderName = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("sender_name") == true)
+                                ?.Str ?? string.Empty,
+                            SenderPhone = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("sender_phone") == true)
+                                ?.Str ?? string.Empty,
+                            SenderAddress = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("sender_addr") == true)
+                                ?.Str ?? string.Empty,
+                            SenderAddressArea = result.Data
+                                ?.FirstOrDefault(f => f.Title?.Key?.Equals("sender_addr") == true)
+                                ?.Coord,
+                            ThreeSegmentCode = result.Data
+                                ?.FirstOrDefault(f => f.Title?.Key?.Equals("three_segment_code") == true)
+                                ?.Str ?? string.Empty,
+                            ThreeSegmentArea = result.Data
+                                ?.FirstOrDefault(f => f.Title?.Key?.Equals("three_segment_code") == true)
+                                ?.Coord,
+                            VirtualNumber = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("virtual_number") == true)
+                                ?.Str ?? string.Empty,
+                            VirtualNumberLast4 =
+                                result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("virtual_number_last4") == true)
+                                    ?.Str ?? string.Empty,
+                            SubmitTimestamp = new DateTimeOffset(submitTimestamp).ToUnixTimeMilliseconds(),
+                            CameraSerialNumber = cameraSerialNumber,
+                            IsSuccess = true
+                        });
+                    }
+                }
+                catch (Exception e) {
+                    NLog.LogManager.GetCurrentClassLogger().Error($"Ocr识别异常:{e}");
+                }
             }
-            catch (Exception e) {
-                Console.WriteLine(e);
-            }
-            return source;
+
+            //识别不成功也需要返回图片
+            return new OcrResult() {
+                ElapsedTime = long.MinValue,
+                Image = bitmap,
+                SubmitTimestamp = new DateTimeOffset(submitTimestamp).ToUnixTimeMilliseconds(),
+                CameraSerialNumber = cameraSerialNumber
+            };
         }
 
         public OcrResult GetFilteredResults(OcrResult source) {
@@ -307,21 +305,12 @@ namespace JayTom.Dws.Ocr.ExpressBill {
                 return new KeyValuePair<bool, string>(true, string.Empty);
             }
             catch (Exception e) {
-                OnOcrExceptionOccurred(new OcrExceptionEventArgs() {
-                    Exception = e,
-                    ExceptionTime = DateTime.Now
-                });
                 return new KeyValuePair<bool, string>(false, e.Message);
             }
         }
 
-        public Task<KeyValuePair<bool, string>> SetRecognitionTimeout(TimeSpan timeout) {
-            _recognitionTimeout = timeout;
-            return Task.FromResult(new KeyValuePair<bool, string>(true, string.Empty));
-        }
-
         public async Task<KeyValuePair<bool, string>> Initialize() {
-            //限制
+            /*//限制
             try {
                 await _semaphoreSlim.WaitAsync();
                 //初始化
@@ -331,11 +320,6 @@ namespace JayTom.Dws.Ocr.ExpressBill {
                 var modelFolder = $"{System.AppDomain.CurrentDomain.BaseDirectory}ExpressBill\\Lib";
                 var n = init(modelFolder);
                 if (n != 0) {
-                    //Ocr初始化异常
-                    OnOcrInitializationExceptionOccurred(new OcrInitializationExceptionEventArgs() {
-                        Exception = new Exception($"sdk init fail and errcode is {n:D}"),
-                        ExceptionTime = DateTime.Now
-                    });
                     return new KeyValuePair<bool, string>(false, $"sdk init fail and errcode is {n:D}");
                 }
                 else {
@@ -345,46 +329,27 @@ namespace JayTom.Dws.Ocr.ExpressBill {
             }
             finally {
                 _semaphoreSlim.Release();
-            }
+            }*/
+            return new KeyValuePair<bool, string>(false, "");
         }
+    }
 
-        private void CopyFiles(string sourceDirectory, string targetDirectory) {
-            try {
-                // 获取源目录和目标目录中的所有文件
-                var sourceFiles = Directory.GetFiles(sourceDirectory);
-                var targetFiles = Directory.GetFiles(targetDirectory);
+    public class Title {
+        public string? Key { get; set; }
+        public string? Value { get; set; }
+    }
 
-                // 使用 LINQ 过滤出尚未复制的文件并进行复制
-                var list = sourceFiles?.Select(s => new FileInfo(s).Name)?.ToList()
-                    ?.Except(targetFiles?.Select(s1 => new FileInfo(s1).Name)?.ToList() ?? new List<string>())
-                    ?.ToList() ?? new List<string>();
+    public class DataItem {
+        public List<double>? Coord { get; set; }
+        public double Score { get; set; }
+        public string? Str { get; set; }
+        public Title? Title { get; set; }
+    }
 
-                // 复制文件
-                foreach (var file in list) {
-                    File.Copy(file ?? string.Empty, Path.Combine(targetDirectory, Path.GetFileName(file) ?? string.Empty));
-                }
-            }
-            catch (Exception e) {
-                OnOcrExceptionOccurred(new OcrExceptionEventArgs() {
-                    Exception = e,
-                    ExceptionTime = DateTime.Now
-                });
-            }
-        }
+    public class RootResult {
+        public List<DataItem>? Data { get; set; }
+        public int Errno { get; set; }
 
-        protected virtual async void OnOcrInitializationExceptionOccurred(OcrInitializationExceptionEventArgs e) {
-            await Task.Yield();
-            OcrInitializationExceptionOccurred?.Invoke(this, e);
-        }
-
-        protected virtual async void OnOcrExceptionOccurred(OcrExceptionEventArgs e) {
-            await Task.Yield();
-            OcrExceptionOccurred?.Invoke(this, e);
-        }
-
-        protected virtual async void OnOcrContentRecognized(OcrContentRecognizedEventArgs e) {
-            await Task.Yield();
-            OcrContentRecognized?.Invoke(this, e);
-        }
+        public string? Msg { get; set; }
     }
 }

@@ -281,7 +281,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
 
         public event EventHandler<BarcodeReadEventArgs>? NotBarcodeHitEvent;
 
-        public event EventHandler<OcrContentRecognizedEventArgs>? OcrContentRecognized;
+        public event EventHandler<OcrResult>? OcrContentRecognized;
 
         public void SetScanCodeFilterParams(ScanCodeFilterParams @params) {
             _barCodeFilterContainer.Pattern = @params.RegularExpression;

@@ -29,21 +29,21 @@ using JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols;
 internal class Program {
 
     private static async Task Main(string[] args) {
-        var expressBill = new ExpressBill();
-        expressBill.OcrContentRecognized += delegate (object? sender, OcrContentRecognizedEventArgs eventArgs) {
+        /*var expressBill = new ExpressBill();
+        expressBill.OcrContentRecognized += delegate (object? sender, OcrResult eventArgs) {
             Console.WriteLine(JsonConvert.SerializeObject(eventArgs, Formatting.Indented));
         };
         var (key1, value1) = await expressBill.Initialize();
         Debug.WriteLine(value1);
         expressBill.SubmitImage((Bitmap)Image.FromFile(".\\images\\1.jpg"));
-        Console.WriteLine(value1);
-        await Task.Delay(TimeSpan.FromSeconds(5));
+        Console.WriteLine(value1);*/
+        /*await Task.Delay(TimeSpan.FromSeconds(5));
         expressBill.Dispose();
         await expressBill.SetOcrParameters(new Dictionary<string, object>()
          {
             { "recipient_name", "aa" }
         });
-        await Task.Delay(TimeSpan.FromSeconds(50));
+        await Task.Delay(TimeSpan.FromSeconds(50));*/
         return;
         var daHuaVolumeCamera = new DaHuaVolumeCamera();
         daHuaVolumeCamera.VolumeCaptured += delegate (object? sender, VolumeCapturedEventArgs eventArgs) {

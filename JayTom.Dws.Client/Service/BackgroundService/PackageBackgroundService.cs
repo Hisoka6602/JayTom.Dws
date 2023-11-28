@@ -21,6 +21,7 @@ using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Client.Service.ExternalDataService;
 
 namespace JayTom.Dws.Client.Service.BackgroundService {
+
     public class PackageBackgroundService : Microsoft.Extensions.Hosting.BackgroundService {
         private readonly IDeviceService _deviceService;
         private readonly IResultOutputService _resultOutputService;
@@ -224,7 +225,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 _packageInfos.Clear();
             };
             //Ocr算法
-            _deviceService.OcrContentRecognized += async delegate (object? sender, OcrContentRecognizedEventArgs args) {
+            _deviceService.OcrContentRecognized += async delegate (object? sender, OcrResult args) {
                 //创建条码
                 if (_communicationsSettingsDto.Type == CommunicationsType.None ||
                     !_communicationsSettingsDto.DeviceControlSettingsInfo.IsUseCreatePackageByDevice) {
@@ -258,7 +259,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         CameraSerialNumber = args.CameraSerialNumber,
                         SubmitTimestamp = args.SubmitTimestamp
                     });
-
                 }
                 else {
                     var info = _packageInfos.OrderBy(o => o.CreateTime).FirstOrDefault(f => f.BarCode == null);
@@ -719,6 +719,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
     }
 
     public class PackageOcrInfo {
+
         /// <summary>
         /// 条码
         /// </summary>
@@ -793,6 +794,5 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         /// 提交图时间
         /// </summary>
         public long SubmitTimestamp { get; set; }
-
     }
 }

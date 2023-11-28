@@ -28,7 +28,6 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
         private Task? _barcodeThread;
         private Task? _continuousSoftTriggerThread;
         private byte[] _bufForDriver = new byte[1024 * 1024 * 20];
-        private byte[] _bufForWaybill = new byte[1024 * 1024 * 20];
         private MvCodeReader.MV_CODEREADER_DEVICE_INFO _structure;
         private CancellationTokenSource _tokenSource = new();
         private SemaphoreSlim _barCodeSlim = new(1);
@@ -42,7 +41,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
 
         private Task? _ocrThread;
         private CancellationTokenSource? _ocrCancellationTokenSource;
-        private SemaphoreSlim _ocrSemaphoreSlim = new(5);
+        private SemaphoreSlim _ocrSemaphoreSlim = new(1);
         private SemaphoreSlim _drawSlim = new(1);
         public CameraInfo? Info { get; private set; } = new();
         private TimeSpan _lockTimeSpan = TimeSpan.FromMilliseconds(500);
@@ -283,6 +282,9 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                                 });
                                 return new KeyValuePair<bool, string>(false, $"Ocr初始化失败:{value}!");
                             }
+
+                            //创建推理回调
+                            Ocr.OcrContentRecognized += OcrOnOcrContentRecognized;
                         }
                         else {
                             OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
@@ -305,6 +307,52 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                     Exception = new Exception("初始化传参类型错误!")
                 });
                 return new KeyValuePair<bool, string>(false, "初始化传参类型错误!");
+            }
+        }
+
+        /// <summary>
+        /// Ocr推理回调
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        /// <exception cref="NotImplementedException"></exception>
+        private async void OcrOnOcrContentRecognized(object? sender, OcrResult e) {
+            await Task.Yield();
+            NLog.LogManager.GetCurrentClassLogger().Error($"相机层接受到:{e.BarCode}");
+            if (e?.Image != null) {
+                var thumbnail = GenerateThumbnail(e.Image);
+                if (!string.IsNullOrEmpty(e.BarCode)) {
+                    //过滤
+                    var validateData = _barCodeFilterContainer.ValidateData(new BarCodeFilterInfo() {
+                        BarCode = e.BarCode,
+                        ScanTime = DateTime.Now
+                    });
+                    if (validateData) {
+                        e.CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty;
+                        //画框
+                        /*if (IsShowBarcodeBorder && thumbnail is not null &&
+                            thumbnail.PixelFormat != PixelFormat.Format8bppIndexed &&
+                            e.IsSuccess) {
+                            //暂时屏蔽画框
+                            thumbnail = await DrawIndicator(thumbnail, new Size(e.Image.Width, e.Image.Height), e);
+                        }*/
+                        e.Thumbnail = thumbnail;
+                        NLog.LogManager.GetCurrentClassLogger().Error($"BarCode：{e.BarCode}");
+                        OnOcrContentRecognized(e);
+                    }
+                    else {
+                        e.Image.Dispose();
+                        if (!IsRealtimeImageEnabled) {
+                            thumbnail?.Dispose();
+                        }
+                    }
+                }
+                if (IsRealtimeImageEnabled) {
+                    OnRealtimeImage(new RealtimeImageEventArgs() {
+                        ThumbImage = thumbnail,
+                        Timestamp = e?.SubmitTimestamp ?? 0
+                    });
+                }
             }
         }
 
@@ -430,7 +478,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
 
         public event EventHandler<BarcodeReadEventArgs>? NotBarcodeHitEvent;
 
-        public event EventHandler<OcrContentRecognizedEventArgs>? OcrContentRecognized;
+        public event EventHandler<OcrResult>? OcrContentRecognized;
 
         public void SetScanCodeFilterParams(ScanCodeFilterParams @params) {
             _barCodeFilterContainer.Pattern = @params.RegularExpression;
@@ -644,52 +692,80 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
         /// </summary>
         /// <param name="token"></param>
         /// <returns></returns>
+        public async Task OcrCallbackThread1(CancellationToken token) {
+            //提交图片
+            await Task.Yield();
+            while (!token.IsCancellationRequested) {
+                //判断信号
+                if (_ocrSemaphoreSlim.CurrentCount > 0) {
+                    Task.Factory.StartNew(async () => {
+                        try {
+                            //这里换成多线程
+                            await _ocrSemaphoreSlim.WaitAsync(token);
+                            var tryDequeue = _ocrBitmapQueue.TryDequeue(out var bitmap);
+                            if (tryDequeue && bitmap is not null) {
+                                //提交图片
+                                Ocr?.SubmitImage(bitmap, this.Info?.SerialNumber ?? string.Empty);
+                            }
+                        }
+                        finally {
+                            _ocrSemaphoreSlim.Release();
+                        }
+                    }, token);
+                }
+
+                await Task.Delay(50, token);
+            }
+        }
+
+        /// <summary>
+        /// Ocr回调处理逻辑
+        /// </summary>
+        /// <param name="token"></param>
+        /// <returns></returns>
         public async Task OcrCallbackThread(CancellationToken token) {
             await Task.Yield();
             while (!token.IsCancellationRequested) {
                 //判断信号
                 if (_ocrSemaphoreSlim.CurrentCount > 0) {
                     try {
-                        await Task.Factory.StartNew(async () => {
-                            //这里换成多线程
-                            await _ocrSemaphoreSlim.WaitAsync(token);
-                            var tryDequeue = _ocrBitmapQueue.TryDequeue(out var bitmap);
-                            if (tryDequeue && bitmap is not null) {
-                                //调用Ocr算法
+                        await _ocrSemaphoreSlim.WaitAsync(token);
+                        var tryDequeue = _ocrBitmapQueue.TryDequeue(out var bitmap);
+                        if (tryDequeue && bitmap is not null) {
+                            //调用Ocr算法
 
-                                var result = Ocr?.ParseOcrResult(bitmap);
-                                var thumbnail = GenerateThumbnail(bitmap);
-                                if (result is not null &&
-                                    !string.IsNullOrEmpty(result.BarCode)) {
-                                    _ocrBitmapQueue.Clear();
-                                    //过滤
-                                    var validateData = _barCodeFilterContainer.ValidateData(new BarCodeFilterInfo() {
-                                        BarCode = result.BarCode,
-                                        ScanTime = DateTime.Now
-                                    });
-                                    if (validateData) {
-                                        result.CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty;
-                                        //画框
-                                        if (IsShowBarcodeBorder && thumbnail is not null && thumbnail.PixelFormat != PixelFormat.Format8bppIndexed) {
-                                            //暂时屏蔽画框
-                                            thumbnail = await DrawIndicator(thumbnail, new Size(bitmap.Width, bitmap.Height), result);
-                                        }
-                                        result.Thumbnail = thumbnail;
-                                        OnOcrContentRecognized(result);
+                            var result = await Ocr?.ParseOcrResult(bitmap)!;
+                            var thumbnail = GenerateThumbnail(bitmap);
+                            if (result is not null &&
+                                !string.IsNullOrEmpty(result.BarCode)) {
+                                _ocrBitmapQueue.Clear();
+                                //过滤
+                                var validateData = _barCodeFilterContainer.ValidateData(new BarCodeFilterInfo() {
+                                    BarCode = result.BarCode,
+                                    ScanTime = DateTime.Now
+                                });
+                                if (validateData) {
+                                    result.CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty;
+                                    //画框
+                                    if (IsShowBarcodeBorder && thumbnail is not null && thumbnail.PixelFormat != PixelFormat.Format8bppIndexed) {
+                                        //暂时屏蔽画框
+                                        thumbnail = await DrawIndicator(thumbnail, new Size(bitmap.Width, bitmap.Height), result);
                                     }
-                                }
-                                else {
-                                    NLog.LogManager.GetCurrentClassLogger().Error($"process返回内容为空,图片:{bitmap.Width}x{bitmap.Height}");
-                                }
-
-                                if (IsRealtimeImageEnabled) {
-                                    OnRealtimeImage(new RealtimeImageEventArgs() {
-                                        ThumbImage = thumbnail,
-                                        Timestamp = result?.SubmitTimestamp ?? 0
-                                    });
+                                    result.Thumbnail = thumbnail;
+                                    OnOcrContentRecognized(result);
                                 }
                             }
-                        }, token);
+                            else {
+                                NLog.LogManager.GetCurrentClassLogger().Error($"process返回内容为空,图片:{bitmap.Width}x{bitmap.Height}");
+                            }
+
+                            if (IsRealtimeImageEnabled) {
+                                OnRealtimeImage(new RealtimeImageEventArgs() {
+                                    ThumbImage = thumbnail,
+                                    Timestamp = result?.SubmitTimestamp ?? 0
+                                });
+                            }
+                        }
                     }
                     finally {
                         _ocrSemaphoreSlim.Release();
@@ -710,11 +786,10 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                 result.SenderAddressArea ?? new List<double>()
             };
 
-            sortedAreas.Sort((a, b) => a[1].CompareTo(b[1])); // 根据Y轴值进行排序
-
             var yOffset = 30; // 初始偏移量
             try {
                 await _drawSlim.WaitAsync();
+                sortedAreas.Sort((a, b) => a[1].CompareTo(b[1])); // 根据Y轴值进行排序
                 using var g = Graphics.FromImage(thumbnail);
                 foreach (var area in sortedAreas.Where(area => !(area[1] <= 0) && !string.IsNullOrEmpty(GetTextForArea(result, area)))) {
                     // 绘制指示器和文本
@@ -722,11 +797,11 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
 
                     yOffset += 40; // 每个指示器之间的间隔为40
                 }
-                return thumbnail;
             }
             finally {
                 _drawSlim.Release();
             }
+            return thumbnail;
         }
 
         private Color GetColorForArea(OcrResult result, List<double> area) {
@@ -1095,7 +1170,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
             }
         }
 
-        protected virtual async void OnOcrContentRecognized(OcrContentRecognizedEventArgs e) {
+        protected virtual async void OnOcrContentRecognized(OcrResult e) {
             await Task.Yield();
             OcrContentRecognized?.Invoke(this, e);
         }

@@ -1,14 +1,15 @@
-﻿using System;
-using System.Drawing;
-using JayTom.Dws.Ocr;
-using System.Threading;
-using JayTom.Dws.Camera;
-using System.Threading.Tasks;
-using JayTom.Dws.Plugin.Scale;
-using System.Collections.Generic;
+﻿using JayTom.Dws.Camera;
 using JayTom.Dws.Client.Models.Cameras;
+using JayTom.Dws.Ocr;
+using JayTom.Dws.Plugin.Scale;
+using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace JayTom.Dws.Client.Service.Device {
+
     public interface IDeviceService {
 
         /// <summary>
@@ -127,7 +128,6 @@ namespace JayTom.Dws.Client.Service.Device {
         /// </summary>
         event EventHandler<ScaleConnectedEventArgs> ScaleConnected;
 
-
         //Ocr相关
 
         /// <summary>
@@ -143,17 +143,12 @@ namespace JayTom.Dws.Client.Service.Device {
         /// <summary>
         /// 当OCR识别到内容时触发的事件
         /// </summary>
-        event EventHandler<OcrContentRecognizedEventArgs> OcrContentRecognized;
+        event EventHandler<OcrResult> OcrContentRecognized;
 
         /// <summary>
         /// 当发生鉴权异常时触发的事件
         /// </summary>
         event EventHandler<AuthenticationExceptionEventArgs> AuthenticationExceptionOccurred;
-
-
-
-
-
 
         /// <summary>
         /// 当磅秤断开连接时触发的事件

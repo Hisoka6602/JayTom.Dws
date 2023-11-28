@@ -319,7 +319,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                             if (tryDequeue && bitmap is not null) {
                                 //调用Ocr算法
                                 var thumbnail = GenerateThumbnail(bitmap);
-                                var result = Ocr?.ParseOcrResult(bitmap);
+                                var result = await Ocr?.ParseOcrResult(bitmap)!;
                                 if (result is not null &&
                                     !string.IsNullOrEmpty(result.BarCode)) {
                                     _ocrBitmapQueue.Clear();
@@ -523,7 +523,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
 
         public event EventHandler<BarcodeReadEventArgs>? BarcodeRead;
 
-        public event EventHandler<OcrContentRecognizedEventArgs>? OcrContentRecognized;
+        public event EventHandler<OcrResult>? OcrContentRecognized;
 
         public event EventHandler<RealtimeImageEventArgs>? RealtimeImage;
 
@@ -1106,7 +1106,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
             }
         }
 
-        protected virtual async void OnOcrContentRecognized(OcrContentRecognizedEventArgs e) {
+        protected virtual async void OnOcrContentRecognized(OcrResult e) {
             await Task.Yield();
             OcrContentRecognized?.Invoke(this, e);
         }

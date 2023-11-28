@@ -88,7 +88,7 @@ namespace JayTom.Dws.Interface.JdyWms {
                     if (!string.IsNullOrWhiteSpace(resultContent)) {
                         //判断
                         var jObject = JObject.Parse(resultContent);
-                        if (jObject["result"]?.ToString()?.ToUpper()?.Equals("true") == true) {
+                        if (jObject["result"]?.ToString()?.ToLower()?.Equals("true") == true) {
                             isSuccess = true;
                         }
                     }
@@ -169,7 +169,7 @@ namespace JayTom.Dws.Interface.JdyWms {
                     if (!string.IsNullOrWhiteSpace(resultContent)) {
                         //判断
                         var jObject = JObject.Parse(resultContent);
-                        if (jObject["result"]?.ToString()?.ToUpper()?.Equals("true") == true) {
+                        if (jObject["result"]?.ToString()?.ToLower()?.Equals("true") == true) {
                             isSuccess = true;
                         }
                     }

@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Windows.Media.Imaging;
 
 namespace JayTom.Dws.Ocr {
+
     public interface IOcr : IDisposable {
 
         /// <summary>
@@ -22,7 +23,7 @@ namespace JayTom.Dws.Ocr {
         /// <summary>
         /// 当OCR识别到内容时触发的事件
         /// </summary>
-        event EventHandler<OcrContentRecognizedEventArgs> OcrContentRecognized;
+        event EventHandler<OcrResult> OcrContentRecognized;
 
         /// <summary>
         /// 当发生鉴权异常时触发的事件
@@ -46,19 +47,21 @@ namespace JayTom.Dws.Ocr {
         /// </summary>
         /// <param name="imageBytes"></param>
         /// <returns></returns>
-        OcrResult? ParseOcrResult(Bitmap imageBytes);
+        Task<OcrResult?> ParseOcrResult(Bitmap imageBytes);
 
         /// <summary>
         /// 设置OCR参数
         /// </summary>
         /// <param name="parameters"></param>
         Task<KeyValuePair<bool, string>> SetOcrParameters(Dictionary<string, object> parameters);
+
         /// <summary>
         /// 设置解析超时时间
         /// </summary>
         /// <param name="timeout"></param>
         /// <returns></returns>
         Task<KeyValuePair<bool, string>> SetRecognitionTimeout(TimeSpan timeout);
+
         /// <summary>
         /// 初始化
         /// </summary>
@@ -122,7 +125,7 @@ namespace JayTom.Dws.Ocr {
         // 添加与OCR初始化异常相关的任何必要属性或信息
     }
 
-    public class OcrContentRecognizedEventArgs : EventArgs {
+    public class OcrResult : EventArgs {
 
         /// <summary>
         /// 条码
@@ -228,9 +231,12 @@ namespace JayTom.Dws.Ocr {
         /// 寄件人地址区域
         /// </summary>
         public List<double>? SenderAddressArea { get; set; }
-    }
 
-    public class OcrResult : OcrContentRecognizedEventArgs { }
+        /// <summary>
+        /// 是否成功
+        /// </summary>
+        public bool IsSuccess { get; set; }
+    }
 
     public class AuthenticationExceptionEventArgs : OcrExceptionEventArgs {
         // 添加与鉴权异常相关的任何必要属性或信息

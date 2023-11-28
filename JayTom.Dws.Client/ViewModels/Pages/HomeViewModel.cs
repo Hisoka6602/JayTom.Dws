@@ -506,7 +506,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="args"></param>
-        private async void DeviceServiceOnOcrContentRecognized(object? sender, OcrContentRecognizedEventArgs args) {
+        private async void DeviceServiceOnOcrContentRecognized(object? sender, OcrResult args) {
             //更新图片
 
             var model = CameraItems.FirstOrDefault(f => f.SerialNumber.Equals(args.CameraSerialNumber) &&

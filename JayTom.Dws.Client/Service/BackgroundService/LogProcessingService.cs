@@ -251,7 +251,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 });
             };
             //Ocr
-            _deviceService.OcrContentRecognized += delegate (object? sender, OcrContentRecognizedEventArgs args) {
+            _deviceService.OcrContentRecognized += delegate (object? sender, OcrResult args) {
                 EventAggregator.Instance.Publish(new OcrLogInfoModel() {
                     Type = LogType.Information,
                     Message = $"Ocr获取到条码[{args.BarCode}]",

@@ -281,7 +281,7 @@ namespace JayTom.Dws.Client {
                 //设备注册
                 services.AddScoped<ICamera, HikvisionSmartCamera>();
                 //Ocr
-                services.AddScoped<IOcr, ExpressBill>();
+                services.AddScoped<IOcr, ExpressBillOcr>();
                 //磅秤
                 services.AddScoped<IDynamicScale, DefaultDynamicScale>();
                 services.AddScoped<IStaticScale, DefaultStaticScale>();

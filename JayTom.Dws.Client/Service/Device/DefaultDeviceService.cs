@@ -329,7 +329,7 @@ namespace JayTom.Dws.Client.Service.Device {
 
         public event EventHandler<OcrInitializationExceptionEventArgs>? OcrInitializationExceptionOccurred;
 
-        public event EventHandler<OcrContentRecognizedEventArgs>? OcrContentRecognized;
+        public event EventHandler<OcrResult>? OcrContentRecognized;
 
         public event EventHandler<AuthenticationExceptionEventArgs>? AuthenticationExceptionOccurred;
 
@@ -349,7 +349,8 @@ namespace JayTom.Dws.Client.Service.Device {
             //启动(逐个相机启动)
             foreach (var camera in _cameras.OrderByDescending(o => o.BindingType)) {
                 //设置过滤
-                if (camera.BindingType == CameraBindingType.ScannerCamera) {
+                if (camera.BindingType == CameraBindingType.ScannerCamera ||
+                    camera.BindingType == CameraBindingType.OcrCamera) {
                     if (camera is IIndustrialCamera industrialCamera) {
                         industrialCamera.SetScanCodeFilterParams(new ScanCodeFilterParams() {
                             DuplicateBarcodeFilterCount = _barcodeFilterSettingsDto?.DuplicateBarcodeFilterCount ?? 0,
@@ -570,7 +571,7 @@ namespace JayTom.Dws.Client.Service.Device {
                                         OnBarcodeScanned(args);
                                     };
                                     industrialCamera.OcrContentRecognized += delegate (object? sender,
-                                        OcrContentRecognizedEventArgs args) {
+                                        OcrResult args) {
                                             OnOcrContentRecognized(args);
                                         };
                                     var isShowRealTimeImage = scannerCameraConfigInfoModels?.FirstOrDefault(f =>
@@ -594,7 +595,7 @@ namespace JayTom.Dws.Client.Service.Device {
                                         OnNotBarcodeHitEvent(args);
                                     };
                                     smartCamera.OcrContentRecognized += delegate (object? sender,
-                                        OcrContentRecognizedEventArgs args) {
+                                        OcrResult args) {
                                             OnOcrContentRecognized(args);
                                         };
                                     try {
@@ -932,7 +933,7 @@ namespace JayTom.Dws.Client.Service.Device {
             OcrInitializationExceptionOccurred?.Invoke(this, e);
         }
 
-        protected virtual async void OnOcrContentRecognized(OcrContentRecognizedEventArgs e) {
+        protected virtual async void OnOcrContentRecognized(OcrResult e) {
             await Task.Yield();
             OcrContentRecognized?.Invoke(this, e);
         }
