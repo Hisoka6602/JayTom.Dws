@@ -347,6 +347,12 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                         }
                     }
                 }
+                else {
+                    e.Image.Dispose();
+                    if (!IsRealtimeImageEnabled) {
+                        thumbnail?.Dispose();
+                    }
+                }
                 if (IsRealtimeImageEnabled) {
                     OnRealtimeImage(new RealtimeImageEventArgs() {
                         ThumbImage = thumbnail,
@@ -642,6 +648,12 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                                                     });
                                                 }
                                             }
+                                            else {
+                                                bmp?.Dispose();
+                                                if (!IsRealtimeImageEnabled) {
+                                                    thumbnailImage?.Dispose();
+                                                }
+                                            }
 
                                             await Task.Delay(1, token);
                                         }
@@ -734,7 +746,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                         if (tryDequeue && bitmap is not null) {
                             //调用Ocr算法
 
-                            var result = await Ocr?.ParseOcrResult(bitmap)!;
+                            var result = Ocr?.ParseOcrResult(bitmap);
                             var thumbnail = GenerateThumbnail(bitmap);
                             if (result is not null &&
                                 !string.IsNullOrEmpty(result.BarCode)) {
@@ -754,9 +766,18 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                                     result.Thumbnail = thumbnail;
                                     OnOcrContentRecognized(result);
                                 }
+                                else {
+                                    result?.Image?.Dispose();
+                                    if (!IsRealtimeImageEnabled) {
+                                        thumbnail?.Dispose();
+                                    }
+                                }
                             }
                             else {
-                                NLog.LogManager.GetCurrentClassLogger().Error($"process返回内容为空,图片:{bitmap.Width}x{bitmap.Height}");
+                                result?.Image?.Dispose();
+                                if (!IsRealtimeImageEnabled) {
+                                    thumbnail?.Dispose();
+                                }
                             }
 
                             if (IsRealtimeImageEnabled) {

@@ -69,12 +69,13 @@ namespace JayTom.Dws.Ocr.ExpressBill {
 
         public OcrStatus OcrStatus { get; private set; } = OcrStatus.Uninitialized;
 
-        public async Task<OcrResult?> ParseOcrResult(Bitmap bitmap) {
+        public async Task<OcrResult?> ParseOcrResultAsync(Bitmap bitmap) {
             await Task.Yield();
+            var submitTimestamp = DateTime.Now;
             if (OcrStatus == OcrStatus.Initialized) {
                 try {
                     var matBgr = new Mat();
-                    var submitTimestamp = DateTime.Now;
+
                     var stopwatch = new Stopwatch();
                     stopwatch.Start();
                     using var stream = new MemoryStream();
@@ -153,7 +154,104 @@ namespace JayTom.Dws.Ocr.ExpressBill {
                 }
             }
 
-            return null;
+            //识别不成功也需要返回图片
+            return new OcrResult() {
+                ElapsedTime = long.MinValue,
+                Image = bitmap,
+                SubmitTimestamp = new DateTimeOffset(submitTimestamp).ToUnixTimeMilliseconds(),
+            };
+        }
+
+        public OcrResult? ParseOcrResult(Bitmap bitmap) {
+            var submitTimestamp = DateTime.Now;
+            if (OcrStatus == OcrStatus.Initialized) {
+                try {
+                    var matBgr = new Mat();
+
+                    var stopwatch = new Stopwatch();
+                    stopwatch.Start();
+                    using var stream = new MemoryStream();
+                    bitmap.Save(stream, System.Drawing.Imaging.ImageFormat.Jpeg);
+                    //stream.Position = 0;
+                    var array = stream.ToArray();
+                    var mat = Cv2.ImDecode(array, ImreadModes.Unchanged);
+                    //Cv2.CvtColor(mat, matBgr, ColorConversionCodes.RGB2BGR);
+                    var ptr = process(mat.CvPtr);
+
+                    var buf = Marshal.PtrToStringAnsi(ptr);
+
+                    var unescape = Regex.Unescape(buf ?? string.Empty);
+                    var result = System.Text.Json.JsonSerializer.Deserialize<RootResult>(unescape, new JsonSerializerOptions {
+                        ReferenceHandler = ReferenceHandler.Preserve,
+                        PropertyNameCaseInsensitive = true,
+                        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+                        DefaultBufferSize = 8192,
+                        MaxDepth = 4,
+                        AllowTrailingCommas = true,
+                        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+                        NumberHandling = JsonNumberHandling.AllowReadingFromString | JsonNumberHandling.WriteAsString,
+                        WriteIndented = false,
+                    });
+                    var recognitionTime = DateTime.Now;
+                    var recognitionTimestamp = new DateTimeOffset(recognitionTime).ToUnixTimeMilliseconds();
+                    stopwatch.Stop();
+                    if (result is not null) {
+                        return GetFilteredResults(new OcrResult {
+                            BarCode = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("waybill_number") == true)
+                                ?.Str ?? string.Empty,
+                            BarcodeArea = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("waybill_number") == true)
+                                ?.Coord,
+                            ElapsedTime = stopwatch.ElapsedMilliseconds,
+                            Image = bitmap,
+                            RecipientAddress = result.Data
+                                ?.FirstOrDefault(f => f.Title?.Key?.Equals("recipient_addr") == true)
+                                ?.Str ?? string.Empty,
+                            RecipientAddressArea = result.Data
+                                ?.FirstOrDefault(f => f.Title?.Key?.Equals("recipient_addr") == true)
+                                ?.Coord,
+                            RecipientName = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("recipient_name") == true)
+                                ?.Str ?? string.Empty,
+                            RecipientPhone = result.Data
+                                ?.FirstOrDefault(f => f.Title?.Key?.Equals("recipient_phone") == true)
+                                ?.Str ?? string.Empty,
+                            RecognitionTime = recognitionTime,
+                            RecognitionTimestamp = recognitionTimestamp,
+                            SenderName = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("sender_name") == true)
+                                ?.Str ?? string.Empty,
+                            SenderPhone = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("sender_phone") == true)
+                                ?.Str ?? string.Empty,
+                            SenderAddress = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("sender_addr") == true)
+                                ?.Str ?? string.Empty,
+                            SenderAddressArea = result.Data
+                                ?.FirstOrDefault(f => f.Title?.Key?.Equals("sender_addr") == true)
+                                ?.Coord,
+                            ThreeSegmentCode = result.Data
+                                ?.FirstOrDefault(f => f.Title?.Key?.Equals("three_segment_code") == true)
+                                ?.Str ?? string.Empty,
+                            ThreeSegmentArea = result.Data
+                                ?.FirstOrDefault(f => f.Title?.Key?.Equals("three_segment_code") == true)
+                                ?.Coord,
+                            VirtualNumber = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("virtual_number") == true)
+                                ?.Str ?? string.Empty,
+                            VirtualNumberLast4 =
+                                result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("virtual_number_last4") == true)
+                                    ?.Str ?? string.Empty,
+                            SubmitTimestamp = new DateTimeOffset(submitTimestamp).ToUnixTimeMilliseconds(),
+                            IsSuccess = true
+                        });
+                    }
+                }
+                catch (Exception e) {
+                    NLog.LogManager.GetCurrentClassLogger().Error($"Ocr识别异常:{e}");
+                }
+            }
+
+            //识别不成功也需要返回图片
+            return new OcrResult() {
+                ElapsedTime = long.MinValue,
+                Image = bitmap,
+                SubmitTimestamp = new DateTimeOffset(submitTimestamp).ToUnixTimeMilliseconds(),
+            };
         }
 
         public async Task<OcrResult?> ParseOcrResult(Bitmap bitmap, string cameraSerialNumber) {

@@ -71,15 +71,28 @@ namespace JayTom.Dws.Ocr.ExpressBill {
             }
         }
 
-        public Task<OcrResult?> ParseOcrResult(Bitmap imageBytes) {
+        public async Task<OcrResult?> ParseOcrResultAsync(Bitmap imageBytes) {
+            try {
+                using (var expressBill = _expressBillPool.GetObject()) {
+                    if (expressBill is not null && expressBill.OcrStatus is not OcrStatus.Uninitialized) {
+                        //识别
+                        return await expressBill.ParseOcrResultAsync(imageBytes);
+                    }
+                }
+            }
+            catch (Exception e) {
+                NLog.LogManager.GetCurrentClassLogger().Error($"ParseOcrResult方法异常:{e}");
+            }
+
+            return null;
+        }
+
+        public OcrResult? ParseOcrResult(Bitmap imageBytes) {
             try {
                 using (var expressBill = _expressBillPool.GetObject()) {
                     if (expressBill is not null && expressBill.OcrStatus is not OcrStatus.Uninitialized) {
                         //识别
                         return expressBill.ParseOcrResult(imageBytes);
-                    }
-                    else {
-                        NLog.LogManager.GetCurrentClassLogger().Error($"expressBill对象已消耗完");
                     }
                 }
             }

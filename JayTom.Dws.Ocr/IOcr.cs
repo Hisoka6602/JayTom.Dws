@@ -47,7 +47,14 @@ namespace JayTom.Dws.Ocr {
         /// </summary>
         /// <param name="imageBytes"></param>
         /// <returns></returns>
-        Task<OcrResult?> ParseOcrResult(Bitmap imageBytes);
+        OcrResult? ParseOcrResult(Bitmap imageBytes);
+
+        /// <summary>
+        /// 解析Ocr
+        /// </summary>
+        /// <param name="imageBytes"></param>
+        /// <returns></returns>
+        Task<OcrResult?> ParseOcrResultAsync(Bitmap imageBytes);
 
         /// <summary>
         /// 设置OCR参数

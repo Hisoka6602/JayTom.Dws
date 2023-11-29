@@ -56,6 +56,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
         private MVIDCodeReader.cbImageBufferdelegate? _readImageCallback = null;
         private double FrameRate { get; set; }
         private GCHandle? _imageBufferHandle;
+        private int _ocrMissCount = 0;
 
         /// <summary>
         /// Ocr图像队列
@@ -319,9 +320,10 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                             if (tryDequeue && bitmap is not null) {
                                 //调用Ocr算法
                                 var thumbnail = GenerateThumbnail(bitmap);
-                                var result = await Ocr?.ParseOcrResult(bitmap)!;
+                                var result = Ocr?.ParseOcrResult(bitmap);
                                 if (result is not null &&
                                     !string.IsNullOrEmpty(result.BarCode)) {
+                                    _ocrMissCount = 0;
                                     _ocrBitmapQueue.Clear();
                                     //过滤
                                     var validateData = _barCodeFilterContainer.ValidateData(new BarCodeFilterInfo() {
@@ -337,6 +339,24 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                                         }
                                         result.Thumbnail = thumbnail;
                                         OnOcrContentRecognized(result);
+                                    }
+                                    else {
+                                        result?.Image?.Dispose();
+                                        if (!IsRealtimeImageEnabled) {
+                                            thumbnail?.Dispose();
+                                        }
+                                    }
+                                }
+                                else {
+                                    result?.Image?.Dispose();
+                                    if (!IsRealtimeImageEnabled) {
+                                        thumbnail?.Dispose();
+                                    }
+
+                                    _ocrMissCount += 1;
+                                    if (_ocrMissCount > 3) {
+                                        //保持清空
+                                        _ocrBitmapQueue.Clear();
                                     }
                                 }
 
@@ -774,6 +794,12 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                         }
 
                         await Task.Delay(1);
+                    }
+                }
+                else {
+                    bitmap?.Dispose();
+                    if (!IsRealtimeImageEnabled) {
+                        thumbnailImage?.Dispose();
                     }
                 }
                 if (IsRealtimeImageEnabled) {
