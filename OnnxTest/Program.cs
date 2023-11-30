@@ -57,8 +57,6 @@ internal class Program {
         var images = Path.Combine(assetsPath, "images", "image.jpg");
         var outputFolder = Path.Combine(assetsPath, "images", "output");
 
-        var mlContext = new MLContext();
-
         try {
             // 加载模型
             using (var session = new InferenceSession(modelFilePath)) {
@@ -243,11 +241,11 @@ internal class Program {
         float scale = 1;
         var imageData = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height),
             ImageLockMode.ReadOnly, PixelFormat.Format24bppRgb);
-        int stride = imageData.Stride;  // 每一行的字节数
-        IntPtr scan0 = imageData.Scan0;  // 第一个像素的内存地址
+        var stride = imageData.Stride;  // 每一行的字节数
+        var scan0 = imageData.Scan0;  // 第一个像素的内存地址
 
         // 用基本的 float 类型模拟与 DenseTensor 维度相同的数组，并进行写入，如 {3, 640, 640}
-        float[,,] temporaryData = new float[tensorInfo[1], tensorInfo[2], tensorInfo[3]];
+        var temporaryData = new float[tensorInfo[1], tensorInfo[2], tensorInfo[3]];
         float scaledImageWidth = imageData.Width;
         float scaledImageHeight = imageData.Height;
 
