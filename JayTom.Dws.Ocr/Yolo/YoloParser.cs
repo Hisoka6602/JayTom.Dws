@@ -16,7 +16,7 @@ using System.Text.RegularExpressions;
 using System.Runtime.InteropServices;
 using Microsoft.ML.OnnxRuntime.Tensors;
 
-namespace JayTom.Dws.Ocr {
+namespace JayTom.Dws.Ocr.Yolo {
 
     public class YoloParser : IDisposable {
         private List<string> _lables = new();
@@ -235,6 +235,7 @@ namespace JayTom.Dws.Ocr {
                 }
 
                 var yoloDatas = RestoreCoordinates(finalResultData, _scale);
+                yoloDatas = RestoreCenterCoordinates(yoloDatas);
                 stopwatch.Stop();
                 return yoloDatas.Select(s => new YoloInfo() {
                     Label = _lables?[(int)s.BasicData[5]] ?? string.Empty,
@@ -251,6 +252,17 @@ namespace JayTom.Dws.Ocr {
             }
 
             return new List<YoloInfo>();
+        }
+
+        private List<YoloData> RestoreCenterCoordinates(List<YoloData> dataList) {
+            if (dataList.Count > 0 && dataList[0]?.BasicData?.Length > 2) {
+                foreach (var t in dataList.Where(t => t.BasicData != null)) {
+                    if (t.BasicData == null) continue;
+                    t.BasicData[0] = t.BasicData[0] - t.BasicData[2] / 2;
+                    t.BasicData[1] = t.BasicData[1] - t.BasicData[3] / 2;
+                }
+            }
+            return dataList;
         }
 
         private List<YoloData> NMSFilter(List<YoloData> initialFilterArray, float iouThreshold, bool globalIoU) {
@@ -329,7 +341,7 @@ namespace JayTom.Dws.Ocr {
             // 图片宽和高只要有一个比张量的宽高大，就说明要缩放
             if (scaledImageWidth > tensorWidth || scaledImageHeight > tensorHeight) {
                 // 图片更大要缩放
-                _scale = (tensorWidth / scaledImageWidth) < (tensorHeight / scaledImageHeight) ? (tensorWidth / scaledImageWidth) : (tensorHeight / scaledImageHeight);
+                _scale = tensorWidth / scaledImageWidth < tensorHeight / scaledImageHeight ? tensorWidth / scaledImageWidth : tensorHeight / scaledImageHeight;
                 scaledImageWidth *= _scale;
                 scaledImageHeight *= _scale;
             }
@@ -344,13 +356,13 @@ namespace JayTom.Dws.Ocr {
                     xPosition = (int)(x * coefficient);
                     yPosition = (int)(y * coefficient);
 
-                    var pixel = IntPtr.Add(scan0, yPosition * stride + xPosition * 3);
+                    var pixel = nint.Add(scan0, yPosition * stride + xPosition * 3);
                     temporaryData[2, y, x] = Marshal.ReadByte(pixel) / 255f;  // B 通道，归一化
 
-                    pixel = IntPtr.Add(pixel, 1);
+                    pixel = nint.Add(pixel, 1);
                     temporaryData[1, y, x] = Marshal.ReadByte(pixel) / 255f;  // G
 
-                    pixel = IntPtr.Add(pixel, 1);
+                    pixel = nint.Add(pixel, 1);
                     temporaryData[0, y, x] = Marshal.ReadByte(pixel) / 255f;  // R
                 }
             }
@@ -460,12 +472,12 @@ namespace JayTom.Dws.Ocr {
             return dataList;
         }
 
-        public Rectangle ExpandRegion(Rectangle originalRegion, float rectangleScale = 1) {
+        private Rectangle ExpandRegion(Rectangle originalRegion, float rectangleScale = 1) {
             var newWidth = (int)(originalRegion.Width * rectangleScale);
             var newHeight = (int)(originalRegion.Height * rectangleScale);
 
-            var newX = originalRegion.X - (int)((newWidth - originalRegion.Width) / 2);
-            var newY = originalRegion.Y - (int)((newHeight - originalRegion.Height) / 2);
+            var newX = originalRegion.X - (newWidth - originalRegion.Width) / 2;
+            var newY = originalRegion.Y - (newHeight - originalRegion.Height) / 2;
 
             var newRegion = new Rectangle(newX, newY, newWidth, newHeight);
 

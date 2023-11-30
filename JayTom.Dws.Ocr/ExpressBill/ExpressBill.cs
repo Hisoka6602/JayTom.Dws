@@ -8,12 +8,14 @@ using Newtonsoft.Json;
 using System.Text.Json;
 using System.Threading;
 using System.Diagnostics;
+using JayTom.Dws.Ocr.Yolo;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using System.Drawing.Imaging;
 using System.Windows.Documents;
 using System.Collections.Generic;
 using System.Reflection.Metadata;
+using Point = System.Drawing.Point;
 using System.Security.AccessControl;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
@@ -31,6 +33,8 @@ namespace JayTom.Dws.Ocr.ExpressBill {
         private const string DllPath = ".\\ExpressBill\\Lib\\Dll\\ExpressBillApi.dll";
         private readonly ExpressBillPool _pool;
         public bool IsExecutingMethod { get; set; }
+
+        private static YoloParser? _yoloParser;
 
         // sdk初始化
         [DllImport(DllPath, EntryPoint = "init", CharSet = CharSet.Ansi
@@ -52,7 +56,14 @@ namespace JayTom.Dws.Ocr.ExpressBill {
 
             lock (pool) {
                 //初始化
+                //获取文件
+                if (!Directory.Exists($"{System.AppDomain.CurrentDomain.BaseDirectory}OnnxModels")) {
+                    Directory.CreateDirectory($"{System.AppDomain.CurrentDomain.BaseDirectory}OnnxModels");
+                }
 
+                var onnxModel = Directory.GetFiles($"{System.AppDomain.CurrentDomain.BaseDirectory}OnnxModels")
+                    ?.Select(s => new FileInfo(s))?.FirstOrDefault(f => f.Extension.Contains("onnx"))?.FullName ?? string.Empty;
+                _yoloParser ??= new YoloParser(onnxModel);
                 _pool = pool;
                 var modelFolder = $"{System.AppDomain.CurrentDomain.BaseDirectory}ExpressBill\\Lib";
                 var n = init(modelFolder);
@@ -164,85 +175,98 @@ namespace JayTom.Dws.Ocr.ExpressBill {
 
         public OcrResult? ParseOcrResult(Bitmap bitmap) {
             var submitTimestamp = DateTime.Now;
-            if (OcrStatus == OcrStatus.Initialized) {
-                try {
-                    var matBgr = new Mat();
+            //过滤
+            if (_yoloParser is not null && _yoloParser.IsLoaded) {
+                var yoloInfos = _yoloParser.Evaluate(bitmap, 0.5F, 1.2F);
 
-                    var stopwatch = new Stopwatch();
-                    stopwatch.Start();
-                    using var stream = new MemoryStream();
-                    bitmap.Save(stream, System.Drawing.Imaging.ImageFormat.Jpeg);
-                    //stream.Position = 0;
-                    var array = stream.ToArray();
-                    var mat = Cv2.ImDecode(array, ImreadModes.Unchanged);
-                    //Cv2.CvtColor(mat, matBgr, ColorConversionCodes.RGB2BGR);
-                    var ptr = process(mat.CvPtr);
+                if (yoloInfos?.Any() == true) {
+                    var yoloInfo = yoloInfos?.MaxBy(o => o.Confidence);
+                    if (yoloInfo is not null) {
+                        var originalTopLeft = new Point(yoloInfo.Rectangle?.X ?? 0, yoloInfo.Rectangle?.Y ?? 0);
+                        //裁剪
+                        var cropImage = CropImage(bitmap, yoloInfo.Rectangle ?? new Rectangle(0, 0, 0, 0));
+                        if (OcrStatus == OcrStatus.Initialized) {
+                            try {
+                                var matBgr = new Mat();
 
-                    var buf = Marshal.PtrToStringAnsi(ptr);
+                                var stopwatch = new Stopwatch();
+                                stopwatch.Start();
+                                using var stream = new MemoryStream();
+                                cropImage.Save(stream, System.Drawing.Imaging.ImageFormat.Jpeg);
+                                //stream.Position = 0;
+                                var array = stream.ToArray();
+                                var mat = Cv2.ImDecode(array, ImreadModes.Unchanged);
+                                //Cv2.CvtColor(mat, matBgr, ColorConversionCodes.RGB2BGR);
+                                var ptr = process(mat.CvPtr);
 
-                    var unescape = Regex.Unescape(buf ?? string.Empty);
-                    var result = System.Text.Json.JsonSerializer.Deserialize<RootResult>(unescape, new JsonSerializerOptions {
-                        ReferenceHandler = ReferenceHandler.Preserve,
-                        PropertyNameCaseInsensitive = true,
-                        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-                        DefaultBufferSize = 8192,
-                        MaxDepth = 4,
-                        AllowTrailingCommas = true,
-                        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-                        NumberHandling = JsonNumberHandling.AllowReadingFromString | JsonNumberHandling.WriteAsString,
-                        WriteIndented = false,
-                    });
-                    var recognitionTime = DateTime.Now;
-                    var recognitionTimestamp = new DateTimeOffset(recognitionTime).ToUnixTimeMilliseconds();
-                    stopwatch.Stop();
-                    if (result is not null) {
-                        return GetFilteredResults(new OcrResult {
-                            BarCode = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("waybill_number") == true)
-                                ?.Str ?? string.Empty,
-                            BarcodeArea = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("waybill_number") == true)
-                                ?.Coord,
-                            ElapsedTime = stopwatch.ElapsedMilliseconds,
-                            Image = bitmap,
-                            RecipientAddress = result.Data
-                                ?.FirstOrDefault(f => f.Title?.Key?.Equals("recipient_addr") == true)
-                                ?.Str ?? string.Empty,
-                            RecipientAddressArea = result.Data
-                                ?.FirstOrDefault(f => f.Title?.Key?.Equals("recipient_addr") == true)
-                                ?.Coord,
-                            RecipientName = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("recipient_name") == true)
-                                ?.Str ?? string.Empty,
-                            RecipientPhone = result.Data
-                                ?.FirstOrDefault(f => f.Title?.Key?.Equals("recipient_phone") == true)
-                                ?.Str ?? string.Empty,
-                            RecognitionTime = recognitionTime,
-                            RecognitionTimestamp = recognitionTimestamp,
-                            SenderName = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("sender_name") == true)
-                                ?.Str ?? string.Empty,
-                            SenderPhone = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("sender_phone") == true)
-                                ?.Str ?? string.Empty,
-                            SenderAddress = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("sender_addr") == true)
-                                ?.Str ?? string.Empty,
-                            SenderAddressArea = result.Data
-                                ?.FirstOrDefault(f => f.Title?.Key?.Equals("sender_addr") == true)
-                                ?.Coord,
-                            ThreeSegmentCode = result.Data
-                                ?.FirstOrDefault(f => f.Title?.Key?.Equals("three_segment_code") == true)
-                                ?.Str ?? string.Empty,
-                            ThreeSegmentArea = result.Data
-                                ?.FirstOrDefault(f => f.Title?.Key?.Equals("three_segment_code") == true)
-                                ?.Coord,
-                            VirtualNumber = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("virtual_number") == true)
-                                ?.Str ?? string.Empty,
-                            VirtualNumberLast4 =
-                                result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("virtual_number_last4") == true)
-                                    ?.Str ?? string.Empty,
-                            SubmitTimestamp = new DateTimeOffset(submitTimestamp).ToUnixTimeMilliseconds(),
-                            IsSuccess = true
-                        });
+                                var buf = Marshal.PtrToStringAnsi(ptr);
+
+                                var unescape = Regex.Unescape(buf ?? string.Empty);
+                                var result = System.Text.Json.JsonSerializer.Deserialize<RootResult>(unescape, new JsonSerializerOptions {
+                                    ReferenceHandler = ReferenceHandler.Preserve,
+                                    PropertyNameCaseInsensitive = true,
+                                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+                                    DefaultBufferSize = 8192,
+                                    MaxDepth = 4,
+                                    AllowTrailingCommas = true,
+                                    Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+                                    NumberHandling = JsonNumberHandling.AllowReadingFromString | JsonNumberHandling.WriteAsString,
+                                    WriteIndented = false,
+                                });
+                                var recognitionTime = DateTime.Now;
+                                var recognitionTimestamp = new DateTimeOffset(recognitionTime).ToUnixTimeMilliseconds();
+                                stopwatch.Stop();
+                                if (result is not null) {
+                                    return GetFilteredResults(new OcrResult {
+                                        BarCode = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("waybill_number") == true)
+                                            ?.Str ?? string.Empty,
+                                        BarcodeArea = ConvertToRectangleAndOffset(result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("waybill_number") == true)
+                                            ?.Coord ?? new List<double>(), originalTopLeft.X, originalTopLeft.Y),
+                                        ElapsedTime = stopwatch.ElapsedMilliseconds,
+                                        Image = bitmap,
+                                        RecipientAddress = result.Data
+                                            ?.FirstOrDefault(f => f.Title?.Key?.Equals("recipient_addr") == true)
+                                            ?.Str ?? string.Empty,
+                                        RecipientAddressArea = ConvertToRectangleAndOffset(result.Data
+                                            ?.FirstOrDefault(f => f.Title?.Key?.Equals("recipient_addr") == true)
+                                            ?.Coord ?? new List<double>(), originalTopLeft.X, originalTopLeft.Y),
+                                        RecipientName = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("recipient_name") == true)
+                                            ?.Str ?? string.Empty,
+                                        RecipientPhone = result.Data
+                                            ?.FirstOrDefault(f => f.Title?.Key?.Equals("recipient_phone") == true)
+                                            ?.Str ?? string.Empty,
+                                        RecognitionTime = recognitionTime,
+                                        RecognitionTimestamp = recognitionTimestamp,
+                                        SenderName = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("sender_name") == true)
+                                            ?.Str ?? string.Empty,
+                                        SenderPhone = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("sender_phone") == true)
+                                            ?.Str ?? string.Empty,
+                                        SenderAddress = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("sender_addr") == true)
+                                            ?.Str ?? string.Empty,
+                                        SenderAddressArea = ConvertToRectangleAndOffset(result.Data
+                                            ?.FirstOrDefault(f => f.Title?.Key?.Equals("sender_addr") == true)
+                                            ?.Coord ?? new List<double>(), originalTopLeft.X, originalTopLeft.Y),
+                                        ThreeSegmentCode = result.Data
+                                            ?.FirstOrDefault(f => f.Title?.Key?.Equals("three_segment_code") == true)
+                                            ?.Str ?? string.Empty,
+                                        ThreeSegmentArea = ConvertToRectangleAndOffset(result.Data
+                                            ?.FirstOrDefault(f => f.Title?.Key?.Equals("three_segment_code") == true)
+                                            ?.Coord ?? new List<double>(), originalTopLeft.X, originalTopLeft.Y),
+                                        VirtualNumber = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("virtual_number") == true)
+                                            ?.Str ?? string.Empty,
+                                        VirtualNumberLast4 =
+                                            result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("virtual_number_last4") == true)
+                                                ?.Str ?? string.Empty,
+                                        SubmitTimestamp = new DateTimeOffset(submitTimestamp).ToUnixTimeMilliseconds(),
+                                        IsSuccess = true
+                                    });
+                                }
+                            }
+                            catch (Exception e) {
+                                NLog.LogManager.GetCurrentClassLogger().Error($"Ocr识别异常:{e}");
+                            }
+                        }
                     }
-                }
-                catch (Exception e) {
-                    NLog.LogManager.GetCurrentClassLogger().Error($"Ocr识别异常:{e}");
                 }
             }
 
@@ -429,6 +453,51 @@ namespace JayTom.Dws.Ocr.ExpressBill {
                 _semaphoreSlim.Release();
             }*/
             return new KeyValuePair<bool, string>(false, "");
+        }
+
+        public Bitmap CropImage(Image image, Rectangle cropArea) {
+            var croppedImage = new Bitmap(cropArea.Width, cropArea.Height);
+            using var graphics = Graphics.FromImage(croppedImage);
+            graphics.DrawImage(image, new Rectangle(0, 0, croppedImage.Width, croppedImage.Height), cropArea, GraphicsUnit.Pixel);
+            return croppedImage;
+        }
+
+        public Bitmap DrawRectangleOnImage(Image image, Rectangle drawArea, Color color, int thickness) {
+            var markedImage = new Bitmap(image);
+            using (var graphics = Graphics.FromImage(markedImage)) {
+                using (var pen = new Pen(color, thickness)) {
+                    graphics.DrawRectangle(pen, drawArea);
+                }
+            }
+            return markedImage;
+        }
+
+        public static List<double> ConvertToRectangleAndOffset(List<double> rectangleData, int offsetX, int offsetY) {
+            if (rectangleData == null || rectangleData.Count < 4) {
+                throw new ArgumentException("Invalid rectangle data");
+            }
+
+            // 将 rectangleData 转换为 Rectangle
+            var rect = new Rectangle(
+                (int)rectangleData[0],  // 左上角 X 坐标
+                (int)rectangleData[1],  // 左上角 Y 坐标
+                (int)rectangleData[2],  // 宽度
+                (int)rectangleData[3]   // 高度
+            );
+
+            // 对矩形进行偏移
+            rect.Offset(offsetX, offsetY);
+
+            // 将偏移后的 Rectangle 转换回 List<double>
+            var result = new List<double>()
+            {
+                rect.Left,  // 左上角 X 坐标
+                rect.Top,   // 左上角 Y 坐标
+                rect.Width, // 宽度
+                rect.Height // 高度
+            };
+
+            return result;
         }
     }
 

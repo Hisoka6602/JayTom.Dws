@@ -874,7 +874,9 @@ namespace JayTom.Dws.Client.Service.Device {
                 case not null when (info.Brand.Contains("Dahua") || info.Brand.Contains("Huaray")):
                     if (info.Model.Contains("IPC"))
                         return new DaHuatechSecurityCamera(info);
-                    if (info.Model.Contains("DH-MV-S") || info.Model.Contains("DH-MV-R") || info.Model.Contains("DH-SL") || info.Model.StartsWith("R"))
+                    if (info.Model.Contains("DH-MV-S") || info.Model.Contains("DH-MV-R")
+                                                       || info.Model.Contains("DH-SL") ||
+                                                       info.Model.StartsWith("R") || info.Model.Contains("S5"))
                         return new DaHuaSmartCamera(info);
                     if (info.Model.Contains("DH-MV-D"))
                         return new DaHuaVolumeCamera(info);
