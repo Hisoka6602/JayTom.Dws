@@ -4,11 +4,13 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:extensions="clr-namespace:JayTom.Dws.Client.Extensions"
     xmlns:languages="clr-namespace:JayTom.Dws.Client.Languages"
     xmlns:local="clr-namespace:JayTom.Dws.Client.Views.Pages"
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:mvvm="http://prismlibrary.com/"
+    xmlns:validationRules="clr-namespace:JayTom.Dws.Client.ValidationRules"
     Name="OcrSettingsView"
     Title="OcrSettingsPage"
     d:DesignHeight="450"
@@ -41,8 +43,14 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="50*" />
+                <ColumnDefinition Width="50*" />
+            </Grid.ColumnDefinitions>
             <StackPanel
                 Grid.Row="0"
+                Grid.Column="0"
+                Grid.ColumnSpan="2"
                 VerticalAlignment="Center"
                 Orientation="Horizontal">
                 <TextBlock
@@ -69,6 +77,7 @@
             </StackPanel>
             <StackPanel
                 Grid.Row="1"
+                Grid.Column="0"
                 Margin="50,10,0,0"
                 Orientation="Vertical"
                 Visibility="{Binding ElementName=IsUseOcrToggleButton, Path=IsChecked, Converter={StaticResource BooleanToVisibilityConverter}}">
@@ -81,7 +90,7 @@
                         Margin="0,0,0,1"
                         VerticalAlignment="Center"
                         FontFamily="{StaticResource IconFontFamily}"
-                        FontSize="20"
+                        FontSize="23"
                         Foreground="DarkGray"
                         Text="&#xe737;" />
                     <TextBlock
@@ -133,7 +142,8 @@
                         Margin="0,0,0,1"
                         VerticalAlignment="Center"
                         FontFamily="{StaticResource IconFontFamily}"
-                        FontSize="20"
+                        FontSize="22"
+                        FontWeight="Bold"
                         Foreground="DarkGray"
                         Text="&#xe7ab;" />
                     <TextBlock
@@ -159,7 +169,8 @@
                         Margin="0,0,0,1"
                         VerticalAlignment="Center"
                         FontFamily="{StaticResource IconFontFamily}"
-                        FontSize="20"
+                        FontSize="22"
+                        FontWeight="Bold"
                         Foreground="DarkGray"
                         Text="&#xe7ab;" />
                     <TextBlock
@@ -217,6 +228,353 @@
                             InputMethod.IsInputMethodEnabled="False"
                             Text="{Binding OcrSettingsInfo.RecognitionTimeout, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                     </Border>
+                </StackPanel>
+                <!--  算法选择  -->
+                <StackPanel
+                    Margin="0,5"
+                    VerticalAlignment="Center"
+                    Orientation="Horizontal">
+                    <TextBlock
+                        Margin="0,0,0,1"
+                        VerticalAlignment="Center"
+                        FontFamily="{StaticResource IconFontFamily}"
+                        FontSize="23"
+                        Foreground="DarkGray"
+                        Text="&#xe86e;" />
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="算法选择:" />
+                    <Border
+                        Margin="5"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Background="#1A696969"
+                        CornerRadius="5">
+                        <ComboBox
+                            Height="30"
+                            MinWidth="160"
+                            Padding="5,0"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            HorizontalContentAlignment="Center"
+                            VerticalContentAlignment="Center"
+                            materialDesign:ButtonAssist.CornerRadius="15"
+                            materialDesign:ColorZoneAssist.Mode="Dark"
+                            BorderThickness="0"
+                            FontSize="12"
+                            FontWeight="Bold"
+                            Foreground="White"
+                            ItemsSource="{Binding ModelFiles, UpdateSourceTrigger=PropertyChanged}"
+                            SelectedItem="{Binding SelectModelFile, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                            Style="{StaticResource MaterialDesignComboBox}" />
+                    </Border>
+                </StackPanel>
+                <!--  置信度  -->
+                <StackPanel
+                    Margin="0,5"
+                    VerticalAlignment="Center"
+                    Orientation="Horizontal">
+                    <TextBlock
+                        Margin="0,0,0,1"
+                        VerticalAlignment="Center"
+                        FontFamily="{StaticResource IconFontFamily}"
+                        FontSize="23"
+                        Foreground="DarkGray"
+                        Text="&#xe86d;" />
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="置信度:" />
+                    <Border
+                        Margin="5"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Background="#1A696969"
+                        CornerRadius="5">
+                        <TextBox
+                            Width="165"
+                            Height="30"
+                            MaxWidth="500"
+                            Margin="5,0"
+                            materialDesign:TextFieldAssist.HasClearButton="False"
+                            materialDesign:TextFieldAssist.HasFilledTextField="True"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="White"
+                            InputMethod.IsInputMethodEnabled="False">
+                            <TextBox.Text>
+                                <Binding
+                                    Mode="TwoWay"
+                                    Path="OcrSettingsInfo.ConfidenceThreshold"
+                                    UpdateSourceTrigger="PropertyChanged">
+                                    <Binding.ValidationRules>
+                                        <validationRules:RegexValidationRule ErrorMessage="请输入有效的浮点数" Pattern="^\d+(\.\d+)?$" />
+                                    </Binding.ValidationRules>
+                                </Binding>
+                            </TextBox.Text>
+                        </TextBox>
+                    </Border>
+                </StackPanel>
+                <!--  面单范围扩充倍数  -->
+                <StackPanel
+                    Margin="0,5"
+                    VerticalAlignment="Center"
+                    Orientation="Horizontal">
+                    <TextBlock
+                        Margin="0,0,0,1"
+                        VerticalAlignment="Center"
+                        FontFamily="{StaticResource IconFontFamily}"
+                        FontSize="23"
+                        Foreground="DarkGray"
+                        Text="&#xe871;" />
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="面单范围扩充倍数:" />
+                    <Border
+                        Margin="5"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Background="#1A696969"
+                        CornerRadius="5">
+                        <TextBox
+                            Width="100"
+                            Height="30"
+                            MaxWidth="500"
+                            Margin="5,0"
+                            materialDesign:TextFieldAssist.HasClearButton="False"
+                            materialDesign:TextFieldAssist.HasFilledTextField="True"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="White"
+                            InputMethod.IsInputMethodEnabled="False">
+                            <TextBox.Text>
+                                <Binding
+                                    Mode="TwoWay"
+                                    Path="OcrSettingsInfo.RectangleScale"
+                                    UpdateSourceTrigger="PropertyChanged">
+                                    <Binding.ValidationRules>
+                                        <validationRules:RegexValidationRule ErrorMessage="请输入有效的浮点数" Pattern="^\d+(\.\d+)?$" />
+                                    </Binding.ValidationRules>
+                                </Binding>
+                            </TextBox.Text>
+                        </TextBox>
+                    </Border>
+                </StackPanel>
+                <!--  面单图存图路径  -->
+                <StackPanel
+                    Margin="0,5"
+                    VerticalAlignment="Center"
+                    Orientation="Horizontal">
+                    <TextBlock
+                        Margin="0,0,0,1"
+                        VerticalAlignment="Center"
+                        FontFamily="{StaticResource IconFontFamily}"
+                        FontSize="20"
+                        FontWeight="Light"
+                        Foreground="DarkGray"
+                        Text="&#xe65f;" />
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="面单图存图路径:" />
+                    <Border
+                        Margin="5"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Background="#1A696969"
+                        CornerRadius="5">
+                        <TextBox
+                            Width="115"
+                            Height="30"
+                            MaxWidth="500"
+                            Margin="5,0"
+                            materialDesign:TextFieldAssist.HasClearButton="False"
+                            materialDesign:TextFieldAssist.HasFilledTextField="True"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="White"
+                            IsReadOnly="True"
+                            Text="{Binding OcrSettingsInfo.CropImagePath, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    </Border>
+                    <Button
+                        MinHeight="30"
+                        Margin="5,0"
+                        HorizontalAlignment="Left"
+                        materialDesign:ButtonAssist.CornerRadius="5"
+                        Background="#2E2E2E"
+                        BorderThickness="0"
+                        Command="{Binding OpenFolderCommand}"
+                        FocusVisualStyle="{x:Null}"
+                        Style="{StaticResource MaterialDesignFlatAccentBgButton}">
+                        <TextBlock
+                            Margin="2,1,0,0"
+                            VerticalAlignment="Center"
+                            FontFamily="{StaticResource CustomFontFamily}"
+                            FontSize="14"
+                            FontWeight="Bold"
+                            Foreground="DarkGray"
+                            Text="{x:Static languages:Language.BrowseDirectory}" />
+                    </Button>
+                </StackPanel>
+                <!--  是否开启面单图保存  -->
+                <StackPanel
+                    Margin="0,5"
+                    VerticalAlignment="Center"
+                    Orientation="Horizontal">
+                    <TextBlock
+                        Margin="0,0,0,1"
+                        VerticalAlignment="Center"
+                        FontFamily="{StaticResource IconFontFamily}"
+                        FontSize="20"
+                        Foreground="DarkGray"
+                        Text="&#xe870;" />
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="是否开启面单图保存:" />
+                    <ToggleButton
+                        materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
+                        materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
+                        Focusable="False"
+                        IsChecked="{Binding OcrSettingsInfo.IsSaveCropImage, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                        Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+                </StackPanel>
+            </StackPanel>
+            <!--  图片框  -->
+            <StackPanel
+                Grid.Row="1"
+                Grid.RowSpan="4"
+                Grid.Column="1"
+                Orientation="Vertical">
+                <!--  图片  -->
+                <Border
+                    Name="ImageBorder"
+                    Height="500"
+                    MaxHeight="650"
+                    CornerRadius="10">
+                    <Border.Clip>
+                        <RectangleGeometry RadiusX="10" RadiusY="10">
+                            <RectangleGeometry.Rect>
+                                <MultiBinding Converter="{StaticResource RectConverter}">
+                                    <Binding
+                                        ElementName="ImageBorder"
+                                        Path="ActualWidth"
+                                        UpdateSourceTrigger="PropertyChanged" />
+                                    <Binding
+                                        ElementName="ImageBorder"
+                                        Path="ActualHeight"
+                                        UpdateSourceTrigger="PropertyChanged" />
+                                </MultiBinding>
+                            </RectangleGeometry.Rect>
+                        </RectangleGeometry>
+                    </Border.Clip>
+                    <Image Source="{Binding ImageSource, UpdateSourceTrigger=PropertyChanged}" />
+                </Border>
+                <!--  加载路径、按钮  -->
+                <!--  加载图片  -->
+                <StackPanel
+                    Margin="0,10"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Orientation="Horizontal">
+                    <!--  图标  -->
+                    <TextBlock
+                        Margin="0,0,0,1"
+                        VerticalAlignment="Center"
+                        FontFamily="{StaticResource IconFontFamily}"
+                        FontSize="20"
+                        Foreground="DarkGray"
+                        Text="&#xe65f;" />
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="16"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="{x:Static languages:Language.TestImagePath}" />
+                    <Border
+                        Margin="5"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Background="#1A696969"
+                        CornerRadius="5">
+                        <TextBox
+                            Width="230"
+                            Height="30"
+                            MaxWidth="500"
+                            Margin="5,0"
+                            materialDesign:TextFieldAssist.HasClearButton="False"
+                            materialDesign:TextFieldAssist.HasFilledTextField="True"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            FontSize="15"
+                            FontWeight="Bold"
+                            Foreground="White"
+                            IsReadOnly="True"
+                            Text="{Binding LoadImagePath, UpdateSourceTrigger=PropertyChanged}" />
+                    </Border>
+                    <Button
+                        MinHeight="30"
+                        Margin="5,0"
+                        HorizontalAlignment="Left"
+                        materialDesign:ButtonAssist.CornerRadius="5"
+                        Background="#2E2E2E"
+                        BorderThickness="0"
+                        Command="{Binding LoadImageCommand}"
+                        FocusVisualStyle="{x:Null}"
+                        Style="{StaticResource MaterialDesignFlatAccentBgButton}">
+                        <TextBlock
+                            Margin="2,1,0,0"
+                            VerticalAlignment="Center"
+                            FontFamily="{StaticResource CustomFontFamily}"
+                            FontSize="14"
+                            FontWeight="Bold"
+                            Foreground="DarkGray"
+                            Text="{x:Static languages:Language.LoadImage}" />
+                    </Button>
+                    <!--  刷新  -->
+                    <Button
+                        MinHeight="30"
+                        Margin="5,0"
+                        HorizontalAlignment="Left"
+                        materialDesign:ButtonAssist.CornerRadius="5"
+                        Background="#2E2E2E"
+                        BorderThickness="0"
+                        Command="{Binding RefreshCommand}"
+                        FocusVisualStyle="{x:Null}"
+                        Style="{StaticResource MaterialDesignFlatAccentBgButton}">
+                        <TextBlock
+                            Margin="2,1,0,0"
+                            VerticalAlignment="Center"
+                            FontFamily="{StaticResource CustomFontFamily}"
+                            FontSize="14"
+                            FontWeight="Bold"
+                            Foreground="DarkGray"
+                            Text="{x:Static languages:Language.Refresh}" />
+                    </Button>
                 </StackPanel>
             </StackPanel>
             <!--  保存设置  -->
@@ -291,6 +649,8 @@
             <!--  提示框  -->
             <materialDesign:Snackbar
                 Grid.Row="4"
+                Grid.Column="0"
+                Grid.ColumnSpan="2"
                 Width="Auto"
                 Height="Auto"
                 VerticalAlignment="Bottom"

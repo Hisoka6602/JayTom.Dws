@@ -8,6 +8,11 @@ namespace JayTom.Dws.Client.Models.OcrSettingsModel {
         private bool _isShowReceiverInfo;
         private bool _isShowSenderInfo;
         private int _recognitionTimeout;
+        private string _modelFilePath = string.Empty;
+        private float _confidenceThreshold;
+        private float _rectangleScale;
+        private string _cropImagePath = string.Empty;
+        private bool _isSaveCropImage;
 
         /// <summary>
         /// 是否使用 OCR 识别
@@ -55,6 +60,46 @@ namespace JayTom.Dws.Client.Models.OcrSettingsModel {
         public int RecognitionTimeout {
             get => _recognitionTimeout;
             set => SetProperty(ref _recognitionTimeout, value);
+        }
+
+        /// <summary>
+        /// 算法选择
+        /// </summary>
+        public string ModelFilePath {
+            get => _modelFilePath;
+            set => SetProperty(ref _modelFilePath, value);
+        }
+
+        /// <summary>
+        /// 置信度
+        /// </summary>
+        public float ConfidenceThreshold {
+            get => _confidenceThreshold;
+            set => SetProperty(ref _confidenceThreshold, value);
+        }
+
+        /// <summary>
+        /// 截图扩充倍数
+        /// </summary>
+        public float RectangleScale {
+            get => _rectangleScale;
+            set => SetProperty(ref _rectangleScale, value);
+        }
+
+        /// <summary>
+        /// 截图存图路径
+        /// </summary>
+        public string CropImagePath {
+            get => _cropImagePath;
+            set => SetProperty(ref _cropImagePath, value);
+        }
+
+        /// <summary>
+        /// 是否开启截图保存
+        /// </summary>
+        public bool IsSaveCropImage {
+            get => _isSaveCropImage;
+            set => SetProperty(ref _isSaveCropImage, value);
         }
     }
 }

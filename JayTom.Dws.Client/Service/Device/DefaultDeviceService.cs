@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using JayTom.Dws.Ocr;
 using Newtonsoft.Json;
@@ -10,6 +11,7 @@ using System.Threading.Tasks;
 using JayTom.Dws.Plugin.Scale;
 using JayTom.Dws.Client.Models;
 using System.Collections.Generic;
+using System.Windows.Media.Media3D;
 using System.Collections.Concurrent;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Models.Cameras;
@@ -433,6 +435,22 @@ namespace JayTom.Dws.Client.Service.Device {
                     configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("OcrSettings"));
                     try {
                         ocrSettingsDto = JsonConvert.DeserializeObject<OcrSettingsDto>(configInfoModel?.Value ?? string.Empty) ?? new OcrSettingsDto();
+                        var modelFilePath = ocrSettingsDto.ModelFilePath;
+                        if (string.IsNullOrEmpty(modelFilePath)) {
+                            if (!Directory.Exists($"{System.AppDomain.CurrentDomain.BaseDirectory}OnnxModels")) {
+                                Directory.CreateDirectory($"{System.AppDomain.CurrentDomain.BaseDirectory}OnnxModels");
+                            }
+
+                            modelFilePath = Directory.GetFiles($"{System.AppDomain.CurrentDomain.BaseDirectory}OnnxModels")
+                                ?.Select(name => new FileInfo(name))?.FirstOrDefault(f => f.Extension.Contains("onnx"))?.FullName ?? string.Empty;
+                        }
+                        else {
+                            modelFilePath = Directory.GetFiles($"{System.AppDomain.CurrentDomain.BaseDirectory}OnnxModels")
+                                ?.Select(name => new FileInfo(name))?.FirstOrDefault(f => f.Name.Equals(modelFilePath))?.FullName ?? string.Empty;
+                        }
+                        await _ocr.SetOnnxModelPath(modelFilePath);
+                        await _ocr.SetConfidenceThreshold(ocrSettingsDto.ConfidenceThreshold);
+                        await _ocr.SetRectangleScale(ocrSettingsDto.RectangleScale);
                     }
                     catch (Exception e) {
                         OnDeviceException(new DeviceExceptionEventArgs() {
@@ -638,6 +656,7 @@ namespace JayTom.Dws.Client.Service.Device {
                                         break;
                                     }
                             }
+                            //判断设置Ocr截图算法路径
 
                             //初始化
                             var (b, s) = await camera.Initialize(camera?.Info);
@@ -842,7 +861,8 @@ namespace JayTom.Dws.Client.Service.Device {
                 case not null when (brand.Contains("Dahua") || brand.Contains("Huaray")):
                     if (modelName.Contains("IPC"))
                         return CameraType.VideoCamera;
-                    if (modelName.Contains("DH-MV-S") || modelName.Contains("DH-MV-R") || modelName.Contains("DH-SL") || modelName.StartsWith("R"))
+                    if (modelName.Contains("DH-MV-S") || modelName.Contains("DH-MV-R") || modelName.Contains("DH-SL")
+                        || modelName.StartsWith("R") || modelName.StartsWith("S5"))
                         return CameraType.SmartCamera;
                     if (modelName.Contains("DH-MV-D"))
                         return CameraType.VolumeCamera;

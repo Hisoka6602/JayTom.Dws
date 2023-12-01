@@ -212,7 +212,7 @@
     <None Update="ExpressBill\Lib\vc_redist\vc_redist.x86.exe">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="OnnxModels\KD20231129.onnx">
+    <None Update="OnnxModels\OCR202311292106.onnx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

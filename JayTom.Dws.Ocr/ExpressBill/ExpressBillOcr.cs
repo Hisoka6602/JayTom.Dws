@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Drawing;
 using System.Threading;
+using JayTom.Dws.Ocr.Yolo;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
@@ -12,6 +13,10 @@ namespace JayTom.Dws.Ocr.ExpressBill {
     public class ExpressBillOcr : IOcr {
         private ExpressBillPool _expressBillPool = new(10);
         private SemaphoreSlim _semaphoreSlim = new(2);
+        private static string _onnxModel = string.Empty;
+
+        private static float _confidenceThreshold = 0.5F;
+        private static float _rectangleScale = 1;
 
         public ExpressBillOcr() {
             //释放文件
@@ -36,8 +41,12 @@ namespace JayTom.Dws.Ocr.ExpressBill {
                 await _semaphoreSlim.WaitAsync();
                 NLog.LogManager.GetCurrentClassLogger().Error($"进入提交");
                 using (var expressBill = _expressBillPool.GetObject()) {
-                    if (expressBill is not null && expressBill.OcrStatus == OcrStatus.Initialized) {
+                    if (expressBill.OcrStatus == OcrStatus.Initialized) {
                         //识别
+                        if (string.IsNullOrEmpty(expressBill.OnnxModel)) {
+                            expressBill.OnnxModel = _onnxModel;
+                        }
+
                         var ocrResult = await expressBill.ParseOcrResult(imageBytes, cameraSerialNumber);
                         if (ocrResult is not null) {
                             NLog.LogManager.GetCurrentClassLogger().Error($"返回结果:{ocrResult.BarCode}");
@@ -71,11 +80,31 @@ namespace JayTom.Dws.Ocr.ExpressBill {
             }
         }
 
+        public OcrResult? ParseOcrTemporarilyResult(Bitmap imageBytes, string cropImageModelPath, float confidenceThreshold,
+            float rectangleScale) {
+            try {
+                using (var expressBill = _expressBillPool.GetObject()) {
+                    if (expressBill.OcrStatus is not OcrStatus.Uninitialized) {
+                        return expressBill.ParseOcrResult(imageBytes,
+                            new YoloParser(cropImageModelPath), confidenceThreshold, rectangleScale);
+                    }
+                }
+            }
+            catch (Exception e) {
+                NLog.LogManager.GetCurrentClassLogger().Error($"ParseOcrResult方法异常:{e}");
+            }
+
+            return null;
+        }
+
         public async Task<OcrResult?> ParseOcrResultAsync(Bitmap imageBytes) {
             try {
                 using (var expressBill = _expressBillPool.GetObject()) {
-                    if (expressBill is not null && expressBill.OcrStatus is not OcrStatus.Uninitialized) {
+                    if (expressBill.OcrStatus is not OcrStatus.Uninitialized) {
                         //识别
+                        if (string.IsNullOrEmpty(expressBill.OnnxModel)) {
+                            expressBill.OnnxModel = _onnxModel;
+                        }
                         return await expressBill.ParseOcrResultAsync(imageBytes);
                     }
                 }
@@ -90,9 +119,12 @@ namespace JayTom.Dws.Ocr.ExpressBill {
         public OcrResult? ParseOcrResult(Bitmap imageBytes) {
             try {
                 using (var expressBill = _expressBillPool.GetObject()) {
-                    if (expressBill is not null && expressBill.OcrStatus is not OcrStatus.Uninitialized) {
-                        //识别
-                        return expressBill.ParseOcrResult(imageBytes);
+                    if (expressBill.OcrStatus is not OcrStatus.Uninitialized) {
+                        if (string.IsNullOrEmpty(expressBill.OnnxModel)) {
+                            expressBill.OnnxModel = _onnxModel;
+                            NLog.LogManager.GetCurrentClassLogger().Error($"{expressBill.OnnxModel}");
+                        }
+                        return expressBill.ParseOcrResult(imageBytes, _confidenceThreshold, _rectangleScale);
                     }
                 }
             }
@@ -146,6 +178,26 @@ namespace JayTom.Dws.Ocr.ExpressBill {
             catch (Exception e) {
                 return new KeyValuePair<bool, string>(false, e.Message);
             }
+        }
+
+        public Task<KeyValuePair<bool, string>> SetOnnxModelPath(string onnxModelPath) {
+            if (File.Exists(onnxModelPath)) {
+                if (new FileInfo(onnxModelPath).Extension.Contains("onnx")) {
+                    _onnxModel = onnxModelPath;
+                    return Task.FromResult(new KeyValuePair<bool, string>(true, "设置成功"));
+                }
+            }
+            return Task.FromResult(new KeyValuePair<bool, string>(false, "找不到文件或文件不匹配"));
+        }
+
+        public Task<KeyValuePair<bool, string>> SetConfidenceThreshold(float confidenceThreshold) {
+            _confidenceThreshold = confidenceThreshold;
+            return Task.FromResult(new KeyValuePair<bool, string>(true, "设置成功"));
+        }
+
+        public Task<KeyValuePair<bool, string>> SetRectangleScale(float rectangleScale) {
+            _rectangleScale = rectangleScale;
+            return Task.FromResult(new KeyValuePair<bool, string>(true, "设置成功"));
         }
 
         public async Task<KeyValuePair<bool, string>> SetRecognitionTimeout(TimeSpan timeout) {

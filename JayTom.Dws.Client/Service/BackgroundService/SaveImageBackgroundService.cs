@@ -1,10 +1,14 @@
 ﻿using System;
+using System.IO;
+using System.Drawing;
+using JayTom.Dws.Ocr;
 using Newtonsoft.Json;
 using System.Threading;
 using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
 using System.Collections.Concurrent;
 using JayTom.Dws.Client.EventMediators;
+using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Client.Service.ImageStorage;
 using JayTom.Dws.Domain.Repository.LocalConf;
 
@@ -13,13 +17,18 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
     public class SaveImageBackgroundService : Microsoft.Extensions.Hosting.BackgroundService {
         private readonly IImageStorageService _imageStorageService;
         private readonly IConfigRepository _configRepository;
+        private readonly IDeviceService _deviceService;
         private ConcurrentQueue<ImageMessageInfo> _imageItems = new();
         private SemaphoreSlim _semaphore = new(1);
-        public ImageSettingsDto? _imageSettingsDto;
+        private ImageSettingsDto? _imageSettingsDto;
+        private OcrSettingsDto? _ocrSettingsDto;
+        private ConcurrentQueue<Bitmap> _cropImageQueue = new();
 
-        public SaveImageBackgroundService(IImageStorageService imageStorageService, IConfigRepository configRepository) {
+        public SaveImageBackgroundService(IImageStorageService imageStorageService,
+            IConfigRepository configRepository, IDeviceService deviceService) {
             _imageStorageService = imageStorageService;
             _configRepository = configRepository;
+            _deviceService = deviceService;
             EventAggregator.Instance.Subscribe<ImageMessageInfo>(info => {
                 //判断是否需要存图
                 if (info is ImageMessageInfo imageInfo) {
@@ -46,7 +55,25 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     }
                     _semaphore.Release();
                 }
+                else if (settings is SettingsChangedEvent { SettingsName: "OcrSettings" }) {
+                    await _semaphore.WaitAsync();
+                    var configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("OcrSettings"));
+                    try {
+                        _ocrSettingsDto = JsonConvert.DeserializeObject<OcrSettingsDto>(configInfoModel.Value);
+                    }
+                    catch (Exception e) {
+                        _ocrSettingsDto ??= new OcrSettingsDto();
+                    }
+                    _semaphore.Release();
+                }
             });
+            _deviceService.OcrContentRecognized += delegate (object? sender, OcrResult result) {
+                if (_ocrSettingsDto?.IsSaveCropImage == true && !string.IsNullOrEmpty(_ocrSettingsDto.CropImagePath)) {
+                    if (result?.CropImage is not null) {
+                        _cropImageQueue.Enqueue(result.CropImage);
+                    }
+                }
+            };
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
@@ -61,6 +88,18 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 }
                 _semaphore.Release();
             }
+
+            if (_ocrSettingsDto is null) {
+                await _semaphore.WaitAsync(stoppingToken);
+                var configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("OcrSettings"), stoppingToken);
+                try {
+                    _ocrSettingsDto = JsonConvert.DeserializeObject<OcrSettingsDto>(configInfoModel.Value);
+                }
+                catch (Exception e) {
+                    _ocrSettingsDto ??= new OcrSettingsDto();
+                }
+                _semaphore.Release();
+            }
             while (!stoppingToken.IsCancellationRequested) {
                 var tryDequeue = _imageItems.TryDequeue(out var messageInfo);
                 if (tryDequeue && messageInfo is not null) {
@@ -72,7 +111,22 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                              , stoppingToken);
                     }
                 }
+                //存截图(按单号+时间戳)
+                var dequeue = _cropImageQueue.TryDequeue(out var cropImage);
+                if (dequeue && cropImage is not null) {
+                    if (!string.IsNullOrEmpty(_ocrSettingsDto?.CropImagePath)) {
+                        var directory =
+                            $"{_ocrSettingsDto.CropImagePath}\\{DateTime.Now:MM}\\{DateTime.Now:dd}\\{DateTime.Now:HH}";
+                        if (!Directory.Exists(directory)) {
+                            Directory.CreateDirectory(directory);
+                        }
 
+                        var fileName =
+                            $"{directory}\\{new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds()}.jpg";
+                        cropImage.Save(fileName);
+                        cropImage.Dispose();
+                    }
+                }
                 await Task.Delay(50, stoppingToken);
             }
         }

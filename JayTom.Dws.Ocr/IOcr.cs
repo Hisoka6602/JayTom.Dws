@@ -7,7 +7,6 @@ using System.Collections.Generic;
 using System.Windows.Media.Imaging;
 
 namespace JayTom.Dws.Ocr {
-
     public interface IOcr : IDisposable {
 
         /// <summary>
@@ -50,6 +49,17 @@ namespace JayTom.Dws.Ocr {
         OcrResult? ParseOcrResult(Bitmap imageBytes);
 
         /// <summary>
+        /// 临时解析Ocr
+        /// </summary>
+        /// <param name="imageBytes"></param>
+        /// <param name="cropImageModelPath"></param>
+        /// <param name="confidenceThreshold"></param>
+        /// <param name="rectangleScale"></param>
+        /// <returns></returns>
+        OcrResult? ParseOcrTemporarilyResult(Bitmap imageBytes, string cropImageModelPath,
+            float confidenceThreshold, float rectangleScale);
+
+        /// <summary>
         /// 解析Ocr
         /// </summary>
         /// <param name="imageBytes"></param>
@@ -62,6 +72,25 @@ namespace JayTom.Dws.Ocr {
         /// <param name="parameters"></param>
         Task<KeyValuePair<bool, string>> SetOcrParameters(Dictionary<string, object> parameters);
 
+        /// <summary>
+        /// 设置截图算法文件路径
+        /// </summary>
+        /// <param name="onnxModelPath"></param>
+        /// <returns></returns>
+        Task<KeyValuePair<bool, string>> SetOnnxModelPath(string onnxModelPath);
+
+        /// <summary>
+        /// 设置置信度
+        /// </summary>
+        /// <param name="confidenceThreshold"></param>
+        /// <returns></returns>
+        Task<KeyValuePair<bool, string>> SetConfidenceThreshold(float confidenceThreshold);
+        /// <summary>
+        /// 设置区域扩展
+        /// </summary>
+        /// <param name="rectangleScale"></param>
+        /// <returns></returns>
+        Task<KeyValuePair<bool, string>> SetRectangleScale(float rectangleScale);
         /// <summary>
         /// 设置解析超时时间
         /// </summary>
@@ -203,6 +232,16 @@ namespace JayTom.Dws.Ocr {
         /// 获取或设置缩略图。
         /// </summary>
         public Bitmap? Thumbnail { get; set; }
+
+        /// <summary>
+        /// 裁剪的图片
+        /// </summary>
+        public Bitmap? CropImage { get; set; }
+
+        /// <summary>
+        /// 裁剪区域
+        /// </summary>
+        public Rectangle? CropRectangle { get; set; }
 
         /// <summary>
         /// 获取或设置识别时间戳。
