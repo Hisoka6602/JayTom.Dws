@@ -787,6 +787,8 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                                         CropImage = result?.CropImage,
                                         CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
                                         ElapsedTime = result?.ElapsedTime ?? 0,
+                                        RecognitionTime = result?.RecognitionTime ?? DateTime.Now,
+                                        RecognitionTimestamp = result?.RecognitionTimestamp ?? new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds()
                                     });
                                 }
                                 else {

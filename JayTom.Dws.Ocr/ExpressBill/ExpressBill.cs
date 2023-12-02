@@ -176,6 +176,7 @@ namespace JayTom.Dws.Ocr.ExpressBill {
             Bitmap? cropImage = null;
             Rectangle? cropRectangle = null;
             yoloParser ??= new YoloParser(OnnxModel);
+            var stopwatch = new Stopwatch();
             if (yoloParser.IsLoaded) {
                 var yoloInfos = yoloParser.Evaluate(bitmap, confidenceThreshold, rectangleScale);
 
@@ -192,7 +193,6 @@ namespace JayTom.Dws.Ocr.ExpressBill {
                             if (OcrStatus == OcrStatus.Initialized) {
                                 var matBgr = new Mat();
 
-                                var stopwatch = new Stopwatch();
                                 stopwatch.Start();
                                 using var stream = new MemoryStream();
                                 cropImage.Save(stream, System.Drawing.Imaging.ImageFormat.Jpeg);
@@ -286,10 +286,13 @@ namespace JayTom.Dws.Ocr.ExpressBill {
             }
 
             //识别不成功也需要返回图片
+
             return new OcrResult() {
+                RecognitionTime = DateTime.Now,
+                RecognitionTimestamp = new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds(),
                 CropRectangle = cropRectangle,
                 CropImage = cropImage,
-                ElapsedTime = long.MinValue,
+                ElapsedTime = stopwatch.ElapsedMilliseconds,
                 Image = bitmap,
                 SubmitTimestamp = new DateTimeOffset(submitTimestamp).ToUnixTimeMilliseconds(),
             };

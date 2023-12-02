@@ -7,6 +7,7 @@ using System.Windows.Input;
 using Prism.Services.Dialogs;
 
 namespace JayTom.Dws.Client.ViewModels.Dialog {
+
     public class TriggerModeSelectionViewModel : BindableBase, IDialogAware {
         private TriggerMode? _cameraTriggerMode;
         private int _sourceLine;
@@ -61,6 +62,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog {
             OnRequestClose(new DialogResult(ButtonResult.OK, new DialogParameters()
            {
                 {"CameraTriggerMode",CameraTriggerMode},
+                {"SourceLine",SourceLine}
            }));
         }
 
