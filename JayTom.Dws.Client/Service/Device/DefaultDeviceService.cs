@@ -623,7 +623,11 @@ namespace JayTom.Dws.Client.Service.Device {
                                         if (!string.IsNullOrEmpty(parameters)) {
                                             var jObject = JObject.Parse(parameters);
                                             if (jObject["TriggerMode"] is not null) {
-                                                smartCamera.TriggerMode = (TriggerMode)jObject["TriggerMode"].Value<int>();
+                                                smartCamera.TriggerMode = (TriggerMode)(jObject["TriggerMode"] ?? 0).Value<int>();
+                                            }
+
+                                            if (jObject["SourceLine"] is not null) {
+                                                smartCamera.SourceLine = (jObject["SourceLine"] ?? 0).Value<int>();
                                             }
                                         }
 

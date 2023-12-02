@@ -1,18 +1,30 @@
-﻿using JayTom.Dws.Camera;
-using Prism.Commands;
+﻿using System;
 using Prism.Mvvm;
-using Prism.Services.Dialogs;
-using System;
+using System.Linq;
+using Prism.Commands;
+using JayTom.Dws.Camera;
 using System.Windows.Input;
+using Prism.Services.Dialogs;
 
 namespace JayTom.Dws.Client.ViewModels.Dialog {
-
     public class TriggerModeSelectionViewModel : BindableBase, IDialogAware {
         private TriggerMode? _cameraTriggerMode;
+        private int _sourceLine;
+        private bool _isShowSourceLine;
 
         public TriggerMode? CameraTriggerMode {
             get => _cameraTriggerMode;
             set => SetProperty(ref _cameraTriggerMode, value);
+        }
+
+        public int SourceLine {
+            get => _sourceLine;
+            set => SetProperty(ref _sourceLine, value);
+        }
+
+        public bool IsShowSourceLine {
+            get => _isShowSourceLine;
+            set => SetProperty(ref _isShowSourceLine, value);
         }
 
         public bool CanCloseDialog() {
@@ -23,6 +35,11 @@ namespace JayTom.Dws.Client.ViewModels.Dialog {
         }
 
         public void OnDialogOpened(IDialogParameters parameters) {
+            var value = parameters.GetValue<string>("Brand");
+
+            if (value?.Contains("Hik") == true) {
+                IsShowSourceLine = true;
+            }
         }
 
         public ICommand CloseCommand {

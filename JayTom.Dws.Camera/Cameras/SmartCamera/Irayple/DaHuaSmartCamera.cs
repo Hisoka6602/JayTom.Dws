@@ -271,6 +271,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
         public bool IsShowBarcodeBorder { get; set; } = true;
         public bool IsUseTriggerMode { get; set; } = true;
         public TriggerMode TriggerMode { get; set; } = TriggerMode.Hardware;
+        public int SourceLine { get; set; }
 
         public async void SoftwareTriggerOnce() {
             await Task.Yield();

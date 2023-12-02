@@ -44,6 +44,11 @@ namespace JayTom.Dws.Camera {
         public TriggerMode TriggerMode { get; set; }
 
         /// <summary>
+        /// 数据来源(管脚、针对海康)
+        /// </summary>
+        public int SourceLine { get; set; }
+
+        /// <summary>
         /// 软触发一次
         /// </summary>
         void SoftwareTriggerOnce();

@@ -174,6 +174,7 @@ namespace JayTom.Dws.Ocr.ExpressBill {
             var submitTimestamp = DateTime.Now;
             //过滤
             Bitmap? cropImage = null;
+            Rectangle? cropRectangle = null;
             yoloParser ??= new YoloParser(OnnxModel);
             if (yoloParser.IsLoaded) {
                 var yoloInfos = yoloParser.Evaluate(bitmap, confidenceThreshold, rectangleScale);
@@ -181,6 +182,7 @@ namespace JayTom.Dws.Ocr.ExpressBill {
                 if (yoloInfos?.Any() == true) {
                     var yoloInfo = yoloInfos?.MaxBy(o => o.Confidence);
                     if (yoloInfo is not null) {
+                        cropRectangle = yoloInfo.Rectangle;
                         var originalTopLeft = new Point(yoloInfo.Rectangle?.X ?? 0, yoloInfo.Rectangle?.Y ?? 0);
                         //裁剪
                         cropImage = CropImage(bitmap, yoloInfo.Rectangle ?? new Rectangle(0, 0, 0, 0));
@@ -285,6 +287,7 @@ namespace JayTom.Dws.Ocr.ExpressBill {
 
             //识别不成功也需要返回图片
             return new OcrResult() {
+                CropRectangle = cropRectangle,
                 CropImage = cropImage,
                 ElapsedTime = long.MinValue,
                 Image = bitmap,
@@ -494,7 +497,7 @@ namespace JayTom.Dws.Ocr.ExpressBill {
 
         public static List<double> ConvertToRectangleAndOffset(List<double> rectangleData, int offsetX, int offsetY) {
             if (rectangleData == null || rectangleData.Count % 2 != 0 || rectangleData.Count < 8) {
-                throw new ArgumentException("Invalid coordinate data");
+                return new List<double>() { 0, 0, 0, 0, 0, 0, 0, 0 };
             }
 
             var result = new List<double>();

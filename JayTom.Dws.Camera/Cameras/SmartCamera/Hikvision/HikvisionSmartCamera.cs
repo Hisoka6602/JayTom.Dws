@@ -224,7 +224,9 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                             }
                         }
                         else {
-                            nRet = _mvCodeReader.MV_CODEREADER_SetEnumValue_NET("TriggerSource", (uint)MvCodeReader.MV_CODEREADER_TRIGGER_SOURCE.MV_CODEREADER_TRIGGER_SOURCE_LINE0);
+                            //管脚
+                            //(uint)MvCodeReader.MV_CODEREADER_TRIGGER_SOURCE.MV_CODEREADER_TRIGGER_SOURCE_LINE0;
+                            nRet = _mvCodeReader.MV_CODEREADER_SetEnumValue_NET("TriggerSource", (uint)SourceLine);
                             if (MvCodeReader.MV_CODEREADER_OK != nRet) {
                                 _mvCodeReader.MV_CODEREADER_DestroyHandle_NET();
                                 OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
@@ -461,6 +463,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
         public bool IsShowBarcodeBorder { get; set; } = true;
         public bool IsUseTriggerMode { get; set; } = true;
         public TriggerMode TriggerMode { get; set; } = TriggerMode.Hardware;
+        public int SourceLine { get; set; } = 0;
 
         public void SoftwareTriggerOnce() {
             Task.Factory.StartNew(() => {
@@ -749,7 +752,8 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                             var result = Ocr?.ParseOcrResult(bitmap);
                             var thumbnail = GenerateThumbnail(bitmap);
                             if (result is not null &&
-                                !string.IsNullOrEmpty(result.BarCode)) {
+                                !string.IsNullOrEmpty(result.BarCode) &&
+                                result.IsSuccess) {
                                 _ocrBitmapQueue.Clear();
                                 //过滤
                                 var validateData = _barCodeFilterContainer.ValidateData(new BarCodeFilterInfo() {
@@ -774,9 +778,22 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                                 }
                             }
                             else {
-                                result?.Image?.Dispose();
-                                if (!IsRealtimeImageEnabled) {
-                                    thumbnail?.Dispose();
+                                //判断是否硬触发
+                                if (TriggerMode == TriggerMode.Hardware) {
+                                    OnOcrContentRecognized(new OcrResult() {
+                                        BarCode = "NoRead",
+                                        Image = bitmap,
+                                        Thumbnail = thumbnail,
+                                        CropImage = result?.CropImage,
+                                        CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
+                                        ElapsedTime = result?.ElapsedTime ?? 0,
+                                    });
+                                }
+                                else {
+                                    result?.Image?.Dispose();
+                                    if (!IsRealtimeImageEnabled) {
+                                        thumbnail?.Dispose();
+                                    }
                                 }
                             }
 

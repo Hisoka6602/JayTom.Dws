@@ -39,8 +39,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
         private bool _isExecuting;
         private static bool _isLoaded;
 
-        private ObservableCollection<CameraFinderItemInfoModel> _cameraFinderItems = new() {
-            /*new CameraFinderItemInfoModel() {
+        private ObservableCollection<CameraFinderItemInfoModel> _cameraFinderItems = new()/* {
+            new CameraFinderItemInfoModel() {
                 Num = 1,
                 Name = "增加一个转换、如果是工业相机、智能相机则不显示体积绑定",
                 ConnectionType = ConnectionType.Ethernet,
@@ -56,7 +56,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                 CameraType = CameraType.SmartCamera,
                 SerialNumber = "测试序列号2",
                 IpAddress = "192.168.0.1",
-                Model = "HK-6565",
+                Model = "Hik-6565",
             },
             new CameraFinderItemInfoModel() {
                 Num = 3,
@@ -77,8 +77,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                 IpAddress = "192.168.0.1",
                 Model = "HK-6565",
                 BoundType = BoundCameraType.BarcodeScannerCamera,
-            },*/
-        };
+            },
+        }*/;
 
         private SnackbarMessageQueue _cameraFinderMessageQueue = new(TimeSpan.FromSeconds(2));
         private bool _isRefreshing;
@@ -375,12 +375,17 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
             if (obj.CameraType == CameraType.SmartCamera /*&&
                 (obj.Brand.Contains("Hik") || obj.Brand.Contains("Dahua") || obj.Model.Contains("DH"))*/) {
                 //弹出触发选择
-                _dialogService.ShowDialog("TriggerModeSelectionPage", callback => {
+                _dialogService.ShowDialog("TriggerModeSelectionPage", new DialogParameters()
+                {
+                    {"Brand", obj.Brand}
+                }, callback => {
                     //获取参数
                     result = callback.Result;
                     var triggerMode = callback.Parameters.GetValue<TriggerMode>("CameraTriggerMode");
+                    var sourceLine = callback.Parameters.GetValue<int>("SourceLine");
                     cameraConnectionParameters = JsonConvert.SerializeObject(new {
                         TriggerMode = triggerMode,
+                        SourceLine = sourceLine
                     });
                 });
                 if (result != ButtonResult.OK) {
@@ -435,12 +440,17 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
             if (obj.CameraType == CameraType.SmartCamera /*&&
                 (obj.Brand.Contains("Hik") || obj.Brand.Contains("Dahua") || obj.Model.Contains("DH"))*/) {
                 //弹出触发选择
-                _dialogService.ShowDialog("TriggerModeSelectionPage", callback => {
+                _dialogService.ShowDialog("TriggerModeSelectionPage", new DialogParameters()
+                {
+                    {"Brand", obj.Brand}
+                }, callback => {
                     //获取参数
                     result = callback.Result;
                     var triggerMode = callback.Parameters.GetValue<TriggerMode>("CameraTriggerMode");
+                    var sourceLine = callback.Parameters.GetValue<int>("SourceLine");
                     cameraConnectionParameters = JsonConvert.SerializeObject(new {
                         TriggerMode = triggerMode,
+                        SourceLine = sourceLine
                     });
                 });
                 if (result != ButtonResult.OK) {

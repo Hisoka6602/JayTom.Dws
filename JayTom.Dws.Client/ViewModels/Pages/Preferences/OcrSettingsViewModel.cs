@@ -26,8 +26,10 @@ using JayTom.Dws.PluginInterface.Utils;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Client.Models.OcrSettingsModel;
 using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
+using SaveFileDialog = Microsoft.Win32.SaveFileDialog;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
+
     public class OcrSettingsViewModel : BindableBase {
         private readonly IConfigRepository _configRepository;
         private readonly IOcr _ocr;
@@ -41,6 +43,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         private string _loadImagePath = string.Empty;
         private ImageSource? _originalImage;
         private ImageSource? _imageSource;
+        private Bitmap? _cropImage = null;
 
         public OcrSettingsViewModel(IConfigRepository configRepository, IOcr ocr,
             IDeviceService deviceService) {
@@ -150,6 +153,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         private async void RefreshDelegate(object obj) {
             //判断图片不为空
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                _cropImage = null;
                 if (OriginalImage is not null) {
                     var fullName = Directory.GetFiles($"{System.AppDomain.CurrentDomain.BaseDirectory}OnnxModels")
                         ?.Select(s => new FileInfo(s))?.FirstOrDefault(f => f.Name.Equals(SelectModelFile))?.FullName ?? string.Empty;
@@ -158,19 +162,52 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     if (image is not null) {
                         var ocrTemporarilyResult = _ocr.ParseOcrTemporarilyResult((Bitmap)image,
                             fullName, OcrSettingsInfo.ConfidenceThreshold, OcrSettingsInfo.RectangleScale);
-                        if (ocrTemporarilyResult is not null && ocrTemporarilyResult.IsSuccess) {
-                            //先画出区域
-                            var inPixels = CalculateLineWidthMultiplier(image.Width, image.Height) * 10;
-                            var rectangleOnImage = DrawRectangleOnImage(image, ocrTemporarilyResult.CropRectangle
+                        var inPixels = CalculateLineWidthMultiplier(image.Width, image.Height) * 10;
+                        Bitmap? rectangleOnImage = null;
+                        if (ocrTemporarilyResult is not null) {
+                            _cropImage = ocrTemporarilyResult.CropImage;
+                            if (ocrTemporarilyResult.CropRectangle is not null) {
+                                //先画出区域
+                                rectangleOnImage = DrawRectangleOnImage(image, ocrTemporarilyResult.CropRectangle
                                                                                ?? new Rectangle(0, 0, 0, 0),
-                                Color.Crimson, (int)inPixels);
-                            var drawIndicator = DrawIndicator(rectangleOnImage, rectangleOnImage.Size,
-                                ocrTemporarilyResult, (int)inPixels);
-                            ImageSource = drawIndicator.ConvertBitmapToBitmapSource();
+                                   Color.Crimson, (int)inPixels);
+                            }
+
+                            if (ocrTemporarilyResult.IsSuccess && rectangleOnImage is not null) {
+                                var drawIndicator = DrawIndicator(rectangleOnImage, rectangleOnImage.Size,
+                                    ocrTemporarilyResult, (int)inPixels);
+                                ImageSource = drawIndicator.ConvertBitmapToBitmapSource();
+                            }
                         }
                         else {
                             ImageSource = OriginalImage;
                         }
+                    }
+                }
+            });
+        }
+
+        public ICommand SaveCropImageCommand {
+            get => new DelegateCommand<object>(SaveCropImageDelegate);
+        }
+
+        private async void SaveCropImageDelegate(object obj) {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                if (_cropImage is null) {
+                    OcrSettingsMessageQueue.Enqueue("未获取到截图!");
+                    return;
+                }
+                else {
+                    var saveFileDialog = new SaveFileDialog() {
+                        Title = "保存图片",
+                        InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory),
+                        Filter =
+                            $"{Languages.Language.ResourceManager.GetString("位图文件") ?? string.Empty} ( *.jpg)| *.jpg",
+                        DefaultExt = ".jpg",
+                        RestoreDirectory = true,
+                    };
+                    if (saveFileDialog.ShowDialog() == true) {
+                        _cropImage.Save(saveFileDialog.FileName);
                     }
                 }
             });
@@ -401,40 +438,40 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                 ?.Select(s => new FileInfo(s))?.Where(w => w.Extension.Contains("onnx"))
                 ?.Select(s1 => s1.Name)?.ToList();
             ModelFiles.AddRange(modelNames);
-            if (!_isLoaded) {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+                var configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("OcrSettings"));
+                if (configInfoModel is not null) {
+                    try {
+                        var ocrSettingsDto = JsonConvert.DeserializeObject<OcrSettingsDto>(configInfoModel.Value);
+                        if (ocrSettingsDto is not null) {
+                            OcrSettingsInfo = new OcrSettingsInfoModel() {
+                                IsShowReceiverInfo = ocrSettingsDto.IsShowReceiverInfo,
+                                IsShowRecognitionTime = ocrSettingsDto.IsShowRecognitionTime,
+                                IsShowSenderInfo = ocrSettingsDto.IsShowSenderInfo,
+                                IsUseOcr = ocrSettingsDto.IsUseOcr,
+                                IsThreeSegmentCode = ocrSettingsDto.IsThreeSegmentCode,
+                                RecognitionTimeout = ocrSettingsDto.RecognitionTimeout,
+                                ConfidenceThreshold = ocrSettingsDto.ConfidenceThreshold,
+                                CropImagePath = ocrSettingsDto.CropImagePath,
+                                IsSaveCropImage = ocrSettingsDto.IsSaveCropImage,
+                                ModelFilePath = ocrSettingsDto.ModelFilePath,
+                                RectangleScale = ocrSettingsDto.RectangleScale,
+                            };
+                            SelectModelFile = ocrSettingsDto.ModelFilePath;
+                        }
+                    }
+                    catch (Exception e) {
+                        OcrSettingsMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("加载设置失败") ?? string.Empty}:{e.Message}");
+                    }
+                }
+                //读取算法文件夹文件
+                if (!Directory.Exists($"{System.AppDomain.CurrentDomain.BaseDirectory}OnnxModels")) {
+                    Directory.CreateDirectory($"{System.AppDomain.CurrentDomain.BaseDirectory}OnnxModels");
+                }
+            });
+            /*if (!_isLoaded) {
                 _isLoaded = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
-                    var configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("OcrSettings"));
-                    if (configInfoModel is not null) {
-                        try {
-                            var ocrSettingsDto = JsonConvert.DeserializeObject<OcrSettingsDto>(configInfoModel.Value);
-                            if (ocrSettingsDto is not null) {
-                                OcrSettingsInfo = new OcrSettingsInfoModel() {
-                                    IsShowReceiverInfo = ocrSettingsDto.IsShowReceiverInfo,
-                                    IsShowRecognitionTime = ocrSettingsDto.IsShowRecognitionTime,
-                                    IsShowSenderInfo = ocrSettingsDto.IsShowSenderInfo,
-                                    IsUseOcr = ocrSettingsDto.IsUseOcr,
-                                    IsThreeSegmentCode = ocrSettingsDto.IsThreeSegmentCode,
-                                    RecognitionTimeout = ocrSettingsDto.RecognitionTimeout,
-                                    ConfidenceThreshold = ocrSettingsDto.ConfidenceThreshold,
-                                    CropImagePath = ocrSettingsDto.CropImagePath,
-                                    IsSaveCropImage = ocrSettingsDto.IsSaveCropImage,
-                                    ModelFilePath = ocrSettingsDto.ModelFilePath,
-                                    RectangleScale = ocrSettingsDto.RectangleScale,
-                                };
-                                SelectModelFile = ocrSettingsDto.ModelFilePath;
-                            }
-                        }
-                        catch (Exception e) {
-                            OcrSettingsMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("加载设置失败") ?? string.Empty}:{e.Message}");
-                        }
-                    }
-                    //读取算法文件夹文件
-                    if (!Directory.Exists($"{System.AppDomain.CurrentDomain.BaseDirectory}OnnxModels")) {
-                        Directory.CreateDirectory($"{System.AppDomain.CurrentDomain.BaseDirectory}OnnxModels");
-                    }
-                });
-            }
+            }*/
         }
     }
 }

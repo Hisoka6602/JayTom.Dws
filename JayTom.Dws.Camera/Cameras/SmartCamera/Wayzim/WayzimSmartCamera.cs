@@ -345,6 +345,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
         public bool IsShowBarcodeBorder { get; set; } = true;
         public bool IsUseTriggerMode { get; set; } = true;
         public TriggerMode TriggerMode { get; set; } = TriggerMode.Hardware;
+        public int SourceLine { get; set; }
 
         public void SoftwareTriggerOnce() {
             //
