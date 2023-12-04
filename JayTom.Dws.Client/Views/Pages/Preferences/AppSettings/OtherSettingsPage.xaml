@@ -162,7 +162,7 @@
                             FontSize="15"
                             FontWeight="Bold"
                             Foreground="White"
-                            MaxLength="12"
+                            MaxLength="30"
                             Text="{Binding OtherSettingsInfo.ProgramTitle, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                     </Border>
                 </StackPanel>

@@ -99,7 +99,6 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                             try {
                                 await _snapRevPhotoSlim.WaitAsync();
                                 await Task.Delay(50);
-
                                 // 取出登录id
                                 var (key, value) = _loginDev.FirstOrDefault(f => f.Value == id);
                                 if (key != null) {
@@ -110,7 +109,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                                         if (type == 10) //.jpg
                                         {
                                             unsafe {
-                                                byte[] fixedBuffer = new byte[len];  // 固定内存缓冲区
+                                                byte[] fixedBuffer = new byte[len]; // 固定内存缓冲区
 
                                                 fixed (byte* pBuffer = fixedBuffer) {
                                                     var ptr = new IntPtr(pBuffer);
@@ -126,7 +125,8 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                                             }
                                         }
 
-                                        var image = imageBitmap?.GetThumbnailImage(imageBitmap.Width, imageBitmap.Height,
+                                        var image = imageBitmap?.GetThumbnailImage(imageBitmap.Width,
+                                            imageBitmap.Height,
                                             () => false, IntPtr.Zero);
 
                                         if (image != null) callback?.Invoke((Bitmap)image);
@@ -134,6 +134,8 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                                         imageBitmap?.Dispose();
                                     }
                                 }
+                            }
+                            catch (Exception e) {
                             }
                             finally {
                                 _snapRevPhotoSlim.Release();
@@ -327,7 +329,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
 
             try {
                 await _takePhotoSlim.WaitAsync();
-                await Task.Delay(150);
+                await Task.Delay(400);
                 var tryGetValue = _loginDev.TryGetValue(serialNo, out var mLoginId);
                 if (tryGetValue) {
                     var indexOf = _loginDev.Keys.OrderBy(o => o).ToList().IndexOf(serialNo);

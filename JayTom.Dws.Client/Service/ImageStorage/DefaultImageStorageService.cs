@@ -16,6 +16,7 @@ using JayTom.Dws.Domain.Repository.LocalConf;
 using WatermarkPosition = JayTom.Dws.Plugin.SaveImage.WatermarkPosition;
 
 namespace JayTom.Dws.Client.Service.ImageStorage {
+
     public class DefaultImageStorageService : IImageStorageService {
         private readonly ISaveImage _saveImage;
         private readonly IConfigRepository _configRepository;

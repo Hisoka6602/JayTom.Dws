@@ -663,14 +663,19 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                                     }
                                     else {
                                         //如果没读到条码
-                                        OnNotBarcodeHitEvent(new BarcodeReadEventArgs() {
-                                            Timestamp = timestamp,
-                                            Barcode = "NoRead",
-                                            Image = bmp,
-                                            ThumbImage = thumbnailImage,
-                                            CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
-                                            ScanTime = DateTime.Now
-                                        });
+                                        if (TriggerMode == TriggerMode.Hardware) {
+                                            OnNotBarcodeHitEvent(new BarcodeReadEventArgs() {
+                                                Timestamp = timestamp,
+                                                Barcode = "NoRead",
+                                                Image = bmp,
+                                                ThumbImage = thumbnailImage,
+                                                CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
+                                                ScanTime = DateTime.Now
+                                            });
+                                        }
+                                        else {
+                                            bmp?.Dispose();
+                                        }
                                     }
 
                                     if (IsRealtimeImageEnabled) {
