@@ -1,4 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using JayTom.Dws.Data.LocalConf;
+using JayTom.Dws.Data.ServerData;
+using Microsoft.EntityFrameworkCore;
 
 namespace JayTom.Dws.Infrastructure {
 
@@ -8,6 +10,28 @@ namespace JayTom.Dws.Infrastructure {
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder) {
+            //创建表
+            //多连接表
+            base.OnModelCreating(modelBuilder);
+            modelBuilder.Entity<UserInfo>().HasKey(c => new {
+                c.Id
+            });
+            modelBuilder.Entity<AuthorizationInfo>().HasKey(c => new {
+                c.Id
+            });
+            // 配置关系
+            modelBuilder.Entity<UserInfo>()
+                .HasMany(u => u.AuthorizationInfos)
+                .WithOne(a => a.UserInfo)
+                .HasForeignKey(a => a.UserId);
+
+            modelBuilder.Entity<MachineInfo>().HasKey(c => new {
+                c.Id
+            });
+            modelBuilder.Entity<AuthorizationInfo>()
+                .HasMany(a => a.MachineInfos)
+                .WithOne(m => m.AuthorizationInfo)
+                .HasForeignKey(m => m.AuthorizationInfoUserId);
         }
     }
 }
