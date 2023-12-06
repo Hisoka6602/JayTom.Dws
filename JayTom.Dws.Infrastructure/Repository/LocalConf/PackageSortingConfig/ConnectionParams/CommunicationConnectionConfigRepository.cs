@@ -15,7 +15,6 @@ using JayTom.Dws.Data.LocalConf.PackageSortingConfig.ConnectionParams;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig.ConnectionParams;
 
 namespace JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig.ConnectionParams {
-
     public class CommunicationConnectionConfigRepository : LocalRepositoryBase<CommunicationConnectionConfigInfoModel>, ICommunicationConnectionConfigRepository {
 
         public CommunicationConnectionConfigRepository(IDbContextFactory<SqliteConfContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
@@ -31,8 +30,10 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig.Co
                         .OrderByDescending(o => o.CreateTime)
                         .Include(b => b.DeviceExtensionConfigInfo)
                         .Include(b => b.TcpConnectionConfigInfo)
+                        .ThenInclude(c => c.TcpConfigItems)
                         .Include(b => b.HeartbeatConfigInfo)
                         .Include(b => b.SerialPortConfigInfo)
+
                         .ToListAsync(cancellationToken: token);
                 }
             }
@@ -51,8 +52,8 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig.Co
                     await using (contextTransaction = await concardContext.Database.BeginTransactionAsync(token)) {
                         if (contextTransaction is not null) {
                             var communicationConnectionConfigInfoModels = concardContext?.Set<CommunicationConnectionConfigInfoModel>();
-                            await communicationConnectionConfigInfoModels.AddAsync(entity, token);
-                            await concardContext?.SaveChangesAsync(token);
+                            var entityEntry = await communicationConnectionConfigInfoModels.AddAsync(entity, token);
+                            var saveChangesAsync = await concardContext?.SaveChangesAsync(token);
                             await contextTransaction.CommitAsync(token);
 
                             return true;
