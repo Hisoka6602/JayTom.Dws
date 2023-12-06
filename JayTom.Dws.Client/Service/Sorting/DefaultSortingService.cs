@@ -4,6 +4,7 @@ using System.Text;
 using Newtonsoft.Json;
 using System.Text.Json;
 using System.Threading;
+using System.Diagnostics;
 using JayTom.Dws.Interface;
 using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
@@ -453,7 +454,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                     f.ExitId.Equals(packageExitDefinitionInfoModel.Id));
                 if (sortingInstructionBindingInfoModel is not null) {
                     await Task.Delay(sortingInstructionBindingInfoModel.DelaySendMilliseconds, token);
-                    _sortingConnectionService.SendInstructions(param.Tag ?? new object(),
+                    _sortingConnectionService.SendInstructions(param.Tag ?? new object(), sortingInstructionBindingInfoModel.ExitId ?? 0,
                         sortingInstructionInfoModels ?? new List<SortingInstructionInfoModel>(),
                         TimeSpan.FromMilliseconds(sortingInstructionBindingInfoModel.SendIntervalMilliseconds),
                         new InstructionsAttach {
@@ -687,7 +688,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                         ?.ToList();
                     await Task.Delay(sortingInstructionBindingInfoModel.DelaySendMilliseconds, token);
 
-                    _sortingConnectionService.SendInstructions(param.Tag ?? new object(),
+                    _sortingConnectionService.SendInstructions(param.Tag ?? new object(), sortingInstructionBindingInfoModel.ExitId ?? 0,
                         sortingInstructionInfoModels ?? new List<SortingInstructionInfoModel>(),
                         TimeSpan.FromMilliseconds(sortingInstructionBindingInfoModel.SendIntervalMilliseconds),
                         new InstructionsAttach {

@@ -11,7 +11,6 @@ using JayTom.Dws.Client.Service.Sorting.Communication.TcpComm;
 using JayTom.Dws.Client.Service.Sorting.Communication.SerialComm;
 
 namespace JayTom.Dws.Client.Service.Sorting {
-
     public interface ISortingConnectionService {
 
         /// <summary>
@@ -69,19 +68,21 @@ namespace JayTom.Dws.Client.Service.Sorting {
         /// 发送指令(多用于测试)
         /// </summary>
         /// <param name="tag"></param>
+        /// <param name="exitId"></param>
         /// <param name="instructions"></param>
         /// <param name="interval"></param>
         /// <param name="attach"></param>
-        void SendInstructions(object tag, List<string> instructions, TimeSpan interval, InstructionsAttach attach);
+        void SendInstructions(object tag, long exitId, List<string> instructions, TimeSpan interval, InstructionsAttach attach);
 
         /// <summary>
         /// 发送指令
         /// </summary>
         /// <param name="tag"></param>
+        /// <param name="exitId"></param>
         /// <param name="instructions"></param>
         /// <param name="interval"></param>
         /// <param name="attach"></param>
-        void SendInstructions(object tag, List<SortingInstructionInfoModel> instructions, TimeSpan interval, InstructionsAttach attach);
+        void SendInstructions(object tag, long exitId, List<SortingInstructionInfoModel> instructions, TimeSpan interval, InstructionsAttach attach);
     }
 
     public class ConnectionCommunicationMessageInfo : CommunicationInfo {
