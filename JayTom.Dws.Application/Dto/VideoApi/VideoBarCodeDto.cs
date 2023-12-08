@@ -4,9 +4,9 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
-namespace JayTom.Dws.Application.Dto {
+namespace JayTom.Dws.Application.Dto.VideoApi {
 
-    public class BarCodeDto {
+    public class VideoBarCodeDto {
 
         /// <summary>
         /// 时间戳Id
