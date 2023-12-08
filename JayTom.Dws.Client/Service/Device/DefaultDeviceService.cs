@@ -792,22 +792,6 @@ namespace JayTom.Dws.Client.Service.Device {
         protected virtual async void OnBarcodeScanned(BarcodeReadEventArgs e) {
             await Task.Yield();
             BarcodeScanned?.Invoke(this, e);
-            //判断如果需要有全景相机则触发
-            var cameras = _cameras?.Where(w =>
-                w is {
-                    BindingType: CameraBindingType.PanoramicCamera,
-                    SdkType: (SdkType.IndustrialCameraSdk or SdkType.SecurityCamera),
-                })?.ToList();
-            if (cameras?.Any() == true && RunningStatus) {
-                foreach (var camera in cameras) {
-                    if (camera is IIndustrialCamera industrialCamera) {
-                        await industrialCamera.TakePhotoAsync(e.Barcode, e.Timestamp);
-                    }
-                    else if (camera is ISecurityCamera securityCamera) {
-                        await securityCamera.TakePhotoAsync(e.Barcode, e.Timestamp);
-                    }
-                }
-            }
         }
 
         protected virtual async void OnNotBarcodeHitEvent(BarcodeReadEventArgs e) {

@@ -67,6 +67,18 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         Timestamp = args.Timestamp,
                     };
                     _packageInfos.Enqueue(packageInfo);
+                    //触发全景拍照
+                    var enumerable = _cameras.Where(w => w.BindingType == CameraBindingType.PanoramicCamera);
+                    foreach (var c in enumerable) {
+                        if (c is IIndustrialCamera camera && _deviceService.RunningStatus) {
+                            await camera.TakePhotoAsync(args.Barcode, args.Timestamp);
+                        }
+                    }
+                    //获取外部数据
+                    //体积
+                    if (_externalDataSource.IsVolumeInput) {
+                        await _externalDataService.GetVolume(args.Barcode);
+                    }
                     EventAggregator.Instance.Publish(new TriggerPositionEvent() {
                         IsSuccess = true,
                         TriggerPosition = TriggerPositionEnum.PackageTrigger
@@ -81,11 +93,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         info.ScanTime = args.ScanTime;
                         info.Timestamp = args.Timestamp;
                     }
-                }
-                //获取外部数据
-                //体积
-                if (_externalDataSource.IsVolumeInput) {
-                    await _externalDataService.GetVolume(args.Barcode);
                 }
             };
             //空包裹
@@ -448,18 +455,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 var info = _packageInfos.FirstOrDefault(f => !string.IsNullOrEmpty(f.BarCode) && f.BarCode.Equals(panoramicImageInfo.Barcode));
                                 if (info is { Weight: not null, Length: not null, Width: not null, Height: not null, Volume: not null, BarCode: not null }
                                    ) {
-                                    var imageMessageInfo = new ImageMessageInfo {
-                                        BarCode = info.BarCode,
-                                        CameraSerialNumber = panoramicImageInfo.CameraSerialNumber,
-                                        Weight = (float)info.Weight,
-                                        Height = (float)info.Height,
-                                        Image = panoramicImageInfo.Image,
-                                        Length = (float)info.Length,
-                                        Width = (float)info.Width,
-                                        Volume = (float)info.Volume,
-                                        ScanTime = info.ScanTime,
-                                        Type = SaveImageType.PanoramaImage
-                                    };
                                     //全景图数量+1
                                     info.PanoramicImageCount += 1;
                                     EventAggregator.Instance.Publish(new ImageMessageInfo {
