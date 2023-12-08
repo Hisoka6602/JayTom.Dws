@@ -143,6 +143,9 @@
     <None Update="Sound\success.wav">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="TimeIntervals.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <!--<Target Name="CopyDeviceLib" AfterTargets="AfterBuild">
     <ItemGroup>
