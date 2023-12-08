@@ -290,7 +290,6 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                 await Task.Delay(TakePhotoDelay, cancellation);
                 if (Status == CameraStatus.Running) {
                     try {
-                        await Task.Delay(TakePhotoDelay, cancellation);
                         await _takePhotoSlim.WaitAsync(cancellation);
                         await Task.Delay(200, cancellation);
                         if (!string.IsNullOrEmpty(Info?.SerialNumber)) {
@@ -324,7 +323,6 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                 await Task.Delay(delay, cancellation);
                 if (Status == CameraStatus.Running) {
                     try {
-                        await Task.Delay(TakePhotoDelay, cancellation);
                         await _takePhotoSlim.WaitAsync(cancellation);
                         await Task.Delay(200, cancellation);
                         if (!string.IsNullOrEmpty(Info?.SerialNumber)) {

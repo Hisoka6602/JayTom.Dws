@@ -39,7 +39,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private ConcurrentQueue<CameraImageInfo> _panoramicImageItems = new();
         private ConcurrentQueue<CameraImageInfo> _volumeCameraImageItems = new();
         private ConcurrentQueue<PackageInfo> _packageInfos = new();
-        private int[] _timeIntervals;
+        private int[] _timeIntervals = Array.Empty<int>();
 
         public PackageBackgroundService(IDeviceService deviceService,
             IResultOutputService resultOutputService,
@@ -88,11 +88,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     //触发全景拍照
                     var enumerable = _cameras.Where(w => w.BindingType == CameraBindingType.PanoramicCamera);
                     foreach (var c in enumerable) {
-                        if (c is IIndustrialCamera camera && _deviceService.RunningStatus) {
+                        if (_deviceService.RunningStatus) {
                             //循环次数
                             foreach (var timeInterval in _timeIntervals ?? Array.Empty<int>()) {
                                 await Task.Delay(timeInterval);
-                                await camera.TakePhotoAsync(args.Barcode, args.Timestamp);
+                                await c.TakePhotoAsync(args.Barcode, args.Timestamp);
                             }
                         }
                     }
@@ -154,8 +154,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 }
             };
             //全景相机
-            _deviceService.PanoramaCaptured += async delegate (object? sender, PanoramaCaptureEventArgs args) {
-                await Task.Yield();
+            _deviceService.PanoramaCaptured += delegate (object? sender, PanoramaCaptureEventArgs args) {
                 _panoramicImageItems.Enqueue(new CameraImageInfo() {
                     CameraSerialNumber = args.CameraSerialNumber,
                     Image = args.Image,
@@ -472,7 +471,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             if (panoramicImageInfo is not null) {
                                 var info = _packageInfos.FirstOrDefault(f => !string.IsNullOrEmpty(f.BarCode) && f.BarCode.Equals(panoramicImageInfo.Barcode));
                                 if (info is { Weight: not null, Length: not null, Width: not null, Height: not null, Volume: not null, BarCode: not null }
-                                   ) {
+                                       && info.PanoramicImageCount <
+                                    _cameras.Count(c => c.BindingType == CameraBindingType.PanoramicCamera)) {
                                     //全景图数量+1
                                     info.PanoramicImageCount += 1;
                                     EventAggregator.Instance.Publish(new ImageMessageInfo {
@@ -489,26 +489,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                     });
                                 }
                                 else {
-                                    //如果时间超过3秒则提交到保存
-                                    //时间-分秒
-                                    var dateTime = DateTimeOffset.FromUnixTimeMilliseconds(panoramicImageInfo.BarcodeTimestamp).LocalDateTime;
-                                    if (DateTime.Now.Subtract(dateTime).TotalMilliseconds > 3000) {
-                                        EventAggregator.Instance.Publish(new ImageMessageInfo {
-                                            BarCode = $"{panoramicImageInfo.Barcode}-{DateTime.Now:mmssfff}",
-                                            CameraSerialNumber = panoramicImageInfo.CameraSerialNumber,
-                                            Weight = 0,
-                                            Height = 0,
-                                            Image = panoramicImageInfo.Image,
-                                            Length = 0,
-                                            Width = 0,
-                                            Volume = 0,
-                                            ScanTime = dateTime,
-                                            Type = SaveImageType.PanoramaImage
-                                        });
-                                    }
-                                    else {
-                                        _panoramicImageItems.Enqueue(panoramicImageInfo);
-                                    }
+                                    _panoramicImageItems.Enqueue(panoramicImageInfo);
                                 }
                             }
                         }
@@ -576,6 +557,36 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
                             if (!packageInfos.Any(a => a.BarCode != null && a.BarCode.Equals(info.BarCode))) {
                                 _packageInfos.Enqueue(info);
+                            }
+                        }
+                    }
+                    else {
+                        //过期全景图
+                        if (_panoramicImageItems.Count > 0) {
+                            _panoramicImageItems.TryDequeue(out var panoramicImageInfo);
+                            if (panoramicImageInfo != null) {
+                                //如果时间超过3秒则提交到保存
+                                //时间-分秒
+
+                                var dateTime = DateTimeOffset.FromUnixTimeMilliseconds(panoramicImageInfo.BarcodeTimestamp).LocalDateTime;
+                                NLog.LogManager.GetCurrentClassLogger().Error($"{dateTime:yyyy-MM-dd HH:mm:ss.fff}");
+                                if (DateTime.Now.Subtract(dateTime).TotalMilliseconds > 3000) {
+                                    EventAggregator.Instance.Publish(new ImageMessageInfo {
+                                        BarCode = $"{panoramicImageInfo.Barcode}-{DateTime.Now:mmssfff}",
+                                        CameraSerialNumber = panoramicImageInfo.CameraSerialNumber,
+                                        Weight = 0,
+                                        Height = 0,
+                                        Image = panoramicImageInfo.Image,
+                                        Length = 0,
+                                        Width = 0,
+                                        Volume = 0,
+                                        ScanTime = dateTime,
+                                        Type = SaveImageType.PanoramaImage
+                                    });
+                                }
+                                else {
+                                    _panoramicImageItems.Enqueue(panoramicImageInfo);
+                                }
                             }
                         }
                     }
