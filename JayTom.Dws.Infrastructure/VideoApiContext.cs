@@ -14,10 +14,6 @@ namespace JayTom.Dws.Infrastructure {
         public VideoApiContext(DbContextOptions<VideoApiContext> options) : base(options) {
         }
 
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
-            optionsBuilder.UseSqlServer("data source=82.156.244.249;initial catalog=DwsVideoApi;persist security info=true;user id=sa;password=Yunshan2021+-/;Max Pool Size = 32767;Packet Size= 1024;Connect Timeout=10;TrustServerCertificate=true");
-        }
-
         protected override void OnModelCreating(ModelBuilder modelBuilder) {
             base.OnModelCreating(modelBuilder);
             modelBuilder.Entity<VideoBarCodeInfoModel>().HasKey(c => new {

@@ -1,0 +1,141 @@
+﻿using System;
+using System.Linq;
+using System.Text;
+using System.Drawing;
+using System.Threading.Tasks;
+using System.Drawing.Imaging;
+using System.Collections.Generic;
+using JayTom.Dws.Data.VideoApiData;
+using JayTom.Dws.Domain.Dto.VideoApi;
+using JayTom.Dws.Domain.Repository.VideoApiData;
+
+namespace JayTom.Dws.Domain.Service.VideoApi {
+
+    public class VideoBarCodeService : IVideoBarCodeService {
+        private readonly IVideoBarCodeRepository _videoBarCodeRepository;
+        private readonly IVideoNodeImageRepository _videoNodeImageRepository;
+        private readonly IVideoScanNodeRepository _videoScanNodeRepository;
+
+        public VideoBarCodeService(IVideoBarCodeRepository videoBarCodeRepository,
+            IVideoNodeImageRepository videoNodeImageRepository,
+            IVideoScanNodeRepository videoScanNodeRepository) {
+            _videoBarCodeRepository = videoBarCodeRepository;
+            _videoNodeImageRepository = videoNodeImageRepository;
+            _videoScanNodeRepository = videoScanNodeRepository;
+        }
+
+        public async Task<KeyValuePair<bool, string>> AddOrUpdateBarcodeInfo(BarcodeImageDto barcodeImageInfo, List<BarcodeImageDto> panoramicImageInfos, ScanNodeDto scanNodeInfo, string rootImagePath) {
+            try {
+                if (barcodeImageInfo?.Image is null) {
+                    return new KeyValuePair<bool, string>(false, "扫码图不能为空");
+                }
+                if (panoramicImageInfos?.Any(a => a.Image == null) == true) {
+                    return new KeyValuePair<bool, string>(false, "全景图不能为空");
+                }
+                await Task.Yield();
+                if (string.IsNullOrEmpty(rootImagePath)) {
+                    rootImagePath = $"{System.AppDomain.CurrentDomain.BaseDirectory}Images";
+                }
+                var barcodeImageRootPath = $"{rootImagePath}\\barcodeImages\\{DateTime.Now:yyyy}\\{DateTime.Now:MM}\\{DateTime.Now:dd}\\{DateTime.Now:HH}";
+                var panoramicRootImage = $"{rootImagePath}\\panoramicImages\\{DateTime.Now:yyyy}\\{DateTime.Now:MM}\\{DateTime.Now:dd}\\{DateTime.Now:HH}";
+                if (!Directory.Exists(barcodeImageRootPath)) {
+                    Directory.CreateDirectory(barcodeImageRootPath);
+                }
+                if (!Directory.Exists(panoramicRootImage)) {
+                    Directory.CreateDirectory(panoramicRootImage);
+                }
+                //保存图片
+                var barcodeImagePath = $"{barcodeImageRootPath}\\{DateTimeOffset.Now.ToUnixTimeMilliseconds()}.jpg";
+                barcodeImageInfo.Image.Save(barcodeImagePath, ImageFormat.Jpeg);
+                barcodeImageInfo.Image.Dispose();
+                var num = 0;
+                var imageInfoModels = panoramicImageInfos.Select(s => {
+                    var panoramicImagePath = $"{panoramicRootImage}\\{DateTimeOffset.Now.ToUnixTimeMilliseconds()}-{num}.jpg";
+                    s.Image.Save(panoramicImagePath, ImageFormat.Jpeg);
+                    s.Image.Dispose();
+                    num++;
+                    return new VideoNodeImageInfoModel {
+                        CameraName = s.CameraName,
+                        CameraSerialNumber = s.CameraSerialNumber,
+                        ImageType = 1,
+                        Name = s.Name,
+                        Path = panoramicImagePath,
+                    };
+                })?.ToList() ?? new List<VideoNodeImageInfoModel>();
+                imageInfoModels?.Add(new VideoNodeImageInfoModel() {
+                    CameraName = barcodeImageInfo.CameraName,
+                    CameraSerialNumber = barcodeImageInfo.CameraSerialNumber,
+                    ImageType = 0,
+                    Name = barcodeImageInfo.Name,
+                    Path = barcodeImagePath,
+                });
+                var model = await _videoBarCodeRepository.FirstOrDefault(f => f.Barcode.Equals(scanNodeInfo.Barcode));
+                if (model is null) {
+                    await _videoBarCodeRepository.Insert(new VideoBarCodeInfoModel() {
+                        Barcode = scanNodeInfo.Barcode,
+                        ScanTime = scanNodeInfo.ScanTime,
+                        TimestampedGuid = new DateTimeOffset(scanNodeInfo.ScanTime).ToUnixTimeMilliseconds(),
+                        VideoScanNodeInfos = new List<VideoScanNodeInfoModel>()
+                        {
+                            new() {
+                                Description = scanNodeInfo.Description,
+                                Name = scanNodeInfo.ScanNodName,
+                                ScanTime = scanNodeInfo.ScanTime,
+                                VideoNodeImageInfos = imageInfoModels
+                            }
+                        }
+                    });
+                }
+                else {
+                    await _videoScanNodeRepository.InsertOrUpdate(new VideoScanNodeInfoModel() {
+                        BarcodeId = model.Id,
+                        Description = scanNodeInfo.Description,
+                        Name = scanNodeInfo.ScanNodName,
+                        ScanTime = scanNodeInfo.ScanTime,
+                        VideoNodeImageInfos = imageInfoModels,
+                    });
+                }
+
+                return new KeyValuePair<bool, string>(true, "保存成功");
+            }
+            catch (Exception e) {
+                return new KeyValuePair<bool, string>(false, $"保存失败:{e.Message}");
+            }
+        }
+
+        public async Task<KeyValuePair<bool, object>> GroupedNodeNames(CancellationToken token = default) {
+            //获取节点的分组返回
+            var (key, value) = await _videoScanNodeRepository.GroupedNodeNames(token);
+            return new KeyValuePair<bool, object>(key, value);
+        }
+
+        public async Task<KeyValuePair<bool, object>> GetBarcodeInfos(string barCode, DateTime? nodeStartDateTime, DateTime? nodeEndDateTime, string? nodeName,
+            string? cameraSerialNumber, string? cameraName, int pageIndex = 0, int pageSize = 1000,
+            CancellationToken token = default) {
+            return await _videoBarCodeRepository.GetBarcodeInfos(barCode,
+                nodeStartDateTime,
+                nodeEndDateTime,
+                nodeName,
+                cameraSerialNumber,
+                cameraName,
+                pageIndex, pageSize, token);
+        }
+
+        public async Task<KeyValuePair<bool, object>> GetBarcodeTotal(string barCode, DateTime? nodeStartDateTime, DateTime? nodeEndDateTime, string? nodeName,
+            string? cameraSerialNumber, string? cameraName, CancellationToken token = default) {
+            //获取条数
+            try {
+                var (key, value) = await _videoBarCodeRepository.GetBarcodeTotal(barCode,
+                    nodeStartDateTime,
+                    nodeEndDateTime, nodeName, cameraSerialNumber,
+                    cameraName, token);
+                return new KeyValuePair<bool, object>(key, value);
+            }
+            catch (Exception e) {
+                Console.WriteLine(e);
+
+                return new KeyValuePair<bool, object>(false, e.Message);
+            }
+        }
+    }
+}

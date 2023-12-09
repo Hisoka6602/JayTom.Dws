@@ -1,35 +1,20 @@
 ﻿using System;
 using System.Linq;
 using System.Text;
-using System.Drawing;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using JayTom.Dws.Application.Dto.VideoApi;
+using JayTom.Dws.Domain.Dto.VideoApi;
 
-namespace JayTom.Dws.Application.Service.VideoApi {
+namespace JayTom.Dws.Domain.Service.VideoApi {
 
-    public interface IVideoBarCode {
-        /*
-         * 1.接收上传的信息(json格式数据->同时接收图片[全景图(组)、扫码图(单)])
-
-{
-  "BarCode": "BarCodeValue",
-  "Weight": "WeightValue",
-  "ScanTime": "ScanTimeValue",
-  "TimestampedGuid": "TimestampedGuidValue",
-  "Length": "LengthValue",
-  "Width": "WidthValue",
-  "Height": "HeightValue",
-  "Volume": "VolumeValue"
-}
-         */
+    public interface IVideoBarCodeService {
 
         /// <summary>
         /// 添加或修改条码信息
         /// </summary>
         /// <returns></returns>
         public Task<KeyValuePair<bool, string>> AddOrUpdateBarcodeInfo(BarcodeImageDto barcodeImageInfo,
-            List<BarcodeImageDto> panoramicImageInfos, ScanNodeDto scanNodeInfo);
+            List<BarcodeImageDto> panoramicImageInfos, ScanNodeDto scanNodeInfo, string rootImagePath);
 
         /// <summary>
         /// 获取节点分组

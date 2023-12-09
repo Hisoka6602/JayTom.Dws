@@ -1,11 +1,6 @@
-﻿using System;
-using System.Linq;
-using System.Text;
-using System.Drawing;
-using System.Threading.Tasks;
-using System.Collections.Generic;
+﻿using System.Drawing;
 
-namespace JayTom.Dws.Application.Dto.VideoApi {
+namespace JayTom.Dws.Domain.Dto.VideoApi {
 
     public class BarcodeImageDto {
 
