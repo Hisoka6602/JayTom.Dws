@@ -39,7 +39,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
         private bool _isExecuting;
         private static bool _isLoaded;
 
-        private ObservableCollection<CameraFinderItemInfoModel> _cameraFinderItems = new()/* {
+        private ObservableCollection<CameraFinderItemInfoModel> _cameraFinderItems = new() {
             new CameraFinderItemInfoModel() {
                 Num = 1,
                 Name = "增加一个转换、如果是工业相机、智能相机则不显示体积绑定",
@@ -78,7 +78,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                 Model = "HK-6565",
                 BoundType = BoundCameraType.BarcodeScannerCamera,
             },
-        }*/;
+        };
 
         private SnackbarMessageQueue _cameraFinderMessageQueue = new(TimeSpan.FromSeconds(2));
         private bool _isRefreshing;
@@ -296,6 +296,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
             //判断有没有选中对应的SDK
             var cameraConnectionParameters = string.Empty;
             var failureMessage = string.Empty;
+            //判断是否安防相机
             if (obj.CameraType == CameraType.VideoCamera) {
                 //弹出账号密码录入框
                 var result = ButtonResult.No;
@@ -322,10 +323,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                 }
             }
 
+            //判断指定扫码相机
+            _dialogService.ShowDialog($"ScanCameraSelectionDialog", callback => {
+            });
             await Application.Current.Dispatcher.InvokeAsync(async () => {
                 _isExecuting = true;
                 var isSuccess = false;
-                //判断是否安防相机
 
                 var insertOrUpdate = await _panoramaCameraConfigRepository.InsertOrUpdate(new PanoramaCameraConfigInfoModel() {
                     ConnectionType = (int)obj.ConnectionType,
@@ -642,8 +645,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                     }
                 }
             }
-
-            Debug.WriteLine(obj);
         }
 
         public ICommand SdkSelectionChangedCommand {

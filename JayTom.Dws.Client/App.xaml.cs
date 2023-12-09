@@ -109,6 +109,7 @@ namespace JayTom.Dws.Client {
             containerRegistry.RegisterDialog<ApiAccessDialog>();
             containerRegistry.RegisterDialog<ApiTestDialog>();
             containerRegistry.RegisterDialog<BarCodeDetailsDialog>();
+
             //插件窗口
             {
                 containerRegistry.RegisterDialog<SunnenInputBarcodeControl>();
@@ -120,6 +121,10 @@ namespace JayTom.Dws.Client {
             //海康软硬触发
             {
                 containerRegistry.RegisterDialog<TriggerModeSelectionPage>();
+            }
+            //全景指定触发
+            {
+                containerRegistry.RegisterDialog<ScanCameraSelectionDialog>();
             }
             //跳转注册
             {
@@ -562,6 +567,7 @@ namespace JayTom.Dws.Client {
             ViewModelLocationProvider.Register<LogManagerPage, LogManagerViewModel>();
             ViewModelLocationProvider.Register<VideoCameraSettingsDialog, VideoCameraSettingsViewModel>();
             ViewModelLocationProvider.Register<TriggerModeSelectionPage, TriggerModeSelectionViewModel>();
+            ViewModelLocationProvider.Register<ScanCameraSelectionDialog, ScanCameraSelectionDialogViewModel>();
             ViewModelLocationProvider.Register<ResolutionConstraintDialog, ResolutionConstraintViewModel>();
 
             ViewModelLocationProvider.Register<PackageSortingSettingsPage, PackageSortingSettingsViewModel>();

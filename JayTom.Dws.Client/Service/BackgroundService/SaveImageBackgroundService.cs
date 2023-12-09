@@ -60,7 +60,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     await _semaphore.WaitAsync();
                     var configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("OcrSettings"));
                     try {
-                        _ocrSettingsDto = JsonConvert.DeserializeObject<OcrSettingsDto>(configInfoModel.Value);
+                        _ocrSettingsDto = JsonConvert.DeserializeObject<OcrSettingsDto>(configInfoModel?.Value ?? string.Empty);
                     }
                     catch (Exception e) {
                         _ocrSettingsDto ??= new OcrSettingsDto();
@@ -94,7 +94,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 await _semaphore.WaitAsync(stoppingToken);
                 var configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("OcrSettings"), stoppingToken);
                 try {
-                    _ocrSettingsDto = JsonConvert.DeserializeObject<OcrSettingsDto>(configInfoModel.Value);
+                    _ocrSettingsDto = JsonConvert.DeserializeObject<OcrSettingsDto>(configInfoModel?.Value ?? string.Empty);
                 }
                 catch (Exception e) {
                     _ocrSettingsDto ??= new OcrSettingsDto();
