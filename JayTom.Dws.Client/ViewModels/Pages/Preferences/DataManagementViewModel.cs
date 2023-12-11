@@ -429,11 +429,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// 打开全景图片
         /// </summary>
 
-        public ICommand OpenPanoramicImageCommand {
-            get => new DelegateCommand<PanoramaImageItemModel>(OpenPanoramicImageDelegate);
+        public ICommand OpenPanoramaImageCommand {
+            get => new DelegateCommand<PanoramaImageItemModel>(OpenPanoramaImageDelegate);
         }
 
-        private void OpenPanoramicImageDelegate(PanoramaImageItemModel obj) {
+        private void OpenPanoramaImageDelegate(PanoramaImageItemModel obj) {
             if (File.Exists(obj?.PanoramaImagePath)) {
                 try {
                     Process.Start(new ProcessStartInfo(obj.PanoramaImagePath) { UseShellExecute = true });
@@ -447,11 +447,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /*/// <summary>
         /// 定位全景图片位置
         /// </summary>
-        public ICommand OpenPanoramicImageFolderCommand {
-            get => new DelegateCommand<PanoramaImageItemModel>(OpenPanoramicImageFolderDelegate);
+        public ICommand OpenPanoramaImageFolderCommand {
+            get => new DelegateCommand<PanoramaImageItemModel>(OpenPanoramaImageFolderDelegate);
         }
 
-        private void OpenPanoramicImageFolderDelegate(PanoramaImageItemModel obj) {
+        private void OpenPanoramaImageFolderDelegate(PanoramaImageItemModel obj) {
             if (File.Exists(obj?.PanoramaImagePath)) {
                 try {
                     Process.Start("explorer.exe", $"/select,\"{obj.PanoramaImagePath}\"");

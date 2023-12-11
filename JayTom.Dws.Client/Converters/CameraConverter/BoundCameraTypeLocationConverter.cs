@@ -9,7 +9,7 @@ namespace JayTom.Dws.Client.Converters.CameraConverter {
 
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
             if (value is CameraType cameraType) {
-                if (parameter?.ToString()?.Equals("PanoramicCamera") == true) {
+                if (parameter?.ToString()?.Equals("PanoramaCamera") == true) {
                     return cameraType switch {
                         CameraType.VideoCamera => 3,
                         _ => 0

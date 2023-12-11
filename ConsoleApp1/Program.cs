@@ -75,7 +75,7 @@ internal class Program {
             //image.Save($"{AppDomain.CurrentDomain.BaseDirectory}13.jpg", ImageFormat.Jpeg);
 
             //return;
-            UploadResponse uploadResponse;
+            /*UploadResponse uploadResponse;
             do {
                 var (key, value) = await _dataUploader.SetParameters(new WeciMexicoDvApiParam {
                     Url = "https://us-central1-ivoy-warehouse.cloudfunctions.net/weighing-machine",
@@ -87,7 +87,7 @@ internal class Program {
                 await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
             } while (!uploadResponse.IsSuccess);
             await File.AppendAllTextAsync($"{AppDomain.CurrentDomain.BaseDirectory}image.txt", uploadResponse.RequestContent, stoppingToken);
-            Console.WriteLine(uploadResponse);
+            Console.WriteLine(uploadResponse);*/
         }
     }
 }

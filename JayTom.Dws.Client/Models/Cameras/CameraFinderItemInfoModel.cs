@@ -35,7 +35,7 @@
         /// 全景相机
         /// </summary>
 
-        PanoramicCamera,
+        PanoramaCamera,
 
         /// <summary>
         /// 扫码相机

@@ -68,8 +68,9 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
         public async Task<List<CameraInfo>?> EnumerateCameras() {
             await Task.Yield();
             _devInfo.Clear();
+            var cameraInfos = new List<CameraInfo>();
             var devices = Enumerator.EnumerateDevices();
-            var cameraInfos = devices.Select(s => new CameraInfo() {
+            var infos = devices.Select(s => new CameraInfo() {
                 Id = s.Index,
                 Brand = s.Vendor,
                 SerialNumber = s.SerialNumber,
@@ -78,9 +79,12 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
                 Version = s.Version,
                 ConnectionType = CameraConnectionType.Ethernet,
             })?.ToList();
-            if (cameraInfos?.Any() == true) {
-                foreach (var cameraInfo in cameraInfos) {
+
+            if (infos?.Any() == true) {
+                foreach (var cameraInfo in infos.Where(cameraInfo => cameraInfo.Brand.Contains("Technology") &&
+                                                                     (cameraInfo.Model.StartsWith("DH-MV") || cameraInfo.Model.StartsWith("S")))) {
                     _devInfo.AddOrUpdate(cameraInfo.SerialNumber, cameraInfo, (k, v) => cameraInfo);
+                    cameraInfos.Add(cameraInfo);
                 }
             }
             return cameraInfos;

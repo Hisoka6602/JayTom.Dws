@@ -182,7 +182,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim {
                                 if (status == 0) {
                                     var bitmap = await GetBitmapAsync(img);
                                     var thumbnailImage = GenerateThumbnail(bitmap);
-                                    if (img.BarcodeCount > 0 && BindingType != CameraBindingType.PanoramicCamera) {
+                                    if (img.BarcodeCount > 0 && BindingType != CameraBindingType.PanoramaCamera) {
                                         if (IsShowBarcodeBorder && thumbnailImage is not null && thumbnailImage.PixelFormat != PixelFormat.Format8bppIndexed &&
                                             img.CodeModels?.Any() == true) {
                                             //设置图像边框

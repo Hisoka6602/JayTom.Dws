@@ -53,7 +53,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
         public string SdkName => "NetSDKCS.dll";
         public bool IsOriginalImageOut { get; set; }
         public CameraStatus Status { get; private set; } = CameraStatus.Uninitialized;
-        public CameraBindingType BindingType { get; set; } = CameraBindingType.PanoramicCamera;
+        public CameraBindingType BindingType { get; set; } = CameraBindingType.PanoramaCamera;
         public string CameraConnectionParameters { get; set; } = string.Empty;
         public int TakePhotoDelay { get; set; }
 

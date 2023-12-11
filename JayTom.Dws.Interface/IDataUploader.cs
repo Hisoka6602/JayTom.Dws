@@ -20,13 +20,13 @@ namespace JayTom.Dws.Interface {
         /// <param name="width">宽</param>
         /// <param name="height">高</param>
         /// <param name="volume">体积</param>
-        /// <param name="image">图片</param>
-        /// <param name="panoramaImage">全景图片</param>
+        /// <param name="imageInfo">图片信息</param>
+        /// <param name="panoramaImageInfos"></param>
         /// <param name="other"></param>
         /// <param name="token"></param>
         /// <returns></returns>
         Task<UploadResponse> UploadData([NotNull] string barcode, [NotNull] double weight, double length = default, double width = default, double height = default,
-            double volume = default, Image? image = default, Image? panoramaImage = default, object? other = null, CancellationToken token = default);
+            double volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default);
 
         /// <summary>
         /// 数据上传
@@ -38,13 +38,13 @@ namespace JayTom.Dws.Interface {
         /// <param name="width"></param>
         /// <param name="height"></param>
         /// <param name="volume"></param>
-        /// <param name="image"></param>
-        /// <param name="panoramaImage"></param>
+        /// <param name="panoramaImageInfos"></param>
         /// <param name="other"></param>
         /// <param name="token"></param>
+        /// <param name="imageInfo"></param>
         /// <returns></returns>
         Task<UploadResponse> UploadData([NotNull] string barcode, [NotNull] double weight, DateTime scanTime, double length = default, double width = default, double height = default,
-            double volume = default, Image? image = default, Image? panoramaImage = default, object? other = null, CancellationToken token = default);
+            double volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default);
 
         /// <summary>
         /// 设置接口参数
@@ -101,5 +101,28 @@ namespace JayTom.Dws.Interface {
         /// 异常信息
         /// </summary>
         public string ExceptionMsg { get; set; } = string.Empty;
+    }
+
+    public class UploadImageInfo {
+
+        /// <summary>
+        /// 图片
+        /// </summary>
+        public Image? Image { get; set; }
+
+        /// <summary>
+        /// 相机序列号
+        /// </summary>
+        public string CameraSerialNumber { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 相机名称
+        /// </summary>
+        public string CameraName { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 相机自定义名称
+        /// </summary>
+        public string CameraCustomName { get; set; } = string.Empty;
     }
 }

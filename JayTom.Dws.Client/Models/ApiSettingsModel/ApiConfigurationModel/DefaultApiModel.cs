@@ -1,10 +1,9 @@
-﻿using JayTom.Dws.Client.Models.ImageSettingModels;
+﻿using Prism.Mvvm;
 using JayTom.Dws.Domain.Dto.ApiDto;
-using Prism.Mvvm;
 using System.Collections.ObjectModel;
+using JayTom.Dws.Client.Models.ImageSettingModels;
 
 namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
-
     public class DefaultApiModel : BindableBase {
         private ObservableCollection<ItemBaseTemplateModel> _dataTemplate = new();
 
@@ -15,6 +14,9 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         private string _completeMatch = string.Empty;
         private string _stringContains = string.Empty;
         private string _regularExpression = string.Empty;
+        private bool _isUseUploadImage;
+        private bool _isUploadScanImage;
+        private bool _isUploadPanoramaImage;
 
         /// <summary>
         /// 数据模板
@@ -78,6 +80,30 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         public string RegularExpression {
             get => _regularExpression;
             set => SetProperty(ref _regularExpression, value);
+        }
+
+        /// <summary>
+        /// 是否上传图片
+        /// </summary>
+        public bool IsUseUploadImage {
+            get => _isUseUploadImage;
+            set => SetProperty(ref _isUseUploadImage, value);
+        }
+
+        /// <summary>
+        /// 是否上传扫码图
+        /// </summary>
+        public bool IsUploadScanImage {
+            get => _isUploadScanImage;
+            set => SetProperty(ref _isUploadScanImage, value);
+        }
+
+        /// <summary>
+        /// 是否上传全景图
+        /// </summary>
+        public bool IsUploadPanoramaImage {
+            get => _isUploadPanoramaImage;
+            set => SetProperty(ref _isUploadPanoramaImage, value);
         }
     }
 }

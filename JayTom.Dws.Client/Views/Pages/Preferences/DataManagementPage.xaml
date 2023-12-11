@@ -34,7 +34,7 @@
         <materialDesign:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
         <unitConverter:VolumeConverter x:Key="VolumeConverter" />
         <!--  全景图模板  -->
-        <DataTemplate x:Key="PanoramicImageTemplate" DataType="{x:Type dataModels:PanoramaImageItemModel}">
+        <DataTemplate x:Key="PanoramaImageTemplate" DataType="{x:Type dataModels:PanoramaImageItemModel}">
             <!--  横向列表，读全景图列数据  -->
             <!--  查看按钮  -->
             <Button
@@ -42,7 +42,7 @@
                 MinWidth="90"
                 materialDesign:ButtonAssist.CornerRadius="2"
                 Background="Transparent"
-                Command="{Binding ElementName=DataManagementPageView, Path=DataContext.OpenPanoramicImageCommand}"
+                Command="{Binding ElementName=DataManagementPageView, Path=DataContext.OpenPanoramaImageCommand}"
                 CommandParameter="{Binding}"
                 Focusable="False"
                 Style="{StaticResource MaterialDesignFlatLightButton}"
@@ -843,14 +843,14 @@
                         MinWidth="40"
                         CellStyle="{StaticResource CustomDataGridTextCellStyle}">
                         <DataGridTemplateColumn.Header>
-                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="{x:Static languages:Language.TableHeaderPanoramicImage}" />
+                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="{x:Static languages:Language.TableHeaderPanoramaImage}" />
                         </DataGridTemplateColumn.Header>
                         <DataGridTemplateColumn.CellTemplate>
                             <!--  横向列表  -->
                             <DataTemplate>
                                 <ListView
                                     Focusable="False"
-                                    ItemTemplate="{StaticResource PanoramicImageTemplate}"
+                                    ItemTemplate="{StaticResource PanoramaImageTemplate}"
                                     ItemsSource="{Binding PanoramaImageItems, UpdateSourceTrigger=PropertyChanged}"
                                     ScrollViewer.HorizontalScrollBarVisibility="Hidden"
                                     ScrollViewer.VerticalScrollBarVisibility="Hidden"

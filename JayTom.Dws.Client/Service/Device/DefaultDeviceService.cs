@@ -80,11 +80,10 @@ namespace JayTom.Dws.Client.Service.Device {
             await Task.Yield();
             _cameraInfos.Clear();
             try {
-                if (_cameraSdkSelectorDto is null) {
-                    var configInfoModel = await _configRepository.FirstOrDefault(f =>
-                        f.ConfigName.Equals("CameraSdkSelector"), token);
-                    _cameraSdkSelectorDto = configInfoModel is not null ? JsonConvert.DeserializeObject<CameraSdkSelectorDto>(configInfoModel.Value) : new CameraSdkSelectorDto();
-                }
+                var configInfoModel = await _configRepository.FirstOrDefault(f =>
+                    f.ConfigName.Equals("CameraSdkSelector"), token);
+                _cameraSdkSelectorDto = configInfoModel is not null ? JsonConvert.DeserializeObject<CameraSdkSelectorDto>(configInfoModel.Value) : new CameraSdkSelectorDto();
+
                 var daHuaSmartCameras = new List<CameraInfo>();
                 var hikvisionIndustrialCameras = new List<CameraInfo>();
                 var hikvisionSmartCameras = new List<CameraInfo>();
@@ -129,6 +128,7 @@ namespace JayTom.Dws.Client.Service.Device {
                 }
 
                 if (_cameraSdkSelectorDto?.IsUseDaHuaVolumeCameraSdk == true) {
+                    //大华体积相机
                     daHuaVolumeCameras = await new DaHuaSmartCamera().EnumerateCameras();
                 }
 
@@ -310,7 +310,7 @@ namespace JayTom.Dws.Client.Service.Device {
                     Parameters = s
                 })?.ToList() ?? new List<CameraParametersModifiedEventArgs>());
                 _cameraParameters.AddRange(panoramaCameraConfigInfoModels?.Select(s => new CameraParametersModifiedEventArgs {
-                    Type = BoundCameraType.PanoramicCamera,
+                    Type = BoundCameraType.PanoramaCamera,
                     Parameters = s
                 })?.ToList() ?? new List<CameraParametersModifiedEventArgs>());
                 _cameraParameters.AddRange(volumeCameraConfigInfoModels?.Select(s => new CameraParametersModifiedEventArgs {
@@ -468,7 +468,7 @@ namespace JayTom.Dws.Client.Service.Device {
                         Parameters = s
                     })?.ToList() ?? new List<CameraParametersModifiedEventArgs>());
                     _cameraParameters.AddRange(panoramaCameraConfigInfoModels?.Select(s => new CameraParametersModifiedEventArgs {
-                        Type = BoundCameraType.PanoramicCamera,
+                        Type = BoundCameraType.PanoramaCamera,
                         Parameters = s
                     })?.ToList() ?? new List<CameraParametersModifiedEventArgs>());
                     _cameraParameters.AddRange(volumeCameraConfigInfoModels?.Select(s => new CameraParametersModifiedEventArgs {
@@ -503,7 +503,7 @@ namespace JayTom.Dws.Client.Service.Device {
 
                                     break;
                                 }
-                            case BoundCameraType.PanoramicCamera: {
+                            case BoundCameraType.PanoramaCamera: {
                                     //全景相机
                                     if (parameter.Parameters is PanoramaCameraConfigInfoModel model) {
                                         var tryGetValue = _cameraInfos.TryGetValue(model.SerialNumber, out var info);
@@ -512,8 +512,8 @@ namespace JayTom.Dws.Client.Service.Device {
                                             camera = ConvertCamera(info);
                                             if (camera is not null) {
                                                 //设置绑定模式
-                                                camera.BindingType = CameraBindingType.PanoramicCamera;
-                                                camera.Info.Type = CameraType.PanoramicCamera;
+                                                camera.BindingType = CameraBindingType.PanoramaCamera;
+                                                camera.Info.Type = CameraType.PanoramaCamera;
                                             }
                                         }
                                     }
@@ -552,7 +552,6 @@ namespace JayTom.Dws.Client.Service.Device {
                                     mCameraInfo =
                                         $"ID:{mCamera.Info?.Id},SerialNumber:{mCamera?.Info?.SerialNumber},SdkType:{mCamera?.SdkType}";
                                 }
-                                NLog.LogManager.GetCurrentClassLogger().Error($"{JsonConvert.SerializeObject(args.Exception)}");
                                 OnCameraException(new DeviceExceptionEventArgs() {
                                     ExceptionMessage = new Exception($"{args.Exception?.Message}")
                                 });

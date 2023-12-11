@@ -5,20 +5,22 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.DependencyInjection;
+using Pomelo.EntityFrameworkCore.MySql.Infrastructure;
 
 internal class Program {
     private static IConfigurationRoot _configuration;
+    private static string _connectionString = string.Empty;
 
     public static void Main(string[] args) {
-        /*
-        var builder = new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory())
+        var builder = new ConfigurationBuilder()
+            .SetBasePath(Directory.GetCurrentDirectory())
             .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
 
-        _configuration = builder.Build();
-        */
-
+        var configuration = builder.Build();
+        _connectionString = configuration.GetConnectionString("DefaultConnection") ?? string.Empty;
         CreateMigration();
         Console.WriteLine("Migration completed successfully.");
+        Console.ReadLine();
     }
 
     public static void CreateMigration() {
@@ -32,8 +34,12 @@ internal class Program {
 
         public VideoApiContext1 CreateDbContext(string[] args) {
             var optionsBuilder = new DbContextOptionsBuilder<VideoApiContext1>();
-            optionsBuilder.UseSqlServer("data source=82.156.244.249;initial catalog=DwsVideoApi;persist security info=true;user id=sa;password=Yunshan2021+-/;Max Pool Size = 32767;Packet Size= 1024;Connect Timeout=10;TrustServerCertificate=true");
 
+            optionsBuilder.UseMySql(_connectionString,
+                ServerVersion.AutoDetect(_connectionString),
+                builder => {
+                    builder.SchemaBehavior(MySqlSchemaBehavior.Ignore);
+                });
             return new VideoApiContext1(optionsBuilder.Options);
         }
     }
@@ -51,6 +57,7 @@ internal class Program {
 
         protected override void OnModelCreating(ModelBuilder modelBuilder) {
             base.OnModelCreating(modelBuilder);
+            modelBuilder.HasDefaultSchema(null);
             modelBuilder.Entity<VideoBarCodeInfoModel>().HasKey(c => new {
                 c.Id
             });

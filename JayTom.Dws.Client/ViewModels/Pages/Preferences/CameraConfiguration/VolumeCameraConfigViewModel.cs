@@ -82,7 +82,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
             _deviceService = deviceService;
             _volumeCameraConfigRepository = volumeCameraConfigRepository;
             _deviceService.CameraBound += async delegate (object? sender, CameraFinderItemInfoModel model) {
-                if (model.BoundType == BoundCameraType.PanoramicCamera) {
+                if (model.BoundType == BoundCameraType.PanoramaCamera) {
                     await Application.Current.Dispatcher.InvokeAsync(async () => {
                         //增加到集合,从数据库获取
                         var infoModel = await _volumeCameraConfigRepository.FirstOrDefault(f =>

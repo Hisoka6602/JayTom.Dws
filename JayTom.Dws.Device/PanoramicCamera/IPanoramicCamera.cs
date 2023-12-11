@@ -4,11 +4,11 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
-namespace JayTom.Dws.Device.PanoramicCamera {
+namespace JayTom.Dws.Device.PanoramaCamera {
 
     /// <summary>
     /// 全景相机
     /// </summary>
-    public interface IPanoramicCamera : IDevice {
+    public interface IPanoramaCamera : IDevice {
     }
 }

@@ -210,29 +210,33 @@ namespace JayTom.Dws.Camera {
         /// 相机连接类型
         /// </summary>
         public CameraConnectionType ConnectionType { get; set; }
-
+        /// <summary>
+        /// 自定义名称
+        /// </summary>
+        public string CustomName { get; set; } = string.Empty;
         public override bool Equals(object? obj) {
             if (obj == null || GetType() != obj.GetType())
                 return false;
 
             var otherInfo = (CameraInfo)obj;
-            return Name == otherInfo.Name &&
+            return //Name == otherInfo.Name &&
                    //Brand == otherInfo.Brand &&
-                   SerialNumber == otherInfo.SerialNumber &&
+                   SerialNumber == otherInfo.SerialNumber /*&&
                    IpAddress == otherInfo.IpAddress &&
-                   Port == otherInfo.Port /*&&
+                   Port == otherInfo.Port &&
                    Version == otherInfo.Version &&
                    Model == otherInfo.Model*/;
         }
 
         public override int GetHashCode() {
-            return Name.GetHashCode()
+            return SerialNumber.GetHashCode();
+            /*return Name.GetHashCode()
                                     //^ Brand.GetHashCode()
                                     ^ SerialNumber.GetHashCode()
                                     ^ IpAddress.GetHashCode()
                                     ^ Port.GetHashCode()
                                     /*^ Version.GetHashCode()
-                                    ^ Model.GetHashCode()*/;
+                                    ^ Model.GetHashCode()#1#;*/
         }
     }
 
@@ -249,7 +253,7 @@ namespace JayTom.Dws.Camera {
         /// <summary>
         /// 全景相机
         /// </summary>
-        PanoramicCamera = 1,
+        PanoramaCamera = 1,
 
         /// <summary>
         /// 体积相机
@@ -321,7 +325,7 @@ namespace JayTom.Dws.Camera {
         /// <summary>
         /// 全景相机
         /// </summary>
-        PanoramicCamera = 1,
+        PanoramaCamera = 1,
 
         /// <summary>
         /// 体积相机

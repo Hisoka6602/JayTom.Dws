@@ -401,6 +401,86 @@
                     </Border>
                 </StackPanel>
             </StackPanel>
+            <!--  是否上传图片  -->
+            <StackPanel Orientation="Vertical">
+                <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
+                    <TextBlock
+                        Margin="0,0,0,1"
+                        VerticalAlignment="Center"
+                        FontFamily="{StaticResource IconFontFamily}"
+                        FontSize="20"
+                        Foreground="DarkGray"
+                        Text="&#xe6d6;" />
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="16"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="是否上传图片:" />
+                    <ToggleButton
+                        Name="IsUseUploadImageToggleButton"
+                        materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
+                        materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
+                        Focusable="False"
+                        IsChecked="{Binding DefaultApiInfo.IsUseUploadImage, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                        Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+                </StackPanel>
+
+
+                <StackPanel
+                    Margin="50,10,0,10"
+                    Orientation="Horizontal"
+                    Visibility="{Binding ElementName=IsUseUploadImageToggleButton, Path=IsChecked, Converter={StaticResource BooleanToVisibilityConverter}}">
+
+                    <StackPanel
+                        Margin="10,0"
+                        VerticalAlignment="Center"
+                        Orientation="Horizontal">
+                        <TextBlock
+                            Margin="5,0"
+                            VerticalAlignment="Center"
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="DarkGray"
+                            Text="上传扫码图:" />
+                        <CheckBox
+                            BorderBrush="DodgerBlue"
+                            BorderThickness="2"
+                            Foreground="#2E2E2E"
+                            IsChecked="{Binding DefaultApiInfo.IsUploadScanImage, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                            Style="{StaticResource CustomCheckBoxStyle}" />
+
+                    </StackPanel>
+                    <StackPanel
+                        Margin="10,0"
+                        VerticalAlignment="Center"
+                        Orientation="Horizontal">
+                        <TextBlock
+                            Margin="5,0"
+                            VerticalAlignment="Center"
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="DarkGray"
+                            Text="上传全景图:" />
+                        <CheckBox
+                            BorderBrush="DodgerBlue"
+                            BorderThickness="2"
+                            Foreground="#2E2E2E"
+                            IsChecked="{Binding DefaultApiInfo.IsUploadPanoramaImage, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                            Style="{StaticResource CustomCheckBoxStyle}" />
+
+                    </StackPanel>
+                </StackPanel>
+
+
+
+
+
+
+
+
+            </StackPanel>
             <!--  接口参数  -->
             <StackPanel Orientation="Vertical">
                 <StackPanel Orientation="Horizontal">

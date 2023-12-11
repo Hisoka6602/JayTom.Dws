@@ -245,7 +245,7 @@
     <value>绑定到体积相机</value>
     <comment>7-绑定到体积相机</comment>
   </data>
-  <data name="BindToPanoramicCamera" xml:space="preserve">
+  <data name="BindToPanoramaCamera" xml:space="preserve">
     <value>绑定到全景相机</value>
     <comment>7-绑定到全景相机</comment>
   </data>
@@ -813,19 +813,19 @@
     <value>补位变量</value>
     <comment>10-补位变量</comment>
   </data>
-  <data name="PanoramicCamera" xml:space="preserve">
+  <data name="PanoramaCamera" xml:space="preserve">
     <value>全景相机</value>
     <comment>7-全景相机</comment>
   </data>
-  <data name="PanoramicImage" xml:space="preserve">
+  <data name="PanoramaImage" xml:space="preserve">
     <value>全景图</value>
     <comment>8-全景图</comment>
   </data>
-  <data name="PanoramicImageDaysAgo" xml:space="preserve">
+  <data name="PanoramaImageDaysAgo" xml:space="preserve">
     <value>天之前的全景图片</value>
     <comment>10-多少天之前的全景图片</comment>
   </data>
-  <data name="PanoramicImages" xml:space="preserve">
+  <data name="PanoramaImages" xml:space="preserve">
     <value>全景图片</value>
     <comment>10-全景图片</comment>
   </data>
@@ -1169,7 +1169,7 @@
     <value>操作</value>
     <comment>7-操作</comment>
   </data>
-  <data name="TableHeaderPanoramicImage" xml:space="preserve">
+  <data name="TableHeaderPanoramaImage" xml:space="preserve">
     <value>全景图片</value>
     <comment>2-全景图片</comment>
   </data>

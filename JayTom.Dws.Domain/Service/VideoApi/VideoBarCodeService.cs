@@ -24,12 +24,12 @@ namespace JayTom.Dws.Domain.Service.VideoApi {
             _videoScanNodeRepository = videoScanNodeRepository;
         }
 
-        public async Task<KeyValuePair<bool, string>> AddOrUpdateBarcodeInfo(BarcodeImageDto barcodeImageInfo, List<BarcodeImageDto> panoramicImageInfos, ScanNodeDto scanNodeInfo, string rootImagePath) {
+        public async Task<KeyValuePair<bool, string>> AddOrUpdateBarcodeInfo(BarcodeImageDto barcodeImageInfo, List<BarcodeImageDto> panoramaImageInfos, ScanNodeDto scanNodeInfo, string rootImagePath) {
             try {
                 if (barcodeImageInfo?.Image is null) {
                     return new KeyValuePair<bool, string>(false, "扫码图不能为空");
                 }
-                if (panoramicImageInfos?.Any(a => a.Image == null) == true) {
+                if (panoramaImageInfos?.Any(a => a.Image == null) == true) {
                     return new KeyValuePair<bool, string>(false, "全景图不能为空");
                 }
                 await Task.Yield();
@@ -37,21 +37,21 @@ namespace JayTom.Dws.Domain.Service.VideoApi {
                     rootImagePath = $"{System.AppDomain.CurrentDomain.BaseDirectory}Images";
                 }
                 var barcodeImageRootPath = $"{rootImagePath}\\barcodeImages\\{DateTime.Now:yyyy}\\{DateTime.Now:MM}\\{DateTime.Now:dd}\\{DateTime.Now:HH}";
-                var panoramicRootImage = $"{rootImagePath}\\panoramicImages\\{DateTime.Now:yyyy}\\{DateTime.Now:MM}\\{DateTime.Now:dd}\\{DateTime.Now:HH}";
+                var panoramaRootImage = $"{rootImagePath}\\panoramaImages\\{DateTime.Now:yyyy}\\{DateTime.Now:MM}\\{DateTime.Now:dd}\\{DateTime.Now:HH}";
                 if (!Directory.Exists(barcodeImageRootPath)) {
                     Directory.CreateDirectory(barcodeImageRootPath);
                 }
-                if (!Directory.Exists(panoramicRootImage)) {
-                    Directory.CreateDirectory(panoramicRootImage);
+                if (!Directory.Exists(panoramaRootImage)) {
+                    Directory.CreateDirectory(panoramaRootImage);
                 }
                 //保存图片
                 var barcodeImagePath = $"{barcodeImageRootPath}\\{DateTimeOffset.Now.ToUnixTimeMilliseconds()}.jpg";
                 barcodeImageInfo.Image.Save(barcodeImagePath, ImageFormat.Jpeg);
                 barcodeImageInfo.Image.Dispose();
                 var num = 0;
-                var imageInfoModels = panoramicImageInfos.Select(s => {
-                    var panoramicImagePath = $"{panoramicRootImage}\\{DateTimeOffset.Now.ToUnixTimeMilliseconds()}-{num}.jpg";
-                    s.Image.Save(panoramicImagePath, ImageFormat.Jpeg);
+                var imageInfoModels = panoramaImageInfos.Select(s => {
+                    var panoramaImagePath = $"{panoramaRootImage}\\{DateTimeOffset.Now.ToUnixTimeMilliseconds()}-{num}.jpg";
+                    s.Image.Save(panoramaImagePath, ImageFormat.Jpeg);
                     s.Image.Dispose();
                     num++;
                     return new VideoNodeImageInfoModel {
@@ -59,7 +59,7 @@ namespace JayTom.Dws.Domain.Service.VideoApi {
                         CameraSerialNumber = s.CameraSerialNumber,
                         ImageType = 1,
                         Name = s.Name,
-                        Path = panoramicImagePath,
+                        Path = panoramaImagePath,
                     };
                 })?.ToList() ?? new List<VideoNodeImageInfoModel>();
                 imageInfoModels?.Add(new VideoNodeImageInfoModel() {

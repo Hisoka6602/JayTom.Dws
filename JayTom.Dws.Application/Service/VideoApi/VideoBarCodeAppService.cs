@@ -18,10 +18,10 @@ namespace JayTom.Dws.Application.Service.VideoApi {
             _videoBarCodeService = videoBarCodeService;
         }
 
-        public Task<KeyValuePair<bool, string>> AddOrUpdateBarcodeInfo(BarcodeImageDto barcodeImageInfo, List<BarcodeImageDto> panoramicImageInfos, ScanNodeDto scanNodeInfo,
+        public Task<KeyValuePair<bool, string>> AddOrUpdateBarcodeInfo(BarcodeImageDto barcodeImageInfo, List<BarcodeImageDto> panoramaImageInfos, ScanNodeDto scanNodeInfo,
             string rootImagePath) {
             return _videoBarCodeService.AddOrUpdateBarcodeInfo(barcodeImageInfo,
-                 panoramicImageInfos, scanNodeInfo, rootImagePath);
+                 panoramaImageInfos, scanNodeInfo, rootImagePath);
         }
 
         public Task<KeyValuePair<bool, object>> GroupedNodeNames(CancellationToken token = default) {

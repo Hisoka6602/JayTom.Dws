@@ -249,7 +249,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                 {
                     CameraName = "海康工业相机.2",
                     Status = CameraStatus.Running,
-                    Type = CameraType.PanoramicCamera,
+                    Type = CameraType.PanoramaCamera,
                     ConnectionType = ConnectionType.Ethernet,
                     ImageClickCommand = ImageClickCommand,
                     StatusClickCommand = StatusClickCommand,
@@ -258,7 +258,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                 {
                     CameraName = "海康工业相机.2",
                     Status = CameraStatus.Running,
-                    Type = CameraType.PanoramicCamera,
+                    Type = CameraType.PanoramaCamera,
                     ConnectionType = ConnectionType.Ethernet,
                     ImageClickCommand = ImageClickCommand,
                     StatusClickCommand = StatusClickCommand,
@@ -549,7 +549,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         private async void DeviceServiceOnPanoramaCaptured(object? sender, PanoramaCaptureEventArgs args) {
             //全景相机
             await Task.Yield();
-            var model = CameraItems.FirstOrDefault(f => f.SerialNumber.Equals(args.CameraSerialNumber) && f.Type is CameraType.PanoramicCamera);
+            var model = CameraItems.FirstOrDefault(f => f.SerialNumber.Equals(args.CameraSerialNumber) && f.Type is CameraType.PanoramaCamera);
             if (model is not null &&
                 model.Image is not null) {
                 //图片转换

@@ -127,7 +127,7 @@
                                 FontSize="14"
                                 FontWeight="Bold"
                                 Foreground="DimGray"
-                                Text="{x:Static languages:Language.PanoramicImages}" />
+                                Text="{x:Static languages:Language.PanoramaImages}" />
                             <TextBlock
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
@@ -272,7 +272,7 @@
                                 FontSize="14"
                                 FontWeight="Bold"
                                 Foreground="DimGray"
-                                Text="{x:Static languages:Language.PanoramicImages}" />
+                                Text="{x:Static languages:Language.PanoramaImages}" />
                             <TextBlock
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
@@ -569,7 +569,7 @@
                             FontSize="13"
                             FontWeight="Bold"
                             Foreground="DarkGray"
-                            Text="{x:Static languages:Language.PanoramicImageDaysAgo}" />
+                            Text="{x:Static languages:Language.PanoramaImageDaysAgo}" />
                         <Button
                             Height="Auto"
                             MinHeight="30"
@@ -984,7 +984,7 @@
                             FontSize="13"
                             FontWeight="Bold"
                             Foreground="DarkGray"
-                            Text="{x:Static languages:Language.PanoramicImageDaysAgo}" />
+                            Text="{x:Static languages:Language.PanoramaImageDaysAgo}" />
                     </StackPanel>
                     <!--  删除 N天之前的FTP图片  -->
                     <StackPanel Orientation="Horizontal">

@@ -14,7 +14,7 @@ namespace JayTom.Dws.Domain.Service.VideoApi {
         /// </summary>
         /// <returns></returns>
         public Task<KeyValuePair<bool, string>> AddOrUpdateBarcodeInfo(BarcodeImageDto barcodeImageInfo,
-            List<BarcodeImageDto> panoramicImageInfos, ScanNodeDto scanNodeInfo, string rootImagePath);
+            List<BarcodeImageDto> panoramaImageInfos, ScanNodeDto scanNodeInfo, string rootImagePath);
 
         /// <summary>
         /// 获取节点分组

@@ -5,6 +5,7 @@ using System.Linq;
 using Prism.Commands;
 using System.Windows;
 using Newtonsoft.Json;
+using TouchSocket.Core;
 using JayTom.Dws.Camera;
 using System.Diagnostics;
 using System.Windows.Input;
@@ -39,7 +40,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
         private bool _isExecuting;
         private static bool _isLoaded;
 
-        private ObservableCollection<CameraFinderItemInfoModel> _cameraFinderItems = new() {
+        private ObservableCollection<CameraFinderItemInfoModel> _cameraFinderItems = new()/* {
             new CameraFinderItemInfoModel() {
                 Num = 1,
                 Name = "增加一个转换、如果是工业相机、智能相机则不显示体积绑定",
@@ -78,7 +79,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                 Model = "HK-6565",
                 BoundType = BoundCameraType.BarcodeScannerCamera,
             },
-        };
+        }*/;
 
         private SnackbarMessageQueue _cameraFinderMessageQueue = new(TimeSpan.FromSeconds(2));
         private bool _isRefreshing;
@@ -123,10 +124,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                         Name = s.Name,
                         SerialNumber = s.SerialNumber,
                         Version = s.Version,
+                        CustomName = s.CustomName,
                         IsOcrSupported = s.IsOcrSupported,
                     })?.ToList() ?? new List<CameraFinderItemInfoModel>());
                     infoModels.AddRange(panoramaCameraConfigInfoModels.Select(s => new CameraFinderItemInfoModel {
-                        BoundType = BoundCameraType.PanoramicCamera,
+                        BoundType = BoundCameraType.PanoramaCamera,
                         ConnectionType = (ConnectionType)s.ConnectionType,
                         CameraType = (CameraType)s.CameraType,
                         HasBinding = true,
@@ -134,6 +136,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                         Model = s.Model,
                         Name = s.Name,
                         SerialNumber = s.SerialNumber,
+                        CustomName = s.CustomName,
                         Version = s.Version,
                     })?.ToList() ?? new List<CameraFinderItemInfoModel>());
                     infoModels.AddRange(volumeCameraConfigInfoModels.Select(s => new CameraFinderItemInfoModel {
@@ -145,6 +148,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                         Model = s.Model,
                         Name = s.Name,
                         SerialNumber = s.SerialNumber,
+                        CustomName = s.CustomName,
                         Version = s.Version,
                     })?.ToList() ?? new List<CameraFinderItemInfoModel>());
                     await Application.Current.Dispatcher.BeginInvoke(async () => {
@@ -167,6 +171,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                             list[i].HasBinding = hasBinding ?? false;
                             list[i].BoundType = infoModels?.FirstOrDefault(f => f.SerialNumber.Equals(list[i].SerialNumber))?.BoundType ??
                                                 BoundCameraType.BarcodeScannerCamera;
+                            list[i].CustomName = infoModels?.FirstOrDefault(f => f.SerialNumber.Equals(list[i].SerialNumber))?.CustomName ??
+                                                string.Empty;
                         }
                         CameraFinderItems.AddRange(list);
                     });
@@ -324,8 +330,21 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
             }
 
             //判断指定扫码相机
-            _dialogService.ShowDialog($"ScanCameraSelectionDialog", callback => {
+            var scanCameraSelectionResult = ButtonResult.No;
+            var selectedCameraSerialNumber = string.Empty;
+            _dialogService.ShowDialog($"ScanCameraSelectionDialog", new DialogParameters()
+            {
+                {"Cameras",_cameraFinderItems}
+            }, callback => {
+                scanCameraSelectionResult = callback.Result;
+                if (scanCameraSelectionResult == ButtonResult.OK) {
+                    var itemInfoModel = callback.Parameters.GetValue<CameraFinderItemInfoModel>("SelectedCamera");
+                    selectedCameraSerialNumber = itemInfoModel.SerialNumber;
+                }
             });
+            if (scanCameraSelectionResult != ButtonResult.OK) {
+                return;
+            }
             await Application.Current.Dispatcher.InvokeAsync(async () => {
                 _isExecuting = true;
                 var isSuccess = false;
@@ -338,14 +357,16 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                     Model = obj.Model,
                     Name = obj.Name,
                     SerialNumber = obj.SerialNumber,
+                    SelectedCameraSerialNumber = selectedCameraSerialNumber,
                     Version = obj.Version,
+                    CustomName = obj.CustomName,
                     CameraConnectionParameters = cameraConnectionParameters
                 });
                 if (insertOrUpdate) {
                     //从数据库修改或增加
                     //触发修改事件
                     obj.HasBinding = true;
-                    obj.BoundType = BoundCameraType.PanoramicCamera;
+                    obj.BoundType = BoundCameraType.PanoramaCamera;
                     var (key, value) = await _deviceService.OnCameraBound(obj);
                     if (!key) {
                         obj.HasBinding = false;
@@ -372,7 +393,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                 return;
             }
 
-            //CameraSdkSelectorInfo
             var cameraConnectionParameters = string.Empty;
             var result = ButtonResult.No;
             if (obj.CameraType == CameraType.SmartCamera /*&&
@@ -408,6 +428,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                     SerialNumber = obj.SerialNumber,
                     Version = obj.Version,
                     IsShowRealTimeImage = true,
+                    CustomName = obj.CustomName,
                     CameraConnectionParameters = cameraConnectionParameters
                 });
                 if (insertOrUpdate) {
@@ -472,6 +493,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                     SerialNumber = obj.SerialNumber,
                     Version = obj.Version,
                     IsShowRealTimeImage = true,
+                    CustomName = obj.CustomName,
                     CameraConnectionParameters = cameraConnectionParameters,
                     IsOcrSupported = true
                 });
@@ -520,6 +542,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                     MinLength = 1000,
                     MaxSyncTime = 1000,
                     MinSyncTime = 500,
+                    CustomName = obj.CustomName,
                     VolumeMeasurementMode = 0,
                     TriggerMode = 0
                 });
@@ -564,7 +587,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                         isSuccess = await _barcodeScannerCameraConfigRepository.Delete(model);
                     }
                 }
-                else if (obj.BoundType == BoundCameraType.PanoramicCamera) {
+                else if (obj.BoundType == BoundCameraType.PanoramaCamera) {
                     //从全景相机删除
                     var model = await _panoramaCameraConfigRepository.
                         FirstOrDefault(f => f.SerialNumber.Equals(obj.SerialNumber));
@@ -602,40 +625,40 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
             //如果不满足任意条件则取消选择
 
             //检查写出文件，后续使用环境变量后删除
-            var destinationDir = Directory.GetCurrentDirectory();
+            var destinationDir = AppDomain.CurrentDomain.BaseDirectory;
             var files = new List<string>();
             if (obj.ToString()?.Equals("IsUseHikvisionSmartCameraSdk") == true) {
                 //海康智能相机
-                files = Directory.GetFiles($"{destinationDir}\\Cameras\\SmartCamera\\Hikvision\\Dll")?.ToList();
+                files = Directory.GetFiles($"{destinationDir}Cameras\\SmartCamera\\Hikvision\\Dll")?.ToList();
             }
             if (obj.ToString()?.Equals("IsUseHikvisionIndustrialCameraSdk") == true) {
                 //海康工业相机
-                files = Directory.GetFiles($"{destinationDir}\\Cameras\\IndustrialCamera\\Hikvision\\Dll")?.ToList();
+                files = Directory.GetFiles($"{destinationDir}Cameras\\IndustrialCamera\\Hikvision\\Dll")?.ToList();
             }
             if (obj.ToString()?.Equals("IsUseHikvisionVolumeCameraSdk") == true) {
                 //海康体积
-                files = Directory.GetFiles($"{destinationDir}\\Cameras\\VolumeCamera\\Hikvision\\Dll")?.ToList();
+                files = Directory.GetFiles($"{destinationDir}Cameras\\VolumeCamera\\Hikvision\\Dll")?.ToList();
             }
             if (obj.ToString()?.Equals("IsUseDaHuaSmartCameraSdk") == true) {
                 //大华智能相机
-                files = Directory.GetFiles($"{destinationDir}\\Cameras\\SmartCamera\\Irayple\\Dll")?.ToList();
+                files = Directory.GetFiles($"{destinationDir}Cameras\\SmartCamera\\Irayple\\Dll")?.ToList();
             }
             if (obj.ToString()?.Equals("IsUseDaHuaVolumeCameraSdk") == true) {
                 //大华体积
-                files = Directory.GetFiles($"{destinationDir}\\Cameras\\SmartCamera\\Irayple\\Dll")?.ToList();
+                files = Directory.GetFiles($"{destinationDir}Cameras\\SmartCamera\\Irayple\\Dll")?.ToList();
             }
             if (obj.ToString()?.Equals("IsUseDaHuaSecurityCameraSdk") == true) {
                 //大华安防
-                files = Directory.GetFiles($"{destinationDir}\\Cameras\\SecurityCamera\\DaHuatech\\Dll")?.ToList();
+                files = Directory.GetFiles($"{destinationDir}Cameras\\SecurityCamera\\DaHuatech\\Dll")?.ToList();
             }
             if (obj.ToString()?.Equals("IsUseWayzimSmartCameraSdk") == true) {
                 //中科微至
-                files = Directory.GetFiles($"{destinationDir}\\Cameras\\SmartCamera\\Wayzim\\Dll")?.ToList();
+                files = Directory.GetFiles($"{destinationDir}Cameras\\SmartCamera\\Wayzim\\Dll")?.ToList();
             }
 
             if (obj.ToString()?.Equals("IsUseWayzimIndustrialCameraSdk") == true) {
                 //中科工业
-                files = Directory.GetFiles($"{destinationDir}\\Cameras\\IndustrialCamera\\Wayzim\\Dll")?.ToList();
+                files = Directory.GetFiles($"{destinationDir}Cameras\\IndustrialCamera\\Wayzim\\Dll")?.ToList();
             }
 
             if (files?.Any() == true) {
@@ -653,19 +676,21 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
 
         private async void SdkSelectionChangedDelegate(object obj) {
             //保存到配置
+            var cameraSdkSelectorDto = new CameraSdkSelectorDto {
+                IsUseDaHuaSecurityCameraSdk = CameraSdkSelectorInfo.IsUseDaHuaSecurityCameraSdk,
+                IsUseDaHuaSmartCameraSdk = CameraSdkSelectorInfo.IsUseDaHuaSmartCameraSdk,
+                IsUseHikvisionIndustrialCameraSdk = CameraSdkSelectorInfo.IsUseHikvisionIndustrialCameraSdk,
+                IsUseHikvisionSmartCameraSdk = CameraSdkSelectorInfo.IsUseHikvisionSmartCameraSdk,
+                IsUseWayzimIndustrialCameraSdk = CameraSdkSelectorInfo.IsUseWayzimIndustrialCameraSdk,
+                IsUseWayzimSmartCameraSdk = CameraSdkSelectorInfo.IsUseWayzimSmartCameraSdk,
+                IsUseDaHuaVolumeCameraSdk = CameraSdkSelectorInfo.IsUseDaHuaVolumeCameraSdk,
+                IsUseHikvisionVolumeCameraSdk = CameraSdkSelectorInfo.IsUseHikvisionVolumeCameraSdk
+            };
             var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
                 ConfigName = "CameraSdkSelector",
-                Value = JsonConvert.SerializeObject(new CameraSdkSelectorDto {
-                    IsUseDaHuaSecurityCameraSdk = CameraSdkSelectorInfo.IsUseDaHuaSecurityCameraSdk,
-                    IsUseDaHuaSmartCameraSdk = CameraSdkSelectorInfo.IsUseDaHuaSmartCameraSdk,
-                    IsUseHikvisionIndustrialCameraSdk = CameraSdkSelectorInfo.IsUseHikvisionIndustrialCameraSdk,
-                    IsUseHikvisionSmartCameraSdk = CameraSdkSelectorInfo.IsUseHikvisionSmartCameraSdk,
-                    IsUseWayzimIndustrialCameraSdk = CameraSdkSelectorInfo.IsUseWayzimIndustrialCameraSdk,
-                    IsUseWayzimSmartCameraSdk = CameraSdkSelectorInfo.IsUseWayzimSmartCameraSdk,
-                    IsUseDaHuaVolumeCameraSdk = CameraSdkSelectorInfo.IsUseDaHuaVolumeCameraSdk,
-                    IsUseHikvisionVolumeCameraSdk = CameraSdkSelectorInfo.IsUseHikvisionVolumeCameraSdk
-                })
+                Value = JsonConvert.SerializeObject(cameraSdkSelectorDto)
             });
+
             if (insertOrUpdate) {
                 EventAggregator.Instance.Publish(new SettingsChangedEvent {
                     SettingsName = "CameraSdkSelector"
@@ -674,6 +699,18 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
             else {
                 CameraFinderMessageQueue.Enqueue(Languages.Language.ResourceManager.GetString("SaveFailed") ?? string.Empty);
             }
+        }
+
+        public ICommand EditedCustomNameCommand {
+            get => new DelegateCommand<CameraFinderItemInfoModel>(EditedCustomNameDelegate);
+        }
+
+        private void EditedCustomNameDelegate(CameraFinderItemInfoModel obj) {
+            //保存到数据库
+            //更新
+
+            Console.WriteLine(obj);
+            Keyboard.ClearFocus();
         }
 
         private bool CheckSdk(CameraFinderItemInfoModel obj) {

@@ -43,16 +43,16 @@ namespace JayTom.Dws.Interface.WeciMexicoDv {
         }
 
         public async Task<UploadResponse> UploadData([NotNull] string barcode, [NotNull] double weight, double length = default, double width = default, double height = default,
-            double volume = default, Image? image = default, Image? panoramaImage = default, object? other = null,
+            double volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
             CancellationToken token = default) {
             var resultContent = string.Empty;
             var exceptionMsg = string.Empty;
             var isSuccess = false;
             UploadResponse response;
-            image = image?.AddTextWatermark(
+            imageInfo.Image = imageInfo.Image?.AddTextWatermark(
                 $"bc_no:{barcode}\nsize_width:{width}\nsize_long:{length}\nsize_heigth:{height}\nweigth_kg:{weight}\ndate_tran:{DateTime.Now:yyyy-MM-dd HH:mm:ss}",
                 Color.Red, 30);
-            var imageBase64 = image?.ConvertImageToBase64() ?? string.Empty;
+            var imageBase64 = imageInfo.Image?.ConvertImageToBase64() ?? string.Empty;
             //image?.Save($"{AppDomain.CurrentDomain.BaseDirectory}watermark.jpg", ImageFormat.Jpeg);
             //var base64String = Convert.ToBase64String(Encoding.Default.GetBytes(imageBase64));
             var data = new {
@@ -134,7 +134,7 @@ namespace JayTom.Dws.Interface.WeciMexicoDv {
         }
 
         public Task<UploadResponse> UploadData([NotNull] string barcode, [NotNull] double weight, DateTime scanTime, double length = default, double width = default,
-            double height = default, double volume = default, Image? image = default, Image? panoramaImage = default, object? other = null,
+            double height = default, double volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
             CancellationToken token = default) {
             throw new NotImplementedException();
         }

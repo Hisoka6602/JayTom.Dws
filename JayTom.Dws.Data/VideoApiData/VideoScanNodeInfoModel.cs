@@ -27,7 +27,7 @@ namespace JayTom.Dws.Data.VideoApiData {
         /// <summary>
         /// 节点扫描时间
         /// </summary>
-        [Column("ScanTime"), Required]
+        [Column("ScanTime", TypeName = "datetime"), Required]
         public DateTime ScanTime { get; set; }
 
         /// <summary>

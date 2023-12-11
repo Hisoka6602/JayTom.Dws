@@ -351,9 +351,9 @@ namespace JayTom.Dws.Client.Languages {
         /// <summary>
         ///   查找类似 绑定到全景相机 的本地化字符串。
         /// </summary>
-        public static string BindToPanoramicCamera {
+        public static string BindToPanoramaCamera {
             get {
-                return ResourceManager.GetString("BindToPanoramicCamera", resourceCulture);
+                return ResourceManager.GetString("BindToPanoramaCamera", resourceCulture);
             }
         }
         
@@ -1629,36 +1629,36 @@ namespace JayTom.Dws.Client.Languages {
         /// <summary>
         ///   查找类似 全景相机 的本地化字符串。
         /// </summary>
-        public static string PanoramicCamera {
+        public static string PanoramaCamera {
             get {
-                return ResourceManager.GetString("PanoramicCamera", resourceCulture);
+                return ResourceManager.GetString("PanoramaCamera", resourceCulture);
             }
         }
         
         /// <summary>
         ///   查找类似 全景图 的本地化字符串。
         /// </summary>
-        public static string PanoramicImage {
+        public static string PanoramaImage {
             get {
-                return ResourceManager.GetString("PanoramicImage", resourceCulture);
+                return ResourceManager.GetString("PanoramaImage", resourceCulture);
             }
         }
         
         /// <summary>
         ///   查找类似 天之前的全景图片 的本地化字符串。
         /// </summary>
-        public static string PanoramicImageDaysAgo {
+        public static string PanoramaImageDaysAgo {
             get {
-                return ResourceManager.GetString("PanoramicImageDaysAgo", resourceCulture);
+                return ResourceManager.GetString("PanoramaImageDaysAgo", resourceCulture);
             }
         }
         
         /// <summary>
         ///   查找类似 全景图片 的本地化字符串。
         /// </summary>
-        public static string PanoramicImages {
+        public static string PanoramaImages {
             get {
-                return ResourceManager.GetString("PanoramicImages", resourceCulture);
+                return ResourceManager.GetString("PanoramaImages", resourceCulture);
             }
         }
         
@@ -2430,9 +2430,9 @@ namespace JayTom.Dws.Client.Languages {
         /// <summary>
         ///   查找类似 全景图片 的本地化字符串。
         /// </summary>
-        public static string TableHeaderPanoramicImage {
+        public static string TableHeaderPanoramaImage {
             get {
-                return ResourceManager.GetString("TableHeaderPanoramicImage", resourceCulture);
+                return ResourceManager.GetString("TableHeaderPanoramaImage", resourceCulture);
             }
         }
         

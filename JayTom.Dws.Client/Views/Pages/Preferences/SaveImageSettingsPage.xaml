@@ -199,7 +199,7 @@
                             FontSize="12"
                             FontWeight="Bold"
                             Foreground="WhiteSmoke"
-                            Text="{x:Static languages:Language.PanoramicImage}" />
+                            Text="{x:Static languages:Language.PanoramaImage}" />
                     </ListBoxItem>
                     <ListBoxItem IsSelected="{Binding IsSaveVolumeImage, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
                         <TextBlock

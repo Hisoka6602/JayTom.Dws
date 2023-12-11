@@ -11,6 +11,7 @@
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:mvvm="http://prismlibrary.com/"
+    xmlns:validationRules="clr-namespace:JayTom.Dws.Client.ValidationRules"
     Name="CameraFinderView"
     Title="CameraFinderPage"
     d:DesignHeight="450"
@@ -149,7 +150,7 @@
 
                 <ListBoxItem IsSelected="{Binding CameraSdkSelectorInfo.IsUseHikvisionSmartCameraSdk, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
                     <b:Interaction.Triggers>
-                        <b:EventTrigger EventName="Selected">
+                        <b:EventTrigger EventName="PreviewMouseLeftButtonDown">
                             <mvvm:InvokeCommandAction Command="{Binding SdkSelectedCommand}" CommandParameter="IsUseHikvisionSmartCameraSdk" />
                         </b:EventTrigger>
                     </b:Interaction.Triggers>
@@ -163,7 +164,7 @@
                 </ListBoxItem>
                 <ListBoxItem IsSelected="{Binding CameraSdkSelectorInfo.IsUseHikvisionIndustrialCameraSdk, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
                     <b:Interaction.Triggers>
-                        <b:EventTrigger EventName="Selected">
+                        <b:EventTrigger EventName="PreviewMouseLeftButtonDown">
                             <mvvm:InvokeCommandAction Command="{Binding SdkSelectedCommand}" CommandParameter="IsUseHikvisionIndustrialCameraSdk" />
                         </b:EventTrigger>
                     </b:Interaction.Triggers>
@@ -177,7 +178,7 @@
                 </ListBoxItem>
                 <ListBoxItem IsSelected="{Binding CameraSdkSelectorInfo.IsUseDaHuaSmartCameraSdk, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
                     <b:Interaction.Triggers>
-                        <b:EventTrigger EventName="Selected">
+                        <b:EventTrigger EventName="PreviewMouseLeftButtonDown">
                             <mvvm:InvokeCommandAction Command="{Binding SdkSelectedCommand}" CommandParameter="IsUseDaHuaSmartCameraSdk" />
                         </b:EventTrigger>
                     </b:Interaction.Triggers>
@@ -189,9 +190,14 @@
                         Foreground="WhiteSmoke"
                         Text="大华智能相机" />
                 </ListBoxItem>
+                <!--<b:Interaction.Triggers>
+                    <b:EventTrigger EventName="Selected">
+                        <mvvm:InvokeCommandAction Command="{Binding SdkSelectedCommand}" CommandParameter="IsUseDaHuaSecurityCameraSdk" />
+                    </b:EventTrigger>
+                </b:Interaction.Triggers>-->
                 <ListBoxItem IsSelected="{Binding CameraSdkSelectorInfo.IsUseDaHuaSecurityCameraSdk, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
                     <b:Interaction.Triggers>
-                        <b:EventTrigger EventName="Selected">
+                        <b:EventTrigger EventName="PreviewMouseLeftButtonDown">
                             <mvvm:InvokeCommandAction Command="{Binding SdkSelectedCommand}" CommandParameter="IsUseDaHuaSecurityCameraSdk" />
                         </b:EventTrigger>
                     </b:Interaction.Triggers>
@@ -205,7 +211,7 @@
                 </ListBoxItem>
                 <ListBoxItem IsSelected="{Binding CameraSdkSelectorInfo.IsUseWayzimSmartCameraSdk, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
                     <b:Interaction.Triggers>
-                        <b:EventTrigger EventName="Selected">
+                        <b:EventTrigger EventName="PreviewMouseLeftButtonDown">
                             <mvvm:InvokeCommandAction Command="{Binding SdkSelectedCommand}" CommandParameter="IsUseWayzimSmartCameraSdk" />
                         </b:EventTrigger>
                     </b:Interaction.Triggers>
@@ -220,7 +226,7 @@
                 </ListBoxItem>
                 <ListBoxItem IsSelected="{Binding CameraSdkSelectorInfo.IsUseWayzimIndustrialCameraSdk, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
                     <b:Interaction.Triggers>
-                        <b:EventTrigger EventName="Selected">
+                        <b:EventTrigger EventName="PreviewMouseLeftButtonDown">
                             <mvvm:InvokeCommandAction Command="{Binding SdkSelectedCommand}" CommandParameter="IsUseWayzimIndustrialCameraSdk" />
                         </b:EventTrigger>
                     </b:Interaction.Triggers>
@@ -235,7 +241,7 @@
                 </ListBoxItem>
                 <ListBoxItem IsSelected="{Binding CameraSdkSelectorInfo.IsUseHikvisionVolumeCameraSdk, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
                     <b:Interaction.Triggers>
-                        <b:EventTrigger EventName="Selected">
+                        <b:EventTrigger EventName="PreviewMouseLeftButtonDown">
                             <mvvm:InvokeCommandAction Command="{Binding SdkSelectedCommand}" CommandParameter="IsUseHikvisionVolumeCameraSdk" />
                         </b:EventTrigger>
                     </b:Interaction.Triggers>
@@ -250,7 +256,7 @@
                 </ListBoxItem>
                 <ListBoxItem IsSelected="{Binding CameraSdkSelectorInfo.IsUseDaHuaVolumeCameraSdk, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
                     <b:Interaction.Triggers>
-                        <b:EventTrigger EventName="Selected">
+                        <b:EventTrigger EventName="PreviewMouseLeftButtonDown">
                             <mvvm:InvokeCommandAction Command="{Binding SdkSelectedCommand}" CommandParameter="IsUseDaHuaVolumeCameraSdk" />
                         </b:EventTrigger>
                     </b:Interaction.Triggers>
@@ -355,6 +361,43 @@
                         <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="{x:Static languages:Language.TableHeaderCameraName}" />
                     </DataGridTextColumn.Header>
                 </DataGridTextColumn>
+                <!--  自定义名称  -->
+                <DataGridTemplateColumn
+                    Width="80"
+                    MinWidth="80"
+                    Header="自定义名称">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBox
+                                MinWidth="80"
+                                BorderBrush="Transparent"
+                                Style="{StaticResource MaterialDesignTextBox}">
+                                <TextBox.Text>
+                                    <Binding
+                                        Mode="TwoWay"
+                                        Path="CustomName"
+                                        UpdateSourceTrigger="PropertyChanged">
+                                        <Binding.ValidationRules>
+                                            <validationRules:RegexValidationRule ErrorMessage="请输入有的字符串,长度大于1" Pattern="^[^ &lt;&gt;:/\\|?*%&quot;&apos;`]{2,}$" />
+                                        </Binding.ValidationRules>
+                                    </Binding>
+                                </TextBox.Text>
+                                <TextBox.InputBindings>
+                                    <KeyBinding
+                                        Key="Enter"
+                                        Command="{Binding ElementName=CameraFinderView, Path=DataContext.EditedCustomNameCommand}"
+                                        CommandParameter="{Binding}" />
+                                </TextBox.InputBindings>
+                                <b:Interaction.Triggers>
+                                    <b:EventTrigger EventName="LostFocus">
+                                        <b:InvokeCommandAction Command="{Binding ElementName=CameraFinderView, Path=DataContext.EditedCustomNameCommand}" CommandParameter="{Binding}" />
+                                    </b:EventTrigger>
+                                </b:Interaction.Triggers>
+                            </TextBox>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
                 <!--  品牌  -->
                 <DataGridTextColumn
                     Width="150"
@@ -440,20 +483,20 @@
                                         </Grid.ColumnDefinitions>
                                         <!--  绑定到全景相机  -->
                                         <Button
-                                            Grid.Column="{Binding CameraType, Converter={StaticResource BoundCameraTypeLocationConverter}, ConverterParameter=PanoramicCamera}"
+                                            Grid.Column="{Binding CameraType, Converter={StaticResource BoundCameraTypeLocationConverter}, ConverterParameter=PanoramaCamera}"
                                             Width="Auto"
                                             Height="30"
                                             MinWidth="125"
                                             Margin="0"
                                             Padding="0"
                                             HorizontalAlignment="Stretch"
-                                            materialDesign:ButtonAssist.CornerRadius="{Binding CameraType, Converter={StaticResource BoundCameraTypeCornerRadiusConverter}, ConverterParameter=PanoramicCamera}"
+                                            materialDesign:ButtonAssist.CornerRadius="{Binding CameraType, Converter={StaticResource BoundCameraTypeCornerRadiusConverter}, ConverterParameter=PanoramaCamera}"
                                             materialDesign:ShadowAssist.ShadowEdges="Right"
                                             Background="BlueViolet"
                                             Command="{Binding ElementName=CameraFinderView, Path=DataContext.BindPanoramaCameraCommand}"
                                             CommandParameter="{Binding}"
                                             Style="{StaticResource ButtonFocusEnlargeStyle}"
-                                            Visibility="{Binding CameraType, Converter={StaticResource BoundCameraTypeVisibilityConverter}, ConverterParameter=PanoramicCamera}">
+                                            Visibility="{Binding CameraType, Converter={StaticResource BoundCameraTypeVisibilityConverter}, ConverterParameter=PanoramaCamera}">
                                             <TextBlock
                                                 Margin="2"
                                                 HorizontalAlignment="Center"
@@ -463,7 +506,7 @@
                                                 FontWeight="Bold"
                                                 Foreground="White"
                                                 RenderTransformOrigin=".5,.5"
-                                                Text="{x:Static languages:Language.BindToPanoramicCamera}" />
+                                                Text="{x:Static languages:Language.BindToPanoramaCamera}" />
                                         </Button>
                                         <!--  绑定到Ocr扫码相机  -->
                                         <Button

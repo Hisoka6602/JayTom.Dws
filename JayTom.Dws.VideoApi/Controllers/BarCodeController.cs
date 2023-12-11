@@ -37,7 +37,7 @@ namespace JayTom.Dws.VideoApi.Controllers {
 
         [HttpPost("UploadBarcodeData")]
         public async Task<JsonResult> UploadBarcodeData([FromForm][NotNull] IFormFile barcodeImage,
-            [FromForm] List<IFormFile> panoramicImages,
+            [FromForm] List<IFormFile> panoramaImages,
             [FromForm][NotNull] string jsonData,
             CancellationToken cancellationToken) {
             _saveImagePath ??= _hostEnvironment.WebRootPath;
@@ -49,7 +49,7 @@ namespace JayTom.Dws.VideoApi.Controllers {
                         //CameraName = barcodeImage.FileName.Split("_")?[1] ?? string.Empty,
                         Image = FileUtils.ConvertIFormFileToBitmap(barcodeImage),
                         Name = barcodeImage.FileName
-                    }, panoramicImages.Select(s =>
+                    }, panoramaImages.Select(s =>
                         new BarcodeImageDto {
                             CameraSerialNumber = Path.GetFileNameWithoutExtension(s.FileName)?.Split("_")?[0] ?? string.Empty,
                             //CameraName = s.FileName.Split("_")?[1] ?? string.Empty,

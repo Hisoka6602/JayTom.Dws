@@ -12,6 +12,7 @@ namespace JayTom.Dws.Client.Models.Cameras {
         private ConnectionType _connectionType = 0;
         private int _num;
         private string _brand = string.Empty;
+        private string _customName = string.Empty;
 
         /// <summary>
         /// 序号
@@ -28,6 +29,14 @@ namespace JayTom.Dws.Client.Models.Cameras {
         public string Name {
             get => _name;
             set => SetProperty(ref _name, value);
+        }
+
+        /// <summary>
+        /// 自定义名称
+        /// </summary>
+        public string CustomName {
+            get => _customName;
+            set => SetProperty(ref _customName, value);
         }
 
         /// <summary>

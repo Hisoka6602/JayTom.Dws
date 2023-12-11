@@ -19,6 +19,12 @@ namespace JayTom.Dws.Data.LocalConf.CameraConfig {
         public int CaptureDelayTime { get; set; }
 
         /// <summary>
+        /// 指定触发的相机序列号
+        /// </summary>
+        [Column("SelectedCameraSerialNumber"), Required, InsertOrUpdata]
+        public string SelectedCameraSerialNumber { get; set; } = string.Empty;
+
+        /// <summary>
         /// 相机连接参数(部分相机使用)
         /// </summary>
         [Column("CameraConnectionParameters"), InsertOrUpdata]

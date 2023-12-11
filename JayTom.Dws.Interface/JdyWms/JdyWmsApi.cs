@@ -52,7 +52,7 @@ namespace JayTom.Dws.Interface.JdyWms {
         }
 
         public async Task<UploadResponse> UploadData(string barcode, double weight, double length = default, double width = default, double height = default,
-            double volume = default, Image? image = default, Image? panoramaImage = default, object? other = null,
+            double volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
             CancellationToken token = default) {
             UploadResponse response;
             var resultContent = string.Empty;
@@ -133,7 +133,7 @@ namespace JayTom.Dws.Interface.JdyWms {
         }
 
         public async Task<UploadResponse> UploadData(string barcode, double weight, DateTime scanTime, double length = default, double width = default,
-            double height = default, double volume = default, Image? image = default, Image? panoramaImage = default,
+            double height = default, double volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default,
             object? other = null, CancellationToken token = default) {
             UploadResponse response;
             var resultContent = string.Empty;

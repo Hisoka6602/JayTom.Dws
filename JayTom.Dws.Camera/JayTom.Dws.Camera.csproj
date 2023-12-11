@@ -106,6 +106,9 @@
     <None Update="Cameras\SmartCamera\Irayple\Dll\ThridLibray.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="Cameras\SmartCamera\Wayzim\Dll\CamSDK.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="Cameras\VolumeCamera\Hikvision\Dll\VolMeasure.Net.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

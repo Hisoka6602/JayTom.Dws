@@ -10,9 +10,9 @@ namespace JayTom.Dws.Client.Converters.CameraConverter {
 
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
             if (value is CameraType cameraType) {
-                if (parameter?.ToString()?.Equals("PanoramicCamera") == true) {
+                if (parameter?.ToString()?.Equals("PanoramaCamera") == true) {
                     return cameraType switch {
-                        CameraType.PanoramicCamera => Visibility.Visible,
+                        CameraType.PanoramaCamera => Visibility.Visible,
                         CameraType.IndustrialCamera => Visibility.Visible,
                         CameraType.SmartCamera => Visibility.Visible,
                         CameraType.VideoCamera => Visibility.Visible,
@@ -40,9 +40,9 @@ namespace JayTom.Dws.Client.Converters.CameraConverter {
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
             if (value is CameraType cameraType) {
-                if (parameter?.ToString()?.Equals("PanoramicCamera") == true) {
+                if (parameter?.ToString()?.Equals("PanoramaCamera") == true) {
                     return cameraType switch {
-                        CameraType.PanoramicCamera => Visibility.Visible,
+                        CameraType.PanoramaCamera => Visibility.Visible,
                         CameraType.IndustrialCamera => Visibility.Visible,
                         CameraType.SmartCamera => Visibility.Visible,
                         _ => Visibility.Collapsed

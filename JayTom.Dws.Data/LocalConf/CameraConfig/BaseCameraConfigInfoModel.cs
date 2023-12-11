@@ -13,6 +13,12 @@ namespace JayTom.Dws.Data.LocalConf.CameraConfig {
         public string Name { get; set; } = string.Empty;
 
         /// <summary>
+        /// 自定义相机名称
+        /// </summary>
+        [Column("CustomName"), InsertOrUpdata]
+        public string CustomName { get; set; } = string.Empty;
+
+        /// <summary>
         /// 相机序列号
         /// </summary>
         [Column("SerialNumber"), Required, UpdateBy]

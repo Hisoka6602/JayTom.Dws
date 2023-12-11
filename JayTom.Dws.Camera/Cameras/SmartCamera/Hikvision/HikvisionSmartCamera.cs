@@ -106,7 +106,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                                 : CameraConnectionType.Unknown),
                         Id = i,
                         IsOcrSupported = ((stGigEDeviceInfo.chManufacturerName?.Contains("Hikrobot") == true ||
-                                           stGigEDeviceInfo.chManufacturerName?.Contains("Hikrobot") == true) &&
+                                           stGigEDeviceInfo.chManufacturerName?.Contains("Hikvision") == true) &&
                                           stGigEDeviceInfo.chModelName?.StartsWith("MV-ID") == true)
                     };
                     if (cameraInfo.Model.StartsWith("MV-ID")) {

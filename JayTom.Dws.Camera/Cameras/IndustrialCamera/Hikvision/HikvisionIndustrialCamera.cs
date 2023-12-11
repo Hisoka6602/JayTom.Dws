@@ -127,15 +127,13 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                         Id = i,
                         //如果是海康的工业相机则支持
                         IsOcrSupported = ((stDevInfo.chManufacturerName?.Contains("Hikrobot") == true ||
-                                          stDevInfo.chManufacturerName?.Contains("Hikrobot") == true) &&
+                                           stDevInfo.chManufacturerName?.Contains("Hikvision") == true) &&
                                           stDevInfo.chModelName?.StartsWith("MV-PD") == true)
                     };
                     if (cameraInfo.Model.StartsWith("MV-PD")) {
                         _devInfo.AddOrUpdate(cameraInfo.SerialNumber, cameraInfo, (k, v) => cameraInfo);
                         cameraInfos.Add(cameraInfo);
                     }
-                    _devInfo.AddOrUpdate(cameraInfo.SerialNumber, cameraInfo, (k, v) => cameraInfo);
-                    cameraInfos.Add(cameraInfo);
                 }
             }
             return cameraInfos;
@@ -737,7 +735,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                 //面单图
                 //var bitmapWaybillAsync = await GetBitmapWaybillAsync(stOutput);
                 var thumbnailImage = GenerateThumbnail(bitmap);
-                if (0 != stOutput.stCodeList.nCodeNum && BindingType != CameraBindingType.PanoramicCamera) {
+                if (0 != stOutput.stCodeList.nCodeNum && BindingType != CameraBindingType.PanoramaCamera) {
                     if (IsShowBarcodeBorder && thumbnailImage is not null && thumbnailImage.PixelFormat != PixelFormat.Format8bppIndexed &&
                         stOutput.stCodeList.stCodeInfo?.Any() == true) {
                         //设置图像边框

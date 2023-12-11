@@ -11,7 +11,7 @@ namespace JayTom.Dws.Client.Converters.CameraConverter {
             if (value is BoundCameraType cameraType) {
                 if (parameter?.ToString()?.Equals("Text") == true) {
                     return cameraType switch {
-                        BoundCameraType.PanoramicCamera => Languages.Language.ResourceManager.GetString("PanoramicCamera") ?? string.Empty,
+                        BoundCameraType.PanoramaCamera => Languages.Language.ResourceManager.GetString("PanoramaCamera") ?? string.Empty,
                         BoundCameraType.BarcodeScannerCamera => Languages.Language.ResourceManager.GetString("ScannerCamera") ?? string.Empty,
                         BoundCameraType.VolumeCamera => Languages.Language.ResourceManager.GetString("VolumeCamera") ?? string.Empty,
                         BoundCameraType.OcrCamera => "Ocr算法扫码",
@@ -20,7 +20,7 @@ namespace JayTom.Dws.Client.Converters.CameraConverter {
                 }
                 else if (parameter?.ToString()?.Equals("Color") == true) {
                     return cameraType switch {
-                        BoundCameraType.PanoramicCamera => new SolidColorBrush(Colors.BlueViolet),
+                        BoundCameraType.PanoramaCamera => new SolidColorBrush(Colors.BlueViolet),
                         BoundCameraType.BarcodeScannerCamera => new SolidColorBrush(Colors.RoyalBlue),
                         BoundCameraType.VolumeCamera => new SolidColorBrush(Colors.DodgerBlue),
                         BoundCameraType.OcrCamera => new SolidColorBrush(Colors.DarkOrange),
@@ -29,7 +29,7 @@ namespace JayTom.Dws.Client.Converters.CameraConverter {
                 }
                 else if (parameter?.ToString()?.Equals("FontText") == true) {
                     return cameraType switch {
-                        BoundCameraType.PanoramicCamera => "\xe605",
+                        BoundCameraType.PanoramaCamera => "\xe605",
                         BoundCameraType.BarcodeScannerCamera => "\xe9f5",
                         BoundCameraType.VolumeCamera => "\xea1a",
                         BoundCameraType.OcrCamera => "\xe7a3",
@@ -44,7 +44,7 @@ namespace JayTom.Dws.Client.Converters.CameraConverter {
             if (value is BoundCameraType cameraType) {
                 if (parameter?.ToString()?.Equals("Text") == true) {
                     return cameraType switch {
-                        BoundCameraType.PanoramicCamera => Languages.Language.ResourceManager.GetString("PanoramicCamera") ?? string.Empty,
+                        BoundCameraType.PanoramaCamera => Languages.Language.ResourceManager.GetString("PanoramaCamera") ?? string.Empty,
                         BoundCameraType.BarcodeScannerCamera => Languages.Language.ResourceManager.GetString("ScannerCamera") ?? string.Empty,
                         BoundCameraType.VolumeCamera => Languages.Language.ResourceManager.GetString("CompactCamera") ?? string.Empty,
                         _ => string.Empty
@@ -52,7 +52,7 @@ namespace JayTom.Dws.Client.Converters.CameraConverter {
                 }
                 else if (parameter?.ToString()?.Equals("Color") == true) {
                     return cameraType switch {
-                        BoundCameraType.PanoramicCamera => new SolidColorBrush(Colors.BlueViolet),
+                        BoundCameraType.PanoramaCamera => new SolidColorBrush(Colors.BlueViolet),
                         BoundCameraType.BarcodeScannerCamera => new SolidColorBrush(Colors.RoyalBlue),
                         BoundCameraType.VolumeCamera => new SolidColorBrush(Colors.DodgerBlue),
                         _ => string.Empty
@@ -60,7 +60,7 @@ namespace JayTom.Dws.Client.Converters.CameraConverter {
                 }
                 else if (parameter?.ToString()?.Equals("FontText") == true) {
                     return cameraType switch {
-                        BoundCameraType.PanoramicCamera => "\xe605",
+                        BoundCameraType.PanoramaCamera => "\xe605",
                         BoundCameraType.BarcodeScannerCamera => "\xe9f5",
                         BoundCameraType.VolumeCamera => "\xea1a",
                         _ => string.Empty
@@ -68,7 +68,7 @@ namespace JayTom.Dws.Client.Converters.CameraConverter {
                 }
                 else if (parameter?.ToString()?.Equals("Visibility") == true) {
                     return cameraType switch {
-                        BoundCameraType.PanoramicCamera => "\xe605",
+                        BoundCameraType.PanoramaCamera => "\xe605",
                         BoundCameraType.BarcodeScannerCamera => "\xe9f5",
                         BoundCameraType.VolumeCamera => "\xea1a",
                         _ => string.Empty

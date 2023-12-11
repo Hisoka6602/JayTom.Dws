@@ -36,7 +36,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             },
             new MenuItemInfoModel()
             {
-                Title = Languages.Language.ResourceManager.GetString("PanoramicCamera")??string.Empty,
+                Title = Languages.Language.ResourceManager.GetString("PanoramaCamera")??string.Empty,
                 IconFont = new IconInfoModel()
                 {
                     IconFont = "pack://application:,,,/Fonts/#iconfont",

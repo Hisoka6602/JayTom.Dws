@@ -29,7 +29,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
             _deviceService = deviceService;
             _panoramaCameraConfigRepository = panoramaCameraConfigRepository;
             _deviceService.CameraBound += async delegate (object? sender, CameraFinderItemInfoModel model) {
-                if (model.BoundType == BoundCameraType.PanoramicCamera) {
+                if (model.BoundType == BoundCameraType.PanoramaCamera) {
                     await Application.Current.Dispatcher.InvokeAsync(async () => {
                         //增加到集合,从数据库获取
                         var infoModel = await _panoramaCameraConfigRepository.FirstOrDefault(f =>
@@ -149,7 +149,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                         {
                             new()
                             {
-                                Type = BoundCameraType.PanoramicCamera,
+                                Type = BoundCameraType.PanoramaCamera,
                                 Parameters = infoModel
                             }
                         });
@@ -180,7 +180,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                     var updateRange = await _panoramaCameraConfigRepository.UpdateRange(infoModels);
                     if (updateRange) {
                         var list = infoModels?.Select(s => new CameraParametersModifiedEventArgs {
-                            Type = BoundCameraType.PanoramicCamera,
+                            Type = BoundCameraType.PanoramaCamera,
                             Parameters = infoModels
                         })?.ToList();
 

@@ -207,13 +207,13 @@
                                 MinWidth="125"
                                 Margin="0"
                                 Padding="0"
-                                materialDesign:ButtonAssist.CornerRadius="{Binding CameraType, Converter={StaticResource BoundCameraTypeCornerRadiusConverter}, ConverterParameter=PanoramicCamera}"
+                                materialDesign:ButtonAssist.CornerRadius="{Binding CameraType, Converter={StaticResource BoundCameraTypeCornerRadiusConverter}, ConverterParameter=PanoramaCamera}"
                                 materialDesign:ShadowAssist.ShadowEdges="Right"
                                 Background="BlueViolet"
                                 Command="{Binding ElementName=CameraFinderView, Path=DataContext.BindPanoramaCameraCommand}"
                                 CommandParameter="{Binding}"
                                 Style="{StaticResource ButtonFocusEnlargeStyle}"
-                                Visibility="{Binding CameraType, Converter={StaticResource BoundCameraTypeVisibilityConverter}, ConverterParameter=PanoramicCamera}">
+                                Visibility="{Binding CameraType, Converter={StaticResource BoundCameraTypeVisibilityConverter}, ConverterParameter=PanoramaCamera}">
                                 <TextBlock
                                     Margin="2"
                                     HorizontalAlignment="Center"

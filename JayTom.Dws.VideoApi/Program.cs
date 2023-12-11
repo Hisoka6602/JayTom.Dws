@@ -27,7 +27,7 @@ internal class Program {
         //注入
         builder.WebHost.UseKestrel((context, options) => {
             // 设置应用服务器 Kestrel 请求体最大为50MB
-            options.Limits.MaxRequestBodySize = 314572800;
+            options.Limits.MaxRequestBodySize = 31457280000;
         });
         //配置从配置文件的`NLog` 节点读取配置
         var nlogConfig = builder.Configuration.GetSection("NLog");
@@ -46,26 +46,22 @@ internal class Program {
         });
 
         //注册数据库
-        builder.Services.AddPooledDbContextFactory<VideoApiContext>(options => {
+        /*builder.Services.AddPooledDbContextFactory<VideoApiContext>(options => {
             var connectionString = builder.Configuration.GetConnectionString("DBConnection");
-            options.UseSqlServer(connectionString ?? string.Empty, sqlServerDbContextOptionsBuilder => {
+            /*options.UseSqlServer(connectionString ?? string.Empty, sqlServerDbContextOptionsBuilder => {
                 sqlServerDbContextOptionsBuilder.EnableRetryOnFailure();
                 sqlServerDbContextOptionsBuilder.CommandTimeout(60); //180秒超时
                 sqlServerDbContextOptionsBuilder.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
             })
                 .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTrackingWithIdentityResolution)
+                .EnableServiceProviderCaching();#1#
+        }
+            , 300);*/
+        builder.Services.AddPooledDbContextFactory<VideoApiContext>(options => {
+            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+            options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString))
+                .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTrackingWithIdentityResolution)
                 .EnableServiceProviderCaching();
-
-            /*
-            options.UseMySql(builder.Configuration.GetConnectionString("DBConnection") ?? string.Empty,
-                sqlServerDbContextOptionsBuilder => {
-                    sqlServerDbContextOptionsBuilder.EnableRetryOnFailure();
-
-                    //builder.EnableRetryOnFailure(5, TimeSpan.FromSeconds(30), new int[] { 2 });
-                    sqlServerDbContextOptionsBuilder.CommandTimeout(60); //180秒超时
-                    sqlServerDbContextOptionsBuilder.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
-                }).UseQueryTrackingBehavior(QueryTrackingBehavior.NoTrackingWithIdentityResolution)
-            .EnableServiceProviderCaching();*/
         }
             , 300);
 

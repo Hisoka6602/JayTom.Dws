@@ -10,9 +10,9 @@ namespace JayTom.Dws.Client.Converters.CameraConverter {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
             if (value is CameraType cameraType) {
 
-                if (parameter?.ToString()?.Equals("PanoramicCamera") == true) {
+                if (parameter?.ToString()?.Equals("PanoramaCamera") == true) {
                     return cameraType switch {
-                        CameraType.PanoramicCamera => new CornerRadius(5),
+                        CameraType.PanoramaCamera => new CornerRadius(5),
                         CameraType.IndustrialCamera => new CornerRadius(5, 0, 0, 5),
                         CameraType.SmartCamera => new CornerRadius(5, 0, 0, 5),
                         CameraType.VideoCamera => new CornerRadius(5),
@@ -38,7 +38,7 @@ namespace JayTom.Dws.Client.Converters.CameraConverter {
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
             if (value is CameraType cameraType) {
-                if (parameter?.ToString()?.Equals("PanoramicCamera") == true) {
+                if (parameter?.ToString()?.Equals("PanoramaCamera") == true) {
                     return new CornerRadius(5, 0, 0, 5);
                 }
                 else if (parameter?.ToString()?.Equals("BarcodeScannerCamera") == true) {

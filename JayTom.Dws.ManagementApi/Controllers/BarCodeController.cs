@@ -13,7 +13,7 @@ namespace JayTom.Dws.ManagementApi.Controllers {
         }
 
         [HttpPost("UploadBarcodeData")]
-        public async Task<JsonResult> UploadBarcodeData(IFormFile barcodeImage, List<IFormFile> panoramicImages, [FromBody] string jsonData, CancellationToken cancellationToken) {
+        public async Task<JsonResult> UploadBarcodeData(IFormFile barcodeImage, List<IFormFile> panoramaImages, [FromBody] string jsonData, CancellationToken cancellationToken) {
         }
     }
 }

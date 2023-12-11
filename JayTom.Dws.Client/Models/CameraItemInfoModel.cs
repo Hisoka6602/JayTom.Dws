@@ -210,7 +210,7 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 全景相机
         /// </summary>
-        PanoramicCamera = 1,
+        PanoramaCamera = 1,
 
         /// <summary>
         /// 3D相机

@@ -1,26 +1,25 @@
-﻿using JayTom.Dws.Client.EventMediators;
-using JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel;
-using JayTom.Dws.Client.Models.ImageSettingModels;
-using JayTom.Dws.Data.LocalConf;
-using JayTom.Dws.Domain.Dto.ApiDto;
-using JayTom.Dws.Domain.Dto.BaseInfoModels;
-using JayTom.Dws.Domain.Repository.LocalConf;
-using MaterialDesignThemes.Wpf;
-using Newtonsoft.Json;
-using Prism.Commands;
+﻿using System;
 using Prism.Mvvm;
-using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
-using System.Text.Encodings.Web;
+using Prism.Commands;
+using Newtonsoft.Json;
 using System.Text.Json;
 using System.Text.Unicode;
 using System.Windows.Input;
+using MaterialDesignThemes.Wpf;
+using JayTom.Dws.Data.LocalConf;
+using System.Text.Encodings.Web;
+using System.Collections.Generic;
+using JayTom.Dws.Domain.Dto.ApiDto;
+using System.Collections.ObjectModel;
+using JayTom.Dws.Client.EventMediators;
+using JayTom.Dws.Domain.Dto.BaseInfoModels;
+using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Client.Models.ImageSettingModels;
 using JsonSerializer = System.Text.Json.JsonSerializer;
+using JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
-
     public class DefaultApiPageViewModel : BindableBase {
         private readonly IConfigRepository _configRepository;
         private DefaultApiModel _defaultApiInfo = new();
@@ -154,7 +153,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
                             ValidationMode = DefaultApiInfo.ValidationMode,
                             JsonTemplate = JsonContent,
                             StringTemplate = string.Join(",", DefaultApiInfo.DataTemplate.Where(w => w.ApplicationType == ItemApplicationType.ApiData)
-                                .Select(s => s.Content)?.ToList() ?? new List<string>())
+                                .Select(s => s.Content)?.ToList() ?? new List<string>()),
+                            IsUploadPanoramaImage = DefaultApiInfo.IsUploadPanoramaImage,
+                            IsUploadScanImage = DefaultApiInfo.IsUploadScanImage,
+                            IsUseUploadImage = DefaultApiInfo.IsUseUploadImage
                         })
                     });
                     if (insertOrUpdate) {
@@ -199,7 +201,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
                                 StringContains = settingsDto.StringContains,
                                 Timeout = (int)settingsDto.Timeout.TotalMilliseconds,
                                 Url = settingsDto.Url,
-                                ValidationMode = settingsDto.ValidationMode
+                                ValidationMode = settingsDto.ValidationMode,
+                                IsUploadPanoramaImage = settingsDto.IsUploadPanoramaImage,
+                                IsUploadScanImage = settingsDto.IsUploadScanImage,
+                                IsUseUploadImage = settingsDto.IsUseUploadImage
                             };
                             DefaultApiInfo.DataTemplate.AddRange(templateModels);
                             JsonContent = ChangeJsonContent(DefaultApiInfo.DataTemplate);

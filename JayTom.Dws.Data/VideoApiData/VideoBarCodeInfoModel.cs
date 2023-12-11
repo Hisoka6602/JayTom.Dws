@@ -26,7 +26,7 @@ namespace JayTom.Dws.Data.VideoApiData {
         /// <summary>
         /// 扫码时间
         /// </summary>
-        [Column("ScanTime"), Required]
+        [Column("ScanTime", TypeName = "datetime"), Required]
         public DateTime ScanTime { get; set; } = DateTime.MinValue;
 
         /// <summary>

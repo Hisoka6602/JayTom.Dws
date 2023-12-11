@@ -112,20 +112,14 @@
                             materialDesign:ButtonAssist.CornerRadius="15"
                             materialDesign:ColorZoneAssist.Mode="Dark"
                             BorderThickness="0"
-                            DisplayMemberPath="Name"
+                            DisplayMemberPath="SerialNumber"
                             FontSize="12"
                             FontWeight="Bold"
                             Foreground="White"
-                            ItemsSource="{Binding ApiTypeItems, UpdateSourceTrigger=PropertyChanged}"
-                            SelectedItem="{Binding SelectApiType, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                            SelectedValuePath="Value"
-                            Style="{StaticResource MaterialDesignComboBox}">
-                            <b:Interaction.Triggers>
-                                <b:EventTrigger EventName="SelectionChanged">
-                                    <mvvm:InvokeCommandAction Command="{Binding OptionSelectionChangedCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ComboBox}}, Path=SelectionChangedEventArgs}" />
-                                </b:EventTrigger>
-                            </b:Interaction.Triggers>
-                        </ComboBox>
+                            ItemsSource="{Binding Cameras, UpdateSourceTrigger=PropertyChanged}"
+                            SelectedItem="{Binding SelectedCamera, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                            SelectedValuePath="SerialNumber"
+                            Style="{StaticResource MaterialDesignComboBox}" />
                     </Border>
                     <Button
                         Width="70"
@@ -135,6 +129,7 @@
                         materialDesign:ButtonAssist.CornerRadius="17"
                         materialDesign:ShadowAssist.ShadowEdges="Right"
                         Background="BlueViolet"
+                        Command="{Binding OkCommand}"
                         Style="{StaticResource ButtonFocusEnlargeStyle}">
                         <TextBlock
                             Margin="2"

@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
 
 namespace JayTom.Dws.Domain.Dto.ApiDto {
-
     public class DefaultApiDto {
 
         /// <summary>
@@ -58,6 +57,18 @@ namespace JayTom.Dws.Domain.Dto.ApiDto {
         /// 正则表达式
         /// </summary>
         public string RegularExpression { get; set; } = string.Empty;
+        /// <summary>
+        /// 是否上传图片
+        /// </summary>
+        public bool IsUseUploadImage { get; set; }
+        /// <summary>
+        /// 是否上传扫码图
+        /// </summary>
+        public bool IsUploadScanImage { get; set; }
+        /// <summary>
+        /// 是否上传全景图
+        /// </summary>
+        public bool IsUploadPanoramaImage { get; set; }
     }
 
     public enum ResponseValidationMode {
