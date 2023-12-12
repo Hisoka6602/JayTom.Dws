@@ -66,6 +66,7 @@ using JayTom.Dws.Client.HomeToolPlugin.SunnenPlugin.Views;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 using JayTom.Dws.Client.Views.Pages.Preferences.LogsViews;
 using JayTom.Dws.Client.Views.Pages.Preferences.AppSettings;
+using JayTom.Dws.Client.Views.Pages.Preferences.CloudService;
 using JayTom.Dws.Client.Service.Sorting.Communication.TcpComm;
 using JayTom.Dws.Client.HomeToolPlugin.SunnenPlugin.ViewModels;
 using JayTom.Dws.Client.Service.Sorting.Communication.SerialComm;
@@ -74,6 +75,7 @@ using JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings;
 using JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Infrastructure.Repository.LocalConf.CameraConfig;
+using JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService;
 using JayTom.Dws.Client.Service.ResultOutput.Communication.TcpComm;
 using JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel;
 using JayTom.Dws.Client.Views.Pages.Preferences.CameraConfiguration;
@@ -144,6 +146,7 @@ namespace JayTom.Dws.Client {
                 containerRegistry.RegisterForNavigation<OcrSettingsPage>();
                 containerRegistry.RegisterForNavigation<WorkflowSettingsPage>();
                 containerRegistry.RegisterForNavigation<AppSettingsPage>();
+                containerRegistry.RegisterForNavigation<CloudServicePage>();
                 //LogManagerPage
                 //相机
                 containerRegistry.RegisterForNavigation<BarcodeScannerCameraConfigPage>();
@@ -160,6 +163,9 @@ namespace JayTom.Dws.Client {
                 //程序设置
                 containerRegistry.RegisterForNavigation<GridSettingsPage>();
                 containerRegistry.RegisterForNavigation<OtherSettingsPage>();
+                //云端服务
+                containerRegistry.RegisterForNavigation<CloudDataPage>();
+                containerRegistry.RegisterForNavigation<CloudVideoPage>();
             }
             //其他注册
             containerRegistry.GetContainer().RegisterServices(services => {
@@ -208,13 +214,14 @@ namespace JayTom.Dws.Client {
                 //data
 
                 services.AddScoped<IBarCodeRepository, BarCodeRepository>();
-                services.AddScoped<IPanoramaImageRepository, PanoramaImageRepository>();
                 services.AddScoped<ISoundRepository, SoundRepository>();
                 services.AddScoped<IVolumeRepository, VolumeRepository>();
                 services.AddScoped<IWeightRepository, WeightRepository>();
                 services.AddScoped<IUploadRepository, UploadRepository>();
                 services.AddScoped<ISortingRepository, SortingRepository>();
                 services.AddScoped<IOcrRepository, OcrRepository>();
+                services.AddScoped<IImageRepository, ImageRepository>();
+                services.AddScoped<ICloudVideoUploadRepository, CloudVideoUploadRepository>();
                 //config
                 services.AddScoped<IBarcodeScannerCameraConfigRepository, BarcodeScannerCameraConfigRepository>();
                 services.AddScoped<IPanoramaCameraConfigRepository, PanoramaCameraConfigRepository>();
@@ -368,13 +375,14 @@ namespace JayTom.Dws.Client {
                         services.AddSingleton(container1.Resolve<IBarCodeRepository>());
                         services.AddSingleton(container1.Resolve<IPanoramaCameraConfigRepository>());
                         services.AddSingleton(container1.Resolve<ISoundRepository>());
-                        services.AddSingleton(container1.Resolve<IPanoramaImageRepository>());
 
                         services.AddSingleton(container1.Resolve<IVolumeRepository>());
                         services.AddSingleton(container1.Resolve<IWeightRepository>());
                         services.AddSingleton(container1.Resolve<IUploadRepository>());
                         services.AddSingleton(container1.Resolve<ISortingRepository>());
                         services.AddSingleton(container1.Resolve<IOcrRepository>());
+                        services.AddSingleton(container1.Resolve<IImageRepository>());
+                        services.AddSingleton(container1.Resolve<ICloudVideoUploadRepository>());
                         //config
                         services.AddSingleton(container1.Resolve<IBarcodeScannerCameraConfigRepository>());
                         services.AddSingleton(container1.Resolve<IPanoramaCameraConfigRepository>());
@@ -569,6 +577,7 @@ namespace JayTom.Dws.Client {
             ViewModelLocationProvider.Register<TriggerModeSelectionPage, TriggerModeSelectionViewModel>();
             ViewModelLocationProvider.Register<ScanCameraSelectionDialog, ScanCameraSelectionDialogViewModel>();
             ViewModelLocationProvider.Register<ResolutionConstraintDialog, ResolutionConstraintViewModel>();
+            ViewModelLocationProvider.Register<CloudServicePage, CloudServicePageViewModel>();
 
             ViewModelLocationProvider.Register<PackageSortingSettingsPage, PackageSortingSettingsViewModel>();
             ViewModelLocationProvider.Register<OcrSettingsPage, OcrSettingsViewModel>();
@@ -602,6 +611,10 @@ namespace JayTom.Dws.Client {
             ViewModelLocationProvider.Register<OutputLogPage, OutputLogPageViewModel>();
             ViewModelLocationProvider.Register<FTPLogPage, FtpLogPageViewModel>();
             ViewModelLocationProvider.Register<ExceptionLogPage, ExceptionLogPageViewModel>();
+            //云端服务
+            ViewModelLocationProvider.Register<CloudDataPage, CloudDataPageViewModel>();
+            ViewModelLocationProvider.Register<CloudVideoPage, CloudVideoPageViewModel>();
+
             //接口
             ViewModelLocationProvider.Register<DefaultApiPage, DefaultApiPageViewModel>();
             ViewModelLocationProvider.Register<SzjyApiPage, SzjyApiPageViewModel>();

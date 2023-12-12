@@ -7,6 +7,6 @@ using System.Collections.Generic;
 
 namespace JayTom.Dws.Domain.Repository.LocalData {
 
-    public interface IPanoramaImageRepository : IRepository<PanoramaImageInfoModel> {
+    public interface ICloudVideoUploadRepository : IRepository<CloudVideoUploadInfoModel> {
     }
 }

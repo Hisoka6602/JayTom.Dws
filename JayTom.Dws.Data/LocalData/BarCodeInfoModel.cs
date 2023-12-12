@@ -67,17 +67,6 @@ namespace JayTom.Dws.Data.LocalData {
         public UploadStatus RequestStatus { get; set; } = UploadStatus.NotUploaded;
 
         /// <summary>
-        /// 条码图片保存路径
-        /// </summary>
-        [Column("BarcodeImagePath")]
-        public string? BarcodeImagePath { get; set; }
-
-        /// <summary>
-        /// 全景图片保存路径
-        /// </summary>
-        public virtual ICollection<PanoramaImageInfoModel>? PanoramaImagePaths { get; set; }
-
-        /// <summary>
         /// 其他项
         /// </summary>
         [Column("Other")]
@@ -107,6 +96,16 @@ namespace JayTom.Dws.Data.LocalData {
         /// Ocr信息
         /// </summary>
         public virtual OcrInfoModel? OcrInfo { get; set; }
+
+        /// <summary>
+        /// 图片信息
+        /// </summary>
+        public virtual ICollection<ImageInfoModel>? ImageInfos { get; set; }
+
+        /// <summary>
+        /// 视频云信息
+        /// </summary>
+        public virtual CloudVideoUploadInfoModel? CloudVideoUploadInfo { get; set; }
     }
 
     public enum UploadStatus {

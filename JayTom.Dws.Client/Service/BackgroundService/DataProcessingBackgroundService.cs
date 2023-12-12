@@ -12,6 +12,8 @@ using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Service.Sorting;
 using JayTom.Dws.Client.Service.ImageStorage;
 using JayTom.Dws.Domain.Repository.LocalData;
+using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
+using JayTom.Dws.Infrastructure.Repository.LocalConf.CameraConfig;
 using static JayTom.Dws.Client.Service.BackgroundService.SubmitApiBackgroundService;
 
 namespace JayTom.Dws.Client.Service.BackgroundService {
@@ -21,24 +23,32 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
     /// </summary>
     public class DataProcessingBackgroundService : Microsoft.Extensions.Hosting.BackgroundService {
         private readonly IBarCodeRepository _barCodeRepository;
-        private readonly IPanoramaImageRepository _panoramaImageRepository;
+
+        //private readonly IPanoramaImageRepository _panoramaImageRepository;
         private readonly IImageStorageService _imageStorageService;
+
         private readonly ISortingRepository _sortingRepository;
         private readonly IUploadRepository _uploadRepository;
+        private readonly IImageRepository _imageRepository;
+        private readonly IBarcodeScannerCameraConfigRepository _barcodeScannerCameraConfigRepository;
         private ConcurrentQueue<BarCodeInfoModel> _insertItems = new();
         private ConcurrentQueue<ApiResponseReceived> _updateResponseItems = new();
         private ConcurrentQueue<SavedImageInfo> _savedImageItems = new();
         private ConcurrentQueue<InstructionReceived> _instructionItems = new();
 
         public DataProcessingBackgroundService(IBarCodeRepository barCodeRepository,
-            IPanoramaImageRepository panoramaImageRepository,
+            //IPanoramaImageRepository panoramaImageRepository,
             IImageStorageService imageStorageService, ISortingRepository sortingRepository,
-            IUploadRepository uploadRepository) {
+            IUploadRepository uploadRepository,
+            IImageRepository imageRepository,
+            IBarcodeScannerCameraConfigRepository barcodeScannerCameraConfigRepository) {
             _barCodeRepository = barCodeRepository;
-            _panoramaImageRepository = panoramaImageRepository;
+            // _panoramaImageRepository = panoramaImageRepository;
             _imageStorageService = imageStorageService;
             _sortingRepository = sortingRepository;
             _uploadRepository = uploadRepository;
+            _imageRepository = imageRepository;
+            _barcodeScannerCameraConfigRepository = barcodeScannerCameraConfigRepository;
             _imageStorageService.ImageSaved += delegate (object? sender, ImageSavedEventArgs args) {
                 //保存后触发
                 _savedImageItems.Enqueue(new SavedImageInfo() {
@@ -124,11 +134,27 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             f.Barcode.Equals(savedImageInfo.BarCode)
                             && f.ScanTime.Equals(savedImageInfo.ScanTime), stoppingToken);
                         if (barCodeInfoModel is not null) {
-                            barCodeInfoModel.BarcodeImagePath = savedImageInfo.FilePath;
-                            var update = await _barCodeRepository.Update(barCodeInfoModel, stoppingToken);
-                            if (!update) {
+                            //获取相机信息
+                            var cameraConfigInfoModel = await _barcodeScannerCameraConfigRepository.FirstOrDefault(f =>
+                                f.SerialNumber.Equals(savedImageInfo.CameraSerialNumber), stoppingToken);
+
+                            var insert = await _imageRepository.Insert(new ImageInfoModel() {
+                                BarcodeId = barCodeInfoModel.Id,
+                                CameraName = cameraConfigInfoModel?.Name ?? string.Empty,
+                                CameraSerialNumber = savedImageInfo.CameraSerialNumber,
+                                CustomCameraName = cameraConfigInfoModel?.CustomName ?? string.Empty,
+                                LocalPath = savedImageInfo.FilePath ?? string.Empty,
+                                Type = 0
+                            }, stoppingToken);
+
+                            if (!insert) {
                                 _savedImageItems.Enqueue(savedImageInfo);
                             }
+                            /*barCodeInfoModel.BarcodeImagePath = savedImageInfo.FilePath;
+                            var update = await _barCodeRepository.Update(barCodeInfoModel, stoppingToken);
+                            if (!insert) {
+                                _savedImageItems.Enqueue(savedImageInfo);
+                            }*/
                         }
                         else {
                             _savedImageItems.Enqueue(savedImageInfo);
@@ -140,10 +166,23 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             f.Barcode.Equals(savedImageInfo.BarCode)
                             && f.ScanTime.Equals(savedImageInfo.ScanTime), stoppingToken);
                         if (barCodeInfoModel is not null) {
-                            var insert = await _panoramaImageRepository.Insert(new PanoramaImageInfoModel() {
+                            /*var insert = await _panoramaImageRepository.Insert(new PanoramaImageInfoModel() {
                                 PanoramaImagePath = savedImageInfo.FilePath,
                                 BarcodeId = barCodeInfoModel.Id
+                            }, stoppingToken);*/
+                            //获取相机信息
+                            var cameraConfigInfoModel = await _barcodeScannerCameraConfigRepository.FirstOrDefault(f =>
+                                f.SerialNumber.Equals(savedImageInfo.CameraSerialNumber), stoppingToken);
+
+                            var insert = await _imageRepository.Insert(new ImageInfoModel() {
+                                BarcodeId = barCodeInfoModel.Id,
+                                CameraName = cameraConfigInfoModel?.Name ?? string.Empty,
+                                CameraSerialNumber = savedImageInfo.CameraSerialNumber,
+                                CustomCameraName = cameraConfigInfoModel?.CustomName ?? string.Empty,
+                                LocalPath = savedImageInfo.FilePath ?? string.Empty,
+                                Type = 1
                             }, stoppingToken);
+
                             if (!insert) {
                                 _savedImageItems.Enqueue(savedImageInfo);
                             }

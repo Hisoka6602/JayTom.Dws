@@ -10,6 +10,8 @@ using JayTom.Dws.Plugin.Tcp;
 using System.Threading.Tasks;
 using JayTom.Dws.Data.LocalLog;
 using JayTom.Dws.Plugin.Speech;
+using JayTom.Dws.Data.LocalData;
+using System.Collections.Generic;
 using System.Collections.Concurrent;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
@@ -18,6 +20,7 @@ using JayTom.Dws.Domain.Repository.LocalData;
 using JayTom.Dws.Client.Service.ResultOutput.Communication.TcpComm;
 
 namespace JayTom.Dws.Client.Service.ResultOutput {
+
     public class DefaultResultOutputService : IResultOutputService {
         private readonly IConfigRepository _configRepository;
         private readonly ISpeech _speech;
@@ -93,9 +96,9 @@ namespace JayTom.Dws.Client.Service.ResultOutput {
                     if (_outputSettingsDto.IsUseAudioOutput) {
                         var soundInfoModels = await _soundRepository.
                             Select(s => s.Id > 0, o => o.Id);
-                        foreach (var soundInfoModel in soundInfoModels.Where(soundInfoModel => soundInfoModel.SoundFile is not null)) {
+                        foreach (var soundInfoModel in soundInfoModels?.Where(soundInfoModel => soundInfoModel.SoundFile is not null) ?? new List<SoundInfoModel>()) {
                             _sounds?.AddOrUpdate(soundInfoModel.SoundName,
-                                soundInfoModel.SoundFile, (a, b) => b);
+                                soundInfoModel?.SoundFile ?? Array.Empty<byte>(), (a, b) => b);
                         }
                     }
 

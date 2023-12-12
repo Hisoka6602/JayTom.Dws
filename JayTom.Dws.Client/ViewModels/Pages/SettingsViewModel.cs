@@ -180,6 +180,19 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     ClickCommand = ClickCommand,
                     PageClassName = "OcrSettingsPage"
                 },
+                new MenuItemInfoModel()
+                {
+                    IconFont = new IconInfoModel()
+                    {
+                        IconFont = "pack://application:,,,/Fonts/#iconfont",
+                        IconCode = "\xe944",
+                        IconSize = 25
+                    },
+                    Title = "云端服务"??string.Empty,
+                    Description = "云端服务相关" ?? string.Empty,
+                    ClickCommand = ClickCommand,
+                    PageClassName = "CloudServicePage"
+                },
                 /*new MenuItemInfoModel()
                 {
                     IconFont = new IconInfoModel()

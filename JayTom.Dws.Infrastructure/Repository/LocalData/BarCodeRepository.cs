@@ -25,11 +25,12 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalData {
                 var barCodeInfoModels = await dbSet.AsNoTracking()
                     .Where(where)
                     .OrderByDescending(order)
-                    .Include(b => b.PanoramaImagePaths)
+                    .Include(b => b.ImageInfos)
                     .Include(b => b.VolumeInfo)
                     .Include(b => b.WeightInfo)
                     .Include(b => b.UploadInfo)
                     .Include(b => b.SortingInfo)
+                    .Include(b => b.CloudVideoUploadInfo)
                     .Skip(pageIndex * pageSize)
                     .Take(pageSize)
                     .ToListAsync(cancellationToken: token);

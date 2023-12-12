@@ -44,15 +44,18 @@ namespace JayTom.Dws.Infrastructure {
                     .HasIndex(b => b.ScanTime)
                     .IsUnique(false)
                     .HasAnnotation("IndexSortOrder", "Descending");
-
+                //图片信息
                 modelBuilder.Entity<BarCodeInfoModel>()
-                    .HasMany(b => b.PanoramaImagePaths)
+                    .HasMany(b => b.ImageInfos)
                     .WithOne(n => n.BarCodeInfo)
                     .HasForeignKey(n => new { n.BarcodeId })
                     .OnDelete(DeleteBehavior.Cascade);
-                modelBuilder.Entity<PanoramaImageInfoModel>().HasKey(c => new {
+                modelBuilder.Entity<ImageInfoModel>().HasKey(c => new {
                     c.Id
                 });
+                /*modelBuilder.Entity<PanoramaImageInfoModel>().HasKey(c => new {
+                    c.Id
+                });*/
                 //体积信息
                 modelBuilder.Entity<BarCodeInfoModel>()
                     .HasOne(b => b.VolumeInfo)
@@ -98,6 +101,16 @@ namespace JayTom.Dws.Infrastructure {
                 modelBuilder.Entity<OcrInfoModel>().HasKey(c => new {
                     c.Id
                 });
+                //视频云
+                modelBuilder.Entity<BarCodeInfoModel>()
+                    .HasOne(b => b.CloudVideoUploadInfo)
+                    .WithOne(n => n.BarCodeInfo)
+                    .HasForeignKey<CloudVideoUploadInfoModel>(n => n.BarcodeId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                modelBuilder.Entity<CloudVideoUploadInfoModel>().HasKey(c => new {
+                    c.Id
+                });
+
                 modelBuilder.Entity<SoundInfoModel>().HasKey(c => new {
                     c.Id
                 });

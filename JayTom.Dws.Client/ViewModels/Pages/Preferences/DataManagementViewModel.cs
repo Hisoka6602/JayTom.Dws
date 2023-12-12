@@ -597,14 +597,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                                 Volume = s.Volume,
                                 ScanTime = s.ScanTime,
                                 RequestStatus = s.RequestStatus,
-                                BarcodeImagePath = s.BarcodeImagePath ?? string.Empty,
-                                IsBarcodeImageExists = s.BarcodeImagePath?.IsFileExists() ?? false,
+                                BarcodeImagePath = s.ImageInfos?.LastOrDefault(l => l.Type == 0)?.LocalPath ?? string.Empty,
+                                IsBarcodeImageExists = s.ImageInfos?.LastOrDefault(l => l.Type == 0)?.LocalPath?.IsFileExists() ?? false,
                                 Other = s.Other ?? string.Empty,
                                 ExitName = exitDefinitionInfoModels?.FirstOrDefault(f => f.Id.Equals(s.SortingInfo?.ExitId ?? 0))?.ExitName ?? string.Empty,
-                                PanoramaImageItems = s.PanoramaImagePaths?.Select(ps =>
+                                PanoramaImageItems = s.ImageInfos?.Where(w => w.Type == 1)?.Select(ps =>
                                 new PanoramaImageItemModel() {
-                                    IsPanoramaImageExists = ps.PanoramaImagePath?.IsFileExists() ?? false,
-                                    PanoramaImagePath = ps.PanoramaImagePath
+                                    IsPanoramaImageExists = ps.LocalPath?.IsFileExists() ?? false,
+                                    PanoramaImagePath = ps.LocalPath
                                 })?.ToList() ?? new List<PanoramaImageItemModel>(),
                                 UploadInfo = new UploadItemModel {
                                     DurationInSeconds = s.UploadInfo?.DurationInSeconds ?? 0,

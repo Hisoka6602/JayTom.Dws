@@ -10,9 +10,9 @@ using JayTom.Dws.Domain.Repository.LocalData;
 
 namespace JayTom.Dws.Infrastructure.Repository.LocalData {
 
-    public class PanoramaImageRepository : LocalRepositoryBase<PanoramaImageInfoModel>, IPanoramaImageRepository {
+    public class CloudVideoUploadRepository : LocalRepositoryBase<CloudVideoUploadInfoModel>, ICloudVideoUploadRepository {
 
-        public PanoramaImageRepository(IDbContextFactory<SqliteContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
+        public CloudVideoUploadRepository(IDbContextFactory<SqliteContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
         }
     }
 }
