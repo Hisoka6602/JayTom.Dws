@@ -21,7 +21,7 @@ namespace JayTom.Dws.Domain.Dto.CloudDto {
         /// <summary>
         /// 是否自动上传未同步的数据
         /// </summary>
-        public bool AutoUploadUnsyncedData { get; set; }
+        public bool IsAutoUploadUnsyncedData { get; set; }
 
         /// <summary>
         /// 并发数 (1-10)

@@ -52,6 +52,43 @@ namespace JayTom.Dws.Interface.Cloud {
         Task<KeyValuePair<bool, string>> SetParameters(Dictionary<string, object> parameters);
     }
 
+    public class CloudVideoUploadMessage {
+
+        /// <summary>
+        /// 条码
+        /// </summary>
+        public string Barcode { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 是否成功
+        /// </summary>
+
+        public bool IsSuccessful { get; set; }
+
+        /// <summary>
+        /// 全景图数量
+        /// </summary>
+        public int PanoramaImageCount { get; set; }
+
+        /// <summary>
+        /// 扫码图数量
+        /// </summary>
+        public int ScanImageCount { get; set; }
+    }
+
+    public class CloudVideoUploadRetryMessage {
+
+        /// <summary>
+        /// 条码
+        /// </summary>
+        public string Barcode { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 重试次数
+        /// </summary>
+        public int RetryCount { get; set; }
+    }
+
     public class CloudUploadResponse {
 
         /// <summary>

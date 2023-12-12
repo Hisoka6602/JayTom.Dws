@@ -620,7 +620,7 @@ namespace JayTom.Dws.Client {
             ViewModelLocationProvider.Register<ExceptionLogPage, ExceptionLogPageViewModel>();
             //云端服务
             ViewModelLocationProvider.Register<CloudDataPage, CloudDataPageViewModel>();
-            ViewModelLocationProvider.Register<CloudVideoPage, CloudVideoPageViewModel>();
+            ViewModelLocationProvider.Register<CloudVideoPage, CloudVideoSettingsPageViewModel>();
 
             //接口
             ViewModelLocationProvider.Register<DefaultApiPage, DefaultApiPageViewModel>();

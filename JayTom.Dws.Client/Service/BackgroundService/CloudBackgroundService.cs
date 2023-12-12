@@ -42,7 +42,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         if (configInfoModel != null) {
                             _cloudVideoSettingsDto = JsonConvert.DeserializeObject<CloudVideoSettingsDto>(configInfoModel.Value) ?? new CloudVideoSettingsDto();
                             _cloudVideoUpLoadSlim = new SemaphoreSlim(_cloudVideoSettingsDto.Concurrency);
-                            if (_cloudVideoSettingsDto.AutoUploadUnsyncedData) {
+                            if (_cloudVideoSettingsDto.IsAutoUploadUnsyncedData) {
                                 _startTime = new DateTime(1970, 1, 1);
                             }
                         }
@@ -59,7 +59,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             if (configInfoModel != null) {
                 _cloudVideoSettingsDto = JsonConvert.DeserializeObject<CloudVideoSettingsDto>(configInfoModel.Value) ?? new CloudVideoSettingsDto();
                 _cloudVideoUpLoadSlim = new SemaphoreSlim(_cloudVideoSettingsDto.Concurrency);
-                if (_cloudVideoSettingsDto.AutoUploadUnsyncedData) {
+                if (_cloudVideoSettingsDto.IsAutoUploadUnsyncedData) {
                     _startTime = new DateTime(1970, 1, 1);
                 }
             }
@@ -70,15 +70,17 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     if (_cloudVideoUpLoadSlim.CurrentCount > 0) {
                         var barCodeInfoModels = await _barCodeRepository.Select(s =>
                                 s.ScanTime.CompareTo(_startTime) > 0 &&
+                                s.ScanTime.CompareTo(DateTime.Now.AddSeconds(-30)) <= 0 &&
                                 (s.CloudVideoUploadInfo == null || s.CloudVideoUploadInfo.UploadTime == null),
                             o => o.ScanTime, 0,
                             _cloudVideoSettingsDto.Concurrency, stoppingToken);
+                        if (barCodeInfoModels?.Any() == true) {
+                            foreach (var barCodeInfoModel in barCodeInfoModels) {
+                                PolicyCloudVideoUpLoad(barCodeInfoModel, stoppingToken);
+                            }
 
-                        foreach (var barCodeInfoModel in barCodeInfoModels) {
-                            PolicyCloudVideoUpLoad(barCodeInfoModel, stoppingToken);
+                            _startTime = barCodeInfoModels.Max(m => m.ScanTime);
                         }
-
-                        _startTime = barCodeInfoModels.Max(m => m.ScanTime);
                     }
                 }
                 await Task.Delay(50, stoppingToken);
@@ -90,6 +92,10 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 await _cloudVideoUpLoadSlim.WaitAsync(token);
                 var retryPolicy = Policy.HandleResult<bool>(result => !result)
                .Or<Exception>().RetryAsync(_cloudVideoSettingsDto.RetryAttempts, (a, b) => {
+                   EventAggregator.Instance.Publish(new CloudVideoUploadRetryMessage {
+                       Barcode = barCodeInfoModel.Barcode,
+                       RetryCount = b + 1
+                   });
                });
                 await retryPolicy.ExecuteAsync(async () => {
                     //获取数据
@@ -113,6 +119,12 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                     Type = s.Type,
                                     Image = File.Exists(s.LocalPath) ? Image.FromFile(s.LocalPath) : null
                                 })?.ToList(), token: token);
+                        EventAggregator.Instance.Publish(new CloudVideoUploadMessage {
+                            Barcode = barCodeInfoModel.Barcode,
+                            IsSuccessful = cloudUploadResponse.IsSuccessful,
+                            PanoramaImageCount = barCodeInfoModel.ImageInfos?.Count(c => c.Type == 1) ?? 0,
+                            ScanImageCount = barCodeInfoModel.ImageInfos?.Count(c => c.Type == 0) ?? 0,
+                        });
                         if (cloudUploadResponse.IsSuccessful) {
                             var cloudVideoUploadInfoModel = await _cloudVideoUploadRepository.FirstOrDefault(f =>
                                 f.BarcodeId.Equals(barCodeInfoModel.Id), token);
