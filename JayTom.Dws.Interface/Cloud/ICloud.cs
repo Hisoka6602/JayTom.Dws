@@ -16,8 +16,9 @@ namespace JayTom.Dws.Interface.Cloud {
         /// <param name="barcode">条码</param>
         /// <param name="scanTime">扫码时间</param>
         /// <param name="weight">重量</param>
+        /// <param name="scanNodName">节点</param>
         /// <param name="volumeInfo">体积信息</param>
-        /// <param name="imageInfo">图片信息</param>
+        /// <param name="imageInfos">图片信息</param>
         /// <param name="ocrInfo">Ocr信息</param>
         /// <param name="uploadApiInfo">Api上传信息</param>
         /// <param name="sortingInfo">分拣信息</param>
@@ -27,12 +28,28 @@ namespace JayTom.Dws.Interface.Cloud {
         Task<CloudUploadResponse> UploadData([NotNull] string barcode,
             [NotNull] DateTime scanTime,
             [NotNull] double weight,
+            [NotNull] string scanNodName,
             CloudUploadVolumeInfo? volumeInfo = default,
-            UploadImageInfo? imageInfo = default,
+            List<CloudUploadImageInfo>? imageInfos = default,
             CloudUploadOcrInfo? ocrInfo = default,
             CloudUploadApiInfo? uploadApiInfo = default,
             CloudUploadSortingInfo? sortingInfo = default,
             object? other = null, CancellationToken token = default);
+
+        /// <summary>
+        /// 设置接口参数
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="parameters"></param>
+        /// <returns></returns>
+        Task<KeyValuePair<bool, string>> SetParameters<T>(T parameters);
+
+        /// <summary>
+        /// 设置接口参数
+        /// </summary>
+        /// <param name="parameters"></param>
+        /// <returns></returns>
+        Task<KeyValuePair<bool, string>> SetParameters(Dictionary<string, object> parameters);
     }
 
     public class CloudUploadResponse {
@@ -66,6 +83,11 @@ namespace JayTom.Dws.Interface.Cloud {
         /// 是否成功
         /// </summary>
         public bool IsSuccessful { get; set; }
+
+        /// <summary>
+        /// 异常信息
+        /// </summary>
+        public string ExceptionMsg { get; set; } = string.Empty;
     }
 
     /// <summary>

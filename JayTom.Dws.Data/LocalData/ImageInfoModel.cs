@@ -38,7 +38,7 @@ namespace JayTom.Dws.Data.LocalData {
         /// <summary>
         /// 图片本地路径
         /// </summary>
-        [Column("Type"), Required]
+        [Column("LocalPath"), Required]
         public string LocalPath { get; set; } = string.Empty;
 
         /// <summary>

@@ -83,7 +83,6 @@ namespace JayTom.Dws.License {
         /// </summary>
         /// <param name="data"></param>
         /// <param name="publicKeyXml"></param>
-        /// <param name="privateKeyXml"></param>
         /// <param name="filePath"></param>
         public static void GenerateAuthorizationFile(LicenseData data, string publicKeyXml, string filePath) {
             try {

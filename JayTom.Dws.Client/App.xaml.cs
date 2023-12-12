@@ -26,6 +26,7 @@ using JayTom.Dws.Data.LocalLog;
 using JayTom.Dws.Client.Service;
 using JayTom.Dws.Infrastructure;
 using JayTom.Dws.Ocr.ExpressBill;
+using JayTom.Dws.Interface.Cloud;
 using JayTom.Dws.Plugin.SaveImage;
 using JayTom.Dws.Client.ViewModels;
 using Microsoft.Extensions.Hosting;
@@ -46,6 +47,7 @@ using JayTom.Dws.Plugin.Scale.StaticScale;
 using JayTom.Dws.Client.ViewModels.Editors;
 using JayTom.Dws.Plugin.Scale.DynamicScale;
 using JayTom.Dws.Domain.Repository.LocalLog;
+using JayTom.Dws.Interface.Cloud.CloudVideo;
 using JayTom.Dws.Client.Service.ImageStorage;
 using JayTom.Dws.Client.Service.ResultOutput;
 using JayTom.Dws.Domain.Repository.LocalConf;
@@ -308,6 +310,8 @@ namespace JayTom.Dws.Client {
                 //分拣指令服务
                 //services.AddScoped<IInventoryManagementService, DefaultInventoryManagementService>();
                 services.AddScoped<ISortingConnectionService, DefaultSortingConnectionService>();
+                //云视频云端
+                services.AddScoped<ICloud, CloudVideoUploadApi>();
             });
         }
 
@@ -466,6 +470,8 @@ namespace JayTom.Dws.Client {
                         //注册分拣服务
                         services.AddSingleton(container1.Resolve<ISortingService>());
                         services.AddSingleton(container1.Resolve<ISortingConnectionService>());
+                        //云端
+                        services.AddSingleton(container1.Resolve<ICloud>());
 
                         services.AddHostedService<PackageBackgroundService>(); // 注册后组包服务
                         services.AddHostedService<SaveImageBackgroundService>();//注册存图服务
@@ -476,6 +482,7 @@ namespace JayTom.Dws.Client {
                         services.AddHostedService<SingleInstanceBackgroundService>(); // 注册单开激活服务
                         services.AddHostedService<LogProcessingService>();//日志管理器
                         services.AddHostedService<TimerBackgroundService>();//计时
+                        services.AddHostedService<CloudBackgroundService>();//上传云端
                     })
                     .Build();
                 _host.Start();

@@ -116,7 +116,6 @@ namespace JayTom.Dws.Interface {
             catch (HttpRequestException e) {
                 isSuccess = false;
                 resultContent += exceptionMsg = e.Message;
-                NLog.LogManager.GetCurrentClassLogger().Error($"HttpRequestException异常:{e}");
             }
             catch (AggregateException) {
                 isSuccess = false;
@@ -133,7 +132,6 @@ namespace JayTom.Dws.Interface {
             catch (Exception e) {
                 isSuccess = false;
                 resultContent += exceptionMsg = e.Message;
-                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
             }
             finally {
                 stopwatch.Stop();

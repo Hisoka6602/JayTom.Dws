@@ -1,18 +1,195 @@
 ﻿using System;
 using System.Linq;
 using System.Text;
+using System.Drawing;
+using Newtonsoft.Json;
+using System.Net.Http;
+using System.Diagnostics;
+using System.Net.Http.Json;
 using System.Threading.Tasks;
+using System.Drawing.Imaging;
+using System.Net.Http.Headers;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 
 namespace JayTom.Dws.Interface.Cloud.CloudVideo {
 
     public class CloudVideoUploadApi : ICloud {
+        private readonly IHttpClientFactory _httpClientFactory;
+        private static CloudVideoApiParameters _parameters = new();
 
-        public Task<CloudUploadResponse> UploadData(string barcode, DateTime scanTime, double weight, CloudUploadVolumeInfo? volumeInfo = default,
-            UploadImageInfo? imageInfo = default, CloudUploadOcrInfo? ocrInfo = default,
+        /// <summary>
+        /// Url
+        /// </summary>
+        public string? Url { get; private set; }
+
+        /// <summary>
+        /// 超时
+        /// </summary>
+        public int? TimeOut { get; private set; }
+
+        public CloudVideoUploadApi(IHttpClientFactory httpClientFactory) {
+            _httpClientFactory = httpClientFactory;
+        }
+
+        public async Task<CloudUploadResponse> UploadData(string barcode, DateTime scanTime,
+            double weight, string scanNodName, CloudUploadVolumeInfo? volumeInfo = default,
+            List<CloudUploadImageInfo>? imageInfos = default, CloudUploadOcrInfo? ocrInfo = default,
             CloudUploadApiInfo? uploadApiInfo = default, CloudUploadSortingInfo? sortingInfo = default, object? other = null,
             CancellationToken token = default) {
-            return null;
+            var resultContent = string.Empty;
+            var exceptionMsg = string.Empty;
+            var isSuccess = false;
+            CloudUploadResponse response;
+            var requestTime = DateTime.Now;
+            var data = string.Empty;
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
+            try {
+                var formData = new MultipartFormDataContent();
+                //组建数据
+                data = JsonConvert.SerializeObject(new {
+                    Barcode = barcode,
+                    ScanNodName = scanNodName,
+                    ScanTime = scanTime,
+                });
+                var jsonContent = new StringContent(data, Encoding.UTF8, "application/json");
+                formData.Add(jsonContent, "jsonData");
+                //判断图片
+                if (imageInfos?.Any() == true) {
+                    //扫码图
+                    var imageInfo = imageInfos.LastOrDefault(l => l.Type == 0);
+                    if (imageInfo?.Image is not null) {
+                        var imageToStreamContent = ImageToStreamContent(imageInfo.Image, "barcodeImage",
+                            $"{imageInfo.CameraSerialNumber}_{imageInfo.CustomCameraName}.jpg");
+                        if (imageToStreamContent is not null) {
+                            formData.Add(imageToStreamContent);
+                        }
+                    }
+                    //全景图
+                    var cloudUploadImageInfos = imageInfos.Where(w => w.Type == 1)?.ToList();
+                    if (cloudUploadImageInfos?.Any() == true) {
+                        foreach (var imageToStreamContent in from cloudUploadImageInfo in cloudUploadImageInfos
+                                                             where cloudUploadImageInfo?.Image is not null
+                                                             select ImageToStreamContent(cloudUploadImageInfo.Image, "panoramaImages",
+                                     $"{cloudUploadImageInfo.CameraSerialNumber}_{cloudUploadImageInfo.CustomCameraName}.jpg") into imageToStreamContent
+                                                             where imageToStreamContent is not null
+                                                             select imageToStreamContent) {
+                            formData.Add(imageToStreamContent);
+                        }
+                    }
+                }
+                //提交
+                using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+                httpClient.Timeout = TimeSpan.FromMilliseconds(_parameters.Timeout);
+                var message = await httpClient.PostAsync(_parameters.Url, formData, token);
+                resultContent = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                resultContent = Regex.Unescape(resultContent);
+                isSuccess = resultContent.ToLower().Contains("true");
+            }
+            catch (HttpRequestException e) {
+                isSuccess = false;
+                resultContent += exceptionMsg = e.Message;
+            }
+            catch (AggregateException) {
+                isSuccess = false;
+                resultContent += exceptionMsg = "接口访问异常!";
+            }
+            catch (JsonException) {
+                isSuccess = false;
+                resultContent += exceptionMsg = "报文解析异常!";
+            }
+            catch (TaskCanceledException) {
+                isSuccess = false;
+                resultContent += exceptionMsg = "接口访问返回超时!";
+            }
+            catch (Exception e) {
+                isSuccess = false;
+                resultContent += exceptionMsg = e.Message;
+            }
+            finally {
+                stopwatch.Stop();
+                response = new CloudUploadResponse() {
+                    IsSuccessful = isSuccess,
+                    ResponseContent = resultContent,
+                    TargetAddress = _parameters.Url,
+                    UploadContent = data,
+                    UploadDuration = (int?)stopwatch.ElapsedMilliseconds,
+                    UploadTime = requestTime,
+                    ExceptionMsg = exceptionMsg
+                };
+            }
+
+            return response;
+        }
+
+        public Task<KeyValuePair<bool, string>> SetParameters<T>(T parameters) {
+            if (parameters is CloudVideoApiParameters param) {
+                _parameters = param;
+                return Task.FromResult(new KeyValuePair<bool, string>(true, string.Empty));
+            }
+            else {
+                return Task.FromResult(new KeyValuePair<bool, string>(false, "参数类型错误"));
+            }
+        }
+
+        public Task<KeyValuePair<bool, string>> SetParameters(Dictionary<string, object> parameters) {
+            var any = parameters.Any(a => !a.Key.ToLower().Equals("url") &&
+                                          !a.Key.ToLower().Equals("timeout"));
+
+            if (any) {
+                return Task.FromResult(new KeyValuePair<bool, string>(false, "键名包含不存在的属性"));
+            }
+            else {
+                foreach (var keyValuePair in parameters) {
+                    switch (keyValuePair.Key.ToLower()) {
+                        case "url":
+                            _parameters.Url = keyValuePair.Value.ToString() ?? string.Empty;
+                            break;
+
+                        case "timeout":
+                            _parameters.Timeout = Convert.ToInt32(keyValuePair.Value.ToString() ?? string.Empty);
+                            break;
+                    }
+                }
+            }
+            return Task.FromResult(new KeyValuePair<bool, string>(true, string.Empty));
+        }
+
+        public StreamContent? ImageToStreamContent(Image image, string paramName, string fileName) {
+            try {
+                using var memoryStream = new MemoryStream();
+                image.Save(memoryStream, ImageFormat.Jpeg);
+                memoryStream.Seek(0, SeekOrigin.Begin);
+
+                var clonedStream = new MemoryStream();
+                memoryStream.CopyTo(clonedStream);
+                clonedStream.Seek(0, SeekOrigin.Begin);
+
+                var streamContent = new StreamContent(clonedStream);
+                streamContent.Headers.ContentDisposition = new ContentDispositionHeaderValue("form-data") {
+                    Name = paramName,
+                    FileName = fileName
+                };
+
+                return streamContent;
+            }
+            catch (Exception e) {
+                return null;
+            }
+        }
+
+        public class CloudVideoApiParameters {
+
+            /// <summary>
+            /// Url
+            /// </summary>
+            public string Url { get; set; } = string.Empty;
+
+            /// <summary>
+            /// 请求超时时间
+            /// </summary>
+            public int Timeout { get; set; } = 2000;
         }
     }
 }

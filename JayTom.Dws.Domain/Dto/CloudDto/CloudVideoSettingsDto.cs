@@ -6,7 +6,7 @@ using System.Collections.Generic;
 
 namespace JayTom.Dws.Domain.Dto.CloudDto {
 
-    public class CloudVideoDto {
+    public class CloudVideoSettingsDto {
 
         /// <summary>
         /// 是否开启云视频上传
@@ -16,7 +16,7 @@ namespace JayTom.Dws.Domain.Dto.CloudDto {
         /// <summary>
         /// 失败重试次数
         /// </summary>
-        public int RetryAttempts { get; set; }
+        public int RetryAttempts { get; set; } = 5;
 
         /// <summary>
         /// 是否自动上传未同步的数据
@@ -26,17 +26,7 @@ namespace JayTom.Dws.Domain.Dto.CloudDto {
         /// <summary>
         /// 并发数 (1-10)
         /// </summary>
-        public int Concurrency { get; set; }
-
-        /// <summary>
-        /// 是否上传扫码图
-        /// </summary>
-        public bool UploadScanImage { get; set; }
-
-        /// <summary>
-        ///  是否上传全景图
-        /// </summary>
-        public bool UploadPanoramaImage { get; set; }
+        public int Concurrency { get; set; } = 2;
 
         /// <summary>
         /// url
@@ -46,7 +36,7 @@ namespace JayTom.Dws.Domain.Dto.CloudDto {
         /// <summary>
         /// 请求超时时间
         /// </summary>
-        public int RequestTimeout { get; set; }
+        public int RequestTimeout { get; set; } = 2000;
 
         /// <summary>
         /// 节点名称
