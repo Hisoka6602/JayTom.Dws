@@ -177,6 +177,9 @@ namespace JayTom.Dws.Interface.Cloud.CloudVideo {
             catch (Exception e) {
                 return null;
             }
+            finally {
+                image.Dispose();
+            }
         }
 
         public class CloudVideoApiParameters {

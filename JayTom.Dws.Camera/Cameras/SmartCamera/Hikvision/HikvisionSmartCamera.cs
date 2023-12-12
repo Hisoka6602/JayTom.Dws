@@ -504,7 +504,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
 
         private async Task ContinuousSoftTrigger(int intervalTime, CancellationToken token) {
             if (intervalTime <= 0) {
-                intervalTime = 50;
+                intervalTime = 100;
             }
             while (!token.IsCancellationRequested) {
                 try {
@@ -617,7 +617,9 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                                                 ScanTime = DateTime.Now
                                             });
                                             if (validateData) {
-                                                if (stBcrResultEx2.stBcrInfoEx2 is not null) {
+                                                if (stBcrResultEx2.stBcrInfoEx2 is not null &&
+                                                    bmp is { Size: { Width: > 0, Height: > 0 } } &&
+                                                    stFrameInfoEx2 is { nWidth: > 0, nHeight: > 0 }) {
                                                     OnBarcodeReadTriggered(new BarcodeTriggeredEventArgs() {
                                                         Timestamp = timestamp,
                                                         TotalProcCost =
@@ -638,21 +640,21 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                                                         CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
                                                         ScanTime = DateTime.Now,
                                                         AreaCoords = Enumerable.Range(0, 4).Select(s => {
-                                                            if (bmp != null)
-                                                                return new Point {
-                                                                    X = (int)(stBcrResultEx2.stBcrInfoEx2[i].pt[s].x *
-                                                                        (float)(bmp.Size.Width) / stFrameInfoEx2.nWidth),
-                                                                    Y = (int)(stBcrResultEx2.stBcrInfoEx2[i].pt[s].y *
-                                                                              (float)(bmp.Size.Height) /
-                                                                              stFrameInfoEx2.nHeight)
-                                                                };
+                                                            if (bmp is { Size: { Width: > 0, Height: > 0 } } &&
+                                                                stFrameInfoEx2 is { nWidth: > 0, nHeight: > 0 } &&
+                                                                stBcrResultEx2.stBcrInfoEx2.Length > i) {
+                                                                var x = (int)(stBcrResultEx2.stBcrInfoEx2[i].pt[s].x * (float)(bmp.Size.Width) / stFrameInfoEx2.nWidth);
+                                                                var y = (int)(stBcrResultEx2.stBcrInfoEx2[i].pt[s].y * (float)(bmp.Size.Height) / stFrameInfoEx2.nHeight);
+
+                                                                return new Point { X = x, Y = y };
+                                                            }
+
                                                             return default;
-                                                        })?.ToList()
+                                                        }).ToList()
                                                     });
                                                 }
                                             }
                                             else {
-                                                bmp?.Dispose();
                                                 if (!IsRealtimeImageEnabled) {
                                                     thumbnailImage?.Dispose();
                                                 }
@@ -701,6 +703,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
             catch (TaskCanceledException) {
             }
             catch (Exception e) {
+                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
                 OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
                     Exception = new Exception($"取码回调线程异常:{JsonConvert.SerializeObject(e)}")
                 });

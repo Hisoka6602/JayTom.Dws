@@ -68,18 +68,20 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 //提交到云端
                 if (_cloudVideoSettingsDto.IsUseCloudVideoUpload) {
                     if (_cloudVideoUpLoadSlim.CurrentCount > 0) {
-                        var barCodeInfoModels = await _barCodeRepository.Select(s =>
+                        var (key, value) = await _barCodeRepository.SelectBarCode(s =>
                                 s.ScanTime.CompareTo(_startTime) > 0 &&
                                 s.ScanTime.CompareTo(DateTime.Now.AddSeconds(-30)) <= 0 &&
                                 (s.CloudVideoUploadInfo == null || s.CloudVideoUploadInfo.UploadTime == null),
                             o => o.ScanTime, 0,
                             _cloudVideoSettingsDto.Concurrency, stoppingToken);
-                        if (barCodeInfoModels?.Any() == true) {
-                            foreach (var barCodeInfoModel in barCodeInfoModels) {
-                                PolicyCloudVideoUpLoad(barCodeInfoModel, stoppingToken);
-                            }
+                        if (key && value is { } barCodeInfoModels) {
+                            if (barCodeInfoModels?.Any() == true) {
+                                foreach (var barCodeInfoModel in barCodeInfoModels) {
+                                    PolicyCloudVideoUpLoad(barCodeInfoModel, stoppingToken);
+                                }
 
-                            _startTime = barCodeInfoModels.Max(m => m.ScanTime);
+                                _startTime = barCodeInfoModels.Max(m => m.ScanTime);
+                            }
                         }
                     }
                 }
@@ -94,7 +96,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                .Or<Exception>().RetryAsync(_cloudVideoSettingsDto.RetryAttempts, (a, b) => {
                    EventAggregator.Instance.Publish(new CloudVideoUploadRetryMessage {
                        Barcode = barCodeInfoModel.Barcode,
-                       RetryCount = b + 1
+                       RetryCount = b
                    });
                });
                 await retryPolicy.ExecuteAsync(async () => {
@@ -102,11 +104,10 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     //创建多线程
 
                     //位置输出*/
-                    var (key, value) = await _cloud.SetParameters(new Dictionary<string, object>()
-                    {
+                    var (key, value) = await _cloud.SetParameters(new Dictionary<string, object>() {
                     { "Url", _cloudVideoSettingsDto.Url },
                     { "Timeout", _cloudVideoSettingsDto.RequestTimeout },
-                });
+                    });
                     if (key) {
                         var cloudUploadResponse = await _cloud.UploadData(barCodeInfoModel.Barcode,
                             barCodeInfoModel.ScanTime, barCodeInfoModel.Weight,
@@ -125,6 +126,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             PanoramaImageCount = barCodeInfoModel.ImageInfos?.Count(c => c.Type == 1) ?? 0,
                             ScanImageCount = barCodeInfoModel.ImageInfos?.Count(c => c.Type == 0) ?? 0,
                         });
+
                         if (cloudUploadResponse.IsSuccessful) {
                             var cloudVideoUploadInfoModel = await _cloudVideoUploadRepository.FirstOrDefault(f =>
                                 f.BarcodeId.Equals(barCodeInfoModel.Id), token);

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using System.Drawing;
 using Newtonsoft.Json;
 using System.Net.Http;
@@ -9,7 +8,6 @@ using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
 using JayTom.Dws.Interface.Wdt;
 using JayTom.Dws.PluginInterface;
-using System.Collections.Generic;
 using JayTom.Dws.Interface.Sunnen;
 using JayTom.Dws.Interface.JdyWms;
 using JayTom.Dws.Domain.Dto.ApiDto;
@@ -55,45 +53,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             Volume = (float)(model.Volume ?? 0),
                             ScanTime = model.ScanTime,
                             Guid = model.Guid,
-                            PanoramaCameraCount = model.PanoramaCameraCount,
                             //图片暂时不写
                         });
                     }
                 }
             });
-            //图片
-            EventAggregator.Instance.Subscribe<ImageMessageInfo>(async info => {
-                if (info is ImageMessageInfo imageInfo) {
-                    await Task.Delay(200);
-                    var submitItemInfo = _submitItems?.FirstOrDefault(f =>
-                        (bool)f.Barcode?.Equals(imageInfo.BarCode));
-                    if (submitItemInfo is not null && imageInfo.Image is not null) {
-                        Image copyImage = new Bitmap(imageInfo.Image);
-
-                        if (imageInfo.Type == SaveImageType.BarcodeImage) {
-                            submitItemInfo.BarCodeImage = new UploadImageInfo() {
-                                CameraName = imageInfo.CameraName,
-                                CameraCustomName = imageInfo.CameraCustomName,
-                                CameraSerialNumber = imageInfo.CameraSerialNumber,
-                                Image = copyImage
-                            };
-                        }
-                        else if (imageInfo.Type == SaveImageType.PanoramaImage) {
-                            submitItemInfo.PanoramaImages ??= new List<UploadImageInfo>();
-                            submitItemInfo.PanoramaImages.Add(new UploadImageInfo() {
-                                CameraName = imageInfo.CameraName,
-                                CameraCustomName = imageInfo.CameraCustomName,
-                                CameraSerialNumber = imageInfo.CameraSerialNumber,
-                                Image = copyImage
-                            });
-                        }
-                    }
-                    else {
-                        NLog.LogManager.GetCurrentClassLogger().Error($"获取不到:{submitItemInfo?.Barcode}--{imageInfo?.BarCode}");
-                    }
-                }
-            });
-
             EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async item => {
                 if (item is SettingsChangedEvent model) {
                     if (model.SettingsName.Equals("ApiSettings")) {
@@ -125,9 +89,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                         StringTemplate = defaultApiDto.StringTemplate,
                                         Url = defaultApiDto.Url,
                                         ValidationMode = (int)defaultApiDto.ValidationMode,
-                                        IsUploadPanoramaImage = defaultApiDto.IsUploadPanoramaImage,
-                                        IsUploadScanImage = defaultApiDto.IsUploadScanImage,
-                                        IsUseUploadImage = defaultApiDto.IsUseUploadImage
                                     };
                                 }
                             }
@@ -228,18 +189,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             while (!stoppingToken.IsCancellationRequested) {
                 //取出
                 //需要判断用户选择的接口和参数设置
-
-                //判断拦截
-                if (_apiSettingsDto?.Type == ApiType.DefaultApi &&
-                    _defaultApiParameters.IsUseUploadImage &&
-                    _submitItems.FirstOrDefault()?.BarCodeImage is null &&
-                    _submitItems.FirstOrDefault()?.PanoramaCameraCount != _submitItems.FirstOrDefault()?.PanoramaImages?.Count) {
-                    continue;
-                }
-
                 var tryDequeue = _submitItems.TryDequeue(out var info);
 
                 if (tryDequeue && info is not null) {
+                    //上传
+                    //判断上传接口
                     Task.Factory.StartNew(async () => {
                         IDataUploader uploader;
                         UploadResponse? uploadResponse = null;
@@ -253,28 +207,12 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                     //设置参数
                                     var (key, value) = await uploader.SetParameters(_defaultApiParameters);
                                     if (key) {
-                                        if (_defaultApiParameters.IsUseUploadImage) {
-                                            if (info.PanoramaCameraCount == info.PanoramaImages?.Count &&
-                                                info.BarCodeImage is not null) {
-                                                uploadResponse = await uploader.UploadData(info.Barcode ?? string.Empty,
-                                                    info.Weight, info.ScanTime,
-                                                    info.Length, info.Width,
-                                                    info.Height, info.Volume,
-                                                    info.BarCodeImage, info.PanoramaImages,
-                                                    null, stoppingToken);
-                                            }
-                                            else {
-                                                NLog.LogManager.GetCurrentClassLogger().Error("跳过上传");
-                                            }
-                                        }
-                                        else {
-                                            uploadResponse = await uploader.UploadData(info.Barcode ?? string.Empty,
-                                                info.Weight, info.ScanTime,
-                                                info.Length, info.Width,
-                                                info.Height, info.Volume,
-                                                info.BarCodeImage, info.PanoramaImages,
-                                                null, stoppingToken);
-                                        }
+                                        uploadResponse = await uploader.UploadData(info.Barcode ?? string.Empty,
+                                            info.Weight, info.ScanTime,
+                                            info.Length, info.Width,
+                                            info.Height, info.Volume,
+                                            null, null,
+                                            null, stoppingToken);
                                     }
                                     else {
                                         uploadResponse = new UploadResponse() {
@@ -291,7 +229,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                         info.Weight, info.ScanTime,
                                         info.Length, info.Width,
                                         info.Height, info.Volume,
-                                        info.BarCodeImage, info.PanoramaImages,
+                                        null, null,
                                         _sunnenApiPackage, stoppingToken);
                                     break;
                                 }
@@ -304,7 +242,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                             info.Weight, info.ScanTime,
                                             info.Length, info.Width,
                                             info.Height, info.Volume,
-                                            info.BarCodeImage, info.PanoramaImages,
+                                            null, null,
                                             null, stoppingToken);
                                     }
                                     else {
@@ -323,7 +261,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                             info.Weight, info.ScanTime,
                                             info.Length, info.Width,
                                             info.Height, info.Volume,
-                                            info.BarCodeImage, info.PanoramaImages,
+                                            null, null,
                                             null, stoppingToken);
                                     }
                                     else {
@@ -342,7 +280,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                             info.Weight, info.ScanTime,
                                             info.Length, info.Width,
                                             info.Height, info.Volume,
-                                            info.BarCodeImage, info.PanoramaImages,
+                                            null, null,
                                             null, stoppingToken);
                                     }
                                     else {
@@ -359,14 +297,13 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                         info.Weight, info.ScanTime,
                                         info.Length, info.Width,
                                         info.Height, info.Volume,
-                                        info.BarCodeImage, info.PanoramaImages,
+                                        null, null,
                                         null, stoppingToken);
                                     break;
                                 }
                         }
                         if (_apiSettingsDto?.Type is not null &&
-                            _apiSettingsDto.Type != ApiType.None &&
-                            uploadResponse is not null) {
+                            _apiSettingsDto.Type != ApiType.None) {
                             //临时单线程
                             EventAggregator.Instance.Publish(new ApiResponseReceived {
                                 Guid = info.Guid,
@@ -414,9 +351,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             StringTemplate = defaultApiDto.StringTemplate,
                             Url = defaultApiDto.Url,
                             ValidationMode = (int)defaultApiDto.ValidationMode,
-                            IsUploadPanoramaImage = defaultApiDto.IsUploadPanoramaImage,
-                            IsUploadScanImage = defaultApiDto.IsUploadScanImage,
-                            IsUseUploadImage = defaultApiDto.IsUseUploadImage
                         };
                     }
                 }
@@ -535,17 +469,12 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             /// <summary>
             /// 条码图片
             /// </summary>
-            public UploadImageInfo? BarCodeImage { get; set; }
+            public Bitmap? Image { get; set; }
 
             /// <summary>
             /// 全景图
             /// </summary>
-            public List<UploadImageInfo>? PanoramaImages { get; set; }
-
-            /// <summary>
-            /// 全景相机数量
-            /// </summary>
-            public int PanoramaCameraCount { get; set; }
+            public Bitmap? PanoramaImage { get; set; }
         }
 
         /// <summary>

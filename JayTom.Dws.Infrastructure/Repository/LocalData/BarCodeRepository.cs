@@ -41,5 +41,32 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalData {
                 return new KeyValuePair<bool, List<BarCodeInfoModel>>(false, new List<BarCodeInfoModel>());
             }
         }
+
+        public async Task<KeyValuePair<bool, List<BarCodeInfoModel>>> SelectBarCode<TOrder>(Expression<Func<BarCodeInfoModel, bool>> where, Expression<Func<BarCodeInfoModel, TOrder>> order, int pageIndex, int pageSize,
+            CancellationToken token = default) {
+            try {
+                //联表
+                await using var concardContext = _contextFactory.CreateDbContext();
+                var dbSet = concardContext?.Set<BarCodeInfoModel>();
+                if (dbSet is null) return new KeyValuePair<bool, List<BarCodeInfoModel>>(false, new List<BarCodeInfoModel>());
+                var barCodeInfoModels = await dbSet.AsNoTracking()
+                    .Where(where)
+                    .OrderBy(order)
+                    .Include(b => b.ImageInfos)
+                    .Include(b => b.VolumeInfo)
+                    .Include(b => b.WeightInfo)
+                    .Include(b => b.UploadInfo)
+                    .Include(b => b.SortingInfo)
+                    .Include(b => b.CloudVideoUploadInfo)
+                    .Skip(pageIndex * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync(cancellationToken: token);
+                return new KeyValuePair<bool, List<BarCodeInfoModel>>(true, barCodeInfoModels);
+            }
+            catch (Exception e) {
+                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
+                return new KeyValuePair<bool, List<BarCodeInfoModel>>(false, new List<BarCodeInfoModel>());
+            }
+        }
     }
 }

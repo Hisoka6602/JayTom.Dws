@@ -457,11 +457,9 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                     stoppingToken);
                                 packageInfo.IsCompleted = true;
                                 //填充全景相机数量
-
                                 var count = _panoramaCameras.Count(p =>
                                     p.SelectedCameraSerialNumber.Equals(packageInfo.CameraSerialNumber));
                                 packageInfo.PanoramaCameraCount = count > 0 ? count : _cameras.Count(c => c.BindingType == CameraBindingType.PanoramaCamera);
-
                                 EventAggregator.Instance.Publish(packageInfo);
                             }
                             else {
@@ -568,11 +566,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
                         //告诉界面这些scanBarCodeInfos已经填充完全部信息，即将移除
 
-                        var packageInfos = _packageInfos.Where(w => (w is { IsCompleted: true, IsSavedImage: true }
-                                                                    &&
-                                                                    w.PanoramaImageCount == _cameras.Count(c => c.BindingType == CameraBindingType.PanoramaCamera)) ||
-                                                                    DateTime.Now.Subtract(w.CreateTime).TotalMinutes > 5 ||
+                        var packageInfos = _packageInfos.Where(w => w is { IsCompleted: true, IsSavedImage: true } &&
+                                                                    (w.PanoramaImageCount == _cameras.Count(c => c.BindingType == CameraBindingType.PanoramaCamera)
+                                                                    || DateTime.Now.Subtract(w.CreateTime).TotalMinutes > 5 ||
                                                                     w.PanoramaImageCount == _panoramaCameras.Count(p => p.SelectedCameraSerialNumber.Equals(w.CameraSerialNumber)))
+                                                                    )
                             .ToList();
                         var infosCount = _packageInfos.Count;
 

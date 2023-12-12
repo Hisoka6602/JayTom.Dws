@@ -20,5 +20,10 @@ namespace JayTom.Dws.Domain.Repository.LocalData {
            [NotNull] Expression<Func<BarCodeInfoModel, bool>> @where,
            [NotNull] Expression<Func<BarCodeInfoModel, TOrder>> order, int pageIndex, int pageSize,
            CancellationToken token = default);
+
+        Task<KeyValuePair<bool, List<BarCodeInfoModel>>> SelectBarCode<TOrder>(
+            [NotNull] Expression<Func<BarCodeInfoModel, bool>> @where,
+            [NotNull] Expression<Func<BarCodeInfoModel, TOrder>> order, int pageIndex, int pageSize,
+            CancellationToken token = default);
     }
 }

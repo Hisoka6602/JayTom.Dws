@@ -33,7 +33,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             EventAggregator.Instance.Subscribe<ImageMessageInfo>(async info => {
                 //判断是否需要存图
                 if (info is ImageMessageInfo imageInfo) {
-                    await Task.Delay(600);
                     if (_imageSettingsDto is not null) {
                         if ((_imageSettingsDto.IsSaveBarcodeImage && imageInfo.Type == SaveImageType.BarcodeImage) ||
                             (_imageSettingsDto.IsSavePanoramaImage && imageInfo.Type == SaveImageType.PanoramaImage) ||
