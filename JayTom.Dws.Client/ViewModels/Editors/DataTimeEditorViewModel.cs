@@ -1,8 +1,8 @@
-﻿using MaterialDesignThemes.Wpf;
-using Prism.Commands;
+﻿using System;
 using Prism.Mvvm;
-using System;
+using Prism.Commands;
 using System.Windows.Input;
+using MaterialDesignThemes.Wpf;
 
 namespace JayTom.Dws.Client.ViewModels.Editors {
 

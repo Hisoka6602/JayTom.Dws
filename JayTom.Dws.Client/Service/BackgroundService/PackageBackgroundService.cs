@@ -89,11 +89,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         ScanTime = args.ScanTime,
                         Timestamp = args.Timestamp,
                     };
-                    _packageInfos.Enqueue(packageInfo);
-                    EventAggregator.Instance.Publish(new TriggerPositionEvent() {
-                        IsSuccess = true,
-                        TriggerPosition = TriggerPositionEnum.PackageTrigger
-                    });
                     //触发全景拍照
                     var list = _panoramaCameras?.Where(w => w.SelectedCameraSerialNumber.Equals(args.CameraSerialNumber))?
                         .Select(s => s.SerialNumber)?.ToList();
@@ -101,13 +96,19 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         list = _panoramaCameras?.Where(w => w.SelectedCameraSerialNumber.Equals(string.Empty))?
                             .Select(s => s.SerialNumber)?.ToList();
                     }
-
                     var cameras = _cameras.Where(w =>
                         list.Contains(w.Info.SerialNumber) && w.BindingType == CameraBindingType.PanoramaCamera)?.ToList();
-
                     foreach (var c in (cameras ?? new List<ICamera>()).Where(c => _deviceService.RunningStatus)) {
                         await c.TakePhotoAsync(args.Barcode, args.Timestamp);
                     }
+                    //填充全景相机数量
+                    packageInfo.PanoramaCameraCount = cameras?.Count ?? 0;
+                    _packageInfos.Enqueue(packageInfo);
+                    EventAggregator.Instance.Publish(new TriggerPositionEvent() {
+                        IsSuccess = true,
+                        TriggerPosition = TriggerPositionEnum.PackageTrigger
+                    });
+
                     //获取外部数据
                     //体积
                     if (_externalDataSource.IsVolumeInput) {
@@ -177,7 +178,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             };
             //体积相机
             _deviceService.VolumeCaptured += async delegate (object? sender, VolumeCapturedEventArgs args) {
-                await Task.Yield();
+                //为了防止先接收到体积信息
+                await Task.Delay(300);
                 /*_volumeCameraImageItems.Enqueue(new CameraImageInfo() {
                     CameraSerialNumber = args.CameraSerialNumber,
                     Image = args.Image,
@@ -197,7 +199,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 }
             };
             //称重
-            _deviceService.StableWeight += delegate (object? sender, StableWeightEventArgs args) {
+            _deviceService.StableWeight += async delegate (object? sender, StableWeightEventArgs args) {
+                await Task.Delay(200);
                 var info = _packageInfos.OrderBy(o => o.CreateTime).FirstOrDefault(f => !f.IsCompleted && f.Weight is null);
                 if (info is not null) {
                     info.Weight = args.Weight;
@@ -332,7 +335,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             CreateTime = DateTime.Now,
                             IsCreatedByLowerMachine = false,
                         };
-                        _packageInfos.Enqueue(packageInfo);
+
                         //触发全景拍照
                         var enumerable = _cameras.Where(w => w.BindingType == CameraBindingType.PanoramaCamera);
                         foreach (var c in enumerable) {
@@ -340,6 +343,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 await camera.TakePhotoAsync(args.Barcode, timestamp);
                             }
                         }
+                        packageInfo.PanoramaCameraCount = enumerable?.Count() ?? 0;
+                        _packageInfos.Enqueue(packageInfo);
                         //获取外部数据
                         //体积
                         if (_externalDataSource.IsVolumeInput) {
@@ -456,10 +461,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                     (float)(packageInfo.Volume ?? 0), packageInfo.CameraSerialNumber,
                                     stoppingToken);
                                 packageInfo.IsCompleted = true;
-                                //填充全景相机数量
-                                var count = _panoramaCameras.Count(p =>
-                                    p.SelectedCameraSerialNumber.Equals(packageInfo.CameraSerialNumber));
-                                packageInfo.PanoramaCameraCount = count > 0 ? count : _cameras.Count(c => c.BindingType == CameraBindingType.PanoramaCamera);
                                 EventAggregator.Instance.Publish(packageInfo);
                             }
                             else {
@@ -487,6 +488,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             _panoramaImageItems.TryDequeue(out var panoramaImageInfo);
                             if (panoramaImageInfo is not null) {
                                 var info = _packageInfos.FirstOrDefault(f => !string.IsNullOrEmpty(f.BarCode) && f.BarCode.Equals(panoramaImageInfo.Barcode));
+                                NLog.LogManager.GetCurrentClassLogger().Error($"{JsonConvert.SerializeObject(info)}");
                                 if (info is { Weight: not null, Length: not null, Width: not null, Height: not null, Volume: not null, BarCode: not null }
                                    ) {
                                     //全景图数量+1
@@ -563,17 +565,13 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 codeInfo.IsSavedImage = true;
                             }
                         }
-
                         //告诉界面这些scanBarCodeInfos已经填充完全部信息，即将移除
-
                         var packageInfos = _packageInfos.Where(w => w is { IsCompleted: true, IsSavedImage: true } &&
-                                                                    (w.PanoramaImageCount == _cameras.Count(c => c.BindingType == CameraBindingType.PanoramaCamera)
-                                                                    || DateTime.Now.Subtract(w.CreateTime).TotalMinutes > 5 ||
-                                                                    w.PanoramaImageCount == _panoramaCameras.Count(p => p.SelectedCameraSerialNumber.Equals(w.CameraSerialNumber)))
-                                                                    )
+                                                                    (w.PanoramaImageCount == w.PanoramaCameraCount
+                                                                     || DateTime.Now.Subtract(w.CreateTime).TotalMinutes > 5)
+                            )
                             .ToList();
                         var infosCount = _packageInfos.Count;
-
                         while (infosCount-- > 0) {
                             _packageInfos.TryDequeue(out var info);
                             if (info is null) continue;

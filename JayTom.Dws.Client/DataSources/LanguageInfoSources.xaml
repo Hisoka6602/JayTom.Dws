@@ -19,7 +19,7 @@
                     UriSource="pack://application:,,,/Image/NationalFlag/English national flag.png" />
             </models:LanguageInfoModel.NationalFlag>
         </models:LanguageInfoModel>
-        <models:LanguageInfoModel DisplayName="日本語">
+        <!--<models:LanguageInfoModel DisplayName="日本語">
             <models:LanguageInfoModel.NationalFlag>
                 <BitmapImage
                     DecodePixelHeight="25"
@@ -98,7 +98,7 @@
                     DecodePixelWidth="25"
                     UriSource="pack://application:,,,/Image/NationalFlag/Korean national flag.png" />
             </models:LanguageInfoModel.NationalFlag>
-        </models:LanguageInfoModel>
+        </models:LanguageInfoModel>-->
     </x:Array>
 </ResourceDictionary>
 

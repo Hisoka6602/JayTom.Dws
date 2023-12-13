@@ -31,15 +31,14 @@ using JayTom.Dws.Domain.Repository.LocalData;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
-
     public class DataManagementViewModel : BindableBase {
         private readonly IDialogService _dialogService;
         private readonly IExcel _excel;
         private readonly IBarCodeRepository _barCodeRepository;
         private readonly IConfigRepository _configRepository;
         private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
-        private DateTime _startTime = DateTime.Today;
-        private DateTime _endTime = DateTime.Now;
+        private DateTime? _startTime;
+        private DateTime? _endTime;
         private int _pageCount;
         private int _pageIndex;
         private SnackbarMessageQueue _dataManagementMessageQueue = new(TimeSpan.FromSeconds(2));
@@ -143,12 +142,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
 
         #region 搜索工具栏条件
 
-        public DateTime StartTime {
+        public DateTime? StartTime {
             get => _startTime;
             set => SetProperty(ref _startTime, value);
         }
 
-        public DateTime EndTime {
+        public DateTime? EndTime {
             get => _endTime;
             set => SetProperty(ref _endTime, value);
         }
@@ -347,14 +346,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                 if (dataTimeEditor.DataContext is DataTimeEditorViewModel model) {
                     model.Identifier = "DataManagementDialog";
                     if (obj?.ToString()?.Equals("StartTime") == true) {
-                        model.SelectedDataTime = StartTime;
-                        model.SelectedDate = StartTime;
-                        model.SelectedTime = StartTime;
+                        model.SelectedDataTime = StartTime ?? DateTime.Today;
+                        model.SelectedDate = StartTime ?? DateTime.Today;
+                        model.SelectedTime = StartTime ?? DateTime.Today;
                     }
                     else {
-                        model.SelectedDataTime = EndTime;
-                        model.SelectedDate = EndTime;
-                        model.SelectedTime = EndTime;
+                        model.SelectedDataTime = EndTime ?? DateTime.Now;
+                        model.SelectedDate = EndTime ?? DateTime.Now;
+                        model.SelectedTime = EndTime ?? DateTime.Now;
                     }
 
                     await DialogHost.Show(dataTimeEditor, model.Identifier);
@@ -471,8 +470,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
 
         private async void ClearSearchCriteriaDelegate(object obj) {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                StartTime = DateTime.Today;
-                EndTime = DateTime.Now;
+                StartTime = null;
+                EndTime = null;
                 TimestampedGuid = 0;
                 MinWeight = MaxWeight = 0;
                 BarCode = string.Empty;
@@ -565,8 +564,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     var exitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0, o => o.CreateTime);
                     //获取条数
                     var total = await _barCodeRepository.Total(s =>
-                            (s.ScanTime.CompareTo(StartTime) >= 0) &&
-                            s.ScanTime.CompareTo(EndTime) <= 0 &&
+                            (StartTime == null || s.ScanTime.CompareTo(StartTime) >= 0) &&
+                            (EndTime == null || s.ScanTime.CompareTo(EndTime) <= 0) &&
                             (string.IsNullOrWhiteSpace(BarCode) || s.Barcode.Contains(BarCode)) &&
                             (TimestampedGuid <= 0 || s.TimestampedGuid.Equals(TimestampedGuid)) &&
                             (MinWeight <= 0 || s.Weight >= MinWeight) &&
@@ -576,8 +575,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     if (total > 0) {
                         PageCount = total / pageSize + (total % pageSize > 0 ? 1 : 0);
                         var (key, infoModels) = await _barCodeRepository.SelectBarCodeOrderByDescending(s =>
-                                (s.ScanTime.CompareTo(StartTime) >= 0) &&
-                                s.ScanTime.CompareTo(EndTime) <= 0 &&
+                                (StartTime == null || s.ScanTime.CompareTo(StartTime) >= 0) &&
+                                (EndTime == null || s.ScanTime.CompareTo(EndTime) <= 0) &&
                                 (string.IsNullOrWhiteSpace(BarCode) || s.Barcode.Contains(BarCode)) &&
                                 (TimestampedGuid <= 0 || s.TimestampedGuid.Equals(TimestampedGuid)) &&
                                 (MinWeight <= 0 || s.Weight >= MinWeight) &&

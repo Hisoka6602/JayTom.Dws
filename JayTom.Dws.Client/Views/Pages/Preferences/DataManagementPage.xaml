@@ -15,6 +15,7 @@
     xmlns:mvvm="http://prismlibrary.com/"
     xmlns:system="clr-namespace:System;assembly=System.Runtime"
     xmlns:unitConverter="clr-namespace:JayTom.Dws.Client.Converters.UnitConverter"
+    xmlns:validationRules="clr-namespace:JayTom.Dws.Client.ValidationRules"
     Name="DataManagementPageView"
     Title="DataManagementPage"
     d:DesignHeight="450"
@@ -303,8 +304,18 @@
                                 BorderThickness="0"
                                 FontSize="15"
                                 FontWeight="Bold"
-                                Foreground="White"
-                                Text="{Binding MinWeight, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, StringFormat={}{0:0.00}}" />
+                                Foreground="White">
+                                <TextBox.Text>
+                                    <Binding
+                                        Mode="TwoWay"
+                                        Path="MinWeight"
+                                        UpdateSourceTrigger="PropertyChanged">
+                                        <Binding.ValidationRules>
+                                            <validationRules:RegexValidationRule ErrorMessage="请输入有效的浮点数" Pattern="^\d+(\.\d+)?$" />
+                                        </Binding.ValidationRules>
+                                    </Binding>
+                                </TextBox.Text>
+                            </TextBox>
                         </Border>
                         <TextBlock
                             Margin="5"
@@ -333,8 +344,18 @@
                                 FontSize="15"
                                 FontWeight="Bold"
                                 Foreground="White"
-                                InputScope="Digits"
-                                Text="{Binding MaxWeight, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, StringFormat={}{0:0.00}}" />
+                                InputScope="Digits">
+                                <TextBox.Text>
+                                    <Binding
+                                        Mode="TwoWay"
+                                        Path="MaxWeight"
+                                        UpdateSourceTrigger="PropertyChanged">
+                                        <Binding.ValidationRules>
+                                            <validationRules:RegexValidationRule ErrorMessage="请输入有效的浮点数" Pattern="^\d+(\.\d+)?$" />
+                                        </Binding.ValidationRules>
+                                    </Binding>
+                                </TextBox.Text>
+                            </TextBox>
                         </Border>
                     </StackPanel>
                     <!--  上传状态  -->

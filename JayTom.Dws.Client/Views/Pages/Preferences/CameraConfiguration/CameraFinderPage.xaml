@@ -362,10 +362,10 @@
                     </DataGridTextColumn.Header>
                 </DataGridTextColumn>
                 <!--  自定义名称  -->
-                <DataGridTemplateColumn
-                    Width="80"
-                    MinWidth="80"
-                    Header="自定义名称">
+                <DataGridTemplateColumn Width="80" MinWidth="80">
+                    <DataGridTemplateColumn.Header>
+                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="自定义名称" />
+                    </DataGridTemplateColumn.Header>
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <TextBox

@@ -53,6 +53,7 @@
                     CalendarDayButtonStyle="{StaticResource SecondaryCalendarDayButton}"
                     Focusable="False"
                     IsTodayHighlighted="True"
+                    Language="zh-cn"
                     SelectedDate="{Binding SelectedDate, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                     SelectionMode="SingleDate">
                     <!--
@@ -88,28 +89,33 @@
                     CommandParameter="2"
                     Foreground="DimGray"
                     Style="{DynamicResource MaterialDesignFlatButton}">
-                    Now
+                    <!--  Now  -->
+                    当前
                 </Button>
                 <Button
                     Command="{Binding TodayCommand}"
                     CommandParameter="2"
                     Foreground="DimGray"
                     Style="{DynamicResource MaterialDesignFlatButton}">
-                    Today
+                    <!--  Today  -->
+                    今天
                 </Button>
                 <Button
                     Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}"
                     CommandParameter="0"
                     Foreground="DimGray"
                     Style="{DynamicResource MaterialDesignFlatButton}">
-                    Cancel
+                    <!--  Cancel  -->
+                    取消
                 </Button>
                 <Button
                     Command="{Binding OkCommand}"
                     CommandParameter="1"
+                    Cursor="Hand"
                     Foreground="DimGray"
                     Style="{DynamicResource MaterialDesignFlatButton}">
-                    Ok
+                    <!--  Ok  -->
+                    确定
                 </Button>
             </StackPanel>
         </Grid>
