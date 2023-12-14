@@ -25,8 +25,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel {
         private bool _isLoaded;
         private int _pageCount;
         private int _pageIndex;
-        private DateTime _startTime = DateTime.Today;
-        private DateTime _endTime = DateTime.Now;
+        private DateTime? _startTime;
+        private DateTime? _endTime;
         private LogType? _selectLogType;
         private string? _responseContent;
         private ObservableCollection<LogType> _logTypeItems = new(Enum.GetValues(typeof(LogType)).Cast<LogType>());
@@ -75,12 +75,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel {
 
         #region 搜索工具栏条件
 
-        public DateTime StartTime {
+        public DateTime? StartTime {
             get => _startTime;
             set => SetProperty(ref _startTime, value);
         }
 
-        public DateTime EndTime {
+        public DateTime? EndTime {
             get => _endTime;
             set => SetProperty(ref _endTime, value);
         }
@@ -233,14 +233,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel {
                 if (dataTimeEditor.DataContext is DataTimeEditorViewModel model) {
                     model.Identifier = "ApiLogDialog";
                     if (obj?.ToString()?.Equals("StartTime") == true) {
-                        model.SelectedDataTime = StartTime;
-                        model.SelectedDate = StartTime;
-                        model.SelectedTime = StartTime;
+                        model.SelectedDataTime = StartTime ?? DateTime.Today;
+                        model.SelectedDate = StartTime ?? DateTime.Today;
+                        model.SelectedTime = StartTime ?? DateTime.Today;
                     }
                     else {
-                        model.SelectedDataTime = EndTime;
-                        model.SelectedDate = EndTime;
-                        model.SelectedTime = EndTime;
+                        model.SelectedDataTime = EndTime ?? DateTime.Now;
+                        model.SelectedDate = EndTime ?? DateTime.Now;
+                        model.SelectedTime = EndTime ?? DateTime.Now;
                     }
 
                     await DialogHost.Show(dataTimeEditor, model.Identifier);
@@ -309,15 +309,15 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel {
                     ApiLogItems.Clear();
                     Details = string.Empty;
                     var total = await _apiLogRepository.Total(s =>
-                        (s.CreateTime.CompareTo(StartTime) >= 0) &&
-                        (s.CreateTime.CompareTo(EndTime) <= 0) &&
+                        (StartTime == null || s.CreateTime.CompareTo(StartTime) >= 0) &&
+                        (EndTime == null || s.CreateTime.CompareTo(EndTime) <= 0) &&
                         (SelectLogType == null || s.Type == SelectLogType) &&
                         (string.IsNullOrEmpty(ResponseContent) || s.ResponseContent.Contains(ResponseContent)));
                     if (total > 0) {
                         PageCount = total / pageSize + (total % pageSize > 0 ? 1 : 0);
                         var selectOrderByDescending = await _apiLogRepository.SelectOrderByDescending(s =>
-                                (s.CreateTime.CompareTo(StartTime) >= 0) &&
-                                (s.CreateTime.CompareTo(EndTime) <= 0) &&
+                                (StartTime == null || s.CreateTime.CompareTo(StartTime) >= 0) &&
+                                (EndTime == null || s.CreateTime.CompareTo(EndTime) <= 0) &&
                                 (SelectLogType == null || s.Type == SelectLogType) &&
                                 (string.IsNullOrEmpty(ResponseContent) || s.ResponseContent.Contains(ResponseContent)), o => o.CreateTime,
                             pageIndex - 1, pageSize);

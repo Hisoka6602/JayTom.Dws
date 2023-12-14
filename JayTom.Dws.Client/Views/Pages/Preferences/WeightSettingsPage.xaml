@@ -10,6 +10,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:mvvm="http://prismlibrary.com/"
     xmlns:settingsConverter="clr-namespace:JayTom.Dws.Client.Converters.SettingsConverter"
+    xmlns:validationRules="clr-namespace:JayTom.Dws.Client.ValidationRules"
     Name="WeightSettingsView"
     Title="WeightSettingsPage"
     d:DesignHeight="450"
@@ -425,8 +426,18 @@
                                         FontSize="13"
                                         FontWeight="Bold"
                                         Foreground="White"
-                                        InputMethod.IsInputMethodEnabled="False"
-                                        Text="{Binding WeightSettingsInfo.CommonWeight.MinWeight, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, StringFormat={}{0:F3}}" />
+                                        InputMethod.IsInputMethodEnabled="False">
+                                        <TextBox.Text>
+                                            <Binding
+                                                Mode="TwoWay"
+                                                Path="WeightSettingsInfo.CommonWeight.MinWeight"
+                                                UpdateSourceTrigger="PropertyChanged">
+                                                <Binding.ValidationRules>
+                                                    <validationRules:RegexValidationRule ErrorMessage="请输入有效的浮点数" Pattern="^\d+(\.\d+)?$" />
+                                                </Binding.ValidationRules>
+                                            </Binding>
+                                        </TextBox.Text>
+                                    </TextBox>
                                 </Border>
                             </StackPanel>
                             <StackPanel Orientation="Horizontal">
@@ -456,8 +467,18 @@
                                         FontSize="13"
                                         FontWeight="Bold"
                                         Foreground="White"
-                                        InputMethod.IsInputMethodEnabled="False"
-                                        Text="{Binding WeightSettingsInfo.CommonWeight.MaxWeight, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, StringFormat={}{0:F3}}" />
+                                        InputMethod.IsInputMethodEnabled="False">
+                                        <TextBox.Text>
+                                            <Binding
+                                                Mode="TwoWay"
+                                                Path="WeightSettingsInfo.CommonWeight.MaxWeight"
+                                                UpdateSourceTrigger="PropertyChanged">
+                                                <Binding.ValidationRules>
+                                                    <validationRules:RegexValidationRule ErrorMessage="请输入有效的浮点数" Pattern="^\d+(\.\d+)?$" />
+                                                </Binding.ValidationRules>
+                                            </Binding>
+                                        </TextBox.Text>
+                                    </TextBox>
                                 </Border>
                             </StackPanel>
                         </StackPanel>
@@ -532,8 +553,18 @@
                                                 FontSize="13"
                                                 FontWeight="Bold"
                                                 Foreground="White"
-                                                InputMethod.IsInputMethodEnabled="False"
-                                                Text="{Binding ParsedWeight, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, StringFormat={}{0:F3}}" />
+                                                InputMethod.IsInputMethodEnabled="False">
+                                                <TextBox.Text>
+                                                    <Binding
+                                                        Mode="TwoWay"
+                                                        Path="ParsedWeight"
+                                                        UpdateSourceTrigger="PropertyChanged">
+                                                        <Binding.ValidationRules>
+                                                            <validationRules:RegexValidationRule ErrorMessage="请输入有效的浮点数" Pattern="^\d+(\.\d+)?$" />
+                                                        </Binding.ValidationRules>
+                                                    </Binding>
+                                                </TextBox.Text>
+                                            </TextBox>
                                         </Border>
                                     </StackPanel>
                                     <Button

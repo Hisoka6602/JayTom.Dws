@@ -12,7 +12,7 @@ using System.Runtime.InteropServices;
 namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Dimension {
 
     public class DimensionVolumeCamera : IVolumeCamera {
-        private static DimensionVolumeSdk? _dimensionVolumeSdk = null;
+        private DimensionVolumeSdk? _dimensionVolumeSdk = null;
         private SemaphoreSlim _volumelim = new(1);
 
         /// <summary>
@@ -34,15 +34,12 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Dimension {
         public DimensionVolumeCamera(CameraInfo info) {
             this.Info = info;
             this.Info.Type = CameraType.VolumeCamera;
-        }
-
-        public DimensionVolumeCamera() {
             if (_dimensionVolumeSdk is null) {
                 _dimensionVolumeSdk = new();
                 _dimensionVolumeSdk.VolumeCaptured += async delegate (object? sender, DimensionVolumeInfo info) {
                     try {
                         await _volumelim.WaitAsync();
-                        var thumbnailImage = GenerateThumbnail(info.Image);
+                        var thumbnailImage = GenerateThumbnail(info.Image, 640, 480);
                         OnVolumeCaptured(new VolumeCapturedEventArgs() {
                             Length = info.Length,
                             Width = info.Width,
@@ -50,7 +47,8 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Dimension {
                             Image = info.Image,
                             Thumbnail = thumbnailImage,
                             Volume = info.Length * info.Width * info.Height,
-                            Timestamp = DateTime.Now
+                            Timestamp = DateTime.Now,
+                            CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty
                         });
                     }
                     catch (Exception e) {
@@ -61,6 +59,9 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Dimension {
                     }
                 };
             }
+        }
+
+        public DimensionVolumeCamera() {
         }
 
         public async Task<List<CameraInfo>?> EnumerateCameras() {

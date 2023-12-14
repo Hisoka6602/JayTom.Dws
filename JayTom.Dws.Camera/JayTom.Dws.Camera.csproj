@@ -110,6 +110,24 @@
     <None Update="Cameras\SmartCamera\Wayzim\Dll\CamSDK.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="Cameras\VolumeCamera\Dimension\Dll\DimensionMessument.exe">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Cameras\VolumeCamera\Dimension\Dll\DimensionMessumentDll.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Cameras\VolumeCamera\Dimension\Dll\DimensionMessument_OB_V1.7.0.exe">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Cameras\VolumeCamera\Dimension\Dll\kernel32.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Cameras\VolumeCamera\Dimension\Dll\msvcp140.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Cameras\VolumeCamera\Dimension\Dll\vcruntime140.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="Cameras\VolumeCamera\Hikvision\Dll\VolMeasure.Net.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

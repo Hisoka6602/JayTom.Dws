@@ -1,8 +1,10 @@
 ﻿using Prism.Ioc;
+using Prism.Mvvm;
 using System.Data;
 using Prism.DryIoc;
 using System.Windows;
 using System.Configuration;
+using JayTom.Dws.VideoApiClient.ViewModels;
 
 namespace JayTom.Dws.VideoApiClient {
 
@@ -16,6 +18,14 @@ namespace JayTom.Dws.VideoApiClient {
 
         protected override Window CreateShell() {
             return Container.Resolve<MainWindow>();
+        }
+
+        protected override void ConfigureViewModelLocator() {
+            base.ConfigureViewModelLocator();
+            //绑定页面
+            ViewModelLocationProvider.Register<MainWindow, MainWindowViewModel>();
+
+            //LoadingDialog
         }
     }
 }

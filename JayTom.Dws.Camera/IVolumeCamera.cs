@@ -59,5 +59,10 @@ namespace JayTom.Dws.Camera {
         /// 获取或设置物体区域的坐标数组。
         /// </summary>
         public System.Drawing.Point[]? AreaCoords { get; set; }
+
+        /// <summary>
+        /// 相机序列号
+        /// </summary>
+        public string CameraSerialNumber { get; set; } = string.Empty;
     }
 }

@@ -27,6 +27,7 @@ using JayTom.Dws.Camera.Cameras.SmartCamera.Irayple;
 using JayTom.Dws.Camera.Cameras.VolumeCamera.Irayple;
 using JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision;
 using JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision;
+using JayTom.Dws.Camera.Cameras.VolumeCamera.Dimension;
 using JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim;
 using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
@@ -92,6 +93,7 @@ namespace JayTom.Dws.Client.Service.Device {
                 var wayzimIndustrialCameras = new List<CameraInfo>();
                 var hikvisionVolumeCameras = new List<CameraInfo>();
                 var daHuaVolumeCameras = new List<CameraInfo>();
+                var dimensionVolumeCamera = new List<CameraInfo>();
                 //HikvisionVolumeCamera
                 //判断已经选择的相机
                 if (_cameraSdkSelectorDto?.IsUseDaHuaSmartCameraSdk == true) {
@@ -132,6 +134,10 @@ namespace JayTom.Dws.Client.Service.Device {
                     daHuaVolumeCameras = await new DaHuaSmartCamera().EnumerateCameras();
                 }
 
+                if (_cameraSdkSelectorDto?.IsUseDimensionVolumeCameraSdk == true) {
+                    dimensionVolumeCamera = await new DimensionVolumeCamera().EnumerateCameras();
+                }
+
                 var cameraList = daHuaVolumeCameras?.Union(daHuaSmartCameras
                                                            ?? new List<CameraInfo>())?.ToList()?
                                      .Union(wayzimIndustrialCameras ?? new List<CameraInfo>())?.ToList()?
@@ -139,7 +145,8 @@ namespace JayTom.Dws.Client.Service.Device {
                                      .Union(daHuaSecurityCameras ?? new List<CameraInfo>())?.ToList()?
                                      .Union(hikvisionIndustrialCameras ?? new List<CameraInfo>())?.ToList()?
                                      .Union(hikvisionSmartCameras ?? new List<CameraInfo>())?.ToList()?
-                                     .Union(hikvisionVolumeCameras ?? new List<CameraInfo>())?.ToList()
+                                     .Union(hikvisionVolumeCameras ?? new List<CameraInfo>())?.ToList()?
+                                     .Union(dimensionVolumeCamera ?? new List<CameraInfo>())?.ToList()
                                  ?? new List<CameraInfo>();
                 var list = cameraList.Select(s =>
                     _cameraInfos.AddOrUpdate(s.SerialNumber, s,
@@ -858,6 +865,13 @@ namespace JayTom.Dws.Client.Service.Device {
                 case not null when (brand.Contains("Wayzim") /*|| info.Brand.Contains("Huaray")*/):
                     if (modelName.Contains("SmartCamera"))
                         return CameraType.SmartCamera;
+                    if (modelName.Contains("IndustrialCamera"))
+                        return CameraType.IndustrialCamera;
+                    break;
+
+                case not null when (brand.Contains("量方") /*|| info.Brand.Contains("Huaray")*/):
+                    if (modelName.Contains("Orbbec"))
+                        return CameraType.VolumeCamera;
                     break;
 
                 default:
@@ -894,6 +908,11 @@ namespace JayTom.Dws.Client.Service.Device {
                         return new WayzimSmartCamera(info);
                     if (info.Model.Contains("IndustrialCamera"))
                         return new WayzimIndustrialCamera(info);
+                    break;
+
+                case not null when (info.Brand.Contains("量方") /*|| info.Brand.Contains("Huaray")*/):
+                    if (info.Model.Contains("Orbbec"))
+                        return new DimensionVolumeCamera(info);
                     break;
 
                 default:

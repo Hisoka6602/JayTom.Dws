@@ -252,7 +252,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                                 IsUseWayzimIndustrialCameraSdk = cameraSdkSelectorDto.IsUseWayzimIndustrialCameraSdk,
                                 IsUseWayzimSmartCameraSdk = cameraSdkSelectorDto.IsUseWayzimSmartCameraSdk,
                                 IsUseDaHuaVolumeCameraSdk = cameraSdkSelectorDto.IsUseDaHuaVolumeCameraSdk,
-                                IsUseHikvisionVolumeCameraSdk = cameraSdkSelectorDto.IsUseHikvisionVolumeCameraSdk
+                                IsUseHikvisionVolumeCameraSdk = cameraSdkSelectorDto.IsUseHikvisionVolumeCameraSdk,
+                                IsUseDimensionVolumeCameraSdk = cameraSdkSelectorDto.IsUseDimensionVolumeCameraSdk,
                             };
                         }
                     }
@@ -660,7 +661,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                 //中科工业
                 files = Directory.GetFiles($"{destinationDir}Cameras\\IndustrialCamera\\Wayzim\\Dll")?.ToList();
             }
-
+            if (obj.ToString()?.Equals("IsUseDimensionVolumeCameraSdk") == true) {
+                //量方体积
+                files = Directory.GetFiles($"{destinationDir}Cameras\\VolumeCamera\\Dimension\\Dll")?.ToList();
+            }
             if (files?.Any() == true) {
                 foreach (var s in files) {
                     if (!File.Exists($"{destinationDir}\\{new FileInfo(s).Name}")) {
@@ -684,7 +688,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                 IsUseWayzimIndustrialCameraSdk = CameraSdkSelectorInfo.IsUseWayzimIndustrialCameraSdk,
                 IsUseWayzimSmartCameraSdk = CameraSdkSelectorInfo.IsUseWayzimSmartCameraSdk,
                 IsUseDaHuaVolumeCameraSdk = CameraSdkSelectorInfo.IsUseDaHuaVolumeCameraSdk,
-                IsUseHikvisionVolumeCameraSdk = CameraSdkSelectorInfo.IsUseHikvisionVolumeCameraSdk
+                IsUseHikvisionVolumeCameraSdk = CameraSdkSelectorInfo.IsUseHikvisionVolumeCameraSdk,
+                IsUseDimensionVolumeCameraSdk = CameraSdkSelectorInfo.IsUseDimensionVolumeCameraSdk
             };
             var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
                 ConfigName = "CameraSdkSelector",

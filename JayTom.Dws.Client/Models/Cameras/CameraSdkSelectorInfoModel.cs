@@ -11,6 +11,7 @@ namespace JayTom.Dws.Client.Models.Cameras {
         private bool _isUseWayzimIndustrialCameraSdk;
         private bool _isUseHikvisionVolumeCameraSdk;
         private bool _isUseDaHuaVolumeCameraSdk;
+        private bool _isUseDimensionVolumeCameraSdk;
 
         /// <summary>
         /// 是否使用海康智能相机SDK
@@ -74,6 +75,14 @@ namespace JayTom.Dws.Client.Models.Cameras {
         public bool IsUseDaHuaVolumeCameraSdk {
             get => _isUseDaHuaVolumeCameraSdk;
             set => SetProperty(ref _isUseDaHuaVolumeCameraSdk, value);
+        }
+
+        /// <summary>
+        /// 是否使用量房相机
+        /// </summary>
+        public bool IsUseDimensionVolumeCameraSdk {
+            get => _isUseDimensionVolumeCameraSdk;
+            set => SetProperty(ref _isUseDimensionVolumeCameraSdk, value);
         }
     }
 }

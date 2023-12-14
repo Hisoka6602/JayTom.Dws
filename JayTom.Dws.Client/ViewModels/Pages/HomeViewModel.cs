@@ -538,6 +538,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         }
 
         private async void DeviceServiceOnVolumeCaptured(object? sender, VolumeCapturedEventArgs args) {
+            var model = CameraItems.FirstOrDefault(f => f.SerialNumber.Equals(args.CameraSerialNumber));
+            if (model is not null && args?.Thumbnail is not null) {
+                if (!model.IsRealtimeImageEnabled) {
+                    model.BitmapQueue.Enqueue(args.Thumbnail);
+                }
+            }
             await Application.Current.Dispatcher.BeginInvoke(() => {
                 Length = (float)args.Length;
                 Width = (float)args.Width;

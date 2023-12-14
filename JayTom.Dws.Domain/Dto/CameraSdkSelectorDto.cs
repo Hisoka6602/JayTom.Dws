@@ -44,5 +44,10 @@ namespace JayTom.Dws.Domain.Dto {
         /// 是否使用大华体积相机
         /// </summary>
         public bool IsUseDaHuaVolumeCameraSdk { get; set; }
+        /// <summary>
+        /// 是否使用量房体积相机
+        /// </summary>
+
+        public bool IsUseDimensionVolumeCameraSdk { get; set; }
     }
 }
