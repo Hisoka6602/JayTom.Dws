@@ -90,6 +90,9 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                                     }
                                 }
                             }
+                            catch (Exception e) {
+                                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
+                            }
                             finally {
                                 _realtimeFrameSlim.Release();
                             }
@@ -99,49 +102,32 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                             try {
                                 await _snapRevPhotoSlim.WaitAsync();
                                 await Task.Delay(50);
-                                // 取出登录id
                                 var (key, value) = _loginDev.FirstOrDefault(f => f.Value == id);
-                                if (key != null) {
-                                    // 取出绑定事件
-                                    var tryGetValue = _imageEvent.TryGetValue(key, out var callback);
-                                    if (tryGetValue) {
-                                        Image? imageBitmap = null;
-                                        if (type == 10) //.jpg
-                                        {
-                                            unsafe {
-                                                byte[] fixedBuffer = new byte[len]; // 固定内存缓冲区
+                                if (key != null && _imageEvent.TryGetValue(key, out var callback)) {
+                                    if (type == 10) //.jpg
+                                    {
+                                        _imageBytes = new byte[len];
+                                        Marshal.Copy(buf, _imageBytes, 0, (int)len);
 
-                                                fixed (byte* pBuffer = fixedBuffer) {
-                                                    var ptr = new IntPtr(pBuffer);
-                                                    Marshal.Copy(buf, fixedBuffer, 0, (int)len);
-
-                                                    using var stream = new UnmanagedMemoryStream(pBuffer, len);
-                                                    stream.Seek(0, SeekOrigin.Begin);
-                                                    var valid = IsImageDataValid(stream);
-                                                    if (valid) {
-                                                        imageBitmap = Image.FromStream(stream);
-                                                    }
-                                                }
-                                            }
+                                        using var stream = new MemoryStream(_imageBytes);
+                                        var valid = IsImageDataValid(stream);
+                                        if (valid) {
+                                            using var imageBitmap = Image.FromStream(stream);
+                                            using var thumbnail = imageBitmap.GetThumbnailImage(imageBitmap.Width, imageBitmap.Height, () => false, IntPtr.Zero);
+                                            callback?.Invoke(new Bitmap(thumbnail));
                                         }
-
-                                        var image = imageBitmap?.GetThumbnailImage(imageBitmap.Width,
-                                            imageBitmap.Height,
-                                            () => false, IntPtr.Zero);
-
-                                        if (image != null) callback?.Invoke((Bitmap)image);
-
-                                        imageBitmap?.Dispose();
                                     }
                                 }
                             }
                             catch (Exception e) {
+                                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
                             }
                             finally {
                                 _snapRevPhotoSlim.Release();
                             }
                         }
                     };
+
                     NETClient.SetNetworkParam(new NET_PARAM() {
                         nWaittime = 10000,// 等待超时时间(毫秒)
                         nConnectTime = 10000,// 连接超时时间(毫秒)

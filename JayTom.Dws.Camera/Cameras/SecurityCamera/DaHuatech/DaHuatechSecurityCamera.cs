@@ -292,7 +292,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                     try {
                         await Task.Delay(TakePhotoDelay, cancellation);
                         await _takePhotoSlim.WaitAsync(cancellation);
-                        await Task.Delay(200, cancellation);
+                        await Task.Delay(600, cancellation);
                         if (!string.IsNullOrEmpty(Info?.SerialNumber)) {
                             var (key, value) = await _baseDaHuatech.GetRealtimeImage(Info.SerialNumber);
                             if (!key) {

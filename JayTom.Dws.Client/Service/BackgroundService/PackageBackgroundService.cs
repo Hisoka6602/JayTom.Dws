@@ -510,7 +510,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             _panoramaImageItems.TryDequeue(out var panoramaImageInfo);
                             if (panoramaImageInfo is not null) {
                                 var info = _packageInfos.FirstOrDefault(f => !string.IsNullOrEmpty(f.BarCode) && f.BarCode.Equals(panoramaImageInfo.Barcode));
-                                NLog.LogManager.GetCurrentClassLogger().Error($"{JsonConvert.SerializeObject(info)}");
                                 if (info is { Weight: not null, Length: not null, Width: not null, Height: not null, Volume: not null, BarCode: not null }
                                    ) {
                                     //全景图数量+1
