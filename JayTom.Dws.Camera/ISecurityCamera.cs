@@ -14,11 +14,6 @@ namespace JayTom.Dws.Camera {
         string CameraConnectionParameters { get; set; }
 
         /// <summary>
-        /// 拍照延迟
-        /// </summary>
-        public int TakePhotoDelay { get; set; }
-
-        /// <summary>
         /// 实时预览事件
         /// </summary>
         event EventHandler<RealPreviewEventArgs> RealPreview;
@@ -75,27 +70,6 @@ namespace JayTom.Dws.Camera {
         /// 关闭实时预览
         /// </summary>
         void StopPreview(CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// 照片回调
-        /// </summary>
-        public event EventHandler<PhotoTakenEventArgs> PhotoTaken;
-
-        /// <summary>
-        /// 拍照
-        /// </summary>
-        /// <returns></returns>
-        Task TakePhotoAsync(string barcode, long barcodeTimestamp, CancellationToken cancellation = default);
-
-        /// <summary>
-        /// 拍照
-        /// </summary>
-        /// <param name="barcode"></param>
-        /// <param name="barcodeTimestamp"></param>
-        /// <param name="delay"></param>
-        /// <param name="cancellation"></param>
-        /// <returns></returns>
-        Task TakePhotoAsync(string barcode, long barcodeTimestamp, TimeSpan delay, CancellationToken cancellation = default);
     }
 
     public class RealPreviewEventArgs {

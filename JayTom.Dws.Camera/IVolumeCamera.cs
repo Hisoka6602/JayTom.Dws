@@ -16,6 +16,16 @@ namespace JayTom.Dws.Camera {
         /// 当相机捕获到体积信息时触发的事件
         /// </summary>
         event EventHandler<VolumeCapturedEventArgs> VolumeCaptured;
+
+        /// <summary>
+        /// 触发一次体积测量
+        /// </summary>
+        /// <param name="barcode"></param>
+        /// <param name="barcodeTimestamp"></param>
+        /// <param name="delay"></param>
+        /// <param name="cancellation"></param>
+        /// <returns></returns>
+        Task TriggerMeasurementPhotoAsync(string barcode, long barcodeTimestamp, int delay, CancellationToken cancellation = default);
     }
 
     public class VolumeCapturedEventArgs : EventArgs {

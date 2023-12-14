@@ -317,6 +317,10 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision {
 
         public event EventHandler<VolumeCapturedEventArgs>? VolumeCaptured;
 
+        public Task TriggerMeasurementPhotoAsync(string barcode, long barcodeTimestamp, int delay, CancellationToken cancellation = default) {
+            return Task.CompletedTask;
+        }
+
         public async Task VolumeThread(CancellationToken token) {
             await Task.Yield();
             var stResultInfo = new MvVolmeasure.NET.VOLM_RESULT_INFO();

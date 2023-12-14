@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Text;
 using System.Drawing;
+using Newtonsoft.Json.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
@@ -117,6 +118,32 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Dimension {
                 _volumeThread?.Dispose();
             }
             _isRuning = false;
+        }
+
+        public async Task TriggerMeasurementPhotoAsync(CancellationToken cancellation = default) {
+            try {
+                var rec = ComputeOnceNoBlock(); //触发计算一次
+                var dimensionData = new float[3]; //存储长、宽、高数据
+                var imageData = new byte[5120000]; //存储图像数据
+                var len = GetDmsResult(dimensionData, imageData); //获取测量结果与测量结果的图像
+                if (len > 0) {
+                    using var bmpStream = new MemoryStream(imageData, 0, len);
+                    var image = System.Drawing.Image.FromStream(bmpStream);
+                    // 处理图像
+                    OnVolumeCaptured(new DimensionVolumeInfo() {
+                        Length = dimensionData[0],
+                        Width = dimensionData[1],
+                        Height = dimensionData[2],
+                        Image = (Bitmap?)image
+                    });
+                }
+            }
+            catch (Exception e) {
+                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
+            }
+            finally {
+                await Task.Delay(50, cancellation);
+            }
         }
 
         public async Task VolumeThread(CancellationToken token) {

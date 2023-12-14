@@ -212,6 +212,10 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Irayple {
 
         public event EventHandler<VolumeCapturedEventArgs>? VolumeCaptured;
 
+        public Task TriggerMeasurementPhotoAsync(string barcode, long barcodeTimestamp, int delay, CancellationToken cancellation = default) {
+            return Task.CompletedTask;
+        }
+
         protected async void OnVolumeCaptured(VolumeCapturedEventArgs e) {
             await Task.Yield();
             VolumeCaptured?.Invoke(this, e);

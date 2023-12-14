@@ -142,6 +142,7 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Dimension {
         public async Task<KeyValuePair<bool, string>> Start(object param) {
             await Task.Yield();
             if (Status == CameraStatus.Initialized) {
+                return new KeyValuePair<bool, string>(true, "不支持实时");
                 _dimensionVolumeSdk.StartVolumeCapture();
                 OnCameraStarted(new CameraStartedEventArgs() {
                     CameraInfo = this.Info
@@ -184,6 +185,13 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Dimension {
         public int TakePhotoDelay { get; set; }
 
         public event EventHandler<VolumeCapturedEventArgs>? VolumeCaptured;
+
+        public async Task TriggerMeasurementPhotoAsync(string barcode, long barcodeTimestamp, int delay, CancellationToken cancellation = default) {
+            if (_dimensionVolumeSdk is not null) {
+                await Task.Delay(TimeSpan.FromMilliseconds(delay), cancellation);
+                await _dimensionVolumeSdk.TriggerMeasurementPhotoAsync(cancellation);
+            }
+        }
 
         protected virtual async void OnCameraExceptionOccurred(CameraExceptionEventArgs e) {
             await Task.Yield();

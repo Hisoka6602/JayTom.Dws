@@ -114,6 +114,17 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     if (_externalDataSource.IsVolumeInput) {
                         await _externalDataService.GetVolume(args.Barcode);
                     }
+                    else {
+                        //触发体积测量
+                        var volumeCameras = _cameras?.Where(w => w.BindingType == CameraBindingType.VolumeCamera)?.ToList();
+                        if (volumeCameras?.Any() == true) {
+                            foreach (var volumeCamera in volumeCameras) {
+                                if (volumeCamera is IVolumeCamera vCamera) {
+                                    await vCamera.TriggerMeasurementPhotoAsync(args.Barcode, args.Timestamp, 100);
+                                }
+                            }
+                        }
+                    }
                 }
                 else {
                     var info = _packageInfos.OrderBy(o => o.CreateTime).FirstOrDefault(f => f.BarCode == null);
@@ -349,6 +360,17 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         //体积
                         if (_externalDataSource.IsVolumeInput) {
                             await _externalDataService.GetVolume(args.Barcode);
+                        }
+                        else {
+                            //触发体积测量
+                            var volumeCameras = _cameras?.Where(w => w.BindingType == CameraBindingType.VolumeCamera)?.ToList();
+                            if (volumeCameras?.Any() == true) {
+                                foreach (var volumeCamera in volumeCameras) {
+                                    if (volumeCamera is IVolumeCamera vCamera) {
+                                        await vCamera.TriggerMeasurementPhotoAsync(args.Barcode, timestamp, 100);
+                                    }
+                                }
+                            }
                         }
                         EventAggregator.Instance.Publish(new TriggerPositionEvent() {
                             IsSuccess = true,
