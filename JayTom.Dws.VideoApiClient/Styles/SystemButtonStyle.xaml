@@ -14,8 +14,8 @@
         <Setter Property="WindowChrome.IsHitTestVisibleInChrome" Value="True" />
         <Style.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
-                <Setter Property="Background" Value="#CA5849E1" />
-                <Setter Property="BorderBrush" Value="#CA5849E1" />
+                <Setter Property="Background" Value="#AF1E90FF" />
+                <Setter Property="BorderBrush" Value="#AF1E90FF" />
             </Trigger>
             <Trigger Property="IsMouseOver" Value="False">
                 <Setter Property="Background" Value="Transparent" />

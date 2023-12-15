@@ -1,6 +1,6 @@
 ﻿using Prism.Mvvm;
 
-namespace JayTom.Dws.VideoApiClient.Views.Dialog {
+namespace JayTom.Dws.VideoApiClient.ViewModels.Dialog {
 
     public class LoadingDialogViewModel : BindableBase {
         private string _description = "Loading...";

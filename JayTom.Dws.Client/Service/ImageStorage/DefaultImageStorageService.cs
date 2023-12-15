@@ -118,7 +118,7 @@ namespace JayTom.Dws.Client.Service.ImageStorage {
                     //解析水印模板(使用图片命名解析)
                     var watermarkList = ImageSettingsDto.WatermarkInfo.ItemTemplate
                         ?.Where(w => w.ApplicationType == ItemApplicationType.Watermark)?
-                        .Select(s => ParseTemplate(s.Content, type, barCode, weight, scanTime, length, width, height,
+                        .Select(s => WatermarkParseTemplate(s.Content, type, barCode, weight, scanTime, length, width, height,
                             volume, cameraSerialNumber, true))
                         ?.ToList();
                     if (watermarkList?.Any() != true) {
@@ -223,6 +223,29 @@ namespace JayTom.Dws.Client.Service.ImageStorage {
                 "{Day}" => $"{(isWatermark ? "Day:" : string.Empty)}{scanTime:dd}",
                 "{Hour}" => $"{(isWatermark ? "Hour:" : string.Empty)}{scanTime:HH}",
                 _ => "null"
+            };
+        }
+
+        public string WatermarkParseTemplate(string source, SaveImageType type, string barCode, float weight,
+            DateTime scanTime, float length,
+            float width, float height, float volume, string cameraSerialNumber, bool isWatermark = false, string? language = default) {
+            //默认中文
+            return source switch {
+                "{BarCode}" => $"{(isWatermark ? "条码:" : string.Empty)}{barCode}",
+                "{Weight}" => $"{(isWatermark ? "重量:" : string.Empty)}{weight.ToString(CultureInfo.InvariantCulture)}",
+                "{Volume}" => $"{(isWatermark ? "体积:" : string.Empty)}{volume.ToString(CultureInfo.InvariantCulture)}",
+                "{Length}" => $"{(isWatermark ? "长度:" : string.Empty)}{length.ToString(CultureInfo.InvariantCulture)}",
+                "{Width}" => $"{(isWatermark ? "宽度:" : string.Empty)}{width.ToString(CultureInfo.InvariantCulture)}",
+                "{Height}" => $"{(isWatermark ? "高度:" : string.Empty)}{height.ToString(CultureInfo.InvariantCulture)}",
+                "{ScanTime}" => $"{(isWatermark ? "扫码时间:" : string.Empty)}{(isWatermark ? $"{scanTime:yyyy-MM-dd HH:mm:ss.fff}" : $"{scanTime:yyyyMMddHHmmssfff}")}",
+                "{TimestampedGuid}" => $"{(isWatermark ? "时间戳:" : string.Empty)}{new DateTimeOffset(scanTime).ToUnixTimeMilliseconds().ToString()}",
+                "{CameraSerialNumber}" => $"{(isWatermark ? "相机序列号:" : string.Empty)}{cameraSerialNumber}",
+                "{ImageType}" => $"{(isWatermark ? "图片类型:" : string.Empty)}{type}",
+                "{Year}" => $"{(isWatermark ? "年:" : string.Empty)}{scanTime:yyyy}",
+                "{Month}" => $"{(isWatermark ? "月:" : string.Empty)}{scanTime:MM}",
+                "{Day}" => $"{(isWatermark ? "日:" : string.Empty)}{scanTime:dd}",
+                "{Hour}" => $"{(isWatermark ? "时:" : string.Empty)}{scanTime:HH}",
+                _ => ""
             };
         }
 

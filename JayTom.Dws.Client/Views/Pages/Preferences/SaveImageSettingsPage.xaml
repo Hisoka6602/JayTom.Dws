@@ -92,7 +92,7 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
@@ -1205,7 +1205,7 @@
                 Grid.Row="7"
                 Grid.Column="0"
                 MinHeight="30"
-                Margin="30,0"
+                Margin="30,10"
                 HorizontalAlignment="Left"
                 materialDesign:ButtonAssist.CornerRadius="5"
                 Background="#2E2E2E"

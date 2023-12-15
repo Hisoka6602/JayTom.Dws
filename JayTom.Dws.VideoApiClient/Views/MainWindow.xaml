@@ -13,10 +13,12 @@
     Title="MainWindow"
     Width="1200"
     Height="900"
+    MinWidth="800"
+    MinHeight="600"
     mvvm:ViewModelLocator.AutoWireViewModel="True"
     Background="Transparent"
     FontFamily="{StaticResource CustomFontFamily}"
-    ResizeMode="NoResize"
+    ResizeMode="CanResizeWithGrip"
     WindowStartupLocation="CenterScreen"
     WindowStyle="None"
     mc:Ignorable="d">
@@ -82,8 +84,11 @@
                         HorizontalAlignment="Right"
                         VerticalAlignment="Center"
                         Orientation="Horizontal">
-                        <!--  最小化  -->
-                        <Button Style="{StaticResource SystemButtonStyle}" ToolTip="设置">
+                        <!--  设置  -->
+                        <Button
+                            Command="{Binding SettingCommand}"
+                            Style="{StaticResource SystemButtonStyle}"
+                            ToolTip="设置">
                             <TextBlock
                                 FontSize="24"
                                 Foreground="#424242"
@@ -245,7 +250,7 @@
                                             FontSize="12"
                                             Foreground="DimGray"
                                             IsReadOnly="True"
-                                            Text="{Binding NodeStartTime , StringFormat={}{0:yyyy-MM-dd HH:mm:ss}}" />
+                                            Text="{Binding NodeStartTime, StringFormat={}{0:yyyy-MM-dd HH:mm:ss}}" />
                                         <Button
                                             Width="30"
                                             Margin="0,0,0,0"
@@ -297,7 +302,7 @@
                                             FontSize="12"
                                             Foreground="DimGray"
                                             IsReadOnly="True"
-                                            Text="{Binding NodeEndTime , StringFormat={}{0:yyyy-MM-dd HH:mm:ss}}" />
+                                            Text="{Binding NodeEndTime, StringFormat={}{0:yyyy-MM-dd HH:mm:ss}}" />
                                         <Button
                                             Width="30"
                                             Margin="0,0,0,0"
@@ -352,9 +357,9 @@
                                         Background="Transparent"
                                         BorderThickness="0"
                                         FontSize="13"
-                                        SelectedItem="{Binding SelectedNode ,UpdateSourceTrigger=PropertyChanged}"
-                                        ItemsSource="{Binding NodeList,UpdateSourceTrigger=PropertyChanged}"
-                                        Foreground="DimGray" />
+                                        Foreground="DimGray"
+                                        ItemsSource="{Binding NodeList, UpdateSourceTrigger=PropertyChanged}"
+                                        SelectedItem="{Binding SelectedNode, UpdateSourceTrigger=PropertyChanged}" />
                                 </Border>
                             </StackPanel>
                             <!--  条码  -->
@@ -385,7 +390,7 @@
                                         BorderThickness="0"
                                         FontSize="15"
                                         Foreground="DimGray"
-                                        Text="{Binding BarCode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                                        Text="{Binding Barcode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                                 </Border>
                             </StackPanel>
                             <!--  相机名称  -->
@@ -416,7 +421,7 @@
                                         BorderThickness="0"
                                         FontSize="15"
                                         Foreground="DimGray"
-                                        Text="{Binding CameraName , UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                                        Text="{Binding CameraName, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                                 </Border>
                             </StackPanel>
                             <!--  按钮  -->
@@ -434,6 +439,7 @@
                                     materialDesign:ShadowAssist.ShadowEdges="Right"
                                     Background="#FF914D"
                                     Command="{Binding ClearSearchCriteriaCommand}"
+                                    Cursor="Hand"
                                     Style="{StaticResource ButtonFocusEnlargeStyle}"
                                     ToolTip="清理条件">
                                     <TextBlock
@@ -905,6 +911,16 @@
                         </Grid>
                     </Border>
                     <!--  提示框  -->
+                    <materialDesign:Snackbar
+                        Grid.Row="2"
+                        Grid.RowSpan="2"
+                        Width="Auto"
+                        Height="Auto"
+                        VerticalAlignment="Bottom"
+                        Background="DodgerBlue"
+                        FontFamily="LoadFiraCode"
+                        FontWeight="Bold"
+                        MessageQueue="{Binding MainMessageQueue}" />
                 </Grid>
             </Grid>
         </materialDesign:Card>

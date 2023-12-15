@@ -114,6 +114,9 @@
             <FontFamily x:Key="CustomFontFamily">
                 pack://application:,,,/Fonts/#更纱黑体 Mono SC Nerd
             </FontFamily>
+            <FontFamily x:Key="IconFontFamily">
+                pack://application:,,,/Fonts/#iconfont
+            </FontFamily>
             <!--  主题  -->
             <SolidColorBrush x:Key="PrimaryHueLightBrush" Color="DodgerBlue" />
             <SolidColorBrush x:Key="PrimaryHueLightForegroundBrush" Color="#333333" />

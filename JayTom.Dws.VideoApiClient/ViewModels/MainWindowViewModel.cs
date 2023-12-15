@@ -6,15 +6,18 @@ using Prism.Commands;
 using System.Windows;
 using System.Windows.Input;
 using System.Threading.Tasks;
+using Prism.Services.Dialogs;
 using MaterialDesignThemes.Wpf;
 using System.Windows.Threading;
 using System.Collections.Generic;
 using JayTom.Dws.VideoApiClient.Views.Editors;
+using JayTom.Dws.VideoApiClient.ViewModels.Dialog;
 using JayTom.Dws.VideoApiClient.ViewModels.Editors;
 
 namespace JayTom.Dws.VideoApiClient.ViewModels {
 
     public class MainWindowViewModel : BindableBase {
+        private readonly IDialogService _dialogService;
         private SnackbarMessageQueue _mainMessageQueue = new(TimeSpan.FromSeconds(2));
         private double _uniformCornerRadius = 10;
         private string _maxBtnIcon = "\xe600";
@@ -27,6 +30,13 @@ namespace JayTom.Dws.VideoApiClient.ViewModels {
         private string? _selectedNode;
         private string? _barcode;
         private string? _cameraName;
+        private int _pageCount;
+        private int _pageIndex = 1;
+        private int _pageSize = 100;
+
+        public MainWindowViewModel(IDialogService dialogService) {
+            _dialogService = dialogService;
+        }
 
         public SnackbarMessageQueue MainMessageQueue {
             get => _mainMessageQueue;
@@ -116,6 +126,22 @@ namespace JayTom.Dws.VideoApiClient.ViewModels {
         public string? CameraName {
             get => _cameraName;
             set => SetProperty(ref _cameraName, value);
+        }
+
+        /// <summary>
+        /// 页数
+        /// </summary>
+        public int PageCount {
+            get => _pageCount;
+            set => SetProperty(ref _pageCount, value);
+        }
+
+        /// <summary>
+        /// 页码
+        /// </summary>
+        public int PageIndex {
+            get => _pageIndex;
+            set => SetProperty(ref _pageIndex, value);
         }
 
         public ICommand LoadedCommand {
@@ -222,6 +248,57 @@ namespace JayTom.Dws.VideoApiClient.ViewModels {
                     }
                 }
             }, DispatcherPriority.Background);
+        }
+
+        /// <summary>
+        /// 清空搜素条件
+        /// </summary>
+        public ICommand ClearSearchCriteriaCommand {
+            get => new DelegateCommand<object>(ClearSearchCriteriaDelegate);
+        }
+
+        private async void ClearSearchCriteriaDelegate(object obj) {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                NodeStartTime = null;
+                NodeEndTime = null;
+                SelectedNode = null;
+                Barcode = null;
+                CameraName = null;
+            });
+        }
+
+        /// <summary>
+        /// 搜索
+        /// </summary>
+        public ICommand SearchCommand {
+            get => new DelegateCommand<object>(SearchDelegate);
+        }
+
+        private void SearchDelegate(object obj) {
+            PageIndex = 1;
+            LoadData(PageIndex, NodeStartTime, NodeEndTime, SelectedNode, Barcode, CameraName);
+        }
+
+        public ICommand SettingCommand {
+            get => new DelegateCommand<object>(SettingDelegate);
+        }
+
+        private async void SettingDelegate(object obj) {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+                _dialogService.Show("VideoDialog", new DialogParameters { { "VideoItem", obj } }, null);
+
+                /*var settingDialog = new SettingDialog();
+                if (settingDialog.DataContext is SettingDialogViewModel model) {
+                    model.Identifier = "MainDialog";
+
+                    await DialogHost.Show(settingDialog, model.Identifier);
+                }*/
+            });
+        }
+
+        private async void LoadData(int pageIndex, DateTime? startTime, DateTime? endTime,
+            string? nodeName, string? barCode, string? cameraName) {
+            return;
         }
     }
 }

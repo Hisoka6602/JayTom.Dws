@@ -18,6 +18,7 @@ namespace JayTom.Dws.VideoApiClient {
     public partial class App : PrismApplication {
 
         protected override void RegisterTypes(IContainerRegistry containerRegistry) {
+            containerRegistry.RegisterDialog<VideoDialog>();
         }
 
         protected override Window CreateShell() {
@@ -29,8 +30,10 @@ namespace JayTom.Dws.VideoApiClient {
             //绑定页面
             ViewModelLocationProvider.Register<MainWindow, MainWindowViewModel>();
             ViewModelLocationProvider.Register<LoadingDialog, LoadingDialogViewModel>();
+            ViewModelLocationProvider.Register<SettingDialog, SettingDialogViewModel>();
             ViewModelLocationProvider.Register<DataTimeEditor, DataTimeEditorViewModel>();
-            //LoadingDialog
+            ViewModelLocationProvider.Register<VideoDialog, VideoDialogViewModel>();
+            //VideoDialog
         }
     }
 }
