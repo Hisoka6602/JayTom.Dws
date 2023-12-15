@@ -97,7 +97,7 @@ namespace JayTom.Dws.Client.Languages {
         }
         
         /// <summary>
-        ///   查找类似 附加重量属性: 的本地化字符串。
+        ///   查找类似 补偿重量配置: 的本地化字符串。
         /// </summary>
         public static string AdditionalWeightAttributes {
             get {
@@ -1069,7 +1069,7 @@ namespace JayTom.Dws.Client.Languages {
         }
         
         /// <summary>
-        ///   查找类似 是否使用实际重量转换率: 的本地化字符串。
+        ///   查找类似 是否使用按百分比补偿: 的本地化字符串。
         /// </summary>
         public static string IsUseActualWeightConversionRate {
             get {
@@ -1078,7 +1078,7 @@ namespace JayTom.Dws.Client.Languages {
         }
         
         /// <summary>
-        ///   查找类似 是否使用追加重量: 的本地化字符串。
+        ///   查找类似 是否使用固定重量补偿: 的本地化字符串。
         /// </summary>
         public static string IsUseAdditionalWeight {
             get {
@@ -2662,7 +2662,7 @@ namespace JayTom.Dws.Client.Languages {
         }
         
         /// <summary>
-        ///   查找类似 追加重量的值: 的本地化字符串。
+        ///   查找类似 补偿值: 的本地化字符串。
         /// </summary>
         public static string ValueOfAdditionalWeight {
             get {
@@ -2815,7 +2815,7 @@ namespace JayTom.Dws.Client.Languages {
         }
         
         /// <summary>
-        ///   查找类似 重量转换率: 的本地化字符串。
+        ///   查找类似 重量百分比值: 的本地化字符串。
         /// </summary>
         public static string WeightConversionRate {
             get {

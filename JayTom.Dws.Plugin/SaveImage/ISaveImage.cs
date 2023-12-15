@@ -60,21 +60,21 @@ namespace JayTom.Dws.Plugin.SaveImage {
         /// <summary>
         /// 左上角
         /// </summary>
-        TopLeft,
+        TopLeft = 0,
 
         /// <summary>
         /// 右上角
         /// </summary>
-        TopRight,
+        TopRight = 1,
 
         /// <summary>
         /// 左下角
         /// </summary>
-        BottomLeft,
+        BottomLeft = 2,
 
         /// <summary>
         /// 右下角
         /// </summary>
-        BottomRight
+        BottomRight = 3
     }
 }

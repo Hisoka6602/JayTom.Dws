@@ -6,8 +6,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
 
-namespace JayTom.Dws.Domain.Dto
-{
+namespace JayTom.Dws.Domain.Dto {
 
     public class ImageSettingsDto {
 
@@ -119,9 +118,25 @@ namespace JayTom.Dws.Domain.Dto
     }
 
     public enum WatermarkPosition {
+
+        /// <summary>
+        /// 左上角
+        /// </summary>
         TopLeft = 0,
-        BottomLeft = 1,
-        TopRight = 2,
+
+        /// <summary>
+        /// 右上角
+        /// </summary>
+        TopRight = 1,
+
+        /// <summary>
+        /// 左下角
+        /// </summary>
+        BottomLeft = 2,
+
+        /// <summary>
+        /// 右下角
+        /// </summary>
         BottomRight = 3
     }
 

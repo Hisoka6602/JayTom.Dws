@@ -782,8 +782,18 @@
                                                 FontSize="13"
                                                 FontWeight="Bold"
                                                 Foreground="White"
-                                                InputMethod.IsInputMethodEnabled="False"
-                                                Text="{Binding WeightSettingsInfo.StaticWeight.BalanceQty, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, StringFormat={}{0:F3}}" />
+                                                InputMethod.IsInputMethodEnabled="False">
+                                                <TextBox.Text>
+                                                    <Binding
+                                                        Mode="TwoWay"
+                                                        Path="WeightSettingsInfo.StaticWeight.BalanceQty"
+                                                        UpdateSourceTrigger="PropertyChanged">
+                                                        <Binding.ValidationRules>
+                                                            <validationRules:RegexValidationRule ErrorMessage="请输入有效的浮点数" Pattern="^\d+(\.\d+)?$" />
+                                                        </Binding.ValidationRules>
+                                                    </Binding>
+                                                </TextBox.Text>
+                                            </TextBox>
                                         </Border>
                                     </StackPanel>
                                 </StackPanel>
@@ -1167,8 +1177,18 @@
                                         FontSize="13"
                                         FontWeight="Bold"
                                         Foreground="White"
-                                        InputMethod.IsInputMethodEnabled="False"
-                                        Text="{Binding WeightSettingsInfo.AdditionalWeight.WeightConversionRate, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, StringFormat={}{0:0.###}}" />
+                                        InputMethod.IsInputMethodEnabled="False">
+                                        <TextBox.Text>
+                                            <Binding
+                                                Mode="TwoWay"
+                                                Path="WeightSettingsInfo.AdditionalWeight.WeightConversionRate"
+                                                UpdateSourceTrigger="PropertyChanged">
+                                                <Binding.ValidationRules>
+                                                    <validationRules:RegexValidationRule ErrorMessage="请输入有效的浮点数" Pattern="^\d+(\.\d+)?$" />
+                                                </Binding.ValidationRules>
+                                            </Binding>
+                                        </TextBox.Text>
+                                    </TextBox>
                                 </Border>
                                 <TextBlock
                                     Margin="5,0"
@@ -1230,9 +1250,26 @@
                                         FontSize="13"
                                         FontWeight="Bold"
                                         Foreground="White"
-                                        InputMethod.IsInputMethodEnabled="False"
-                                        Text="{Binding WeightSettingsInfo.AdditionalWeight.AppendedWeightValue, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, StringFormat={}{0:0.###}}" />
+                                        InputMethod.IsInputMethodEnabled="False">
+                                        <TextBox.Text>
+                                            <Binding
+                                                Mode="TwoWay"
+                                                Path="WeightSettingsInfo.AdditionalWeight.AppendedWeightValue"
+                                                UpdateSourceTrigger="PropertyChanged">
+                                                <Binding.ValidationRules>
+                                                    <validationRules:RegexValidationRule ErrorMessage="请输入有效的浮点数" Pattern="^\d+(\.\d+)?$" />
+                                                </Binding.ValidationRules>
+                                            </Binding>
+                                        </TextBox.Text>
+                                    </TextBox>
                                 </Border>
+                                <TextBlock
+                                    Margin="5,0"
+                                    VerticalAlignment="Center"
+                                    FontSize="13"
+                                    FontWeight="Bold"
+                                    Foreground="DarkGray"
+                                    Text="kg" />
                             </StackPanel>
                         </StackPanel>
                         <!--  固定重量  -->
@@ -1286,9 +1323,26 @@
                                         FontSize="13"
                                         FontWeight="Bold"
                                         Foreground="White"
-                                        InputMethod.IsInputMethodEnabled="False"
-                                        Text="{Binding WeightSettingsInfo.AdditionalWeight.FixedWeightValue, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, StringFormat={}{0:0.###}}" />
+                                        InputMethod.IsInputMethodEnabled="False">
+                                        <TextBox.Text>
+                                            <Binding
+                                                Mode="TwoWay"
+                                                Path="WeightSettingsInfo.AdditionalWeight.FixedWeightValue"
+                                                UpdateSourceTrigger="PropertyChanged">
+                                                <Binding.ValidationRules>
+                                                    <validationRules:RegexValidationRule ErrorMessage="请输入有效的浮点数" Pattern="^\d+(\.\d+)?$" />
+                                                </Binding.ValidationRules>
+                                            </Binding>
+                                        </TextBox.Text>
+                                    </TextBox>
                                 </Border>
+                                <TextBlock
+                                    Margin="5,0"
+                                    VerticalAlignment="Center"
+                                    FontSize="13"
+                                    FontWeight="Bold"
+                                    Foreground="DarkGray"
+                                    Text="kg" />
                             </StackPanel>
                         </StackPanel>
                         <!--  是否使用融合重量超时  -->

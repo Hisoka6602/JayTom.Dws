@@ -125,7 +125,6 @@ namespace JayTom.Dws.Client.Service.ImageStorage {
                         OnImageSaveFailed(new Exception(Languages.Language.ResourceManager.GetString("图片命名解析错误,未找到模板内容") ?? string.Empty));
                         return;
                     }
-
                     watermarkParams = new WatermarkParams() {
                         FontSize = ImageSettingsDto.WatermarkInfo.WatermarkFontSize,
                         WatermarkColor = ImageSettingsDto.WatermarkInfo.WatermarkColor,

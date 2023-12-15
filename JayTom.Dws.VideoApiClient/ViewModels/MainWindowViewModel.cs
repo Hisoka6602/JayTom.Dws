@@ -7,14 +7,26 @@ using System.Windows;
 using System.Windows.Input;
 using System.Threading.Tasks;
 using MaterialDesignThemes.Wpf;
+using System.Windows.Threading;
 using System.Collections.Generic;
+using JayTom.Dws.VideoApiClient.Views.Editors;
+using JayTom.Dws.VideoApiClient.ViewModels.Editors;
 
 namespace JayTom.Dws.VideoApiClient.ViewModels {
+
     public class MainWindowViewModel : BindableBase {
         private SnackbarMessageQueue _mainMessageQueue = new(TimeSpan.FromSeconds(2));
         private double _uniformCornerRadius = 10;
         private string _maxBtnIcon = "\xe600";
         private string _maxBtnToolTip = "最大化";
+        private int _yesterdayBarcodeCount;
+        private int _todayBarcodeCount;
+        private DateTime? _nodeStartTime;
+        private DateTime? _nodeEndTime;
+        private List<string> _nodeList = new();
+        private string? _selectedNode;
+        private string? _barcode;
+        private string? _cameraName;
 
         public SnackbarMessageQueue MainMessageQueue {
             get => _mainMessageQueue;
@@ -41,6 +53,71 @@ namespace JayTom.Dws.VideoApiClient.ViewModels {
             get => _maxBtnToolTip;
             set => SetProperty(ref _maxBtnToolTip, value);
         }
+
+        /// <summary>
+        /// 昨天条码数量
+        /// </summary>
+        public int YesterdayBarcodeCount {
+            get => _yesterdayBarcodeCount;
+            set => SetProperty(ref _yesterdayBarcodeCount, value);
+        }
+
+        /// <summary>
+        /// 今天条码数量
+        /// </summary>
+        public int TodayBarcodeCount {
+            get => _todayBarcodeCount;
+            set => SetProperty(ref _todayBarcodeCount, value);
+        }
+
+        /// <summary>
+        /// 节点开始时间
+        /// </summary>
+        public DateTime? NodeStartTime {
+            get => _nodeStartTime;
+            set => SetProperty(ref _nodeStartTime, value);
+        }
+
+        /// <summary>
+        /// 节点结束时间
+        /// </summary>
+        public DateTime? NodeEndTime {
+            get => _nodeEndTime;
+            set => SetProperty(ref _nodeEndTime, value);
+        }
+
+        /// <summary>
+        /// 节点列表
+        /// </summary>
+        public List<string> NodeList {
+            get => _nodeList;
+            set => SetProperty(ref _nodeList, value);
+        }
+
+        /// <summary>
+        /// 节点选中项
+        /// </summary>
+        public string? SelectedNode {
+            get => _selectedNode;
+            set => SetProperty(ref _selectedNode, value);
+        }
+
+        /// <summary>
+        /// 条码
+        /// </summary>
+        public string? Barcode {
+            get => _barcode;
+            set => SetProperty(ref _barcode, value);
+        }
+
+        /// <summary>
+        /// 相机名称
+        /// </summary>
+        public string? CameraName {
+            get => _cameraName;
+            set => SetProperty(ref _cameraName, value);
+        }
+
         public ICommand LoadedCommand {
             get => new DelegateCommand<object>(LoadedDelegate);
         }
@@ -107,6 +184,44 @@ namespace JayTom.Dws.VideoApiClient.ViewModels {
 
         private void CloseWinDelegate(object obj) {
             System.Windows.Application.Current.Shutdown();//关闭
+        }
+
+        public ICommand OpenDateTimeDialogCommand {
+            get => new DelegateCommand<object>(OpenDateTimeDialogDelegate);
+        }
+
+        private async void OpenDateTimeDialogDelegate(object obj) {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+                var dataTimeEditor = new DataTimeEditor();
+                if (dataTimeEditor.DataContext is DataTimeEditorViewModel model) {
+                    model.Identifier = "MainDialog";
+                    if (obj?.ToString()?.Equals("StartTime") == true) {
+                        model.SelectedDataTime = NodeStartTime ?? DateTime.Today;
+                        model.SelectedDate = NodeStartTime ?? DateTime.Today;
+                        model.SelectedTime = NodeStartTime ?? DateTime.Today;
+                    }
+                    else {
+                        model.SelectedDataTime = NodeEndTime ?? DateTime.Now;
+                        model.SelectedDate = NodeEndTime ?? DateTime.Now;
+                        model.SelectedTime = NodeEndTime ?? DateTime.Now;
+                    }
+
+                    await DialogHost.Show(dataTimeEditor, model.Identifier);
+                    if (model.IsOk) {
+                        if (obj?.ToString()?.Equals("StartTime") == true) {
+                            NodeStartTime = model.SelectedDataTime.Value;
+                        }
+                        else if (obj?.ToString()?.Equals("EndTime") == true) {
+                            if (DateTime.Now.CompareTo(model.SelectedDataTime.Value) < 0) {
+                                //DataListMessageQueue.Enqueue("截止时间不能超过当前时间!");
+                                NodeEndTime = DateTime.Now;
+                                return;
+                            }
+                            NodeEndTime = model.SelectedDataTime.Value;
+                        }
+                    }
+                }
+            }, DispatcherPriority.Background);
         }
     }
 }

@@ -130,12 +130,82 @@
                 <!--  内容  -->
                 <Grid Grid.Row="1" Margin="10">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="70" />
+                        <RowDefinition Height="Auto" />
                         <RowDefinition Height="60" />
                         <RowDefinition Height="*" />
                         <RowDefinition Height="70" />
                     </Grid.RowDefinitions>
                     <!--  统计数据  -->
+                    <StackPanel
+                        Grid.Row="0"
+                        HorizontalAlignment="Center"
+                        Orientation="Horizontal">
+                        <!--  昨天数据  -->
+                        <Border
+                            Width="200"
+                            Height="100"
+                            Margin="10"
+                            Background="#F1F5F8"
+                            CornerRadius="10">
+                            <StackPanel Orientation="Vertical">
+                                <Border
+                                    Width="60"
+                                    Height="30"
+                                    HorizontalAlignment="Left"
+                                    VerticalAlignment="Top"
+                                    Background="DimGray"
+                                    CornerRadius="10,0,10,0"
+                                    Opacity="0.7">
+                                    <TextBlock
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        FontSize="13"
+                                        Foreground="White"
+                                        Text="昨天" />
+                                </Border>
+                                <TextBlock
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    FontSize="50"
+                                    FontWeight="Bold"
+                                    Foreground="Gray"
+                                    Opacity="0.7"
+                                    Text="{Binding YesterdayBarcodeCount, UpdateSourceTrigger=PropertyChanged}" />
+                            </StackPanel>
+                        </Border>
+                        <!--  今天数据  -->
+                        <Border
+                            Width="200"
+                            Height="100"
+                            Margin="10"
+                            Background="#F1F5F8"
+                            CornerRadius="10">
+                            <StackPanel Orientation="Vertical">
+                                <Border
+                                    Width="60"
+                                    Height="30"
+                                    HorizontalAlignment="Left"
+                                    VerticalAlignment="Top"
+                                    Background="DodgerBlue"
+                                    CornerRadius="10,0,10,0"
+                                    Opacity="0.7">
+                                    <TextBlock
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        FontSize="13"
+                                        Foreground="White"
+                                        Text="今天" />
+                                </Border>
+                                <TextBlock
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    FontSize="50"
+                                    FontWeight="Bold"
+                                    Foreground="DodgerBlue"
+                                    Text="{Binding TodayBarcodeCount, UpdateSourceTrigger=PropertyChanged}" />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
                     <!--  工具栏  -->
                     <Border
                         Grid.Row="1"
@@ -175,7 +245,7 @@
                                             FontSize="12"
                                             Foreground="DimGray"
                                             IsReadOnly="True"
-                                            Text="{Binding StartTime, StringFormat={}{0:yyyy-MM-dd HH:mm:ss}}" />
+                                            Text="{Binding NodeStartTime , StringFormat={}{0:yyyy-MM-dd HH:mm:ss}}" />
                                         <Button
                                             Width="30"
                                             Margin="0,0,0,0"
@@ -227,7 +297,7 @@
                                             FontSize="12"
                                             Foreground="DimGray"
                                             IsReadOnly="True"
-                                            Text="{Binding EndTime, StringFormat={}{0:yyyy-MM-dd HH:mm:ss}}" />
+                                            Text="{Binding NodeEndTime , StringFormat={}{0:yyyy-MM-dd HH:mm:ss}}" />
                                         <Button
                                             Width="30"
                                             Margin="0,0,0,0"
@@ -282,6 +352,8 @@
                                         Background="Transparent"
                                         BorderThickness="0"
                                         FontSize="13"
+                                        SelectedItem="{Binding SelectedNode ,UpdateSourceTrigger=PropertyChanged}"
+                                        ItemsSource="{Binding NodeList,UpdateSourceTrigger=PropertyChanged}"
                                         Foreground="DimGray" />
                                 </Border>
                             </StackPanel>
@@ -344,7 +416,7 @@
                                         BorderThickness="0"
                                         FontSize="15"
                                         Foreground="DimGray"
-                                        Text="{Binding BarCode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                                        Text="{Binding CameraName , UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                                 </Border>
                             </StackPanel>
                             <!--  按钮  -->

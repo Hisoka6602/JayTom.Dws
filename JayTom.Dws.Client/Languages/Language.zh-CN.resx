@@ -134,8 +134,8 @@
     <comment>8-附加内容</comment>
   </data>
   <data name="AdditionalWeightAttributes" xml:space="preserve">
-    <value>附加重量属性:</value>
-    <comment>9-附加重量属性</comment>
+    <value>补偿重量配置:</value>
+    <comment>9-补偿重量配置</comment>
   </data>
   <data name="AfterPackageDeparture" xml:space="preserve">
     <value>包裹出发后</value>
@@ -566,12 +566,12 @@
     <comment>9-是否反转</comment>
   </data>
   <data name="IsUseActualWeightConversionRate" xml:space="preserve">
-    <value>是否使用实际重量转换率:</value>
+    <value>是否使用按百分比补偿:</value>
     <comment>9-是否使用实际重量转换率</comment>
   </data>
   <data name="IsUseAdditionalWeight" xml:space="preserve">
-    <value>是否使用追加重量:</value>
-    <comment>9-是否使用追加重量</comment>
+    <value>是否使用固定重量补偿:</value>
+    <comment>9-是否使用固定重量补偿</comment>
   </data>
   <data name="IsUseAudioOutput" xml:space="preserve">
     <value>使用音频输出:</value>
@@ -1274,8 +1274,8 @@
     <comment>8-测试</comment>
   </data>
   <data name="ValueOfAdditionalWeight" xml:space="preserve">
-    <value>追加重量的值:</value>
-    <comment>9-追加重量的值</comment>
+    <value>补偿值:</value>
+    <comment>9-补偿值</comment>
   </data>
   <data name="ValueOfFixedWeight" xml:space="preserve">
     <value>固定重量的值:</value>
@@ -1342,8 +1342,8 @@
     <comment>1-重量(主页)</comment>
   </data>
   <data name="WeightConversionRate" xml:space="preserve">
-    <value>重量转换率:</value>
-    <comment>9-重量转换率</comment>
+    <value>重量百分比值:</value>
+    <comment>9-重量百分比值</comment>
   </data>
   <data name="WeightPoints" xml:space="preserve">
     <value>重量坐标:</value>

@@ -1,24 +1,24 @@
-﻿using JayTom.Dws.Client.EventMediators;
-using JayTom.Dws.Client.Models.ImageSettingModels;
-using JayTom.Dws.Data.LocalConf;
-using JayTom.Dws.Domain.Dto;
-using JayTom.Dws.Domain.Dto.BaseInfoModels;
-using JayTom.Dws.Domain.Repository.LocalConf;
-using JayTom.Dws.PluginInterface.Utils;
-using MaterialDesignThemes.Wpf;
-using Newtonsoft.Json;
-using Prism.Commands;
+﻿using System;
 using Prism.Mvvm;
-using System;
-using System.Collections.ObjectModel;
-using System.Drawing;
 using System.Linq;
-using System.Threading.Tasks;
+using Prism.Commands;
+using System.Drawing;
+using Newtonsoft.Json;
 using System.Windows.Forms;
 using System.Windows.Input;
 using System.Windows.Media;
+using JayTom.Dws.Domain.Dto;
+using System.Threading.Tasks;
+using MaterialDesignThemes.Wpf;
+using JayTom.Dws.Data.LocalConf;
 using System.Windows.Media.Imaging;
+using System.Collections.ObjectModel;
+using JayTom.Dws.Client.EventMediators;
+using JayTom.Dws.PluginInterface.Utils;
 using Color = System.Windows.Media.Color;
+using JayTom.Dws.Domain.Dto.BaseInfoModels;
+using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Client.Models.ImageSettingModels;
 using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
@@ -614,8 +614,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             };
             if (openFileDialog.ShowDialog() == true) {
                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                    OriginalImage = new BitmapImage(new Uri(openFileDialog.FileName));
+                    //判断图片
+
+                    /*OriginalImage = new BitmapImage(new Uri(openFileDialog.FileName));
                     ImageSource = new BitmapImage(new Uri(openFileDialog.FileName));
+                    LoadImagePath = openFileDialog.FileName;*/
+
+                    OriginalImage = new FormatConvertedBitmap(new BitmapImage(new Uri(openFileDialog.FileName)), PixelFormats.Bgra32, null, 0);
+                    ImageSource = new FormatConvertedBitmap(new BitmapImage(new Uri(openFileDialog.FileName)), PixelFormats.Bgra32, null, 0);
                     LoadImagePath = openFileDialog.FileName;
                 });
             }

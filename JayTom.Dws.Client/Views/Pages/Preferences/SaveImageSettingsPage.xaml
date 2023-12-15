@@ -3,6 +3,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
+    xmlns:converters="clr-namespace:JayTom.Dws.Client.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:dataTemplateSelectors="clr-namespace:JayTom.Dws.Client.DataTemplateSelectors"
     xmlns:imageSettingModels="clr-namespace:JayTom.Dws.Client.Models.ImageSettingModels"
@@ -28,6 +29,7 @@
     <Page.Resources>
 
         <settingsConverter:ShortcutMacroConverter x:Key="ShortcutMacroConverter" />
+        <converters:WatermarkPositionToIntConverter x:Key="WatermarkPositionToIntConverter" />
         <DataTemplate x:Key="ImageSettingButtonTemplate" DataType="{x:Type imageSettingModels:ItemBaseTemplateModel}">
             <Button
                 Height="25"
@@ -578,14 +580,7 @@
                                         Foreground="#2E2E2E"
                                         Text="&#xe74e;" />
                                 </ListBoxItem>
-                                <ListBoxItem ToolTip="{x:Static languages:Language.BottomLeftCorner}">
-                                    <TextBlock
-                                        VerticalAlignment="Center"
-                                        FontFamily="{StaticResource IconFontFamily}"
-                                        FontSize="18"
-                                        Foreground="#2E2E2E"
-                                        Text="&#xe750;" />
-                                </ListBoxItem>
+
                                 <ListBoxItem ToolTip="{x:Static languages:Language.TopRightCorner}">
                                     <TextBlock
                                         VerticalAlignment="Center"
@@ -593,6 +588,14 @@
                                         FontSize="18"
                                         Foreground="#2E2E2E"
                                         Text="&#xe74d;" />
+                                </ListBoxItem>
+                                <ListBoxItem ToolTip="{x:Static languages:Language.BottomLeftCorner}">
+                                    <TextBlock
+                                        VerticalAlignment="Center"
+                                        FontFamily="{StaticResource IconFontFamily}"
+                                        FontSize="18"
+                                        Foreground="#2E2E2E"
+                                        Text="&#xe750;" />
                                 </ListBoxItem>
                                 <ListBoxItem ToolTip="{x:Static languages:Language.BottomRightCorner}">
                                     <TextBlock
