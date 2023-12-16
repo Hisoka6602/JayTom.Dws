@@ -71,6 +71,9 @@
         <b:EventTrigger EventName="SizeChanged" SourceName="MainWin">
             <b:InvokeCommandAction Command="{Binding SizeChangedCommand, IsAsync=False}" CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}" />
         </b:EventTrigger>
+        <b:EventTrigger EventName="Loaded" SourceName="MainWin">
+            <b:InvokeCommandAction Command="{Binding LoadedCommand, IsAsync=False}" CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}" />
+        </b:EventTrigger>
     </b:Interaction.Triggers>
     <WindowChrome.WindowChrome>
         <WindowChrome
@@ -508,7 +511,7 @@
                                     materialDesign:ButtonAssist.CornerRadius="0"
                                     materialDesign:ShadowAssist.ShadowEdges="Right"
                                     Background="#3A8EFF"
-                                    Command="{Binding SearchDataCommand}"
+                                    Command="{Binding SearchCommand}"
                                     Style="{StaticResource ButtonFocusEnlargeStyle}"
                                     ToolTip="搜索">
                                     <TextBlock
@@ -561,7 +564,7 @@
                         Grid.Row="2"
                         Margin="20,10,20,0"
                         Padding="10,0"
-                        HorizontalAlignment="Center"
+                        HorizontalAlignment="Stretch"
                         VerticalAlignment="Stretch"
                         materialDesign:DataGridAssist.ApplyMaterialDesignColumnStyles="False"
                         materialDesign:DataGridAssist.CellPadding="4 2 2 2"

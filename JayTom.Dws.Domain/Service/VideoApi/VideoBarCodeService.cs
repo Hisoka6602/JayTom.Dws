@@ -137,5 +137,20 @@ namespace JayTom.Dws.Domain.Service.VideoApi {
                 return new KeyValuePair<bool, object>(false, e.Message);
             }
         }
+
+        public async Task<KeyValuePair<bool, object>> BarcodeTotalForDate(DateTime date) {
+            try {
+                var total = await _videoBarCodeRepository.
+                    Total(w => w.ScanTime >= date.Date &&
+                               w.ScanTime <= date.Date.AddDays(1).AddSeconds(-1));
+
+                return new KeyValuePair<bool, object>(true, total);
+            }
+            catch (Exception e) {
+                Console.WriteLine(e);
+
+                return new KeyValuePair<bool, object>(false, e.Message);
+            }
+        }
     }
 }

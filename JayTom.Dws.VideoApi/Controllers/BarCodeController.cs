@@ -15,7 +15,6 @@ using Microsoft.AspNetCore.Authorization;
 using JayTom.Dws.Application.Service.VideoApi;
 
 namespace JayTom.Dws.VideoApi.Controllers {
-
     [Route("api/[controller]")]
     [ApiController]
     public class BarCodeController : ControllerBase {
@@ -74,7 +73,7 @@ namespace JayTom.Dws.VideoApi.Controllers {
             CancellationToken cancellationToken) {
             var (key, value) = await _videoBarCodeAppService.GetBarcodeInfos(param.BarCode,
                 param.NodeStartDateTime,
-                param.NodeStartDateTime,
+                param.NodeEndDateTime,
                 param.NodeName,
                 param.CameraSerialNumber,
                 param.CameraName,
@@ -101,6 +100,17 @@ namespace JayTom.Dws.VideoApi.Controllers {
             var (key, value) = await _videoBarCodeAppService.GroupedNodeNames();
             if (key && value is List<string> nodeNames) {
                 return JsonResultVo.Success("查询成功", nodeNames.Count, nodeNames);
+            }
+            else {
+                return JsonResultVo.Fail(value?.ToString() ?? string.Empty);
+            }
+        }
+
+        [HttpGet("BarcodeTotalForDate")]
+        public async Task<JsonResult> BarcodeTotalForDate(DateTime date) {
+            var (key, value) = await _videoBarCodeAppService.BarcodeTotalForDate(date);
+            if (key && value is int total) {
+                return JsonResultVo.Success("查询成功", total);
             }
             else {
                 return JsonResultVo.Fail(value?.ToString() ?? string.Empty);

@@ -68,5 +68,12 @@ namespace JayTom.Dws.Application.Service.VideoApi {
         /// <returns></returns>
         public Task<KeyValuePair<bool, object>> GetBarcodeTotal(string barCode, DateTime? nodeStartDateTime,
             DateTime? nodeEndDateTime, string? nodeName, string? cameraSerialNumber, string? cameraName, CancellationToken token = default);
+
+        /// <summary>
+        /// 获取指定日期的条码总数
+        /// </summary>
+        /// <param name="date"></param>
+        /// <returns></returns>
+        public Task<KeyValuePair<bool, object>> BarcodeTotalForDate(DateTime date);
     }
 }

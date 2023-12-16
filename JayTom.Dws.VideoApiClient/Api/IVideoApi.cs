@@ -12,13 +12,24 @@ namespace JayTom.Dws.VideoApiClient.Api {
         /// 查询条码
         /// </summary>
         /// <returns></returns>
-        Task<KeyValuePair<bool, object>> BarcodeInfos();
+        Task<KeyValuePair<bool, object>> BarcodeInfos(string? barCode, DateTime? nodeStartDateTime,
+            DateTime? nodeEndDateTime, string? nodeName, string? cameraSerialNumber,
+            string? cameraName, int pageIndex = 0, int pageSize = 1000, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// 节点列表
         /// </summary>
         /// <returns></returns>
-        Task<KeyValuePair<bool, List<string>>> GroupedNodeNames();
+        Task<KeyValuePair<bool, object>> GroupedNodeNames(CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// 获取指定条码数量
+        /// </summary>
+        /// <param name="date"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        Task<KeyValuePair<bool, object>> BarcodeTotalForDate(DateTime date,
+            CancellationToken cancellationToken = default);
     }
 
     public class ApiResult {
@@ -28,7 +39,7 @@ namespace JayTom.Dws.VideoApiClient.Api {
         public int Total { get; set; }
     }
 
-    public class ApiBarCodesInfoDto {
+    public class ApiBarCodesInfo {
         public long Id { get; set; }
 
         /// <summary>

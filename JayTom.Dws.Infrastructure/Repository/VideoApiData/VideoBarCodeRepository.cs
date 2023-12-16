@@ -34,8 +34,8 @@ namespace JayTom.Dws.Infrastructure.Repository.VideoApiData {
                         .Include(a => a.VideoNodeImageInfos)
                         ?.Where(w => w.BarCodeInfo != null &&
                                          (string.IsNullOrEmpty(barCode) || w.BarCodeInfo.Barcode.Contains(barCode)) &&
-                                     (nodeStartDateTime == null || w.ScanTime.CompareTo(nodeStartDateTime) >= 0) &&
-                                     (nodeEndDateTime == null || w.ScanTime.CompareTo(nodeEndDateTime) <= 0) &&
+                                     (nodeStartDateTime == null || w.ScanTime >= nodeStartDateTime.Value) &&
+                                     (nodeEndDateTime == null || w.ScanTime <= nodeEndDateTime.Value) &&
                                      (string.IsNullOrEmpty(nodeName) || w.Name.Contains(nodeName)) &&
                                      (string.IsNullOrEmpty(cameraName) || (w.VideoNodeImageInfos != null &&
                                                                            w.VideoNodeImageInfos.Any(v =>
@@ -73,8 +73,8 @@ namespace JayTom.Dws.Infrastructure.Repository.VideoApiData {
                         ?.ThenInclude(b => b.VideoNodeImageInfos)
                         ?.Where(w => w.VideoScanNodeInfos != null &&
                                      (string.IsNullOrEmpty(barCode) || w.Barcode.Contains(barCode)) &&
-                                     (nodeStartDateTime == null || w.VideoScanNodeInfos.Any(v => v.ScanTime.CompareTo(nodeStartDateTime) >= 0)) &&
-                                     (nodeEndDateTime == null || w.VideoScanNodeInfos.Any(v => v.ScanTime.CompareTo(nodeEndDateTime) <= 0)) &&
+                                     (nodeStartDateTime == null || w.VideoScanNodeInfos.Any(v => v.ScanTime >= nodeStartDateTime.Value)) &&
+                                     (nodeEndDateTime == null || w.VideoScanNodeInfos.Any(v => v.ScanTime <= nodeEndDateTime.Value)) &&
                                      (string.IsNullOrEmpty(nodeName) || w.VideoScanNodeInfos.Any(v => v.Name.Contains(nodeName))) &&
                                      ((string.IsNullOrEmpty(cameraName) || w.VideoScanNodeInfos.Any(v => v.VideoNodeImageInfos != null && v.VideoNodeImageInfos.Any(vni => vni.CameraName.Contains(cameraName))))) &&
                                      ((string.IsNullOrEmpty(cameraSerialNumber) || w.VideoScanNodeInfos.Any(v => v.VideoNodeImageInfos != null && v.VideoNodeImageInfos.Any(vni => vni.CameraName.Contains(cameraSerialNumber))))))
@@ -89,8 +89,8 @@ namespace JayTom.Dws.Infrastructure.Repository.VideoApiData {
                         TimestampedGuid = s.TimestampedGuid,
                         VideoScanNodeInfos = s.VideoScanNodeInfos?
                            .Where(w =>
-                               (nodeStartDateTime == null || w.ScanTime.CompareTo(nodeStartDateTime) >= 0) &&
-                               (nodeEndDateTime == null || w.ScanTime.CompareTo(nodeEndDateTime) <= 0) &&
+                               (nodeStartDateTime == null || w.ScanTime.CompareTo(nodeStartDateTime.Value) >= 0) &&
+                               (nodeEndDateTime == null || w.ScanTime.CompareTo(nodeEndDateTime.Value) <= 0) &&
                                (string.IsNullOrEmpty(nodeName) || w.Name.Contains(nodeName)))?.Select(s1 =>
                                new VideoScanNodeInfoModel() {
                                    BarCodeInfo = s,

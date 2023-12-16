@@ -89,5 +89,9 @@ namespace JayTom.Dws.Application.Service.VideoApi {
                 nodeStartDateTime, nodeEndDateTime, nodeName,
                 cameraSerialNumber, cameraName, token);
         }
+
+        public Task<KeyValuePair<bool, object>> BarcodeTotalForDate(DateTime date) {
+            return _videoBarCodeService.BarcodeTotalForDate(date);
+        }
     }
 }

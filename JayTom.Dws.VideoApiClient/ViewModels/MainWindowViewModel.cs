@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using Prism.Commands;
 using System.Windows;
+using System.Threading;
 using System.Diagnostics;
 using System.Windows.Input;
 using System.Threading.Tasks;
@@ -12,6 +13,7 @@ using System.Security.Policy;
 using MaterialDesignThemes.Wpf;
 using System.Windows.Threading;
 using System.Collections.Generic;
+using JayTom.Dws.VideoApiClient.Api;
 using System.Collections.ObjectModel;
 using JayTom.Dws.VideoApiClient.Models;
 using JayTom.Dws.VideoApiClient.Views.Editors;
@@ -22,7 +24,9 @@ namespace JayTom.Dws.VideoApiClient.ViewModels {
 
     public class MainWindowViewModel : BindableBase {
         private readonly IDialogService _dialogService;
+        private readonly IVideoApi _videoApi;
         private SnackbarMessageQueue _mainMessageQueue = new(TimeSpan.FromSeconds(2));
+        private static SemaphoreSlim _semaphoreSlim = new(1);
         private double _uniformCornerRadius = 10;
         private string _maxBtnIcon = "\xe600";
         private string _maxBtnToolTip = "最大化";
@@ -30,7 +34,7 @@ namespace JayTom.Dws.VideoApiClient.ViewModels {
         private int _todayBarcodeCount;
         private DateTime? _nodeStartTime;
         private DateTime? _nodeEndTime;
-        private List<string> _nodeList = new();
+        private ObservableCollection<string> _nodeList = new();
         private string? _selectedNode;
         private string? _barcode;
         private string? _cameraName;
@@ -38,60 +42,12 @@ namespace JayTom.Dws.VideoApiClient.ViewModels {
         private int _pageIndex = 1;
         private int _pageSize = 100;
 
-        private ObservableCollection<BarCodeItemModel> _barCodeItems = new()
-        {
-            new BarCodeItemModel()
-            {
-                BarCode = "SF123456789",
-                CameraCustomName = "自定义名称1",
-                CameraSerialNumber = "DAO555777888",
-                NodeName = "节点1",
-                Num = 1,
-                ScanImageUrl = "https://pica.zhimg.com/v2-c6af95fde4c49be17489191ac9129fdf_r.jpg?source=1def8aca",
-                ScanImageVisible = true,
-                ScanTime = DateTime.Now,
-                PanoramaImageItems = new ObservableCollection<PanoramaImageItemModel>()
-                {
-                    new()
-                    {
-                        ImageUrl = "https://pica.zhimg.com/80/c7ad985268e7144b588d7bf94eedb487_720w.webp?source=1def8aca",
-                        ImageVisible = true
-                    },
-                    new()
-                    {
-                        ImageUrl = "https://picx.zhimg.com/80/v2-3ff3d6a85edb2f19d343668d24ed9269_720w.webp?source=1def8aca",
-                        ImageVisible = true
-                    },
-                }
-            },
-            new BarCodeItemModel()
-            {
-                BarCode = "SF123456789",
-                CameraCustomName = "自定义名称1",
-                CameraSerialNumber = "DAO555777888",
-                NodeName = "节点1",
-                Num = 1,
-                ScanImageUrl = "https://pic1.zhimg.com/80/v2-73b8307b2db44c617f4e8515ce67dd39_720w.webp?source=1def8aca",
-                ScanImageVisible = true,
-                ScanTime = DateTime.Now,
-                PanoramaImageItems = new ObservableCollection<PanoramaImageItemModel>()
-                {
-                    new()
-                    {
-                        ImageUrl = "https://picx.zhimg.com/80/v2-3fcdfeacc10696e3f71d66a9ba6e9cc4_720w.webp?source=1def8aca",
-                        ImageVisible = true
-                    },
-                    new()
-                    {
-                        ImageUrl = "https://picx.zhimg.com/80/v2-e5427c1e9ad8aaad99d643e7bd7e927b_720w.webp?source=1def8aca",
-                        ImageVisible = true
-                    },
-                }
-            },
-        };
+        private ObservableCollection<BarCodeItemModel> _barCodeItems = new();
 
-        public MainWindowViewModel(IDialogService dialogService) {
+        public MainWindowViewModel(IDialogService dialogService,
+            IVideoApi videoApi) {
             _dialogService = dialogService;
+            _videoApi = videoApi;
         }
 
         public SnackbarMessageQueue MainMessageQueue {
@@ -155,7 +111,7 @@ namespace JayTom.Dws.VideoApiClient.ViewModels {
         /// <summary>
         /// 节点列表
         /// </summary>
-        public List<string> NodeList {
+        public ObservableCollection<string> NodeList {
             get => _nodeList;
             set => SetProperty(ref _nodeList, value);
         }
@@ -210,6 +166,26 @@ namespace JayTom.Dws.VideoApiClient.ViewModels {
         }
 
         private void LoadedDelegate(object obj) {
+            //查询节点
+            Task.Factory.StartNew(async () => {
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+                    NodeList.Clear();
+                    var (key, value) = await _videoApi.GroupedNodeNames();
+                    if (key && value is ApiResult { Data: List<string> nodeNames }) {
+                        NodeList.AddRange(nodeNames);
+                    }
+
+                    var (b, o) = await _videoApi.BarcodeTotalForDate(DateTime.Today);
+                    if (b && o is ApiResult { Data: int total }) {
+                        TodayBarcodeCount = total;
+                    }
+
+                    var (key1, value1) = await _videoApi.BarcodeTotalForDate(DateTime.Today.AddDays(-1));
+                    if (key1 && value1 is ApiResult { Data: int count }) {
+                        TodayBarcodeCount = count;
+                    }
+                });
+            });
         }
 
         public ICommand SizeChangedCommand {
@@ -319,12 +295,17 @@ namespace JayTom.Dws.VideoApiClient.ViewModels {
         }
 
         private async void ClearSearchCriteriaDelegate(object obj) {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
                 NodeStartTime = null;
                 NodeEndTime = null;
                 SelectedNode = null;
                 Barcode = null;
                 CameraName = null;
+                NodeList.Clear();
+                var (key, value) = await _videoApi.GroupedNodeNames();
+                if (key && value is ApiResult { Data: List<string> nodeNames }) {
+                    NodeList.AddRange(nodeNames);
+                }
             });
         }
 
@@ -366,11 +347,16 @@ namespace JayTom.Dws.VideoApiClient.ViewModels {
 
         private void ScanImageDelegate(BarCodeItemModel obj) {
             if (!string.IsNullOrEmpty(obj.ScanImageUrl)) {
-                Process.Start(new ProcessStartInfo {
-                    FileName = "cmd.exe",
-                    Arguments = $"/c start {obj.ScanImageUrl}",
-                    CreateNoWindow = true
-                });
+                try {
+                    Process.Start(new ProcessStartInfo {
+                        FileName = "cmd.exe",
+                        Arguments = $"/c start {obj.ScanImageUrl}",
+                        CreateNoWindow = true
+                    });
+                }
+                catch (Exception e) {
+                    MainMessageQueue.Enqueue(e.Message);
+                }
             }
         }
 
@@ -383,27 +369,90 @@ namespace JayTom.Dws.VideoApiClient.ViewModels {
 
         private void PanoramaImageDelegate(PanoramaImageItemModel obj) {
             if (!string.IsNullOrEmpty(obj.ImageUrl)) {
-                Process.Start(new ProcessStartInfo {
-                    FileName = "cmd.exe",
-                    Arguments = $"/c start {obj.ImageUrl}",
-                    CreateNoWindow = true
-                });
+                try {
+                    Process.Start(new ProcessStartInfo {
+                        FileName = "cmd.exe",
+                        Arguments = $"/c start {obj.ImageUrl}",
+                        CreateNoWindow = true
+                    });
+                }
+                catch (Exception e) {
+                    MainMessageQueue.Enqueue(e.Message);
+                }
             }
         }
 
         /// <summary>
         /// 点击视频方法
         /// </summary>
-        public ICommand VideoImageCommand {
-            get => new DelegateCommand<BarCodeItemModel>(VideoImageDelegate);
+        public ICommand VideoCommand {
+            get => new DelegateCommand<BarCodeItemModel>(VideoDelegate);
         }
 
-        private void VideoImageDelegate(BarCodeItemModel obj) {
+        private void VideoDelegate(BarCodeItemModel obj) {
         }
 
         private async void LoadData(int pageIndex, DateTime? startTime, DateTime? endTime,
             string? nodeName, string? barCode, string? cameraName) {
-            return;
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+                await _semaphoreSlim.WaitAsync();
+                var loadingDialog = new LoadingDialog();
+                if (loadingDialog.DataContext is LoadingDialogViewModel model) {
+                    model.Identifier = "MainDialog";
+                    DialogHost.Show(loadingDialog, model.Identifier);
+                    BarCodeItems.Clear();
+
+                    var (key, value) = await _videoApi.BarcodeInfos(barCode,
+                        startTime, endTime,
+                        nodeName, string.Empty, cameraName,
+                        pageIndex - 1, _pageSize);
+                    try {
+                        if (value is ApiResult result) {
+                            PageCount = result.Total / _pageSize + (result.Total % _pageSize > 0 ? 1 : 0);
+                            if (result.Total > 0) {
+                                //转换
+                                if (result.Data is List<ApiBarCodesInfo> infos) {
+                                    var barCodeItemModels = infos.SelectMany(d => d.ScanNodeInfos, (d, s) => new { d.Barcode, s })
+                                        .Select((s, i) => new BarCodeItemModel {
+                                            Num = i + 1,
+                                            BarCode = s.Barcode,
+                                            CameraCustomName = s.s.BarcodeImageInfos
+                                                ?.FirstOrDefault(f => f.ImageType == 0)?.CameraName,
+                                            CameraSerialNumber = s.s.BarcodeImageInfos
+                                                ?.FirstOrDefault(f => f.ImageType == 0)?.CameraSerialNumber,
+                                            NodeName = s.s.Name,
+                                            ScanImageUrl = s.s.BarcodeImageInfos?.FirstOrDefault(f => f.ImageType == 0)
+                                                ?.Path,
+                                            ScanTime = s.s.ScanTime,
+                                            ScanImageVisible = !string.IsNullOrEmpty(s.s.BarcodeImageInfos
+                                                ?.FirstOrDefault(f => f.ImageType == 0)?.Path),
+                                            PanoramaImageItems = new ObservableCollection<PanoramaImageItemModel>(s.s
+                                                .BarcodeImageInfos?.Where(w => w.ImageType == 1)
+                                                ?.Select(s1 => new PanoramaImageItemModel {
+                                                    ImageVisible = !string.IsNullOrEmpty(s1.Path),
+                                                    ImageUrl = s1.Path
+                                                })?.ToList() ?? new List<PanoramaImageItemModel>()),
+                                        })?.ToList();
+                                    BarCodeItems.AddRange(barCodeItemModels);
+                                }
+                            }
+                            else {
+                                MainMessageQueue.Enqueue("未查询到相关数据");
+                            }
+                        }
+                        else {
+                            MainMessageQueue.Enqueue(value?.ToString() ?? string.Empty);
+                        }
+                    }
+                    catch (Exception e) {
+                        MainMessageQueue.Enqueue(e.Message);
+                    }
+                    if (DialogHost.IsDialogOpen(model.Identifier)) {
+                        DialogHost.Close(model.Identifier);
+                    }
+                }
+                _semaphoreSlim.Release();
+            });
         }
     }
 }
