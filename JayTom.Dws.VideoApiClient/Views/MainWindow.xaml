@@ -684,10 +684,8 @@
                             <DataGridTemplateColumn
                                 Width="100"
                                 MinWidth="60"
-                                CellStyle="{StaticResource CustomDataGridTextCellStyle}">
-                                <DataGridTemplateColumn.Header>
-                                    <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="扫码图" />
-                                </DataGridTemplateColumn.Header>
+                                CellStyle="{StaticResource CustomDataGridTextCellStyle}"
+                                Header="扫码图">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <!--  查看按钮  -->
@@ -732,10 +730,8 @@
                             <DataGridTemplateColumn
                                 Width="Auto"
                                 MinWidth="130"
-                                CellStyle="{StaticResource CustomDataGridTextCellStyle}">
-                                <DataGridTemplateColumn.Header>
-                                    <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="全景图" />
-                                </DataGridTemplateColumn.Header>
+                                CellStyle="{StaticResource CustomDataGridTextCellStyle}"
+                                Header="全景图">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <!--  横向列表  -->
                                     <DataTemplate>

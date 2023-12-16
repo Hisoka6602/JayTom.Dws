@@ -4,9 +4,11 @@ using System.Linq;
 using System.Text;
 using Prism.Commands;
 using System.Windows;
+using System.Diagnostics;
 using System.Windows.Input;
 using System.Threading.Tasks;
 using Prism.Services.Dialogs;
+using System.Security.Policy;
 using MaterialDesignThemes.Wpf;
 using System.Windows.Threading;
 using System.Collections.Generic;
@@ -45,19 +47,19 @@ namespace JayTom.Dws.VideoApiClient.ViewModels {
                 CameraSerialNumber = "DAO555777888",
                 NodeName = "节点1",
                 Num = 1,
-                ScanImageUrl = "https://cn.bing.com/images/search?view=detailV2&ccid=bgRCTyf0&id=E5BE88AFC56697CDE348D5A2D23F4905C002D754&thid=OIP.bgRCTyf0gxs-65-GGGT_kQHaEK&mediaurl=https%3a%2f%2fbbsfiles.vivo.com.cn%2fvivobbs%2fattachment%2fforum%2f201403%2f07%2f124302g8ftlk59dlcfqtoi.jpg&exph=2160&expw=3840&q=%e5%a3%81%e7%ba%b8&simid=608037425498389439&FORM=IRPRST&ck=1DED562AFBE1F3E34ADD5B96AA9F15A5&selectedIndex=2&itb=0&qpvt=%e5%a3%81%e7%ba%b8&ajaxhist=0&ajaxserp=0",
+                ScanImageUrl = "https://pica.zhimg.com/v2-c6af95fde4c49be17489191ac9129fdf_r.jpg?source=1def8aca",
                 ScanImageVisible = true,
                 ScanTime = DateTime.Now,
                 PanoramaImageItems = new ObservableCollection<PanoramaImageItemModel>()
                 {
                     new()
                     {
-                        ImageUrl = "https://cn.bing.com/images/search?view=detailV2&ccid=fbmVvqcT&id=F6680576C50090DE72CE6EEAFBA9EB579B54E340&thid=OIP.fbmVvqcTmK2ByjtyUx03WgHaEo&mediaurl=https%3A%2F%2Fts1.cn.mm.bing.net%2Fth%2Fid%2FR-C.7db995bea71398ad81ca3b72531d375a%3Frik%3DQONUm1frqfvqbg%26riu%3Dhttp%253a%252f%252fpic.bizhi360.com%252fbbpic%252f77%252f3477.jpg%26ehk%3DMyA5tLeOYZ4D9PHlB7i5jM8EF8rod1J31k%252fjnocTSe4%253d%26risl%3D%26pid%3DImgRaw%26r%3D0&exph=1050&expw=1680&q=%e5%a3%81%e7%ba%b8&simid=608046818578400455&form=IRPRST&ck=C375D3B228659679CFE5A50798B69EEE&selectedindex=1&itb=0&qpvt=%e5%a3%81%e7%ba%b8&ajaxhist=0&ajaxserp=0&vt=0&sim=11",
+                        ImageUrl = "https://pica.zhimg.com/80/c7ad985268e7144b588d7bf94eedb487_720w.webp?source=1def8aca",
                         ImageVisible = true
                     },
                     new()
                     {
-                        ImageUrl = "https://cn.bing.com/images/search?view=detailV2&ccid=GsQBVXXa&id=1DA6011E2BE719575E0DD1F7389F205B2E244C49&thid=OIP.GsQBVXXaX59PFfxzxGAPCAHaEo&mediaurl=https%3A%2F%2Fts1.cn.mm.bing.net%2Fth%2Fid%2FR-C.1ac4015575da5f9f4f15fc73c4600f08%3Frik%3DSUwkLlsgnzj30Q%26riu%3Dhttp%253a%252f%252fit.people.com.cn%252fmediafile%252f200807%252f18%252fF200807181408392043013242.jpg%26ehk%3DY5Jms6733640Shi6R5OXcUKbJsxn%252bdpsqWF%252beacGhz4%253d%26risl%3D%26pid%3DImgRaw%26r%3D0&exph=1200&expw=1920&q=%e5%a3%81%e7%ba%b8&simid=608025876327380709&form=IRPRST&ck=04459EFEC5305B893D107C71C953B4CA&selectedindex=0&itb=0&qpvt=%e5%a3%81%e7%ba%b8&ajaxhist=0&ajaxserp=0&vt=0&sim=11",
+                        ImageUrl = "https://picx.zhimg.com/80/v2-3ff3d6a85edb2f19d343668d24ed9269_720w.webp?source=1def8aca",
                         ImageVisible = true
                     },
                 }
@@ -69,19 +71,19 @@ namespace JayTom.Dws.VideoApiClient.ViewModels {
                 CameraSerialNumber = "DAO555777888",
                 NodeName = "节点1",
                 Num = 1,
-                ScanImageUrl = "https://cn.bing.com/images/search?view=detailV2&ccid=bgRCTyf0&id=E5BE88AFC56697CDE348D5A2D23F4905C002D754&thid=OIP.bgRCTyf0gxs-65-GGGT_kQHaEK&mediaurl=https%3a%2f%2fbbsfiles.vivo.com.cn%2fvivobbs%2fattachment%2fforum%2f201403%2f07%2f124302g8ftlk59dlcfqtoi.jpg&exph=2160&expw=3840&q=%e5%a3%81%e7%ba%b8&simid=608037425498389439&FORM=IRPRST&ck=1DED562AFBE1F3E34ADD5B96AA9F15A5&selectedIndex=2&itb=0&qpvt=%e5%a3%81%e7%ba%b8&ajaxhist=0&ajaxserp=0",
+                ScanImageUrl = "https://pic1.zhimg.com/80/v2-73b8307b2db44c617f4e8515ce67dd39_720w.webp?source=1def8aca",
                 ScanImageVisible = true,
                 ScanTime = DateTime.Now,
                 PanoramaImageItems = new ObservableCollection<PanoramaImageItemModel>()
                 {
                     new()
                     {
-                        ImageUrl = "https://cn.bing.com/images/search?view=detailV2&ccid=fbmVvqcT&id=F6680576C50090DE72CE6EEAFBA9EB579B54E340&thid=OIP.fbmVvqcTmK2ByjtyUx03WgHaEo&mediaurl=https%3A%2F%2Fts1.cn.mm.bing.net%2Fth%2Fid%2FR-C.7db995bea71398ad81ca3b72531d375a%3Frik%3DQONUm1frqfvqbg%26riu%3Dhttp%253a%252f%252fpic.bizhi360.com%252fbbpic%252f77%252f3477.jpg%26ehk%3DMyA5tLeOYZ4D9PHlB7i5jM8EF8rod1J31k%252fjnocTSe4%253d%26risl%3D%26pid%3DImgRaw%26r%3D0&exph=1050&expw=1680&q=%e5%a3%81%e7%ba%b8&simid=608046818578400455&form=IRPRST&ck=C375D3B228659679CFE5A50798B69EEE&selectedindex=1&itb=0&qpvt=%e5%a3%81%e7%ba%b8&ajaxhist=0&ajaxserp=0&vt=0&sim=11",
+                        ImageUrl = "https://picx.zhimg.com/80/v2-3fcdfeacc10696e3f71d66a9ba6e9cc4_720w.webp?source=1def8aca",
                         ImageVisible = true
                     },
                     new()
                     {
-                        ImageUrl = "https://cn.bing.com/images/search?view=detailV2&ccid=GsQBVXXa&id=1DA6011E2BE719575E0DD1F7389F205B2E244C49&thid=OIP.GsQBVXXaX59PFfxzxGAPCAHaEo&mediaurl=https%3A%2F%2Fts1.cn.mm.bing.net%2Fth%2Fid%2FR-C.1ac4015575da5f9f4f15fc73c4600f08%3Frik%3DSUwkLlsgnzj30Q%26riu%3Dhttp%253a%252f%252fit.people.com.cn%252fmediafile%252f200807%252f18%252fF200807181408392043013242.jpg%26ehk%3DY5Jms6733640Shi6R5OXcUKbJsxn%252bdpsqWF%252beacGhz4%253d%26risl%3D%26pid%3DImgRaw%26r%3D0&exph=1200&expw=1920&q=%e5%a3%81%e7%ba%b8&simid=608025876327380709&form=IRPRST&ck=04459EFEC5305B893D107C71C953B4CA&selectedindex=0&itb=0&qpvt=%e5%a3%81%e7%ba%b8&ajaxhist=0&ajaxserp=0&vt=0&sim=11",
+                        ImageUrl = "https://picx.zhimg.com/80/v2-e5427c1e9ad8aaad99d643e7bd7e927b_720w.webp?source=1def8aca",
                         ImageVisible = true
                     },
                 }
@@ -353,6 +355,50 @@ namespace JayTom.Dws.VideoApiClient.ViewModels {
                     await DialogHost.Show(settingDialog, model.Identifier);
                 }
             });
+        }
+
+        /// <summary>
+        /// 点击扫码图方法
+        /// </summary>
+        public ICommand ScanImageCommand {
+            get => new DelegateCommand<BarCodeItemModel>(ScanImageDelegate);
+        }
+
+        private void ScanImageDelegate(BarCodeItemModel obj) {
+            if (!string.IsNullOrEmpty(obj.ScanImageUrl)) {
+                Process.Start(new ProcessStartInfo {
+                    FileName = "cmd.exe",
+                    Arguments = $"/c start {obj.ScanImageUrl}",
+                    CreateNoWindow = true
+                });
+            }
+        }
+
+        /// <summary>
+        /// 点击全景图方法
+        /// </summary>
+        public ICommand PanoramaImageCommand {
+            get => new DelegateCommand<PanoramaImageItemModel>(PanoramaImageDelegate);
+        }
+
+        private void PanoramaImageDelegate(PanoramaImageItemModel obj) {
+            if (!string.IsNullOrEmpty(obj.ImageUrl)) {
+                Process.Start(new ProcessStartInfo {
+                    FileName = "cmd.exe",
+                    Arguments = $"/c start {obj.ImageUrl}",
+                    CreateNoWindow = true
+                });
+            }
+        }
+
+        /// <summary>
+        /// 点击视频方法
+        /// </summary>
+        public ICommand VideoImageCommand {
+            get => new DelegateCommand<BarCodeItemModel>(VideoImageDelegate);
+        }
+
+        private void VideoImageDelegate(BarCodeItemModel obj) {
         }
 
         private async void LoadData(int pageIndex, DateTime? startTime, DateTime? endTime,

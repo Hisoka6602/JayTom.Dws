@@ -582,7 +582,7 @@
     <comment>10-是否使用控件输入</comment>
   </data>
   <data name="IsUseExternalVolumeInput" xml:space="preserve">
-    <value>是否使用外部体积输入:</value>
+    <value>是否使用触发外部获取体积:</value>
     <comment>13-是否使用外部体积输入</comment>
   </data>
   <data name="IsUseFixedWeight" xml:space="preserve">
