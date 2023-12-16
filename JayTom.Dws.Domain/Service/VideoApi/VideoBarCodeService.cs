@@ -26,49 +26,53 @@ namespace JayTom.Dws.Domain.Service.VideoApi {
 
         public async Task<KeyValuePair<bool, string>> AddOrUpdateBarcodeInfo(BarcodeImageDto barcodeImageInfo, List<BarcodeImageDto> panoramaImageInfos, ScanNodeDto scanNodeInfo, string rootImagePath) {
             try {
-                if (barcodeImageInfo?.Image is null) {
-                    return new KeyValuePair<bool, string>(false, "扫码图不能为空");
-                }
-                if (panoramaImageInfos?.Any(a => a.Image == null) == true) {
-                    return new KeyValuePair<bool, string>(false, "全景图不能为空");
-                }
+                var barcodeImagePath = string.Empty;
+                var imageInfoModels = new List<VideoNodeImageInfoModel>();
                 await Task.Yield();
                 if (string.IsNullOrEmpty(rootImagePath)) {
                     rootImagePath = $"{System.AppDomain.CurrentDomain.BaseDirectory}Images";
                 }
-                var barcodeImageRootPath = $"{rootImagePath}\\barcodeImages\\{DateTime.Now:yyyy}\\{DateTime.Now:MM}\\{DateTime.Now:dd}\\{DateTime.Now:HH}";
-                var panoramaRootImage = $"{rootImagePath}\\panoramaImages\\{DateTime.Now:yyyy}\\{DateTime.Now:MM}\\{DateTime.Now:dd}\\{DateTime.Now:HH}";
-                if (!Directory.Exists(barcodeImageRootPath)) {
-                    Directory.CreateDirectory(barcodeImageRootPath);
+                if (barcodeImageInfo?.Image is not null) {
+                    var barcodeImageRootPath = $"{rootImagePath}\\barcodeImages\\{DateTime.Now:yyyy}\\{DateTime.Now:MM}\\{DateTime.Now:dd}\\{DateTime.Now:HH}";
+
+                    if (!Directory.Exists(barcodeImageRootPath)) {
+                        Directory.CreateDirectory(barcodeImageRootPath);
+                    }
+                    barcodeImagePath = $"{barcodeImageRootPath}\\{DateTimeOffset.Now.ToUnixTimeMilliseconds()}.jpg";
+                    barcodeImageInfo.Image.Save(barcodeImagePath, ImageFormat.Jpeg);
+                    barcodeImageInfo.Image.Dispose();
+
+                    imageInfoModels?.Add(new VideoNodeImageInfoModel() {
+                        CameraName = barcodeImageInfo.CameraName,
+                        CameraSerialNumber = barcodeImageInfo.CameraSerialNumber,
+                        ImageType = 0,
+                        Name = barcodeImageInfo.Name,
+                        Path = barcodeImagePath,
+                    });
                 }
-                if (!Directory.Exists(panoramaRootImage)) {
-                    Directory.CreateDirectory(panoramaRootImage);
+                if (panoramaImageInfos?.All(a => a.Image != null) == true) {
+                    var panoramaRootImage = $"{rootImagePath}\\panoramaImages\\{DateTime.Now:yyyy}\\{DateTime.Now:MM}\\{DateTime.Now:dd}\\{DateTime.Now:HH}";
+
+                    if (!Directory.Exists(panoramaRootImage)) {
+                        Directory.CreateDirectory(panoramaRootImage);
+                    }
+                    var num = 0;
+                    var videoNodeImageInfoModels = panoramaImageInfos.Select(s => {
+                        var panoramaImagePath = $"{panoramaRootImage}\\{DateTimeOffset.Now.ToUnixTimeMilliseconds()}-{num}.jpg";
+                        s.Image.Save(panoramaImagePath, ImageFormat.Jpeg);
+                        s.Image.Dispose();
+                        num++;
+                        return new VideoNodeImageInfoModel {
+                            CameraName = s.CameraName,
+                            CameraSerialNumber = s.CameraSerialNumber,
+                            ImageType = 1,
+                            Name = s.Name,
+                            Path = panoramaImagePath,
+                        };
+                    })?.ToList() ?? new List<VideoNodeImageInfoModel>();
+                    imageInfoModels?.AddRange(videoNodeImageInfoModels);
                 }
                 //保存图片
-                var barcodeImagePath = $"{barcodeImageRootPath}\\{DateTimeOffset.Now.ToUnixTimeMilliseconds()}.jpg";
-                barcodeImageInfo.Image.Save(barcodeImagePath, ImageFormat.Jpeg);
-                barcodeImageInfo.Image.Dispose();
-                var num = 0;
-                var imageInfoModels = panoramaImageInfos.Select(s => {
-                    var panoramaImagePath = $"{panoramaRootImage}\\{DateTimeOffset.Now.ToUnixTimeMilliseconds()}-{num}.jpg";
-                    s.Image.Save(panoramaImagePath, ImageFormat.Jpeg);
-                    s.Image.Dispose();
-                    num++;
-                    return new VideoNodeImageInfoModel {
-                        CameraName = s.CameraName,
-                        CameraSerialNumber = s.CameraSerialNumber,
-                        ImageType = 1,
-                        Name = s.Name,
-                        Path = panoramaImagePath,
-                    };
-                })?.ToList() ?? new List<VideoNodeImageInfoModel>();
-                imageInfoModels?.Add(new VideoNodeImageInfoModel() {
-                    CameraName = barcodeImageInfo.CameraName,
-                    CameraSerialNumber = barcodeImageInfo.CameraSerialNumber,
-                    ImageType = 0,
-                    Name = barcodeImageInfo.Name,
-                    Path = barcodeImagePath,
-                });
                 var model = await _videoBarCodeRepository.FirstOrDefault(f => f.Barcode.Equals(scanNodeInfo.Barcode));
                 if (model is null) {
                     await _videoBarCodeRepository.Insert(new VideoBarCodeInfoModel() {

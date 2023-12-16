@@ -15,6 +15,7 @@ using Microsoft.AspNetCore.Authorization;
 using JayTom.Dws.Application.Service.VideoApi;
 
 namespace JayTom.Dws.VideoApi.Controllers {
+
     [Route("api/[controller]")]
     [ApiController]
     public class BarCodeController : ControllerBase {
@@ -45,13 +46,13 @@ namespace JayTom.Dws.VideoApi.Controllers {
                 if (scanNodeDto is not null) {
                     var (key, value) = await _videoBarCodeAppService.AddOrUpdateBarcodeInfo(new BarcodeImageDto() {
                         CameraSerialNumber = Path.GetFileNameWithoutExtension(barcodeImage.FileName)?.Split("_")?[0] ?? string.Empty,
-                        //CameraName = barcodeImage.FileName.Split("_")?[1] ?? string.Empty,
+                        CameraName = Path.GetFileNameWithoutExtension(barcodeImage.FileName)?.Split("_")?[1] ?? string.Empty,
                         Image = FileUtils.ConvertIFormFileToBitmap(barcodeImage),
                         Name = barcodeImage.FileName
                     }, panoramaImages.Select(s =>
                         new BarcodeImageDto {
                             CameraSerialNumber = Path.GetFileNameWithoutExtension(s.FileName)?.Split("_")?[0] ?? string.Empty,
-                            //CameraName = s.FileName.Split("_")?[1] ?? string.Empty,
+                            CameraName = Path.GetFileNameWithoutExtension(s.FileName)?.Split("_")?[1] ?? string.Empty,
                             Image = FileUtils.ConvertIFormFileToBitmap(s),
                             Name = s.FileName
                         })?.ToList() ?? new List<BarcodeImageDto>(),

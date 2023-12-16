@@ -3,6 +3,7 @@ using System;
 using System.Linq;
 using System.Text;
 using System.ComponentModel;
+using EFCore.BulkExtensions;
 using System.Threading.Tasks;
 using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
@@ -55,19 +56,28 @@ namespace JayTom.Dws.Infrastructure.Repository.VideoApiData {
                     await using (contextTransaction = await concardContext.Database.BeginTransactionAsync(token)) {
                         if (contextTransaction is not null) {
                             var videoScanNodeInfoModels = concardContext?.Set<VideoScanNodeInfoModel>();
+                            var videoNodeImageInfoModels = concardContext?.Set<VideoNodeImageInfoModel>();
 
                             var existingEntity = videoScanNodeInfoModels.FirstOrDefault(a =>
                                 a.BarcodeId.Equals(entity.BarcodeId) && a.Name.Equals(entity.Name));
 
                             if (existingEntity != null) {
                                 // 更新现有实体的属性
-                                concardContext.Entry(existingEntity).CurrentValues.SetValues(entity);
+                                var id = videoScanNodeInfoModels.FirstOrDefault(f => f.BarcodeId == entity.BarcodeId &&
+                                    f.Name.Equals(entity.Name))?.Id;
+                                if (id is > 0) {
+                                    await videoNodeImageInfoModels.Where(w => w.ScanNodeId.Equals(id)).BatchDeleteAsync(token);
+                                    foreach (var imageInfo in entity.VideoNodeImageInfos) {
+                                        imageInfo.ScanNodeId = id ?? 0;
+                                    }
+                                    videoNodeImageInfoModels.AddRange(entity.VideoNodeImageInfos);
+                                }
+                                concardContext.Update(entity);
                             }
                             else {
                                 // 添加新实体
                                 await videoScanNodeInfoModels.AddAsync(entity, token);
                             }
-
                             await concardContext?.SaveChangesAsync(token);
                             await contextTransaction.CommitAsync(token);
 

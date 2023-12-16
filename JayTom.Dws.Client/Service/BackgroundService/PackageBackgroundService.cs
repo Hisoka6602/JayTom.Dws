@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using System.Drawing;
 using JayTom.Dws.Ocr;
@@ -102,7 +103,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         await c.TakePhotoAsync(args.Barcode, args.Timestamp);
                     }
                     //填充全景相机数量
-                    packageInfo.PanoramaCameraCount = cameras?.Count ?? 0;
+                    packageInfo.PanoramaCameraImageInfo = cameras?.Select(s => new PanoramaCameraImageInfo {
+                        CameraSerialNumber = s.Info?.SerialNumber ?? string.Empty,
+                    })?.ToList()
+                                                          ?? new List<PanoramaCameraImageInfo>();
+
                     _packageInfos.Enqueue(packageInfo);
                     EventAggregator.Instance.Publish(new TriggerPositionEvent() {
                         IsSuccess = true,
@@ -354,7 +359,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 await camera.TakePhotoAsync(args.Barcode, timestamp);
                             }
                         }
-                        packageInfo.PanoramaCameraCount = enumerable?.Count() ?? 0;
+                        packageInfo.PanoramaCameraImageInfo = enumerable?.Select(s => new PanoramaCameraImageInfo {
+                            CameraSerialNumber = s.Info?.SerialNumber ?? string.Empty,
+                        })?.ToList()
+                                                              ?? new List<PanoramaCameraImageInfo>();
+
                         _packageInfos.Enqueue(packageInfo);
                         //获取外部数据
                         //体积
@@ -510,24 +519,32 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             _panoramaImageItems.TryDequeue(out var panoramaImageInfo);
                             if (panoramaImageInfo is not null) {
                                 var info = _packageInfos.FirstOrDefault(f => !string.IsNullOrEmpty(f.BarCode) && f.BarCode.Equals(panoramaImageInfo.Barcode));
-                                if (info is { Weight: not null, Length: not null, Width: not null, Height: not null, Volume: not null, BarCode: not null }
-                                   ) {
+                                if (info is { Weight: not null, Length: not null, Width: not null, Height: not null, Volume: not null, BarCode: not null }) {
                                     //全景图数量+1
-                                    info.PanoramaImageCount += 1;
-                                    EventAggregator.Instance.Publish(new ImageMessageInfo {
-                                        BarCode = info.BarCode,
-                                        CameraSerialNumber = panoramaImageInfo.CameraSerialNumber,
-                                        Weight = (float)info.Weight,
-                                        Height = (float)info.Height,
-                                        Image = panoramaImageInfo.Image,
-                                        Length = (float)info.Length,
-                                        Width = (float)info.Width,
-                                        Volume = (float)info.Volume,
-                                        ScanTime = info.ScanTime,
-                                        Type = SaveImageType.PanoramaImage,
-                                        CameraName = _cameras.FirstOrDefault(f => (bool)f.Info?.SerialNumber.Equals(panoramaImageInfo.CameraSerialNumber))?.Info?.Name ?? string.Empty,
-                                        CameraCustomName = _cameras.FirstOrDefault(f => (bool)f.Info?.SerialNumber.Equals(panoramaImageInfo.CameraSerialNumber))?.Info?.CustomName ?? string.Empty,
-                                    });
+
+                                    var panoramaCameraImageInfo = info.PanoramaCameraImageInfo.FirstOrDefault(f =>
+                                        !f.IsExists &&
+                                        f.CameraSerialNumber.Equals(panoramaImageInfo.CameraSerialNumber));
+                                    if (panoramaCameraImageInfo is not null) {
+                                        panoramaCameraImageInfo.IsExists = true;
+                                        EventAggregator.Instance.Publish(new ImageMessageInfo {
+                                            BarCode = info.BarCode,
+                                            CameraSerialNumber = panoramaImageInfo.CameraSerialNumber,
+                                            Weight = (float)info.Weight,
+                                            Height = (float)info.Height,
+                                            Image = panoramaImageInfo.Image,
+                                            Length = (float)info.Length,
+                                            Width = (float)info.Width,
+                                            Volume = (float)info.Volume,
+                                            ScanTime = info.ScanTime,
+                                            Type = SaveImageType.PanoramaImage,
+                                            CameraName = _cameras.FirstOrDefault(f => (bool)f.Info?.SerialNumber.Equals(panoramaImageInfo.CameraSerialNumber))?.Info?.Name ?? string.Empty,
+                                            CameraCustomName = _cameras.FirstOrDefault(f => (bool)f.Info?.SerialNumber.Equals(panoramaImageInfo.CameraSerialNumber))?.Info?.CustomName ?? string.Empty,
+                                        });
+                                    }
+                                    else {
+                                        _panoramaImageItems.Enqueue(panoramaImageInfo);
+                                    }
                                 }
                                 else {
                                     _panoramaImageItems.Enqueue(panoramaImageInfo);
@@ -588,7 +605,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         }
                         //告诉界面这些scanBarCodeInfos已经填充完全部信息，即将移除
                         var packageInfos = _packageInfos.Where(w => w is { IsCompleted: true, IsSavedImage: true } &&
-                                                                    (w.PanoramaImageCount == w.PanoramaCameraCount
+                                                                    (w.PanoramaCameraImageInfo.All(a => a.IsExists)
                                                                      || DateTime.Now.Subtract(w.CreateTime).TotalMinutes > 5)
                             )
                             .ToList();
@@ -719,7 +736,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         /// </summary>
         public bool IsCreatedByLowerMachine { get; set; }
 
-        /// <summary>
+        /*/// <summary>
         /// 全景图数量
         /// </summary>
         public int PanoramaImageCount { get; set; }
@@ -727,7 +744,12 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         /// <summary>
         /// 全景相机数量
         /// </summary>
-        public int PanoramaCameraCount { get; set; }
+        public List<string> PanoramaCamera { get; set; } = new();*/
+
+        /// <summary>
+        /// 全景图信息
+        /// </summary>
+        public List<PanoramaCameraImageInfo> PanoramaCameraImageInfo { get; set; } = new();
     }
 
     public class CameraImageInfo {
@@ -889,5 +911,18 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         /// 提交图时间
         /// </summary>
         public long SubmitTimestamp { get; set; }
+    }
+
+    public class PanoramaCameraImageInfo {
+
+        /// <summary>
+        /// 相机序列号
+        /// </summary>
+        public string CameraSerialNumber { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 是否已存在
+        /// </summary>
+        public bool IsExists { get; set; }
     }
 }
