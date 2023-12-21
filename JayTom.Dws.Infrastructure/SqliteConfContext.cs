@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using JayTom.Dws.Data.LocalConf;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
+using JayTom.Dws.Data.LocalConf.CloudConfig;
 using JayTom.Dws.Data.LocalConf.CameraConfig;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig.RuleConfig;
@@ -224,6 +225,10 @@ namespace JayTom.Dws.Infrastructure {
                     .HasForeignKey(n => new { n.TcpConnectionConfigId })
                     .OnDelete(DeleteBehavior.Cascade);
                 modelBuilder.Entity<TcpConfigInfoModel>().HasKey(c => new {
+                    c.Id
+                });
+                //------------------云端-----------
+                modelBuilder.Entity<NvrCameraBindingInfoModel>().HasKey(c => new {
                     c.Id
                 });
             }

@@ -55,6 +55,7 @@ namespace JayTom.Dws.Client.Service.Device {
         private CameraSdkSelectorDto? _cameraSdkSelectorDto;
         private static ConcurrentDictionary<string, CameraInfo> _cameraInfos = new();
         public bool RunningStatus { get; private set; } = false;
+        public List<CameraInfo> CameraItems { get; private set; }
         public ScaleType ScaleType { get; private set; } = ScaleType.None;
 
         public event EventHandler<List<ICamera>>? CameraInitialized;
@@ -163,7 +164,7 @@ namespace JayTom.Dws.Client.Service.Device {
                     IsOcrSupported = s.IsOcrSupported
                 })?.ToList();
                 CameraEnumerationRefreshed?.Invoke(null, itemInfoModels ?? new List<CameraFinderItemInfoModel>());
-
+                CameraItems = list;
                 return new KeyValuePair<bool, string>(true, Languages.Language.ResourceManager.GetString("相机检索成功") ?? string.Empty);
             }
             catch (Exception e) {

@@ -60,7 +60,7 @@
                         Foreground="DodgerBlue"
                         materialDesign:CalendarAssist.HeaderBackground="DodgerBlue"
                         materialDesign:CalendarAssist.SelectionColor="DodgerBlue"
-
+                        
                         materialDesign:CalendarAssist.SelectionForegroundColor="DodgerBlue"
                     -->
                 </Calendar>

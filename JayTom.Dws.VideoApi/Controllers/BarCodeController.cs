@@ -44,18 +44,23 @@ namespace JayTom.Dws.VideoApi.Controllers {
             try {
                 var scanNodeDto = JsonConvert.DeserializeObject<ScanNodeDto>(jsonData);
                 if (scanNodeDto is not null) {
+                    var strings = Path.GetFileNameWithoutExtension(barcodeImage.FileName)?.Split("_");
                     var (key, value) = await _videoBarCodeAppService.AddOrUpdateBarcodeInfo(new BarcodeImageDto() {
-                        CameraSerialNumber = Path.GetFileNameWithoutExtension(barcodeImage.FileName)?.Split("_")?[0] ?? string.Empty,
-                        CameraName = Path.GetFileNameWithoutExtension(barcodeImage.FileName)?.Split("_")?[1] ?? string.Empty,
+                        CameraSerialNumber = strings?.Length > 0 ? strings[0] : string.Empty,
+                        CameraName = strings?.Length > 1 ? strings[1] : string.Empty,
                         Image = FileUtils.ConvertIFormFileToBitmap(barcodeImage),
                         Name = barcodeImage.FileName
-                    }, panoramaImages.Select(s =>
-                        new BarcodeImageDto {
-                            CameraSerialNumber = Path.GetFileNameWithoutExtension(s.FileName)?.Split("_")?[0] ?? string.Empty,
-                            CameraName = Path.GetFileNameWithoutExtension(s.FileName)?.Split("_")?[1] ?? string.Empty,
+                    }, panoramaImages.Select(s => {
+                        var split = Path.GetFileNameWithoutExtension(s.FileName)?.Split("_");
+                        return new BarcodeImageDto {
+                            CameraSerialNumber = split?.Length > 0 ? split[0] :
+                                                                     string.Empty,
+                            CameraName = split?.Length > 1 ? split[1] :
+                                         string.Empty,
                             Image = FileUtils.ConvertIFormFileToBitmap(s),
                             Name = s.FileName
-                        })?.ToList() ?? new List<BarcodeImageDto>(),
+                        };
+                    })?.ToList() ?? new List<BarcodeImageDto>(),
                         scanNodeDto, _saveImagePath);
                     return key ? JsonResultVo.Success(value) : JsonResultVo.Fail(value);
                 }

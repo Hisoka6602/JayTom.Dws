@@ -70,7 +70,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     if (_cloudVideoUpLoadSlim.CurrentCount > 0) {
                         var (key, value) = await _barCodeRepository.SelectBarCode(s =>
                                 s.ScanTime.CompareTo(_startTime) > 0 &&
-                                s.ScanTime.CompareTo(DateTime.Now.AddSeconds(-30)) <= 0 &&
+                                s.ScanTime.CompareTo(DateTime.Now.AddSeconds(-90)) <= 0 &&
                                 (s.CloudVideoUploadInfo == null || s.CloudVideoUploadInfo.UploadTime == null),
                             o => o.ScanTime, 0,
                             _cloudVideoSettingsDto.Concurrency, stoppingToken);

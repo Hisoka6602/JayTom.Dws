@@ -807,7 +807,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                     });
                 }
                 //显示图像
-                await Task.Delay(1);
+                // await Task.Delay(1);
             }
         }
 

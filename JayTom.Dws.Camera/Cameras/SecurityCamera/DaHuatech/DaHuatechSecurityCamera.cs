@@ -283,6 +283,20 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
             throw new NotImplementedException();
         }
 
+        public event EventHandler<RemotePlaybackEventArgs>? RemotePlaybackRealtimeImage;
+
+        public void StartRemotePlayback(int playbackSpeed) {
+            throw new NotImplementedException();
+        }
+
+        public void StopRemotePlayback() {
+            throw new NotImplementedException();
+        }
+
+        public void PauseRemotePlayback() {
+            throw new NotImplementedException();
+        }
+
         public event EventHandler<PhotoTakenEventArgs>? PhotoTaken;
 
         public Task TakePhotoAsync(string barcode, long barcodeTimestamp, CancellationToken cancellation = default) {

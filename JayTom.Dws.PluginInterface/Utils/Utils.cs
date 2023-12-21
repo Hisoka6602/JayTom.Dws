@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Windows;
 using System.Drawing;
+using System.Diagnostics;
 using System.Windows.Media;
 using System.Threading.Tasks;
 using System.Drawing.Imaging;
@@ -13,11 +14,11 @@ using System.Windows.Media.Imaging;
 namespace JayTom.Dws.PluginInterface.Utils {
 
     public static class Utils {
-
-        public static T? GetVisualChild<T>(DependencyObject parent, Func<T, bool> predicate) where T : Visual {
+        /*public static T? GetVisualChild<T>(DependencyObject parent, Func<T, bool> predicate) where T : Visual {
             var numVisuals = VisualTreeHelper.GetChildrenCount(parent);
             for (var i = 0; i < numVisuals; i++) {
                 var v = VisualTreeHelper.GetChild(parent, i);
+
                 if (v is not T child) {
                     child = GetVisualChild(v, predicate);
                     if (child is not null) {
@@ -28,6 +29,28 @@ namespace JayTom.Dws.PluginInterface.Utils {
                     if (predicate(child)) {
                         return child;
                     }
+                }
+            }
+
+            return null;
+        }*/
+
+        public static T? GetVisualChild<T>(DependencyObject parent, Func<T, bool> predicate) where T : Visual {
+            if (parent is null) {
+                return null;
+            }
+
+            var numVisuals = VisualTreeHelper.GetChildrenCount(parent);
+            for (var i = 0; i < numVisuals; i++) {
+                var child = VisualTreeHelper.GetChild(parent, i);
+
+                if (child is T typedChild && predicate(typedChild)) {
+                    return typedChild;
+                }
+
+                var foundChild = GetVisualChild(child, predicate);
+                if (foundChild is not null) {
+                    return foundChild;
                 }
             }
 

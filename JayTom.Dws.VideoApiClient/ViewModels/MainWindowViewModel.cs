@@ -392,6 +392,76 @@ namespace JayTom.Dws.VideoApiClient.ViewModels {
         private void VideoDelegate(BarCodeItemModel obj) {
         }
 
+        #region 翻页执行方法
+
+        /// <summary>
+        /// 上一页
+        /// </summary>
+        public ICommand PreviousPageCommand {
+            get => new DelegateCommand<object>(PreviousPageDelegate);
+        }
+
+        private void PreviousPageDelegate(object obj) {
+            if (PageIndex <= 1) return;
+            PageIndex--;
+            LoadData(PageIndex, NodeStartTime, NodeEndTime, SelectedNode, Barcode, CameraName);
+        }
+
+        /// <summary>
+        /// 下一页
+        /// </summary>
+        public ICommand NextPageCommand {
+            get => new DelegateCommand<object>(NextPageDelegate);
+        }
+
+        private void NextPageDelegate(object obj) {
+            if (PageIndex >= PageCount) return;
+            PageIndex++;
+            LoadData(PageIndex, NodeStartTime, NodeEndTime, SelectedNode, Barcode, CameraName);
+        }
+
+        /// <summary>
+        /// 首页
+        /// </summary>
+        public ICommand FirstPageCommand {
+            get => new DelegateCommand<object>(FirstPageDelegate);
+        }
+
+        private void FirstPageDelegate(object obj) {
+            PageIndex = 1;
+            LoadData(PageIndex, NodeStartTime, NodeEndTime, SelectedNode, Barcode, CameraName);
+        }
+
+        /// <summary>
+        /// 尾页
+        /// </summary>
+        public ICommand LastPageCommand {
+            get => new DelegateCommand<object>(LastPageDelegate);
+        }
+
+        private void LastPageDelegate(object obj) {
+            if (PageCount > 0) {
+                PageIndex = PageCount;
+                LoadData(PageIndex, NodeStartTime, NodeEndTime, SelectedNode, Barcode, CameraName);
+            }
+        }
+
+        //跳转
+        public ICommand JumpPageCommand {
+            get => new DelegateCommand<object>(JumpPageDelegate);
+        }
+
+        private void JumpPageDelegate(object obj) {
+            if (PageIndex >= 0 && PageIndex <= PageCount) {
+                LoadData(PageIndex, NodeStartTime, NodeEndTime, SelectedNode, Barcode, CameraName);
+            }
+            else {
+                PageIndex = 1;
+            }
+        }
+
+        #endregion 翻页执行方法
+
         private async void LoadData(int pageIndex, DateTime? startTime, DateTime? endTime,
             string? nodeName, string? barCode, string? cameraName) {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
@@ -432,7 +502,7 @@ namespace JayTom.Dws.VideoApiClient.ViewModels {
                                                     ImageVisible = !string.IsNullOrEmpty(s1.Path),
                                                     ImageUrl = s1.Path
                                                 })?.ToList() ?? new List<PanoramaImageItemModel>()),
-                                        })?.ToList();
+                                        })?.OrderByDescending(o => o.ScanTime)?.ToList();
                                     BarCodeItems.AddRange(barCodeItemModels);
                                 }
                             }

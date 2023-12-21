@@ -1257,7 +1257,7 @@
                                                 Path="WeightSettingsInfo.AdditionalWeight.AppendedWeightValue"
                                                 UpdateSourceTrigger="PropertyChanged">
                                                 <Binding.ValidationRules>
-                                                    <validationRules:RegexValidationRule ErrorMessage="请输入有效的浮点数" Pattern="^\d+(\.\d+)?$" />
+                                                    <validationRules:RegexValidationRule ErrorMessage="请输入有效的浮点数" Pattern="^-?\d+(\.\d+)?$" />
                                                 </Binding.ValidationRules>
                                             </Binding>
                                         </TextBox.Text>

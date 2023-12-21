@@ -14,6 +14,8 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.EntityFrameworkCore.Storage;
 using JayTom.Dws.Domain.Repository.LocalData;
 using JayTom.Dws.Domain.Repository.VideoApiData;
+using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
+using JayTom.Dws.Data.LocalConf.PackageSortingConfig.RuleConfig;
 
 namespace JayTom.Dws.Infrastructure.Repository.VideoApiData {
 
@@ -47,7 +49,7 @@ namespace JayTom.Dws.Infrastructure.Repository.VideoApiData {
             return new KeyValuePair<bool, List<string>>(false, new List<string>());
         }
 
-        public new async Task<bool> InsertOrUpdate([NotNull] VideoScanNodeInfoModel entity, CancellationToken token = default) {
+        public new async Task<bool> Update([NotNull] VideoScanNodeInfoModel entity, CancellationToken token = default) {
             IDbContextTransaction? contextTransaction = null;
             try {
                 await using var concardContext = _contextFactory.CreateDbContext();
@@ -58,29 +60,22 @@ namespace JayTom.Dws.Infrastructure.Repository.VideoApiData {
                             var videoScanNodeInfoModels = concardContext?.Set<VideoScanNodeInfoModel>();
                             var videoNodeImageInfoModels = concardContext?.Set<VideoNodeImageInfoModel>();
 
-                            var existingEntity = videoScanNodeInfoModels.FirstOrDefault(a =>
-                                a.BarcodeId.Equals(entity.BarcodeId) && a.Name.Equals(entity.Name));
-
-                            if (existingEntity != null) {
-                                // 更新现有实体的属性
-                                var id = videoScanNodeInfoModels.FirstOrDefault(f => f.BarcodeId == entity.BarcodeId &&
-                                    f.Name.Equals(entity.Name))?.Id;
-                                if (id is > 0) {
-                                    await videoNodeImageInfoModels.Where(w => w.ScanNodeId.Equals(id)).BatchDeleteAsync(token);
-                                    foreach (var imageInfo in entity.VideoNodeImageInfos) {
-                                        imageInfo.ScanNodeId = id ?? 0;
-                                    }
-                                    videoNodeImageInfoModels.AddRange(entity.VideoNodeImageInfos);
-                                }
-                                concardContext.Update(entity);
+                            var videoScanNodeInfoModel = videoScanNodeInfoModels?.FirstOrDefault(f => f.BarcodeId.Equals(entity.BarcodeId) &&
+                                f.Name.Equals(entity.Name));
+                            if (videoScanNodeInfoModel != null) {
+                                entity.Id = videoScanNodeInfoModel.Id;
+                                // 先删除原有的
+                                var nodeImageInfoModels = videoNodeImageInfoModels?.AsTracking()?.Where(w => w.ScanNodeId.Equals(entity.Id))
+                                    ?.ToList() ?? new List<VideoNodeImageInfoModel>();
+                                concardContext.RemoveRange(nodeImageInfoModels);
+                                videoScanNodeInfoModels.Update(entity);
                             }
                             else {
-                                // 添加新实体
                                 await videoScanNodeInfoModels.AddAsync(entity, token);
                             }
+
                             await concardContext?.SaveChangesAsync(token);
                             await contextTransaction.CommitAsync(token);
-
                             return true;
                         }
                     }

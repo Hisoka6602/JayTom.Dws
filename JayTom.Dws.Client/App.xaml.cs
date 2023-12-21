@@ -6,12 +6,14 @@ using Prism.Mvvm;
 using Prism.DryIoc;
 using System.Windows;
 using JayTom.Dws.Ocr;
+using JayTom.Dws.Nvr;
 using Newtonsoft.Json;
 using System.IO.Pipes;
 using System.Net.Http;
 using System.Threading;
 using JayTom.Dws.Camera;
 using JayTom.Dws.Plugin;
+using JayTom.Dws.Nvr.Nvr;
 using JayTom.Dws.Interface;
 using System.Globalization;
 using System.Windows.Media;
@@ -56,6 +58,7 @@ using JayTom.Dws.Domain.Service.CacheCleanup;
 using Microsoft.Extensions.DependencyInjection;
 using JayTom.Dws.Client.Views.Pages.Preferences;
 using JayTom.Dws.Client.Service.BackgroundService;
+using JayTom.Dws.Client.Views.Editors.CloudService;
 using JayTom.Dws.Client.Service.ExternalDataService;
 using JayTom.Dws.Infrastructure.Repository.LocalLog;
 using DryIoc.Microsoft.DependencyInjection.Extension;
@@ -64,6 +67,8 @@ using JayTom.Dws.Infrastructure.Repository.LocalConf;
 using JayTom.Dws.Infrastructure.Repository.LocalData;
 using JayTom.Dws.Client.Service.DefaultConfiguration;
 using JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision;
+using JayTom.Dws.Client.ViewModels.Editors.CloudService;
+using JayTom.Dws.Domain.Repository.LocalConf.CloudConfig;
 using JayTom.Dws.Client.HomeToolPlugin.SunnenPlugin.Views;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 using JayTom.Dws.Client.Views.Pages.Preferences.LogsViews;
@@ -74,6 +79,7 @@ using JayTom.Dws.Client.HomeToolPlugin.SunnenPlugin.ViewModels;
 using JayTom.Dws.Client.Service.Sorting.Communication.SerialComm;
 using JayTom.Dws.Client.Views.Pages.Preferences.ApiConfiguration;
 using JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings;
+using JayTom.Dws.Infrastructure.Repository.LocalConf.CloudConfig;
 using JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Infrastructure.Repository.LocalConf.CameraConfig;
@@ -168,6 +174,7 @@ namespace JayTom.Dws.Client {
                 //云端服务
                 containerRegistry.RegisterForNavigation<CloudDataPage>();
                 containerRegistry.RegisterForNavigation<CloudVideoPage>();
+                containerRegistry.RegisterForNavigation<NetworkVideoRecorderPage>();
             }
             //其他注册
             containerRegistry.GetContainer().RegisterServices(services => {
@@ -259,6 +266,8 @@ namespace JayTom.Dws.Client {
                 services.AddScoped<ISerialPortConfigRepository, SerialPortConfigRepository>();
                 services.AddScoped<ITcpConfigRepository, TcpConfigRepository>();
                 services.AddScoped<ITcpConnectionConfigRepository, TcpConnectionConfigRepository>();
+                services.AddScoped<INvrCameraBindingRepository, NvrCameraBindingRepository>();
+
                 //logs
                 services.AddScoped<IAppLogRepository, AppLogRepository>();
                 services.AddScoped<ICameraLogRepository, CameraLogRepository>();
@@ -312,6 +321,8 @@ namespace JayTom.Dws.Client {
                 services.AddScoped<ISortingConnectionService, DefaultSortingConnectionService>();
                 //云视频云端
                 services.AddScoped<ICloud, CloudVideoUploadApi>();
+                //Nvr
+                services.AddScoped<INvrManager, DaHuaNvr>();
             });
         }
 
@@ -585,6 +596,7 @@ namespace JayTom.Dws.Client {
             ViewModelLocationProvider.Register<ScanCameraSelectionDialog, ScanCameraSelectionDialogViewModel>();
             ViewModelLocationProvider.Register<ResolutionConstraintDialog, ResolutionConstraintViewModel>();
             ViewModelLocationProvider.Register<CloudServicePage, CloudServicePageViewModel>();
+            ViewModelLocationProvider.Register<NetworkVideoRecorderPage, NetworkVideoRecorderPageViewModel>();
 
             ViewModelLocationProvider.Register<PackageSortingSettingsPage, PackageSortingSettingsViewModel>();
             ViewModelLocationProvider.Register<OcrSettingsPage, OcrSettingsViewModel>();
@@ -621,12 +633,14 @@ namespace JayTom.Dws.Client {
             //云端服务
             ViewModelLocationProvider.Register<CloudDataPage, CloudDataPageViewModel>();
             ViewModelLocationProvider.Register<CloudVideoPage, CloudVideoSettingsPageViewModel>();
-
+            //Nvr绑定页面
+            ViewModelLocationProvider.Register<NvrCameraBindingEditor, NvrCameraBindingEditorViewModel>();
             //接口
             ViewModelLocationProvider.Register<DefaultApiPage, DefaultApiPageViewModel>();
             ViewModelLocationProvider.Register<SzjyApiPage, SzjyApiPageViewModel>();
             ViewModelLocationProvider.Register<WdtFlagshipApiPage, WdtFlagshipApiPageViewModel>();
             ViewModelLocationProvider.Register<WdtWmsApiPage, WdtWmsApiPageViewModel>();
+
             //实时日志
             ViewModelLocationProvider.Register<RealTimeLogPage, RealTimeLogViewModel>();
             //其他插件

@@ -26,7 +26,6 @@ namespace JayTom.Dws.Domain.Service.VideoApi {
 
         public async Task<KeyValuePair<bool, string>> AddOrUpdateBarcodeInfo(BarcodeImageDto barcodeImageInfo, List<BarcodeImageDto> panoramaImageInfos, ScanNodeDto scanNodeInfo, string rootImagePath) {
             try {
-                var barcodeImagePath = string.Empty;
                 var imageInfoModels = new List<VideoNodeImageInfoModel>();
                 await Task.Yield();
                 if (string.IsNullOrEmpty(rootImagePath)) {
@@ -38,7 +37,7 @@ namespace JayTom.Dws.Domain.Service.VideoApi {
                     if (!Directory.Exists(barcodeImageRootPath)) {
                         Directory.CreateDirectory(barcodeImageRootPath);
                     }
-                    barcodeImagePath = $"{barcodeImageRootPath}\\{DateTimeOffset.Now.ToUnixTimeMilliseconds()}.jpg";
+                    var barcodeImagePath = $"{barcodeImageRootPath}\\{DateTimeOffset.Now.ToUnixTimeMilliseconds()}.jpg";
                     barcodeImageInfo.Image.Save(barcodeImagePath, ImageFormat.Jpeg);
                     barcodeImageInfo.Image.Dispose();
 
@@ -91,7 +90,7 @@ namespace JayTom.Dws.Domain.Service.VideoApi {
                     });
                 }
                 else {
-                    await _videoScanNodeRepository.InsertOrUpdate(new VideoScanNodeInfoModel() {
+                    await _videoScanNodeRepository.Update(new VideoScanNodeInfoModel() {
                         BarcodeId = model.Id,
                         Description = scanNodeInfo.Description,
                         Name = scanNodeInfo.ScanNodName,

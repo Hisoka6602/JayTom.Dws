@@ -1,12 +1,12 @@
-﻿using JayTom.Dws.Camera;
-using JayTom.Dws.Client.Models.Cameras;
+﻿using System;
 using JayTom.Dws.Ocr;
-using JayTom.Dws.Plugin.Scale;
-using System;
-using System.Collections.Generic;
 using System.Drawing;
 using System.Threading;
+using JayTom.Dws.Camera;
 using System.Threading.Tasks;
+using JayTom.Dws.Plugin.Scale;
+using System.Collections.Generic;
+using JayTom.Dws.Client.Models.Cameras;
 
 namespace JayTom.Dws.Client.Service.Device {
 
@@ -16,6 +16,11 @@ namespace JayTom.Dws.Client.Service.Device {
         /// 设备运行状态
         /// </summary>
         public bool RunningStatus { get; }
+
+        /// <summary>
+        /// 相机列表
+        /// </summary>
+        public List<CameraInfo> CameraItems { get; }
 
         /// <summary>
         /// 磅秤类型

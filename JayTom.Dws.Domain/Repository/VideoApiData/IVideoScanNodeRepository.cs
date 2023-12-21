@@ -24,6 +24,6 @@ namespace JayTom.Dws.Domain.Repository.VideoApiData {
         /// <param name="entity"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        public new Task<bool> InsertOrUpdate([NotNull] VideoScanNodeInfoModel entity, CancellationToken token = default);
+        public new Task<bool> Update([NotNull] VideoScanNodeInfoModel entity, CancellationToken token = default);
     }
 }

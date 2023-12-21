@@ -41,40 +41,45 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService {
 
             EventAggregator.Instance.Subscribe<CloudVideoUploadMessage>(async item => {
                 if (item is CloudVideoUploadMessage model) {
-                    try {
-                        await _logSlim.WaitAsync();
-                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
-                            LogItems.Insert(0, new BaseLogItemModel() {
-                                CreateTime = DateTime.Now,
-                                Message = $"条码:[{model.Barcode}],上传[{(model.IsSuccessful ? "成功" : "失败")}],扫码图数量:{model.ScanImageCount},全景图数量:{model.PanoramaImageCount}"
+                    Task.Factory.StartNew(async () => {
+                        try {
+                            await _logSlim.WaitAsync();
+                            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+                                LogItems.Insert(0, new BaseLogItemModel() {
+                                    CreateTime = DateTime.Now,
+                                    Message =
+                                        $"条码:[{model.Barcode}],上传[{(model.IsSuccessful ? "成功" : "失败")}],扫码图数量:{model.ScanImageCount},全景图数量:{model.PanoramaImageCount}"
+                                });
+                                if (LogItems.Count > 100) {
+                                    LogItems.RemoveAt(LogItems.Count - 1);
+                                }
                             });
-                            if (LogItems.Count > 100) {
-                                LogItems.RemoveAt(LogItems.Count - 1);
-                            }
-                        });
-                    }
-                    finally {
-                        _logSlim.Release();
-                    }
+                        }
+                        finally {
+                            _logSlim.Release();
+                        }
+                    });
                 }
             });
             EventAggregator.Instance.Subscribe<CloudVideoUploadRetryMessage>(async item => {
                 if (item is CloudVideoUploadRetryMessage model) {
-                    try {
-                        await _logSlim.WaitAsync();
-                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
-                            LogItems.Insert(0, new BaseLogItemModel() {
-                                CreateTime = DateTime.Now,
-                                Message = $"条码:[{model.Barcode}],重试次数:{model.RetryCount}"
+                    Task.Factory.StartNew(async () => {
+                        try {
+                            await _logSlim.WaitAsync();
+                            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+                                LogItems.Insert(0, new BaseLogItemModel() {
+                                    CreateTime = DateTime.Now,
+                                    Message = $"条码:[{model.Barcode}],重试次数:{model.RetryCount}"
+                                });
+                                if (LogItems.Count > 100) {
+                                    LogItems.RemoveAt(LogItems.Count - 1);
+                                }
                             });
-                            if (LogItems.Count > 100) {
-                                LogItems.RemoveAt(LogItems.Count - 1);
-                            }
-                        });
-                    }
-                    finally {
-                        _logSlim.Release();
-                    }
+                        }
+                        finally {
+                            _logSlim.Release();
+                        }
+                    });
                 }
             });
         }

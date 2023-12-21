@@ -40,6 +40,20 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                 },
                 new()
                 {
+                    Title = "录像NVR",
+                    IconFont = new IconInfoModel()
+                    {
+                        IconFont = "pack://application:,,,/Fonts/#iconfont",
+                        IconCode = "\xe9ef",
+                        IconSize = 25
+                    },
+                    IsSelected = false,
+                    Description = "录像NVR",
+                    PageClassName = "NetworkVideoRecorderPage",
+                    ClickCommand = ClickCommand
+                },
+                new()
+                {
                     Title = "云端数据",
                     IconFont = new IconInfoModel()
                     {

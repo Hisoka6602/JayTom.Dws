@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Text;
+using System.Drawing;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
@@ -70,9 +71,35 @@ namespace JayTom.Dws.Camera {
         /// 关闭实时预览
         /// </summary>
         void StopPreview(CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// 远程回放实时画面事件
+        /// </summary>
+        public event EventHandler<RemotePlaybackEventArgs> RemotePlaybackRealtimeImage;
+
+        /// <summary>
+        /// 开始远程回放
+        /// </summary>
+        /// <param name="playbackSpeed"></param>
+        public void StartRemotePlayback(int playbackSpeed);
+
+        /// <summary>
+        /// 停止远程回放
+        /// </summary>
+        public void StopRemotePlayback();
+
+        /// <summary>
+        /// 暂停远程回放
+        /// </summary>
+        public void PauseRemotePlayback();
     }
 
     public class RealPreviewEventArgs {
+    }
+
+    public class RemotePlaybackEventArgs : EventArgs {
+        public Bitmap? RealtimeImage { get; set; }
+        public int PlaybackSpeed { get; set; }
     }
 
     /// <summary>

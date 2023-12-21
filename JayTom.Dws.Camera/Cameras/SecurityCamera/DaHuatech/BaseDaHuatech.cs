@@ -36,6 +36,10 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
         private static byte[] _realtimeFrameBytes = Array.Empty<byte>();
         private static SemaphoreSlim _takePhotoSlim = new(1);
         private static SemaphoreSlim _switchRealtimeFrameSlim = new(1);
+        private IntPtr _mPlayBackId = IntPtr.Zero;
+
+        //播放Id队列
+        private static ConcurrentDictionary<string, IntPtr> _playBackIds = new();
 
         private BaseDaHuatech() {
         }
@@ -430,22 +434,139 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
             //RealPlay
         }
 
-        private static bool IsImageDataValid(Stream stream) {
-            var header = new byte[8]; // 读取文件头的字节数
-            if (stream.Read(header, 0, 8) != 8) {
-                return false;
-            }
+        /// <summary>
+        /// 开始远程回放
+        /// </summary>
+        /// <param name="endTime"></param>
+        /// <param name="playbackSpeed"></param>
+        /// <param name="serialNo"></param>
+        /// <param name="channelId"></param>
+        /// <param name="startTime"></param>
+        public async Task<KeyValuePair<bool, string>> StartRemotePlayback(string serialNo, int channelId, DateTime startTime, DateTime endTime, int playbackSpeed) {
+            await Task.Yield();
+            // 执行开始远程回放的逻辑，使用传入的播放速度参数
+            var tryGetValue = _loginDev.TryGetValue(serialNo, out var mLoginId);
+            if (tryGetValue && mLoginId != IntPtr.Zero) {
+                var fileCount = 0;
+                var recordFileArray = new NET_RECORDFILE_INFO[5000];
+                var (key, value) = QueryFile(mLoginId, channelId, startTime, endTime, ref recordFileArray, ref fileCount);
+                if (!key) {
+                    return new KeyValuePair<bool, string>(key, value);
+                }
+                var videoTimeArray = new VideoTime[fileCount];
+                for (var i = 0; i < fileCount; i++) {
+                    videoTimeArray[i] = new VideoTime {
+                        StartTime = recordFileArray[i].starttime.ToDateTime(),
+                        EndTime = recordFileArray[i].endtime.ToDateTime()
+                    };
+                }
+                /*playBackProgressBar.Init(startTime, videoTimeArray);
+                if (m_EndTime > recordFileArray[fileCount - 1].endtime.ToDateTime()) {
+                    m_EndTime = recordFileArray[fileCount - 1].endtime.ToDateTime();
+                }*/
 
-            // 判断图像文件头是否匹配有效的图像格式
-            // 这里以JPEG格式为例
-            var jpegHeader = new byte[] { 0xFF, 0xD8, 0xFF };
-            for (var i = 0; i < 3; i++) {
-                if (header[i] != jpegHeader[i]) {
+                //回调播放进度
+
+                var (b, s) = PlayBack(serialNo, channelId, startTime, endTime);
+                if (!b) {
+                    return new KeyValuePair<bool, string>(b, s);
+                }
+
+                //开启一个播放线程
+
+                return new KeyValuePair<bool, string>(true, string.Empty);
+            }
+            else {
+                return new KeyValuePair<bool, string>(false, "设备不存在");
+            }
+        }
+
+        private KeyValuePair<bool, string> PlayBack(string serialNo, int channelId, DateTime startTime, DateTime endTime) {
+            //_playBackIds 取出Id
+            var tryGetValue = _playBackIds.TryGetValue(serialNo, out var playBackId);
+            if (tryGetValue && playBackId != IntPtr.Zero) {
+                NETClient.PlayBackControl(playBackId, PlayBackType.Stop);
+            }
+            var stuInfo = new NET_IN_PLAY_BACK_BY_TIME_INFO();
+            var stuOut = new NET_OUT_PLAY_BACK_BY_TIME_INFO();
+            stuInfo.stStartTime = NET_TIME.FromDateTime(startTime);
+            stuInfo.stStopTime = NET_TIME.FromDateTime(endTime);
+            //stuInfo.hWnd = playback_pictureBox.Handle;
+            stuInfo.cbDownLoadPos = null;
+            stuInfo.dwPosUser = IntPtr.Zero;
+            stuInfo.fDownLoadDataCallBack = null;
+            stuInfo.dwDataUser = IntPtr.Zero;
+            stuInfo.nPlayDirection = 0;
+            stuInfo.nWaittime = 5000;
+            MemoryStream videoMemoryStream = new MemoryStream();
+            stuInfo.fDownLoadDataCallBack += delegate (IntPtr handle, uint type, IntPtr buffer, uint size, IntPtr user) {
+                //Console.WriteLine($"{buffer}");
+                // 将回调数据写入内存流中
+                byte[] data = new byte[size];
+                Marshal.Copy(buffer, data, 0, (int)size);
+                videoMemoryStream.Write(data, 0, data.Length);
+                Console.WriteLine(videoMemoryStream.Length);
+                return (int)size;
+            };
+            var getValue = _loginDev.TryGetValue(serialNo, out var mLoginId);
+            if (getValue && mLoginId != IntPtr.Zero) {
+                var playBackByTime = NETClient.PlayBackByTime(mLoginId, channelId, stuInfo, ref stuOut);
+                if (IntPtr.Zero == playBackByTime) {
+                    Console.WriteLine($"mLoginId:{mLoginId}");
+                    Console.WriteLine($"channelId:{channelId}");
+                    return new KeyValuePair<bool, string>(false, "初始化播放Id失败");
+                }
+                _playBackIds.TryAdd(serialNo, playBackByTime);
+                //加入队列
+                return new KeyValuePair<bool, string>(true, string.Empty);
+            }
+            else {
+                return new KeyValuePair<bool, string>(false, "设备未登录");
+            }
+        }
+
+        private KeyValuePair<bool, string> QueryFile(IntPtr mLoginId, int channelId, DateTime startTime, DateTime endTime, ref NET_RECORDFILE_INFO[] infos, ref int fileCount) {
+            //set stream type 设置码流类型 (一律主码流)
+            const EM_STREAM_TYPE streamType = EM_STREAM_TYPE.MAIN;
+            var pStream = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(int)));
+            Marshal.StructureToPtr((int)streamType, pStream, true);
+            NETClient.SetDeviceMode(mLoginId, EM_USEDEV_MODE.RECORD_STREAM_TYPE, pStream);
+            //query record file 查询录像文件
+            var ret = NETClient.QueryRecordFile(mLoginId, channelId, EM_QUERY_RECORD_TYPE.ALL, startTime, endTime, null, ref infos, ref fileCount, 5000, false);
+            Console.WriteLine($"{channelId}");
+            Console.WriteLine($"{startTime}--{endTime}");
+            Console.WriteLine($"fileCount:{fileCount}");
+            return (false == ret || fileCount <= 0) ? new KeyValuePair<bool, string>(false, "录像文件不存在") : new KeyValuePair<bool, string>(true, string.Empty);
+        }
+
+        private static bool IsImageDataValid(Stream stream) {
+            try {
+                var header = new byte[8]; // 读取文件头的字节数
+                if (stream.Read(header, 0, 8) != 8) {
                     return false;
                 }
-            }
 
-            return true;
+                // 判断图像文件头是否匹配有效的图像格式
+                // 这里以JPEG格式为例
+                var jpegHeader = new byte[] { 0xFF, 0xD8, 0xFF };
+                for (var i = 0; i < 3; i++) {
+                    if (header[i] != jpegHeader[i]) {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+            catch (Exception e) {
+                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
+                return false;
+            }
         }
+    }
+
+    public class VideoTime {
+        public DateTime StartTime { get; set; }
+
+        public DateTime EndTime { get; set; }
     }
 }
