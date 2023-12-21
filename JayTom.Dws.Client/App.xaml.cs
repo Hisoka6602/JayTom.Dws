@@ -435,6 +435,8 @@ namespace JayTom.Dws.Client {
                         services.AddSingleton(container1.Resolve<ISerialPortConfigRepository>());
                         services.AddSingleton(container1.Resolve<ITcpConfigRepository>());
                         services.AddSingleton(container1.Resolve<ITcpConnectionConfigRepository>());
+                        services.AddSingleton(container1.Resolve<INvrCameraBindingRepository>());
+
                         //logs
                         services.AddSingleton(container1.Resolve<IAppLogRepository>());
                         services.AddSingleton(container1.Resolve<ICameraLogRepository>());

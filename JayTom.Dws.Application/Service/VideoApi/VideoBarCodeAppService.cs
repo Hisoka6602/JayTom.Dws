@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using JayTom.Dws.Application.Dto;
 using JayTom.Dws.Data.VideoApiData;
+using JayTom.Dws.Domain.Dto.CloudDto;
 using JayTom.Dws.Domain.Dto.VideoApi;
 using JayTom.Dws.Domain.Service.VideoApi;
 
@@ -58,6 +59,14 @@ namespace JayTom.Dws.Application.Service.VideoApi {
                                         Description = s1.Description,
                                         Name = s1.Name,
                                         ScanTime = s1.ScanTime,
+                                        NvrCameraBindingInfo = new NvrCameraBindingDto() {
+                                            BarcodeScannerSerialNumber = s1.VideoNvrCameraBindingInfo?.BarcodeScannerSerialNumber ?? string.Empty,
+                                            Channel = s1.VideoNvrCameraBindingInfo?.Channel ?? 0,
+                                            IpAddress = s1.VideoNvrCameraBindingInfo?.IpAddress ?? string.Empty,
+                                            Password = s1.VideoNvrCameraBindingInfo?.Password ?? string.Empty,
+                                            Username = s1.VideoNvrCameraBindingInfo?.Username ?? string.Empty,
+                                            Port = s1.VideoNvrCameraBindingInfo?.Port ?? 0,
+                                        },
                                         BarcodeImageInfos = s1.VideoNodeImageInfos?
                                             .Select(s2 => new BarcodeImageInfoDto {
                                                 CameraName = s2.CameraName,

@@ -14,8 +14,10 @@ using System.Collections.Generic;
 using JayTom.Dws.Interface.Cloud;
 using JayTom.Dws.Domain.Dto.CloudDto;
 using JayTom.Dws.Client.EventMediators;
+using JayTom.Dws.Data.LocalConf.CloudConfig;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Repository.LocalData;
+using JayTom.Dws.Domain.Repository.LocalConf.CloudConfig;
 
 namespace JayTom.Dws.Client.Service.BackgroundService {
 
@@ -24,17 +26,21 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private readonly ICloud _cloud;
         private readonly IBarCodeRepository _barCodeRepository;
         private readonly ICloudVideoUploadRepository _cloudVideoUploadRepository;
+        private readonly INvrCameraBindingRepository _nvrCameraBindingRepository;
         private CloudVideoSettingsDto _cloudVideoSettingsDto = new();
         private DateTime _startTime = DateTime.Now;
         private SemaphoreSlim _cloudVideoUpLoadSlim = new(2);
+        private List<NvrCameraBindingInfoModel> _nvrCameraBindingInfoModels = new();
 
         public CloudBackgroundService(IConfigRepository configRepository,
             ICloud cloud, IBarCodeRepository barCodeRepository,
-            ICloudVideoUploadRepository cloudVideoUploadRepository) {
+            ICloudVideoUploadRepository cloudVideoUploadRepository,
+            INvrCameraBindingRepository nvrCameraBindingRepository) {
             _configRepository = configRepository;
             _cloud = cloud;
             _barCodeRepository = barCodeRepository;
             _cloudVideoUploadRepository = cloudVideoUploadRepository;
+            _nvrCameraBindingRepository = nvrCameraBindingRepository;
             EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async item => {
                 if (item is SettingsChangedEvent { SettingsName: "CloudVideoSettings" }) {
                     try {
@@ -63,6 +69,10 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     _startTime = new DateTime(1970, 1, 1);
                 }
             }
+
+            _nvrCameraBindingInfoModels = await _nvrCameraBindingRepository.Select(s => s.Id > 0,
+                o => o.Id, stoppingToken);
+
             while (!stoppingToken.IsCancellationRequested) {
                 //设置参数
                 //提交到云端
@@ -70,7 +80,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     if (_cloudVideoUpLoadSlim.CurrentCount > 0) {
                         var (key, value) = await _barCodeRepository.SelectBarCode(s =>
                                 s.ScanTime.CompareTo(_startTime) > 0 &&
-                                s.ScanTime.CompareTo(DateTime.Now.AddSeconds(-90)) <= 0 &&
+                                s.ScanTime.CompareTo(DateTime.Now.AddSeconds(-20)) <= 0 &&
                                 (s.CloudVideoUploadInfo == null || s.CloudVideoUploadInfo.UploadTime == null),
                             o => o.ScanTime, 0,
                             _cloudVideoSettingsDto.Concurrency, stoppingToken);
@@ -109,6 +119,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     { "Timeout", _cloudVideoSettingsDto.RequestTimeout },
                     });
                     if (key) {
+                        var cameraSerialNumber = barCodeInfoModel.ImageInfos?.FirstOrDefault(f => f.Type == 0)?.CameraSerialNumber;
+                        //取出绑定信息
+                        var nvrCameraBindingInfoModel = _nvrCameraBindingInfoModels.FirstOrDefault(f => !string.IsNullOrEmpty(cameraSerialNumber)
+                            && f.BarcodeScannerSerialNumber.Equals(
+                                cameraSerialNumber)) ?? new NvrCameraBindingInfoModel();
                         var cloudUploadResponse = await _cloud.UploadData(barCodeInfoModel.Barcode,
                             barCodeInfoModel.ScanTime, barCodeInfoModel.Weight,
                             _cloudVideoSettingsDto.NodeName,
@@ -119,7 +134,14 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                     CustomCameraName = s.CustomCameraName,
                                     Type = s.Type,
                                     Image = File.Exists(s.LocalPath) ? Image.FromFile(s.LocalPath) : null
-                                })?.ToList(), token: token);
+                                })?.ToList(), nvrCameraBindingInfo: new CloudNvrCameraBindingInfo() {
+                                    BarcodeScannerSerialNumber = nvrCameraBindingInfoModel.BarcodeScannerSerialNumber,
+                                    Channel = nvrCameraBindingInfoModel.Channel,
+                                    IpAddress = nvrCameraBindingInfoModel.IpAddress,
+                                    Password = nvrCameraBindingInfoModel.Password,
+                                    Port = nvrCameraBindingInfoModel.Port,
+                                    Username = nvrCameraBindingInfoModel.Username
+                                }, token: token);
                         EventAggregator.Instance.Publish(new CloudVideoUploadMessage {
                             Barcode = barCodeInfoModel.Barcode,
                             IsSuccessful = cloudUploadResponse.IsSuccessful,

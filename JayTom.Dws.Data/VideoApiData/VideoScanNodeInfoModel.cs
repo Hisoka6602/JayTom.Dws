@@ -40,5 +40,10 @@ namespace JayTom.Dws.Data.VideoApiData {
         /// 节点图片信息
         /// </summary>
         public virtual ICollection<VideoNodeImageInfoModel>? VideoNodeImageInfos { get; set; }
+
+        /// <summary>
+        /// NVR信息
+        /// </summary>
+        public virtual VideoNvrCameraBindingInfoModel? VideoNvrCameraBindingInfo { get; set; }
     }
 }

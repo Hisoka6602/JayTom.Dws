@@ -83,6 +83,53 @@ namespace ConsoleApp5.Migrations
                     b.ToTable("Data_VideoNodeImageInfo", "dbo");
                 });
 
+            modelBuilder.Entity("JayTom.Dws.Data.VideoApiData.VideoNvrCameraBindingInfoModel", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("Id");
+
+                    b.Property<string>("BarcodeScannerSerialNumber")
+                        .IsRequired()
+                        .HasColumnType("longtext")
+                        .HasColumnName("BarcodeScannerSerialNumber");
+
+                    b.Property<int>("Channel")
+                        .HasColumnType("int")
+                        .HasColumnName("Channel");
+
+                    b.Property<string>("IpAddress")
+                        .IsRequired()
+                        .HasColumnType("longtext")
+                        .HasColumnName("IpAddress");
+
+                    b.Property<string>("Password")
+                        .IsRequired()
+                        .HasColumnType("longtext")
+                        .HasColumnName("Password");
+
+                    b.Property<int>("Port")
+                        .HasColumnType("int")
+                        .HasColumnName("Port");
+
+                    b.Property<long>("ScanNodeId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("ScanNodeId");
+
+                    b.Property<string>("Username")
+                        .IsRequired()
+                        .HasColumnType("longtext")
+                        .HasColumnName("Username");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ScanNodeId")
+                        .IsUnique();
+
+                    b.ToTable("Data_VideoNvrCameraBindingInfo", "dbo");
+                });
+
             modelBuilder.Entity("JayTom.Dws.Data.VideoApiData.VideoScanNodeInfoModel", b =>
                 {
                     b.Property<long>("Id")
@@ -126,6 +173,17 @@ namespace ConsoleApp5.Migrations
                     b.Navigation("ScanNodeInfo");
                 });
 
+            modelBuilder.Entity("JayTom.Dws.Data.VideoApiData.VideoNvrCameraBindingInfoModel", b =>
+                {
+                    b.HasOne("JayTom.Dws.Data.VideoApiData.VideoScanNodeInfoModel", "ScanNodeInfo")
+                        .WithOne("VideoNvrCameraBindingInfo")
+                        .HasForeignKey("JayTom.Dws.Data.VideoApiData.VideoNvrCameraBindingInfoModel", "ScanNodeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ScanNodeInfo");
+                });
+
             modelBuilder.Entity("JayTom.Dws.Data.VideoApiData.VideoScanNodeInfoModel", b =>
                 {
                     b.HasOne("JayTom.Dws.Data.VideoApiData.VideoBarCodeInfoModel", "BarCodeInfo")
@@ -145,6 +203,8 @@ namespace ConsoleApp5.Migrations
             modelBuilder.Entity("JayTom.Dws.Data.VideoApiData.VideoScanNodeInfoModel", b =>
                 {
                     b.Navigation("VideoNodeImageInfos");
+
+                    b.Navigation("VideoNvrCameraBindingInfo");
                 });
 #pragma warning restore 612, 618
         }

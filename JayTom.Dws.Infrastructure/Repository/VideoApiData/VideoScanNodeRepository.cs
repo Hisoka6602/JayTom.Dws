@@ -59,15 +59,18 @@ namespace JayTom.Dws.Infrastructure.Repository.VideoApiData {
                         if (contextTransaction is not null) {
                             var videoScanNodeInfoModels = concardContext?.Set<VideoScanNodeInfoModel>();
                             var videoNodeImageInfoModels = concardContext?.Set<VideoNodeImageInfoModel>();
-
+                            var videoNvrCameraBindingInfoModels = concardContext?.Set<VideoNvrCameraBindingInfoModel>();
                             var videoScanNodeInfoModel = videoScanNodeInfoModels?.FirstOrDefault(f => f.BarcodeId.Equals(entity.BarcodeId) &&
-                                f.Name.Equals(entity.Name));
+                                                                                                      f.Name.Equals(entity.Name));
                             if (videoScanNodeInfoModel != null) {
                                 entity.Id = videoScanNodeInfoModel.Id;
                                 // 先删除原有的
                                 var nodeImageInfoModels = videoNodeImageInfoModels?.AsTracking()?.Where(w => w.ScanNodeId.Equals(entity.Id))
                                     ?.ToList() ?? new List<VideoNodeImageInfoModel>();
                                 concardContext.RemoveRange(nodeImageInfoModels);
+                                var nvrCameraBindingInfoModels = videoNvrCameraBindingInfoModels?.AsTracking()
+                                    ?.Where(w => w.ScanNodeId.Equals(entity.Id))?.ToList() ?? new List<VideoNvrCameraBindingInfoModel>();
+                                concardContext.RemoveRange(nvrCameraBindingInfoModels);
                                 videoScanNodeInfoModels.Update(entity);
                             }
                             else {

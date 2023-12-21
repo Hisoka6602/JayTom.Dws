@@ -3,6 +3,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using JayTom.Dws.Domain.Dto.CloudDto;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -58,6 +59,11 @@ namespace JayTom.Dws.Application.Dto {
         /// </summary>
 
         public string Description { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 绑定通道
+        /// </summary>
+        public NvrCameraBindingDto NvrCameraBindingInfo { get; set; } = new();
 
         /// <summary>
         /// 图片

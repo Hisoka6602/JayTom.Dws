@@ -1,4 +1,6 @@
-﻿namespace JayTom.Dws.Domain.Dto.VideoApi {
+﻿using JayTom.Dws.Domain.Dto.CloudDto;
+
+namespace JayTom.Dws.Domain.Dto.VideoApi {
 
     public class ScanNodeDto {
 
@@ -21,5 +23,10 @@
         /// 说明
         /// </summary>
         public string Description { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Nvr通道信息
+        /// </summary>
+        public NvrCameraBindingDto NvrCameraBindingInfo { get; set; } = new();
     }
 }

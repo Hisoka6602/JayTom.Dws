@@ -25,6 +25,9 @@ namespace JayTom.Dws.Infrastructure {
             modelBuilder.Entity<VideoScanNodeInfoModel>().HasKey(c => new {
                 c.Id
             });
+            modelBuilder.Entity<VideoNvrCameraBindingInfoModel>().HasKey(c => new {
+                c.Id
+            });
             //配置对应关系
 
             modelBuilder.Entity<VideoBarCodeInfoModel>()
@@ -37,6 +40,12 @@ namespace JayTom.Dws.Infrastructure {
                 .HasMany(b => b.VideoNodeImageInfos)
                 .WithOne(n => n.ScanNodeInfo)
                 .HasForeignKey(n => new { n.ScanNodeId })
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<VideoScanNodeInfoModel>()
+                .HasOne(b => b.VideoNvrCameraBindingInfo)
+                .WithOne(n => n.ScanNodeInfo)
+                .HasForeignKey<VideoNvrCameraBindingInfoModel>(n => n.ScanNodeId)
                 .OnDelete(DeleteBehavior.Cascade);
         }
     }

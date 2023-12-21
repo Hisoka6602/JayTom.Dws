@@ -70,6 +70,8 @@ namespace JayTom.Dws.Infrastructure.Repository.VideoApiData {
 
                     var videoBarCodeInfoModels = await dbSet.AsNoTracking()
                         ?.Include(a => a.VideoScanNodeInfos)
+                        ?.ThenInclude(b => b.VideoNvrCameraBindingInfo)
+                        ?.Include(a => a.VideoScanNodeInfos)
                         ?.ThenInclude(b => b.VideoNodeImageInfos)
                         ?.Where(w => w.VideoScanNodeInfos != null &&
                                      (string.IsNullOrEmpty(barCode) || w.Barcode.Contains(barCode)) &&
@@ -78,6 +80,7 @@ namespace JayTom.Dws.Infrastructure.Repository.VideoApiData {
                                      (string.IsNullOrEmpty(nodeName) || w.VideoScanNodeInfos.Any(v => v.Name.Contains(nodeName))) &&
                                      ((string.IsNullOrEmpty(cameraName) || w.VideoScanNodeInfos.Any(v => v.VideoNodeImageInfos != null && v.VideoNodeImageInfos.Any(vni => vni.CameraName.Contains(cameraName))))) &&
                                      ((string.IsNullOrEmpty(cameraSerialNumber) || w.VideoScanNodeInfos.Any(v => v.VideoNodeImageInfos != null && v.VideoNodeImageInfos.Any(vni => vni.CameraName.Contains(cameraSerialNumber))))))
+                         ?.Include(a => a.VideoScanNodeInfos)
                         ?.OrderByDescending(o => o.ScanTime)
                         ?.Skip(pageIndex * pageSize)
                         ?.Take(pageSize)
@@ -98,6 +101,7 @@ namespace JayTom.Dws.Infrastructure.Repository.VideoApiData {
                                    ScanTime = s1.ScanTime,
                                    Description = s1.Description,
                                    Name = s1.Name,
+                                   VideoNvrCameraBindingInfo = s1.VideoNvrCameraBindingInfo ?? new VideoNvrCameraBindingInfoModel(),
                                    VideoNodeImageInfos = s1.VideoNodeImageInfos?.Where(w1 =>
                                            (string.IsNullOrEmpty(cameraName) || w1.CameraName.Contains(cameraName)) &&
                                            (string.IsNullOrEmpty(cameraSerialNumber) ||

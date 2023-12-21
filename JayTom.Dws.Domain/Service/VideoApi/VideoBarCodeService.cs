@@ -84,9 +84,18 @@ namespace JayTom.Dws.Domain.Service.VideoApi {
                                 Description = scanNodeInfo.Description,
                                 Name = scanNodeInfo.ScanNodName,
                                 ScanTime = scanNodeInfo.ScanTime,
-                                VideoNodeImageInfos = imageInfoModels
+                                VideoNodeImageInfos = imageInfoModels,
+                                VideoNvrCameraBindingInfo = new VideoNvrCameraBindingInfoModel()
+                                {
+                                    BarcodeScannerSerialNumber = scanNodeInfo.NvrCameraBindingInfo.BarcodeScannerSerialNumber,
+                                    Channel = scanNodeInfo.NvrCameraBindingInfo.Channel,
+                                    IpAddress = scanNodeInfo.NvrCameraBindingInfo.IpAddress,
+                                    Password = scanNodeInfo.NvrCameraBindingInfo.Password,
+                                    Port = scanNodeInfo.NvrCameraBindingInfo.Port,
+                                    Username = scanNodeInfo.NvrCameraBindingInfo.Username
+                                }
                             }
-                        }
+                        },
                     });
                 }
                 else {
@@ -96,6 +105,14 @@ namespace JayTom.Dws.Domain.Service.VideoApi {
                         Name = scanNodeInfo.ScanNodName,
                         ScanTime = scanNodeInfo.ScanTime,
                         VideoNodeImageInfos = imageInfoModels,
+                        VideoNvrCameraBindingInfo = new VideoNvrCameraBindingInfoModel() {
+                            BarcodeScannerSerialNumber = scanNodeInfo.NvrCameraBindingInfo.BarcodeScannerSerialNumber,
+                            Channel = scanNodeInfo.NvrCameraBindingInfo.Channel,
+                            IpAddress = scanNodeInfo.NvrCameraBindingInfo.IpAddress,
+                            Password = scanNodeInfo.NvrCameraBindingInfo.Password,
+                            Port = scanNodeInfo.NvrCameraBindingInfo.Port,
+                            Username = scanNodeInfo.NvrCameraBindingInfo.Username
+                        }
                     });
                 }
 

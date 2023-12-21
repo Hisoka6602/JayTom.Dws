@@ -12,12 +12,12 @@ internal class Program {
     private static string _connectionString = string.Empty;
 
     public static void Main(string[] args) {
-        var builder = new ConfigurationBuilder()
+        /*var builder = new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())
             .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
 
         var configuration = builder.Build();
-        _connectionString = configuration.GetConnectionString("DefaultConnection") ?? string.Empty;
+        _connectionString = configuration.GetConnectionString("DefaultConnection") ?? string.Empty;*/
         CreateMigration();
         Console.WriteLine("Migration completed successfully.");
         Console.ReadLine();
@@ -35,8 +35,8 @@ internal class Program {
         public VideoApiContext1 CreateDbContext(string[] args) {
             var optionsBuilder = new DbContextOptionsBuilder<VideoApiContext1>();
 
-            optionsBuilder.UseMySql(_connectionString,
-                ServerVersion.AutoDetect(_connectionString),
+            optionsBuilder.UseMySql("Server=localhost;Port=3306;Password=4cW3Ld4KNYWaF8M3;Database=dh;User=DH;",
+                ServerVersion.AutoDetect("Server=localhost;Port=3306;Password=4cW3Ld4KNYWaF8M3;Database=dh;User=DH;"),
                 builder => {
                     builder.SchemaBehavior(MySqlSchemaBehavior.Ignore);
                 });
@@ -49,11 +49,9 @@ internal class Program {
         public VideoApiContext1(DbContextOptions<VideoApiContext1> options) : base(options) {
         }
 
-        /*
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
-            optionsBuilder.UseSqlServer("data source=82.156.244.249;initial catalog=DwsVideoApi;persist security info=true;user id=sa;password=Yunshan2021+-/;Max Pool Size = 32767;Packet Size= 1024;Connect Timeout=10;TrustServerCertificate=true");
-        }
-        */
+        /*protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
+            optionsBuilder.UseSqlServer("Server=127.0.0.1;Port=3306;Password=f6vQDiiWpXLDUCxR;Database=dh;User=root;");
+        }*/
 
         protected override void OnModelCreating(ModelBuilder modelBuilder) {
             base.OnModelCreating(modelBuilder);
@@ -65,6 +63,9 @@ internal class Program {
                 c.Id
             });
             modelBuilder.Entity<VideoScanNodeInfoModel>().HasKey(c => new {
+                c.Id
+            });
+            modelBuilder.Entity<VideoNvrCameraBindingInfoModel>().HasKey(c => new {
                 c.Id
             });
             //配置对应关系
@@ -79,6 +80,12 @@ internal class Program {
                 .HasMany(b => b.VideoNodeImageInfos)
                 .WithOne(n => n.ScanNodeInfo)
                 .HasForeignKey(n => new { n.ScanNodeId })
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<VideoScanNodeInfoModel>()
+                .HasOne(b => b.VideoNvrCameraBindingInfo)
+                .WithOne(n => n.ScanNodeInfo)
+                .HasForeignKey<VideoNvrCameraBindingInfoModel>(n => n.ScanNodeId)
                 .OnDelete(DeleteBehavior.Cascade);
         }
     }

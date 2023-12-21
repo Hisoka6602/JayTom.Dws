@@ -22,6 +22,7 @@ namespace JayTom.Dws.Interface.Cloud {
         /// <param name="ocrInfo">Ocr信息</param>
         /// <param name="uploadApiInfo">Api上传信息</param>
         /// <param name="sortingInfo">分拣信息</param>
+        /// <param name="nvrCameraBindingInfo"></param>
         /// <param name="other">其他</param>
         /// <param name="token"></param>
         /// <returns></returns>
@@ -34,6 +35,7 @@ namespace JayTom.Dws.Interface.Cloud {
             CloudUploadOcrInfo? ocrInfo = default,
             CloudUploadApiInfo? uploadApiInfo = default,
             CloudUploadSortingInfo? sortingInfo = default,
+            CloudNvrCameraBindingInfo? nvrCameraBindingInfo = default,
             object? other = null, CancellationToken token = default);
 
         /// <summary>
@@ -201,5 +203,41 @@ namespace JayTom.Dws.Interface.Cloud {
     /// 分拣信息
     /// </summary>
     public class CloudUploadSortingInfo {
+    }
+
+    /// <summary>
+    /// NVR绑定信息
+    /// </summary>
+    public class CloudNvrCameraBindingInfo {
+
+        /// <summary>
+        /// IP地址
+        /// </summary>
+        public string IpAddress { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 端口号
+        /// </summary>
+        public int Port { get; set; }
+
+        /// <summary>
+        /// 用户名
+        /// </summary>
+        public string Username { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 密码
+        /// </summary>
+        public string Password { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 通道
+        /// </summary>
+        public int Channel { get; set; }
+
+        /// <summary>
+        /// 扫码相机序列号
+        /// </summary>
+        public string BarcodeScannerSerialNumber { get; set; } = string.Empty;
     }
 }

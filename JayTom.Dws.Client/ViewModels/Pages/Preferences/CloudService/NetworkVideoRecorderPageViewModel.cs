@@ -156,7 +156,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService {
                     //保存设置
 
                     var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
-                        ConfigName = "CloudVideoSettings",
+                        ConfigName = "NetworkVideoRecorderSettings",
                         Value = JsonConvert.SerializeObject(new NvrClientSettingsDto() {
                             Ip = NvrClientSettingsInfo.Ip,
                             Port = NvrClientSettingsInfo.Port,
@@ -168,7 +168,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService {
                     });
                     if (insertOrUpdate) {
                         EventAggregator.Instance.Publish(new SettingsChangedEvent {
-                            SettingsName = "NvrClientSettings"
+                            SettingsName = "NetworkVideoRecorderSettings"
                         });
                     }
 
@@ -198,7 +198,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService {
                 }
 
                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
-                    var configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("CloudVideoSettings"));
+                    var configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("NetworkVideoRecorderSettings"));
                     if (configInfoModel is not null) {
                         try {
                             var vnrClientSettingsDto = JsonConvert.DeserializeObject<NvrClientSettingsDto>(configInfoModel.Value);
