@@ -354,7 +354,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                     ConnectionType = (int)obj.ConnectionType,
                     CameraType = (int)obj.CameraType,
                     IpAddress = obj.IpAddress,
-                    CaptureDelayTime = 2000,
+                    CaptureDelayTime = 100,
                     Model = obj.Model,
                     Name = obj.Name,
                     SerialNumber = obj.SerialNumber,

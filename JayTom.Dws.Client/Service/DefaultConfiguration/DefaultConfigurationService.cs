@@ -119,7 +119,13 @@ namespace JayTom.Dws.Client.Service.DefaultConfiguration {
                                 ApplicationType = ItemApplicationType.ImageNaming,
                                 Type =1,
                                 Content = "{BarCode}"
-                            }
+                            },
+                            new()
+                            {
+                                ApplicationType = ItemApplicationType.ImageNaming,
+                                Type =1,
+                                Content = "{ScanTime}"
+                            },
                         },
                         IsFtpUploadEnabled = false,
                         FtpInfo = new FtpInfo() {

@@ -156,7 +156,7 @@ namespace JayTom.Dws.VideoApiClient.Api {
                 using (var httpClient = _httpClientFactory.CreateClient("INSURANCE")) {
                     httpClient.Timeout = TimeSpan.FromSeconds(10);
                     HttpResponseMessage message;
-                    message = await httpClient.GetAsync($"{Domain}{"/api/BarCode/GroupedNodeNames"}?date={date}", cancellationToken)
+                    message = await httpClient.GetAsync($"{Domain}{"/api/BarCode/BarcodeTotalForDate"}?date={date}", cancellationToken)
                         .ConfigureAwait(false);
                     string httpResult;
                     switch (message.StatusCode) {

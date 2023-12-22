@@ -176,13 +176,13 @@ namespace JayTom.Dws.VideoApiClient.ViewModels {
                     }
 
                     var (b, o) = await _videoApi.BarcodeTotalForDate(DateTime.Today);
-                    if (b && o is ApiResult { Data: int total }) {
-                        TodayBarcodeCount = total;
+                    if (b && o is ApiResult { Data: long total }) {
+                        TodayBarcodeCount = (int)total;
                     }
 
                     var (key1, value1) = await _videoApi.BarcodeTotalForDate(DateTime.Today.AddDays(-1));
-                    if (key1 && value1 is ApiResult { Data: int count }) {
-                        TodayBarcodeCount = count;
+                    if (key1 && value1 is ApiResult { Data: long count }) {
+                        YesterdayBarcodeCount = (int)count;
                     }
                 });
             });
@@ -390,6 +390,8 @@ namespace JayTom.Dws.VideoApiClient.ViewModels {
         }
 
         private void VideoDelegate(BarCodeItemModel obj) {
+            //调用视频Demo并传参
+            Console.WriteLine(obj);
         }
 
         #region 翻页执行方法
@@ -502,6 +504,20 @@ namespace JayTom.Dws.VideoApiClient.ViewModels {
                                                     ImageVisible = !string.IsNullOrEmpty(s1.Path),
                                                     ImageUrl = s1.Path
                                                 })?.ToList() ?? new List<PanoramaImageItemModel>()),
+                                            NvrCameraBindingItemInfo = new NvrCameraBindingItemInfo() {
+                                                BarcodeScannerSerialNumber = s.s.NvrCameraBindingInfo.BarcodeScannerSerialNumber,
+                                                Channel = s.s.NvrCameraBindingInfo.Channel,
+                                                IpAddress = s.s.NvrCameraBindingInfo.IpAddress,
+                                                Password = s.s.NvrCameraBindingInfo.Password,
+                                                Port = s.s.NvrCameraBindingInfo.Port,
+                                                Username = s.s.NvrCameraBindingInfo.Username
+                                            },
+                                            IsVideoLinkVisible =
+                                                new Func<bool>(() => !string.IsNullOrEmpty(s.s.NvrCameraBindingInfo.BarcodeScannerSerialNumber) &&
+                                                                     !string.IsNullOrEmpty(s.s.NvrCameraBindingInfo.Password) &&
+                                                                     !string.IsNullOrEmpty(s.s.NvrCameraBindingInfo.Username) &&
+                                                                     !string.IsNullOrEmpty(s.s.NvrCameraBindingInfo.IpAddress) &&
+                                                                     s.s.NvrCameraBindingInfo is { Port: > 0, Channel: > 0 })(),
                                         })?.OrderByDescending(o => o.ScanTime)?.ToList();
                                     BarCodeItems.AddRange(barCodeItemModels);
                                 }

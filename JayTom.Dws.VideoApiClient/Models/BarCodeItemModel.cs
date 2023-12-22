@@ -18,6 +18,8 @@ namespace JayTom.Dws.VideoApiClient.Models {
         private string? _scanImageUrl;
         private bool _scanImageVisible;
         private ObservableCollection<PanoramaImageItemModel> _panoramaImageItems = new();
+        private bool _isVideoLinkVisible;
+        private NvrCameraBindingItemInfo? _nvrCameraBindingItemInfo;
 
         public int Num {
             get => _num;
@@ -81,11 +83,24 @@ namespace JayTom.Dws.VideoApiClient.Models {
         }
 
         /// <summary>
+        /// 是否显示视频链接
+        /// </summary>
+        public bool IsVideoLinkVisible {
+            get => _isVideoLinkVisible;
+            set => SetProperty(ref _isVideoLinkVisible, value);
+        }
+
+        /// <summary>
         /// 全景图
         /// </summary>
         public ObservableCollection<PanoramaImageItemModel> PanoramaImageItems {
             get => _panoramaImageItems;
             set => SetProperty(ref _panoramaImageItems, value);
+        }
+
+        public NvrCameraBindingItemInfo? NvrCameraBindingItemInfo {
+            get => _nvrCameraBindingItemInfo;
+            set => SetProperty(ref _nvrCameraBindingItemInfo, value);
         }
     }
 }

@@ -23,6 +23,7 @@ using System.Windows.Interop;
 using System.Security.Policy;
 using System.Windows.Controls;
 using MaterialDesignThemes.Wpf;
+using System.Windows.Threading;
 using JayTom.Dws.Data.LocalConf;
 using System.Collections.Generic;
 using System.Windows.Media.Imaging;
@@ -282,16 +283,16 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService {
         }
 
         private void LogInDelegate(object obj) {
-            //_nvrManager
             if (!IsLogInProgress) {
                 IsLogInProgress = true;
                 Task.Run(async () => {
+                    var (key, value) = await _nvrManager.Login(NvrClientSettingsInfo.Ip,
+                        NvrClientSettingsInfo.Port,
+                        NvrClientSettingsInfo.Username,
+                        NvrClientSettingsInfo.Password);
                     await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
                         ChannelItems.Clear();
-                        var (key, value) = await _nvrManager.Login(NvrClientSettingsInfo.Ip,
-                            NvrClientSettingsInfo.Port,
-                            NvrClientSettingsInfo.Username,
-                            NvrClientSettingsInfo.Password);
+
                         if (key) {
                             var (b, ints) = await _nvrManager.EnumerateChannels();
                             if (b) {
@@ -307,7 +308,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService {
                         }
 
                         IsLogInProgress = false;
-                    });
+                    }, DispatcherPriority.Background);
                 });
             }
         }

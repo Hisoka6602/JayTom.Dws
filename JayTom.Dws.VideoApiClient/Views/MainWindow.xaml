@@ -657,7 +657,7 @@
                                             Focusable="False"
                                             Style="{StaticResource MaterialDesignFlatLightButton}"
                                             ToolTip="查看视频"
-                                            Visibility="Visible">
+                                            Visibility="{Binding IsVideoLinkVisible, Converter={StaticResource BooleanToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}">
                                             <StackPanel Orientation="Horizontal">
 
                                                 <!--<TextBlock
