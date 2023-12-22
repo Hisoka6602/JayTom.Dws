@@ -31,6 +31,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private DateTime _startTime = DateTime.Now;
         private SemaphoreSlim _cloudVideoUpLoadSlim = new(2);
         private List<NvrCameraBindingInfoModel> _nvrCameraBindingInfoModels = new();
+        private SemaphoreSlim _setNvrCameraBindingSlim = new(1);
 
         public CloudBackgroundService(IConfigRepository configRepository,
             ICloud cloud, IBarCodeRepository barCodeRepository,
@@ -55,6 +56,19 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     }
                     catch (Exception e) {
                         NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
+                    }
+                }
+                else if (item is SettingsChangedEvent { SettingsName: "NvrCameraBindingInfoModel" }) {
+                    try {
+                        await _setNvrCameraBindingSlim.WaitAsync();
+                        _nvrCameraBindingInfoModels = await _nvrCameraBindingRepository.Select(s => s.Id > 0,
+                            o => o.Id);
+                    }
+                    catch (Exception e) {
+                        NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
+                    }
+                    finally {
+                        _setNvrCameraBindingSlim.Release();
                     }
                 }
             });
@@ -121,9 +135,17 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     if (key) {
                         var cameraSerialNumber = barCodeInfoModel.ImageInfos?.FirstOrDefault(f => f.Type == 0)?.CameraSerialNumber;
                         //取出绑定信息
-                        var nvrCameraBindingInfoModel = _nvrCameraBindingInfoModels.FirstOrDefault(f => !string.IsNullOrEmpty(cameraSerialNumber)
-                            && f.BarcodeScannerSerialNumber.Equals(
-                                cameraSerialNumber)) ?? new NvrCameraBindingInfoModel();
+                        NvrCameraBindingInfoModel nvrCameraBindingInfoModel;
+                        try {
+                            await _setNvrCameraBindingSlim.WaitAsync(token);
+                            nvrCameraBindingInfoModel = _nvrCameraBindingInfoModels.FirstOrDefault(f => !string.IsNullOrEmpty(cameraSerialNumber)
+                                && f.BarcodeScannerSerialNumber.Equals(
+                                    cameraSerialNumber)) ?? new NvrCameraBindingInfoModel();
+                        }
+                        finally {
+                            _setNvrCameraBindingSlim.Release();
+                        }
+
                         var cloudUploadResponse = await _cloud.UploadData(barCodeInfoModel.Barcode,
                             barCodeInfoModel.ScanTime, barCodeInfoModel.Weight,
                             _cloudVideoSettingsDto.NodeName,

@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using LibreHardwareMonitor.Hardware;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Service.Device;
+using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Data.LocalConf.CloudConfig;
 using JayTom.Dws.Client.Models.CloudSettingModel;
 using JayTom.Dws.Domain.Repository.LocalConf.CloudConfig;
@@ -185,10 +186,12 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CloudService {
             //保存到表
             //先删除
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+                var list = NvrCameraBindingItems.Where(w => w.IsBinding).Select(s => s.CameraSerialNumber)?.ToList() ??
+                           new List<string>();
                 var nvrCameraBindingInfoModels = await _nvrCameraBindingRepository.Select(s =>
-                    s.Channel.Equals(Channel) &&
+                    (s.Channel.Equals(Channel) &&
                     s.IpAddress.Equals(IpAddress) &&
-                    s.Port.Equals(Port), o => o.Id);
+                    s.Port.Equals(Port) || list.Contains(s.BarcodeScannerSerialNumber)), o => o.Id);
                 if (nvrCameraBindingInfoModels?.Any() == true) {
                     var deleteRange = await _nvrCameraBindingRepository.DeleteRange(nvrCameraBindingInfoModels);
                     if (!deleteRange) {
@@ -207,6 +210,11 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CloudService {
                     new List<NvrCameraBindingInfoModel>());
                 if (!insertRange) {
                     Message = "保存失败";
+                }
+                else {
+                    EventAggregator.Instance.Publish(new SettingsChangedEvent {
+                        SettingsName = "NvrCameraBindingInfoModel"
+                    });
                 }
                 if (DialogHost.IsDialogOpen(Identifier)) {
                     DialogHost.Close(Identifier);

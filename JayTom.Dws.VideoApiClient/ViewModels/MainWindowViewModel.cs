@@ -1,17 +1,21 @@
 ﻿using System;
 using Prism.Mvvm;
+using System.Net;
 using System.Linq;
 using System.Text;
 using Prism.Commands;
 using System.Windows;
+using Newtonsoft.Json;
 using System.Threading;
 using System.Diagnostics;
 using System.Windows.Input;
+using System.Globalization;
 using System.Threading.Tasks;
 using Prism.Services.Dialogs;
 using System.Security.Policy;
 using MaterialDesignThemes.Wpf;
 using System.Windows.Threading;
+using System.Threading.Channels;
 using System.Collections.Generic;
 using JayTom.Dws.VideoApiClient.Api;
 using System.Collections.ObjectModel;
@@ -392,6 +396,24 @@ namespace JayTom.Dws.VideoApiClient.ViewModels {
         private void VideoDelegate(BarCodeItemModel obj) {
             //调用视频Demo并传参
             Console.WriteLine(obj);
+            try {
+                var process = new Process();
+                process.StartInfo.FileName = $"{AppDomain.CurrentDomain.BaseDirectory}x64Demo\\PlayBackAndDownloadDemo.exe";
+                process.StartInfo.Arguments = JsonConvert.SerializeObject(new {
+                    Channel = obj.NvrCameraBindingItemInfo?.Channel,
+                    IpAddress = obj.NvrCameraBindingItemInfo?.IpAddress?.ToString(),
+                    Port = obj.NvrCameraBindingItemInfo?.Port,
+                    Password = obj.NvrCameraBindingItemInfo?.Password?.ToString(),
+                    Username = obj.NvrCameraBindingItemInfo?.Username?.ToString(),
+                    StartTime = obj.ScanTime
+                }).Replace("\"", "\\\"");
+                process.StartInfo.UseShellExecute = false;
+                process.StartInfo.RedirectStandardOutput = true;
+                process.Start();
+            }
+            catch (Exception e) {
+                MainMessageQueue.Enqueue($"{e.Message}");
+            }
         }
 
         #region 翻页执行方法

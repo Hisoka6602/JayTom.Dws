@@ -190,12 +190,18 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService {
         private async void LoadedDelegate(object obj) {
             if (!_isLoaded) {
                 _isLoaded = true;
-                if (obj is Page page) {
-                    var visualChild = PluginInterface.Utils.Utils.GetVisualChild<VlcControl>(page, f => f.Name.Equals("VlcPlayer"));
-                    if (visualChild != null) {
-                        _vlcPlay = visualChild;
-                        _vlcPlay.SourceProvider.CreatePlayer(new DirectoryInfo($"{System.AppDomain.CurrentDomain.BaseDirectory}VideoLAN\\VLC"));
+                try {
+                    if (obj is Page page) {
+                        var visualChild = PluginInterface.Utils.Utils.GetVisualChild<VlcControl>(page, f => f.Name.Equals("VlcPlayer"));
+                        if (visualChild != null) {
+                            _vlcPlay = visualChild;
+                            _vlcPlay.SourceProvider.CreatePlayer(new DirectoryInfo($"{System.AppDomain.CurrentDomain.BaseDirectory}VideoLAN\\VLC"));
+                        }
                     }
+                }
+                catch (Exception e) {
+                    NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
+                    NetworkVideoRecorderMessageQueue.Enqueue($"{e.Message}");
                 }
 
                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
