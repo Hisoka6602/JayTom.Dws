@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using JayTom.Dws.Data.VideoApiData;
 using JayTom.Dws.Domain.Dto.VideoApi;
 using JayTom.Dws.Domain.Repository.VideoApiData;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace JayTom.Dws.Domain.Service.VideoApi {
 
@@ -163,6 +164,21 @@ namespace JayTom.Dws.Domain.Service.VideoApi {
                 var total = await _videoBarCodeRepository.
                     Total(w => w.ScanTime >= date.Date &&
                                w.ScanTime <= date.Date.AddDays(1).AddSeconds(-1));
+
+                return new KeyValuePair<bool, object>(true, total);
+            }
+            catch (Exception e) {
+                Console.WriteLine(e);
+
+                return new KeyValuePair<bool, object>(false, e.Message);
+            }
+        }
+
+        public async Task<KeyValuePair<bool, object>> BarcodeTotalForDateBetween(DateTime startDate, DateTime endDate) {
+            try {
+                var total = await _videoBarCodeRepository.
+                Total(w => w.ScanTime >= startDate.Date &&
+                               w.ScanTime <= endDate.Date.AddDays(1).AddSeconds(-1));
 
                 return new KeyValuePair<bool, object>(true, total);
             }

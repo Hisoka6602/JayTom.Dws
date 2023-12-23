@@ -122,5 +122,16 @@ namespace JayTom.Dws.VideoApi.Controllers {
                 return JsonResultVo.Fail(value?.ToString() ?? string.Empty);
             }
         }
+
+        [HttpGet("BarcodeTotalForDateBetween")]
+        public async Task<JsonResult> BarcodeTotalForDateBetween(DateTime startDate, DateTime endDate) {
+            var (key, value) = await _videoBarCodeAppService.BarcodeTotalForDateBetween(startDate, endDate);
+            if (key && value is int total) {
+                return JsonResultVo.Success("查询成功", total);
+            }
+            else {
+                return JsonResultVo.Fail(value?.ToString() ?? string.Empty);
+            }
+        }
     }
 }

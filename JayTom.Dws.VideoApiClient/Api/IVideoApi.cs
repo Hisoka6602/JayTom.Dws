@@ -30,6 +30,21 @@ namespace JayTom.Dws.VideoApiClient.Api {
         /// <returns></returns>
         Task<KeyValuePair<bool, object>> BarcodeTotalForDate(DateTime date,
             CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// 获取指定日期之间的条码数量
+        /// </summary>
+        /// <param name="startDate"></param>
+        /// <param name="endDate"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public Task<KeyValuePair<bool, object>> BarcodeTotalForDateBetween(DateTime startDate, DateTime endDate, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// 设置Web域名
+        /// </summary>
+        /// <param name="domain">域名</param>
+        void SetWebDomain(string domain);
     }
 
     public class ApiResult {

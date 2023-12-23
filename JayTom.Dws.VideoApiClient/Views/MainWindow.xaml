@@ -115,7 +115,7 @@
                     FontSize="15"
                     FontWeight="Bold"
                     Foreground="#AD424242"
-                    Text="数据中台" />
+                    Text="无限创科数据中台" />
                 <!--  系统按钮  -->
                 <Border
                     Grid.Row="0"
@@ -190,6 +190,72 @@
                         Grid.Row="0"
                         HorizontalAlignment="Center"
                         Orientation="Horizontal">
+                        <!--  上月数据  -->
+                        <Border
+                            Width="200"
+                            Height="100"
+                            Margin="10"
+                            Background="#F1F5F8"
+                            CornerRadius="10">
+                            <StackPanel Orientation="Vertical">
+                                <Border
+                                    Width="60"
+                                    Height="30"
+                                    HorizontalAlignment="Left"
+                                    VerticalAlignment="Top"
+                                    Background="SlateGray"
+                                    CornerRadius="10,0,10,0"
+                                    Opacity="0.7">
+                                    <TextBlock
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        FontSize="13"
+                                        Foreground="White"
+                                        Text="上月" />
+                                </Border>
+                                <TextBlock
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    FontSize="50"
+                                    FontWeight="Bold"
+                                    Foreground="SlateGray"
+                                    Opacity="0.7"
+                                    Text="{Binding LastDayOfMonthCount, UpdateSourceTrigger=PropertyChanged}" />
+                            </StackPanel>
+                        </Border>
+                        <!--  本月数据  -->
+                        <Border
+                            Width="200"
+                            Height="100"
+                            Margin="10"
+                            Background="#F1F5F8"
+                            CornerRadius="10">
+                            <StackPanel Orientation="Vertical">
+                                <Border
+                                    Width="60"
+                                    Height="30"
+                                    HorizontalAlignment="Left"
+                                    VerticalAlignment="Top"
+                                    Background="IndianRed"
+                                    CornerRadius="10,0,10,0"
+                                    Opacity="0.7">
+                                    <TextBlock
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        FontSize="13"
+                                        Foreground="White"
+                                        Text="本月" />
+                                </Border>
+                                <TextBlock
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    FontSize="50"
+                                    FontWeight="Bold"
+                                    Foreground="IndianRed"
+                                    Opacity="0.7"
+                                    Text="{Binding FirstDayOfMonthCount, UpdateSourceTrigger=PropertyChanged}" />
+                            </StackPanel>
+                        </Border>
                         <!--  昨天数据  -->
                         <Border
                             Width="200"
@@ -619,7 +685,7 @@
                                 MinWidth="180"
                                 Binding="{Binding ScanTime, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:yyyy-MM-dd HH:mm:ss}}"
                                 CellStyle="{StaticResource CustomDataGridTextCellStyle}"
-                                Header="节点扫码时间"
+                                Header="扫码时间"
                                 IsReadOnly="True" />
                             <!--  相机序列号  -->
                             <DataGridTextColumn
@@ -635,7 +701,7 @@
                                 MinWidth="150"
                                 Binding="{Binding CameraCustomName, UpdateSourceTrigger=PropertyChanged}"
                                 CellStyle="{StaticResource CustomDataGridTextCellStyle}"
-                                Header="相机自定义名称"
+                                Header="相机名称"
                                 IsReadOnly="True" />
                             <!--  视频  -->
                             <DataGridTemplateColumn

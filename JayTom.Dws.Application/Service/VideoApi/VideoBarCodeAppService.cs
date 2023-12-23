@@ -9,6 +9,7 @@ using JayTom.Dws.Data.VideoApiData;
 using JayTom.Dws.Domain.Dto.CloudDto;
 using JayTom.Dws.Domain.Dto.VideoApi;
 using JayTom.Dws.Domain.Service.VideoApi;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace JayTom.Dws.Application.Service.VideoApi {
 
@@ -101,6 +102,10 @@ namespace JayTom.Dws.Application.Service.VideoApi {
 
         public Task<KeyValuePair<bool, object>> BarcodeTotalForDate(DateTime date) {
             return _videoBarCodeService.BarcodeTotalForDate(date);
+        }
+
+        public Task<KeyValuePair<bool, object>> BarcodeTotalForDateBetween(DateTime startDate, DateTime endDate) {
+            return _videoBarCodeService.BarcodeTotalForDateBetween(startDate, endDate);
         }
     }
 }

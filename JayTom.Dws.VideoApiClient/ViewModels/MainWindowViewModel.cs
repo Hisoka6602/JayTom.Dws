@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using Prism.Mvvm;
 using System.Net;
 using System.Linq;
@@ -10,6 +11,8 @@ using System.Threading;
 using System.Diagnostics;
 using System.Windows.Input;
 using System.Globalization;
+using System.Configuration;
+using Newtonsoft.Json.Linq;
 using System.Threading.Tasks;
 using Prism.Services.Dialogs;
 using System.Security.Policy;
@@ -20,7 +23,9 @@ using System.Collections.Generic;
 using JayTom.Dws.VideoApiClient.Api;
 using System.Collections.ObjectModel;
 using JayTom.Dws.VideoApiClient.Models;
+using Microsoft.Extensions.Configuration;
 using JayTom.Dws.VideoApiClient.Views.Editors;
+using Microsoft.Extensions.Configuration.Json;
 using JayTom.Dws.VideoApiClient.ViewModels.Dialog;
 using JayTom.Dws.VideoApiClient.ViewModels.Editors;
 
@@ -45,8 +50,11 @@ namespace JayTom.Dws.VideoApiClient.ViewModels {
         private int _pageCount;
         private int _pageIndex = 1;
         private int _pageSize = 100;
-
+        private int _videoLengthInSeconds = 60;
+        private int _secondsToSubtract = 0;
         private ObservableCollection<BarCodeItemModel> _barCodeItems = new();
+        private int _firstDayOfMonthCount;
+        private int _lastDayOfMonthCount;
 
         public MainWindowViewModel(IDialogService dialogService,
             IVideoApi videoApi) {
@@ -94,6 +102,16 @@ namespace JayTom.Dws.VideoApiClient.ViewModels {
         public int TodayBarcodeCount {
             get => _todayBarcodeCount;
             set => SetProperty(ref _todayBarcodeCount, value);
+        }
+
+        public int FirstDayOfMonthCount {
+            get => _firstDayOfMonthCount;
+            set => SetProperty(ref _firstDayOfMonthCount, value);
+        }
+
+        public int LastDayOfMonthCount {
+            get => _lastDayOfMonthCount;
+            set => SetProperty(ref _lastDayOfMonthCount, value);
         }
 
         /// <summary>
@@ -171,8 +189,15 @@ namespace JayTom.Dws.VideoApiClient.ViewModels {
 
         private void LoadedDelegate(object obj) {
             //查询节点
+            //SetConfig();
             Task.Factory.StartNew(async () => {
                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+                    //读取内容
+                    var configuration = new ConfigurationBuilder()
+                        .AddJsonFile("appsettings.json")
+                        .Build();
+                    var webDomains = configuration.GetSection("AppSettings:WebDomain").Value ?? string.Empty;
+                    _videoApi.SetWebDomain(webDomains);
                     NodeList.Clear();
                     var (key, value) = await _videoApi.GroupedNodeNames();
                     if (key && value is ApiResult { Data: List<string> nodeNames }) {
@@ -188,6 +213,17 @@ namespace JayTom.Dws.VideoApiClient.ViewModels {
                     if (key1 && value1 is ApiResult { Data: long count }) {
                         YesterdayBarcodeCount = (int)count;
                     }
+                    var (b1, o1) = await _videoApi.BarcodeTotalForDateBetween(new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1),
+                        new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1).AddMonths(1).AddSeconds(-1));
+                    if (b1 && o1 is ApiResult { Data: long firstDayOfMonthCount }) {
+                        FirstDayOfMonthCount = (int)firstDayOfMonthCount;
+                    }
+                    var (key2, value2) = await _videoApi.BarcodeTotalForDateBetween(new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1).AddMonths(-1),
+                        new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1).AddSeconds(-1));
+                    if (key2 && value2 is ApiResult { Data: long lastDayOfMonthCount }) {
+                        LastDayOfMonthCount = (int)lastDayOfMonthCount;
+                    }
+                    FirstPageDelegate(obj);
                 });
             });
         }
@@ -395,8 +431,14 @@ namespace JayTom.Dws.VideoApiClient.ViewModels {
 
         private void VideoDelegate(BarCodeItemModel obj) {
             //调用视频Demo并传参
-            Console.WriteLine(obj);
             try {
+                var configuration = new ConfigurationBuilder()
+                    .AddJsonFile("appsettings.json")
+                    .Build();
+                var videoLengthInSeconds = configuration.GetSection("AppSettings:VideoLengthInSeconds").Value ?? string.Empty;
+                int.TryParse(videoLengthInSeconds, out _videoLengthInSeconds);
+                var secondsToSubtracts = configuration.GetSection("AppSettings:SecondsToSubtract").Value ?? string.Empty;
+                int.TryParse(secondsToSubtracts, out _secondsToSubtract);
                 var process = new Process();
                 process.StartInfo.FileName = $"{AppDomain.CurrentDomain.BaseDirectory}x64Demo\\PlayBackAndDownloadDemo.exe";
                 process.StartInfo.Arguments = JsonConvert.SerializeObject(new {
@@ -405,7 +447,9 @@ namespace JayTom.Dws.VideoApiClient.ViewModels {
                     Port = obj.NvrCameraBindingItemInfo?.Port,
                     Password = obj.NvrCameraBindingItemInfo?.Password?.ToString(),
                     Username = obj.NvrCameraBindingItemInfo?.Username?.ToString(),
-                    StartTime = obj.ScanTime
+                    StartTime = obj.ScanTime.AddSeconds(0 - _secondsToSubtract),
+                    BarCode = obj.BarCode,
+                    VideoLengthInSeconds = _videoLengthInSeconds,
                 }).Replace("\"", "\\\"");
                 process.StartInfo.UseShellExecute = false;
                 process.StartInfo.RedirectStandardOutput = true;

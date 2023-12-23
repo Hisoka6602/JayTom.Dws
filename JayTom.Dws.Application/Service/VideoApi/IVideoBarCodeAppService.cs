@@ -75,5 +75,13 @@ namespace JayTom.Dws.Application.Service.VideoApi {
         /// <param name="date"></param>
         /// <returns></returns>
         public Task<KeyValuePair<bool, object>> BarcodeTotalForDate(DateTime date);
+
+        /// <summary>
+        /// 获取指定日期之间的条码总数
+        /// </summary>
+        /// <param name="startDate"></param>
+        /// <param name="endDate"></param>
+        /// <returns></returns>
+        public Task<KeyValuePair<bool, object>> BarcodeTotalForDateBetween(DateTime startDate, DateTime endDate);
     }
 }
