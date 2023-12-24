@@ -28,10 +28,10 @@ namespace JayTom.Dws.Domain.Dto.CloudDto {
         /// </summary>
         public int Concurrency { get; set; } = 2;
 
-        /// <summary>
+        /*/// <summary>
         /// url
         /// </summary>
-        public string Url { get; set; } = string.Empty;
+        public string Url { get; set; } = string.Empty;*/
 
         /// <summary>
         /// 请求超时时间
@@ -47,5 +47,15 @@ namespace JayTom.Dws.Domain.Dto.CloudDto {
         ///  登录名
         /// </summary>
         public string LoginName { get; set; } = string.Empty;
+
+        /// <summary>
+        /// ip/域名
+        /// </summary>
+        public string WebDoMain { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 上传间隔
+        /// </summary>
+        public int UploadIntervalInSeconds { get; set; } = 20;
     }
 }

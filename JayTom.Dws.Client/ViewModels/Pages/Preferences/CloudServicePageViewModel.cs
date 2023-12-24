@@ -26,7 +26,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             {
                 new()
                 {
-                    Title = "视频云",
+                    Title = "数据中台",
                     IconFont = new IconInfoModel()
                     {
                         IconFont = "pack://application:,,,/Fonts/#iconfont",
@@ -52,7 +52,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     PageClassName = "NetworkVideoRecorderPage",
                     ClickCommand = ClickCommand
                 },
-                new()
+                /*new()
                 {
                     Title = "云端数据",
                     IconFont = new IconInfoModel()
@@ -64,7 +64,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     Description = "云端数据",
                     PageClassName = "CloudDataPage",
                     ClickCommand = ClickCommand
-                },
+                },*/
             };
         }
 

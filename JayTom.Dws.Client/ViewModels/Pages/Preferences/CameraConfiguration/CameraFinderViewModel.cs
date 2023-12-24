@@ -710,11 +710,48 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
             get => new DelegateCommand<CameraFinderItemInfoModel>(EditedCustomNameDelegate);
         }
 
-        private void EditedCustomNameDelegate(CameraFinderItemInfoModel obj) {
+        private async void EditedCustomNameDelegate(CameraFinderItemInfoModel obj) {
             //保存到数据库
             //更新
+            await Application.Current.Dispatcher.InvokeAsync(async () => {
+                if (obj.HasBinding) {
+                    if (obj.BoundType is BoundCameraType.OcrCamera or BoundCameraType.BarcodeScannerCamera) {
+                        var barcodeScannerCameraConfigInfoModel = await _barcodeScannerCameraConfigRepository.FirstOrDefault(f =>
+                            f.SerialNumber.Equals(obj.SerialNumber));
+                        if (barcodeScannerCameraConfigInfoModel is not null) {
+                            barcodeScannerCameraConfigInfoModel.CustomName = obj.CustomName;
+                            var update = await _barcodeScannerCameraConfigRepository.Update(barcodeScannerCameraConfigInfoModel);
+                            if (!update) {
+                                CameraFinderMessageQueue.Enqueue("修改失败");
+                            }
+                        }
+                    }
+                    else if (obj.BoundType is BoundCameraType.PanoramaCamera) {
+                        var panoramaCameraConfigInfoModel = await _panoramaCameraConfigRepository.
+                            FirstOrDefault(f => f.SerialNumber.Equals(obj.SerialNumber));
+                        if (panoramaCameraConfigInfoModel is not null) {
+                            panoramaCameraConfigInfoModel.CustomName = obj.CustomName;
 
-            Console.WriteLine(obj);
+                            var update = await _panoramaCameraConfigRepository.Update(panoramaCameraConfigInfoModel);
+                            if (!update) {
+                                CameraFinderMessageQueue.Enqueue("修改失败");
+                            }
+                        }
+                    }
+                    else if (obj.BoundType is BoundCameraType.VolumeCamera) {
+                        var volumeCameraConfigInfoModel = await _volumeCameraConfigRepository.
+                            FirstOrDefault(f =>
+                                f.SerialNumber.Equals(obj.SerialNumber));
+                        if (volumeCameraConfigInfoModel is not null) {
+                            volumeCameraConfigInfoModel.CustomName = obj.CustomName;
+                            var update = await _volumeCameraConfigRepository.Update(volumeCameraConfigInfoModel);
+                            if (!update) {
+                                CameraFinderMessageQueue.Enqueue("修改失败");
+                            }
+                        }
+                    }
+                }
+            });
             Keyboard.ClearFocus();
         }
 

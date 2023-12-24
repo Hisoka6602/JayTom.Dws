@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using JayTom.Dws.Plugin.Excel.Attributes;
 
 namespace JayTom.Dws.Client.Models.DataModels {
+
     public class BarCodeItemModel : BindableBase {
         private float _volume;
         private bool _isInserting;
@@ -28,6 +29,7 @@ namespace JayTom.Dws.Client.Models.DataModels {
         private SortingItemModel _sortingInfo = new();
         private OcrItemInfo _ocrInfo = new();
         private string _exitName = string.Empty;
+        private bool _isUploadedToCloudVideo;
 
         [DisplayName("No."), ExcelInfo(Width = 3000)]
         public int Num {
@@ -115,6 +117,7 @@ namespace JayTom.Dws.Client.Models.DataModels {
             get => _requestStatus;
             set => SetProperty(ref _requestStatus, value);
         }
+
         /// <summary>
         /// 格口名称
         /// </summary>
@@ -210,6 +213,14 @@ namespace JayTom.Dws.Client.Models.DataModels {
         public bool IsBarcodeImageExists {
             get => _isBarcodeImageExists;
             set => SetProperty(ref _isBarcodeImageExists, value);
+        }
+
+        /// <summary>
+        /// 是否已上传云视频
+        /// </summary>
+        public bool IsUploadedToCloudVideo {
+            get => _isUploadedToCloudVideo;
+            set => SetProperty(ref _isUploadedToCloudVideo, value);
         }
     }
 

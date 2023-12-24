@@ -31,6 +31,7 @@ using JayTom.Dws.Domain.Repository.LocalData;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
+
     public class DataManagementViewModel : BindableBase {
         private readonly IDialogService _dialogService;
         private readonly IExcel _excel;
@@ -651,7 +652,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                                     OcrInterfaceName = s.OcrInfo?.OcrInterfaceName ?? string.Empty,
                                     OriginalContent = s.OcrInfo?.OriginalContent ?? string.Empty,
                                     ParsedContent = s.OcrInfo?.ParsedContent ?? string.Empty
-                                }
+                                },
+                                IsUploadedToCloudVideo = s.CloudVideoUploadInfo is { UploadTime: not null }
                             })?.ToList();
                             await Task.Delay(100);
                             BarCodeItems.AddRange(itemModels);

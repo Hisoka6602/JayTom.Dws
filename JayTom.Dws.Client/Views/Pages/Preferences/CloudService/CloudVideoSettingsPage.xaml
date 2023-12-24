@@ -208,7 +208,7 @@
                             FontSize="13"
                             FontWeight="Bold"
                             Foreground="DarkGray"
-                            Text="Url:" />
+                            Text="IP/域名:" />
                         <Border
                             Margin="5"
                             HorizontalAlignment="Center"
@@ -228,7 +228,7 @@
                                 FontWeight="Bold"
                                 Foreground="White"
                                 InputMethod.IsInputMethodEnabled="False"
-                                Text="{Binding CloudVideoSettings.Url, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                                Text="{Binding CloudVideoSettings.WebDoMain, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                         </Border>
                     </StackPanel>
                     <!--  请求超时时间  -->
@@ -361,6 +361,57 @@
                                 FontWeight="Bold"
                                 Foreground="White"
                                 Text="{Binding CloudVideoSettings.LoginName, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                        </Border>
+                    </StackPanel>
+                    <!--  上传间隔  -->
+                    <StackPanel
+                        Margin="0,5"
+                        VerticalAlignment="Center"
+                        Orientation="Horizontal">
+                        <TextBlock
+                            Margin="0,0,0,1"
+                            VerticalAlignment="Center"
+                            FontFamily="{StaticResource IconFontFamily}"
+                            FontSize="23"
+                            Foreground="DarkGray"
+                            Text="&#xe82f;" />
+                        <TextBlock
+                            Margin="5,0"
+                            VerticalAlignment="Center"
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="DarkGray"
+                            Text="上传间隔(s):" />
+                        <Border
+                            Margin="5"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Background="#1A696969"
+                            CornerRadius="5">
+                            <TextBox
+                                Width="165"
+                                Height="30"
+                                MaxWidth="500"
+                                Margin="5,0"
+                                materialDesign:TextFieldAssist.HasClearButton="False"
+                                materialDesign:TextFieldAssist.HasFilledTextField="True"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="White"
+                                InputMethod.IsInputMethodEnabled="False">
+                                <TextBox.Text>
+                                    <Binding
+                                        Mode="TwoWay"
+                                        Path="CloudVideoSettings.UploadIntervalInSeconds"
+                                        UpdateSourceTrigger="PropertyChanged">
+                                        <Binding.ValidationRules>
+                                            <validationRules:RegexValidationRule ErrorMessage="请输入有效的整数" Pattern="^[1-9]\d*$" />
+                                        </Binding.ValidationRules>
+                                    </Binding>
+                                </TextBox.Text>
+                            </TextBox>
                         </Border>
                     </StackPanel>
                 </StackPanel>

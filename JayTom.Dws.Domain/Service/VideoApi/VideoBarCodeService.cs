@@ -188,5 +188,34 @@ namespace JayTom.Dws.Domain.Service.VideoApi {
                 return new KeyValuePair<bool, object>(false, e.Message);
             }
         }
+
+        public async Task<KeyValuePair<bool, object>> CleanupDataDaysAgo(int days, CancellationToken token = default) {
+            try {
+                var scanNodeInfoModels = await _videoScanNodeRepository.GetScanNodeInfos(s =>
+                    s.ScanTime <= DateTime.Today.AddDays(0 - days), token);
+
+                if (scanNodeInfoModels?.Any() == true) {
+                    foreach (var videoScanNodeInfoModel in scanNodeInfoModels) {
+                        if (videoScanNodeInfoModel.VideoNodeImageInfos?.Any() == true) {
+                            foreach (var videoNodeImageInfoModel in videoScanNodeInfoModel.VideoNodeImageInfos) {
+                                //删除图片
+                                File.Delete(videoNodeImageInfoModel.Path);
+                            }
+                        }
+                    }
+                }
+
+                var videoBarCodeInfoModels = await _videoBarCodeRepository.Select(s =>
+                    s.ScanTime <= DateTime.Today.AddDays(0 - days), o => o.Id, token);
+                if (videoBarCodeInfoModels?.Any() == true) {
+                    await _videoBarCodeRepository.DeleteRange(videoBarCodeInfoModels, token);
+                }
+
+                return new KeyValuePair<bool, object>(true, "删除成功");
+            }
+            catch (Exception e) {
+                return new KeyValuePair<bool, object>(false, e.Message);
+            }
+        }
     }
 }

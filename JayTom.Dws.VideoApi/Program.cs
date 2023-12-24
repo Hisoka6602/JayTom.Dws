@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.FileProviders;
 using JayTom.Dws.Domain.Service.VideoApi;
+using JayTom.Dws.VideoApi.BackgroundService;
 using JayTom.Dws.Domain.Repository.LocalData;
 using JayTom.Dws.Application.Service.VideoApi;
 using JayTom.Dws.Domain.Repository.VideoApiData;
@@ -119,7 +120,8 @@ internal class Program {
             builder.Services.AddSingleton<IVideoBarCodeAppService, VideoBarCodeAppService>();
             builder.Services.AddSingleton<IVideoBarCodeService, VideoBarCodeService>();
         }
-
+        //后台服务
+        builder.Services.AddHostedService<DataCleanupService>();
         // Add services to the container.
 
         builder.Services.AddControllers();

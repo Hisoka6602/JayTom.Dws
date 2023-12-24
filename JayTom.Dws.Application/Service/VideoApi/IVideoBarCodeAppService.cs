@@ -83,5 +83,13 @@ namespace JayTom.Dws.Application.Service.VideoApi {
         /// <param name="endDate"></param>
         /// <returns></returns>
         public Task<KeyValuePair<bool, object>> BarcodeTotalForDateBetween(DateTime startDate, DateTime endDate);
+
+        /// <summary>
+        /// 删除多少天之前的数据
+        /// </summary>
+        /// <param name="days"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        public Task<KeyValuePair<bool, object>> CleanupDataDaysAgo(int days, CancellationToken token = default);
     }
 }

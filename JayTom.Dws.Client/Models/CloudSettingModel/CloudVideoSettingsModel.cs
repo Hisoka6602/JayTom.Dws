@@ -12,10 +12,14 @@ namespace JayTom.Dws.Client.Models.CloudSettingModel {
         private int _retryAttempts = 5;
         private bool _isAutoUploadUnsyncedData;
         private int _concurrency = 2;
-        private string _url = string.Empty;
+
+        //private string _url = string.Empty;
         private int _requestTimeout = 2000;
+
         private string _nodeName = string.Empty;
         private string _loginName = string.Empty;
+        private string _webDoMain = string.Empty;
+        private int _uploadIntervalInSeconds = 20;
 
         /// <summary>
         /// 是否开启云视频上传
@@ -49,13 +53,13 @@ namespace JayTom.Dws.Client.Models.CloudSettingModel {
             set => SetProperty(ref _concurrency, value);
         }
 
-        /// <summary>
+        /*/// <summary>
         /// url
         /// </summary>
         public string Url {
             get => _url;
             set => SetProperty(ref _url, value);
-        }
+        }*/
 
         /// <summary>
         /// 请求超时时间
@@ -79,6 +83,22 @@ namespace JayTom.Dws.Client.Models.CloudSettingModel {
         public string LoginName {
             get => _loginName;
             set => SetProperty(ref _loginName, value);
+        }
+
+        /// <summary>
+        /// ip/域名
+        /// </summary>
+        public string WebDoMain {
+            get => _webDoMain;
+            set => SetProperty(ref _webDoMain, value);
+        }
+
+        /// <summary>
+        /// 上传间隔
+        /// </summary>
+        public int UploadIntervalInSeconds {
+            get => _uploadIntervalInSeconds;
+            set => SetProperty(ref _uploadIntervalInSeconds, value);
         }
     }
 }

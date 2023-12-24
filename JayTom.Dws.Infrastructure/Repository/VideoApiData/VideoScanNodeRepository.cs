@@ -5,6 +5,7 @@ using System.Text;
 using System.ComponentModel;
 using EFCore.BulkExtensions;
 using System.Threading.Tasks;
+using System.Linq.Expressions;
 using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
 using JayTom.Dws.Data.VideoApiData;
@@ -97,6 +98,29 @@ namespace JayTom.Dws.Infrastructure.Repository.VideoApiData {
                 LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
             }
             return false;
+        }
+
+        public async Task<List<VideoScanNodeInfoModel>> GetScanNodeInfos(Expression<Func<VideoScanNodeInfoModel, bool>> where, CancellationToken token = default) {
+            try {
+                await using (var concardContext = _contextFactory.CreateDbContext()) {
+                    var dbSet = concardContext?.Set<VideoScanNodeInfoModel>();
+                    if (dbSet is null) return new List<VideoScanNodeInfoModel>();
+
+                    return await dbSet.AsNoTracking()?.Where(where)
+                        ?.Include(a =>
+                            a.VideoNodeImageInfos)
+                        ?.ToListAsync(cancellationToken: token)!;
+                }
+            }
+            catch (Win32Exception) {
+            }
+            catch (TaskCanceledException) {
+            }
+            catch (Exception e) {
+                LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
+                return new List<VideoScanNodeInfoModel>();
+            }
+            return new List<VideoScanNodeInfoModel>();
         }
     }
 }

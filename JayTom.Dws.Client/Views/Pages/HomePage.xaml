@@ -3,6 +3,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
+    xmlns:cloudConverters="clr-namespace:JayTom.Dws.Client.Converters.CloudConverters"
     xmlns:converters="clr-namespace:JayTom.Dws.Client.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:languages="clr-namespace:JayTom.Dws.Client.Languages"
@@ -35,6 +36,7 @@
         <unitConverter:VolumeConverter x:Key="VolumeConverter" />
         <unitConverter:WeightConverter x:Key="WeightConverter" />
         <converters:NegativeNumberConverter x:Key="NegativeNumberConverter" />
+        <cloudConverters:IsUploadedToCloudVideoTagColorConvert x:Key="IsUploadedToCloudVideoTagColorConvert" />
 
         <Storyboard x:Key="ItemCountStoryboard">
             <DoubleAnimation
@@ -906,12 +908,12 @@
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
-                                <GridViewColumn Width="150" Header="{x:Static languages:Language.TableHeaderBarCode}">
+                                <GridViewColumn Width="130" Header="{x:Static languages:Language.TableHeaderBarCode}">
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBlock
-                                                Width="150"
-                                                MinWidth="150"
+                                                Width="130"
+                                                MinWidth="130"
                                                 Style="{StaticResource CustomGridViewTextBlockCellStyle}"
                                                 Text="{Binding Barcode}" />
                                         </DataTemplate>
@@ -1010,12 +1012,12 @@
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>-->
-                                <GridViewColumn Width="90" Header="格口">
+                                <GridViewColumn Width="60" Header="格口">
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBlock
-                                                Width="90"
-                                                MinWidth="90"
+                                                Width="60"
+                                                MinWidth="60"
                                                 Style="{StaticResource CustomGridViewTextBlockCellStyle}"
                                                 Text="{Binding ExitName}" />
                                         </DataTemplate>
@@ -1029,6 +1031,19 @@
                                                 MinWidth="180"
                                                 Style="{StaticResource CustomGridViewTextBlockCellStyle}"
                                                 Text="{Binding ScanTime, StringFormat={}{0:yyyy-MM-dd HH:mm:ss}}" />
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                                <GridViewColumn Width="50" Header="云">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"
+                                                FontFamily="{StaticResource IconFontFamily}"
+                                                FontSize="25"
+                                                Foreground="{Binding IsUploadedToCloudVideo, Converter={StaticResource IsUploadedToCloudVideoTagColorConvert}}"
+                                                Text="&#xe8dc;" />
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>

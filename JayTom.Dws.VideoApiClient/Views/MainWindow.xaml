@@ -501,7 +501,11 @@
                                         BorderThickness="0"
                                         FontSize="15"
                                         Foreground="DimGray"
-                                        Text="{Binding Barcode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                                        Text="{Binding Barcode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                                        <TextBox.InputBindings>
+                                            <KeyBinding Key="Enter" Command="{Binding SearchCommand}" />
+                                        </TextBox.InputBindings>
+                                    </TextBox>
                                 </Border>
                             </StackPanel>
                             <!--  相机名称  -->
@@ -669,8 +673,9 @@
                                 MinWidth="180"
                                 Binding="{Binding BarCode, UpdateSourceTrigger=PropertyChanged}"
                                 CellStyle="{StaticResource CustomDataGridTextCellStyle}"
+                                EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}"
                                 Header="条码"
-                                IsReadOnly="True" />
+                                IsReadOnly="False" />
                             <!--  节点名称  -->
                             <DataGridTextColumn
                                 Width="Auto"

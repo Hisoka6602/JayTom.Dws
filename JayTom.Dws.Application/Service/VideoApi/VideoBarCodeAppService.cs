@@ -107,5 +107,9 @@ namespace JayTom.Dws.Application.Service.VideoApi {
         public Task<KeyValuePair<bool, object>> BarcodeTotalForDateBetween(DateTime startDate, DateTime endDate) {
             return _videoBarCodeService.BarcodeTotalForDateBetween(startDate, endDate);
         }
+
+        public Task<KeyValuePair<bool, object>> CleanupDataDaysAgo(int days, CancellationToken token = default) {
+            return _videoBarCodeService.CleanupDataDaysAgo(days, token);
+        }
     }
 }

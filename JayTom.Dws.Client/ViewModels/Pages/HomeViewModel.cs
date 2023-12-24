@@ -20,6 +20,7 @@ using JayTom.Dws.Data.LocalLog;
 using JayTom.Dws.Client.Service;
 using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
+using JayTom.Dws.Interface.Cloud;
 using JayTom.Dws.Domain.Converters;
 using JayTom.Dws.Domain.Dto.AppDto;
 using System.Collections.ObjectModel;
@@ -32,6 +33,7 @@ using JayTom.Dws.Client.Service.ImageStorage;
 using JayTom.Dws.Client.Service.ResultOutput;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Repository.LocalData;
+using JayTom.Dws.Client.Models.LogsItemModels;
 using JayTom.Dws.Client.Models.OcrSettingsModel;
 using JayTom.Dws.Client.Service.BackgroundService;
 using JayTom.Dws.Client.Service.ExternalDataService;
@@ -59,7 +61,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         private readonly ICertificateValidationService _certificateValidationService;
         private ObservableCollection<CameraItemInfoModel> _cameraItems = new();
 
-        private ObservableCollection<BarCodeItemModel> _barCodeItems = new();
+        private ObservableCollection<BarCodeItemModel> _barCodeItems;
 
         private DataGrid? _dataGrid = null;
         private int _totalDataCount;
@@ -497,6 +499,25 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     finally {
                         _updateSlim.Release();
                     }
+                }
+            });
+            //更新云视频上传状态
+            EventAggregator.Instance.Subscribe<CloudVideoUploadMessage>(async item => {
+                if (item is CloudVideoUploadMessage model) {
+                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+                        try {
+                            await Task.Delay(100);
+                            await _updateSlim.WaitAsync();
+                            var barCodeItemModel = BarCodeItems.FirstOrDefault(f => f.Barcode.Equals(model.Barcode) &&
+                                f.ScanTime.Equals(model.ScanTime));
+                            if (barCodeItemModel is not null) {
+                                barCodeItemModel.IsUploadedToCloudVideo = model.IsSuccessful;
+                            }
+                        }
+                        finally {
+                            _updateSlim.Release();
+                        }
+                    });
                 }
             });
         }

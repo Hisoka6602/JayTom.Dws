@@ -18,16 +18,6 @@ namespace JayTom.Dws.Interface.Cloud.CloudVideo {
         private readonly IHttpClientFactory _httpClientFactory;
         private static CloudVideoApiParameters _parameters = new();
 
-        /// <summary>
-        /// Url
-        /// </summary>
-        public string? Url { get; private set; }
-
-        /// <summary>
-        /// 超时
-        /// </summary>
-        public int? TimeOut { get; private set; }
-
         public CloudVideoUploadApi(IHttpClientFactory httpClientFactory) {
             _httpClientFactory = httpClientFactory;
         }
@@ -85,7 +75,7 @@ namespace JayTom.Dws.Interface.Cloud.CloudVideo {
                 //提交
                 using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
                 httpClient.Timeout = TimeSpan.FromMilliseconds(_parameters.Timeout);
-                var message = await httpClient.PostAsync(_parameters.Url, formData, token);
+                var message = await httpClient.PostAsync($"http://{_parameters.WebDoMain}/api/BarCode/UploadBarcodeData", formData, token);
                 resultContent = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
                 resultContent = Regex.Unescape(resultContent);
                 isSuccess = resultContent.ToLower().Contains("true");
@@ -115,7 +105,7 @@ namespace JayTom.Dws.Interface.Cloud.CloudVideo {
                 response = new CloudUploadResponse() {
                     IsSuccessful = isSuccess,
                     ResponseContent = resultContent,
-                    TargetAddress = _parameters.Url,
+                    TargetAddress = $"http://{_parameters.WebDoMain}/api/BarCode/UploadBarcodeData",
                     UploadContent = data,
                     UploadDuration = (int?)stopwatch.ElapsedMilliseconds,
                     UploadTime = requestTime,
@@ -137,7 +127,7 @@ namespace JayTom.Dws.Interface.Cloud.CloudVideo {
         }
 
         public Task<KeyValuePair<bool, string>> SetParameters(Dictionary<string, object> parameters) {
-            var any = parameters.Any(a => !a.Key.ToLower().Equals("url") &&
+            var any = parameters.Any(a => !a.Key.ToLower().Equals("webdomain") &&
                                           !a.Key.ToLower().Equals("timeout"));
 
             if (any) {
@@ -146,8 +136,8 @@ namespace JayTom.Dws.Interface.Cloud.CloudVideo {
             else {
                 foreach (var keyValuePair in parameters) {
                     switch (keyValuePair.Key.ToLower()) {
-                        case "url":
-                            _parameters.Url = keyValuePair.Value.ToString() ?? string.Empty;
+                        case "webdomain":
+                            _parameters.WebDoMain = keyValuePair.Value.ToString() ?? string.Empty;
                             break;
 
                         case "timeout":
@@ -186,11 +176,16 @@ namespace JayTom.Dws.Interface.Cloud.CloudVideo {
         }
 
         public class CloudVideoApiParameters {
-
-            /// <summary>
+            /*/// <summary>
             /// Url
             /// </summary>
-            public string Url { get; set; } = string.Empty;
+            public string Url { get; set; } = string.Empty;*/
+
+            /// <summary>
+            /// ip/域名
+            /// </summary>
+
+            public string WebDoMain { get; set; } = string.Empty;
 
             /// <summary>
             /// 请求超时时间

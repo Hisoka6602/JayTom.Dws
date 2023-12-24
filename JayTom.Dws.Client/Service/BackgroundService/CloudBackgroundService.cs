@@ -94,7 +94,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     if (_cloudVideoUpLoadSlim.CurrentCount > 0) {
                         var (key, value) = await _barCodeRepository.SelectBarCode(s =>
                                 s.ScanTime.CompareTo(_startTime) > 0 &&
-                                s.ScanTime.CompareTo(DateTime.Now.AddSeconds(-20)) <= 0 &&
+                                s.ScanTime.CompareTo(DateTime.Now.AddSeconds(0 - _cloudVideoSettingsDto.UploadIntervalInSeconds)) <= 0 &&
                                 (s.CloudVideoUploadInfo == null || s.CloudVideoUploadInfo.UploadTime == null),
                             o => o.ScanTime, 0,
                             _cloudVideoSettingsDto.Concurrency, stoppingToken);
@@ -129,7 +129,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
                     //位置输出*/
                     var (key, value) = await _cloud.SetParameters(new Dictionary<string, object>() {
-                    { "Url", _cloudVideoSettingsDto.Url },
+                    { "WebDoMain", _cloudVideoSettingsDto.WebDoMain },
                     { "Timeout", _cloudVideoSettingsDto.RequestTimeout },
                     });
                     if (key) {
@@ -169,6 +169,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             IsSuccessful = cloudUploadResponse.IsSuccessful,
                             PanoramaImageCount = barCodeInfoModel.ImageInfos?.Count(c => c.Type == 1) ?? 0,
                             ScanImageCount = barCodeInfoModel.ImageInfos?.Count(c => c.Type == 0) ?? 0,
+                            ScanTime = barCodeInfoModel.ScanTime
                         });
 
                         if (cloudUploadResponse.IsSuccessful) {

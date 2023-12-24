@@ -125,7 +125,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService {
                             NodeName = CloudVideoSettings.NodeName,
                             RequestTimeout = CloudVideoSettings.RequestTimeout,
                             RetryAttempts = CloudVideoSettings.RetryAttempts,
-                            Url = CloudVideoSettings.Url,
+                            WebDoMain = CloudVideoSettings.WebDoMain,
+                            UploadIntervalInSeconds = CloudVideoSettings.UploadIntervalInSeconds
                         })
                     });
                     if (insertOrUpdate) {
@@ -165,7 +166,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService {
                                     NodeName = cloudVideoSettingsDto.NodeName,
                                     RequestTimeout = cloudVideoSettingsDto.RequestTimeout,
                                     RetryAttempts = cloudVideoSettingsDto.RetryAttempts,
-                                    Url = cloudVideoSettingsDto.Url,
+                                    WebDoMain = cloudVideoSettingsDto.WebDoMain,
+                                    UploadIntervalInSeconds = cloudVideoSettingsDto.UploadIntervalInSeconds
                                 };
                             }
                         }

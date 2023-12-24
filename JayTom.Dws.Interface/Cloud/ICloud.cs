@@ -76,6 +76,11 @@ namespace JayTom.Dws.Interface.Cloud {
         /// 扫码图数量
         /// </summary>
         public int ScanImageCount { get; set; }
+
+        /// <summary>
+        /// 扫码时间
+        /// </summary>
+        public DateTime ScanTime { get; set; }
     }
 
     public class CloudVideoUploadRetryMessage {
