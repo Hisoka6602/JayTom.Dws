@@ -908,12 +908,12 @@
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
-                                <GridViewColumn Width="130" Header="{x:Static languages:Language.TableHeaderBarCode}">
+                                <GridViewColumn Width="150" Header="{x:Static languages:Language.TableHeaderBarCode}">
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBlock
-                                                Width="130"
-                                                MinWidth="130"
+                                                Width="150"
+                                                MinWidth="150"
                                                 Style="{StaticResource CustomGridViewTextBlockCellStyle}"
                                                 Text="{Binding Barcode}" />
                                         </DataTemplate>
@@ -1012,12 +1012,12 @@
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>-->
-                                <GridViewColumn Width="60" Header="格口">
+                                <GridViewColumn Width="80" Header="格口">
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBlock
-                                                Width="60"
-                                                MinWidth="60"
+                                                Width="80"
+                                                MinWidth="80"
                                                 Style="{StaticResource CustomGridViewTextBlockCellStyle}"
                                                 Text="{Binding ExitName}" />
                                         </DataTemplate>
@@ -1034,70 +1034,67 @@
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
-                                <GridViewColumn Width="50" Header="云">
-                                    <GridViewColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <TextBlock
-                                                HorizontalAlignment="Center"
-                                                VerticalAlignment="Center"
-                                                FontFamily="{StaticResource IconFontFamily}"
-                                                FontSize="25"
-                                                Foreground="{Binding IsUploadedToCloudVideo, Converter={StaticResource IsUploadedToCloudVideoTagColorConvert}}"
-                                                Text="&#xe8dc;" />
-                                        </DataTemplate>
-                                    </GridViewColumn.CellTemplate>
-                                </GridViewColumn>
                                 <GridViewColumn Width="100" Header="{x:Static languages:Language.TableHeaderAPIResponseStatus}">
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
-                                            <Button
-                                                Height="20"
-                                                Padding="0"
-                                                HorizontalAlignment="Center"
-                                                VerticalAlignment="Center"
-                                                Command="{Binding ElementName=HomePageView, Path=DataContext.UploadStatusCommand}"
-                                                CommandParameter="{Binding}"
-                                                Focusable="False"
-                                                Foreground="Transparent"
-                                                Style="{StaticResource MaterialDesignFlatButton}">
-                                                <Grid
-                                                    Width="100"
-                                                    MinWidth="40"
-                                                    Margin="0"
+                                            <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
+                                                <TextBlock
+                                                    Margin="5,0"
                                                     HorizontalAlignment="Center"
-                                                    VerticalAlignment="Center">
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="30" />
-                                                        <ColumnDefinition Width="*" />
-                                                    </Grid.ColumnDefinitions>
-                                                    <!--  图标  -->
-                                                    <TextBlock
-                                                        Grid.Column="0"
+                                                    VerticalAlignment="Center"
+                                                    FontFamily="{StaticResource IconFontFamily}"
+                                                    FontSize="25"
+                                                    Foreground="{Binding IsUploadedToCloudVideo, Converter={StaticResource IsUploadedToCloudVideoTagColorConvert}}"
+                                                    Text="&#xe8dc;" />
+                                                <Button
+                                                    Height="20"
+                                                    Padding="0"
+                                                    HorizontalAlignment="Center"
+                                                    VerticalAlignment="Center"
+                                                    Command="{Binding ElementName=HomePageView, Path=DataContext.UploadStatusCommand}"
+                                                    CommandParameter="{Binding}"
+                                                    Focusable="False"
+                                                    Foreground="Transparent"
+                                                    Style="{StaticResource MaterialDesignFlatButton}">
+                                                    <Grid
+                                                        MinWidth="30"
+                                                        Margin="0"
                                                         HorizontalAlignment="Center"
-                                                        VerticalAlignment="Center"
-                                                        FontFamily="{StaticResource IconFontFamily}"
-                                                        FontSize="18"
-                                                        Foreground="{Binding RequestStatus, Converter={StaticResource UploadStatusConverter}, ConverterParameter=Background}"
-                                                        Text="{Binding RequestStatus, Converter={StaticResource UploadStatusConverter}, ConverterParameter=FontText}" />
-                                                    <!--  文字  -->
-                                                    <TextBlock
-                                                        Grid.Column="1"
-                                                        Margin="10,0"
-                                                        HorizontalAlignment="Center"
-                                                        VerticalAlignment="Center"
-                                                        FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
-                                                        FontSize="13"
-                                                        FontWeight="Light"
-                                                        Foreground="White"
-                                                        IsEnabled="False"
-                                                        TextAlignment="Justify"
-                                                        TextTrimming="WordEllipsis">
-                                                        <Run Text="{Binding RequestStatus, Converter={StaticResource UploadStatusConverter}, ConverterParameter=Text}" />
-                                                    </TextBlock>
-                                                </Grid>
+                                                        VerticalAlignment="Center">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="30" />
+                                                            <ColumnDefinition Width="*" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <!--  图标  -->
+                                                        <TextBlock
+                                                            Grid.Column="0"
+                                                            HorizontalAlignment="Center"
+                                                            VerticalAlignment="Center"
+                                                            FontFamily="{StaticResource IconFontFamily}"
+                                                            FontSize="18"
+                                                            Foreground="{Binding RequestStatus, Converter={StaticResource UploadStatusConverter}, ConverterParameter=Background}"
+                                                            Text="{Binding RequestStatus, Converter={StaticResource UploadStatusConverter}, ConverterParameter=FontText}" />
+                                                        <!--  文字  -->
+                                                        <TextBlock
+                                                            Grid.Column="1"
+                                                            Margin="10,0"
+                                                            HorizontalAlignment="Center"
+                                                            VerticalAlignment="Center"
+                                                            FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                                                            FontSize="13"
+                                                            FontWeight="Light"
+                                                            Foreground="White"
+                                                            IsEnabled="False"
+                                                            TextAlignment="Justify"
+                                                            TextTrimming="WordEllipsis"
+                                                            Visibility="Collapsed">
+                                                            <Run Text="{Binding RequestStatus, Converter={StaticResource UploadStatusConverter}, ConverterParameter=Text}" />
+                                                        </TextBlock>
+                                                    </Grid>
 
-                                                <!--  点击后弹出对应的信息框  -->
-                                            </Button>
+                                                    <!--  点击后弹出对应的信息框  -->
+                                                </Button>
+                                            </StackPanel>
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>

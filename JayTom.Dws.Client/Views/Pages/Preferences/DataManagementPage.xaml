@@ -692,8 +692,8 @@
                         </DataGridTextColumn.Header>
                     </DataGridTextColumn>
                     <DataGridTemplateColumn
-                        Width="150"
-                        MinWidth="150"
+                        Width="100"
+                        MinWidth="100"
                         CellStyle="{StaticResource CustomDataGridTextCellStyle}">
                         <DataGridTemplateColumn.Header>
                             <TextBlock
@@ -703,51 +703,62 @@
                         </DataGridTemplateColumn.Header>
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <Button
-                                    Margin="0,0"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    Command="{Binding ElementName=DataManagementPageView, Path=DataContext.UploadStatusCommand}"
-                                    CommandParameter="{Binding}"
-                                    Focusable="False"
-                                    Foreground="Transparent"
-                                    Style="{StaticResource MaterialDesignFlatButton}">
-                                    <Grid
-                                        MinWidth="40"
+                                <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
+                                    <TextBlock
+                                        Margin="5,0"
                                         HorizontalAlignment="Center"
-                                        VerticalAlignment="Center">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="20" />
-                                            <ColumnDefinition Width="*" />
-                                        </Grid.ColumnDefinitions>
-                                        <!--  图标  -->
-                                        <TextBlock
-                                            Grid.Column="0"
+                                        VerticalAlignment="Center"
+                                        FontFamily="{StaticResource IconFontFamily}"
+                                        FontSize="25"
+                                        Foreground="{Binding IsUploadedToCloudVideo, Converter={StaticResource IsUploadedToCloudVideoTagColorConvert}}"
+                                        Text="&#xe8dc;" />
+                                    <Button
+                                        Margin="0,0"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        Command="{Binding ElementName=DataManagementPageView, Path=DataContext.UploadStatusCommand}"
+                                        CommandParameter="{Binding}"
+                                        Focusable="False"
+                                        Foreground="Transparent"
+                                        Style="{StaticResource MaterialDesignFlatButton}">
+                                        <Grid
+                                            MinWidth="30"
                                             HorizontalAlignment="Center"
-                                            VerticalAlignment="Center"
-                                            FontFamily="{StaticResource IconFontFamily}"
-                                            FontSize="16"
-                                            Foreground="{Binding RequestStatus, Converter={StaticResource UploadStatusConverter}, ConverterParameter=Background}"
-                                            Text="{Binding RequestStatus, Converter={StaticResource UploadStatusConverter}, ConverterParameter=FontText}" />
-                                        <!--  文字  -->
-                                        <TextBlock
-                                            Grid.Column="1"
-                                            Margin="5,0"
-                                            HorizontalAlignment="Left"
-                                            VerticalAlignment="Center"
-                                            FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
-                                            FontSize="13"
-                                            FontWeight="Light"
-                                            Foreground="White"
-                                            IsEnabled="False"
-                                            TextAlignment="Justify"
-                                            TextTrimming="WordEllipsis">
-                                            <Run Text="{Binding RequestStatus, Converter={StaticResource UploadStatusConverter}, ConverterParameter=Text}" />
-                                        </TextBlock>
-                                    </Grid>
+                                            VerticalAlignment="Center">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="20" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <!--  图标  -->
+                                            <TextBlock
+                                                Grid.Column="0"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"
+                                                FontFamily="{StaticResource IconFontFamily}"
+                                                FontSize="16"
+                                                Foreground="{Binding RequestStatus, Converter={StaticResource UploadStatusConverter}, ConverterParameter=Background}"
+                                                Text="{Binding RequestStatus, Converter={StaticResource UploadStatusConverter}, ConverterParameter=FontText}" />
+                                            <!--  文字  -->
+                                            <TextBlock
+                                                Grid.Column="1"
+                                                Margin="5,0"
+                                                HorizontalAlignment="Left"
+                                                VerticalAlignment="Center"
+                                                FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                                                FontSize="13"
+                                                FontWeight="Light"
+                                                Foreground="White"
+                                                IsEnabled="False"
+                                                TextAlignment="Justify"
+                                                TextTrimming="WordEllipsis"
+                                                Visibility="Collapsed">
+                                                <Run Text="{Binding RequestStatus, Converter={StaticResource UploadStatusConverter}, ConverterParameter=Text}" />
+                                            </TextBlock>
+                                        </Grid>
 
-                                    <!--  点击后弹出对应的信息框  -->
-                                </Button>
+                                        <!--  点击后弹出对应的信息框  -->
+                                    </Button>
+                                </StackPanel>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
@@ -762,23 +773,6 @@
                             <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="格口" />
                         </DataGridTextColumn.Header>
                     </DataGridTextColumn>
-                    <!--  云视频上传  -->
-                    <DataGridTemplateColumn Width="50" MinWidth="50">
-                        <DataGridTemplateColumn.Header>
-                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="云" />
-                        </DataGridTemplateColumn.Header>
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate>
-                                <TextBlock
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    FontFamily="{StaticResource IconFontFamily}"
-                                    FontSize="25"
-                                    Foreground="{Binding IsUploadedToCloudVideo, Converter={StaticResource IsUploadedToCloudVideoTagColorConvert}}"
-                                    Text="&#xe8dc;" />
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                    </DataGridTemplateColumn>
                     <!--  详细信息  -->
                     <DataGridTemplateColumn
                         Width="120"
