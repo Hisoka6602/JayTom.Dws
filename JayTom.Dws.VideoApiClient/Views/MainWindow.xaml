@@ -66,6 +66,45 @@
                 </StackPanel>
             </Button>
         </DataTemplate>
+        <!--  视频模板  -->
+        <DataTemplate x:Key="VideoTemplate" DataType="{x:Type dataModels:NvrCameraBindingItemInfo}">
+            <!--  横向列表，读全景图列数据  -->
+            <!--  查看按钮  -->
+            <Button
+                Height="25"
+                MinWidth="25"
+                Padding="0"
+                materialDesign:ButtonAssist.CornerRadius="10"
+                Background="Transparent"
+                Command="{Binding ElementName=MainWin, Path=DataContext.VideoCommand}"
+                CommandParameter="{Binding}"
+                Focusable="False"
+                Style="{StaticResource MaterialDesignFlatLightButton}"
+                ToolTip="查看视频"
+                Visibility="{Binding IsVideoLinkVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <StackPanel Orientation="Horizontal">
+                    <!--<TextBlock
+                Margin="5,0"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Background="Transparent"
+                FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                FontSize="12"
+                FontWeight="Light"
+                Foreground="DodgerBlue"
+                IsEnabled="True"
+                Text="查看图片"
+                TextAlignment="Justify" />-->
+                    <TextBlock
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        FontFamily="{StaticResource IconFontFamily}"
+                        FontSize="18"
+                        Foreground="DodgerBlue"
+                        Text="&#xe773;" />
+                </StackPanel>
+            </Button>
+        </DataTemplate>
     </Window.Resources>
     <b:Interaction.Triggers>
         <b:EventTrigger EventName="SizeChanged" SourceName="MainWin">
@@ -710,47 +749,55 @@
                                 IsReadOnly="True" />
                             <!--  视频  -->
                             <DataGridTemplateColumn
-                                Width="100"
-                                MinWidth="40"
+                                Width="Auto"
+                                MinWidth="60"
                                 CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                                 Header="视频">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <!--  查看按钮  -->
-                                        <Button
-                                            Height="25"
-                                            MinWidth="25"
-                                            Padding="0"
-                                            materialDesign:ButtonAssist.CornerRadius="10"
-                                            Background="Transparent"
-                                            Command="{Binding ElementName=MainWin, Path=DataContext.VideoCommand}"
-                                            CommandParameter="{Binding}"
-                                            Focusable="False"
-                                            Style="{StaticResource MaterialDesignFlatLightButton}"
-                                            ToolTip="查看视频"
-                                            Visibility="{Binding IsVideoLinkVisible, Converter={StaticResource BooleanToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}">
-                                            <StackPanel Orientation="Horizontal">
 
-                                                <!--<TextBlock
-                                                    HorizontalAlignment="Center"
-                                                    VerticalAlignment="Center"
-                                                    Background="Transparent"
-                                                    FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
-                                                    FontSize="12"
-                                                    FontWeight="Light"
-                                                    Foreground="DodgerBlue"
-                                                    IsEnabled="True"
-                                                    Text="查看视频"
-                                                    TextAlignment="Justify" />-->
-                                                <TextBlock
-                                                    HorizontalAlignment="Center"
-                                                    VerticalAlignment="Center"
-                                                    FontFamily="{StaticResource IconFontFamily}"
-                                                    FontSize="18"
-                                                    Foreground="DodgerBlue"
-                                                    Text="&#xe773;" />
-                                            </StackPanel>
-                                        </Button>
+                                        <ListView
+                                            Focusable="False"
+                                            ItemTemplate="{StaticResource VideoTemplate}"
+                                            ItemsSource="{Binding NvrCameraBindingItemInfos, UpdateSourceTrigger=PropertyChanged}"
+                                            ScrollViewer.HorizontalScrollBarVisibility="Hidden"
+                                            ScrollViewer.VerticalScrollBarVisibility="Hidden"
+                                            SelectionMode="Extended">
+                                            <ListView.ItemContainerStyle>
+                                                <Style TargetType="ListViewItem">
+                                                    <Setter Property="Background" Value="Transparent" />
+                                                    <Setter Property="Template">
+                                                        <Setter.Value>
+                                                            <ControlTemplate TargetType="ListViewItem">
+                                                                <Border
+                                                                    x:Name="Border"
+                                                                    Background="{TemplateBinding Background}"
+                                                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                                                    BorderThickness="1"
+                                                                    SnapsToDevicePixels="True">
+                                                                    <ContentPresenter
+                                                                        HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                                        VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                                                        SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                                                                </Border>
+                                                                <ControlTemplate.Triggers>
+                                                                    <Trigger Property="IsSelected" Value="True">
+                                                                        <Setter TargetName="Border" Property="Background" Value="Transparent" />
+                                                                        <Setter TargetName="Border" Property="BorderBrush" Value="Transparent" />
+                                                                    </Trigger>
+                                                                </ControlTemplate.Triggers>
+                                                            </ControlTemplate>
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                </Style>
+                                            </ListView.ItemContainerStyle>
+                                            <ListView.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <StackPanel Background="Transparent" Orientation="Horizontal" />
+                                                </ItemsPanelTemplate>
+                                            </ListView.ItemsPanel>
+                                        </ListView>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>

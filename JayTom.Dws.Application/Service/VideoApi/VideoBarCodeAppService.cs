@@ -20,7 +20,7 @@ namespace JayTom.Dws.Application.Service.VideoApi {
             _videoBarCodeService = videoBarCodeService;
         }
 
-        public Task<KeyValuePair<bool, string>> AddOrUpdateBarcodeInfo(BarcodeImageDto barcodeImageInfo, List<BarcodeImageDto> panoramaImageInfos, ScanNodeDto scanNodeInfo,
+        public Task<KeyValuePair<bool, object>> AddOrUpdateBarcodeInfo(BarcodeImageDto barcodeImageInfo, List<BarcodeImageDto> panoramaImageInfos, ScanNodeDto scanNodeInfo,
             string rootImagePath) {
             return _videoBarCodeService.AddOrUpdateBarcodeInfo(barcodeImageInfo,
                  panoramaImageInfos, scanNodeInfo, rootImagePath);
@@ -60,14 +60,14 @@ namespace JayTom.Dws.Application.Service.VideoApi {
                                         Description = s1.Description,
                                         Name = s1.Name,
                                         ScanTime = s1.ScanTime,
-                                        NvrCameraBindingInfo = new NvrCameraBindingDto() {
-                                            BarcodeScannerSerialNumber = s1.VideoNvrCameraBindingInfo?.BarcodeScannerSerialNumber ?? string.Empty,
-                                            Channel = s1.VideoNvrCameraBindingInfo?.Channel ?? 0,
-                                            IpAddress = s1.VideoNvrCameraBindingInfo?.IpAddress ?? string.Empty,
-                                            Password = s1.VideoNvrCameraBindingInfo?.Password ?? string.Empty,
-                                            Username = s1.VideoNvrCameraBindingInfo?.Username ?? string.Empty,
-                                            Port = s1.VideoNvrCameraBindingInfo?.Port ?? 0,
-                                        },
+                                        NvrCameraBindingInfos = s1.VideoNvrCameraBindingInfos?.Select(nvr => new NvrCameraBindingDto {
+                                            BarcodeScannerSerialNumber = nvr?.BarcodeScannerSerialNumber ?? string.Empty,
+                                            Channel = nvr?.Channel ?? 0,
+                                            IpAddress = nvr?.IpAddress ?? string.Empty,
+                                            Password = nvr?.Password ?? string.Empty,
+                                            Username = nvr?.Username ?? string.Empty,
+                                            Port = nvr?.Port ?? 0,
+                                        })?.ToList() ?? new List<NvrCameraBindingDto>(),
                                         BarcodeImageInfos = s1.VideoNodeImageInfos?
                                             .Select(s2 => new BarcodeImageInfoDto {
                                                 CameraName = s2.CameraName,

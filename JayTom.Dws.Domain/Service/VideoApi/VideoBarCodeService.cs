@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Text;
 using System.Drawing;
+using System.Net.Http.Json;
 using System.Threading.Tasks;
 using System.Drawing.Imaging;
 using System.Collections.Generic;
@@ -25,7 +26,7 @@ namespace JayTom.Dws.Domain.Service.VideoApi {
             _videoScanNodeRepository = videoScanNodeRepository;
         }
 
-        public async Task<KeyValuePair<bool, string>> AddOrUpdateBarcodeInfo(BarcodeImageDto barcodeImageInfo, List<BarcodeImageDto> panoramaImageInfos, ScanNodeDto scanNodeInfo, string rootImagePath) {
+        public async Task<KeyValuePair<bool, object>> AddOrUpdateBarcodeInfo(BarcodeImageDto barcodeImageInfo, List<BarcodeImageDto> panoramaImageInfos, ScanNodeDto scanNodeInfo, string rootImagePath) {
             try {
                 var imageInfoModels = new List<VideoNodeImageInfoModel>();
                 await Task.Yield();
@@ -75,52 +76,63 @@ namespace JayTom.Dws.Domain.Service.VideoApi {
                 //保存图片
                 var model = await _videoBarCodeRepository.FirstOrDefault(f => f.Barcode.Equals(scanNodeInfo.Barcode));
                 if (model is null) {
-                    await _videoBarCodeRepository.Insert(new VideoBarCodeInfoModel() {
+                    var videoBarCodeInfoModel = new VideoBarCodeInfoModel() {
                         Barcode = scanNodeInfo.Barcode,
                         ScanTime = scanNodeInfo.ScanTime,
                         TimestampedGuid = new DateTimeOffset(scanNodeInfo.ScanTime).ToUnixTimeMilliseconds(),
                         VideoScanNodeInfos = new List<VideoScanNodeInfoModel>()
                         {
-                            new() {
+                            new()
+                            {
                                 Description = scanNodeInfo.Description,
                                 Name = scanNodeInfo.ScanNodName,
                                 ScanTime = scanNodeInfo.ScanTime,
                                 VideoNodeImageInfos = imageInfoModels,
-                                VideoNvrCameraBindingInfo = new VideoNvrCameraBindingInfoModel()
-                                {
-                                    BarcodeScannerSerialNumber = scanNodeInfo.NvrCameraBindingInfo.BarcodeScannerSerialNumber,
-                                    Channel = scanNodeInfo.NvrCameraBindingInfo.Channel,
-                                    IpAddress = scanNodeInfo.NvrCameraBindingInfo.IpAddress,
-                                    Password = scanNodeInfo.NvrCameraBindingInfo.Password,
-                                    Port = scanNodeInfo.NvrCameraBindingInfo.Port,
-                                    Username = scanNodeInfo.NvrCameraBindingInfo.Username
-                                }
+                                VideoNvrCameraBindingInfos =scanNodeInfo?.NvrCameraBindingInfos?
+                            .Select(s => new VideoNvrCameraBindingInfoModel {
+                                BarcodeScannerSerialNumber = s.BarcodeScannerSerialNumber,
+                                Channel = s.Channel,
+                                IpAddress = s.IpAddress,
+                                Password = s.Password,
+                                Port = s.Port,
+                                Username = s.Username
+                            })?.ToList() ?? new List<VideoNvrCameraBindingInfoModel>()
                             }
                         },
-                    });
+                    };
+
+                    var insert = await _videoBarCodeRepository.Insert(videoBarCodeInfoModel);
+                    if (insert) {
+                        return new KeyValuePair<bool, object>(true, videoBarCodeInfoModel);
+                    }
                 }
                 else {
-                    await _videoScanNodeRepository.Update(new VideoScanNodeInfoModel() {
+                    var videoScanNodeInfoModel = new VideoScanNodeInfoModel() {
                         BarcodeId = model.Id,
                         Description = scanNodeInfo.Description,
                         Name = scanNodeInfo.ScanNodName,
                         ScanTime = scanNodeInfo.ScanTime,
                         VideoNodeImageInfos = imageInfoModels,
-                        VideoNvrCameraBindingInfo = new VideoNvrCameraBindingInfoModel() {
-                            BarcodeScannerSerialNumber = scanNodeInfo.NvrCameraBindingInfo.BarcodeScannerSerialNumber,
-                            Channel = scanNodeInfo.NvrCameraBindingInfo.Channel,
-                            IpAddress = scanNodeInfo.NvrCameraBindingInfo.IpAddress,
-                            Password = scanNodeInfo.NvrCameraBindingInfo.Password,
-                            Port = scanNodeInfo.NvrCameraBindingInfo.Port,
-                            Username = scanNodeInfo.NvrCameraBindingInfo.Username
-                        }
-                    });
+                        VideoNvrCameraBindingInfos = scanNodeInfo?.NvrCameraBindingInfos?
+                            .Select(s => new VideoNvrCameraBindingInfoModel {
+                                BarcodeScannerSerialNumber = s.BarcodeScannerSerialNumber,
+                                Channel = s.Channel,
+                                IpAddress = s.IpAddress,
+                                Password = s.Password,
+                                Port = s.Port,
+                                Username = s.Username
+                            })?.ToList() ?? new List<VideoNvrCameraBindingInfoModel>()
+                    };
+                    var update = await _videoScanNodeRepository.Update(videoScanNodeInfoModel);
+                    if (update) {
+                        return new KeyValuePair<bool, object>(true, videoScanNodeInfoModel);
+                    }
                 }
 
-                return new KeyValuePair<bool, string>(true, "保存成功");
+                return new KeyValuePair<bool, object>(false, "保存失败");
             }
             catch (Exception e) {
-                return new KeyValuePair<bool, string>(false, $"保存失败:{e.Message}");
+                return new KeyValuePair<bool, object>(false, $"保存失败:{e.Message}");
             }
         }
 

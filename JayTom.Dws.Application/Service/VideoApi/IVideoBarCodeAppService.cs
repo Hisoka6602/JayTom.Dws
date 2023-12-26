@@ -28,7 +28,7 @@ namespace JayTom.Dws.Application.Service.VideoApi {
         /// 添加或修改条码信息
         /// </summary>
         /// <returns></returns>
-        public Task<KeyValuePair<bool, string>> AddOrUpdateBarcodeInfo(BarcodeImageDto barcodeImageInfo,
+        public Task<KeyValuePair<bool, object>> AddOrUpdateBarcodeInfo(BarcodeImageDto barcodeImageInfo,
             List<BarcodeImageDto> panoramaImageInfos, ScanNodeDto scanNodeInfo, string rootImagePath);
 
         /// <summary>

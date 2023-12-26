@@ -27,6 +27,6 @@ namespace JayTom.Dws.Domain.Dto.VideoApi {
         /// <summary>
         /// Nvr通道信息
         /// </summary>
-        public NvrCameraBindingDto NvrCameraBindingInfo { get; set; } = new();
+        public List<NvrCameraBindingDto> NvrCameraBindingInfos { get; set; } = new();
     }
 }

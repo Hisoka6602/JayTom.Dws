@@ -47,9 +47,12 @@ namespace JayTom.Dws.Infrastructure.SignalR.VideoApi.ClientMessageHub {
                 _hubConnection.Reconnected += OnReconnected;
                 _hubConnection.Reconnecting += OnReconnecting;
                 //注册接收服务函数
-                RegisterMethod(_hubConnection, "DataSummaries",
-                    ReceiveMessageType.DataSummaries);
-
+                RegisterMethod(_hubConnection, "DataStatistics",
+                    ReceiveMessageType.DataStatistics);
+                RegisterMethod(_hubConnection, "MessageItem",
+                    ReceiveMessageType.MessageItem);
+                RegisterMethod(_hubConnection, "UpDateNodes",
+                    ReceiveMessageType.UpDateNodes);
                 await _hubConnection?.StartAsync(token)!;
                 ConnectionId = _hubConnection?.ConnectionId ?? string.Empty;
                 IsConnected = true;

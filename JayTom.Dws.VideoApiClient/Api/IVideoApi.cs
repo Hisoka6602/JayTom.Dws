@@ -95,7 +95,7 @@ namespace JayTom.Dws.VideoApiClient.Api {
         /// <summary>
         /// Nvr通道信息
         /// </summary>
-        public NvrCameraBindingInfo NvrCameraBindingInfo { get; set; } = new();
+        public List<NvrCameraBindingInfo> NvrCameraBindingInfos { get; set; } = new();
 
         /// <summary>
         /// 图片

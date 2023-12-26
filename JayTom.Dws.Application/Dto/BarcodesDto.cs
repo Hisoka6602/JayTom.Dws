@@ -63,7 +63,7 @@ namespace JayTom.Dws.Application.Dto {
         /// <summary>
         /// 绑定通道
         /// </summary>
-        public NvrCameraBindingDto NvrCameraBindingInfo { get; set; } = new();
+        public List<NvrCameraBindingDto> NvrCameraBindingInfos { get; set; } = new();
 
         /// <summary>
         /// 图片

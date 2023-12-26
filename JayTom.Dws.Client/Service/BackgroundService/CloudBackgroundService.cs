@@ -135,12 +135,13 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     if (key) {
                         var cameraSerialNumber = barCodeInfoModel.ImageInfos?.FirstOrDefault(f => f.Type == 0)?.CameraSerialNumber;
                         //取出绑定信息
-                        NvrCameraBindingInfoModel nvrCameraBindingInfoModel;
+                        List<NvrCameraBindingInfoModel> nvrCameraBindingInfoModels;
                         try {
                             await _setNvrCameraBindingSlim.WaitAsync(token);
-                            nvrCameraBindingInfoModel = _nvrCameraBindingInfoModels.FirstOrDefault(f => !string.IsNullOrEmpty(cameraSerialNumber)
-                                && f.BarcodeScannerSerialNumber.Equals(
-                                    cameraSerialNumber)) ?? new NvrCameraBindingInfoModel();
+                            nvrCameraBindingInfoModels = _nvrCameraBindingInfoModels.Where(f => !string.IsNullOrEmpty(cameraSerialNumber)
+                                                                                                                                 && f.BarcodeScannerSerialNumber.Equals(
+                                                                                                                                     cameraSerialNumber))?.ToList() ??
+                                                                                          new List<NvrCameraBindingInfoModel>();
                         }
                         finally {
                             _setNvrCameraBindingSlim.Release();
@@ -156,14 +157,15 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                     CustomCameraName = s.CustomCameraName,
                                     Type = s.Type,
                                     Image = File.Exists(s.LocalPath) ? Image.FromFile(s.LocalPath) : null
-                                })?.ToList(), nvrCameraBindingInfo: new CloudNvrCameraBindingInfo() {
-                                    BarcodeScannerSerialNumber = nvrCameraBindingInfoModel.BarcodeScannerSerialNumber,
-                                    Channel = nvrCameraBindingInfoModel.Channel,
-                                    IpAddress = nvrCameraBindingInfoModel.IpAddress,
-                                    Password = nvrCameraBindingInfoModel.Password,
-                                    Port = nvrCameraBindingInfoModel.Port,
-                                    Username = nvrCameraBindingInfoModel.Username
-                                }, token: token);
+                                })?.ToList(), nvrCameraBindingInfos: nvrCameraBindingInfoModels.Select(nvr =>
+                           new CloudNvrCameraBindingInfo {
+                               BarcodeScannerSerialNumber = nvr.BarcodeScannerSerialNumber,
+                               Channel = nvr.Channel,
+                               IpAddress = nvr.IpAddress,
+                               Password = nvr.Password,
+                               Port = nvr.Port,
+                               Username = nvr.Username
+                           })?.ToList() ?? new List<CloudNvrCameraBindingInfo>(), token: token);
                         EventAggregator.Instance.Publish(new CloudVideoUploadMessage {
                             Barcode = barCodeInfoModel.Barcode,
                             IsSuccessful = cloudUploadResponse.IsSuccessful,

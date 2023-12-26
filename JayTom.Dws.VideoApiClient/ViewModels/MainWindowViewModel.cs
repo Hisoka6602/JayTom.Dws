@@ -20,20 +20,25 @@ using MaterialDesignThemes.Wpf;
 using System.Windows.Threading;
 using System.Threading.Channels;
 using System.Collections.Generic;
+using MathNet.Numerics.Statistics;
 using JayTom.Dws.VideoApiClient.Api;
 using System.Collections.ObjectModel;
 using JayTom.Dws.VideoApiClient.Models;
 using Microsoft.Extensions.Configuration;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using JayTom.Dws.VideoApiClient.Views.Editors;
 using Microsoft.Extensions.Configuration.Json;
 using JayTom.Dws.VideoApiClient.ViewModels.Dialog;
 using JayTom.Dws.VideoApiClient.ViewModels.Editors;
+using JayTom.Dws.Infrastructure.SignalR.VideoApi.ClientMessageHub;
+using JayTom.Dws.Infrastructure.SignalR.VideoApi.SignalRMessageHub;
 
 namespace JayTom.Dws.VideoApiClient.ViewModels {
 
     public class MainWindowViewModel : BindableBase {
         private readonly IDialogService _dialogService;
         private readonly IVideoApi _videoApi;
+        private readonly IClientMessageHub _clientMessageHub;
         private SnackbarMessageQueue _mainMessageQueue = new(TimeSpan.FromSeconds(2));
         private static SemaphoreSlim _semaphoreSlim = new(1);
         private double _uniformCornerRadius = 10;
@@ -57,9 +62,158 @@ namespace JayTom.Dws.VideoApiClient.ViewModels {
         private int _lastDayOfMonthCount;
 
         public MainWindowViewModel(IDialogService dialogService,
-            IVideoApi videoApi) {
+            IVideoApi videoApi, IClientMessageHub clientMessageHub) {
             _dialogService = dialogService;
             _videoApi = videoApi;
+            _clientMessageHub = clientMessageHub;
+            _clientMessageHub.Reconnected += async delegate (string s) {
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+                    MainMessageQueue.Enqueue(s);
+                });
+            };
+            _clientMessageHub.Reconnecting += async delegate (Exception exception) {
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+                    MainMessageQueue.Enqueue("远程服务器正在重连");
+                });
+            };
+            _clientMessageHub.Closed += async delegate (Exception exception) {
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+                    MainMessageQueue.Enqueue("远程服务器已断开");
+                });
+            };
+            _clientMessageHub.ReceiveMessage += async delegate (ReceiveMessageInfo info) {
+                if (info.MessageType == ReceiveMessageType.MessageItem) {
+                    //添加或更新一行
+                    if (NodeStartTime is null &&
+                        NodeEndTime is null &&
+                        SelectedNode is null &&
+                        Barcode is null &&
+                        CameraName is null) {
+                        var messageBarCodeItemInfo = JsonConvert.DeserializeObject<MessageBarCodeItemInfo>(info.MessageData?.ToString()
+                            ?? string.Empty);
+                        if (messageBarCodeItemInfo is not null) {
+                            var nvrCameraBindingItemInfos = messageBarCodeItemInfo.NvrCameraBindingItem?
+                                .Select(s => new NvrCameraBindingItemInfo() {
+                                    BarcodeScannerSerialNumber = s.BarcodeScannerSerialNumber,
+                                    Channel = s.Channel,
+                                    IpAddress = s.IpAddress,
+                                    Password = s.Password,
+                                    Port = s.Port,
+                                    Username = s.Username
+                                })?.ToList() ?? new List<NvrCameraBindingItemInfo>();
+                            var barCodeItemModel = BarCodeItems.FirstOrDefault(f => f.BarCode.Equals(messageBarCodeItemInfo.BarCode) &&
+                                f.NodeName.Equals(messageBarCodeItemInfo.NodeName));
+                            if (barCodeItemModel is not null) {
+                                //更新
+                                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+                                    barCodeItemModel.CameraCustomName = messageBarCodeItemInfo.CameraCustomName;
+                                    barCodeItemModel.CameraSerialNumber = messageBarCodeItemInfo.CameraSerialNumber;
+                                    barCodeItemModel.ScanImageUrl = messageBarCodeItemInfo.ScanImageUrl;
+                                    barCodeItemModel.ScanTime = messageBarCodeItemInfo.ScanTime;
+                                    barCodeItemModel.ScanImageVisible =
+                                        !string.IsNullOrEmpty(messageBarCodeItemInfo.ScanImageUrl);
+                                    barCodeItemModel.PanoramaImageItems = new ObservableCollection<PanoramaImageItemModel>(
+                                        messageBarCodeItemInfo.PanoramaImageItems?.Select(s => new PanoramaImageItemModel {
+                                            ImageUrl = s,
+                                            ImageVisible = !string.IsNullOrEmpty(s)
+                                        })?.ToList() ?? new List<PanoramaImageItemModel>());
+                                    barCodeItemModel.NvrCameraBindingItemInfos = nvrCameraBindingItemInfos?
+                                        .Select(nvr => new NvrCameraBindingItemInfo {
+                                            BarcodeScannerSerialNumber = nvr.BarcodeScannerSerialNumber,
+                                            Channel = nvr.Channel,
+                                            IpAddress = nvr.IpAddress,
+                                            Password = nvr.Password,
+                                            Port = nvr.Port,
+                                            Username = nvr.Username,
+                                            IsVideoLinkVisible =
+                                                new Func<bool>(() => !string.IsNullOrEmpty(nvr.BarcodeScannerSerialNumber) &&
+                                                                     !string.IsNullOrEmpty(nvr.Password) &&
+                                                                     !string.IsNullOrEmpty(nvr.Username) &&
+                                                                     !string.IsNullOrEmpty(nvr.IpAddress) &&
+                                                                     nvr is { Port: > 0, Channel: > 0 })(),
+                                            BarCode = barCodeItemModel.BarCode ?? string.Empty,
+                                            ScanTime = barCodeItemModel.ScanTime,
+                                        })?.ToList() ?? new List<NvrCameraBindingItemInfo>();
+                                });
+                            }
+                            else {
+                                //添加
+                                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+                                    BarCodeItems.Insert(0, new BarCodeItemModel() {
+                                        BarCode = messageBarCodeItemInfo.BarCode,
+                                        CameraCustomName = messageBarCodeItemInfo.CameraCustomName,
+                                        CameraSerialNumber = messageBarCodeItemInfo.CameraSerialNumber,
+                                        NodeName = messageBarCodeItemInfo.NodeName,
+                                        Num = 0,
+                                        ScanImageUrl = messageBarCodeItemInfo.ScanImageUrl,
+                                        ScanTime = messageBarCodeItemInfo.ScanTime,
+                                        ScanImageVisible = !string.IsNullOrEmpty(messageBarCodeItemInfo.ScanImageUrl),
+                                        NvrCameraBindingItemInfos = nvrCameraBindingItemInfos?
+                                            .Select(nvr => new NvrCameraBindingItemInfo {
+                                                BarcodeScannerSerialNumber = nvr.BarcodeScannerSerialNumber,
+                                                Channel = nvr.Channel,
+                                                IpAddress = nvr.IpAddress,
+                                                Password = nvr.Password,
+                                                Port = nvr.Port,
+                                                Username = nvr.Username,
+                                                IsVideoLinkVisible =
+                                                    new Func<bool>(() => !string.IsNullOrEmpty(nvr.BarcodeScannerSerialNumber) &&
+                                                                         !string.IsNullOrEmpty(nvr.Password) &&
+                                                                         !string.IsNullOrEmpty(nvr.Username) &&
+                                                                         !string.IsNullOrEmpty(nvr.IpAddress) &&
+                                                                         nvr is { Port: > 0, Channel: > 0 })(),
+                                                BarCode = messageBarCodeItemInfo.BarCode ?? string.Empty,
+                                                ScanTime = messageBarCodeItemInfo.ScanTime,
+                                            })?.ToList() ?? new List<NvrCameraBindingItemInfo>(),
+                                        PanoramaImageItems = new ObservableCollection<PanoramaImageItemModel>(
+                                            messageBarCodeItemInfo.PanoramaImageItems?.Select(s => new PanoramaImageItemModel {
+                                                ImageUrl = s,
+                                                ImageVisible = !string.IsNullOrEmpty(s)
+                                            })?.ToList() ?? new List<PanoramaImageItemModel>())
+                                    });
+                                    if (BarCodeItems.Count > _pageSize) {
+                                        BarCodeItems.Remove(BarCodeItems.LastOrDefault()!);
+                                    }
+                                    //排序
+                                    foreach (var codeItemModel in BarCodeItems) {
+                                        codeItemModel.Num += 1;
+                                    }
+                                });
+
+                                //
+                            }
+                        }
+                    }
+                }
+                else if (info.MessageType == ReceiveMessageType.DataStatistics) {
+                    //更新数据汇总
+                    try {
+                        var statistics = JsonConvert.DeserializeObject<DataStatistics>(info.MessageData?.ToString() ?? string.Empty);
+                        if (statistics is not null) {
+                            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+                                FirstDayOfMonthCount = statistics.ThisMonthBarcodeTotal;
+                                LastDayOfMonthCount = statistics.LastMonthBarcodeTotal;
+                                TodayBarcodeCount = statistics.TodayBarcodeTotal;
+                                YesterdayBarcodeCount = statistics.YesterdayBarcodeTotal;
+                            });
+                        }
+                    }
+                    catch (Exception e) {
+                        NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
+                    }
+                }
+                else if (info.MessageType == ReceiveMessageType.UpDateNodes) {
+                    //更新数据节点
+
+                    var deserializeObject = JsonConvert.DeserializeObject<List<string>>(info.MessageData?.ToString() ?? string.Empty);
+                    if (deserializeObject is not null) {
+                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+                            NodeList.Clear();
+                            NodeList.AddRange(deserializeObject);
+                        });
+                    }
+                }
+            };
         }
 
         public SnackbarMessageQueue MainMessageQueue {
@@ -193,37 +347,43 @@ namespace JayTom.Dws.VideoApiClient.ViewModels {
             Task.Factory.StartNew(async () => {
                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
                     //读取内容
+                    NodeList.Clear();
                     var configuration = new ConfigurationBuilder()
                         .AddJsonFile("appsettings.json")
                         .Build();
                     var webDomains = configuration.GetSection("AppSettings:WebDomain").Value ?? string.Empty;
-                    _videoApi.SetWebDomain(webDomains);
-                    NodeList.Clear();
-                    var (key, value) = await _videoApi.GroupedNodeNames();
-                    if (key && value is ApiResult { Data: List<string> nodeNames }) {
-                        NodeList.AddRange(nodeNames);
-                    }
+                    //判断连接
+                    if (!string.IsNullOrEmpty(webDomains)) {
+                        //连接
+                        await _clientMessageHub.StartAsync($"http://{webDomains}/Message");
 
-                    var (b, o) = await _videoApi.BarcodeTotalForDate(DateTime.Today);
-                    if (b && o is ApiResult { Data: long total }) {
-                        TodayBarcodeCount = (int)total;
-                    }
+                        _videoApi.SetWebDomain(webDomains);
+                        var (key, value) = await _videoApi.GroupedNodeNames();
+                        if (key && value is ApiResult { Data: List<string> nodeNames }) {
+                            NodeList.AddRange(nodeNames);
+                        }
 
-                    var (key1, value1) = await _videoApi.BarcodeTotalForDate(DateTime.Today.AddDays(-1));
-                    if (key1 && value1 is ApiResult { Data: long count }) {
-                        YesterdayBarcodeCount = (int)count;
+                        var (b, o) = await _videoApi.BarcodeTotalForDate(DateTime.Today);
+                        if (b && o is ApiResult { Data: long total }) {
+                            TodayBarcodeCount = (int)total;
+                        }
+
+                        var (key1, value1) = await _videoApi.BarcodeTotalForDate(DateTime.Today.AddDays(-1));
+                        if (key1 && value1 is ApiResult { Data: long count }) {
+                            YesterdayBarcodeCount = (int)count;
+                        }
+                        var (b1, o1) = await _videoApi.BarcodeTotalForDateBetween(new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1),
+                            new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1).AddMonths(1).AddSeconds(-1));
+                        if (b1 && o1 is ApiResult { Data: long firstDayOfMonthCount }) {
+                            FirstDayOfMonthCount = (int)firstDayOfMonthCount;
+                        }
+                        var (key2, value2) = await _videoApi.BarcodeTotalForDateBetween(new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1).AddMonths(-1),
+                            new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1).AddSeconds(-1));
+                        if (key2 && value2 is ApiResult { Data: long lastDayOfMonthCount }) {
+                            LastDayOfMonthCount = (int)lastDayOfMonthCount;
+                        }
+                        FirstPageDelegate(obj);
                     }
-                    var (b1, o1) = await _videoApi.BarcodeTotalForDateBetween(new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1),
-                        new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1).AddMonths(1).AddSeconds(-1));
-                    if (b1 && o1 is ApiResult { Data: long firstDayOfMonthCount }) {
-                        FirstDayOfMonthCount = (int)firstDayOfMonthCount;
-                    }
-                    var (key2, value2) = await _videoApi.BarcodeTotalForDateBetween(new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1).AddMonths(-1),
-                        new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1).AddSeconds(-1));
-                    if (key2 && value2 is ApiResult { Data: long lastDayOfMonthCount }) {
-                        LastDayOfMonthCount = (int)lastDayOfMonthCount;
-                    }
-                    FirstPageDelegate(obj);
                 });
             });
         }
@@ -426,10 +586,10 @@ namespace JayTom.Dws.VideoApiClient.ViewModels {
         /// 点击视频方法
         /// </summary>
         public ICommand VideoCommand {
-            get => new DelegateCommand<BarCodeItemModel>(VideoDelegate);
+            get => new DelegateCommand<NvrCameraBindingItemInfo>(VideoDelegate);
         }
 
-        private void VideoDelegate(BarCodeItemModel obj) {
+        private void VideoDelegate(NvrCameraBindingItemInfo obj) {
             //调用视频Demo并传参
             try {
                 var configuration = new ConfigurationBuilder()
@@ -442,13 +602,13 @@ namespace JayTom.Dws.VideoApiClient.ViewModels {
                 var process = new Process();
                 process.StartInfo.FileName = $"{AppDomain.CurrentDomain.BaseDirectory}x64Demo\\PlayBackAndDownloadDemo.exe";
                 process.StartInfo.Arguments = JsonConvert.SerializeObject(new {
-                    Channel = obj.NvrCameraBindingItemInfo?.Channel,
-                    IpAddress = obj.NvrCameraBindingItemInfo?.IpAddress?.ToString(),
-                    Port = obj.NvrCameraBindingItemInfo?.Port,
-                    Password = obj.NvrCameraBindingItemInfo?.Password?.ToString(),
-                    Username = obj.NvrCameraBindingItemInfo?.Username?.ToString(),
-                    StartTime = obj.ScanTime.AddSeconds(0 - _secondsToSubtract),
-                    BarCode = obj.BarCode,
+                    Channel = obj?.Channel,
+                    IpAddress = obj?.IpAddress?.ToString(),
+                    Port = obj?.Port,
+                    Password = obj?.Password?.ToString(),
+                    Username = obj?.Username?.ToString(),
+                    StartTime = obj?.ScanTime.AddSeconds(0 - _secondsToSubtract),
+                    BarCode = obj?.BarCode,
                     VideoLengthInSeconds = _videoLengthInSeconds,
                 }).Replace("\"", "\\\"");
                 process.StartInfo.UseShellExecute = false;
@@ -570,20 +730,22 @@ namespace JayTom.Dws.VideoApiClient.ViewModels {
                                                     ImageVisible = !string.IsNullOrEmpty(s1.Path),
                                                     ImageUrl = s1.Path
                                                 })?.ToList() ?? new List<PanoramaImageItemModel>()),
-                                            NvrCameraBindingItemInfo = new NvrCameraBindingItemInfo() {
-                                                BarcodeScannerSerialNumber = s.s.NvrCameraBindingInfo.BarcodeScannerSerialNumber,
-                                                Channel = s.s.NvrCameraBindingInfo.Channel,
-                                                IpAddress = s.s.NvrCameraBindingInfo.IpAddress,
-                                                Password = s.s.NvrCameraBindingInfo.Password,
-                                                Port = s.s.NvrCameraBindingInfo.Port,
-                                                Username = s.s.NvrCameraBindingInfo.Username
-                                            },
-                                            IsVideoLinkVisible =
-                                                new Func<bool>(() => !string.IsNullOrEmpty(s.s.NvrCameraBindingInfo.BarcodeScannerSerialNumber) &&
-                                                                     !string.IsNullOrEmpty(s.s.NvrCameraBindingInfo.Password) &&
-                                                                     !string.IsNullOrEmpty(s.s.NvrCameraBindingInfo.Username) &&
-                                                                     !string.IsNullOrEmpty(s.s.NvrCameraBindingInfo.IpAddress) &&
-                                                                     s.s.NvrCameraBindingInfo is { Port: > 0, Channel: > 0 })(),
+                                            NvrCameraBindingItemInfos = s.s.NvrCameraBindingInfos?.Select(nvr => new NvrCameraBindingItemInfo {
+                                                BarcodeScannerSerialNumber = nvr.BarcodeScannerSerialNumber,
+                                                Channel = nvr.Channel,
+                                                IpAddress = nvr.IpAddress,
+                                                Password = nvr.Password,
+                                                Port = nvr.Port,
+                                                Username = nvr.Username,
+                                                IsVideoLinkVisible =
+                                                    new Func<bool>(() => !string.IsNullOrEmpty(nvr.BarcodeScannerSerialNumber) &&
+                                                                         !string.IsNullOrEmpty(nvr.Password) &&
+                                                                         !string.IsNullOrEmpty(nvr.Username) &&
+                                                                         !string.IsNullOrEmpty(nvr.IpAddress) &&
+                                                                         nvr is { Port: > 0, Channel: > 0 })(),
+                                                BarCode = s.Barcode,
+                                                ScanTime = s.s.ScanTime,
+                                            })?.ToList() ?? new List<NvrCameraBindingItemInfo>()
                                         })?.OrderByDescending(o => o.ScanTime)?.ToList();
                                     BarCodeItems.AddRange(barCodeItemModels);
                                 }

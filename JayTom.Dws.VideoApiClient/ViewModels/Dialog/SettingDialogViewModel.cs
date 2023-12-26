@@ -12,19 +12,23 @@ using MaterialDesignThemes.Wpf;
 using System.Collections.Generic;
 using JayTom.Dws.VideoApiClient.Api;
 using Microsoft.Extensions.Configuration;
+using JayTom.Dws.Infrastructure.SignalR.VideoApi.ClientMessageHub;
 
 namespace JayTom.Dws.VideoApiClient.ViewModels.Dialog {
 
     public class SettingDialogViewModel : BindableBase {
         private readonly IVideoApi _videoApi;
+        private readonly IClientMessageHub _clientMessageHub;
         private string _identifier = string.Empty;
         private bool _isOk;
         private string _webDomain = string.Empty;
         private int _videoLengthInSeconds;
         private int _secondsToSubtract;
 
-        public SettingDialogViewModel(IVideoApi videoApi) {
+        public SettingDialogViewModel(IVideoApi videoApi,
+            IClientMessageHub clientMessageHub) {
             _videoApi = videoApi;
+            _clientMessageHub = clientMessageHub;
         }
 
         /// <summary>
@@ -63,7 +67,7 @@ namespace JayTom.Dws.VideoApiClient.ViewModels.Dialog {
             get => new DelegateCommand(SaveDelegate);
         }
 
-        private void SaveDelegate() {
+        private async void SaveDelegate() {
             try {
                 string json = File.ReadAllText("appsettings.json");
                 // 解析 JSON，将配置文件内容转换为 JObject 对象
@@ -83,6 +87,11 @@ namespace JayTom.Dws.VideoApiClient.ViewModels.Dialog {
                 File.WriteAllText("appsettings.json", JsonConvert.SerializeObject(configObject, Formatting.Indented));
                 IsOk = true;
                 _videoApi.SetWebDomain(WebDomain);
+
+                if (_clientMessageHub.IsConnected) {
+                    await _clientMessageHub.StopAsync();
+                    await _clientMessageHub.StartAsync($"http://{WebDomain}/Message");
+                }
             }
             catch (Exception e) {
                 IsOk = false;

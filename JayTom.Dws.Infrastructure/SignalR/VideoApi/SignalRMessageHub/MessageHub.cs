@@ -1,74 +1,117 @@
-﻿using Microsoft.AspNetCore.SignalR;
+﻿using System;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+using Microsoft.AspNetCore.SignalR;
+using JayTom.Dws.Domain.Service.VideoApi;
 
 namespace JayTom.Dws.Infrastructure.SignalR.VideoApi.SignalRMessageHub {
 
     public class MessageHub : Hub, IMessageHub {
         private readonly IHubContext<MessageHub> _hubContext;
-        private readonly IBarCodeService _barCodeService;
-        private List<DataSummary> _dataSummary = new();
+        private readonly IVideoBarCodeService _videoBarCodeService;
         private static SemaphoreSlim _semaphoreSlim = new(1);
 
-        public List<DataSummary> DataSummaries {
-            get => _dataSummary;
-            private set => _dataSummary = value;
-        }
-
         public MessageHub(IHubContext<MessageHub> hubContext,
-            IBarCodeService barCodeService) {
+            IVideoBarCodeService videoBarCodeService) {
             _hubContext = hubContext;
-            _barCodeService = barCodeService;
+            _videoBarCodeService = videoBarCodeService;
         }
 
-        public async void SendTotalCount() {
-            await _hubContext.Clients.All.SendCoreAsync("DataSummaries", new object?[]
-             {
-                DataSummaries
-             });
-        }
-
-        public async void AddTotalCount(DateTime date) {
+        public async void DataStatistics() {
             try {
+                var dataStatistics = new DataStatistics();
                 await _semaphoreSlim.WaitAsync();
-                var summary = DataSummaries.FirstOrDefault(f => f.Date.Equals(date.Date));
-                if (summary is null) {
-                    DataSummaries.Add(new DataSummary() {
-                        Date = date.Date,
-                        TotalCount = 1
-                    });
+                //获取计数
+                var (key, value) = await _videoBarCodeService.BarcodeTotalForDateBetween(
+                    new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1),
+                    new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1)
+                        .AddMonths(1).AddSeconds(-1));
+                if (key && value is int thisMonthBarcodeTotal) {
+                    dataStatistics.ThisMonthBarcodeTotal = thisMonthBarcodeTotal;
                 }
-                else {
-                    summary.TotalCount += 1;
+                (key, value) = await _videoBarCodeService.BarcodeTotalForDateBetween(
+                    new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1).AddMonths(-1),
+                    new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1).AddSeconds(-1));
+                if (key && value is int lastMonthBarcodeTotal) {
+                    dataStatistics.LastMonthBarcodeTotal = lastMonthBarcodeTotal;
                 }
-            }
-            finally {
-                _semaphoreSlim.Release();
-                SendTotalCount();
-            }
-        }
 
-        public async Task<bool> ResetDataSummaries() {
-            try {
-                await _semaphoreSlim.WaitAsync();
-                DataSummaries.Clear();
-                var times = new[]
+                (key, value) = await _videoBarCodeService.BarcodeTotalForDate(DateTime.Today);
+                if (key && value is int todayBarcodeTotal) {
+                    dataStatistics.TodayBarcodeTotal = todayBarcodeTotal;
+                }
+                (key, value) = await _videoBarCodeService.BarcodeTotalForDate(DateTime.Today.AddDays(-1));
+                if (key && value is int yesterdayBarcodeTotal) {
+                    dataStatistics.YesterdayBarcodeTotal = yesterdayBarcodeTotal;
+                }
+
+                await _hubContext.Clients.All.SendCoreAsync("DataStatistics", new object?[]
                 {
-                    DateTime.Now.AddDays(-1),
-                    DateTime.Now
-                };
-                await Parallel.ForEachAsync(times, async (t, c) => {
-                    var (key, value) = await _barCodeService.CodeTotal(t, c);
-                    if (key && value is int total) {
-                        lock (DataSummaries) {
-                            DataSummaries.Add(new DataSummary { Date = t.Date, TotalCount = total });
-                        }
-                    }
+                    dataStatistics
                 });
             }
+            catch (Exception e) {
+                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
+            }
             finally {
                 _semaphoreSlim.Release();
             }
+        }
 
-            return false;
+        public async void MessageItem(MessageBarCodeItemInfo info) {
+            try {
+                await _semaphoreSlim.WaitAsync();
+                //获取计数
+                await _hubContext.Clients.All.SendCoreAsync("MessageItem", new object?[]
+                {
+                    info
+                });
+            }
+            catch (Exception e) {
+                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
+            }
+            finally {
+                _semaphoreSlim.Release();
+            }
+        }
+
+        public async void UpDateItem(MessageBarCodeItemInfo info) {
+            try {
+                await _semaphoreSlim.WaitAsync();
+                //获取计数
+                await _hubContext.Clients.All.SendCoreAsync("UpDateItem", new object?[]
+                {
+                    info
+                });
+            }
+            catch (Exception e) {
+                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
+            }
+            finally {
+                _semaphoreSlim.Release();
+            }
+        }
+
+        public async void UpDateNodes() {
+            try {
+                await _semaphoreSlim.WaitAsync();
+                var (key, value) = await _videoBarCodeService.GroupedNodeNames();
+                if (key && value is List<string> nodeNames) {
+                    //获取计数
+                    await _hubContext.Clients.All.SendCoreAsync("NodeNames", new object?[]
+                    {
+                        nodeNames
+                    });
+                }
+            }
+            catch (Exception e) {
+                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
+            }
+            finally {
+                _semaphoreSlim.Release();
+            }
         }
     }
 }

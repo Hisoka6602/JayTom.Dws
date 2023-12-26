@@ -89,7 +89,17 @@
         /// <summary>
         /// 数据汇总
         /// </summary>
-        DataSummaries,
+        DataStatistics,
+
+        /// <summary>
+        /// Item消息
+        /// </summary>
+        MessageItem,
+
+        /// <summary>
+        /// 更新节点
+        /// </summary>
+        UpDateNodes,
 
         /// <summary>
         /// 停止服务

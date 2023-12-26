@@ -29,6 +29,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\JayTom.Dws.Infrastructure\JayTom.Dws.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Resource Include="Fonts\iconfont.ttf" />
     <Resource Include="Fonts\更纱黑体 Mono SC Nerd.ttf" />
   </ItemGroup>

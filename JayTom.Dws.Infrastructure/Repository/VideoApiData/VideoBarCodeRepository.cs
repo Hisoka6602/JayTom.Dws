@@ -70,7 +70,7 @@ namespace JayTom.Dws.Infrastructure.Repository.VideoApiData {
 
                     var videoBarCodeInfoModels = await dbSet.AsNoTracking()
                         ?.Include(a => a.VideoScanNodeInfos)
-                        ?.ThenInclude(b => b.VideoNvrCameraBindingInfo)
+                        ?.ThenInclude(b => b.VideoNvrCameraBindingInfos)
                         ?.Include(a => a.VideoScanNodeInfos)
                         ?.ThenInclude(b => b.VideoNodeImageInfos)
                         ?.Where(w => w.VideoScanNodeInfos != null &&
@@ -101,7 +101,15 @@ namespace JayTom.Dws.Infrastructure.Repository.VideoApiData {
                                    ScanTime = s1.ScanTime,
                                    Description = s1.Description,
                                    Name = s1.Name,
-                                   VideoNvrCameraBindingInfo = s1.VideoNvrCameraBindingInfo ?? new VideoNvrCameraBindingInfoModel(),
+                                   VideoNvrCameraBindingInfos = s1.VideoNvrCameraBindingInfos?.Select(nvr => new VideoNvrCameraBindingInfoModel {
+                                       BarcodeScannerSerialNumber = nvr.BarcodeScannerSerialNumber,
+                                       Channel = nvr.Channel,
+                                       IpAddress = nvr.IpAddress,
+                                       Password = nvr.Password,
+                                       Port = nvr.Port,
+                                       ScanNodeId = nvr.ScanNodeId,
+                                       Username = nvr.Username,
+                                   })?.ToList() ?? new List<VideoNvrCameraBindingInfoModel>(),
                                    VideoNodeImageInfos = s1.VideoNodeImageInfos?.Where(w1 =>
                                            (string.IsNullOrEmpty(cameraName) || w1.CameraName.Contains(cameraName)) &&
                                            (string.IsNullOrEmpty(cameraSerialNumber) ||

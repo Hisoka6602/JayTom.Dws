@@ -14,6 +14,7 @@ namespace JayTom.Dws.VideoApiClient.Models {
         private string _password = string.Empty;
         private int _channel;
         private string _barcodeScannerSerialNumber = string.Empty;
+        private bool _isVideoLinkVisible;
 
         /// <summary>
         /// IP地址
@@ -62,5 +63,23 @@ namespace JayTom.Dws.VideoApiClient.Models {
             get => _barcodeScannerSerialNumber;
             set => SetProperty(ref _barcodeScannerSerialNumber, value);
         }
+
+        /// <summary>
+        /// 是否显示视频链接
+        /// </summary>
+        public bool IsVideoLinkVisible {
+            get => _isVideoLinkVisible;
+            set => SetProperty(ref _isVideoLinkVisible, value);
+        }
+
+        /// <summary>
+        /// 扫码时间
+        /// </summary>
+        public DateTime ScanTime { get; set; }
+
+        /// <summary>
+        /// 条码
+        /// </summary>
+        public string BarCode { get; set; } = string.Empty;
     }
 }

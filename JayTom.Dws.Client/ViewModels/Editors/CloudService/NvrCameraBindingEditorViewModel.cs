@@ -191,13 +191,16 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CloudService {
                 var nvrCameraBindingInfoModels = await _nvrCameraBindingRepository.Select(s =>
                     (s.Channel.Equals(Channel) &&
                     s.IpAddress.Equals(IpAddress) &&
-                    s.Port.Equals(Port) || list.Contains(s.BarcodeScannerSerialNumber)), o => o.Id);
+                    s.Port.Equals(Port)), o => o.Id);
+                //|| list.Contains(s.BarcodeScannerSerialNumber)
                 if (nvrCameraBindingInfoModels?.Any() == true) {
                     var deleteRange = await _nvrCameraBindingRepository.DeleteRange(nvrCameraBindingInfoModels);
                     if (!deleteRange) {
                         Message = "保存失败";
                     }
                 }
+                //修改删除条件
+
                 var cameraBindingInfoModels = NvrCameraBindingItems.Where(w => w.IsBinding).Select(s => new NvrCameraBindingInfoModel {
                     BarcodeScannerSerialNumber = s.CameraSerialNumber,
                     Channel = Channel,

@@ -20,6 +20,7 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using JayTom.Dws.Infrastructure.Repository.LocalData;
 using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 using JayTom.Dws.Infrastructure.Repository.VideoApiData;
+using JayTom.Dws.Infrastructure.SignalR.VideoApi.SignalRMessageHub;
 
 internal class Program {
 
@@ -105,6 +106,17 @@ internal class Program {
             options.SerializerSettings.DateTimeZoneHandling = DateTimeZoneHandling.Local; // 设置时区为 UTC
             options.SerializerSettings.DateFormatString = "yyyy-MM-dd HH:mm:ss";
         });
+        //SignalR
+
+        builder.Services.AddSignalR(options => {
+            options.HandshakeTimeout = TimeSpan.FromMinutes(1);
+            options.EnableDetailedErrors = true;
+            options.MaximumReceiveMessageSize = null;
+            options.KeepAliveInterval = TimeSpan.FromMinutes(1);
+            options.ClientTimeoutInterval = TimeSpan.FromMinutes(5);
+            options.MaximumParallelInvocationsPerClient = 10;
+            options.StreamBufferCapacity = int.MaxValue;
+        });
         //仓储注入
         {
             //data
@@ -119,6 +131,7 @@ internal class Program {
         {
             builder.Services.AddSingleton<IVideoBarCodeAppService, VideoBarCodeAppService>();
             builder.Services.AddSingleton<IVideoBarCodeService, VideoBarCodeService>();
+            builder.Services.AddSingleton<IMessageHub, MessageHub>();
         }
         //后台服务
         builder.Services.AddHostedService<DataCleanupService>();
@@ -166,7 +179,12 @@ internal class Program {
         app.UseAuthorization();
 
         app.MapControllers();
-
+        //SignalR
+        app.MapHub<MessageHub>("/Message", a => {
+            a.TransportMaxBufferSize = 0;
+            a.ApplicationMaxBufferSize = 0;
+            a.WebSockets.CloseTimeout = TimeSpan.FromSeconds(10);
+        });
         app.Run();
     }
 }

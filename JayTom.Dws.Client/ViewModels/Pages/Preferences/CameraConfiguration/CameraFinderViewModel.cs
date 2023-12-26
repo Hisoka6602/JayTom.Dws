@@ -163,11 +163,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                                 if (infoModels?.FirstOrDefault(f => f.SerialNumber.Equals(list[i].SerialNumber))
                                         ?.BoundType == BoundCameraType.OcrCamera) {
                                     UnbindDelegate(list[i]);
-                                    list[i].IsOcrSupported = false;
                                     hasBinding = false;
                                 }
+                                list[i].IsOcrSupported = false;
                             }
-                            hasBinding ??= infoModels?.Any(a => a.SerialNumber.Equals(list[i].SerialNumber)) ?? false;
+                            else {
+                                hasBinding ??= infoModels?.Any(a => a.SerialNumber.Equals(list[i].SerialNumber)) ?? false;
+                            }
                             list[i].HasBinding = hasBinding ?? false;
                             list[i].BoundType = infoModels?.FirstOrDefault(f => f.SerialNumber.Equals(list[i].SerialNumber))?.BoundType ??
                                                 BoundCameraType.BarcodeScannerCamera;

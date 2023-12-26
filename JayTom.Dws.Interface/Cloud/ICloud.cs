@@ -22,7 +22,7 @@ namespace JayTom.Dws.Interface.Cloud {
         /// <param name="ocrInfo">Ocr信息</param>
         /// <param name="uploadApiInfo">Api上传信息</param>
         /// <param name="sortingInfo">分拣信息</param>
-        /// <param name="nvrCameraBindingInfo"></param>
+        /// <param name="nvrCameraBindingInfos"></param>
         /// <param name="other">其他</param>
         /// <param name="token"></param>
         /// <returns></returns>
@@ -35,7 +35,7 @@ namespace JayTom.Dws.Interface.Cloud {
             CloudUploadOcrInfo? ocrInfo = default,
             CloudUploadApiInfo? uploadApiInfo = default,
             CloudUploadSortingInfo? sortingInfo = default,
-            CloudNvrCameraBindingInfo? nvrCameraBindingInfo = default,
+            List<CloudNvrCameraBindingInfo>? nvrCameraBindingInfos = default,
             object? other = null, CancellationToken token = default);
 
         /// <summary>

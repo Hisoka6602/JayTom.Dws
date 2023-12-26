@@ -26,7 +26,7 @@ namespace JayTom.Dws.Interface.Cloud.CloudVideo {
             double weight, string scanNodName, CloudUploadVolumeInfo? volumeInfo = default,
             List<CloudUploadImageInfo>? imageInfos = default, CloudUploadOcrInfo? ocrInfo = default,
             CloudUploadApiInfo? uploadApiInfo = default, CloudUploadSortingInfo? sortingInfo = default,
-            CloudNvrCameraBindingInfo? nvrCameraBindingInfo = default,
+            List<CloudNvrCameraBindingInfo>? nvrCameraBindingInfos = default,
             object? other = null,
             CancellationToken token = default) {
             var resultContent = string.Empty;
@@ -44,7 +44,7 @@ namespace JayTom.Dws.Interface.Cloud.CloudVideo {
                     Barcode = barcode,
                     ScanNodName = scanNodName,
                     ScanTime = scanTime,
-                    NvrCameraBindingInfo = nvrCameraBindingInfo
+                    NvrCameraBindingInfos = nvrCameraBindingInfos
                 });
                 var jsonContent = new StringContent(data, Encoding.UTF8, "application/json");
                 formData.Add(jsonContent, "jsonData");

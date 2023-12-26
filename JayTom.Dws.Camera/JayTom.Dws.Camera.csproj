@@ -21,6 +21,27 @@
     <Reference Include="CamSDK">
       <HintPath>Cameras\SmartCamera\Wayzim\Dll\CamSDK.dll</HintPath>
     </Reference>
+    <Reference Include="Dynamsoft.BarcodeReader">
+      <HintPath>..\..\..\dynamsoft-barcode-reader-dotnet-9.6.30\dynamsoft-barcode-reader-dotnet-9.6.30\Samples\BarcodeReaderDemo\BarcodeReaderDemo\bin\Debug_VS2010\Dynamsoft.BarcodeReader.dll</HintPath>
+    </Reference>
+    <Reference Include="Dynamsoft.Camera">
+      <HintPath>..\..\..\dynamsoft-barcode-reader-dotnet-9.6.30\dynamsoft-barcode-reader-dotnet-9.6.30\Samples\BarcodeReaderDemo\BarcodeReaderDemo\Lib\dotNet4_0\Dynamsoft.Camera.dll</HintPath>
+    </Reference>
+    <Reference Include="Dynamsoft.Forms.Viewer">
+      <HintPath>..\..\..\dynamsoft-barcode-reader-dotnet-9.6.30\dynamsoft-barcode-reader-dotnet-9.6.30\Samples\BarcodeReaderDemo\BarcodeReaderDemo\Lib\dotNet4_0\Dynamsoft.Forms.Viewer.dll</HintPath>
+    </Reference>
+    <Reference Include="Dynamsoft.ImageCore">
+      <HintPath>..\..\..\dynamsoft-barcode-reader-dotnet-9.6.30\dynamsoft-barcode-reader-dotnet-9.6.30\Samples\BarcodeReaderDemo\BarcodeReaderDemo\Lib\dotNet4_0\Dynamsoft.ImageCore.dll</HintPath>
+    </Reference>
+    <Reference Include="Dynamsoft.PDF">
+      <HintPath>..\..\..\dynamsoft-barcode-reader-dotnet-9.6.30\dynamsoft-barcode-reader-dotnet-9.6.30\Samples\BarcodeReaderDemo\BarcodeReaderDemo\Lib\dotNet4_0\Dynamsoft.PDF.dll</HintPath>
+    </Reference>
+    <Reference Include="Dynamsoft.Twain">
+      <HintPath>..\..\..\dynamsoft-barcode-reader-dotnet-9.6.30\dynamsoft-barcode-reader-dotnet-9.6.30\Samples\BarcodeReaderDemo\BarcodeReaderDemo\Lib\dotNet4_0\Dynamsoft.Twain.dll</HintPath>
+    </Reference>
+    <Reference Include="DynamsoftCommon">
+      <HintPath>..\..\..\dynamsoft-barcode-reader-dotnet-9.6.30\dynamsoft-barcode-reader-dotnet-9.6.30\Samples\BarcodeReaderDemo\BarcodeReaderDemo\bin\Debug_VS2010\DynamsoftCommon.dll</HintPath>
+    </Reference>
     <Reference Include="MvCodeReaderSDK.Net">
       <HintPath>Cameras\SmartCamera\Hikvision\Dll\MvCodeReaderSDK.Net.dll</HintPath>
       <Private></Private>

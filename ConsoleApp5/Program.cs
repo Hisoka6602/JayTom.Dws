@@ -83,9 +83,9 @@ internal class Program {
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<VideoScanNodeInfoModel>()
-                .HasOne(b => b.VideoNvrCameraBindingInfo)
+                .HasMany(b => b.VideoNvrCameraBindingInfos)
                 .WithOne(n => n.ScanNodeInfo)
-                .HasForeignKey<VideoNvrCameraBindingInfoModel>(n => n.ScanNodeId)
+                .HasForeignKey(n => n.ScanNodeId)
                 .OnDelete(DeleteBehavior.Cascade);
         }
     }

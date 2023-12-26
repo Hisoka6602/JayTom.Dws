@@ -14,6 +14,7 @@ using Microsoft.Extensions.DependencyInjection;
 using JayTom.Dws.VideoApiClient.ViewModels.Dialog;
 using JayTom.Dws.VideoApiClient.ViewModels.Editors;
 using DryIoc.Microsoft.DependencyInjection.Extension;
+using JayTom.Dws.Infrastructure.SignalR.VideoApi.ClientMessageHub;
 
 namespace JayTom.Dws.VideoApiClient {
 
@@ -47,6 +48,7 @@ namespace JayTom.Dws.VideoApiClient {
                 });
                 services.AddSingleton<IConfiguration>(_configuration);
                 services.AddScoped<IVideoApi, VideoApi>();
+                services.AddScoped<IClientMessageHub, ClientMessageHub>();
             });
         }
 

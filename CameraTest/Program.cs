@@ -12,6 +12,8 @@ internal class Program {
     private static SemaphoreSlim _takePhotoSlim = new(1);
 
     private static async Task Main(string[] args) {
+        var usbBarCodeReader = new UsbBarCodeReader().EnumerateCameras();
+
         // 创建RSA实例
         /*using (RSA rsa = RSA.Create()) {
             // 获取RSA的公钥和私钥

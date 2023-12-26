@@ -52,9 +52,10 @@ internal class Program {
             Console.WriteLine($"硬件ID:{device["HardwareID"]?.ToString()}");
             Console.WriteLine($"设备类别:{device["PNPClass"]?.ToString()}");
             Console.WriteLine($"设备状态:{device["Status"]?.ToString()}");
-            /*var deviceName = device["Caption"]?.ToString();
+            /*var deviceName = device["Caption"]?.ToString();*/
             // Console.WriteLine(deviceName);
-            var serializeObject = JsonConvert.SerializeObject(device);*/
+            var serializeObject = JsonConvert.SerializeObject(device);
+            Console.WriteLine(serializeObject);
         }
 
         Console.ReadLine();

@@ -44,6 +44,6 @@ namespace JayTom.Dws.Data.VideoApiData {
         /// <summary>
         /// NVR信息
         /// </summary>
-        public virtual VideoNvrCameraBindingInfoModel? VideoNvrCameraBindingInfo { get; set; }
+        public virtual ICollection<VideoNvrCameraBindingInfoModel>? VideoNvrCameraBindingInfos { get; set; }
     }
 }
