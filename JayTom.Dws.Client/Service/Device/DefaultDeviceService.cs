@@ -32,6 +32,7 @@ using JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim;
 using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 using JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision;
+using JayTom.Dws.Camera.Cameras.IndustrialCamera.UsbCamera;
 
 namespace JayTom.Dws.Client.Service.Device {
 
@@ -55,7 +56,7 @@ namespace JayTom.Dws.Client.Service.Device {
         private CameraSdkSelectorDto? _cameraSdkSelectorDto;
         private static ConcurrentDictionary<string, CameraInfo> _cameraInfos = new();
         public bool RunningStatus { get; private set; } = false;
-        public List<CameraInfo> CameraItems { get; private set; }
+        public List<CameraInfo> CameraItems { get; private set; } = new();
         public ScaleType ScaleType { get; private set; } = ScaleType.None;
 
         public event EventHandler<List<ICamera>>? CameraInitialized;
@@ -95,8 +96,10 @@ namespace JayTom.Dws.Client.Service.Device {
                 var hikvisionVolumeCameras = new List<CameraInfo>();
                 var daHuaVolumeCameras = new List<CameraInfo>();
                 var dimensionVolumeCamera = new List<CameraInfo>();
+                var normalUsbCamera = new List<CameraInfo>();
                 //HikvisionVolumeCamera
                 //判断已经选择的相机
+
                 if (_cameraSdkSelectorDto?.IsUseDaHuaSmartCameraSdk == true) {
                     //大华智能相机
                     daHuaSmartCameras = await new DaHuaSmartCamera().EnumerateCameras();
@@ -138,7 +141,8 @@ namespace JayTom.Dws.Client.Service.Device {
                 if (_cameraSdkSelectorDto?.IsUseDimensionVolumeCameraSdk == true) {
                     dimensionVolumeCamera = await new DimensionVolumeCamera().EnumerateCameras();
                 }
-
+                //Usb相机
+                normalUsbCamera = await new NormalUsbCamera().EnumerateCameras();
                 var cameraList = daHuaVolumeCameras?.Union(daHuaSmartCameras
                                                            ?? new List<CameraInfo>())?.ToList()?
                                      .Union(wayzimIndustrialCameras ?? new List<CameraInfo>())?.ToList()?
@@ -147,7 +151,8 @@ namespace JayTom.Dws.Client.Service.Device {
                                      .Union(hikvisionIndustrialCameras ?? new List<CameraInfo>())?.ToList()?
                                      .Union(hikvisionSmartCameras ?? new List<CameraInfo>())?.ToList()?
                                      .Union(hikvisionVolumeCameras ?? new List<CameraInfo>())?.ToList()?
-                                     .Union(dimensionVolumeCamera ?? new List<CameraInfo>())?.ToList()
+                                     .Union(dimensionVolumeCamera ?? new List<CameraInfo>())?.ToList()?
+                                     .Union(normalUsbCamera ?? new List<CameraInfo>())?.ToList()
                                  ?? new List<CameraInfo>();
                 var list = cameraList.Select(s =>
                     _cameraInfos.AddOrUpdate(s.SerialNumber, s,
@@ -164,7 +169,7 @@ namespace JayTom.Dws.Client.Service.Device {
                     IsOcrSupported = s.IsOcrSupported
                 })?.ToList();
                 CameraEnumerationRefreshed?.Invoke(null, itemInfoModels ?? new List<CameraFinderItemInfoModel>());
-                CameraItems = list;
+                CameraItems = list ?? new List<CameraInfo>();
                 return new KeyValuePair<bool, string>(true, Languages.Language.ResourceManager.GetString("相机检索成功") ?? string.Empty);
             }
             catch (Exception e) {
@@ -359,8 +364,7 @@ namespace JayTom.Dws.Client.Service.Device {
             //启动(逐个相机启动)
             foreach (var camera in _cameras.OrderByDescending(o => o.BindingType)) {
                 //设置过滤
-                if (camera.BindingType == CameraBindingType.ScannerCamera ||
-                    camera.BindingType == CameraBindingType.OcrCamera) {
+                if (camera.BindingType is CameraBindingType.ScannerCamera or CameraBindingType.OcrCamera) {
                     if (camera is IIndustrialCamera industrialCamera) {
                         industrialCamera.SetScanCodeFilterParams(new ScanCodeFilterParams() {
                             DuplicateBarcodeFilterCount = _barcodeFilterSettingsDto?.DuplicateBarcodeFilterCount ?? 0,
@@ -875,6 +879,9 @@ namespace JayTom.Dws.Client.Service.Device {
                         return CameraType.VolumeCamera;
                     break;
 
+                case not null when (brand.Contains("Microsoft") /*|| info.Brand.Contains("Huaray")*/):
+                    return CameraType.IndustrialCamera;
+
                 default:
                     return CameraType.IndustrialCamera;
             }
@@ -915,6 +922,9 @@ namespace JayTom.Dws.Client.Service.Device {
                     if (info.Model.Contains("Orbbec"))
                         return new DimensionVolumeCamera(info);
                     break;
+
+                case not null when (info.Brand.Contains("Microsoft") /*|| info.Brand.Contains("Huaray")*/):
+                    return new NormalUsbCamera(info);
 
                 default:
                     return null;

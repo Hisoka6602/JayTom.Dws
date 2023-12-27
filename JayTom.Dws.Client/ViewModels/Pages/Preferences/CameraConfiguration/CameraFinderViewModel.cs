@@ -29,7 +29,6 @@ using CameraType = JayTom.Dws.Client.Models.CameraType;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
-
     public class CameraFinderViewModel : BindableBase {
         private readonly IDeviceService _deviceService;
         private readonly IBarcodeScannerCameraConfigRepository _barcodeScannerCameraConfigRepository;
@@ -167,9 +166,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                                 }
                                 list[i].IsOcrSupported = false;
                             }
-                            else {
-                                hasBinding ??= infoModels?.Any(a => a.SerialNumber.Equals(list[i].SerialNumber)) ?? false;
-                            }
+                            hasBinding ??= infoModels?.Any(a => a.SerialNumber.Equals(list[i].SerialNumber)) ?? false;
                             list[i].HasBinding = hasBinding ?? false;
                             list[i].BoundType = infoModels?.FirstOrDefault(f => f.SerialNumber.Equals(list[i].SerialNumber))?.BoundType ??
                                                 BoundCameraType.BarcodeScannerCamera;

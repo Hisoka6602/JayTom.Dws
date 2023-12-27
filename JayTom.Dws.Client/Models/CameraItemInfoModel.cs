@@ -1,16 +1,16 @@
-﻿using JayTom.Dws.Camera;
-using Prism.Mvvm;
-using System.Collections.Concurrent;
-using System.Collections.Specialized;
+﻿using Prism.Mvvm;
 using System.Drawing;
-using System.Drawing.Imaging;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Windows;
+using System.Threading;
+using JayTom.Dws.Camera;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
+using System.Drawing.Imaging;
+using System.Threading.Tasks;
 using System.Windows.Threading;
+using System.Windows.Media.Imaging;
+using System.Collections.Concurrent;
+using System.Collections.Specialized;
 using Image = System.Windows.Controls.Image;
 
 namespace JayTom.Dws.Client.Models {
@@ -46,10 +46,16 @@ namespace JayTom.Dws.Client.Models {
                     if (tryDequeue && bitmap is not null && this.Image is not null) {
                         var rect = new Rectangle(0, 0, bitmap.Width, bitmap.Height);
                         var bitmapData = bitmap.LockBits(rect, ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
-                        await this.Image.Dispatcher.InvokeAsync(() => {
+                        /*await this.Image.Dispatcher.InvokeAsync(() => {
                             this.Image.WritePixels(new Int32Rect(0, 0, bitmap.Width, bitmap.Height), bitmapData.Scan0, bitmapData.Stride * bitmapData.Height, bitmapData.Stride);
                             bitmap.UnlockBits(bitmapData);
-                        }, DispatcherPriority.Render);
+                        }, DispatcherPriority.Render);*/
+                        await Task.Run(() => {
+                            this.Image.Dispatcher.Invoke(() => {
+                                this.Image.WritePixels(new Int32Rect(0, 0, bitmap.Width, bitmap.Height), bitmapData.Scan0, bitmapData.Stride * bitmapData.Height, bitmapData.Stride);
+                                bitmap.UnlockBits(bitmapData);
+                            }, DispatcherPriority.Render);
+                        });
                     }
                     await Task.Delay(1);
                 }
