@@ -127,6 +127,8 @@ namespace JayTom.Dws.Camera {
                             _selectCamera.CurrentResolution = new CamResolution(size.Width, size.Height);
                         }
                         else {
+                            var name = resolution.GetType().Name;
+                            Debug.WriteLine(name);
                             var orDefault = UsbCameraInfo.CameraResolutions?.OrderByDescending(o => o.Width * o.Height)?.FirstOrDefault();
                             if (orDefault is not null) {
                                 _selectCamera.CurrentResolution = new CamResolution(orDefault.Value.Width, orDefault.Value.Height);
@@ -815,6 +817,56 @@ namespace JayTom.Dws.Camera {
             destBitmap.UnlockBits(destData);
 
             return destBitmap;
+        }
+
+        public static unsafe Bitmap? GenerateThumbnail(Bitmap? sourceImage, int thumbnailWidth = 800, int thumbnailHeight = 600) {
+            if (sourceImage is null) {
+                return null;
+            }
+
+            var sourceData = sourceImage.LockBits(new Rectangle(0, 0, sourceImage.Width, sourceImage.Height), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
+
+            try {
+                var thumbnail = new Bitmap(thumbnailWidth, thumbnailHeight);
+                var thumbnailData = thumbnail.LockBits(new Rectangle(0, 0, thumbnailWidth, thumbnailHeight), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
+
+                try {
+                    byte* sourcePtr = (byte*)sourceData.Scan0;
+                    byte* thumbnailPtr = (byte*)thumbnailData.Scan0;
+
+                    var sourceBytesPerPixel = 4;
+                    var thumbnailBytesPerPixel = 4;
+
+                    var scaleX = (float)thumbnailWidth / sourceImage.Width;
+                    var scaleY = (float)thumbnailHeight / sourceImage.Height;
+
+                    var sourceWidth = sourceImage.Width;
+                    var sourceHeight = sourceImage.Height;
+
+                    for (int y = 0; y < thumbnailHeight; y++) {
+                        for (int x = 0; x < thumbnailWidth; x++) {
+                            var sourceX = (int)(x / scaleX);
+                            var sourceY = (int)(y / scaleY);
+
+                            var sourceIndex = (sourceY * sourceWidth + sourceX) * sourceBytesPerPixel;
+                            var thumbnailIndex = (y * thumbnailWidth + x) * thumbnailBytesPerPixel;
+
+                            thumbnailPtr[thumbnailIndex] = sourcePtr[sourceIndex];
+                            thumbnailPtr[thumbnailIndex + 1] = sourcePtr[sourceIndex + 1];
+                            thumbnailPtr[thumbnailIndex + 2] = sourcePtr[sourceIndex + 2];
+                            thumbnailPtr[thumbnailIndex + 3] = sourcePtr[sourceIndex + 3];
+                        }
+                    }
+                }
+                finally {
+                    thumbnail.UnlockBits(thumbnailData);
+                }
+
+                return thumbnail;
+            }
+            finally {
+                sourceImage.UnlockBits(sourceData);
+            }
         }
     }
 }

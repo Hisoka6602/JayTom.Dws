@@ -15,14 +15,14 @@ namespace JayTom.Dws.Client.Models.Cameras {
         private bool _isUseCode128 = true;
         private bool _isUseCodeBar = true;
         private bool _isUseItf = true;
-        private bool _ean13 = true;
-        private bool _ean8 = true;
+        private bool _isUseEan13 = true;
+        private bool _isUseEan8 = true;
         private int _localizationMode;
         private int _deblurLevel;
         private int _expectedBarcodesCount;
         private int _scaleDownThreshold;
-        private bool _isUseTextFilterMode;
-        private bool _isUseRegionPredetectionMode;
+        private bool _isUseTextFilterMode = true;
+        private bool _isUseRegionPredetectionMode = true;
         private int _grayscaleTransformationMode;
         private int _imagePreprocessingMode;
         private int _minResultConfidence;
@@ -90,17 +90,17 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 是否使用Ean13
         /// </summary>
-        public bool Ean13 {
-            get => _ean13;
-            set => SetProperty(ref _ean13, value);
+        public bool IsUseEan13 {
+            get => _isUseEan13;
+            set => SetProperty(ref _isUseEan13, value);
         }
 
         /// <summary>
         /// 是否使用
         /// </summary>
-        public bool Ean8 {
-            get => _ean8;
-            set => SetProperty(ref _ean8, value);
+        public bool IsUseEan8 {
+            get => _isUseEan8;
+            set => SetProperty(ref _isUseEan8, value);
         }
 
         /// <summary>

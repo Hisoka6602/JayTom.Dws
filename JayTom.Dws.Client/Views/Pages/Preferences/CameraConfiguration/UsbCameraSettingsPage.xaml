@@ -66,15 +66,43 @@
                         materialDesign:ThemeAssist.Theme="Dark"
                         Background="Transparent"
                         BorderThickness="0"
-                        DisplayMemberPath="Display"
+                        DisplayMemberPath="CameraName"
                         Focusable="False"
                         FontSize="13"
                         FontWeight="Bold"
                         Foreground="White"
-                        ItemsSource="{Binding VolumeMeasurementModeItems, UpdateSourceTrigger=PropertyChanged}"
-                        SelectedItem="{Binding VolumeMeasurementMode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                        SelectedValuePath="VolumeMeasurementMode" />
+                        ItemsSource="{Binding CameraItems, UpdateSourceTrigger=PropertyChanged}"
+                        SelectedItem="{Binding SelectCameraInfo, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                        <b:Interaction.Triggers>
+                            <b:EventTrigger EventName="SelectionChanged">
+                                <mvvm:InvokeCommandAction Command="{Binding SwitchCameraCommand}" />
+                            </b:EventTrigger>
+                        </b:Interaction.Triggers>
+                    </ComboBox>
                 </Border>
+                <Button
+                    Width="50"
+                    MinHeight="30"
+                    Margin="5,0"
+                    Padding="0"
+                    HorizontalAlignment="Left"
+                    materialDesign:ButtonAssist.CornerRadius="5"
+                    Background="#2E2E2E"
+                    BorderThickness="0"
+                    Command="{Binding CameraUpdateCommand}"
+                    FocusVisualStyle="{x:Null}"
+                    Style="{StaticResource MaterialDesignFlatAccentBgButton}">
+
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Margin="0,0,0,0"
+                            VerticalAlignment="Center"
+                            FontFamily="{StaticResource IconFontFamily}"
+                            FontSize="18"
+                            Foreground="DarkGray"
+                            Text="&#xe69a;" />
+                    </StackPanel>
+                </Button>
             </StackPanel>
             <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
                 <TextBlock
@@ -135,9 +163,14 @@
                                 FontSize="13"
                                 FontWeight="Bold"
                                 Foreground="White"
-                                ItemsSource="{Binding VolumeMeasurementModeItems, UpdateSourceTrigger=PropertyChanged}"
-                                SelectedItem="{Binding VolumeMeasurementMode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                SelectedValuePath="VolumeMeasurementMode" />
+                                ItemsSource="{Binding CameraResolutions, UpdateSourceTrigger=PropertyChanged}"
+                                SelectedItem="{Binding CameraResolution, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                <b:Interaction.Triggers>
+                                    <b:EventTrigger EventName="SelectionChanged">
+                                        <mvvm:InvokeCommandAction Command="{Binding SwitchCameraResolutionCommand}" />
+                                    </b:EventTrigger>
+                                </b:Interaction.Triggers>
+                            </ComboBox>
                         </Border>
                     </StackPanel>
                     <!--  曝光度  -->
@@ -774,43 +807,6 @@
                 <StackPanel Margin="50,5,0,0" Orientation="Vertical">
                     <!--  条码类型  -->
                     <StackPanel Orientation="Horizontal">
-                        <!--<TextBlock
-                            Margin="5,0"
-                            VerticalAlignment="Center"
-                            FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
-                            FontSize="14"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            Text="条码类型:" />
-                        <Border
-                            Margin="5"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Background="#1A696969"
-                            CornerRadius="5">
-                            <ComboBox
-                                Width="Auto"
-                                Height="30"
-                                MinWidth="100"
-                                MaxWidth="170"
-                                Margin="5,0"
-                                Padding="0"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                HorizontalContentAlignment="Center"
-                                VerticalContentAlignment="Center"
-                                materialDesign:ThemeAssist.Theme="Dark"
-                                Background="Transparent"
-                                BorderThickness="0"
-                                DisplayMemberPath="Display"
-                                Focusable="False"
-                                FontSize="13"
-                                FontWeight="Bold"
-                                Foreground="White"
-                                ItemsSource="{Binding VolumeMeasurementModeItems, UpdateSourceTrigger=PropertyChanged}"
-                                SelectedItem="{Binding VolumeMeasurementMode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                SelectedValuePath="VolumeMeasurementMode" />
-                        </Border>-->
                         <TreeView MinWidth="220">
                             <TreeView.Resources>
                                 <Style BasedOn="{StaticResource MaterialDesignTreeViewItem}" TargetType="TreeViewItem">
@@ -825,6 +821,7 @@
                                 FontWeight="Bold"
                                 Foreground="DarkGray"
                                 Header="条码类型">
+                                <!--  ORCode(二维码)  -->
                                 <TreeViewItem Margin="-40,0,0,0" Background="Transparent">
                                     <TreeViewItem.Header>
                                         <StackPanel Orientation="Horizontal">
@@ -836,7 +833,7 @@
                                                 <CheckBox
                                                     BorderBrush="DodgerBlue"
                                                     BorderThickness="2"
-                                                    IsChecked="{Binding IsUseWatermark, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                                    IsChecked="{Binding BarcodeReaderSettingsInfo.IsUseOrCode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                                     Style="{StaticResource CustomCheckBoxStyle}">
                                                     <b:Interaction.Triggers>
                                                         <b:EventTrigger EventName="PreviewMouseUp">
@@ -856,6 +853,7 @@
                                         </StackPanel>
                                     </TreeViewItem.Header>
                                 </TreeViewItem>
+                                <!--  MicroQR(二维码)  -->
                                 <TreeViewItem Margin="-40,0,0,0" Background="Transparent">
                                     <TreeViewItem.Header>
                                         <StackPanel Orientation="Horizontal">
@@ -867,7 +865,7 @@
                                                 <CheckBox
                                                     BorderBrush="DodgerBlue"
                                                     BorderThickness="2"
-                                                    IsChecked="{Binding IsUseWatermark, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                                    IsChecked="{Binding BarcodeReaderSettingsInfo.IsUseMicroQr, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                                     Style="{StaticResource CustomCheckBoxStyle}">
                                                     <b:Interaction.Triggers>
                                                         <b:EventTrigger EventName="PreviewMouseUp">
@@ -887,6 +885,7 @@
                                         </StackPanel>
                                     </TreeViewItem.Header>
                                 </TreeViewItem>
+                                <!--  Code39(一维码)  -->
                                 <TreeViewItem Margin="-40,0,0,0" Background="Transparent">
                                     <TreeViewItem.Header>
                                         <StackPanel Orientation="Horizontal">
@@ -898,7 +897,7 @@
                                                 <CheckBox
                                                     BorderBrush="DodgerBlue"
                                                     BorderThickness="2"
-                                                    IsChecked="{Binding IsUseWatermark, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                                    IsChecked="{Binding BarcodeReaderSettingsInfo.IsUseCode39, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                                     Style="{StaticResource CustomCheckBoxStyle}">
                                                     <b:Interaction.Triggers>
                                                         <b:EventTrigger EventName="PreviewMouseUp">
@@ -918,6 +917,7 @@
                                         </StackPanel>
                                     </TreeViewItem.Header>
                                 </TreeViewItem>
+                                <!--  Code93(一维码)  -->
                                 <TreeViewItem Margin="-40,0,0,0" Background="Transparent">
                                     <TreeViewItem.Header>
                                         <StackPanel Orientation="Horizontal">
@@ -929,7 +929,7 @@
                                                 <CheckBox
                                                     BorderBrush="DodgerBlue"
                                                     BorderThickness="2"
-                                                    IsChecked="{Binding IsUseWatermark, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                                    IsChecked="{Binding BarcodeReaderSettingsInfo.IsUseCode93, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                                     Style="{StaticResource CustomCheckBoxStyle}">
                                                     <b:Interaction.Triggers>
                                                         <b:EventTrigger EventName="PreviewMouseUp">
@@ -949,6 +949,7 @@
                                         </StackPanel>
                                     </TreeViewItem.Header>
                                 </TreeViewItem>
+                                <!--  Code128(一维码)  -->
                                 <TreeViewItem Margin="-40,0,0,0" Background="Transparent">
                                     <TreeViewItem.Header>
                                         <StackPanel Orientation="Horizontal">
@@ -960,7 +961,7 @@
                                                 <CheckBox
                                                     BorderBrush="DodgerBlue"
                                                     BorderThickness="2"
-                                                    IsChecked="{Binding IsUseWatermark, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                                    IsChecked="{Binding BarcodeReaderSettingsInfo.IsUseCode128, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                                     Style="{StaticResource CustomCheckBoxStyle}">
                                                     <b:Interaction.Triggers>
                                                         <b:EventTrigger EventName="PreviewMouseUp">
@@ -980,6 +981,7 @@
                                         </StackPanel>
                                     </TreeViewItem.Header>
                                 </TreeViewItem>
+                                <!--  CodeBar(一维码)  -->
                                 <TreeViewItem Margin="-40,0,0,0" Background="Transparent">
                                     <TreeViewItem.Header>
                                         <StackPanel Orientation="Horizontal">
@@ -991,7 +993,7 @@
                                                 <CheckBox
                                                     BorderBrush="DodgerBlue"
                                                     BorderThickness="2"
-                                                    IsChecked="{Binding IsUseWatermark, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                                    IsChecked="{Binding BarcodeReaderSettingsInfo.IsUseCodeBar, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                                     Style="{StaticResource CustomCheckBoxStyle}">
                                                     <b:Interaction.Triggers>
                                                         <b:EventTrigger EventName="PreviewMouseUp">
@@ -1011,6 +1013,7 @@
                                         </StackPanel>
                                     </TreeViewItem.Header>
                                 </TreeViewItem>
+                                <!--  ITF(一维码)  -->
                                 <TreeViewItem Margin="-40,0,0,0" Background="Transparent">
                                     <TreeViewItem.Header>
                                         <StackPanel Orientation="Horizontal">
@@ -1022,7 +1025,7 @@
                                                 <CheckBox
                                                     BorderBrush="DodgerBlue"
                                                     BorderThickness="2"
-                                                    IsChecked="{Binding IsUseWatermark, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                                    IsChecked="{Binding BarcodeReaderSettingsInfo.IsUseItf, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                                     Style="{StaticResource CustomCheckBoxStyle}">
                                                     <b:Interaction.Triggers>
                                                         <b:EventTrigger EventName="PreviewMouseUp">
@@ -1042,6 +1045,7 @@
                                         </StackPanel>
                                     </TreeViewItem.Header>
                                 </TreeViewItem>
+                                <!--  Ean13(一维码)  -->
                                 <TreeViewItem Margin="-40,0,0,0" Background="Transparent">
                                     <TreeViewItem.Header>
                                         <StackPanel Orientation="Horizontal">
@@ -1053,7 +1057,7 @@
                                                 <CheckBox
                                                     BorderBrush="DodgerBlue"
                                                     BorderThickness="2"
-                                                    IsChecked="{Binding IsUseWatermark, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                                    IsChecked="{Binding BarcodeReaderSettingsInfo.IsUseEan13, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                                     Style="{StaticResource CustomCheckBoxStyle}">
                                                     <b:Interaction.Triggers>
                                                         <b:EventTrigger EventName="PreviewMouseUp">
@@ -1073,6 +1077,7 @@
                                         </StackPanel>
                                     </TreeViewItem.Header>
                                 </TreeViewItem>
+                                <!--  Ean8(一维码)  -->
                                 <TreeViewItem Margin="-40,0,0,0" Background="Transparent">
                                     <TreeViewItem.Header>
                                         <StackPanel Orientation="Horizontal">
@@ -1084,7 +1089,7 @@
                                                 <CheckBox
                                                     BorderBrush="DodgerBlue"
                                                     BorderThickness="2"
-                                                    IsChecked="{Binding IsUseWatermark, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                                    IsChecked="{Binding BarcodeReaderSettingsInfo.IsUseEan8, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                                     Style="{StaticResource CustomCheckBoxStyle}">
                                                     <b:Interaction.Triggers>
                                                         <b:EventTrigger EventName="PreviewMouseUp">
@@ -1137,14 +1142,36 @@
                                 materialDesign:ThemeAssist.Theme="Dark"
                                 Background="Transparent"
                                 BorderThickness="0"
-                                DisplayMemberPath="Display"
                                 Focusable="False"
                                 FontSize="13"
                                 FontWeight="Bold"
                                 Foreground="White"
-                                ItemsSource="{Binding VolumeMeasurementModeItems, UpdateSourceTrigger=PropertyChanged}"
-                                SelectedItem="{Binding VolumeMeasurementMode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                SelectedValuePath="VolumeMeasurementMode" />
+                                SelectedIndex="{Binding BarcodeReaderSettingsInfo.LocalizationMode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                                <ComboBoxItem>
+                                    默认
+                                    <!--  Default  -->
+                                </ComboBoxItem>
+                                <ComboBoxItem>
+                                    连通块
+                                    <!--  ConnectedBlocks  -->
+                                </ComboBoxItem>
+                                <ComboBoxItem>
+                                    统计
+                                    <!--  Statistics  -->
+                                </ComboBoxItem>
+                                <ComboBoxItem>
+                                    线条
+                                    <!--  Lines  -->
+                                </ComboBoxItem>
+                                <ComboBoxItem>
+                                    直接扫描
+                                    <!--  ScanDirectly  -->
+                                </ComboBoxItem>
+                                <ComboBoxItem>
+                                    连通块 + 直接扫描
+                                    <!--  ConnectedBlocksAndScanDirectly  -->
+                                </ComboBoxItem>
+                            </ComboBox>
                         </Border>
                     </StackPanel>
                     <!--  去模糊级别  -->
@@ -1177,14 +1204,12 @@
                                 materialDesign:ThemeAssist.Theme="Dark"
                                 Background="Transparent"
                                 BorderThickness="0"
-                                DisplayMemberPath="Display"
                                 Focusable="False"
                                 FontSize="13"
                                 FontWeight="Bold"
                                 Foreground="White"
-                                ItemsSource="{Binding VolumeMeasurementModeItems, UpdateSourceTrigger=PropertyChanged}"
-                                SelectedItem="{Binding VolumeMeasurementMode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                SelectedValuePath="VolumeMeasurementMode" />
+                                ItemsSource="{Binding DeblurLevelItems, UpdateSourceTrigger=PropertyChanged}"
+                                SelectedIndex="{Binding BarcodeReaderSettingsInfo.DeblurLevel, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                         </Border>
                     </StackPanel>
                     <!--  期望的条形码数量  -->
@@ -1196,7 +1221,7 @@
                             FontSize="14"
                             FontWeight="Bold"
                             Foreground="DarkGray"
-                            Text="期望的条形码数量:" />
+                            Text="条形码数量:" />
                         <Border
                             Margin="5"
                             HorizontalAlignment="Center"
@@ -1219,7 +1244,7 @@
                                 <TextBox.Text>
                                     <Binding
                                         Mode="TwoWay"
-                                        Path="NvrClientSettingsInfo.MaxWatermarkTime"
+                                        Path="BarcodeReaderSettingsInfo.ExpectedBarcodesCount"
                                         UpdateSourceTrigger="PropertyChanged">
                                         <Binding.ValidationRules>
                                             <validationRules:RegexValidationRule ErrorMessage="请输入有效的正整数" Pattern="^[1-9]\d*$" />
@@ -1245,28 +1270,30 @@
                             VerticalAlignment="Center"
                             Background="#1A696969"
                             CornerRadius="5">
-                            <ComboBox
-                                Width="Auto"
+                            <TextBox
+                                Width="120"
                                 Height="30"
-                                MinWidth="100"
-                                MaxWidth="170"
+                                MaxWidth="500"
                                 Margin="5,0"
-                                Padding="0"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                HorizontalContentAlignment="Center"
-                                VerticalContentAlignment="Center"
-                                materialDesign:ThemeAssist.Theme="Dark"
+                                materialDesign:TextFieldAssist.HasClearButton="False"
+                                materialDesign:TextFieldAssist.HasFilledTextField="True"
                                 Background="Transparent"
                                 BorderThickness="0"
-                                DisplayMemberPath="Display"
-                                Focusable="False"
                                 FontSize="13"
                                 FontWeight="Bold"
                                 Foreground="White"
-                                ItemsSource="{Binding VolumeMeasurementModeItems, UpdateSourceTrigger=PropertyChanged}"
-                                SelectedItem="{Binding VolumeMeasurementMode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                SelectedValuePath="VolumeMeasurementMode" />
+                                InputMethod.IsInputMethodEnabled="False">
+                                <TextBox.Text>
+                                    <Binding
+                                        Mode="TwoWay"
+                                        Path="BarcodeReaderSettingsInfo.ScaleDownThreshold"
+                                        UpdateSourceTrigger="PropertyChanged">
+                                        <Binding.ValidationRules>
+                                            <validationRules:RegexValidationRule ErrorMessage="请输入有效的正整数" Pattern="^[1-9]\d*$" />
+                                        </Binding.ValidationRules>
+                                    </Binding>
+                                </TextBox.Text>
+                            </TextBox>
                         </Border>
                     </StackPanel>
                     <!--  是否使用文本过滤模式  -->
@@ -1288,14 +1315,8 @@
                             <CheckBox
                                 BorderBrush="DodgerBlue"
                                 BorderThickness="2"
-                                IsChecked="{Binding IsUseWatermark, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                Style="{StaticResource CustomCheckBoxStyle}">
-                                <b:Interaction.Triggers>
-                                    <b:EventTrigger EventName="PreviewMouseUp">
-                                        <mvvm:InvokeCommandAction Command="{Binding CheckBoxValueChangedCommand}" />
-                                    </b:EventTrigger>
-                                </b:Interaction.Triggers>
-                            </CheckBox>
+                                IsChecked="{Binding BarcodeReaderSettingsInfo.IsUseTextFilterMode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                Style="{StaticResource CustomCheckBoxStyle}" />
                         </Border>
                     </StackPanel>
                     <!--  是否使用区域预检测模式  -->
@@ -1317,14 +1338,8 @@
                             <CheckBox
                                 BorderBrush="DodgerBlue"
                                 BorderThickness="2"
-                                IsChecked="{Binding IsUseWatermark, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                Style="{StaticResource CustomCheckBoxStyle}">
-                                <b:Interaction.Triggers>
-                                    <b:EventTrigger EventName="PreviewMouseUp">
-                                        <mvvm:InvokeCommandAction Command="{Binding CheckBoxValueChangedCommand}" />
-                                    </b:EventTrigger>
-                                </b:Interaction.Triggers>
-                            </CheckBox>
+                                IsChecked="{Binding BarcodeReaderSettingsInfo.IsUseRegionPredetectionMode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                Style="{StaticResource CustomCheckBoxStyle}" />
                         </Border>
                     </StackPanel>
                     <!--  灰度转换模式  -->
@@ -1357,14 +1372,24 @@
                                 materialDesign:ThemeAssist.Theme="Dark"
                                 Background="Transparent"
                                 BorderThickness="0"
-                                DisplayMemberPath="Display"
                                 Focusable="False"
                                 FontSize="13"
                                 FontWeight="Bold"
                                 Foreground="White"
-                                ItemsSource="{Binding VolumeMeasurementModeItems, UpdateSourceTrigger=PropertyChanged}"
-                                SelectedItem="{Binding VolumeMeasurementMode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                SelectedValuePath="VolumeMeasurementMode" />
+                                SelectedIndex="{Binding BarcodeReaderSettingsInfo.GrayscaleTransformationMode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                                <ComboBoxItem>
+                                    原图
+                                    <!--  Original  -->
+                                </ComboBoxItem>
+                                <ComboBoxItem>
+                                    反色
+                                    <!--  Inverted  -->
+                                </ComboBoxItem>
+                                <ComboBoxItem>
+                                    原图+反色
+                                    <!--  OriginalAndInverted  -->
+                                </ComboBoxItem>
+                            </ComboBox>
                         </Border>
                     </StackPanel>
                     <!--  图像预处理模式  -->
@@ -1397,14 +1422,28 @@
                                 materialDesign:ThemeAssist.Theme="Dark"
                                 Background="Transparent"
                                 BorderThickness="0"
-                                DisplayMemberPath="Display"
                                 Focusable="False"
                                 FontSize="13"
                                 FontWeight="Bold"
                                 Foreground="White"
-                                ItemsSource="{Binding VolumeMeasurementModeItems, UpdateSourceTrigger=PropertyChanged}"
-                                SelectedItem="{Binding VolumeMeasurementMode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                SelectedValuePath="VolumeMeasurementMode" />
+                                SelectedIndex="{Binding BarcodeReaderSettingsInfo.ImagePreprocessingMode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                                <ComboBoxItem>
+                                    通用
+                                    <!--  General  -->
+                                </ComboBoxItem>
+                                <ComboBoxItem>
+                                    灰度均衡化
+                                    <!--  GrayEqualization  -->
+                                </ComboBoxItem>
+                                <ComboBoxItem>
+                                    灰度平滑
+                                    <!--  GraySmoothing  -->
+                                </ComboBoxItem>
+                                <ComboBoxItem>
+                                    锐化和平滑
+                                    <!--  SharpeningAndSmoothing  -->
+                                </ComboBoxItem>
+                            </ComboBox>
                         </Border>
                     </StackPanel>
                     <!--  最小结果置信度  -->
@@ -1437,14 +1476,43 @@
                                 materialDesign:ThemeAssist.Theme="Dark"
                                 Background="Transparent"
                                 BorderThickness="0"
-                                DisplayMemberPath="Display"
                                 Focusable="False"
                                 FontSize="13"
                                 FontWeight="Bold"
                                 Foreground="White"
-                                ItemsSource="{Binding VolumeMeasurementModeItems, UpdateSourceTrigger=PropertyChanged}"
-                                SelectedItem="{Binding VolumeMeasurementMode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                SelectedValuePath="VolumeMeasurementMode" />
+                                SelectedIndex="{Binding BarcodeReaderSettingsInfo.MinResultConfidence, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                                <ComboBoxItem>
+                                    0-不限制
+                                    <!--  0-No Limitation  -->
+                                </ComboBoxItem>
+                                <ComboBoxItem>
+                                    10
+                                </ComboBoxItem>
+                                <ComboBoxItem>
+                                    20
+                                </ComboBoxItem>
+                                <ComboBoxItem>
+                                    30
+                                </ComboBoxItem>
+                                <ComboBoxItem>
+                                    40
+                                </ComboBoxItem>
+                                <ComboBoxItem>
+                                    50
+                                </ComboBoxItem>
+                                <ComboBoxItem>
+                                    60
+                                </ComboBoxItem>
+                                <ComboBoxItem>
+                                    70
+                                </ComboBoxItem>
+                                <ComboBoxItem>
+                                    80
+                                </ComboBoxItem>
+                                <ComboBoxItem>
+                                    90
+                                </ComboBoxItem>
+                            </ComboBox>
                         </Border>
                     </StackPanel>
                     <!--  纹理检测敏感度  -->
@@ -1477,14 +1545,12 @@
                                 materialDesign:ThemeAssist.Theme="Dark"
                                 Background="Transparent"
                                 BorderThickness="0"
-                                DisplayMemberPath="Display"
                                 Focusable="False"
                                 FontSize="13"
                                 FontWeight="Bold"
                                 Foreground="White"
-                                ItemsSource="{Binding VolumeMeasurementModeItems, UpdateSourceTrigger=PropertyChanged}"
-                                SelectedItem="{Binding VolumeMeasurementMode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                SelectedValuePath="VolumeMeasurementMode" />
+                                ItemsSource="{Binding TextureDetectionSensitivityItems, UpdateSourceTrigger=PropertyChanged}"
+                                SelectedIndex="{Binding BarcodeReaderSettingsInfo.TextureDetectionSensitivity, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                         </Border>
                     </StackPanel>
                     <!--  二值化块大小  -->
@@ -1519,7 +1585,7 @@
                                 <TextBox.Text>
                                     <Binding
                                         Mode="TwoWay"
-                                        Path="NvrClientSettingsInfo.MaxWatermarkTime"
+                                        Path="BarcodeReaderSettingsInfo.BinarizationBlockSize"
                                         UpdateSourceTrigger="PropertyChanged">
                                         <Binding.ValidationRules>
                                             <validationRules:RegexValidationRule ErrorMessage="请输入有效的正整数" Pattern="^[1-9]\d*$" />
@@ -1529,7 +1595,48 @@
                             </TextBox>
                         </Border>
                     </StackPanel>
-
+                    <!--  识别跳过的帧数  -->
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Margin="5,0"
+                            VerticalAlignment="Center"
+                            FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                            FontSize="14"
+                            FontWeight="Bold"
+                            Foreground="DarkGray"
+                            Text="识别跳过的帧数:" />
+                        <Border
+                            Margin="5"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Background="#1A696969"
+                            CornerRadius="5">
+                            <TextBox
+                                Width="120"
+                                Height="30"
+                                MaxWidth="500"
+                                Margin="5,0"
+                                materialDesign:TextFieldAssist.HasClearButton="False"
+                                materialDesign:TextFieldAssist.HasFilledTextField="True"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="White"
+                                InputMethod.IsInputMethodEnabled="False">
+                                <TextBox.Text>
+                                    <Binding
+                                        Mode="TwoWay"
+                                        Path="BarcodeReaderSettingsInfo.RecognitionSkipFrames"
+                                        UpdateSourceTrigger="PropertyChanged">
+                                        <Binding.ValidationRules>
+                                            <validationRules:RegexValidationRule ErrorMessage="请输入有效的正整数" Pattern="^[1-9]\d*$" />
+                                        </Binding.ValidationRules>
+                                    </Binding>
+                                </TextBox.Text>
+                            </TextBox>
+                        </Border>
+                    </StackPanel>
                 </StackPanel>
             </ScrollViewer>
             <!--  识别模式  -->
@@ -1562,14 +1669,28 @@
                         materialDesign:ThemeAssist.Theme="Dark"
                         Background="Transparent"
                         BorderThickness="0"
-                        DisplayMemberPath="Display"
                         Focusable="False"
                         FontSize="13"
                         FontWeight="Bold"
                         Foreground="White"
-                        ItemsSource="{Binding VolumeMeasurementModeItems, UpdateSourceTrigger=PropertyChanged}"
-                        SelectedItem="{Binding VolumeMeasurementMode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                        SelectedValuePath="VolumeMeasurementMode" />
+                        SelectedIndex="{Binding BarcodeReaderSettingsInfo.RecognitionMode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                        <ComboBoxItem>
+                            快速
+                            <!--  Speed  -->
+                        </ComboBoxItem>
+                        <ComboBoxItem>
+                            均衡
+                            <!--  Balance  -->
+                        </ComboBoxItem>
+                        <ComboBoxItem>
+                            覆盖
+                            <!--  Coverage  -->
+                        </ComboBoxItem>
+                        <ComboBoxItem>
+                            自定义
+                            <!--  Custom  -->
+                        </ComboBoxItem>
+                    </ComboBox>
                 </Border>
             </StackPanel>
         </StackPanel>
@@ -1577,7 +1698,6 @@
         <!--  预览画面  -->
         <StackPanel Grid.Column="1">
             <Border
-                Grid.Column="1"
                 MaxWidth="640"
                 MaxHeight="640"
                 Margin="10,50"
@@ -1587,7 +1707,11 @@
                 <StackPanel Orientation="Vertical">
                     <!--  视频框  -->
                     <Grid>
-                        <Image Width="640" MinHeight="600">
+                        <Image
+                            Width="640"
+                            MinHeight="600"
+                            Source="{Binding Image, UpdateSourceTrigger=PropertyChanged}"
+                            Stretch="UniformToFill">
                             <Image.Clip>
                                 <RectangleGeometry
                                     RadiusX="15"
@@ -1595,12 +1719,11 @@
                                     Rect="0,0,635,635" />
                             </Image.Clip>
                         </Image>
-
                         <Border
                             Width="640"
                             MinHeight="640"
                             CornerRadius="15"
-                            Visibility="{Binding IsPlaying, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
+                            Visibility="Collapsed">
                             <TextBlock
                                 Margin="10"
                                 HorizontalAlignment="Center"
@@ -1615,5 +1738,16 @@
                 </StackPanel>
             </Border>
         </StackPanel>
+        <!--  提示框  -->
+        <materialDesign:Snackbar
+            Grid.Column="0"
+            Grid.ColumnSpan="2"
+            Width="Auto"
+            Height="Auto"
+            VerticalAlignment="Bottom"
+            Background="BlueViolet"
+            FontFamily="LoadFiraCode"
+            FontWeight="Bold"
+            MessageQueue="{Binding UsbCameraSettingsMessageQueue}" />
     </Grid>
 </Page>
