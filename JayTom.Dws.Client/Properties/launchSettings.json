@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "JayTom.Dws.Client": {
+      "commandName": "Project",
+      "nativeDebugging": true
+    }
+  }
+}

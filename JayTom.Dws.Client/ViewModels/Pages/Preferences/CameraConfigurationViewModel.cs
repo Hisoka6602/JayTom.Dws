@@ -10,7 +10,6 @@ using System.Windows.Threading;
 using System.Collections.ObjectModel;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
-
     public class CameraConfigurationViewModel : BindableBase {
         private readonly IRegionManager _regionManager;
         private static bool _isLoaded;
@@ -71,6 +70,19 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                 },
                 Description = Languages.Language.ResourceManager.GetString("体积相机配置") ?? string.Empty,
                 PageClassName = "VolumeCameraConfigPage",
+                ClickCommand = ClickCommand,
+            },
+            new MenuItemInfoModel()
+            {
+                Title = "Usb相机设置",
+                IconFont = new IconInfoModel()
+                {
+                    IconFont = "pack://application:,,,/Fonts/#iconfont",
+                    IconCode = "\xe867",
+                    IconSize = 25
+                },
+                Description ="Usb相机和算法设置",
+                PageClassName = "UsbCameraSettingsPage",
                 ClickCommand = ClickCommand,
             },
         };
