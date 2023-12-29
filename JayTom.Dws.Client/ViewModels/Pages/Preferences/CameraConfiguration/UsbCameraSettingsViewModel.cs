@@ -133,6 +133,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                 try {
                     if (!_isUpdate) {
                         _isUpdate = true;
+                        _usbBarCodeReader?.Dispose();
+                        await Task.Delay(500);
+                        _usbBarCodeReader = null;
+                        BitmapQueue.Clear();
                         var usbCameraInfos = UsbBarCodeReader.EnumerateCameras();
                         await Application.Current.Dispatcher.InvokeAsync(() => {
                             CameraItems.Clear();
@@ -198,34 +202,90 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
             await Task.Delay(500);
             _usbBarCodeReader = null;
             BitmapQueue.Clear();
-            _usbBarCodeReader = new UsbBarCodeReader();
-            _usbBarCodeReader.ImageDataReceived += delegate (object? sender, Bitmap bitmap) {
-                var thumbnail = UsbBarCodeReader.GenerateThumbnail(bitmap);
-                if (thumbnail is not null) {
-                    BitmapQueue.Enqueue(thumbnail);
-                }
-            };
-            _usbBarCodeReader.BarcodeScanned += delegate (object? sender, BarcodeScannedEventArgs args) {
-                if (args.Image is not null) {
-                    var thumbnail = UsbBarCodeReader.GenerateThumbnail(args.Image);
+            if (CameraResolution is not null) {
+                _usbBarCodeReader = new UsbBarCodeReader();
+                _usbBarCodeReader.ImageDataReceived += delegate (object? sender, Bitmap bitmap) {
+                    var thumbnail = UsbBarCodeReader.GenerateThumbnail(bitmap);
                     if (thumbnail is not null) {
                         BitmapQueue.Enqueue(thumbnail);
                     }
+                };
+                _usbBarCodeReader.BarcodeScanned += delegate (object? sender, BarcodeScannedEventArgs args) {
+                    if (args.Image is not null) {
+                        var thumbnail = UsbBarCodeReader.GenerateThumbnail(args.Image);
+                        if (thumbnail is not null) {
+                            BitmapQueue.Enqueue(thumbnail);
+                        }
+                    }
+                };
+                var bindCamera = await _usbBarCodeReader.BindCamera(SelectCameraInfo);
+                if (bindCamera) {
+                    var (key, value) = await _usbBarCodeReader.Start();
+                    if (!key) {
+                        UsbCameraSettingsMessageQueue.Enqueue(value);
+                    }
+                    else {
+                        //设置指定分辨率
+                        await _usbBarCodeReader.SetUsbCameraParameter(new Dictionary<UsbCameraParameter, object>()
+                        {
+                            { UsbCameraParameter.Resolution, CameraResolution.Size }
+                        });
+                    }
                 }
-            };
-            var bindCamera = await _usbBarCodeReader.BindCamera(SelectCameraInfo);
-            if (bindCamera) {
-                var (key, value) = await _usbBarCodeReader.Start();
-                if (!key) {
-                    UsbCameraSettingsMessageQueue.Enqueue(value);
+            }
+        }
+
+        /// <summary>
+        /// 修改相机参数
+        /// </summary>
+        public ICommand UpdateCameraParametersCommand {
+            get => new DelegateCommand<object>(UpdateCameraParametersDelegate);
+        }
+
+        private async void UpdateCameraParametersDelegate(object obj) {
+            //实时设置相机参数
+            Console.WriteLine(obj);
+
+            if (_usbBarCodeReader is not null) {
+                var dictionary = new Dictionary<UsbCameraParameter, object> {
+                    //分辨率
+                    { UsbCameraParameter.Resolution, CameraResolution.Size }
+                };
+
+                //曝光度
+                if (UsbCameraSettingsInfo.IsCustomExposureEnabled) {
+                    dictionary.Add(UsbCameraParameter.Exposure, UsbCameraSettingsInfo.Exposure);
                 }
-                else {
-                    //设置指定分辨率
-                    await _usbBarCodeReader.SetUsbCameraParameter(new Dictionary<UsbCameraParameter, object>()
-                    {
-                        { UsbCameraParameter.Resolution, CameraResolution.Size }
-                    });
+                //亮度
+                if (UsbCameraSettingsInfo.IsCustomBrightnessEnabled) {
+                    dictionary.Add(UsbCameraParameter.Brightness, UsbCameraSettingsInfo.Brightness);
                 }
+                //对比度
+                if (UsbCameraSettingsInfo.IsCustomContrastEnabled) {
+                    dictionary.Add(UsbCameraParameter.Contrast, UsbCameraSettingsInfo.Contrast);
+                }
+                //色调
+                if (UsbCameraSettingsInfo.IsCustomHueEnabled) {
+                    dictionary.Add(UsbCameraParameter.Hue, UsbCameraSettingsInfo.Hue);
+                }
+                //锐度
+                if (UsbCameraSettingsInfo.IsCustomSharpnessEnabled) {
+                    dictionary.Add(UsbCameraParameter.Sharpness, UsbCameraSettingsInfo.Sharpness);
+                }
+                //伽马值
+                if (UsbCameraSettingsInfo.IsCustomGammaEnabled) {
+                    dictionary.Add(UsbCameraParameter.Gamma, UsbCameraSettingsInfo.Gamma);
+                }
+                //白平衡
+                if (UsbCameraSettingsInfo.IsCustomWhiteBalanceEnabled) {
+                    dictionary.Add(UsbCameraParameter.WhiteBalance, UsbCameraSettingsInfo.WhiteBalance);
+                }
+                //背光补偿
+                if (UsbCameraSettingsInfo.IsCustomBacklightCompensationEnabled) {
+                    dictionary.Add(UsbCameraParameter.BklightComp, UsbCameraSettingsInfo.BklightComp);
+                }
+                //增益
+                await _usbBarCodeReader.SetUsbCameraParameter(dictionary);
             }
         }
 

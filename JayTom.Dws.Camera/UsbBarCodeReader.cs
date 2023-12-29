@@ -7,6 +7,7 @@ using Dynamsoft.UVC;
 using Dynamsoft.DBR;
 using System.Drawing;
 using System.Xml.Linq;
+using Newtonsoft.Json;
 using Dynamsoft.Common;
 using System.Management;
 using System.Diagnostics;
@@ -107,6 +108,19 @@ namespace JayTom.Dws.Camera {
                 try {
                     if (_selectCamera is not null) {
                         //设置参数
+                        //设置分辨率(如果没有指定则使用最大分辨率)
+                        var resolution = parameters.FirstOrDefault(f =>
+                                 f.Key == UsbCameraParameter.Resolution)
+                             .Value;
+                        /*if (resolution is Size size) {
+                            _selectCamera.CurrentResolution = new CamResolution(size.Width, size.Height);
+                        }
+                        else {
+                            var orDefault = UsbCameraInfo.CameraResolutions?.OrderByDescending(o => o.Width * o.Height)?.FirstOrDefault();
+                            if (orDefault is not null) {
+                                _selectCamera.CurrentResolution = new CamResolution(orDefault.Value.Width, orDefault.Value.Height);
+                            }
+                        }*/
                         var exposure = parameters.FirstOrDefault(f =>
                                 f.Key == UsbCameraParameter.Exposure)
                             .Value;
@@ -117,22 +131,6 @@ namespace JayTom.Dws.Camera {
                         }
                         else {
                             _selectCamera.Exposure.IfAuto = true;
-                        }
-
-                        //设置分辨率(如果没有指定则使用最大分辨率)
-                        var resolution = parameters.FirstOrDefault(f =>
-                                f.Key == UsbCameraParameter.Resolution)
-                            .Value;
-                        if (resolution is Size size) {
-                            _selectCamera.CurrentResolution = new CamResolution(size.Width, size.Height);
-                        }
-                        else {
-                            var name = resolution.GetType().Name;
-                            Debug.WriteLine(name);
-                            var orDefault = UsbCameraInfo.CameraResolutions?.OrderByDescending(o => o.Width * o.Height)?.FirstOrDefault();
-                            if (orDefault is not null) {
-                                _selectCamera.CurrentResolution = new CamResolution(orDefault.Value.Width, orDefault.Value.Height);
-                            }
                         }
                         //亮度
                         var brightness = parameters.FirstOrDefault(f =>
@@ -145,94 +143,90 @@ namespace JayTom.Dws.Camera {
                         else {
                             _selectCamera.Exposure.IfAuto = true;
                         }
+
                         //对比度
                         var contrast = parameters.FirstOrDefault(f =>
                                 f.Key == UsbCameraParameter.Contrast)
                             .Value;
                         if (contrast is int contrast1) {
-                            _selectCamera.Contrast.IfAuto = false;
+                            // _selectCamera.Contrast.IfAuto = false;
                             _selectCamera.Contrast.Value = contrast1;
                         }
-                        else {
-                            _selectCamera.Contrast.IfAuto = true;
-                        }
+
                         //色调
                         var hue = parameters.FirstOrDefault(f =>
                                 f.Key == UsbCameraParameter.Hue)
                             .Value;
                         if (hue is int hue1) {
-                            _selectCamera.Hue.IfAuto = false;
+                            //_selectCamera.Hue.IfAuto = false;
                             _selectCamera.Hue.Value = hue1;
                         }
-                        else {
-                            _selectCamera.Hue.IfAuto = true;
-                        }
+
                         //饱和度
                         var saturation = parameters.FirstOrDefault(f =>
                                 f.Key == UsbCameraParameter.Saturation)
                             .Value;
                         if (saturation is int saturation1) {
-                            _selectCamera.Saturation.IfAuto = false;
+                            //_selectCamera.Saturation.IfAuto = false;
                             _selectCamera.Saturation.Value = saturation1;
                         }
-                        else {
-                            _selectCamera.Saturation.IfAuto = true;
-                        }
+
                         //锐度
                         var sharpness = parameters.FirstOrDefault(f =>
                                 f.Key == UsbCameraParameter.Sharpness)
                             .Value;
                         if (sharpness is int sharpness1) {
-                            _selectCamera.Sharpness.IfAuto = false;
+                            //_selectCamera.Sharpness.IfAuto = false;
                             _selectCamera.Sharpness.Value = sharpness1;
                         }
-                        else {
+                        /*else {
                             _selectCamera.Sharpness.IfAuto = true;
-                        }
+                        }*/
                         //伽马值
                         var gamma = parameters.FirstOrDefault(f =>
                                 f.Key == UsbCameraParameter.Gamma)
                             .Value;
                         if (gamma is int gamma1) {
-                            _selectCamera.Gamma.IfAuto = false;
-                            _selectCamera.Gamma.Value = gamma1;
+                            //_selectCamera.Gamma.IfAuto = false;
+                            //_selectCamera.Gamma.Value = gamma1;
                         }
-                        else {
+                        /*else {
                             _selectCamera.Gamma.IfAuto = true;
-                        }
+                        }*/
                         //白平衡
                         var whiteBalance = parameters.FirstOrDefault(f =>
                                 f.Key == UsbCameraParameter.WhiteBalance)
                             .Value;
                         if (whiteBalance is int balance) {
-                            _selectCamera.WhiteBalance.IfAuto = false;
+                            //_selectCamera.WhiteBalance.IfAuto = false;
                             _selectCamera.WhiteBalance.Value = balance;
                         }
-                        else {
+                        /*else {
                             _selectCamera.WhiteBalance.IfAuto = true;
-                        }
+                        }*/
                         //背光补偿
                         var bklightComp = parameters.FirstOrDefault(f =>
                                 f.Key == UsbCameraParameter.BklightComp)
                             .Value;
                         if (bklightComp is int comp) {
-                            _selectCamera.BklightComp.IfAuto = false;
+                            //_selectCamera.BklightComp.IfAuto = false;
                             _selectCamera.BklightComp.Value = comp;
                         }
-                        else {
+                        /*else {
                             _selectCamera.BklightComp.IfAuto = true;
-                        }
+                        }*/
                         //增益
                         var gain = parameters.FirstOrDefault(f =>
                                 f.Key == UsbCameraParameter.Gain)
                             .Value;
                         if (gain is int gain1) {
-                            _selectCamera.Gain.IfAuto = false;
+                            //_selectCamera.Gain.IfAuto = false;
                             _selectCamera.Gain.Value = gain1;
                         }
-                        else {
+                        /*else {
                             _selectCamera.Gain.IfAuto = true;
-                        }
+                        }*/
+                        return new KeyValuePair<bool, string>(true, string.Empty);
                         //变焦
                         var zoom = parameters.FirstOrDefault(f =>
                                 f.Key == UsbCameraParameter.Zoom)
@@ -299,7 +293,6 @@ namespace JayTom.Dws.Camera {
                         else {
                             _selectCamera.Roll.IfAuto = true;
                         }
-                        return new KeyValuePair<bool, string>(true, "设置完成");
                     }
                     else {
                         return new KeyValuePair<bool, string>(false, "相机未绑定");
@@ -658,6 +651,7 @@ namespace JayTom.Dws.Camera {
                 if (_selectCamera is not null && _isOpend) {
                     //注册事件
                     _selectCamera.OnFrameCaptrue -= SelectCameraOnOnFrameCaptrue;
+                    _selectCamera.Close();
 
                     return new KeyValuePair<bool, string>(true, "停止成功");
                 }
