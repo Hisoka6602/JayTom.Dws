@@ -1,10 +1,12 @@
 ﻿using System;
+using Dynamsoft;
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
 using Prism.Commands;
 using System.Windows;
 using System.Drawing;
+using Newtonsoft.Json;
 using System.Threading;
 using JayTom.Dws.Camera;
 using System.Diagnostics;
@@ -17,10 +19,15 @@ using System.Windows.Threading;
 using System.Collections.Generic;
 using Size = System.Drawing.Size;
 using System.Windows.Media.Imaging;
+using Color = System.Drawing.Color;
+using Point = System.Drawing.Point;
 using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Models.Cameras;
 using JayTom.Dws.Client.Service.Device;
+using FontStyle = System.Drawing.FontStyle;
+using FontFamily = System.Drawing.FontFamily;
+using Matrix = System.Drawing.Drawing2D.Matrix;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
 
@@ -163,6 +170,73 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
             //读码设置每个设置被改变时都需要重置设置，并使用改变后的设置(需要一个Command)
         }
 
+        public ICommand UpdateBarcodeReaderCommand {
+            get => new DelegateCommand<object>(UpdateBarcodeReaderCommandDelegate);
+        }
+
+        private void UpdateBarcodeReaderCommandDelegate(object obj) {
+            //设置读码参数
+            if (_deviceService.RunningStatus) {
+                UsbCameraSettingsMessageQueue.Enqueue("请先停止识别再调试摄像头!");
+                return;
+            }
+
+            Task.Run(async () => {
+                EnumBarcodeFormat barcodeFormat = 0;
+                if (BarcodeReaderSettingsInfo.IsUseOrCode) {
+                    barcodeFormat |= EnumBarcodeFormat.BF_QR_CODE;
+                }
+                if (BarcodeReaderSettingsInfo.IsUseMicroQr) {
+                    barcodeFormat |= EnumBarcodeFormat.BF_MICRO_QR;
+                }
+                if (BarcodeReaderSettingsInfo.IsUseCode128) {
+                    barcodeFormat |= EnumBarcodeFormat.BF_CODE_128;
+                }
+                if (BarcodeReaderSettingsInfo.IsUseCode39) {
+                    barcodeFormat |= EnumBarcodeFormat.BF_CODE_39;
+                }
+                if (BarcodeReaderSettingsInfo.IsUseCode93) {
+                    barcodeFormat |= EnumBarcodeFormat.BF_CODE_93;
+                }
+                if (BarcodeReaderSettingsInfo.IsUseCodeBar) {
+                    barcodeFormat |= EnumBarcodeFormat.BF_CODABAR;
+                }
+                if (BarcodeReaderSettingsInfo.IsUseEan13) {
+                    barcodeFormat |= EnumBarcodeFormat.BF_EAN_13;
+                }
+                if (BarcodeReaderSettingsInfo.IsUseEan13) {
+                    barcodeFormat |= EnumBarcodeFormat.BF_EAN_8;
+                }
+
+                var dictionary = new Dictionary<BarcodeReaderParameter, object>()
+                {
+                    { BarcodeReaderParameter.EnumBarcodeFormat,barcodeFormat },
+                    { BarcodeReaderParameter.RecognitionMode,(ScanMode)BarcodeReaderSettingsInfo.RecognitionMode },
+                    { BarcodeReaderParameter.TextureDetectionSensitivity,BarcodeReaderSettingsInfo.TextureDetectionSensitivity },
+                    { BarcodeReaderParameter.BinarizationBlockSize,BarcodeReaderSettingsInfo.BinarizationBlockSize },
+                    { BarcodeReaderParameter.ExpectedBarcodesCount,BarcodeReaderSettingsInfo.ExpectedBarcodesCount },
+                    { BarcodeReaderParameter.DeblurLevel,BarcodeReaderSettingsInfo.DeblurLevel },
+                    { BarcodeReaderParameter.LocalizationMode,BarcodeReaderSettingsInfo.LocalizationMode },
+                    { BarcodeReaderParameter.IsUseTextFilterMode,BarcodeReaderSettingsInfo.IsUseTextFilterMode },
+                    { BarcodeReaderParameter.IsUseRegionPredetectionMode,BarcodeReaderSettingsInfo.IsUseRegionPredetectionMode },
+                    { BarcodeReaderParameter.ScaleDownThreshold,BarcodeReaderSettingsInfo.ScaleDownThreshold },
+                    { BarcodeReaderParameter.GrayscaleTransformationMode,BarcodeReaderSettingsInfo.GrayscaleTransformationMode },
+                    { BarcodeReaderParameter.ImagePreprocessingMode,BarcodeReaderSettingsInfo.ImagePreprocessingMode },
+                    { BarcodeReaderParameter.MinResultConfidence,BarcodeReaderSettingsInfo.MinResultConfidence },
+                    { BarcodeReaderParameter.RecognitionSkipFrames,BarcodeReaderSettingsInfo.RecognitionSkipFrames },
+                };
+                if (_usbBarCodeReader is not null) {
+                    var (key, value) = await _usbBarCodeReader.SetBarcodeReaderParameter(dictionary);
+                    if (!key) {
+                        await Application.Current.Dispatcher.InvokeAsync(() => {
+                            UsbCameraSettingsMessageQueue.Enqueue(value);
+                        });
+                    }
+                }
+            });
+            Debug.WriteLine($"触发");
+        }
+
         /// <summary>
         /// 切换相机
         /// </summary>
@@ -214,10 +288,31 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                     if (args.Image is not null) {
                         var thumbnail = UsbBarCodeReader.GenerateThumbnail(args.Image);
                         if (thumbnail is not null) {
+                            List<Point>? points = null;
+                            using var g = Graphics.FromImage(thumbnail);
+
+                            foreach (var barcodeInfo in args?.BarCodes ?? new List<BarcodeInfo>()) {
+                                points = barcodeInfo.BarcodeRegion;
+                                if (points is not null && points.Count == 4 &&
+                                    args?.Image is { Width: > 0, Height: > 0 }) {
+                                    var stPointList = new Point[4];
+                                    for (var i = 0; i < 4; i++) {
+                                        stPointList[i].X = (int)(points[i].X *
+                                                                 ((float)thumbnail.Width / args.Image.Width));
+                                        stPointList[i].Y = (int)(points[i].Y *
+                                                                 ((float)thumbnail.Height / args.Image.Height));
+                                    }
+                                    g.DrawPolygon(new System.Drawing.Pen(Color.Red, 5), stPointList);
+                                }
+                            }
+                            g.DrawString($"{args?.RecognitionTime}ms", new Font(FontFamily.GenericSerif, 15, FontStyle.Bold),
+                                new SolidBrush(Color.Red), 10, 10);
                             BitmapQueue.Enqueue(thumbnail);
+                            Debug.WriteLine($"{JsonConvert.SerializeObject(args?.BarCodes)}");
                         }
                     }
                 };
+                await Task.Delay(2000);
                 var bindCamera = await _usbBarCodeReader.BindCamera(SelectCameraInfo);
                 if (bindCamera) {
                     var (key, value) = await _usbBarCodeReader.Start();

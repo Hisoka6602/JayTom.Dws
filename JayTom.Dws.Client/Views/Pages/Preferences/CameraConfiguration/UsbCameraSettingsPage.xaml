@@ -907,7 +907,7 @@
                                                     Style="{StaticResource CustomCheckBoxStyle}">
                                                     <b:Interaction.Triggers>
                                                         <b:EventTrigger EventName="PreviewMouseUp">
-                                                            <mvvm:InvokeCommandAction Command="{Binding CheckBoxValueChangedCommand}" />
+                                                            <mvvm:InvokeCommandAction Command="{Binding UpdateBarcodeReaderCommand}" />
                                                         </b:EventTrigger>
                                                     </b:Interaction.Triggers>
                                                 </CheckBox>
@@ -939,7 +939,7 @@
                                                     Style="{StaticResource CustomCheckBoxStyle}">
                                                     <b:Interaction.Triggers>
                                                         <b:EventTrigger EventName="PreviewMouseUp">
-                                                            <mvvm:InvokeCommandAction Command="{Binding CheckBoxValueChangedCommand}" />
+                                                            <mvvm:InvokeCommandAction Command="{Binding UpdateBarcodeReaderCommand}" />
                                                         </b:EventTrigger>
                                                     </b:Interaction.Triggers>
                                                 </CheckBox>
@@ -971,7 +971,7 @@
                                                     Style="{StaticResource CustomCheckBoxStyle}">
                                                     <b:Interaction.Triggers>
                                                         <b:EventTrigger EventName="PreviewMouseUp">
-                                                            <mvvm:InvokeCommandAction Command="{Binding CheckBoxValueChangedCommand}" />
+                                                            <mvvm:InvokeCommandAction Command="{Binding UpdateBarcodeReaderCommand}" />
                                                         </b:EventTrigger>
                                                     </b:Interaction.Triggers>
                                                 </CheckBox>
@@ -1003,7 +1003,7 @@
                                                     Style="{StaticResource CustomCheckBoxStyle}">
                                                     <b:Interaction.Triggers>
                                                         <b:EventTrigger EventName="PreviewMouseUp">
-                                                            <mvvm:InvokeCommandAction Command="{Binding CheckBoxValueChangedCommand}" />
+                                                            <mvvm:InvokeCommandAction Command="{Binding UpdateBarcodeReaderCommand}" />
                                                         </b:EventTrigger>
                                                     </b:Interaction.Triggers>
                                                 </CheckBox>
@@ -1035,7 +1035,7 @@
                                                     Style="{StaticResource CustomCheckBoxStyle}">
                                                     <b:Interaction.Triggers>
                                                         <b:EventTrigger EventName="PreviewMouseUp">
-                                                            <mvvm:InvokeCommandAction Command="{Binding CheckBoxValueChangedCommand}" />
+                                                            <mvvm:InvokeCommandAction Command="{Binding UpdateBarcodeReaderCommand}" />
                                                         </b:EventTrigger>
                                                     </b:Interaction.Triggers>
                                                 </CheckBox>
@@ -1067,7 +1067,7 @@
                                                     Style="{StaticResource CustomCheckBoxStyle}">
                                                     <b:Interaction.Triggers>
                                                         <b:EventTrigger EventName="PreviewMouseUp">
-                                                            <mvvm:InvokeCommandAction Command="{Binding CheckBoxValueChangedCommand}" />
+                                                            <mvvm:InvokeCommandAction Command="{Binding UpdateBarcodeReaderCommand}" />
                                                         </b:EventTrigger>
                                                     </b:Interaction.Triggers>
                                                 </CheckBox>
@@ -1099,7 +1099,7 @@
                                                     Style="{StaticResource CustomCheckBoxStyle}">
                                                     <b:Interaction.Triggers>
                                                         <b:EventTrigger EventName="PreviewMouseUp">
-                                                            <mvvm:InvokeCommandAction Command="{Binding CheckBoxValueChangedCommand}" />
+                                                            <mvvm:InvokeCommandAction Command="{Binding UpdateBarcodeReaderCommand}" />
                                                         </b:EventTrigger>
                                                     </b:Interaction.Triggers>
                                                 </CheckBox>
@@ -1131,7 +1131,7 @@
                                                     Style="{StaticResource CustomCheckBoxStyle}">
                                                     <b:Interaction.Triggers>
                                                         <b:EventTrigger EventName="PreviewMouseUp">
-                                                            <mvvm:InvokeCommandAction Command="{Binding CheckBoxValueChangedCommand}" />
+                                                            <mvvm:InvokeCommandAction Command="{Binding UpdateBarcodeReaderCommand}" />
                                                         </b:EventTrigger>
                                                     </b:Interaction.Triggers>
                                                 </CheckBox>
@@ -1163,7 +1163,7 @@
                                                     Style="{StaticResource CustomCheckBoxStyle}">
                                                     <b:Interaction.Triggers>
                                                         <b:EventTrigger EventName="PreviewMouseUp">
-                                                            <mvvm:InvokeCommandAction Command="{Binding CheckBoxValueChangedCommand}" />
+                                                            <mvvm:InvokeCommandAction Command="{Binding UpdateBarcodeReaderCommand}" />
                                                         </b:EventTrigger>
                                                     </b:Interaction.Triggers>
                                                 </CheckBox>
@@ -1217,6 +1217,11 @@
                                 FontWeight="Bold"
                                 Foreground="White"
                                 SelectedIndex="{Binding BarcodeReaderSettingsInfo.LocalizationMode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                                <b:Interaction.Triggers>
+                                    <b:EventTrigger EventName="SelectionChanged">
+                                        <mvvm:InvokeCommandAction Command="{Binding UpdateBarcodeReaderCommand}" />
+                                    </b:EventTrigger>
+                                </b:Interaction.Triggers>
                                 <ComboBoxItem>
                                     默认
                                     <!--  Default  -->
@@ -1279,7 +1284,13 @@
                                 FontWeight="Bold"
                                 Foreground="White"
                                 ItemsSource="{Binding DeblurLevelItems, UpdateSourceTrigger=PropertyChanged}"
-                                SelectedIndex="{Binding BarcodeReaderSettingsInfo.DeblurLevel, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                                SelectedIndex="{Binding BarcodeReaderSettingsInfo.DeblurLevel, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                                <b:Interaction.Triggers>
+                                    <b:EventTrigger EventName="SelectionChanged">
+                                        <mvvm:InvokeCommandAction Command="{Binding UpdateBarcodeReaderCommand}" />
+                                    </b:EventTrigger>
+                                </b:Interaction.Triggers>
+                            </ComboBox>
                         </Border>
                     </StackPanel>
                     <!--  期望的条形码数量  -->
@@ -1311,6 +1322,11 @@
                                 FontWeight="Bold"
                                 Foreground="White"
                                 InputMethod.IsInputMethodEnabled="False">
+                                <b:Interaction.Triggers>
+                                    <b:EventTrigger EventName="TextChanged">
+                                        <mvvm:InvokeCommandAction Command="{Binding UpdateBarcodeReaderCommand}" />
+                                    </b:EventTrigger>
+                                </b:Interaction.Triggers>
                                 <TextBox.Text>
                                     <Binding
                                         Mode="TwoWay"
@@ -1353,6 +1369,11 @@
                                 FontWeight="Bold"
                                 Foreground="White"
                                 InputMethod.IsInputMethodEnabled="False">
+                                <b:Interaction.Triggers>
+                                    <b:EventTrigger EventName="TextChanged">
+                                        <mvvm:InvokeCommandAction Command="{Binding UpdateBarcodeReaderCommand}" />
+                                    </b:EventTrigger>
+                                </b:Interaction.Triggers>
                                 <TextBox.Text>
                                     <Binding
                                         Mode="TwoWay"
@@ -1386,7 +1407,13 @@
                                 BorderBrush="DodgerBlue"
                                 BorderThickness="2"
                                 IsChecked="{Binding BarcodeReaderSettingsInfo.IsUseTextFilterMode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                Style="{StaticResource CustomCheckBoxStyle}" />
+                                Style="{StaticResource CustomCheckBoxStyle}">
+                                <b:Interaction.Triggers>
+                                    <b:EventTrigger EventName="PreviewMouseUp">
+                                        <mvvm:InvokeCommandAction Command="{Binding UpdateBarcodeReaderCommand}" />
+                                    </b:EventTrigger>
+                                </b:Interaction.Triggers>
+                            </CheckBox>
                         </Border>
                     </StackPanel>
                     <!--  是否使用区域预检测模式  -->
@@ -1409,7 +1436,13 @@
                                 BorderBrush="DodgerBlue"
                                 BorderThickness="2"
                                 IsChecked="{Binding BarcodeReaderSettingsInfo.IsUseRegionPredetectionMode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                Style="{StaticResource CustomCheckBoxStyle}" />
+                                Style="{StaticResource CustomCheckBoxStyle}">
+                                <b:Interaction.Triggers>
+                                    <b:EventTrigger EventName="PreviewMouseUp">
+                                        <mvvm:InvokeCommandAction Command="{Binding UpdateBarcodeReaderCommand}" />
+                                    </b:EventTrigger>
+                                </b:Interaction.Triggers>
+                            </CheckBox>
                         </Border>
                     </StackPanel>
                     <!--  灰度转换模式  -->
@@ -1447,6 +1480,12 @@
                                 FontWeight="Bold"
                                 Foreground="White"
                                 SelectedIndex="{Binding BarcodeReaderSettingsInfo.GrayscaleTransformationMode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                                <b:Interaction.Triggers>
+                                    <b:EventTrigger EventName="SelectionChanged">
+                                        <mvvm:InvokeCommandAction Command="{Binding UpdateBarcodeReaderCommand}" />
+                                    </b:EventTrigger>
+                                </b:Interaction.Triggers>
+
                                 <ComboBoxItem>
                                     原图
                                     <!--  Original  -->
@@ -1497,6 +1536,12 @@
                                 FontWeight="Bold"
                                 Foreground="White"
                                 SelectedIndex="{Binding BarcodeReaderSettingsInfo.ImagePreprocessingMode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                                <b:Interaction.Triggers>
+                                    <b:EventTrigger EventName="SelectionChanged">
+                                        <mvvm:InvokeCommandAction Command="{Binding UpdateBarcodeReaderCommand}" />
+                                    </b:EventTrigger>
+                                </b:Interaction.Triggers>
+
                                 <ComboBoxItem>
                                     通用
                                     <!--  General  -->
@@ -1551,6 +1596,12 @@
                                 FontWeight="Bold"
                                 Foreground="White"
                                 SelectedIndex="{Binding BarcodeReaderSettingsInfo.MinResultConfidence, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                                <b:Interaction.Triggers>
+                                    <b:EventTrigger EventName="SelectionChanged">
+                                        <mvvm:InvokeCommandAction Command="{Binding UpdateBarcodeReaderCommand}" />
+                                    </b:EventTrigger>
+                                </b:Interaction.Triggers>
+
                                 <ComboBoxItem>
                                     0-不限制
                                     <!--  0-No Limitation  -->
@@ -1620,7 +1671,14 @@
                                 FontWeight="Bold"
                                 Foreground="White"
                                 ItemsSource="{Binding TextureDetectionSensitivityItems, UpdateSourceTrigger=PropertyChanged}"
-                                SelectedIndex="{Binding BarcodeReaderSettingsInfo.TextureDetectionSensitivity, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                                SelectedIndex="{Binding BarcodeReaderSettingsInfo.TextureDetectionSensitivity, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                                <b:Interaction.Triggers>
+                                    <b:EventTrigger EventName="SelectionChanged">
+                                        <mvvm:InvokeCommandAction Command="{Binding UpdateBarcodeReaderCommand}" />
+                                    </b:EventTrigger>
+                                </b:Interaction.Triggers>
+
+                            </ComboBox>
                         </Border>
                     </StackPanel>
                     <!--  二值化块大小  -->
@@ -1652,6 +1710,11 @@
                                 FontWeight="Bold"
                                 Foreground="White"
                                 InputMethod.IsInputMethodEnabled="False">
+                                <b:Interaction.Triggers>
+                                    <b:EventTrigger EventName="TextChanged">
+                                        <mvvm:InvokeCommandAction Command="{Binding UpdateBarcodeReaderCommand}" />
+                                    </b:EventTrigger>
+                                </b:Interaction.Triggers>
                                 <TextBox.Text>
                                     <Binding
                                         Mode="TwoWay"
@@ -1694,6 +1757,11 @@
                                 FontWeight="Bold"
                                 Foreground="White"
                                 InputMethod.IsInputMethodEnabled="False">
+                                <b:Interaction.Triggers>
+                                    <b:EventTrigger EventName="TextChanged">
+                                        <mvvm:InvokeCommandAction Command="{Binding UpdateBarcodeReaderCommand}" />
+                                    </b:EventTrigger>
+                                </b:Interaction.Triggers>
                                 <TextBox.Text>
                                     <Binding
                                         Mode="TwoWay"
@@ -1744,6 +1812,11 @@
                         FontWeight="Bold"
                         Foreground="White"
                         SelectedIndex="{Binding BarcodeReaderSettingsInfo.RecognitionMode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                        <b:Interaction.Triggers>
+                            <b:EventTrigger EventName="PreviewMouseUp">
+                                <mvvm:InvokeCommandAction Command="{Binding UpdateBarcodeReaderCommand}" />
+                            </b:EventTrigger>
+                        </b:Interaction.Triggers>
                         <ComboBoxItem>
                             快速
                             <!--  Speed  -->

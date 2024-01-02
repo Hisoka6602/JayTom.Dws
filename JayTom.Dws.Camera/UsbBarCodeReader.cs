@@ -37,8 +37,11 @@ namespace JayTom.Dws.Camera {
         private PublicRuntimeSettings? mNormalRuntimeSettings;
         private bool _isOpend = false;
         private SemaphoreSlim _semaphoreSlim = new(1, 1);
+        private int _recognitionSkipFrames = 4;
 
         public event EventHandler<BarcodeScannedEventArgs> BarcodeScanned;
+
+        private int _framenum = 0;
 
         public event EventHandler<Bitmap> ImageDataReceived;
 
@@ -61,39 +64,46 @@ namespace JayTom.Dws.Camera {
         /// </summary>
         /// <returns></returns>
         public static List<UsbCameraInfo> EnumerateCameras() {
-            var cameraManager = new CameraManager(dntLicenseKeys);
-            //枚举相机
-            //之后需要加一个过滤
             var usbCameraInfos = new List<UsbCameraInfo>();
-            _cameraDictionary = new();
-            var cameraNames = cameraManager?.GetCameraNames() ?? new List<string>();
-            var searcher = new ManagementObjectSearcher("SELECT * FROM Win32_PnPEntity WHERE PNPClass = 'Camera'");
-            var devices = searcher.Get();
+            try {
+                var cameraManager = new CameraManager(dntLicenseKeys);
+                //枚举相机
+                //之后需要加一个过滤
 
-            foreach (var device in devices) {
-                var select = cameraNames?.Select((s, i) => new {
-                    Id = i,
-                    Name = s
-                });
-                var orDefault = select?.FirstOrDefault(f => f.Name.Equals(device["Caption"]?.ToString()));
-                if (orDefault is not null && !string.IsNullOrEmpty(device["ClassGuid"]?.ToString())) {
-                    //取出序列号ClassGuid
-                    var usbCameraInfo = new UsbCameraInfo() {
-                        CameraName = orDefault.Name,
-                        CameraId = orDefault.Id,
-                        CameraDescription = device["Description"]?.ToString(),
-                        CameraManufacturer = device["Manufacturer"]?.ToString(),
-                        CameraSerialNumber = device["ClassGuid"]?.ToString(),
-                        CameraResolutions = cameraManager?.SelectCamera(orDefault.Name)?.SupportedResolutions?.Select(s =>
-                            new Size(s.Width, s.Height))?.ToList()
-                    };
-                    usbCameraInfos.Add(usbCameraInfo);
-                    _cameraDictionary.AddOrUpdate(device["ClassGuid"].ToString() ?? string.Empty, value => usbCameraInfo,
-                        (key, oldValue) => usbCameraInfo);
+                _cameraDictionary = new();
+                var cameraNames = cameraManager?.GetCameraNames() ?? new List<string>();
+                var searcher = new ManagementObjectSearcher("SELECT * FROM Win32_PnPEntity WHERE PNPClass = 'Camera'");
+                var devices = searcher.Get();
+
+                foreach (var device in devices) {
+                    var select = cameraNames?.Select((s, i) => new {
+                        Id = i,
+                        Name = s
+                    });
+                    var orDefault = select?.FirstOrDefault(f => f.Name.Equals(device["Caption"]?.ToString()));
+                    if (orDefault is not null && !string.IsNullOrEmpty(device["ClassGuid"]?.ToString())) {
+                        //取出序列号ClassGuid
+                        var usbCameraInfo = new UsbCameraInfo() {
+                            CameraName = orDefault.Name,
+                            CameraId = orDefault.Id,
+                            CameraDescription = device["Description"]?.ToString(),
+                            CameraManufacturer = device["Manufacturer"]?.ToString(),
+                            CameraSerialNumber = device["ClassGuid"]?.ToString(),
+                            CameraResolutions = cameraManager?.SelectCamera(orDefault.Name)?.SupportedResolutions?.Select(s =>
+                                new Size(s.Width, s.Height))?.ToList()
+                        };
+                        usbCameraInfos.Add(usbCameraInfo);
+                        _cameraDictionary.AddOrUpdate(device["ClassGuid"].ToString() ?? string.Empty, value => usbCameraInfo,
+                            (key, oldValue) => usbCameraInfo);
+                    }
                 }
+
+                cameraManager?.Dispose();
+            }
+            catch (Exception e) {
+                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
             }
 
-            cameraManager?.Dispose();
             return usbCameraInfos;
         }
 
@@ -317,7 +327,7 @@ namespace JayTom.Dws.Camera {
             Dictionary<BarcodeReaderParameter, object> parameters) {
             await Task.Yield();
             if (mBarcodeReader is not null) {
-                if (!_isOpend) {
+                if (/*!_isOpend*/ true) {
                     mBarcodeReader.ResetRuntimeSettings();
                     var runtimeSettings = mBarcodeReader.GetRuntimeSettings();
 
@@ -342,7 +352,7 @@ namespace JayTom.Dws.Camera {
                     if (recognitionMode is ScanMode scanMode) {
                         switch (scanMode) {
                             case ScanMode.Speed: {
-                                    runtimeSettings.BarcodeFormatIds = (int)(EnumBarcodeFormat.BF_CODE_128 | EnumBarcodeFormat.BF_CODE_39 | EnumBarcodeFormat.BF_QR_CODE);
+                                    //runtimeSettings.BarcodeFormatIds = (int)(EnumBarcodeFormat.BF_CODE_128 | EnumBarcodeFormat.BF_CODE_39 | EnumBarcodeFormat.BF_QR_CODE);
                                     runtimeSettings.LocalizationModes[0] = EnumLocalizationMode.LM_SCAN_DIRECTLY;
                                     for (var i = 1; i < runtimeSettings.LocalizationModes.Length; i++)
                                         runtimeSettings.LocalizationModes[i] = EnumLocalizationMode.LM_SKIP;
@@ -515,13 +525,9 @@ namespace JayTom.Dws.Camera {
                         if (binarizationBlockSize is int) {
                             mBarcodeReader.SetModeArgument("BinarizationModes", 0, "BlockSizeX", binarizationBlockSize.ToString(), out var strErrorMessage);
                         }
-                        mBarcodeReader.UpdateRuntimeSettings(runtimeSettings);
-
-                        return new KeyValuePair<bool, string>(false, "读码器设置成功");
                     }
-                    else {
-                        return new KeyValuePair<bool, string>(false, "识别模式未设置");
-                    }
+                    mBarcodeReader.UpdateRuntimeSettings(runtimeSettings);
+                    return new KeyValuePair<bool, string>(false, "读码器设置成功");
                 }
                 else {
                     return new KeyValuePair<bool, string>(false, "运行中不能设置");
@@ -547,12 +553,13 @@ namespace JayTom.Dws.Camera {
                 if (orDefault is not null && _selectCamera is not null) {
                     _selectCamera.CurrentResolution = new CamResolution(orDefault.Value.Width, orDefault.Value.Height);
                 }
-                mBarcodeReader ??= BarcodeReader.GetInstance();
+                mBarcodeReader = BarcodeReader.GetInstance();
                 mNormalRuntimeSettings = mBarcodeReader?.GetRuntimeSettings();
                 await SetBarcodeReaderParameter(new Dictionary<BarcodeReaderParameter, object>()
                  {
                     { BarcodeReaderParameter.RecognitionMode, ScanMode.Speed },
-                    {BarcodeReaderParameter.IsUseTextFilterMode,true}
+                    {BarcodeReaderParameter.IsUseTextFilterMode,true},
+                    //{BarcodeReaderParameter.IsUseRegionPredetectionMode,true}
                 });
                 return true;
             }
@@ -573,6 +580,7 @@ namespace JayTom.Dws.Camera {
                     _selectCamera.Open();
                     //注册事件
                     _selectCamera.OnFrameCaptrue += SelectCameraOnOnFrameCaptrue;
+                    _isOpend = true;
                     return new KeyValuePair<bool, string>(true, "启动成功");
                 }
                 else {
@@ -606,39 +614,56 @@ namespace JayTom.Dws.Camera {
         /// </summary>
         /// <param name="bitmap"></param>
         private async void ReadFromFrame(Bitmap bitmap) {
-            OnImageDataReceived(bitmap);
-            return;
-            TextResult[]? bars = null;
-            var (buffer, stride, pixelFormat) = GetBitmapData(bitmap);
-            try {
-                await _semaphoreSlim.WaitAsync();
+            if (_framenum >= _recognitionSkipFrames) {
+                _framenum = 0;
+                long elapsedMilliseconds = 0;
+                TextResult[]? bars = null;
+                var (buffer, stride, pixelFormat) = GetBitmapData(bitmap);
+                try {
+                    await _semaphoreSlim.WaitAsync();
+                    if (mBarcodeReader is not null) {
+                        var stopwatch = new Stopwatch();
+                        stopwatch.Start();
+                        bars = mBarcodeReader?.DecodeBuffer(buffer, bitmap.Width, bitmap.Height, stride, pixelFormat,
+                            "");
+                        //bars = mBarcodeReader?.DecodeBitmap(bitmap, "");
+                        stopwatch.Stop();
+                        elapsedMilliseconds = stopwatch.ElapsedMilliseconds;
+                    }
+                }
+                catch (Exception e) {
+                    Console.WriteLine(e);
+                }
+                finally {
+                    _semaphoreSlim.Release();
+                }
 
-                bars = mBarcodeReader?.DecodeBuffer(buffer, bitmap.Width, bitmap.Height, stride, pixelFormat, "");
-                //bars = mBarcodeReader?.DecodeBitmap(bitmap, "");
-            }
-            finally {
-                _semaphoreSlim.Release();
-            }
-
-            //解析条码
-            var barcodeScannedEventArgs = new BarcodeScannedEventArgs() {
-                ScanTime = DateTime.Now,
-                CameraSerialNumber = this.UsbCameraInfo.CameraSerialNumber
-            };
-            if (bars is not null && bars.Length > 0) {
-                //识别到条码
-                //barcodeScannedEventArgs.BarCodes
-                barcodeScannedEventArgs.BarCodes = bars.Select(s => new BarcodeInfo {
-                    Barcode = s.BarcodeText,
-                    BarcodeRegion = CreateRegionFromPoints(s.LocalizationResult.ResultPoints),
-                    BarcodeType = s.LocalizationResult.BarcodeFormatString
-                })?.ToList();
-                barcodeScannedEventArgs.Image = bitmap;
-                OnBarcodeScanned(barcodeScannedEventArgs);
+                //解析条码
+                var barcodeScannedEventArgs = new BarcodeScannedEventArgs() {
+                    ScanTime = DateTime.Now,
+                    CameraSerialNumber = this.UsbCameraInfo.CameraSerialNumber
+                };
+                if (bars is not null && bars.Length > 0) {
+                    //识别到条码
+                    //barcodeScannedEventArgs.BarCodes
+                    barcodeScannedEventArgs.BarCodes = bars.Select(s => new BarcodeInfo {
+                        Barcode = s.BarcodeText,
+                        BarcodeRegion = s.LocalizationResult.ResultPoints?.ToList(),
+                        BarcodeType = s.LocalizationResult.BarcodeFormatString,
+                    })?.ToList();
+                    barcodeScannedEventArgs.Image = bitmap;
+                    barcodeScannedEventArgs.RecognitionTime = elapsedMilliseconds;
+                    OnBarcodeScanned(barcodeScannedEventArgs);
+                }
+                else {
+                    OnImageDataReceived(bitmap);
+                }
             }
             else {
                 OnImageDataReceived(bitmap);
             }
+
+            _framenum++;
         }
 
         /// <summary>
@@ -651,8 +676,9 @@ namespace JayTom.Dws.Camera {
                 if (_selectCamera is not null && _isOpend) {
                     //注册事件
                     _selectCamera.OnFrameCaptrue -= SelectCameraOnOnFrameCaptrue;
+                    await Task.Delay(500);
                     _selectCamera.Close();
-
+                    _isOpend = false;
                     return new KeyValuePair<bool, string>(true, "停止成功");
                 }
                 else {
@@ -929,6 +955,11 @@ public class BarcodeScannedEventArgs : EventArgs {
     /// 相机序列号
     /// </summary>
     public string? CameraSerialNumber { get; set; }
+
+    /// <summary>
+    /// 识别耗时
+    /// </summary>
+    public long RecognitionTime { get; set; }
 }
 
 public class BarcodeInfo {
@@ -941,7 +972,7 @@ public class BarcodeInfo {
     /// <summary>
     /// 条码区域
     /// </summary>
-    public Region? BarcodeRegion { get; set; }
+    public List<Point>? BarcodeRegion { get; set; }
 
     /// <summary>
     /// 条码类型
@@ -1179,6 +1210,11 @@ public enum BarcodeReaderParameter {
     /// 识别模式
     /// </summary>
     RecognitionMode,
+
+    /// <summary>
+    /// 跳过的帧率
+    /// </summary>
+    RecognitionSkipFrames,
 }
 
 /// <summary>

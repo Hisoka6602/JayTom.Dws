@@ -151,14 +151,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.UsbCamera {
                                         using var g = Graphics.FromImage(generateThumbnail);
 
                                         foreach (var barcodeInfo in args?.BarCodes ?? new List<BarcodeInfo>()) {
-                                            points = barcodeInfo.BarcodeRegion?.GetRegionScans(new Matrix())
-                                                ?.SelectMany(rect => Enumerable.Range((int)rect.Left, (int)rect.Width)
-                                                                         ?.SelectMany(x => Enumerable
-                                                                                 .Range((int)rect.Top, (int)rect.Height)
-                                                                                 ?.Select(y => new Point(x, y)) ??
-                                                                             Array.Empty<Point>()) ??
-                                                                     Array.Empty<Point>())
-                                                ?.ToList();
+                                            points = barcodeInfo.BarcodeRegion;
                                             if (points is not null && points.Count == 4 &&
                                                 generateThumbnail is not null &&
                                                 args?.Image is { Width: > 0, Height: > 0 }) {
