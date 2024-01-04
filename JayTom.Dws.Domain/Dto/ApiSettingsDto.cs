@@ -51,5 +51,10 @@ namespace JayTom.Dws.Domain.Dto {
         /// 筋斗云Wms
         /// </summary>
         JdyWms = 7,
+
+        /// <summary>
+        /// 极兔快递
+        /// </summary>
+        JtExpressApi = 8,
     }
 }

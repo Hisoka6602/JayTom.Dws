@@ -142,6 +142,14 @@
                         NavigationUIVisibility="Hidden"
                         Source="ApiConfiguration/SzjyApiPage.xaml" />
                 </TabItem>
+                <TabItem Header="极兔Api">
+                    <Frame
+                        Margin="0"
+                        Padding="0"
+                        Focusable="False"
+                        NavigationUIVisibility="Hidden"
+                        Source="ApiConfiguration/JtExpressApiPage.xaml" />
+                </TabItem>
             </TabControl>
             <!--  提示框  -->
             <materialDesign:Snackbar
