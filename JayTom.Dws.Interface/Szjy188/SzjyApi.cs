@@ -246,8 +246,6 @@ namespace JayTom.Dws.Interface.Szjy188 {
                     ResponseContent = resultContent,
                     ResponseTime = DateTime.Now
                 };
-                //临时记录上传耗时
-                NLog.LogManager.GetCurrentClassLogger().Warn($"上传耗时:{stopwatch.Elapsed.TotalMilliseconds}(ms)");
             }
             return response;
         }

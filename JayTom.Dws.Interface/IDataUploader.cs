@@ -8,7 +8,6 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
 namespace JayTom.Dws.Interface {
-
     public interface IDataUploader {
 
         /// <summary>
@@ -25,8 +24,11 @@ namespace JayTom.Dws.Interface {
         /// <param name="other"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<UploadResponse> UploadData([NotNull] string barcode, [NotNull] double weight, double length = default, double width = default, double height = default,
-            double volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default);
+        Task<UploadResponse> UploadData([NotNull] string barcode, [NotNull] double weight,
+            double length = default, double width = default, double height = default,
+            double volume = default, UploadImageInfo? imageInfo = default,
+            List<UploadImageInfo>? panoramaImageInfos = default,
+            object? other = null, CancellationToken token = default);
 
         /// <summary>
         /// 数据上传

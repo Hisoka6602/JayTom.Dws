@@ -19,6 +19,7 @@ using Org.BouncyCastle.Utilities;
 using JayTom.Dws.Ocr.ExpressBill;
 using JayTom.Dws.Interface.Sunnen;
 using JayTom.Dws.Interface.Szjy188;
+using JayTom.Dws.Interface.Jtexpress;
 using static System.Text.Json.JsonElement;
 using JayTom.Dws.Infrastructure.IComputer;
 using JayTom.Dws.Domain.DownstreamProtocols;
@@ -44,6 +45,11 @@ internal class Program {
             { "recipient_name", "aa" }
         });
         await Task.Delay(TimeSpan.FromSeconds(50));*/
+        var jtExpressApi = new JtExpressApi(null);
+        var (key1, jtExpressUserInfo) = await jtExpressApi.LogIn("Ls3513222001",
+            "JTAa12345", "JTZN001231109",
+            "EdmchRA9Tkq47M8pgXybdQ==");
+
         return;
         var daHuaVolumeCamera = new DaHuaVolumeCamera();
         daHuaVolumeCamera.VolumeCaptured += delegate (object? sender, VolumeCapturedEventArgs eventArgs) {
