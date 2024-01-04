@@ -29,6 +29,7 @@ using CameraType = JayTom.Dws.Client.Models.CameraType;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
+
     public class CameraFinderViewModel : BindableBase {
         private readonly IDeviceService _deviceService;
         private readonly IBarcodeScannerCameraConfigRepository _barcodeScannerCameraConfigRepository;
@@ -645,7 +646,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
             }
             if (obj.ToString()?.Equals("IsUseDaHuaVolumeCameraSdk") == true) {
                 //大华体积
-                files = Directory.GetFiles($"{destinationDir}Cameras\\SmartCamera\\Irayple\\Dll")?.ToList();
+                //files = Directory.GetFiles($"{destinationDir}Cameras\\SmartCamera\\Irayple\\Dll")?.ToList();
             }
             if (obj.ToString()?.Equals("IsUseDaHuaSecurityCameraSdk") == true) {
                 //大华安防
