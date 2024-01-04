@@ -412,7 +412,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     }
                     else if (model.SettingsName.Equals("VolumeSettings")) {
                         try {
-                            var configInfoModel = await _configRepository.FirstOrDefault(f => f.ConfigName.Equals("CommunicationsSettings"));
+                            var configInfoModel = await _configRepository.FirstOrDefault(f => f.ConfigName.Equals("VolumeSettings"));
                             if (configInfoModel != null) {
                                 _volumeSettingsDto = JsonConvert.DeserializeObject<VolumeSettingsDto>(configInfoModel.Value) ?? new VolumeSettingsDto();
                             }
@@ -423,7 +423,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     }
                     else if (model.SettingsName.Equals("WeightSettings")) {
                         try {
-                            var configInfoModel = await _configRepository.FirstOrDefault(f => f.ConfigName.Equals("CommunicationsSettings"));
+                            var configInfoModel = await _configRepository.FirstOrDefault(f => f.ConfigName.Equals("WeightSettings"));
                             if (configInfoModel != null) {
                                 _weightSettingsDto = JsonConvert.DeserializeObject<WeightSettingsDto>(configInfoModel.Value) ?? new WeightSettingsDto();
                             }
