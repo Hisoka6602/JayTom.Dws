@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using JayTom.Dws.Data.LocalLog;
 using JayTom.Dws.Data.LocalConf;
 using JayTom.Dws.Data.LocalData;
+using NPOI.SS.Formula.Functions;
 using System.Collections.Generic;
 using System.Windows.Media.Media3D;
 using System.Collections.Concurrent;
@@ -44,6 +45,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private ConcurrentQueue<CameraImageInfo> _panoramaImageItems = new();
         private ConcurrentQueue<CameraImageInfo> _volumeCameraImageItems = new();
         private ConcurrentQueue<PackageInfo> _packageInfos = new();
+        private ConcurrentQueue<WeightQueueInfo> _weightQueueInfos = new();
+        private ConcurrentQueue<VolumeQueueInfo> _volumeQueueInfos = new();
 
         public PackageBackgroundService(IDeviceService deviceService,
             IResultOutputService resultOutputService,
@@ -108,6 +111,29 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     })?.ToList()
                                                           ?? new List<PanoramaCameraImageInfo>();
 
+                    //判断重量和体积队列
+                    var tryDequeue = false;
+                    do {
+                        tryDequeue = _volumeQueueInfos.TryDequeue(out var volume);
+                        if (tryDequeue && volume is not null &&
+                            DateTime.Now.Subtract(volume.Time).TotalMilliseconds < 500) {
+                            packageInfo.Length = volume.Length;
+                            packageInfo.Width = volume.Width;
+                            packageInfo.Height = volume.Height;
+                            packageInfo.Volume = volume.Volume;
+                            break;
+                        }
+                    } while (tryDequeue && _volumeQueueInfos.Count > 0);
+
+                    do {
+                        tryDequeue = _weightQueueInfos.TryDequeue(out var weight);
+                        if (tryDequeue && weight is not null &&
+                            DateTime.Now.Subtract(weight.Time).TotalMilliseconds < 500) {
+                            packageInfo.Weight = weight.Weight;
+                            break;
+                        }
+                    } while (tryDequeue && _weightQueueInfos.Count > 0);
+
                     _packageInfos.Enqueue(packageInfo);
                     EventAggregator.Instance.Publish(new TriggerPositionEvent() {
                         IsSuccess = true,
@@ -159,6 +185,30 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             ScanTime = args.ScanTime,
                             Timestamp = args.Timestamp,
                         };
+
+                        //判断重量和体积队列
+                        var tryDequeue = false;
+                        do {
+                            tryDequeue = _volumeQueueInfos.TryDequeue(out var volume);
+                            if (tryDequeue && volume is not null &&
+                                DateTime.Now.Subtract(volume.Time).TotalMilliseconds < 500) {
+                                packageInfo.Length = volume.Length;
+                                packageInfo.Width = volume.Width;
+                                packageInfo.Height = volume.Height;
+                                packageInfo.Volume = volume.Volume;
+                                break;
+                            }
+                        } while (tryDequeue && _volumeQueueInfos.Count > 0);
+
+                        do {
+                            tryDequeue = _weightQueueInfos.TryDequeue(out var weight);
+                            if (tryDequeue && weight is not null &&
+                                DateTime.Now.Subtract(weight.Time).TotalMilliseconds < 500) {
+                                packageInfo.Weight = weight.Weight;
+                                break;
+                            }
+                        } while (tryDequeue && _weightQueueInfos.Count > 0);
+
                         _packageInfos.Enqueue(packageInfo);
                         EventAggregator.Instance.Publish(new TriggerPositionEvent() {
                             IsSuccess = true,
@@ -194,14 +244,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             };
             //体积相机
             _deviceService.VolumeCaptured += async delegate (object? sender, VolumeCapturedEventArgs args) {
-                //为了防止先接收到体积信息
-                await Task.Delay(300);
-                /*_volumeCameraImageItems.Enqueue(new CameraImageInfo() {
-                    CameraSerialNumber = args.CameraSerialNumber,
-                    Image = args.Image,
-                    Barcode = args.Barcode,
-                    BarcodeTimestamp = args.BarcodeTimestamp
-                });*/
                 //填充长宽高
                 var info = _packageInfos.FirstOrDefault(f => f.Length == null ||
                                                              f.Width == null ||
@@ -213,13 +255,29 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     info.Height = args.Height - info.HeightToDeduct;
                     info.Volume = args.Volume - info.VolumeToDeduct;
                 }
+                else {
+                    _volumeQueueInfos.Enqueue(new VolumeQueueInfo() {
+                        Time = DateTime.Now,
+                        Length = args.Length,
+                        Width = args.Width,
+                        Height = args.Height,
+                        Volume = args.Volume,
+                    });
+                }
             };
             //称重
             _deviceService.StableWeight += async delegate (object? sender, StableWeightEventArgs args) {
-                await Task.Delay(200);
                 var info = _packageInfos.OrderBy(o => o.CreateTime).FirstOrDefault(f => !f.IsCompleted && f.Weight is null);
                 if (info is not null) {
                     info.Weight = args.Weight;
+                }
+                else {
+                    if (_weightSettingsDto.Mode == WeightMode.Dynamic) {
+                        _weightQueueInfos.Enqueue(new WeightQueueInfo() {
+                            Time = DateTime.Now,
+                            Weight = args.Weight,
+                        });
+                    }
                 }
             };
             //外部数据源
@@ -235,6 +293,15 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     info.Width = args.Width - info.WidthToDeduct;
                     info.Height = args.Height - info.HeightToDeduct;
                     info.Volume = args.Volume - info.VolumeToDeduct;
+                }
+                else {
+                    _volumeQueueInfos.Enqueue(new VolumeQueueInfo() {
+                        Time = DateTime.Now,
+                        Length = args.Length,
+                        Width = args.Width,
+                        Height = args.Height,
+                        Volume = args.Volume,
+                    });
                 }
                 EventAggregator.Instance.Publish(new VolumeLogInfoModel() {
                     Type = LogType.Information,
@@ -364,6 +431,28 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         })?.ToList()
                                                               ?? new List<PanoramaCameraImageInfo>();
 
+                        //判断重量和体积队列
+                        var tryDequeue = false;
+                        do {
+                            tryDequeue = _volumeQueueInfos.TryDequeue(out var volume);
+                            if (tryDequeue && volume is not null &&
+                                DateTime.Now.Subtract(volume.Time).TotalMilliseconds < 500) {
+                                packageInfo.Length = volume.Length;
+                                packageInfo.Width = volume.Width;
+                                packageInfo.Height = volume.Height;
+                                packageInfo.Volume = volume.Volume;
+                                break;
+                            }
+                        } while (tryDequeue && _volumeQueueInfos.Count > 0);
+
+                        do {
+                            tryDequeue = _weightQueueInfos.TryDequeue(out var weight);
+                            if (tryDequeue && weight is not null &&
+                                DateTime.Now.Subtract(weight.Time).TotalMilliseconds < 500) {
+                                packageInfo.Weight = weight.Weight;
+                                break;
+                            }
+                        } while (tryDequeue && _weightQueueInfos.Count > 0);
                         _packageInfos.Enqueue(packageInfo);
                         //获取外部数据
                         //体积
@@ -925,5 +1014,22 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         /// 是否已存在
         /// </summary>
         public bool IsExists { get; set; }
+    }
+
+    public class VolumeQueueInfo {
+        public DateTime Time { get; set; }
+        public double? Length { get; set; }
+        public double? Width { get; set; }
+        public double? Height { get; set; }
+        public double? Volume { get; set; }
+    }
+
+    public class WeightQueueInfo {
+        public DateTime Time { get; set; }
+
+        /// <summary>
+        /// 重量
+        /// </summary>
+        public double? Weight { get; set; }
     }
 }

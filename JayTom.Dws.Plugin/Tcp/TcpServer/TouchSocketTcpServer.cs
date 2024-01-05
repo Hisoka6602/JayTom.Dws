@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net;
 using System.Linq;
 using System.Text;
 using TouchSocket.Core;
@@ -120,7 +121,9 @@ namespace JayTom.Dws.Plugin.Tcp.TcpServer {
                         };
                     }
 
-                    var listenIpHosts = new TouchSocketConfig().SetListenIPHosts(new IPHost[] { new($"{tcpConnect?.Address}:{tcpConnect?.Port}") });
+                    var listenIpHosts = new TouchSocketConfig().SetListenIPHosts(new IPHost[] { new($"{IPAddress.Any.ToString()}:{tcpConnect?.Port}") });
+
+                    //var listenIpHosts = new TouchSocketConfig().SetListenIPHosts(new IPHost[] { new($"{tcpConnect?.Address}:{tcpConnect?.Port}") });
                     _tcpService?.Setup(listenIpHosts);
                     return true;
                 }

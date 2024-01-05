@@ -8,10 +8,13 @@ using System.Windows;
 using System.Drawing;
 using Newtonsoft.Json;
 using System.Threading;
+using TouchSocket.Core;
 using JayTom.Dws.Camera;
 using System.Diagnostics;
 using System.Windows.Input;
 using System.Windows.Media;
+using Org.BouncyCastle.Tsp;
+using MaterialDesignColors;
 using System.Threading.Tasks;
 using System.Drawing.Imaging;
 using MaterialDesignThemes.Wpf;
@@ -23,16 +26,21 @@ using Color = System.Drawing.Color;
 using Point = System.Drawing.Point;
 using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
+using MathNet.Numerics.Distributions;
 using JayTom.Dws.Client.Models.Cameras;
 using JayTom.Dws.Client.Service.Device;
+using JayTom.Dws.Client.EventMediators;
 using FontStyle = System.Drawing.FontStyle;
+using JayTom.Dws.Data.LocalConf.CameraConfig;
 using FontFamily = System.Drawing.FontFamily;
 using Matrix = System.Drawing.Drawing2D.Matrix;
+using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
 
     public class UsbCameraSettingsViewModel : BindableBase {
         private readonly IDeviceService _deviceService;
+        private readonly IUsbCameraConfigRepository _usbCameraConfigRepository;
         private BarcodeReaderSettingsInfoModel _barcodeReaderSettingsInfo = new();
         private UsbCameraSettingsInfoModel _usbCameraSettingsInfo = new();
         private ObservableCollection<int> _deblurLevelItems = new(Enumerable.Range(0, 10).ToList());
@@ -44,9 +52,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
         private bool _isUpdate = false;
         private WriteableBitmap? _image = new(800, 600, 96, 96, PixelFormats.Bgr24, null);
         private bool _isLoaded = false;
+        private bool _isSavingInProgress;
 
-        public UsbCameraSettingsViewModel(IDeviceService deviceService) {
+        public UsbCameraSettingsViewModel(IDeviceService deviceService,
+            IUsbCameraConfigRepository usbCameraConfigRepository) {
             _deviceService = deviceService;
+            _usbCameraConfigRepository = usbCameraConfigRepository;
         }
 
         public WriteableBitmap? Image {
@@ -95,6 +106,75 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
         public ObservableCollection<int> TextureDetectionSensitivityItems {
             get => _textureDetectionSensitivityItems;
             set => SetProperty(ref _textureDetectionSensitivityItems, value);
+        }
+
+        public bool IsSavingInProgress {
+            get => _isSavingInProgress;
+            set => SetProperty(ref _isSavingInProgress, value);
+        }
+
+        /// <summary>
+        /// 保存设置
+        /// </summary>
+        public ICommand SaveSettingsCommand {
+            get => new DelegateCommand<object>(SaveSettingDelegate);
+        }
+
+        private async void SaveSettingDelegate(object obj) {
+            if (!string.IsNullOrEmpty(SelectCameraInfo?.CameraSerialNumber)) {
+                if (!IsSavingInProgress) {
+                    IsSavingInProgress = true;
+                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+                        var insertOrUpdate = await _usbCameraConfigRepository.InsertOrUpdate(new UsbCameraConfigInfoModel() {
+                            Exposure = UsbCameraSettingsInfo.Exposure,
+                            Resolution = UsbCameraSettingsInfo.Resolution,
+                            Brightness = UsbCameraSettingsInfo.Brightness,
+                            Contrast = UsbCameraSettingsInfo.Contrast,
+                            Hue = UsbCameraSettingsInfo.Hue,
+                            Saturation = UsbCameraSettingsInfo.Saturation,
+                            Sharpness = UsbCameraSettingsInfo.Sharpness,
+                            Gamma = UsbCameraSettingsInfo.Gamma,
+                            WhiteBalance = UsbCameraSettingsInfo.WhiteBalance,
+                            BklightComp = UsbCameraSettingsInfo.BklightComp,
+                            Gain = UsbCameraSettingsInfo.Gain,
+                            Zoom = UsbCameraSettingsInfo.Zoom,
+                            Focus = UsbCameraSettingsInfo.Focus,
+                            Iris = UsbCameraSettingsInfo.Iris,
+                            Pan = UsbCameraSettingsInfo.Pan,
+                            Tilt = UsbCameraSettingsInfo.Tilt,
+                            Roll = UsbCameraSettingsInfo.Roll,
+                            IsCustomExposureEnabled = UsbCameraSettingsInfo.IsCustomExposureEnabled,
+                            IsCustomBrightnessEnabled = UsbCameraSettingsInfo.IsCustomBrightnessEnabled,
+                            IsCustomContrastEnabled = UsbCameraSettingsInfo.IsCustomContrastEnabled,
+                            IsCustomHueEnabled = UsbCameraSettingsInfo.IsCustomHueEnabled,
+                            IsCustomSaturationEnabled = UsbCameraSettingsInfo.IsCustomSaturationEnabled,
+                            IsCustomSharpnessEnabled = UsbCameraSettingsInfo.IsCustomSharpnessEnabled,
+                            IsCustomGammaEnabled = UsbCameraSettingsInfo.IsCustomGammaEnabled,
+                            IsCustomWhiteBalanceEnabled = UsbCameraSettingsInfo.IsCustomWhiteBalanceEnabled,
+                            IsCustomBacklightCompensationEnabled =
+                                UsbCameraSettingsInfo.IsCustomBacklightCompensationEnabled,
+                            IsCustomGainEnabled = UsbCameraSettingsInfo.IsCustomGainEnabled,
+                            IsCustomZoomEnabled = UsbCameraSettingsInfo.IsCustomZoomEnabled,
+                            IsCustomFocusEnabled = UsbCameraSettingsInfo.IsCustomFocusEnabled,
+                            IsCustomApertureEnabled = UsbCameraSettingsInfo.IsCustomApertureEnabled,
+                            IsCustomHorizontalRotationEnabled = UsbCameraSettingsInfo.IsCustomHorizontalRotationEnabled,
+                            IsCustomVerticalRotationEnabled = UsbCameraSettingsInfo.IsCustomVerticalRotationEnabled,
+                            IsCustomFlipEnabled = UsbCameraSettingsInfo.IsCustomFlipEnabled,
+                            Name = SelectCameraInfo?.CameraName ?? string.Empty,
+                            SerialNumber = SelectCameraInfo?.CameraSerialNumber ?? string.Empty,
+                        });
+
+                        if (insertOrUpdate) {
+                            EventAggregator.Instance.Publish(new SettingsChangedEvent {
+                                SettingsName = "UsbCameraSettings"
+                            });
+                        }
+                        IsSavingInProgress = false;
+                        UsbCameraSettingsMessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
+                            Languages.Language.ResourceManager.GetString("SaveFailed"))}");
+                    });
+                }
+            }
         }
 
         public ICommand LoadedCommand {
@@ -245,7 +325,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
         }
 
         private async void SwitchCameraDelegate(object obj) {
-            await Application.Current.Dispatcher.InvokeAsync(() => {
+            await Application.Current.Dispatcher.InvokeAsync(async () => {
                 if (SelectCameraInfo?.CameraResolutions?.Any() == true) {
                     CameraResolutions.Clear();
                     var cameraResolutionInfos = SelectCameraInfo?.CameraResolutions?.Select(s => new CameraResolutionInfo {
@@ -253,6 +333,55 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                         Display = $"{s.Width}x{s.Height}"
                     })?.OrderBy(s => s.Size.Width * s.Size.Height)?.ToList() ?? new List<CameraResolutionInfo>();
                     CameraResolutions.AddRange(cameraResolutionInfos);
+
+                    //读参数
+
+                    var usbCameraConfigInfoModel = await _usbCameraConfigRepository.FirstOrDefault(f =>
+                        SelectCameraInfo != null && f.SerialNumber.Equals(SelectCameraInfo.CameraSerialNumber));
+                    if (usbCameraConfigInfoModel is not null) {
+                        UsbCameraSettingsInfo = new UsbCameraSettingsInfoModel() {
+                            Exposure = usbCameraConfigInfoModel.Exposure,
+                            Resolution = usbCameraConfigInfoModel.Resolution,
+                            Brightness = usbCameraConfigInfoModel.Brightness,
+                            Contrast = usbCameraConfigInfoModel.Contrast,
+                            Hue = usbCameraConfigInfoModel.Hue,
+                            Saturation = usbCameraConfigInfoModel.Saturation,
+                            Sharpness = usbCameraConfigInfoModel.Sharpness,
+                            Gamma = usbCameraConfigInfoModel.Gamma,
+                            WhiteBalance = usbCameraConfigInfoModel.WhiteBalance,
+                            BklightComp = usbCameraConfigInfoModel.BklightComp,
+                            Gain = usbCameraConfigInfoModel.Gain,
+                            Zoom = usbCameraConfigInfoModel.Zoom,
+                            Focus = usbCameraConfigInfoModel.Focus,
+                            Iris = usbCameraConfigInfoModel.Iris,
+                            Pan = usbCameraConfigInfoModel.Pan,
+                            Tilt = usbCameraConfigInfoModel.Tilt,
+                            Roll = usbCameraConfigInfoModel.Roll,
+                            IsCustomExposureEnabled = usbCameraConfigInfoModel.IsCustomExposureEnabled,
+                            IsCustomBrightnessEnabled = usbCameraConfigInfoModel.IsCustomBrightnessEnabled,
+                            IsCustomContrastEnabled = usbCameraConfigInfoModel.IsCustomContrastEnabled,
+                            IsCustomHueEnabled = usbCameraConfigInfoModel.IsCustomHueEnabled,
+                            IsCustomSaturationEnabled = usbCameraConfigInfoModel.IsCustomSaturationEnabled,
+                            IsCustomSharpnessEnabled = usbCameraConfigInfoModel.IsCustomSharpnessEnabled,
+                            IsCustomGammaEnabled = usbCameraConfigInfoModel.IsCustomGammaEnabled,
+                            IsCustomWhiteBalanceEnabled = usbCameraConfigInfoModel.IsCustomWhiteBalanceEnabled,
+                            IsCustomBacklightCompensationEnabled =
+                                usbCameraConfigInfoModel.IsCustomBacklightCompensationEnabled,
+                            IsCustomGainEnabled = usbCameraConfigInfoModel.IsCustomGainEnabled,
+                            IsCustomZoomEnabled = usbCameraConfigInfoModel.IsCustomZoomEnabled,
+                            IsCustomFocusEnabled = usbCameraConfigInfoModel.IsCustomFocusEnabled,
+                            IsCustomApertureEnabled = usbCameraConfigInfoModel.IsCustomApertureEnabled,
+                            IsCustomHorizontalRotationEnabled =
+                                usbCameraConfigInfoModel.IsCustomHorizontalRotationEnabled,
+                            IsCustomVerticalRotationEnabled = usbCameraConfigInfoModel.IsCustomVerticalRotationEnabled,
+                            IsCustomFlipEnabled = usbCameraConfigInfoModel.IsCustomFlipEnabled,
+                        };
+                        UsbCameraSettingsInfo.Resolution = SelectCameraInfo?.CameraResolutions?.LastOrDefault() ?? new Size(0, 0);
+                        SwitchCameraResolutionDelegate(this);
+                    }
+                    else {
+                        UsbCameraSettingsInfo = new UsbCameraSettingsInfoModel();
+                    }
 
                     //切换相机
                     //切换分辨率x
@@ -339,7 +468,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
 
         private async void UpdateCameraParametersDelegate(object obj) {
             //实时设置相机参数
-            Console.WriteLine(obj);
 
             if (_usbBarCodeReader is not null) {
                 var dictionary = new Dictionary<UsbCameraParameter, object> {

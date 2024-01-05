@@ -21,7 +21,7 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         private StringItemModel _weightFlag = new();
         private string _segmentCodeUrl = "https://opa.jtexpress.com.cn";
         private int _segmentCodeTimeOut = 1000;
-        private int _businessType;
+        private IntegerItemModel _businessType = new();
 
         /// <summary>
         /// Url
@@ -130,7 +130,7 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 业务类型
         /// </summary>
-        public int BusinessType {
+        public IntegerItemModel BusinessType {
             get => _businessType;
             set => SetProperty(ref _businessType, value);
         }

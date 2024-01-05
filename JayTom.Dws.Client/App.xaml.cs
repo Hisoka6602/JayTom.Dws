@@ -236,6 +236,8 @@ namespace JayTom.Dws.Client {
                 services.AddScoped<IBarcodeScannerCameraConfigRepository, BarcodeScannerCameraConfigRepository>();
                 services.AddScoped<IPanoramaCameraConfigRepository, PanoramaCameraConfigRepository>();
                 services.AddScoped<IVolumeCameraConfigRepository, VolumeCameraConfigRepository>();
+
+                services.AddScoped<IUsbCameraConfigRepository, UsbCameraConfigRepository>();
                 services.AddScoped<IConfigRepository, ConfigRepository>();
                 services.AddScoped<ILogisticsCodeRecognitionRepository, LogisticsCodeRecognitionRepository>();
                 services.AddScoped<IPackageExitDefinitionRepository, PackageExitDefinitionRepository>();
@@ -403,6 +405,7 @@ namespace JayTom.Dws.Client {
                         services.AddSingleton(container1.Resolve<IBarcodeScannerCameraConfigRepository>());
                         services.AddSingleton(container1.Resolve<IPanoramaCameraConfigRepository>());
                         services.AddSingleton(container1.Resolve<IVolumeCameraConfigRepository>());
+                        services.AddSingleton(container1.Resolve<IUsbCameraConfigRepository>());
                         services.AddSingleton(container1.Resolve<IConfigRepository>());
                         services.AddSingleton(container1.Resolve<ILogisticsCodeRecognitionRepository>());
                         services.AddSingleton(container1.Resolve<ILogisticsCodeRecognitionRepository>());

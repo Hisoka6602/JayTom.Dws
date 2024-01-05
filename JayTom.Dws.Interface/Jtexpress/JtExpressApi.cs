@@ -54,7 +54,28 @@ namespace JayTom.Dws.Interface.Jtexpress {
         }
 
         public Task<KeyValuePair<bool, string>> SetParameters<T>(T parameters) {
-            throw new NotImplementedException();
+            if (parameters is ApiParameter param) {
+                Parameters = new ApiParameter() {
+                    AppSecret = param.AppSecret,
+                    AppKey = param.AppKey,
+                    BusinessType = param.BusinessType,
+                    Password = param.Password,
+                    ScanPda = param.ScanPda,
+                    ScanType = param.ScanType,
+                    ScanTypeCode = param.ScanTypeCode,
+                    SegmentCodeTimeOut = param.SegmentCodeTimeOut,
+                    SegmentCodeUrl = param.SegmentCodeUrl,
+                    TimeOut = param.TimeOut,
+                    TransportTypeCode = param.TransportTypeCode,
+                    Url = param.Url,
+                    UserName = param.UserName,
+                    WeightFlag = param.WeightFlag,
+                };
+                return Task.FromResult(new KeyValuePair<bool, string>(true, string.Empty));
+            }
+            else {
+                return Task.FromResult(new KeyValuePair<bool, string>(true, "参数类型不匹配"));
+            }
         }
 
         /// <summary>
@@ -208,7 +229,15 @@ namespace JayTom.Dws.Interface.Jtexpress {
             double height = default, string? scanTypeCode = default, string? transportTypeCode = default, string? scanPda = default,
             int scanType = 1, string? weightFlag = default) {
             //如果没登录或登录时间超20小时则先登录,
-
+            if (UserInfo.LoginTime is null ||
+                DateTime.Now.Subtract(UserInfo.LoginTime.Value).TotalHours >= 20 ||
+                string.IsNullOrEmpty(UserInfo.Token)) {
+                var (key, value) = await LogIn(Parameters.UserName, Parameters.Password,
+                    Parameters.AppKey, Parameters.AppSecret);
+                if (key) {
+                    UserInfo = value;
+                }
+            }
             try {
                 //密码加密
                 //转MD5
@@ -267,6 +296,15 @@ namespace JayTom.Dws.Interface.Jtexpress {
         /// <returns></returns>
         public async Task DepartureScan(string barcode, string? scanPda = default) {
             //如果没登录或登录时间超20小时则先登录,
+            if (UserInfo.LoginTime is null ||
+                DateTime.Now.Subtract(UserInfo.LoginTime.Value).TotalHours >= 20 ||
+                string.IsNullOrEmpty(UserInfo.Token)) {
+                var (key, value) = await LogIn(Parameters.UserName, Parameters.Password,
+                    Parameters.AppKey, Parameters.AppSecret);
+                if (key) {
+                    UserInfo = value;
+                }
+            }
             try {
                 //密码加密
                 //转MD5

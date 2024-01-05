@@ -13,6 +13,7 @@ using JayTom.Dws.Interface.JdyWms;
 using JayTom.Dws.Domain.Dto.ApiDto;
 using JayTom.Dws.Interface.Szjy188;
 using System.Collections.Concurrent;
+using JayTom.Dws.Interface.Jtexpress;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using UploadResponse = JayTom.Dws.Interface.UploadResponse;
@@ -31,6 +32,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private static SzjyApi.ApiParameter _szjyApiParam = new();
         private static WdtWmsApi.ApiParameter _wdtWmsApiParameter = new();
         private static WdtFlagshipApi.ApiParameter _wdtFlagshipApiParameter = new();
+        private static JtExpressApi.ApiParameter _jtExpressApiParam = new();
 
         #region 非通用版本变量(临时)
 
@@ -171,6 +173,37 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             }
                         }
                     }
+                    else if (model.SettingsName.Equals("JtExpressApiParameters")) {
+                        //默认上传接口改参数
+                        var configInfoModel = await _configRepository.FirstOrDefault(f => f.ConfigName.Equals("JtExpressApiParameters"));
+                        if (configInfoModel is not null) {
+                            try {
+                                var jtExpressDto = JsonConvert.DeserializeObject<JtExpressDto>(configInfoModel.Value);
+                                if (jtExpressDto != null) {
+                                    _jtExpressApiParam = new JtExpressApi.ApiParameter {
+                                        AppSecret = jtExpressDto.AppSecret,
+                                        AppKey = jtExpressDto.AppKey,
+                                        BusinessType = (JtExpressApi.BusinessType)jtExpressDto.BusinessType,
+                                        Password = jtExpressDto.Password,
+                                        ScanPda = jtExpressDto.ScanPda,
+                                        ScanType = jtExpressDto.ScanType,
+                                        ScanTypeCode = jtExpressDto.ScanTypeCode,
+                                        SegmentCodeTimeOut = jtExpressDto.SegmentCodeTimeOut,
+                                        SegmentCodeUrl = jtExpressDto.SegmentCodeUrl,
+                                        TimeOut = jtExpressDto.TimeOut,
+                                        TransportTypeCode = jtExpressDto.TransportTypeCode,
+                                        Url = jtExpressDto.Url,
+                                        UserName = jtExpressDto.UserName,
+                                        WeightFlag = jtExpressDto.WeightFlag,
+                                    };
+                                }
+                            }
+                            catch (Exception e) {
+                                //抛出异常事件
+                                Console.WriteLine(e);
+                            }
+                        }
+                    }
                     //其他接口
                 }
             });
@@ -301,6 +334,16 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                         null, stoppingToken);
                                     break;
                                 }
+                            case ApiType.JtExpressApi: {
+                                    uploader = new JtExpressApi(_httpClientFactory);
+                                    uploadResponse = await uploader.UploadData(info.Barcode ?? string.Empty,
+                                        info.Weight, info.ScanTime,
+                                        info.Length, info.Width,
+                                        info.Height, info.Volume,
+                                        null, null,
+                                        null, stoppingToken);
+                                    break;
+                                }
                         }
                         if (_apiSettingsDto?.Type is not null &&
                             _apiSettingsDto.Type != ApiType.None) {
@@ -418,6 +461,35 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             PackagerId = wdtFlagshipApiDto.PackagerId,
                             Salt = wdtFlagshipApiDto.Salt,
                             V = wdtFlagshipApiDto.V
+                        };
+                    }
+                }
+                catch (Exception e) {
+                    //抛出异常事件
+                    Console.WriteLine(e);
+                }
+            }
+            //极兔
+            configInfoModel = await _configRepository.FirstOrDefault(f => f.ConfigName.Equals("JtExpressApiParameters"));
+            if (configInfoModel is not null) {
+                try {
+                    var jtExpressDto = JsonConvert.DeserializeObject<JtExpressDto>(configInfoModel.Value);
+                    if (jtExpressDto != null) {
+                        _jtExpressApiParam = new JtExpressApi.ApiParameter {
+                            AppSecret = jtExpressDto.AppSecret,
+                            AppKey = jtExpressDto.AppKey,
+                            BusinessType = (JtExpressApi.BusinessType)jtExpressDto.BusinessType,
+                            Password = jtExpressDto.Password,
+                            ScanPda = jtExpressDto.ScanPda,
+                            ScanType = jtExpressDto.ScanType,
+                            ScanTypeCode = jtExpressDto.ScanTypeCode,
+                            SegmentCodeTimeOut = jtExpressDto.SegmentCodeTimeOut,
+                            SegmentCodeUrl = jtExpressDto.SegmentCodeUrl,
+                            TimeOut = jtExpressDto.TimeOut,
+                            TransportTypeCode = jtExpressDto.TransportTypeCode,
+                            Url = jtExpressDto.Url,
+                            UserName = jtExpressDto.UserName,
+                            WeightFlag = jtExpressDto.WeightFlag,
                         };
                     }
                 }
