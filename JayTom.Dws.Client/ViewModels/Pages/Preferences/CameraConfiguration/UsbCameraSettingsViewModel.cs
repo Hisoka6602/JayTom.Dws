@@ -19,6 +19,7 @@ using System.Threading.Tasks;
 using System.Drawing.Imaging;
 using MaterialDesignThemes.Wpf;
 using System.Windows.Threading;
+using JayTom.Dws.Data.LocalConf;
 using System.Collections.Generic;
 using Size = System.Drawing.Size;
 using System.Windows.Media.Imaging;
@@ -32,8 +33,10 @@ using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Client.EventMediators;
 using FontStyle = System.Drawing.FontStyle;
 using JayTom.Dws.Data.LocalConf.CameraConfig;
+using JayTom.Dws.Domain.Repository.LocalConf;
 using FontFamily = System.Drawing.FontFamily;
 using Matrix = System.Drawing.Drawing2D.Matrix;
+using JayTom.Dws.Domain.Dto.CameraConfiguration;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
@@ -41,6 +44,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
     public class UsbCameraSettingsViewModel : BindableBase {
         private readonly IDeviceService _deviceService;
         private readonly IUsbCameraConfigRepository _usbCameraConfigRepository;
+        private readonly IConfigRepository _configRepository;
         private BarcodeReaderSettingsInfoModel _barcodeReaderSettingsInfo = new();
         private UsbCameraSettingsInfoModel _usbCameraSettingsInfo = new();
         private ObservableCollection<int> _deblurLevelItems = new(Enumerable.Range(0, 10).ToList());
@@ -55,9 +59,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
         private bool _isSavingInProgress;
 
         public UsbCameraSettingsViewModel(IDeviceService deviceService,
-            IUsbCameraConfigRepository usbCameraConfigRepository) {
+            IUsbCameraConfigRepository usbCameraConfigRepository,
+            IConfigRepository configRepository) {
             _deviceService = deviceService;
             _usbCameraConfigRepository = usbCameraConfigRepository;
+            _configRepository = configRepository;
         }
 
         public WriteableBitmap? Image {
@@ -164,7 +170,37 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                             SerialNumber = SelectCameraInfo?.CameraSerialNumber ?? string.Empty,
                         });
 
-                        if (insertOrUpdate) {
+                        //保存算法参数
+                        //UsbBarcodeReaderDto
+                        var orUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
+                            ConfigName = "UsbBarcodeReaderSettings",
+                            Value = JsonConvert.SerializeObject(new UsbBarcodeReaderDto {
+                                IsUseOrCode = BarcodeReaderSettingsInfo.IsUseOrCode,
+                                IsUseMicroQr = BarcodeReaderSettingsInfo.IsUseMicroQr,
+                                IsUseCode39 = BarcodeReaderSettingsInfo.IsUseCode39,
+                                IsUseCode93 = BarcodeReaderSettingsInfo.IsUseCode93,
+                                IsUseCode128 = BarcodeReaderSettingsInfo.IsUseCode128,
+                                IsUseCodeBar = BarcodeReaderSettingsInfo.IsUseCodeBar,
+                                IsUseItf = BarcodeReaderSettingsInfo.IsUseItf,
+                                IsUseEan13 = BarcodeReaderSettingsInfo.IsUseEan13,
+                                IsUseEan8 = BarcodeReaderSettingsInfo.IsUseEan8,
+                                LocalizationMode = BarcodeReaderSettingsInfo.LocalizationMode,
+                                DeblurLevel = BarcodeReaderSettingsInfo.DeblurLevel,
+                                ExpectedBarcodesCount = BarcodeReaderSettingsInfo.ExpectedBarcodesCount,
+                                ScaleDownThreshold = BarcodeReaderSettingsInfo.ScaleDownThreshold,
+                                IsUseTextFilterMode = BarcodeReaderSettingsInfo.IsUseTextFilterMode,
+                                IsUseRegionPredetectionMode = BarcodeReaderSettingsInfo.IsUseRegionPredetectionMode,
+                                GrayscaleTransformationMode = BarcodeReaderSettingsInfo.GrayscaleTransformationMode,
+                                ImagePreprocessingMode = BarcodeReaderSettingsInfo.ImagePreprocessingMode,
+                                MinResultConfidence = BarcodeReaderSettingsInfo.MinResultConfidence,
+                                TextureDetectionSensitivity = BarcodeReaderSettingsInfo.TextureDetectionSensitivity,
+                                BinarizationBlockSize = BarcodeReaderSettingsInfo.BinarizationBlockSize,
+                                RecognitionMode = BarcodeReaderSettingsInfo.RecognitionMode,
+                                RecognitionSkipFrames = BarcodeReaderSettingsInfo.RecognitionSkipFrames
+                            })
+                        });
+
+                        if (insertOrUpdate && orUpdate) {
                             EventAggregator.Instance.Publish(new SettingsChangedEvent {
                                 SettingsName = "UsbCameraSettings"
                             });
@@ -203,6 +239,45 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                         Debug.WriteLine($"{e}");
                     }
                 }, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+                //加载设置
+                var configInfoModel = await _configRepository.FirstOrDefault(f => f.ConfigName.Equals("UsbBarcodeReaderSettings"));
+                if (configInfoModel is not null) {
+                    try {
+                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                            var usbBarcodeReaderDto =
+                                JsonConvert.DeserializeObject<UsbBarcodeReaderDto>(configInfoModel.Value);
+                            if (usbBarcodeReaderDto is not null) {
+                                BarcodeReaderSettingsInfo = new BarcodeReaderSettingsInfoModel() {
+                                    IsUseOrCode = usbBarcodeReaderDto.IsUseOrCode,
+                                    IsUseMicroQr = usbBarcodeReaderDto.IsUseMicroQr,
+                                    IsUseCode39 = usbBarcodeReaderDto.IsUseCode39,
+                                    IsUseCode93 = usbBarcodeReaderDto.IsUseCode93,
+                                    IsUseCode128 = usbBarcodeReaderDto.IsUseCode128,
+                                    IsUseCodeBar = usbBarcodeReaderDto.IsUseCodeBar,
+                                    IsUseItf = usbBarcodeReaderDto.IsUseItf,
+                                    IsUseEan13 = usbBarcodeReaderDto.IsUseEan13,
+                                    IsUseEan8 = usbBarcodeReaderDto.IsUseEan8,
+                                    LocalizationMode = usbBarcodeReaderDto.LocalizationMode,
+                                    DeblurLevel = usbBarcodeReaderDto.DeblurLevel,
+                                    ExpectedBarcodesCount = usbBarcodeReaderDto.ExpectedBarcodesCount,
+                                    ScaleDownThreshold = usbBarcodeReaderDto.ScaleDownThreshold,
+                                    IsUseTextFilterMode = usbBarcodeReaderDto.IsUseTextFilterMode,
+                                    IsUseRegionPredetectionMode = usbBarcodeReaderDto.IsUseRegionPredetectionMode,
+                                    GrayscaleTransformationMode = usbBarcodeReaderDto.GrayscaleTransformationMode,
+                                    ImagePreprocessingMode = usbBarcodeReaderDto.ImagePreprocessingMode,
+                                    MinResultConfidence = usbBarcodeReaderDto.MinResultConfidence,
+                                    TextureDetectionSensitivity = usbBarcodeReaderDto.TextureDetectionSensitivity,
+                                    BinarizationBlockSize = usbBarcodeReaderDto.BinarizationBlockSize,
+                                    RecognitionMode = usbBarcodeReaderDto.RecognitionMode,
+                                    RecognitionSkipFrames = usbBarcodeReaderDto.RecognitionSkipFrames
+                                };
+                            }
+                        });
+                    }
+                    catch (Exception e) {
+                        Console.WriteLine(e);
+                    }
+                }
             }
         }
 
@@ -407,12 +482,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
             BitmapQueue.Clear();
             if (CameraResolution is not null) {
                 _usbBarCodeReader = new UsbBarCodeReader();
-                _usbBarCodeReader.ImageDataReceived += delegate (object? sender, Bitmap bitmap) {
-                    var thumbnail = UsbBarCodeReader.GenerateThumbnail(bitmap);
-                    if (thumbnail is not null) {
-                        BitmapQueue.Enqueue(thumbnail);
-                    }
-                };
+
                 _usbBarCodeReader.BarcodeScanned += delegate (object? sender, BarcodeScannedEventArgs args) {
                     if (args.Image is not null) {
                         var thumbnail = UsbBarCodeReader.GenerateThumbnail(args.Image);
@@ -441,7 +511,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                         }
                     }
                 };
-                await Task.Delay(2000);
+
                 var bindCamera = await _usbBarCodeReader.BindCamera(SelectCameraInfo);
                 if (bindCamera) {
                     var (key, value) = await _usbBarCodeReader.Start();

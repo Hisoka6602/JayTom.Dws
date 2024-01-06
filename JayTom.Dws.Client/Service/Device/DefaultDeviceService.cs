@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using Dynamsoft;
 using System.Linq;
 using JayTom.Dws.Ocr;
 using Newtonsoft.Json;
@@ -21,6 +22,7 @@ using Microsoft.AspNetCore.Mvc.ModelBinding;
 using JayTom.Dws.Data.LocalConf.CameraConfig;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using CameraType = JayTom.Dws.Camera.CameraType;
+using JayTom.Dws.Domain.Dto.CameraConfiguration;
 using JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim;
 using JayTom.Dws.Plugin.Scale.ScaleValueParameters;
 using JayTom.Dws.Camera.Cameras.SmartCamera.Irayple;
@@ -44,6 +46,7 @@ namespace JayTom.Dws.Client.Service.Device {
         private readonly IDynamicScale _dynamicScale;
         private readonly IStaticScale _staticScale;
         private readonly IOcr _ocr;
+        private readonly IUsbCameraConfigRepository _usbCameraConfigRepository;
         private SemaphoreSlim _cameraSlim = new(1);
 
         //private List<string> CameraInitializationException { get; set; } = new();
@@ -183,7 +186,8 @@ namespace JayTom.Dws.Client.Service.Device {
             IPanoramaCameraConfigRepository panoramaCameraConfigRepository,
             IVolumeCameraConfigRepository volumeCameraConfigRepository,
             IConfigRepository configRepository, IDynamicScale dynamicScale,
-            IStaticScale staticScale, IOcr ocr) {
+            IStaticScale staticScale, IOcr ocr,
+            IUsbCameraConfigRepository usbCameraConfigRepository) {
             _barcodeScannerCameraConfigRepository = barcodeScannerCameraConfigRepository;
             _panoramaCameraConfigRepository = panoramaCameraConfigRepository;
             _volumeCameraConfigRepository = volumeCameraConfigRepository;
@@ -191,6 +195,7 @@ namespace JayTom.Dws.Client.Service.Device {
             _dynamicScale = dynamicScale;
             _staticScale = staticScale;
             _ocr = ocr;
+            _usbCameraConfigRepository = usbCameraConfigRepository;
             //注册磅秤事件
             _dynamicScale.StabledWeight += delegate (object? sender, float f) {
                 OnStableWeight(new StableWeightEventArgs() {
@@ -383,6 +388,20 @@ namespace JayTom.Dws.Client.Service.Device {
 
                 await Task.Delay(100, token);
                 await camera.Start(string.Empty);
+                //判断是否Usb相机
+                if (camera is NormalUsbCamera usbCamera) {
+                    var usbCameraParameter = await GetUsbCameraParameter(usbCamera.Info?.SerialNumber ?? string.Empty);
+                    var barcodeReaderParameter = await GetBarcodeReaderParameter();
+                    var dictionary = new Dictionary<string, object>();
+                    if (usbCameraParameter is not null) {
+                        dictionary.Add("UsbCameraParameter", usbCameraParameter);
+                    }
+
+                    if (barcodeReaderParameter is not null) {
+                        dictionary.Add("BarcodeReaderParameter", barcodeReaderParameter);
+                    }
+                    usbCamera.SetParameters(dictionary);
+                }
             }
             //连接磅秤
             if (_weightSettingsDto is not null) {
@@ -671,7 +690,6 @@ namespace JayTom.Dws.Client.Service.Device {
                                         break;
                                     }
                             }
-                            //判断设置Ocr截图算法路径
 
                             //初始化
                             var (b, s) = await camera.Initialize(camera?.Info);
@@ -680,6 +698,7 @@ namespace JayTom.Dws.Client.Service.Device {
                                     ExceptionMessage = new Exception(s)
                                 });
                             }
+
                             //添加到集合
                             _cameras.Add(camera);
                         }
@@ -929,6 +948,113 @@ namespace JayTom.Dws.Client.Service.Device {
                 default:
                     return null;
             }
+            return null;
+        }
+
+        private async Task<Dictionary<UsbCameraParameter, object>?> GetUsbCameraParameter(string serialNumber) {
+            try {
+                var usbCameraConfigInfoModel = await _usbCameraConfigRepository.
+                    FirstOrDefault(f =>
+                        f.SerialNumber.Equals(serialNumber));
+                if (usbCameraConfigInfoModel is not null) {
+                    var dictionary = new Dictionary<UsbCameraParameter, object>();
+                    //曝光度
+                    if (usbCameraConfigInfoModel.IsCustomExposureEnabled) {
+                        dictionary.Add(UsbCameraParameter.Exposure, usbCameraConfigInfoModel.Exposure);
+                    }
+                    //亮度
+                    if (usbCameraConfigInfoModel.IsCustomBrightnessEnabled) {
+                        dictionary.Add(UsbCameraParameter.Brightness, usbCameraConfigInfoModel.Brightness);
+                    }
+                    //对比度
+                    if (usbCameraConfigInfoModel.IsCustomContrastEnabled) {
+                        dictionary.Add(UsbCameraParameter.Contrast, usbCameraConfigInfoModel.Contrast);
+                    }
+                    //色调
+                    if (usbCameraConfigInfoModel.IsCustomHueEnabled) {
+                        dictionary.Add(UsbCameraParameter.Hue, usbCameraConfigInfoModel.Hue);
+                    }
+                    //锐度
+                    if (usbCameraConfigInfoModel.IsCustomSharpnessEnabled) {
+                        dictionary.Add(UsbCameraParameter.Sharpness, usbCameraConfigInfoModel.Sharpness);
+                    }
+                    //伽马值
+                    if (usbCameraConfigInfoModel.IsCustomGammaEnabled) {
+                        dictionary.Add(UsbCameraParameter.Gamma, usbCameraConfigInfoModel.Gamma);
+                    }
+                    //白平衡
+                    if (usbCameraConfigInfoModel.IsCustomWhiteBalanceEnabled) {
+                        dictionary.Add(UsbCameraParameter.WhiteBalance, usbCameraConfigInfoModel.WhiteBalance);
+                    }
+                    //背光补偿
+                    if (usbCameraConfigInfoModel.IsCustomBacklightCompensationEnabled) {
+                        dictionary.Add(UsbCameraParameter.BklightComp, usbCameraConfigInfoModel.BklightComp);
+                    }
+                    return dictionary;
+                }
+            }
+            catch (Exception e) {
+            }
+
+            return null;
+        }
+
+        private async Task<Dictionary<BarcodeReaderParameter, object>?> GetBarcodeReaderParameter() {
+            try {
+                var configInfoModel = await _configRepository.FirstOrDefault(f => f.ConfigName.Equals("UsbBarcodeReaderSettings"));
+                if (configInfoModel is not null) {
+                    var usbBarcodeReaderDto =
+                        JsonConvert.DeserializeObject<UsbBarcodeReaderDto>(configInfoModel.Value);
+                    if (usbBarcodeReaderDto is not null) {
+                        EnumBarcodeFormat barcodeFormat = 0;
+                        if (usbBarcodeReaderDto.IsUseOrCode) {
+                            barcodeFormat |= EnumBarcodeFormat.BF_QR_CODE;
+                        }
+                        if (usbBarcodeReaderDto.IsUseMicroQr) {
+                            barcodeFormat |= EnumBarcodeFormat.BF_MICRO_QR;
+                        }
+                        if (usbBarcodeReaderDto.IsUseCode128) {
+                            barcodeFormat |= EnumBarcodeFormat.BF_CODE_128;
+                        }
+                        if (usbBarcodeReaderDto.IsUseCode39) {
+                            barcodeFormat |= EnumBarcodeFormat.BF_CODE_39;
+                        }
+                        if (usbBarcodeReaderDto.IsUseCode93) {
+                            barcodeFormat |= EnumBarcodeFormat.BF_CODE_93;
+                        }
+                        if (usbBarcodeReaderDto.IsUseCodeBar) {
+                            barcodeFormat |= EnumBarcodeFormat.BF_CODABAR;
+                        }
+                        if (usbBarcodeReaderDto.IsUseEan13) {
+                            barcodeFormat |= EnumBarcodeFormat.BF_EAN_13;
+                        }
+                        if (usbBarcodeReaderDto.IsUseEan13) {
+                            barcodeFormat |= EnumBarcodeFormat.BF_EAN_8;
+                        }
+                        var dictionary = new Dictionary<BarcodeReaderParameter, object>()
+                        {
+                            { BarcodeReaderParameter.EnumBarcodeFormat,barcodeFormat },
+                            { BarcodeReaderParameter.RecognitionMode,(ScanMode)usbBarcodeReaderDto.RecognitionMode },
+                            { BarcodeReaderParameter.TextureDetectionSensitivity,usbBarcodeReaderDto.TextureDetectionSensitivity },
+                            { BarcodeReaderParameter.BinarizationBlockSize,usbBarcodeReaderDto.BinarizationBlockSize },
+                            { BarcodeReaderParameter.ExpectedBarcodesCount,usbBarcodeReaderDto.ExpectedBarcodesCount },
+                            { BarcodeReaderParameter.DeblurLevel,usbBarcodeReaderDto.DeblurLevel },
+                            { BarcodeReaderParameter.LocalizationMode,usbBarcodeReaderDto.LocalizationMode },
+                            { BarcodeReaderParameter.IsUseTextFilterMode,usbBarcodeReaderDto.IsUseTextFilterMode },
+                            { BarcodeReaderParameter.IsUseRegionPredetectionMode,usbBarcodeReaderDto.IsUseRegionPredetectionMode },
+                            { BarcodeReaderParameter.ScaleDownThreshold,usbBarcodeReaderDto.ScaleDownThreshold },
+                            { BarcodeReaderParameter.GrayscaleTransformationMode,usbBarcodeReaderDto.GrayscaleTransformationMode },
+                            { BarcodeReaderParameter.ImagePreprocessingMode,usbBarcodeReaderDto.ImagePreprocessingMode },
+                            { BarcodeReaderParameter.MinResultConfidence,usbBarcodeReaderDto.MinResultConfidence },
+                            { BarcodeReaderParameter.RecognitionSkipFrames,usbBarcodeReaderDto.RecognitionSkipFrames },
+                        };
+                        return dictionary;
+                    }
+                }
+            }
+            catch (Exception e) {
+            }
+
             return null;
         }
 

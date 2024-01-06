@@ -167,22 +167,29 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.UsbCamera {
                                         }
                                     }
 
-                                    foreach (var barcodeInfo in args?.BarCodes ?? new List<BarcodeInfo>()) {
-                                        var validateData = _barCodeFilterContainer.ValidateData(new BarCodeFilterInfo() {
-                                            BarCode = barcodeInfo.Barcode ?? "NoRead",
-                                            ScanTime = DateTime.Now
+                                    foreach (var barcodeInfo in from barcodeInfo in args?.BarCodes ?? new List<BarcodeInfo>()
+                                                                let validateData = _barCodeFilterContainer.ValidateData(new BarCodeFilterInfo() {
+                                                                    BarCode = barcodeInfo.Barcode ?? "NoRead",
+                                                                    ScanTime = DateTime.Now
+                                                                })
+                                                                where validateData
+                                                                select barcodeInfo) {
+                                        OnBarcodeRead(new BarcodeReadEventArgs() {
+                                            Barcode = barcodeInfo.Barcode ?? "NoRead",
+                                            CameraSerialNumber = args?.CameraSerialNumber ?? this.Info.SerialNumber,
+                                            Image = args?.Image,
+                                            ScanTime = args?.ScanTime ?? DateTime.Now,
+                                            Timestamp = timestamp,
+                                            ThumbImage = generateThumbnail,
+                                            AreaCoords = points
                                         });
-                                        if (validateData) {
-                                            OnBarcodeRead(new BarcodeReadEventArgs() {
-                                                Barcode = barcodeInfo.Barcode ?? "NoRead",
-                                                CameraSerialNumber = args?.CameraSerialNumber ?? this.Info.SerialNumber,
-                                                Image = args?.Image,
-                                                ScanTime = args?.ScanTime ?? DateTime.Now,
-                                                Timestamp = timestamp,
-                                                ThumbImage = generateThumbnail,
-                                                AreaCoords = points
-                                            });
-                                        }
+                                    }
+
+                                    if (IsRealtimeImageEnabled) {
+                                        OnRealtimeImage(new RealtimeImageEventArgs() {
+                                            ThumbImage = generateThumbnail,
+                                            Timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds()
+                                        });
                                     }
                                 }
                             }
@@ -195,21 +202,6 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.UsbCamera {
                             //扫码回调
                             //获取缩略图
                             //画框
-                        };
-                        _usbBarCodeReader.ImageDataReceived += async delegate (object? sender, Bitmap bitmap) {
-                            if (IsRealtimeImageEnabled) {
-                                /*Stopwatch stopwatch = new Stopwatch();
-                                stopwatch.Start();*/
-                                var generateThumbnail = GenerateThumbnail(bitmap);
-                                OnRealtimeImage(new RealtimeImageEventArgs() {
-                                    ThumbImage = generateThumbnail,
-                                    Timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds()
-                                });
-                                /*stopwatch.Stop();
-                                Debug.WriteLine(stopwatch.ElapsedMilliseconds);*/
-                            }
-                            //实时图像回调
-                            //判断是否需要实时
                         };
                     }
                     OnCameraInitialized(new CameraInitializedEventArgs() {

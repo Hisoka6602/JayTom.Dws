@@ -44,8 +44,6 @@ namespace JayTom.Dws.Camera {
 
         private int _framenum = 0;
 
-        public event EventHandler<Bitmap> ImageDataReceived;
-
         private DateTime reTime = DateTime.Now;
 
         /// <summary>
@@ -130,10 +128,10 @@ namespace JayTom.Dws.Camera {
                     if (_selectCamera is not null) {
                         //设置参数
                         //设置分辨率(如果没有指定则使用最大分辨率)
-                        var resolution = parameters.FirstOrDefault(f =>
+                        /*var resolution = parameters.FirstOrDefault(f =>
                                  f.Key == UsbCameraParameter.Resolution)
                              .Value;
-                        /*if (resolution is Size size) {
+                        if (resolution is Size size) {
                             _selectCamera.CurrentResolution = new CamResolution(size.Width, size.Height);
                         }
                         else {
@@ -555,7 +553,7 @@ namespace JayTom.Dws.Camera {
         /// <param name="info"></param>
         /// <exception cref="NotImplementedException"></exception>
         public async Task<bool> BindCamera(UsbCameraInfo info) {
-            await Task.Yield();
+            await Task.Delay(2000);
             var (key, value) = _cameraDictionary.FirstOrDefault(f => f.Key.Equals(info.CameraSerialNumber));
             if (!string.IsNullOrEmpty(key)) {
                 UsbCameraInfo = value;
@@ -586,7 +584,7 @@ namespace JayTom.Dws.Camera {
         /// 开始
         /// </summary>
         public async Task<KeyValuePair<bool, string>> Start() {
-            await Task.Yield();
+            await Task.Delay(1000);
             try {
                 if (_selectCamera is not null && !_isOpend) {
                     _selectCamera.Open();
@@ -618,7 +616,9 @@ namespace JayTom.Dws.Camera {
             tempBitmap.Dispose();*/
             /*Debug.WriteLine($"纯图片返回间隔{DateTime.Now.Subtract(reTime).TotalMilliseconds}");
             reTime = DateTime.Now;*/
-            ReadFromFrame(fastClone);
+            Task.Factory.StartNew(() => {
+                ReadFromFrame(fastClone);
+            });
         }
 
         /// <summary>
@@ -638,7 +638,6 @@ namespace JayTom.Dws.Camera {
                         stopwatch.Start();
                         bars = mBarcodeReader?.DecodeBuffer(buffer, bitmap.Width, bitmap.Height, stride, pixelFormat,
                             "");
-                        //bars = mBarcodeReader?.DecodeBitmap(bitmap.Clone(new Rectangle(0, 0, bitmap.Width, bitmap.Height), bitmap.PixelFormat), "");
                         stopwatch.Stop();
                         elapsedMilliseconds = stopwatch.ElapsedMilliseconds;
                     }
@@ -653,11 +652,11 @@ namespace JayTom.Dws.Camera {
                 //解析条码
                 var barcodeScannedEventArgs = new BarcodeScannedEventArgs() {
                     ScanTime = DateTime.Now,
-                    CameraSerialNumber = this.UsbCameraInfo.CameraSerialNumber
+                    CameraSerialNumber = this.UsbCameraInfo.CameraSerialNumber,
+                    Image = bitmap
                 };
                 if (bars is not null && bars.Length > 0) {
                     //识别到条码
-                    //barcodeScannedEventArgs.BarCodes
                     barcodeScannedEventArgs.BarCodes = bars.Select(s => new BarcodeInfo {
                         Barcode = s.BarcodeText,
                         BarcodeRegion = s.LocalizationResult.ResultPoints?.ToList(),
@@ -668,11 +667,15 @@ namespace JayTom.Dws.Camera {
                     OnBarcodeScanned(barcodeScannedEventArgs);
                 }
                 else {
-                    OnImageDataReceived(bitmap);
+                    OnBarcodeScanned(barcodeScannedEventArgs);
                 }
             }
             else {
-                OnImageDataReceived(bitmap);
+                OnBarcodeScanned(new BarcodeScannedEventArgs() {
+                    ScanTime = DateTime.Now,
+                    CameraSerialNumber = this.UsbCameraInfo.CameraSerialNumber,
+                    Image = bitmap
+                });
             }
 
             _framenum++;
@@ -767,11 +770,6 @@ namespace JayTom.Dws.Camera {
                 default:
                     throw new NotSupportedException("Unsupported pixel format");
             }
-        }
-
-        protected virtual async void OnImageDataReceived(Bitmap e) {
-            await Task.Yield();
-            ImageDataReceived?.Invoke(this, e);
         }
 
         public static (byte[] buffer, int stride, EnumImagePixelFormat pixelFormat) GetBitmapData(Bitmap bitmap) {
