@@ -152,6 +152,17 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
+  <ItemGroup>
+    <!-- Include the files from JayTom.Dws.Nvr\VideoLAN folder -->
+    <Content Include="..\JayTom.Dws.Camera\UsbCameraDll\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="DynamsoftCommon">
+      <HintPath>..\..\..\dynamsoft-barcode-reader-dotnet-9.6.30\dynamsoft-barcode-reader-dotnet-9.6.30\Samples\BarcodeReaderDemo\BarcodeReaderDemo\bin\Debug_VS2010\DynamsoftCommon.dll</HintPath>
+    </Reference>
+  </ItemGroup>
   <!--<Target Name="CopyDeviceLib" AfterTargets="AfterBuild">
     <ItemGroup>
       <DeviceLibFiles Include="$(SolutionDir)JayTom.Dws.Device\DeviceLib\*\*" />

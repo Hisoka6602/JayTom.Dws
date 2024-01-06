@@ -172,7 +172,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.UsbCamera {
                                             BarCode = barcodeInfo.Barcode ?? "NoRead",
                                             ScanTime = DateTime.Now
                                         });
-                                        if (true) {
+                                        if (validateData) {
                                             OnBarcodeRead(new BarcodeReadEventArgs() {
                                                 Barcode = barcodeInfo.Barcode ?? "NoRead",
                                                 CameraSerialNumber = args?.CameraSerialNumber ?? this.Info.SerialNumber,
@@ -336,8 +336,8 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.UsbCamera {
 
         public int TakePhotoDelay { get; set; }
         public IOcr? Ocr { get; set; }
-        public int BarcodeBorderSize { get; set; }
-        public Color BarcodeBorderColor { get; set; }
+        public int BarcodeBorderSize { get; set; } = 5;
+        public Color BarcodeBorderColor { get; set; } = System.Drawing.Color.LawnGreen;
         public bool IsShowBarcodeBorder { get; set; }
 
         public event EventHandler<BarcodeReadEventArgs>? BarcodeRead;

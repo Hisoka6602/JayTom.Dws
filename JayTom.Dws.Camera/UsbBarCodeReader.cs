@@ -38,6 +38,7 @@ namespace JayTom.Dws.Camera {
         private bool _isOpend = false;
         private SemaphoreSlim _semaphoreSlim = new(1, 1);
         private int _recognitionSkipFrames = 4;
+        private bool _isLicense = false;
 
         public event EventHandler<BarcodeScannedEventArgs> BarcodeScanned;
 
@@ -55,6 +56,15 @@ namespace JayTom.Dws.Camera {
         public UsbBarCodeReader() {
             //_twainManager = new TwainManager(dntLicenseKeys);
             _cameraManager ??= new CameraManager(dntLicenseKeys);
+            if (!_isLicense) {
+                EnumErrorCode ret = BarcodeReader.InitLicense(dbrLicenseKeys, out var errorMsg);
+                if (ret != EnumErrorCode.DBR_SUCCESS) {
+                    Console.WriteLine("InitLicense Failed:" + errorMsg);
+                }
+                else {
+                    _isLicense = true;
+                }
+            }
             //mPDFRasterizer = new PDFRasterizer(dntLicenseKeys);
             //_imageCore = new ImageCore();
         }
@@ -67,6 +77,7 @@ namespace JayTom.Dws.Camera {
             var usbCameraInfos = new List<UsbCameraInfo>();
             try {
                 var cameraManager = new CameraManager(dntLicenseKeys);
+
                 //枚举相机
                 //之后需要加一个过滤
 
@@ -553,6 +564,7 @@ namespace JayTom.Dws.Camera {
                 if (orDefault is not null && _selectCamera is not null) {
                     _selectCamera.CurrentResolution = new CamResolution(orDefault.Value.Width, orDefault.Value.Height);
                 }
+
                 mBarcodeReader = BarcodeReader.GetInstance();
                 mNormalRuntimeSettings = mBarcodeReader?.GetRuntimeSettings();
                 await SetBarcodeReaderParameter(new Dictionary<BarcodeReaderParameter, object>()
@@ -626,7 +638,7 @@ namespace JayTom.Dws.Camera {
                         stopwatch.Start();
                         bars = mBarcodeReader?.DecodeBuffer(buffer, bitmap.Width, bitmap.Height, stride, pixelFormat,
                             "");
-                        //bars = mBarcodeReader?.DecodeBitmap(bitmap, "");
+                        //bars = mBarcodeReader?.DecodeBitmap(bitmap.Clone(new Rectangle(0, 0, bitmap.Width, bitmap.Height), bitmap.PixelFormat), "");
                         stopwatch.Stop();
                         elapsedMilliseconds = stopwatch.ElapsedMilliseconds;
                     }

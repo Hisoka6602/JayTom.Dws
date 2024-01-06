@@ -377,7 +377,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                             IsCustomFlipEnabled = usbCameraConfigInfoModel.IsCustomFlipEnabled,
                         };
                         UsbCameraSettingsInfo.Resolution = SelectCameraInfo?.CameraResolutions?.LastOrDefault() ?? new Size(0, 0);
-                        SwitchCameraResolutionDelegate(this);
+                        UpdateBarcodeReaderCommandDelegate(this);
                     }
                     else {
                         UsbCameraSettingsInfo = new UsbCameraSettingsInfoModel();

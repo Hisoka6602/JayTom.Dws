@@ -8,7 +8,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Dynamsoft.DotNet.Barcode" Version="9.6.30" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="System.Drawing.Common" Version="7.0.0" />
     <PackageReference Include="System.Management" Version="7.0.0" />
@@ -22,8 +21,14 @@
     <Reference Include="CamSDK">
       <HintPath>Cameras\SmartCamera\Wayzim\Dll\CamSDK.dll</HintPath>
     </Reference>
+    <Reference Include="Dynamsoft.BarcodeReader">
+      <HintPath>..\..\..\dynamsoft-barcode-reader-dotnet-9.6.30\dynamsoft-barcode-reader-dotnet-9.6.30\Samples\BarcodeReaderDemo\BarcodeReaderDemo\bin\Debug_VS2010\Dynamsoft.BarcodeReader.dll</HintPath>
+    </Reference>
     <Reference Include="Dynamsoft.Camera">
       <HintPath>..\..\..\dynamsoft-barcode-reader-dotnet-9.6.30\dynamsoft-barcode-reader-dotnet-9.6.30\Samples\BarcodeReaderDemo\BarcodeReaderDemo\bin\Debug_VS2010\Dynamsoft.Camera.dll</HintPath>
+    </Reference>
+    <Reference Include="DynamsoftCommon">
+      <HintPath>..\..\..\dynamsoft-barcode-reader-dotnet-9.6.30\dynamsoft-barcode-reader-dotnet-9.6.30\Samples\BarcodeReaderDemo\BarcodeReaderDemo\bin\Debug_VS2010\DynamsoftCommon.dll</HintPath>
     </Reference>
     <Reference Include="MvCodeReaderSDK.Net">
       <HintPath>Cameras\SmartCamera\Hikvision\Dll\MvCodeReaderSDK.Net.dll</HintPath>
@@ -199,5 +204,4 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-
 </Project>
