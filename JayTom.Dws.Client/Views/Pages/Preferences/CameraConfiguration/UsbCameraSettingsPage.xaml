@@ -263,592 +263,595 @@
                             IsEnabled="{Binding ElementName=IsCustomBrightnessEnabledToggleButton, Path=IsChecked}"
                             Text="{Binding UsbCameraSettingsInfo.Brightness, UpdateSourceTrigger=PropertyChanged}" />
                     </StackPanel>
-                    <!--  对比度  -->
-                    <StackPanel Margin="0,5" Orientation="Horizontal">
-                        <TextBlock
-                            Margin="5,0"
-                            VerticalAlignment="Center"
-                            FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
-                            FontSize="14"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            Text="对比度:" />
-                        <ToggleButton
-                            Name="IsCustomContrastEnabledToggleButton"
-                            materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
-                            materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
-                            Command="{Binding UpdateCameraParametersCommand}"
-                            Focusable="False"
-                            IsChecked="{Binding UsbCameraSettingsInfo.IsCustomContrastEnabled, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                            Style="{StaticResource MaterialDesignSwitchToggleButton}" />
-                        <Slider
-                            Width="150"
-                            Margin="10,0"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Focusable="False"
-                            IsEnabled="{Binding ElementName=IsCustomContrastEnabledToggleButton, Path=IsChecked}"
-                            IsMoveToPointEnabled="True"
-                            IsSelectionRangeEnabled="True"
-                            Maximum="100"
-                            Minimum="0"
-                            Value="{Binding UsbCameraSettingsInfo.Contrast, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
-                            <b:Interaction.Triggers>
-                                <b:EventTrigger EventName="PreviewMouseUp">
-                                    <mvvm:InvokeCommandAction Command="{Binding UpdateCameraParametersCommand}" />
-                                </b:EventTrigger>
-                            </b:Interaction.Triggers>
-                        </Slider>
-                        <TextBlock
-                            Margin="5,0,0,6"
-                            VerticalAlignment="Center"
-                            FontSize="13"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            IsEnabled="{Binding ElementName=IsCustomContrastEnabledToggleButton, Path=IsChecked}"
-                            Text="{Binding UsbCameraSettingsInfo.Contrast, UpdateSourceTrigger=PropertyChanged}" />
-                    </StackPanel>
-                    <!--  色调  -->
-                    <StackPanel Margin="0,5" Orientation="Horizontal">
-                        <TextBlock
-                            Margin="5,0"
-                            VerticalAlignment="Center"
-                            FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
-                            FontSize="14"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            Text="色  调:" />
-                        <ToggleButton
-                            Name="IsCustomHueEnabledToggleButton"
-                            materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
-                            materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
-                            Command="{Binding UpdateCameraParametersCommand}"
-                            Focusable="False"
-                            IsChecked="{Binding UsbCameraSettingsInfo.IsCustomHueEnabled, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                            Style="{StaticResource MaterialDesignSwitchToggleButton}" />
-                        <Slider
-                            Width="150"
-                            Margin="10,0"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Focusable="False"
-                            IsEnabled="{Binding ElementName=IsCustomHueEnabledToggleButton, Path=IsChecked}"
-                            IsMoveToPointEnabled="True"
-                            IsSelectionRangeEnabled="True"
-                            Maximum="180"
-                            Minimum="-180"
-                            Value="{Binding UsbCameraSettingsInfo.Hue, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
-                            <b:Interaction.Triggers>
-                                <b:EventTrigger EventName="PreviewMouseUp">
-                                    <mvvm:InvokeCommandAction Command="{Binding UpdateCameraParametersCommand}" />
-                                </b:EventTrigger>
-                            </b:Interaction.Triggers>
-                        </Slider>
-                        <TextBlock
-                            Margin="5,0,0,6"
-                            VerticalAlignment="Center"
-                            FontSize="13"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            IsEnabled="{Binding ElementName=IsCustomHueEnabledToggleButton, Path=IsChecked}"
-                            Text="{Binding UsbCameraSettingsInfo.Hue, UpdateSourceTrigger=PropertyChanged}" />
-                    </StackPanel>
-                    <!--  饱和度  -->
-                    <StackPanel Margin="0,5" Orientation="Horizontal">
-                        <TextBlock
-                            Margin="5,0"
-                            VerticalAlignment="Center"
-                            FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
-                            FontSize="14"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            Text="饱和度:" />
-                        <ToggleButton
-                            Name="IsCustomSaturationEnabledToggleButton"
-                            materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
-                            materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
-                            Command="{Binding UpdateCameraParametersCommand}"
-                            Focusable="False"
-                            IsChecked="{Binding UsbCameraSettingsInfo.IsCustomSaturationEnabled, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                            Style="{StaticResource MaterialDesignSwitchToggleButton}" />
-                        <Slider
-                            Width="150"
-                            Margin="10,0"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Focusable="False"
-                            IsEnabled="{Binding ElementName=IsCustomSaturationEnabledToggleButton, Path=IsChecked}"
-                            IsMoveToPointEnabled="True"
-                            IsSelectionRangeEnabled="True"
-                            Maximum="100"
-                            Minimum="0"
-                            Value="{Binding UsbCameraSettingsInfo.Saturation, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
-                            <b:Interaction.Triggers>
-                                <b:EventTrigger EventName="PreviewMouseUp">
-                                    <mvvm:InvokeCommandAction Command="{Binding UpdateCameraParametersCommand}" />
-                                </b:EventTrigger>
-                            </b:Interaction.Triggers>
-                        </Slider>
-                        <TextBlock
-                            Margin="5,0,0,6"
-                            VerticalAlignment="Center"
-                            FontSize="13"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            IsEnabled="{Binding ElementName=IsCustomSaturationEnabledToggleButton, Path=IsChecked}"
-                            Text="{Binding UsbCameraSettingsInfo.Saturation, UpdateSourceTrigger=PropertyChanged}" />
-                    </StackPanel>
-                    <!--  锐度  -->
-                    <StackPanel Margin="0,5" Orientation="Horizontal">
-                        <TextBlock
-                            Margin="5,0"
-                            VerticalAlignment="Center"
-                            FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
-                            FontSize="14"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            Text="锐  度:" />
-                        <ToggleButton
-                            Name="IsCustomSharpnessEnabledToggleButton"
-                            materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
-                            materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
-                            Command="{Binding UpdateCameraParametersCommand}"
-                            Focusable="False"
-                            IsChecked="{Binding UsbCameraSettingsInfo.IsCustomSharpnessEnabled, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                            Style="{StaticResource MaterialDesignSwitchToggleButton}" />
-                        <Slider
-                            Width="150"
-                            Margin="10,0"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Focusable="False"
-                            IsEnabled="{Binding ElementName=IsCustomSharpnessEnabledToggleButton, Path=IsChecked}"
-                            IsMoveToPointEnabled="True"
-                            IsSelectionRangeEnabled="True"
-                            Maximum="100"
-                            Minimum="0"
-                            Value="{Binding UsbCameraSettingsInfo.Sharpness, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
-                            <b:Interaction.Triggers>
-                                <b:EventTrigger EventName="PreviewMouseUp">
-                                    <mvvm:InvokeCommandAction Command="{Binding UpdateCameraParametersCommand}" />
-                                </b:EventTrigger>
-                            </b:Interaction.Triggers>
-                        </Slider>
-                        <TextBlock
-                            Margin="5,0,0,6"
-                            VerticalAlignment="Center"
-                            FontSize="13"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            IsEnabled="{Binding ElementName=IsCustomSharpnessEnabledToggleButton, Path=IsChecked}"
-                            Text="{Binding UsbCameraSettingsInfo.Sharpness, UpdateSourceTrigger=PropertyChanged}" />
-                    </StackPanel>
-                    <!--  伽马值  -->
-                    <StackPanel Margin="0,5" Orientation="Horizontal">
-                        <TextBlock
-                            Margin="5,0"
-                            VerticalAlignment="Center"
-                            FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
-                            FontSize="14"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            Text="伽马值:" />
-                        <ToggleButton
-                            Name="IsCustomGammaEnabledToggleButton"
-                            materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
-                            materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
-                            Command="{Binding UpdateCameraParametersCommand}"
-                            Focusable="False"
-                            IsChecked="{Binding UsbCameraSettingsInfo.IsCustomGammaEnabled, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                            Style="{StaticResource MaterialDesignSwitchToggleButton}" />
-                        <Slider
-                            Width="150"
-                            Margin="10,0"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Focusable="False"
-                            IsEnabled="{Binding ElementName=IsCustomGammaEnabledToggleButton, Path=IsChecked}"
-                            IsMoveToPointEnabled="True"
-                            IsSelectionRangeEnabled="True"
-                            Maximum="500"
-                            Minimum="100"
-                            Value="{Binding UsbCameraSettingsInfo.Gamma, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-                        <TextBlock
-                            Margin="5,0,0,6"
-                            VerticalAlignment="Center"
-                            FontSize="13"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            IsEnabled="{Binding ElementName=IsCustomGammaEnabledToggleButton, Path=IsChecked}"
-                            Text="{Binding UsbCameraSettingsInfo.Gamma, UpdateSourceTrigger=PropertyChanged}">
-                            <b:Interaction.Triggers>
-                                <b:EventTrigger EventName="PreviewMouseUp">
-                                    <mvvm:InvokeCommandAction Command="{Binding UpdateCameraParametersCommand}" />
-                                </b:EventTrigger>
-                            </b:Interaction.Triggers>
-                        </TextBlock>
-                    </StackPanel>
-                    <!--  白平衡  -->
-                    <StackPanel Margin="0,5" Orientation="Horizontal">
-                        <TextBlock
-                            Margin="5,0"
-                            VerticalAlignment="Center"
-                            FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
-                            FontSize="14"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            Text="白平衡:" />
-                        <ToggleButton
-                            Name="IsCustomWhiteBalanceEnabledToggleButton"
-                            materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
-                            materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
-                            Command="{Binding UpdateCameraParametersCommand}"
-                            Focusable="False"
-                            IsChecked="{Binding UsbCameraSettingsInfo.IsCustomWhiteBalanceEnabled, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                            Style="{StaticResource MaterialDesignSwitchToggleButton}" />
-                        <Slider
-                            Width="150"
-                            Margin="10,0"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Focusable="False"
-                            IsEnabled="{Binding ElementName=IsCustomWhiteBalanceEnabledToggleButton, Path=IsChecked}"
-                            IsMoveToPointEnabled="True"
-                            IsSelectionRangeEnabled="True"
-                            Maximum="6500"
-                            Minimum="2800"
-                            Value="{Binding UsbCameraSettingsInfo.WhiteBalance, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
-                            <b:Interaction.Triggers>
-                                <b:EventTrigger EventName="PreviewMouseUp">
-                                    <mvvm:InvokeCommandAction Command="{Binding UpdateCameraParametersCommand}" />
-                                </b:EventTrigger>
-                            </b:Interaction.Triggers>
-                        </Slider>
-                        <TextBlock
-                            Margin="5,0,0,6"
-                            VerticalAlignment="Center"
-                            FontSize="13"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            IsEnabled="{Binding ElementName=IsCustomWhiteBalanceEnabledToggleButton, Path=IsChecked}"
-                            Text="{Binding UsbCameraSettingsInfo.WhiteBalance, UpdateSourceTrigger=PropertyChanged}" />
-                    </StackPanel>
-                    <!--  背光补偿  -->
-                    <StackPanel Margin="0,5" Orientation="Horizontal">
-                        <TextBlock
-                            Margin="5,0"
-                            VerticalAlignment="Center"
-                            FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
-                            FontSize="14"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            Text="背光补偿:" />
-                        <ToggleButton
-                            Name="IsCustomBacklightCompensationEnabledToggleButton"
-                            materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
-                            materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
-                            Command="{Binding UpdateCameraParametersCommand}"
-                            Focusable="False"
-                            IsChecked="{Binding UsbCameraSettingsInfo.IsCustomBacklightCompensationEnabled, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                            Style="{StaticResource MaterialDesignSwitchToggleButton}" />
-                        <Slider
-                            Width="135"
-                            Margin="10,0"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Focusable="False"
-                            IsEnabled="{Binding ElementName=IsCustomBacklightCompensationEnabledToggleButton, Path=IsChecked}"
-                            IsMoveToPointEnabled="True"
-                            IsSelectionRangeEnabled="True"
-                            Maximum="2"
-                            Minimum="0"
-                            Value="{Binding UsbCameraSettingsInfo.BklightComp, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
-                            <b:Interaction.Triggers>
-                                <b:EventTrigger EventName="PreviewMouseUp">
-                                    <mvvm:InvokeCommandAction Command="{Binding UpdateCameraParametersCommand}" />
-                                </b:EventTrigger>
-                            </b:Interaction.Triggers>
-                        </Slider>
-                        <TextBlock
-                            Margin="5,0,0,6"
-                            VerticalAlignment="Center"
-                            FontSize="13"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            IsEnabled="{Binding ElementName=IsCustomBacklightCompensationEnabledToggleButton, Path=IsChecked}"
-                            Text="{Binding UsbCameraSettingsInfo.BklightComp, UpdateSourceTrigger=PropertyChanged}" />
-                    </StackPanel>
-                    <!--  增益  -->
-                    <StackPanel Margin="0,5" Orientation="Horizontal">
-                        <TextBlock
-                            Margin="5,0"
-                            VerticalAlignment="Center"
-                            FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
-                            FontSize="14"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            Text="增  益:" />
-                        <ToggleButton
-                            Name="IsCustomGainEnabledToggleButton"
-                            materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
-                            materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
-                            Command="{Binding UpdateCameraParametersCommand}"
-                            Focusable="False"
-                            IsChecked="{Binding UsbCameraSettingsInfo.IsCustomGainEnabled, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                            Style="{StaticResource MaterialDesignSwitchToggleButton}" />
-                        <Slider
-                            Width="150"
-                            Margin="10,0"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Focusable="False"
-                            IsEnabled="{Binding ElementName=IsCustomGainEnabledToggleButton, Path=IsChecked}"
-                            IsMoveToPointEnabled="True"
-                            IsSelectionRangeEnabled="True"
-                            Maximum="128"
-                            Minimum="0"
-                            Value="{Binding UsbCameraSettingsInfo.Gain, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
-                            <b:Interaction.Triggers>
-                                <b:EventTrigger EventName="PreviewMouseUp">
-                                    <mvvm:InvokeCommandAction Command="{Binding UpdateCameraParametersCommand}" />
-                                </b:EventTrigger>
-                            </b:Interaction.Triggers>
-                        </Slider>
-                        <TextBlock
-                            Margin="5,0,0,6"
-                            VerticalAlignment="Center"
-                            FontSize="13"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            IsEnabled="{Binding ElementName=IsCustomGainEnabledToggleButton, Path=IsChecked}"
-                            Text="{Binding UsbCameraSettingsInfo.Gain, UpdateSourceTrigger=PropertyChanged}" />
-                    </StackPanel>
-                    <!--  变焦  -->
-                    <StackPanel Margin="0,5" Orientation="Horizontal">
-                        <TextBlock
-                            Margin="5,0"
-                            VerticalAlignment="Center"
-                            FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
-                            FontSize="14"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            Text="变  焦:" />
-                        <ToggleButton
-                            Name="IsCustomZoomEnabledToggleButton"
-                            materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
-                            materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
-                            Focusable="False"
-                            IsChecked="{Binding UsbCameraSettingsInfo.IsCustomZoomEnabled, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                            Style="{StaticResource MaterialDesignSwitchToggleButton}" />
-                        <Slider
-                            Width="150"
-                            Margin="10,0"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Focusable="False"
-                            IsEnabled="{Binding ElementName=IsCustomZoomEnabledToggleButton, Path=IsChecked}"
-                            IsMoveToPointEnabled="True"
-                            IsSelectionRangeEnabled="True"
-                            Maximum="0"
-                            Minimum="-6"
-                            Value="{Binding UsbCameraSettingsInfo.Zoom, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-                        <TextBlock
-                            Margin="5,0,0,6"
-                            VerticalAlignment="Center"
-                            FontSize="13"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            IsEnabled="{Binding ElementName=IsCustomZoomEnabledToggleButton, Path=IsChecked}"
-                            Text="{Binding UsbCameraSettingsInfo.Zoom, UpdateSourceTrigger=PropertyChanged}" />
-                    </StackPanel>
-                    <!--  对焦  -->
-                    <StackPanel Margin="0,5" Orientation="Horizontal">
-                        <TextBlock
-                            Margin="5,0"
-                            VerticalAlignment="Center"
-                            FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
-                            FontSize="14"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            Text="对  焦:" />
-                        <ToggleButton
-                            Name="IsCustomFocusEnabledToggleButton"
-                            materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
-                            materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
-                            Focusable="False"
-                            IsChecked="{Binding UsbCameraSettingsInfo.IsCustomFocusEnabled, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                            Style="{StaticResource MaterialDesignSwitchToggleButton}" />
-                        <Slider
-                            Width="150"
-                            Margin="10,0"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Focusable="False"
-                            IsEnabled="{Binding ElementName=IsCustomFocusEnabledToggleButton, Path=IsChecked}"
-                            IsMoveToPointEnabled="True"
-                            IsSelectionRangeEnabled="True"
-                            Maximum="0"
-                            Minimum="-6"
-                            Value="{Binding UsbCameraSettingsInfo.Focus, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-                        <TextBlock
-                            Margin="5,0,0,6"
-                            VerticalAlignment="Center"
-                            FontSize="13"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            IsEnabled="{Binding ElementName=IsCustomFocusEnabledToggleButton, Path=IsChecked}"
-                            Text="{Binding UsbCameraSettingsInfo.Focus, UpdateSourceTrigger=PropertyChanged}" />
-                    </StackPanel>
-                    <!--  光圈  -->
-                    <StackPanel Margin="0,5" Orientation="Horizontal">
-                        <TextBlock
-                            Margin="5,0"
-                            VerticalAlignment="Center"
-                            FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
-                            FontSize="14"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            Text="光  圈:" />
-                        <ToggleButton
-                            Name="IsCustomApertureEnabledToggleButton"
-                            materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
-                            materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
-                            Focusable="False"
-                            IsChecked="{Binding UsbCameraSettingsInfo.IsCustomApertureEnabled, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                            Style="{StaticResource MaterialDesignSwitchToggleButton}" />
-                        <Slider
-                            Width="150"
-                            Margin="10,0"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Focusable="False"
-                            IsEnabled="{Binding ElementName=IsCustomApertureEnabledToggleButton, Path=IsChecked}"
-                            IsMoveToPointEnabled="True"
-                            IsSelectionRangeEnabled="True"
-                            Maximum="0"
-                            Minimum="-6"
-                            Value="{Binding UsbCameraSettingsInfo.Iris, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-                        <TextBlock
-                            Margin="5,0,0,6"
-                            VerticalAlignment="Center"
-                            FontSize="13"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            IsEnabled="{Binding ElementName=IsCustomApertureEnabledToggleButton, Path=IsChecked}"
-                            Text="{Binding UsbCameraSettingsInfo.Iris, UpdateSourceTrigger=PropertyChanged}" />
-                    </StackPanel>
-                    <!--  水平旋转  -->
-                    <StackPanel Margin="0,5" Orientation="Horizontal">
-                        <TextBlock
-                            Margin="5,0"
-                            VerticalAlignment="Center"
-                            FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
-                            FontSize="14"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            Text="水平旋转:" />
-                        <ToggleButton
-                            Name="IsCustomHorizontalRotationEnabledToggleButton"
-                            materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
-                            materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
-                            Focusable="False"
-                            IsChecked="{Binding UsbCameraSettingsInfo.IsCustomHorizontalRotationEnabled, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                            Style="{StaticResource MaterialDesignSwitchToggleButton}" />
-                        <Slider
-                            Width="135"
-                            Margin="10,0"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Focusable="False"
-                            IsEnabled="{Binding ElementName=IsCustomHorizontalRotationEnabledToggleButton, Path=IsChecked}"
-                            IsMoveToPointEnabled="True"
-                            IsSelectionRangeEnabled="True"
-                            Maximum="0"
-                            Minimum="-6"
-                            Value="{Binding UsbCameraSettingsInfo.Pan, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-                        <TextBlock
-                            Margin="5,0,0,6"
-                            VerticalAlignment="Center"
-                            FontSize="13"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            Text="{Binding UsbCameraSettingsInfo.Pan, UpdateSourceTrigger=PropertyChanged}" />
-                    </StackPanel>
-                    <!--  垂直旋转  -->
-                    <StackPanel Margin="0,5" Orientation="Horizontal">
-                        <TextBlock
-                            Margin="5,0"
-                            VerticalAlignment="Center"
-                            FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
-                            FontSize="14"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            Text="垂直旋转:" />
-                        <ToggleButton
-                            Name="IsCustomVerticalRotationEnabledToggleButton"
-                            materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
-                            materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
-                            Focusable="False"
-                            IsChecked="{Binding UsbCameraSettingsInfo.IsCustomVerticalRotationEnabled, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                            Style="{StaticResource MaterialDesignSwitchToggleButton}" />
-                        <Slider
-                            Width="135"
-                            Margin="10,0"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Focusable="False"
-                            IsEnabled="{Binding ElementName=IsCustomVerticalRotationEnabledToggleButton, Path=IsChecked}"
-                            IsMoveToPointEnabled="True"
-                            IsSelectionRangeEnabled="True"
-                            Maximum="0"
-                            Minimum="-6"
-                            Value="{Binding UsbCameraSettingsInfo.Tilt, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-                        <TextBlock
-                            Margin="5,0,0,6"
-                            VerticalAlignment="Center"
-                            FontSize="13"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            IsEnabled="{Binding ElementName=IsCustomVerticalRotationEnabledToggleButton, Path=IsChecked}"
-                            Text="{Binding UsbCameraSettingsInfo.Tilt, UpdateSourceTrigger=PropertyChanged}" />
-                    </StackPanel>
-                    <!--  翻转  -->
-                    <StackPanel Margin="0,5" Orientation="Horizontal">
-                        <TextBlock
-                            Margin="5,0"
-                            VerticalAlignment="Center"
-                            FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
-                            FontSize="14"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            Text="翻  转:" />
-                        <ToggleButton
-                            Name="IsCustomFlipEnabledToggleButton"
-                            materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
-                            materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
-                            Focusable="False"
-                            IsChecked="{Binding UsbCameraSettingsInfo.IsCustomFlipEnabled, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                            Style="{StaticResource MaterialDesignSwitchToggleButton}" />
-                        <Slider
-                            Width="150"
-                            Margin="10,0"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Focusable="False"
-                            IsEnabled="{Binding ElementName=IsCustomFlipEnabledToggleButton, Path=IsChecked}"
-                            IsMoveToPointEnabled="True"
-                            IsSelectionRangeEnabled="True"
-                            Maximum="0"
-                            Minimum="-6"
-                            Value="{Binding UsbCameraSettingsInfo.Roll, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-                        <TextBlock
-                            Margin="5,0,0,6"
-                            VerticalAlignment="Center"
-                            FontSize="13"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            IsEnabled="{Binding ElementName=IsCustomFlipEnabledToggleButton, Path=IsChecked}"
-                            Text="{Binding UsbCameraSettingsInfo.Roll, UpdateSourceTrigger=PropertyChanged}" />
+                    <!--  暂时隐藏的属性  -->
+                    <StackPanel Orientation="Vertical" Visibility="Collapsed">
+                        <!--  对比度  -->
+                        <StackPanel Margin="0,5" Orientation="Horizontal">
+                            <TextBlock
+                                Margin="5,0"
+                                VerticalAlignment="Center"
+                                FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                                FontSize="14"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                Text="对比度:" />
+                            <ToggleButton
+                                Name="IsCustomContrastEnabledToggleButton"
+                                materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
+                                materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
+                                Command="{Binding UpdateCameraParametersCommand}"
+                                Focusable="False"
+                                IsChecked="{Binding UsbCameraSettingsInfo.IsCustomContrastEnabled, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+                            <Slider
+                                Width="150"
+                                Margin="10,0"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Focusable="False"
+                                IsEnabled="{Binding ElementName=IsCustomContrastEnabledToggleButton, Path=IsChecked}"
+                                IsMoveToPointEnabled="True"
+                                IsSelectionRangeEnabled="True"
+                                Maximum="100"
+                                Minimum="0"
+                                Value="{Binding UsbCameraSettingsInfo.Contrast, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                                <b:Interaction.Triggers>
+                                    <b:EventTrigger EventName="PreviewMouseUp">
+                                        <mvvm:InvokeCommandAction Command="{Binding UpdateCameraParametersCommand}" />
+                                    </b:EventTrigger>
+                                </b:Interaction.Triggers>
+                            </Slider>
+                            <TextBlock
+                                Margin="5,0,0,6"
+                                VerticalAlignment="Center"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                IsEnabled="{Binding ElementName=IsCustomContrastEnabledToggleButton, Path=IsChecked}"
+                                Text="{Binding UsbCameraSettingsInfo.Contrast, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+                        <!--  色调  -->
+                        <StackPanel Margin="0,5" Orientation="Horizontal">
+                            <TextBlock
+                                Margin="5,0"
+                                VerticalAlignment="Center"
+                                FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                                FontSize="14"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                Text="色  调:" />
+                            <ToggleButton
+                                Name="IsCustomHueEnabledToggleButton"
+                                materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
+                                materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
+                                Command="{Binding UpdateCameraParametersCommand}"
+                                Focusable="False"
+                                IsChecked="{Binding UsbCameraSettingsInfo.IsCustomHueEnabled, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+                            <Slider
+                                Width="150"
+                                Margin="10,0"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Focusable="False"
+                                IsEnabled="{Binding ElementName=IsCustomHueEnabledToggleButton, Path=IsChecked}"
+                                IsMoveToPointEnabled="True"
+                                IsSelectionRangeEnabled="True"
+                                Maximum="180"
+                                Minimum="-180"
+                                Value="{Binding UsbCameraSettingsInfo.Hue, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                                <b:Interaction.Triggers>
+                                    <b:EventTrigger EventName="PreviewMouseUp">
+                                        <mvvm:InvokeCommandAction Command="{Binding UpdateCameraParametersCommand}" />
+                                    </b:EventTrigger>
+                                </b:Interaction.Triggers>
+                            </Slider>
+                            <TextBlock
+                                Margin="5,0,0,6"
+                                VerticalAlignment="Center"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                IsEnabled="{Binding ElementName=IsCustomHueEnabledToggleButton, Path=IsChecked}"
+                                Text="{Binding UsbCameraSettingsInfo.Hue, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+                        <!--  饱和度  -->
+                        <StackPanel Margin="0,5" Orientation="Horizontal">
+                            <TextBlock
+                                Margin="5,0"
+                                VerticalAlignment="Center"
+                                FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                                FontSize="14"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                Text="饱和度:" />
+                            <ToggleButton
+                                Name="IsCustomSaturationEnabledToggleButton"
+                                materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
+                                materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
+                                Command="{Binding UpdateCameraParametersCommand}"
+                                Focusable="False"
+                                IsChecked="{Binding UsbCameraSettingsInfo.IsCustomSaturationEnabled, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+                            <Slider
+                                Width="150"
+                                Margin="10,0"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Focusable="False"
+                                IsEnabled="{Binding ElementName=IsCustomSaturationEnabledToggleButton, Path=IsChecked}"
+                                IsMoveToPointEnabled="True"
+                                IsSelectionRangeEnabled="True"
+                                Maximum="100"
+                                Minimum="0"
+                                Value="{Binding UsbCameraSettingsInfo.Saturation, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                                <b:Interaction.Triggers>
+                                    <b:EventTrigger EventName="PreviewMouseUp">
+                                        <mvvm:InvokeCommandAction Command="{Binding UpdateCameraParametersCommand}" />
+                                    </b:EventTrigger>
+                                </b:Interaction.Triggers>
+                            </Slider>
+                            <TextBlock
+                                Margin="5,0,0,6"
+                                VerticalAlignment="Center"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                IsEnabled="{Binding ElementName=IsCustomSaturationEnabledToggleButton, Path=IsChecked}"
+                                Text="{Binding UsbCameraSettingsInfo.Saturation, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+                        <!--  锐度  -->
+                        <StackPanel Margin="0,5" Orientation="Horizontal">
+                            <TextBlock
+                                Margin="5,0"
+                                VerticalAlignment="Center"
+                                FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                                FontSize="14"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                Text="锐  度:" />
+                            <ToggleButton
+                                Name="IsCustomSharpnessEnabledToggleButton"
+                                materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
+                                materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
+                                Command="{Binding UpdateCameraParametersCommand}"
+                                Focusable="False"
+                                IsChecked="{Binding UsbCameraSettingsInfo.IsCustomSharpnessEnabled, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+                            <Slider
+                                Width="150"
+                                Margin="10,0"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Focusable="False"
+                                IsEnabled="{Binding ElementName=IsCustomSharpnessEnabledToggleButton, Path=IsChecked}"
+                                IsMoveToPointEnabled="True"
+                                IsSelectionRangeEnabled="True"
+                                Maximum="100"
+                                Minimum="0"
+                                Value="{Binding UsbCameraSettingsInfo.Sharpness, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                                <b:Interaction.Triggers>
+                                    <b:EventTrigger EventName="PreviewMouseUp">
+                                        <mvvm:InvokeCommandAction Command="{Binding UpdateCameraParametersCommand}" />
+                                    </b:EventTrigger>
+                                </b:Interaction.Triggers>
+                            </Slider>
+                            <TextBlock
+                                Margin="5,0,0,6"
+                                VerticalAlignment="Center"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                IsEnabled="{Binding ElementName=IsCustomSharpnessEnabledToggleButton, Path=IsChecked}"
+                                Text="{Binding UsbCameraSettingsInfo.Sharpness, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+                        <!--  伽马值  -->
+                        <StackPanel Margin="0,5" Orientation="Horizontal">
+                            <TextBlock
+                                Margin="5,0"
+                                VerticalAlignment="Center"
+                                FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                                FontSize="14"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                Text="伽马值:" />
+                            <ToggleButton
+                                Name="IsCustomGammaEnabledToggleButton"
+                                materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
+                                materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
+                                Command="{Binding UpdateCameraParametersCommand}"
+                                Focusable="False"
+                                IsChecked="{Binding UsbCameraSettingsInfo.IsCustomGammaEnabled, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+                            <Slider
+                                Width="150"
+                                Margin="10,0"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Focusable="False"
+                                IsEnabled="{Binding ElementName=IsCustomGammaEnabledToggleButton, Path=IsChecked}"
+                                IsMoveToPointEnabled="True"
+                                IsSelectionRangeEnabled="True"
+                                Maximum="500"
+                                Minimum="100"
+                                Value="{Binding UsbCameraSettingsInfo.Gamma, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                            <TextBlock
+                                Margin="5,0,0,6"
+                                VerticalAlignment="Center"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                IsEnabled="{Binding ElementName=IsCustomGammaEnabledToggleButton, Path=IsChecked}"
+                                Text="{Binding UsbCameraSettingsInfo.Gamma, UpdateSourceTrigger=PropertyChanged}">
+                                <b:Interaction.Triggers>
+                                    <b:EventTrigger EventName="PreviewMouseUp">
+                                        <mvvm:InvokeCommandAction Command="{Binding UpdateCameraParametersCommand}" />
+                                    </b:EventTrigger>
+                                </b:Interaction.Triggers>
+                            </TextBlock>
+                        </StackPanel>
+                        <!--  白平衡  -->
+                        <StackPanel Margin="0,5" Orientation="Horizontal">
+                            <TextBlock
+                                Margin="5,0"
+                                VerticalAlignment="Center"
+                                FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                                FontSize="14"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                Text="白平衡:" />
+                            <ToggleButton
+                                Name="IsCustomWhiteBalanceEnabledToggleButton"
+                                materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
+                                materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
+                                Command="{Binding UpdateCameraParametersCommand}"
+                                Focusable="False"
+                                IsChecked="{Binding UsbCameraSettingsInfo.IsCustomWhiteBalanceEnabled, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+                            <Slider
+                                Width="150"
+                                Margin="10,0"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Focusable="False"
+                                IsEnabled="{Binding ElementName=IsCustomWhiteBalanceEnabledToggleButton, Path=IsChecked}"
+                                IsMoveToPointEnabled="True"
+                                IsSelectionRangeEnabled="True"
+                                Maximum="6500"
+                                Minimum="2800"
+                                Value="{Binding UsbCameraSettingsInfo.WhiteBalance, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                                <b:Interaction.Triggers>
+                                    <b:EventTrigger EventName="PreviewMouseUp">
+                                        <mvvm:InvokeCommandAction Command="{Binding UpdateCameraParametersCommand}" />
+                                    </b:EventTrigger>
+                                </b:Interaction.Triggers>
+                            </Slider>
+                            <TextBlock
+                                Margin="5,0,0,6"
+                                VerticalAlignment="Center"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                IsEnabled="{Binding ElementName=IsCustomWhiteBalanceEnabledToggleButton, Path=IsChecked}"
+                                Text="{Binding UsbCameraSettingsInfo.WhiteBalance, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+                        <!--  背光补偿  -->
+                        <StackPanel Margin="0,5" Orientation="Horizontal">
+                            <TextBlock
+                                Margin="5,0"
+                                VerticalAlignment="Center"
+                                FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                                FontSize="14"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                Text="背光补偿:" />
+                            <ToggleButton
+                                Name="IsCustomBacklightCompensationEnabledToggleButton"
+                                materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
+                                materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
+                                Command="{Binding UpdateCameraParametersCommand}"
+                                Focusable="False"
+                                IsChecked="{Binding UsbCameraSettingsInfo.IsCustomBacklightCompensationEnabled, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+                            <Slider
+                                Width="135"
+                                Margin="10,0"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Focusable="False"
+                                IsEnabled="{Binding ElementName=IsCustomBacklightCompensationEnabledToggleButton, Path=IsChecked}"
+                                IsMoveToPointEnabled="True"
+                                IsSelectionRangeEnabled="True"
+                                Maximum="2"
+                                Minimum="0"
+                                Value="{Binding UsbCameraSettingsInfo.BklightComp, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                                <b:Interaction.Triggers>
+                                    <b:EventTrigger EventName="PreviewMouseUp">
+                                        <mvvm:InvokeCommandAction Command="{Binding UpdateCameraParametersCommand}" />
+                                    </b:EventTrigger>
+                                </b:Interaction.Triggers>
+                            </Slider>
+                            <TextBlock
+                                Margin="5,0,0,6"
+                                VerticalAlignment="Center"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                IsEnabled="{Binding ElementName=IsCustomBacklightCompensationEnabledToggleButton, Path=IsChecked}"
+                                Text="{Binding UsbCameraSettingsInfo.BklightComp, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+                        <!--  增益  -->
+                        <StackPanel Margin="0,5" Orientation="Horizontal">
+                            <TextBlock
+                                Margin="5,0"
+                                VerticalAlignment="Center"
+                                FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                                FontSize="14"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                Text="增  益:" />
+                            <ToggleButton
+                                Name="IsCustomGainEnabledToggleButton"
+                                materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
+                                materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
+                                Command="{Binding UpdateCameraParametersCommand}"
+                                Focusable="False"
+                                IsChecked="{Binding UsbCameraSettingsInfo.IsCustomGainEnabled, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+                            <Slider
+                                Width="150"
+                                Margin="10,0"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Focusable="False"
+                                IsEnabled="{Binding ElementName=IsCustomGainEnabledToggleButton, Path=IsChecked}"
+                                IsMoveToPointEnabled="True"
+                                IsSelectionRangeEnabled="True"
+                                Maximum="128"
+                                Minimum="0"
+                                Value="{Binding UsbCameraSettingsInfo.Gain, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                                <b:Interaction.Triggers>
+                                    <b:EventTrigger EventName="PreviewMouseUp">
+                                        <mvvm:InvokeCommandAction Command="{Binding UpdateCameraParametersCommand}" />
+                                    </b:EventTrigger>
+                                </b:Interaction.Triggers>
+                            </Slider>
+                            <TextBlock
+                                Margin="5,0,0,6"
+                                VerticalAlignment="Center"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                IsEnabled="{Binding ElementName=IsCustomGainEnabledToggleButton, Path=IsChecked}"
+                                Text="{Binding UsbCameraSettingsInfo.Gain, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+                        <!--  变焦  -->
+                        <StackPanel Margin="0,5" Orientation="Horizontal">
+                            <TextBlock
+                                Margin="5,0"
+                                VerticalAlignment="Center"
+                                FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                                FontSize="14"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                Text="变  焦:" />
+                            <ToggleButton
+                                Name="IsCustomZoomEnabledToggleButton"
+                                materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
+                                materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
+                                Focusable="False"
+                                IsChecked="{Binding UsbCameraSettingsInfo.IsCustomZoomEnabled, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+                            <Slider
+                                Width="150"
+                                Margin="10,0"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Focusable="False"
+                                IsEnabled="{Binding ElementName=IsCustomZoomEnabledToggleButton, Path=IsChecked}"
+                                IsMoveToPointEnabled="True"
+                                IsSelectionRangeEnabled="True"
+                                Maximum="0"
+                                Minimum="-6"
+                                Value="{Binding UsbCameraSettingsInfo.Zoom, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                            <TextBlock
+                                Margin="5,0,0,6"
+                                VerticalAlignment="Center"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                IsEnabled="{Binding ElementName=IsCustomZoomEnabledToggleButton, Path=IsChecked}"
+                                Text="{Binding UsbCameraSettingsInfo.Zoom, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+                        <!--  对焦  -->
+                        <StackPanel Margin="0,5" Orientation="Horizontal">
+                            <TextBlock
+                                Margin="5,0"
+                                VerticalAlignment="Center"
+                                FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                                FontSize="14"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                Text="对  焦:" />
+                            <ToggleButton
+                                Name="IsCustomFocusEnabledToggleButton"
+                                materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
+                                materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
+                                Focusable="False"
+                                IsChecked="{Binding UsbCameraSettingsInfo.IsCustomFocusEnabled, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+                            <Slider
+                                Width="150"
+                                Margin="10,0"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Focusable="False"
+                                IsEnabled="{Binding ElementName=IsCustomFocusEnabledToggleButton, Path=IsChecked}"
+                                IsMoveToPointEnabled="True"
+                                IsSelectionRangeEnabled="True"
+                                Maximum="0"
+                                Minimum="-6"
+                                Value="{Binding UsbCameraSettingsInfo.Focus, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                            <TextBlock
+                                Margin="5,0,0,6"
+                                VerticalAlignment="Center"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                IsEnabled="{Binding ElementName=IsCustomFocusEnabledToggleButton, Path=IsChecked}"
+                                Text="{Binding UsbCameraSettingsInfo.Focus, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+                        <!--  光圈  -->
+                        <StackPanel Margin="0,5" Orientation="Horizontal">
+                            <TextBlock
+                                Margin="5,0"
+                                VerticalAlignment="Center"
+                                FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                                FontSize="14"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                Text="光  圈:" />
+                            <ToggleButton
+                                Name="IsCustomApertureEnabledToggleButton"
+                                materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
+                                materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
+                                Focusable="False"
+                                IsChecked="{Binding UsbCameraSettingsInfo.IsCustomApertureEnabled, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+                            <Slider
+                                Width="150"
+                                Margin="10,0"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Focusable="False"
+                                IsEnabled="{Binding ElementName=IsCustomApertureEnabledToggleButton, Path=IsChecked}"
+                                IsMoveToPointEnabled="True"
+                                IsSelectionRangeEnabled="True"
+                                Maximum="0"
+                                Minimum="-6"
+                                Value="{Binding UsbCameraSettingsInfo.Iris, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                            <TextBlock
+                                Margin="5,0,0,6"
+                                VerticalAlignment="Center"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                IsEnabled="{Binding ElementName=IsCustomApertureEnabledToggleButton, Path=IsChecked}"
+                                Text="{Binding UsbCameraSettingsInfo.Iris, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+                        <!--  水平旋转  -->
+                        <StackPanel Margin="0,5" Orientation="Horizontal">
+                            <TextBlock
+                                Margin="5,0"
+                                VerticalAlignment="Center"
+                                FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                                FontSize="14"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                Text="水平旋转:" />
+                            <ToggleButton
+                                Name="IsCustomHorizontalRotationEnabledToggleButton"
+                                materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
+                                materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
+                                Focusable="False"
+                                IsChecked="{Binding UsbCameraSettingsInfo.IsCustomHorizontalRotationEnabled, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+                            <Slider
+                                Width="135"
+                                Margin="10,0"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Focusable="False"
+                                IsEnabled="{Binding ElementName=IsCustomHorizontalRotationEnabledToggleButton, Path=IsChecked}"
+                                IsMoveToPointEnabled="True"
+                                IsSelectionRangeEnabled="True"
+                                Maximum="0"
+                                Minimum="-6"
+                                Value="{Binding UsbCameraSettingsInfo.Pan, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                            <TextBlock
+                                Margin="5,0,0,6"
+                                VerticalAlignment="Center"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                Text="{Binding UsbCameraSettingsInfo.Pan, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+                        <!--  垂直旋转  -->
+                        <StackPanel Margin="0,5" Orientation="Horizontal">
+                            <TextBlock
+                                Margin="5,0"
+                                VerticalAlignment="Center"
+                                FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                                FontSize="14"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                Text="垂直旋转:" />
+                            <ToggleButton
+                                Name="IsCustomVerticalRotationEnabledToggleButton"
+                                materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
+                                materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
+                                Focusable="False"
+                                IsChecked="{Binding UsbCameraSettingsInfo.IsCustomVerticalRotationEnabled, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+                            <Slider
+                                Width="135"
+                                Margin="10,0"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Focusable="False"
+                                IsEnabled="{Binding ElementName=IsCustomVerticalRotationEnabledToggleButton, Path=IsChecked}"
+                                IsMoveToPointEnabled="True"
+                                IsSelectionRangeEnabled="True"
+                                Maximum="0"
+                                Minimum="-6"
+                                Value="{Binding UsbCameraSettingsInfo.Tilt, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                            <TextBlock
+                                Margin="5,0,0,6"
+                                VerticalAlignment="Center"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                IsEnabled="{Binding ElementName=IsCustomVerticalRotationEnabledToggleButton, Path=IsChecked}"
+                                Text="{Binding UsbCameraSettingsInfo.Tilt, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+                        <!--  翻转  -->
+                        <StackPanel Margin="0,5" Orientation="Horizontal">
+                            <TextBlock
+                                Margin="5,0"
+                                VerticalAlignment="Center"
+                                FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                                FontSize="14"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                Text="翻  转:" />
+                            <ToggleButton
+                                Name="IsCustomFlipEnabledToggleButton"
+                                materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
+                                materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
+                                Focusable="False"
+                                IsChecked="{Binding UsbCameraSettingsInfo.IsCustomFlipEnabled, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+                            <Slider
+                                Width="150"
+                                Margin="10,0"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Focusable="False"
+                                IsEnabled="{Binding ElementName=IsCustomFlipEnabledToggleButton, Path=IsChecked}"
+                                IsMoveToPointEnabled="True"
+                                IsSelectionRangeEnabled="True"
+                                Maximum="0"
+                                Minimum="-6"
+                                Value="{Binding UsbCameraSettingsInfo.Roll, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                            <TextBlock
+                                Margin="5,0,0,6"
+                                VerticalAlignment="Center"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                IsEnabled="{Binding ElementName=IsCustomFlipEnabledToggleButton, Path=IsChecked}"
+                                Text="{Binding UsbCameraSettingsInfo.Roll, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
                     </StackPanel>
                 </StackPanel>
             </ScrollViewer>
@@ -1767,11 +1770,86 @@
                                         Path="BarcodeReaderSettingsInfo.RecognitionSkipFrames"
                                         UpdateSourceTrigger="PropertyChanged">
                                         <Binding.ValidationRules>
-                                            <validationRules:RegexValidationRule ErrorMessage="请输入有效的正整数" Pattern="^[1-9]\d*$" />
+                                            <validationRules:RegexValidationRule ErrorMessage="请输入有效的正整数" Pattern="^[0-9]\d*$" />
                                         </Binding.ValidationRules>
                                     </Binding>
                                 </TextBox.Text>
                             </TextBox>
+                        </Border>
+                    </StackPanel>
+                    <!--  图片缩放百分比  -->
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Margin="5,0"
+                            VerticalAlignment="Center"
+                            FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                            FontSize="14"
+                            FontWeight="Bold"
+                            Foreground="DarkGray"
+                            Text="图片缩放百分比:" />
+                        <Border
+                            Margin="5"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Background="#1A696969"
+                            CornerRadius="5">
+                            <ComboBox
+                                Width="Auto"
+                                Height="30"
+                                MinWidth="100"
+                                MaxWidth="170"
+                                Margin="5,0"
+                                Padding="0"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                HorizontalContentAlignment="Center"
+                                VerticalContentAlignment="Center"
+                                materialDesign:ThemeAssist.Theme="Dark"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                Focusable="False"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="White"
+                                SelectedIndex="{Binding BarcodeReaderSettingsInfo.ScalePercentage, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                                <b:Interaction.Triggers>
+                                    <b:EventTrigger EventName="SelectionChanged">
+                                        <mvvm:InvokeCommandAction Command="{Binding UpdateBarcodeReaderCommand}" />
+                                    </b:EventTrigger>
+                                </b:Interaction.Triggers>
+
+                                <ComboBoxItem>
+                                    0-不缩放
+                                    <!--  0-No Limitation  -->
+                                </ComboBoxItem>
+                                <ComboBoxItem>
+                                    10
+                                </ComboBoxItem>
+                                <ComboBoxItem>
+                                    20
+                                </ComboBoxItem>
+                                <ComboBoxItem>
+                                    30
+                                </ComboBoxItem>
+                                <ComboBoxItem>
+                                    40
+                                </ComboBoxItem>
+                                <ComboBoxItem>
+                                    50
+                                </ComboBoxItem>
+                                <ComboBoxItem>
+                                    60
+                                </ComboBoxItem>
+                                <ComboBoxItem>
+                                    70
+                                </ComboBoxItem>
+                                <ComboBoxItem>
+                                    80
+                                </ComboBoxItem>
+                                <ComboBoxItem>
+                                    90
+                                </ComboBoxItem>
+                            </ComboBox>
                         </Border>
                     </StackPanel>
                 </StackPanel>
@@ -1845,8 +1923,9 @@
                 Background="#2E2E2E"
                 BorderThickness="0"
                 Command="{Binding SaveSettingsCommand}"
+                Cursor="Hand"
                 FocusVisualStyle="{x:Null}"
-                Style="{StaticResource MaterialDesignFlatAccentBgButton}" Cursor="Hand">
+                Style="{StaticResource MaterialDesignFlatAccentBgButton}">
 
                 <Grid>
                     <StackPanel Orientation="Horizontal">

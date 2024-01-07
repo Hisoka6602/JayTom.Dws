@@ -1047,6 +1047,7 @@ namespace JayTom.Dws.Client.Service.Device {
                             { BarcodeReaderParameter.ImagePreprocessingMode,usbBarcodeReaderDto.ImagePreprocessingMode },
                             { BarcodeReaderParameter.MinResultConfidence,usbBarcodeReaderDto.MinResultConfidence },
                             { BarcodeReaderParameter.RecognitionSkipFrames,usbBarcodeReaderDto.RecognitionSkipFrames },
+                            { BarcodeReaderParameter.ScalePercentage,usbBarcodeReaderDto.ScalePercentage },
                         };
                         return dictionary;
                     }

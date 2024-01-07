@@ -40,6 +40,9 @@ namespace JayTom.Dws.Camera {
         private int _recognitionSkipFrames = 4;
         private bool _isLicense = false;
 
+        //图片缩放百分比
+        private int _scalePercentage = 0;
+
         public event EventHandler<BarcodeScannedEventArgs> BarcodeScanned;
 
         private int _framenum = 0;
@@ -128,7 +131,7 @@ namespace JayTom.Dws.Camera {
                     if (_selectCamera is not null) {
                         //设置参数
                         //设置分辨率(如果没有指定则使用最大分辨率)
-                        /*var resolution = parameters.FirstOrDefault(f =>
+                        var resolution = parameters.FirstOrDefault(f =>
                                  f.Key == UsbCameraParameter.Resolution)
                              .Value;
                         if (resolution is Size size) {
@@ -139,7 +142,7 @@ namespace JayTom.Dws.Camera {
                             if (orDefault is not null) {
                                 _selectCamera.CurrentResolution = new CamResolution(orDefault.Value.Width, orDefault.Value.Height);
                             }
-                        }*/
+                        }
                         var exposure = parameters.FirstOrDefault(f =>
                                 f.Key == UsbCameraParameter.Exposure)
                             .Value;
@@ -162,7 +165,7 @@ namespace JayTom.Dws.Camera {
                         else {
                             _selectCamera.Exposure.IfAuto = true;
                         }
-
+                        return new KeyValuePair<bool, string>(true, string.Empty);
                         //对比度
                         var contrast = parameters.FirstOrDefault(f =>
                                 f.Key == UsbCameraParameter.Contrast)
@@ -340,6 +343,13 @@ namespace JayTom.Dws.Camera {
                     mBarcodeReader.ResetRuntimeSettings();
                     var runtimeSettings = mBarcodeReader.GetRuntimeSettings();
 
+                    var recognitionSkipFrames = parameters.FirstOrDefault(f =>
+                            f.Key == BarcodeReaderParameter.RecognitionSkipFrames)
+                        .Value;
+                    if (recognitionSkipFrames is int skipFrames) {
+                        _recognitionSkipFrames = skipFrames;
+                    }
+
                     //条码类型
                     var enumBarcodeFormat = parameters.FirstOrDefault(f =>
                             f.Key == BarcodeReaderParameter.EnumBarcodeFormat)
@@ -355,6 +365,12 @@ namespace JayTom.Dws.Camera {
                         runtimeSettings.BarcodeFormatIds = (int)format2;
                     }
 
+                    var scalePercentage = parameters.FirstOrDefault(f =>
+                            f.Key == BarcodeReaderParameter.ScalePercentage)
+                        .Value;
+                    if (scalePercentage is int percentage) {
+                        _scalePercentage = percentage * 10;
+                    }
                     var recognitionMode = parameters.FirstOrDefault(f =>
                             f.Key == BarcodeReaderParameter.RecognitionMode)
                         .Value ?? ScanMode.Speed;
@@ -607,18 +623,28 @@ namespace JayTom.Dws.Camera {
         /// </summary>
         /// <param name="bitmap"></param>
         /// <exception cref="NotImplementedException"></exception>
-        private async void SelectCameraOnOnFrameCaptrue(Bitmap bitmap) {
+        private void SelectCameraOnOnFrameCaptrue(Bitmap bitmap) {
             //读码
             var fastClone = FastClone(bitmap);
-            await Task.Yield();
             /*var tempBitmap = bitmap.Clone(new Rectangle(0, 0, bitmap.Width, bitmap.Height), bitmap.PixelFormat);
 
             tempBitmap.Dispose();*/
             /*Debug.WriteLine($"纯图片返回间隔{DateTime.Now.Subtract(reTime).TotalMilliseconds}");
             reTime = DateTime.Now;*/
-            Task.Factory.StartNew(() => {
+            /*Task.Factory.StartNew(() => {
                 ReadFromFrame(fastClone);
-            });
+            });*/
+            //缩放图片
+            if (_scalePercentage > 0) {
+                var generateThumbnail = GenerateThumbnail(fastClone, (int)(fastClone.Width * ((float)_scalePercentage / 100)),
+                    (int)(fastClone.Height * ((float)_scalePercentage / 100)));
+                if (generateThumbnail is not null) {
+                    ReadFromFrame(generateThumbnail);
+                }
+            }
+            else {
+                ReadFromFrame(fastClone);
+            }
         }
 
         /// <summary>
@@ -1225,6 +1251,11 @@ public enum BarcodeReaderParameter {
     /// 跳过的帧率
     /// </summary>
     RecognitionSkipFrames,
+
+    /// <summary>
+    /// 图片缩放百分比
+    /// </summary>
+    ScalePercentage,
 }
 
 /// <summary>

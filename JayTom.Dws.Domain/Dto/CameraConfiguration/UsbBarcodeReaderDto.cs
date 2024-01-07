@@ -117,5 +117,10 @@ namespace JayTom.Dws.Domain.Dto.CameraConfiguration {
         /// 识别跳过帧
         /// </summary>
         public int RecognitionSkipFrames { get; set; }
+
+        /// <summary>
+        /// 图片缩放百分比
+        /// </summary>
+        public int ScalePercentage { get; set; }
     }
 }

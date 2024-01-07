@@ -20,12 +20,6 @@ namespace JayTom.Dws.Data.LocalConf.CameraConfig {
         public int Exposure { get; set; }
 
         /// <summary>
-        /// 分辨率
-        /// </summary>
-        [NotMapped]
-        public Size Resolution { get; set; }
-
-        /// <summary>
         /// 亮度
         /// </summary>
         [Column("Brightness"), Required, InsertOrUpdata]
@@ -210,5 +204,17 @@ namespace JayTom.Dws.Data.LocalConf.CameraConfig {
         /// </summary>
         [Column("IsCustomFlipEnabled"), Required, InsertOrUpdata]
         public bool IsCustomFlipEnabled { get; set; }
+
+        /// <summary>
+        /// 分辨率宽度
+        /// </summary>
+        [Column("ResolutionWidth"), Required, InsertOrUpdata]
+        public int ResolutionWidth { get; set; }
+
+        /// <summary>
+        /// 分辨率高度
+        /// </summary>
+        [Column("ResolutionHeight"), Required, InsertOrUpdata]
+        public int ResolutionHeight { get; set; }
     }
 }

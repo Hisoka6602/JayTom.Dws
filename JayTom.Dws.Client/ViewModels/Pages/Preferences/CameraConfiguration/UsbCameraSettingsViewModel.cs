@@ -57,6 +57,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
         private WriteableBitmap? _image = new(800, 600, 96, 96, PixelFormats.Bgr24, null);
         private bool _isLoaded = false;
         private bool _isSavingInProgress;
+        private CameraResolutionInfo _cameraResolution = new();
+        private ObservableCollection<CameraResolutionInfo> _cameraResolutions = new();
 
         public UsbCameraSettingsViewModel(IDeviceService deviceService,
             IUsbCameraConfigRepository usbCameraConfigRepository,
@@ -91,8 +93,15 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
             set => SetProperty(ref _usbCameraSettingsInfo, value);
         }
 
-        public ObservableCollection<CameraResolutionInfo> CameraResolutions { get; set; } = new();
-        public CameraResolutionInfo CameraResolution { get; set; } = new();
+        public ObservableCollection<CameraResolutionInfo> CameraResolutions {
+            get => _cameraResolutions;
+            set => SetProperty(ref _cameraResolutions, value);
+        }
+
+        public CameraResolutionInfo CameraResolution {
+            get => _cameraResolution;
+            set => SetProperty(ref _cameraResolution, value);
+        }
 
         public ObservableCollection<int> DeblurLevelItems {
             get => _deblurLevelItems;
@@ -133,7 +142,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                     await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
                         var insertOrUpdate = await _usbCameraConfigRepository.InsertOrUpdate(new UsbCameraConfigInfoModel() {
                             Exposure = UsbCameraSettingsInfo.Exposure,
-                            Resolution = UsbCameraSettingsInfo.Resolution,
                             Brightness = UsbCameraSettingsInfo.Brightness,
                             Contrast = UsbCameraSettingsInfo.Contrast,
                             Hue = UsbCameraSettingsInfo.Hue,
@@ -168,6 +176,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                             IsCustomFlipEnabled = UsbCameraSettingsInfo.IsCustomFlipEnabled,
                             Name = SelectCameraInfo?.CameraName ?? string.Empty,
                             SerialNumber = SelectCameraInfo?.CameraSerialNumber ?? string.Empty,
+                            ResolutionHeight = CameraResolution.Size.Height,
+                            ResolutionWidth = CameraResolution.Size.Width,
                         });
 
                         //保存算法参数
@@ -196,7 +206,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                                 TextureDetectionSensitivity = BarcodeReaderSettingsInfo.TextureDetectionSensitivity,
                                 BinarizationBlockSize = BarcodeReaderSettingsInfo.BinarizationBlockSize,
                                 RecognitionMode = BarcodeReaderSettingsInfo.RecognitionMode,
-                                RecognitionSkipFrames = BarcodeReaderSettingsInfo.RecognitionSkipFrames
+                                RecognitionSkipFrames = BarcodeReaderSettingsInfo.RecognitionSkipFrames,
+                                ScalePercentage = BarcodeReaderSettingsInfo.ScalePercentage,
                             })
                         });
 
@@ -269,7 +280,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                                     TextureDetectionSensitivity = usbBarcodeReaderDto.TextureDetectionSensitivity,
                                     BinarizationBlockSize = usbBarcodeReaderDto.BinarizationBlockSize,
                                     RecognitionMode = usbBarcodeReaderDto.RecognitionMode,
-                                    RecognitionSkipFrames = usbBarcodeReaderDto.RecognitionSkipFrames
+                                    RecognitionSkipFrames = usbBarcodeReaderDto.RecognitionSkipFrames,
+                                    ScalePercentage = usbBarcodeReaderDto.ScalePercentage,
                                 };
                             }
                         });
@@ -304,6 +316,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                             CameraItems.Clear();
                             var list = usbCameraInfos.Select(s => s)?.ToList() ?? new List<UsbCameraInfo>();
                             CameraItems.AddRange(list);
+                            if (CameraItems.Any()) {
+                                SelectCameraInfo = CameraItems.FirstOrDefault() ?? new UsbCameraInfo();
+                            }
                         });
                     }
                 }
@@ -313,8 +328,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
             });
 
             // _usbBarCodeReader ??= new UsbBarCodeReader();
-
-            Console.WriteLine(obj);
 
             //刷新相机列表(判断是否在运行中,不在运行中才能刷新)
 
@@ -379,6 +392,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                     { BarcodeReaderParameter.ImagePreprocessingMode,BarcodeReaderSettingsInfo.ImagePreprocessingMode },
                     { BarcodeReaderParameter.MinResultConfidence,BarcodeReaderSettingsInfo.MinResultConfidence },
                     { BarcodeReaderParameter.RecognitionSkipFrames,BarcodeReaderSettingsInfo.RecognitionSkipFrames },
+                    { BarcodeReaderParameter.ScalePercentage,BarcodeReaderSettingsInfo.ScalePercentage },
                 };
                 if (_usbBarCodeReader is not null) {
                     var (key, value) = await _usbBarCodeReader.SetBarcodeReaderParameter(dictionary);
@@ -389,7 +403,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                     }
                 }
             });
-            Debug.WriteLine($"触发");
         }
 
         /// <summary>
@@ -416,7 +429,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                     if (usbCameraConfigInfoModel is not null) {
                         UsbCameraSettingsInfo = new UsbCameraSettingsInfoModel() {
                             Exposure = usbCameraConfigInfoModel.Exposure,
-                            Resolution = usbCameraConfigInfoModel.Resolution,
+                            Resolution = new Size(usbCameraConfigInfoModel.ResolutionWidth, usbCameraConfigInfoModel.ResolutionHeight),
                             Brightness = usbCameraConfigInfoModel.Brightness,
                             Contrast = usbCameraConfigInfoModel.Contrast,
                             Hue = usbCameraConfigInfoModel.Hue,
@@ -451,8 +464,17 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                             IsCustomVerticalRotationEnabled = usbCameraConfigInfoModel.IsCustomVerticalRotationEnabled,
                             IsCustomFlipEnabled = usbCameraConfigInfoModel.IsCustomFlipEnabled,
                         };
-                        UsbCameraSettingsInfo.Resolution = SelectCameraInfo?.CameraResolutions?.LastOrDefault() ?? new Size(0, 0);
-                        UpdateBarcodeReaderCommandDelegate(this);
+
+                        UsbCameraSettingsInfo.Resolution = SelectCameraInfo?.CameraResolutions?.FirstOrDefault(f =>
+                                                               f.Width.Equals(UsbCameraSettingsInfo.Resolution.Width) &&
+                                                               f.Height.Equals(UsbCameraSettingsInfo.Resolution
+                                                                   .Height)) ??
+                                                           SelectCameraInfo?.CameraResolutions?.LastOrDefault()
+                                                           ?? new Size(0, 0);
+
+                        CameraResolution = CameraResolutions.FirstOrDefault(f =>
+                            f.Size.Width.Equals(UsbCameraSettingsInfo.Resolution.Width) &&
+                            f.Size.Height.Equals(UsbCameraSettingsInfo.Resolution.Height)) ?? new CameraResolutionInfo();
                     }
                     else {
                         UsbCameraSettingsInfo = new UsbCameraSettingsInfoModel();
@@ -480,7 +502,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
             await Task.Delay(500);
             _usbBarCodeReader = null;
             BitmapQueue.Clear();
-            if (CameraResolution is not null) {
+            if (CameraResolution.Size is { Width: > 0, Height: > 0 }) {
                 _usbBarCodeReader = new UsbBarCodeReader();
 
                 _usbBarCodeReader.BarcodeScanned += delegate (object? sender, BarcodeScannedEventArgs args) {
@@ -524,6 +546,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                         {
                             { UsbCameraParameter.Resolution, CameraResolution.Size }
                         });
+
+                        UpdateCameraParametersDelegate(this);
+                        UpdateBarcodeReaderCommandDelegate(this);
                     }
                 }
             }
