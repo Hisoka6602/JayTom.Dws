@@ -45,6 +45,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.UsbCamera {
             await Task.Yield();
             if (_usbBarCodeReader is not null) {
                 _usbBarCodeReader.Dispose();
+                _usbBarCodeReader = null;
                 OnCameraDisconnected(new CameraConnectionEventArgs() {
                     CameraInfo = this.Info
                 });

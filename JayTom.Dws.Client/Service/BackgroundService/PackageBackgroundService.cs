@@ -170,7 +170,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             };
             //空包裹
             _deviceService.NotBarcodeHitEvent += async delegate (object? sender, BarcodeReadEventArgs args) {
-                await Task.Delay(200);
+                await Task.Delay(100);
                 //等200ms,如果仍没有创建包裹则由空条码创建创建(有危险，看实际应用调整)
                 var orDefault = _packageInfos.OrderBy(o => o.CreateTime)
                     .FirstOrDefault(f => DateTime.Now.Subtract(f.CreateTime).TotalMilliseconds < 500);
@@ -185,6 +185,23 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             ScanTime = args.ScanTime,
                             Timestamp = args.Timestamp,
                         };
+                        //触发全景拍照
+                        var list = _panoramaCameras?.Where(w => w.SelectedCameraSerialNumber.Equals(args.CameraSerialNumber))?
+                            .Select(s => s.SerialNumber)?.ToList();
+                        if (list?.Any() != true) {
+                            list = _panoramaCameras?.Where(w => w.SelectedCameraSerialNumber.Equals(string.Empty))?
+                                .Select(s => s.SerialNumber)?.ToList();
+                        }
+                        var cameras = _cameras.Where(w =>
+                            list.Contains(w.Info.SerialNumber) && w.BindingType == CameraBindingType.PanoramaCamera)?.ToList();
+                        foreach (var c in (cameras ?? new List<ICamera>()).Where(c => _deviceService.RunningStatus)) {
+                            await c.TakePhotoAsync(args.Barcode, args.Timestamp);
+                        }
+                        //填充全景相机数量
+                        packageInfo.PanoramaCameraImageInfo = cameras?.Select(s => new PanoramaCameraImageInfo {
+                            CameraSerialNumber = s.Info?.SerialNumber ?? string.Empty,
+                        })?.ToList()
+                                                              ?? new List<PanoramaCameraImageInfo>();
 
                         //判断重量和体积队列
                         var tryDequeue = false;

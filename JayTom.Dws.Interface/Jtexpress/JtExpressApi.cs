@@ -209,7 +209,7 @@ namespace JayTom.Dws.Interface.Jtexpress {
                 stopwatch.Stop();
                 response = new UploadResponse() {
                     ExceptionMsg = exceptionMsg,
-                    ApiParameters = JsonConvert.SerializeObject(this),
+                    ApiParameters = JsonConvert.SerializeObject(this.Parameters),
                     IsSuccess = isSuccess,
                     Duration = stopwatch.Elapsed.TotalSeconds,
                     RequestContent = $"{Parameters.SegmentCodeUrl}{method}",

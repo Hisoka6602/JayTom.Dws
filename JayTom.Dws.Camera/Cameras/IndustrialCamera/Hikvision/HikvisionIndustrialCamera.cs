@@ -563,7 +563,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                     try {
                         await _takePhotoSlim.WaitAsync(cancellation);
                         var pFrameInfo = new MVIDCodeReader.MVID_IMAGE_INFO();
-                        _nRet = _myCodeReader?.MVID_CR_CAM_GetImageBuffer_NET(ref pFrameInfo, 300) ?? -1;
+                        _nRet = _myCodeReader?.MVID_CR_CAM_GetImageBuffer_NET(ref pFrameInfo, 10) ?? -1;
                         if (_nRet != MVIDCodeReader.MVID_CR_OK) {
                             OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
                                 Exception = new Exception($"截图失败:截取一帧图片失败,{_nRet:X}")
@@ -572,7 +572,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                         }
                         var image = await ConvertPointerToImage(pFrameInfo);
                         var thumbnailImage = GenerateThumbnail(image);
-                        await Task.Delay(100, cancellation);
+                        await Task.Delay(10, cancellation);
                         OnPhotoTaken(new PhotoTakenEventArgs {
                             Timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds(),
                             CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,

@@ -14,9 +14,9 @@ namespace JayTom.Dws.Client.Models.Cameras {
         private bool _isUseCode93 = true;
         private bool _isUseCode128 = true;
         private bool _isUseCodeBar = true;
-        private bool _isUseItf = true;
-        private bool _isUseEan13 = true;
-        private bool _isUseEan8 = true;
+        private bool _isUseItf = false;
+        private bool _isUseEan13 = false;
+        private bool _isUseEan8 = false;
         private int _localizationMode;
         private int _deblurLevel;
         private int _expectedBarcodesCount;
@@ -28,7 +28,7 @@ namespace JayTom.Dws.Client.Models.Cameras {
         private int _minResultConfidence;
         private int _textureDetectionSensitivity;
         private int _binarizationBlockSize;
-        private int _recognitionMode;
+        private int _recognitionMode = 1;
         private int _recognitionSkipFrames;
         private int _scalePercentage;
 

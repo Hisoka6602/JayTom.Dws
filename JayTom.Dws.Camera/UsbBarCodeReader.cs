@@ -40,6 +40,8 @@ namespace JayTom.Dws.Camera {
         private int _recognitionSkipFrames = 4;
         private bool _isLicense = false;
 
+        private CancellationTokenSource _stopCancellationTokenSource = new();
+
         //图片缩放百分比
         private int _scalePercentage = 0;
 
@@ -95,16 +97,19 @@ namespace JayTom.Dws.Camera {
                     var orDefault = select?.FirstOrDefault(f => f.Name.Equals(device["Caption"]?.ToString()));
                     if (orDefault is not null && !string.IsNullOrEmpty(device["ClassGuid"]?.ToString())) {
                         //取出序列号ClassGuid
+                        var selectCamera = cameraManager?.SelectCamera(orDefault.Name);
                         var usbCameraInfo = new UsbCameraInfo() {
                             CameraName = orDefault.Name,
                             CameraId = orDefault.Id,
                             CameraDescription = device["Description"]?.ToString(),
                             CameraManufacturer = device["Manufacturer"]?.ToString(),
                             CameraSerialNumber = device["ClassGuid"]?.ToString(),
-                            CameraResolutions = cameraManager?.SelectCamera(orDefault.Name)?.SupportedResolutions?.Select(s =>
+                            CameraResolutions = selectCamera?.SupportedResolutions?.Select(s =>
                                 new Size(s.Width, s.Height))?.ToList()
                         };
                         usbCameraInfos.Add(usbCameraInfo);
+                        selectCamera?.Close();
+                        selectCamera?.Dispose();
                         _cameraDictionary.AddOrUpdate(device["ClassGuid"].ToString() ?? string.Empty, value => usbCameraInfo,
                             (key, oldValue) => usbCameraInfo);
                     }
@@ -570,8 +575,10 @@ namespace JayTom.Dws.Camera {
         /// <exception cref="NotImplementedException"></exception>
         public async Task<bool> BindCamera(UsbCameraInfo info) {
             await Task.Delay(2000);
+            NLog.LogManager.GetCurrentClassLogger().Error($"调用绑定");
             var (key, value) = _cameraDictionary.FirstOrDefault(f => f.Key.Equals(info.CameraSerialNumber));
             if (!string.IsNullOrEmpty(key)) {
+                _cameraManager ??= new CameraManager(dntLicenseKeys);
                 UsbCameraInfo = value;
                 _selectCamera = _cameraManager?.SelectCamera(value.CameraName);
                 var orDefault = value.CameraResolutions?.OrderByDescending(o => o.Width * o.Height)?.FirstOrDefault();
@@ -587,6 +594,7 @@ namespace JayTom.Dws.Camera {
                     {BarcodeReaderParameter.IsUseTextFilterMode,true},
                     //{BarcodeReaderParameter.IsUseRegionPredetectionMode,true}
                 });
+                NLog.LogManager.GetCurrentClassLogger().Error($"成功绑定");
                 return true;
             }
 
@@ -602,18 +610,23 @@ namespace JayTom.Dws.Camera {
         public async Task<KeyValuePair<bool, string>> Start() {
             await Task.Delay(1000);
             try {
+                NLog.LogManager.GetCurrentClassLogger().Error($"调用启动");
                 if (_selectCamera is not null && !_isOpend) {
-                    _selectCamera.Open();
                     //注册事件
+                    _stopCancellationTokenSource = new CancellationTokenSource();
                     _selectCamera.OnFrameCaptrue += SelectCameraOnOnFrameCaptrue;
+                    _selectCamera.Open();
                     _isOpend = true;
+                    NLog.LogManager.GetCurrentClassLogger().Error($"启动成功");
                     return new KeyValuePair<bool, string>(true, "启动成功");
                 }
                 else {
+                    NLog.LogManager.GetCurrentClassLogger().Error($"相机未绑定:{_isOpend},{_selectCamera is not null}");
                     return new KeyValuePair<bool, string>(false, "相机未绑定");
                 }
             }
             catch (Exception e) {
+                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
                 return new KeyValuePair<bool, string>(false, $"{e}");
             }
         }
@@ -639,11 +652,11 @@ namespace JayTom.Dws.Camera {
                 var generateThumbnail = GenerateThumbnail(fastClone, (int)(fastClone.Width * ((float)_scalePercentage / 100)),
                     (int)(fastClone.Height * ((float)_scalePercentage / 100)));
                 if (generateThumbnail is not null) {
-                    ReadFromFrame(generateThumbnail);
+                    ReadFromFrame(generateThumbnail, _stopCancellationTokenSource.Token);
                 }
             }
             else {
-                ReadFromFrame(fastClone);
+                ReadFromFrame(fastClone, _stopCancellationTokenSource.Token);
             }
         }
 
@@ -651,14 +664,15 @@ namespace JayTom.Dws.Camera {
         /// 读码
         /// </summary>
         /// <param name="bitmap"></param>
-        private async void ReadFromFrame(Bitmap bitmap) {
+        /// <param name="token"></param>
+        private async void ReadFromFrame(Bitmap bitmap, CancellationToken token) {
             if (_framenum >= _recognitionSkipFrames) {
                 _framenum = 0;
                 long elapsedMilliseconds = 0;
                 TextResult[]? bars = null;
                 var (buffer, stride, pixelFormat) = GetBitmapData(bitmap);
                 try {
-                    await _semaphoreSlim.WaitAsync();
+                    await _semaphoreSlim.WaitAsync(token);
                     if (mBarcodeReader is not null) {
                         var stopwatch = new Stopwatch();
                         stopwatch.Start();
@@ -669,12 +683,11 @@ namespace JayTom.Dws.Camera {
                     }
                 }
                 catch (Exception e) {
-                    Console.WriteLine(e);
+                    NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
                 }
                 finally {
                     _semaphoreSlim.Release();
                 }
-
                 //解析条码
                 var barcodeScannedEventArgs = new BarcodeScannedEventArgs() {
                     ScanTime = DateTime.Now,
@@ -715,10 +728,15 @@ namespace JayTom.Dws.Camera {
             await Task.Yield();
             try {
                 if (_selectCamera is not null && _isOpend) {
-                    //注册事件
                     _selectCamera.OnFrameCaptrue -= SelectCameraOnOnFrameCaptrue;
+                    await Task.Delay(100);
+                    NLog.LogManager.GetCurrentClassLogger().Error($"注销事件");
+                    _stopCancellationTokenSource.Cancel();
+                    //注册事件
                     await Task.Delay(500);
-                    _selectCamera.Close();
+                    _selectCamera?.Close();
+                    _selectCamera?.Dispose();
+                    _selectCamera = null;
                     _isOpend = false;
                     return new KeyValuePair<bool, string>(true, "停止成功");
                 }
@@ -727,6 +745,7 @@ namespace JayTom.Dws.Camera {
                 }
             }
             catch (Exception e) {
+                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
                 return new KeyValuePair<bool, string>(false, $"{e}");
             }
         }
@@ -739,8 +758,14 @@ namespace JayTom.Dws.Camera {
         /// 释放资源
         /// </summary>
         public async void Dispose() {
+            NLog.LogManager.GetCurrentClassLogger().Error($"调用释放");
             await Stop();
-            mBarcodeReader?.Recycle();
+            //mBarcodeReader?.Recycle();
+            mBarcodeReader?.Dispose();
+            mBarcodeReader = null;
+            _cameraManager?.Dispose();
+            _cameraManager = null;
+            NLog.LogManager.GetCurrentClassLogger().Error($"释放结束");
         }
 
         protected virtual async void OnBarcodeScanned(BarcodeScannedEventArgs e) {

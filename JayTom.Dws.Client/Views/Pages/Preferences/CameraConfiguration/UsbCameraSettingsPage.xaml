@@ -1903,7 +1903,7 @@
                             <!--  Balance  -->
                         </ComboBoxItem>
                         <ComboBoxItem>
-                            覆盖
+                            全局
                             <!--  Coverage  -->
                         </ComboBoxItem>
                         <ComboBoxItem>

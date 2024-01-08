@@ -3,8 +3,10 @@ using System.Text;
 using Newtonsoft.Json;
 using JayTom.Dws.Camera;
 using JayTom.Dws.License;
+using Newtonsoft.Json.Linq;
 using System.ComponentModel;
 using System.Security.Cryptography;
+using JayTom.Dws.Interface.Routdata;
 using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech;
 using LicenseManager = JayTom.Dws.License.LicenseManager;
 
@@ -12,6 +14,11 @@ internal class Program {
     private static SemaphoreSlim _takePhotoSlim = new(1);
 
     private static async Task Main(string[] args) {
+        var ldkjApi = new RoutdataApi(null);
+        var uploadResponse = await ldkjApi.UploadData("9883813791427", 0);
+
+        await Task.Delay(50000);
+        return;
         //var usbBarCodeReader = new UsbBarCodeReader().EnumerateCameras();
 
         // 创建RSA实例
