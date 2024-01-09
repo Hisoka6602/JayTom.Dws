@@ -13,12 +13,11 @@ using System.Text.RegularExpressions;
 
 namespace JayTom.Dws.Interface.Routdata {
 
-    public class RoutdataApi : IDataUploader {
+    public class RoutDataApi : IDataUploader {
         private readonly IHttpClientFactory _httpClientFactory;
-        public string BaseUrl { get; set; } = "http://33qhun.natappfree.cc/siss-sorting/service";
-        public string DeviceCode { get; set; } = "51811101007";
+        public ApiParameters Parameters { get; private set; } = new();
 
-        public RoutdataApi(IHttpClientFactory httpClientFactory) {
+        public RoutDataApi(IHttpClientFactory httpClientFactory) {
             _httpClientFactory = httpClientFactory;
         }
 
@@ -26,7 +25,7 @@ namespace JayTom.Dws.Interface.Routdata {
             double volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default,
             object? other = null, CancellationToken token = default) {
             var callApiMethod = await CallApiMethod(ApiMethod.MailInfoQuery, barcode, string.Empty, string.Empty,
-                DeviceCode, string.Empty, token: token);
+                Parameters.DeviceCode, string.Empty, token: token);
             var orgCode = string.Empty;
             var phyBoxCode = string.Empty;
             var theoryBoxCode = string.Empty;
@@ -45,26 +44,67 @@ namespace JayTom.Dws.Interface.Routdata {
             }
 
             PolicyPush(ApiMethod.ScanInfoPush, barcode, orgCode ?? string.Empty, phyBoxCode ?? string.Empty,
-                DeviceCode, theoryBoxCode ?? string.Empty,
+                Parameters.DeviceCode, theoryBoxCode ?? string.Empty,
                 callApiMethod.IsSuccess,
                 callApiMethod.ResponseTime
                 , mailInfoQueryResponseContent, token).ConfigureAwait(false).GetAwaiter();
             PolicyPush(ApiMethod.PickingInfoPush, barcode, orgCode ?? string.Empty, phyBoxCode ?? string.Empty,
-                DeviceCode, theoryBoxCode ?? string.Empty,
+                Parameters.DeviceCode, theoryBoxCode ?? string.Empty,
                 callApiMethod.IsSuccess,
                 callApiMethod.ResponseTime
                 , callApiMethod.IsSuccess ? string.Empty : mailInfoQueryResponseContent, token).ConfigureAwait(false).GetAwaiter();
             return callApiMethod;
         }
 
-        public Task<UploadResponse> UploadData(string barcode, double weight, DateTime scanTime, double length = default, double width = default,
+        public async Task<UploadResponse> UploadData(string barcode, double weight, DateTime scanTime, double length = default, double width = default,
             double height = default, double volume = default, UploadImageInfo? imageInfo = default,
             List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
-            throw new NotImplementedException();
+            var callApiMethod = await CallApiMethod(ApiMethod.MailInfoQuery, barcode, string.Empty, string.Empty,
+                Parameters.DeviceCode, string.Empty, token: token);
+            var orgCode = string.Empty;
+            var phyBoxCode = string.Empty;
+            var theoryBoxCode = string.Empty;
+            var mailInfoQueryResponseContent = callApiMethod.ResponseContent;
+            if (callApiMethod.IsSuccess) {
+                //解析
+                try {
+                    var jObject = JObject.Parse(callApiMethod.ResponseContent);
+                    orgCode = jObject?["BODY"]?["201"]?.First?["JGDM"]?.ToString();
+                    phyBoxCode = jObject?["BODY"]?["201"]?.First?["WLGK"]?.ToString();
+                    theoryBoxCode = jObject?["BODY"]?["201"]?.First?["YLZDONE"]?.ToString();
+                }
+                catch (Exception e) {
+                    mailInfoQueryResponseContent += $"报文解析异常:{e.Message}";
+                }
+            }
+
+            PolicyPush(ApiMethod.ScanInfoPush, barcode, orgCode ?? string.Empty, phyBoxCode ?? string.Empty,
+                Parameters.DeviceCode, theoryBoxCode ?? string.Empty,
+                callApiMethod.IsSuccess,
+                callApiMethod.ResponseTime
+                , mailInfoQueryResponseContent, token).ConfigureAwait(false).GetAwaiter();
+            PolicyPush(ApiMethod.PickingInfoPush, barcode, orgCode ?? string.Empty, phyBoxCode ?? string.Empty,
+                Parameters.DeviceCode, theoryBoxCode ?? string.Empty,
+                callApiMethod.IsSuccess,
+                callApiMethod.ResponseTime
+                , callApiMethod.IsSuccess ? string.Empty : mailInfoQueryResponseContent, token).ConfigureAwait(false).GetAwaiter();
+            return callApiMethod;
         }
 
         public Task<KeyValuePair<bool, string>> SetParameters<T>(T parameters) {
-            throw new NotImplementedException();
+            if (parameters is ApiParameters param) {
+                Parameters.DeviceCode = param.DeviceCode;
+                Parameters.Url = param.Url;
+                Parameters.RetryCount = param.RetryCount;
+                Parameters.RetryInterval = param.RetryInterval;
+                Parameters.SignKey = param.SignKey;
+                Parameters.TimeOut = param.TimeOut;
+
+                return Task.FromResult(new KeyValuePair<bool, string>(true, string.Empty));
+            }
+            else {
+                return Task.FromResult(new KeyValuePair<bool, string>(true, "参数类型不匹配"));
+            }
         }
 
         /// <summary>
@@ -103,7 +143,7 @@ namespace JayTom.Dws.Interface.Routdata {
             try {
                 using var httpClient = new HttpClient(new HttpClientHandler { AutomaticDecompression = DecompressionMethods.GZip });
                 //using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
-                httpClient.Timeout = TimeSpan.FromMilliseconds(5000);
+                httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut);
                 httpClient.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("gzip"));
                 HttpResponseMessage message;
 
@@ -171,14 +211,14 @@ namespace JayTom.Dws.Interface.Routdata {
                     }
                     compressedData = memoryStream.ToArray();
                 }
-                var signBytes = CombineByteArrays(compressedData, Encoding.UTF8.GetBytes("R1O2U3T4D5A6T7A8X9B0S9O8R7T6I5N4G3*2@1"));
+                var signBytes = CombineByteArrays(compressedData, Encoding.UTF8.GetBytes(Parameters.SignKey));
 
                 sign = GetSha256Hex(signBytes).ToUpper();
 
                 using (HttpContent content = new ByteArrayContent(compressedData)) {
                     content.Headers.Add("Content-Encoding", "gzip");
                     content.Headers.Add("Content-Type", "application/json");
-                    message = await httpClient.PostAsync($"{BaseUrl}?SIGN={sign}", content, token).ConfigureAwait(false);
+                    message = await httpClient.PostAsync($"{Parameters.Url}?SIGN={sign}", content, token).ConfigureAwait(false);
                 }
 
                 resultContent = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
@@ -217,7 +257,7 @@ namespace JayTom.Dws.Interface.Routdata {
                     Duration = stopwatch.Elapsed.TotalSeconds,
                     RequestContent = requestContent,
                     RequestTime = requestTime,
-                    RequestUrl = $"{BaseUrl}?SIGN={sign}",
+                    RequestUrl = $"{Parameters.Url}?SIGN={sign}",
                     ResponseContent = resultContent,
                     ResponseTime = DateTime.Now
                 };
@@ -235,17 +275,17 @@ namespace JayTom.Dws.Interface.Routdata {
             string mailInfoQueryResponseContent = "",
             CancellationToken token = default) {
             var waitAndRetryAsync = Policy.HandleResult<UploadResponse>(result => !result.IsSuccess)
-                .Or<Exception>().WaitAndRetryAsync(5, retryCount => TimeSpan.FromSeconds(3), // 重试间隔时间
+                .Or<Exception>().WaitAndRetryAsync(Parameters.RetryCount, retryCount => TimeSpan.FromSeconds(Parameters.RetryInterval), // 重试间隔时间
                     (ex, timespan, retryCount, context) => {
                         NLog.LogManager.GetCurrentClassLogger().Error($"接口重试次数:{retryCount}");
                     });
             var uploadResponse = await waitAndRetryAsync.ExecuteAsync(async () => {
                 return method switch {
                     ApiMethod.PickingInfoPush => await CallApiMethod(ApiMethod.PickingInfoPush, barcode,
-                        orgCode ?? string.Empty, phyBoxCode, DeviceCode, theoryBoxCode, processingResult,
+                        orgCode ?? string.Empty, phyBoxCode, deviceCode, theoryBoxCode, processingResult,
                         processingTime, mailInfoQueryResponseContent, token),
                     ApiMethod.ScanInfoPush => await CallApiMethod(ApiMethod.ScanInfoPush, barcode,
-                        orgCode ?? string.Empty, phyBoxCode, DeviceCode, theoryBoxCode, token: token),
+                        orgCode ?? string.Empty, phyBoxCode, deviceCode, theoryBoxCode, token: token),
                     _ => new UploadResponse()
                 };
             });
@@ -262,7 +302,7 @@ namespace JayTom.Dws.Interface.Routdata {
             using var sha256 = SHA256.Create();
             var hashBytes = sha256.ComputeHash(bytes);
             var builder = new StringBuilder();
-            foreach (byte b in hashBytes) {
+            foreach (var b in hashBytes) {
                 builder.Append(b.ToString("x2"));
             }
             return builder.ToString();
@@ -284,6 +324,39 @@ namespace JayTom.Dws.Interface.Routdata {
             /// 分拣信息推送接口
             /// </summary>
             PickingInfoPush
+        }
+
+        public class ApiParameters {
+
+            /// <summary>
+            /// Url
+            /// </summary>
+            public string Url { get; set; } = "http://33qhun.natappfree.cc/siss-sorting/service";
+
+            /// <summary>
+            /// 超时
+            /// </summary>
+            public int TimeOut { get; set; } = 1000;
+
+            /// <summary>
+            /// SignKey
+            /// </summary>
+            public string SignKey { get; set; } = "R1O2U3T4D5A6T7A8X9B0S9O8R7T6I5N4G3*2@1";
+
+            /// <summary>
+            /// 重试次数
+            /// </summary>
+            public int RetryCount { get; set; }
+
+            /// <summary>
+            /// 重试间隔
+            /// </summary>
+            public int RetryInterval { get; set; }
+
+            /// <summary>
+            /// 设备代码
+            /// </summary>
+            public string DeviceCode { get; set; } = "51811101007";
         }
     }
 }

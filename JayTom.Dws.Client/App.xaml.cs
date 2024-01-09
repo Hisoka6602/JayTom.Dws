@@ -648,6 +648,8 @@ namespace JayTom.Dws.Client {
             ViewModelLocationProvider.Register<WdtFlagshipApiPage, WdtFlagshipApiPageViewModel>();
             ViewModelLocationProvider.Register<WdtWmsApiPage, WdtWmsApiPageViewModel>();
             ViewModelLocationProvider.Register<JtExpressApiPage, JtExpressApiPageViewModel>();
+            ViewModelLocationProvider.Register<RoutDataApiPage, RoutDataApiViewPageModel>();
+            //实时日志
             //实时日志
             ViewModelLocationProvider.Register<RealTimeLogPage, RealTimeLogViewModel>();
             //其他插件

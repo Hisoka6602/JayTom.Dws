@@ -7,12 +7,14 @@ using JayTom.Dws.Interface;
 using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
 using JayTom.Dws.Interface.Wdt;
+using JayTom.Dws.Data.LocalConf;
 using JayTom.Dws.PluginInterface;
 using JayTom.Dws.Interface.Sunnen;
 using JayTom.Dws.Interface.JdyWms;
 using JayTom.Dws.Domain.Dto.ApiDto;
 using JayTom.Dws.Interface.Szjy188;
 using System.Collections.Concurrent;
+using JayTom.Dws.Interface.Routdata;
 using JayTom.Dws.Interface.Jtexpress;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.Repository.LocalConf;
@@ -33,6 +35,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private static WdtWmsApi.ApiParameter _wdtWmsApiParameter = new();
         private static WdtFlagshipApi.ApiParameter _wdtFlagshipApiParameter = new();
         private static JtExpressApi.ApiParameter _jtExpressApiParam = new();
+        private static RoutDataApi.ApiParameters _rstDataApiParam = new();
 
         #region 非通用版本变量(临时)
 
@@ -204,6 +207,28 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             }
                         }
                     }
+                    else if (model.SettingsName.Equals("RoutDataApiParameters")) {
+                        var configInfoModel = await _configRepository.FirstOrDefault(f => f.ConfigName.Equals("RoutDataApiParameters"));
+                        if (configInfoModel is not null) {
+                            try {
+                                var routDataApiDto = JsonConvert.DeserializeObject<RoutDataApiDto>(configInfoModel.Value);
+                                if (routDataApiDto != null) {
+                                    _rstDataApiParam = new RoutDataApi.ApiParameters() {
+                                        Url = routDataApiDto.Url,
+                                        TimeOut = routDataApiDto.TimeOut,
+                                        DeviceCode = routDataApiDto.DeviceCode,
+                                        RetryCount = routDataApiDto.RetryCount,
+                                        RetryInterval = routDataApiDto.RetryInterval,
+                                        SignKey = routDataApiDto.SignKey
+                                    };
+                                }
+                            }
+                            catch (Exception e) {
+                                //抛出异常事件
+                                Console.WriteLine(e);
+                            }
+                        }
+                    }
                     //其他接口
                 }
             });
@@ -336,12 +361,41 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 }
                             case ApiType.JtExpressApi: {
                                     uploader = new JtExpressApi(_httpClientFactory);
-                                    uploadResponse = await uploader.UploadData(info.Barcode ?? string.Empty,
-                                        info.Weight, info.ScanTime,
-                                        info.Length, info.Width,
-                                        info.Height, info.Volume,
-                                        null, null,
-                                        null, stoppingToken);
+                                    var (key, value) = await uploader.SetParameters(_jtExpressApiParam);
+                                    if (key) {
+                                        uploadResponse = await uploader.UploadData(info.Barcode ?? string.Empty,
+                                            info.Weight, info.ScanTime,
+                                            info.Length, info.Width,
+                                            info.Height, info.Volume,
+                                            null, null,
+                                            null, stoppingToken);
+                                    }
+                                    else {
+                                        uploadResponse = new UploadResponse() {
+                                            ExceptionMsg = value
+                                        };
+                                        Console.WriteLine("设置参数失败!");
+                                    }
+
+                                    break;
+                                }
+                            case ApiType.RoutDataApi: {
+                                    uploader = new RoutDataApi(_httpClientFactory);
+                                    var (key, value) = await uploader.SetParameters(_rstDataApiParam);
+                                    if (key) {
+                                        uploadResponse = await uploader.UploadData(info.Barcode ?? string.Empty,
+                                            info.Weight, info.ScanTime,
+                                            info.Length, info.Width,
+                                            info.Height, info.Volume,
+                                            null, null,
+                                            null, stoppingToken);
+                                    }
+                                    else {
+                                        uploadResponse = new UploadResponse() {
+                                            ExceptionMsg = value
+                                        };
+                                        Console.WriteLine("设置参数失败!");
+                                    }
                                     break;
                                 }
                         }
@@ -490,6 +544,27 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             Url = jtExpressDto.Url,
                             UserName = jtExpressDto.UserName,
                             WeightFlag = jtExpressDto.WeightFlag,
+                        };
+                    }
+                }
+                catch (Exception e) {
+                    //抛出异常事件
+                    Console.WriteLine(e);
+                }
+            }
+            //络道科技Api
+            configInfoModel = await _configRepository.FirstOrDefault(f => f.ConfigName.Equals("RoutDataApiParameters"));
+            if (configInfoModel is not null) {
+                try {
+                    var routDataApiDto = JsonConvert.DeserializeObject<RoutDataApiDto>(configInfoModel.Value);
+                    if (routDataApiDto != null) {
+                        _rstDataApiParam = new RoutDataApi.ApiParameters() {
+                            Url = routDataApiDto.Url,
+                            TimeOut = routDataApiDto.TimeOut,
+                            DeviceCode = routDataApiDto.DeviceCode,
+                            RetryCount = routDataApiDto.RetryCount,
+                            RetryInterval = routDataApiDto.RetryInterval,
+                            SignKey = routDataApiDto.SignKey
                         };
                     }
                 }

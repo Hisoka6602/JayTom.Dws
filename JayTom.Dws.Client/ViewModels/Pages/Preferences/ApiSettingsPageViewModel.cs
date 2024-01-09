@@ -60,6 +60,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                 Name = "极兔Api接口",
                 Value = ApiType.JtExpressApi
             },
+            new ApiTypeInfoModel()
+            {
+                Name = "络道科技Api",
+                Value = ApiType.RoutDataApi
+            },
         };
 
         private ApiTypeInfoModel? _selectApiType = new();

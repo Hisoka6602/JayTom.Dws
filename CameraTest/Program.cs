@@ -14,7 +14,7 @@ internal class Program {
     private static SemaphoreSlim _takePhotoSlim = new(1);
 
     private static async Task Main(string[] args) {
-        var ldkjApi = new RoutdataApi(null);
+        var ldkjApi = new RoutDataApi(null);
         var uploadResponse = await ldkjApi.UploadData("9883813791427", 0);
 
         await Task.Delay(50000);
