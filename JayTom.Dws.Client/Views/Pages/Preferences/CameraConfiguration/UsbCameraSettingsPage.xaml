@@ -1998,14 +1998,14 @@
                     <Grid>
                         <Image
                             Width="640"
-                            MinHeight="600"
+                            MinHeight="640"
                             Source="{Binding Image, UpdateSourceTrigger=PropertyChanged}"
-                            Stretch="UniformToFill">
+                            Stretch="Fill">
                             <Image.Clip>
                                 <RectangleGeometry
                                     RadiusX="15"
                                     RadiusY="15"
-                                    Rect="0,0,635,635" />
+                                    Rect="0,0,620,620" />
                             </Image.Clip>
                         </Image>
                         <Border

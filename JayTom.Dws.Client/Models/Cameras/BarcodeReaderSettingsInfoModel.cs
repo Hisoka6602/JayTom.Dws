@@ -30,7 +30,7 @@ namespace JayTom.Dws.Client.Models.Cameras {
         private int _binarizationBlockSize;
         private int _recognitionMode = 1;
         private int _recognitionSkipFrames;
-        private int _scalePercentage;
+        private int _scalePercentage = 6;
 
         /// <summary>
         /// 是否使用OrCode码

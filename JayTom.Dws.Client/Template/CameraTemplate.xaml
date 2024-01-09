@@ -64,7 +64,7 @@
                         Name="PackImage"
                         Grid.Row="0"
                         Source="{Binding Image, UpdateSourceTrigger=PropertyChanged}"
-                        Stretch="UniformToFill">
+                        Stretch="Fill">
                         <Image.InputBindings>
                             <MouseBinding
                                 Command="{Binding ImageClickCommand}"

@@ -40,7 +40,6 @@ using JayTom.Dws.Domain.Dto.CameraConfiguration;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
-
     public class UsbCameraSettingsViewModel : BindableBase {
         private readonly IDeviceService _deviceService;
         private readonly IUsbCameraConfigRepository _usbCameraConfigRepository;
@@ -219,6 +218,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                         IsSavingInProgress = false;
                         UsbCameraSettingsMessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
                             Languages.Language.ResourceManager.GetString("SaveFailed"))}");
+                        UsbCameraSettingsMessageQueue.Enqueue("请重启程序");
                     });
                 }
             }

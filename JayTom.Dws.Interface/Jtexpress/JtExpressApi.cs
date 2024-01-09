@@ -244,7 +244,25 @@ namespace JayTom.Dws.Interface.Jtexpress {
                 var nowDate = DateTime.Now;
                 string resultContent;
                 var method = "/opa/smart/scan/uploadUnloadingArrivalData";
-                var data = new {
+                var data = new object[]
+                {
+                    new
+                    {
+                        listld = $"{UserInfo.NetworkCode}{new DateTimeOffset(nowDate).ToUnixTimeMilliseconds()}",
+                        waybillld = barcode,
+                        scanTime = $"{nowDate:yyyy-MM-dd HH:mm:ss}",
+                        scanTypeCode = scanTypeCode,
+                        weight = weight,
+                        length = length,
+                        wide = width,
+                        high = height,
+                        transportTypeCode = transportTypeCode,
+                        scanPda = scanPda,
+                        scanType = scanType,
+                        weightFlag = weightFlag
+                    }
+                };
+                /*var data = new {
                     listld = $"{UserInfo.NetworkCode}{new DateTimeOffset(nowDate).ToUnixTimeMilliseconds()}",
                     waybillld = barcode,
                     scanTime = $"{nowDate:yyyy-MM-dd HH:mm:ss}",
@@ -257,7 +275,7 @@ namespace JayTom.Dws.Interface.Jtexpress {
                     scanPda = scanPda,
                     scanType = scanType,
                     weightFlag = weightFlag
-                };
+                };*/
                 //using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
                 using var httpClient = new HttpClient();
                 httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut);
@@ -311,13 +329,24 @@ namespace JayTom.Dws.Interface.Jtexpress {
                 var nowDate = DateTime.Now;
                 string resultContent;
                 var method = "/opa/smart/scan/uploadDeliveryOutStockData";
-                var data = new {
+                var data = new object[]
+                {
+                    new
+                    {
+                        listld = $"{UserInfo.NetworkCode}{new DateTimeOffset(nowDate).ToUnixTimeMilliseconds()}",
+                        waybillld = barcode,
+                        scanTime = $"{nowDate:yyyy-MM-dd HH:mm:ss}",
+                        deliveryCode = string.Empty,
+                        scanPda = scanPda,
+                    }
+                };
+                /*var data = new {
                     listld = $"{UserInfo.NetworkCode}{new DateTimeOffset(nowDate).ToUnixTimeMilliseconds()}",
                     waybillld = barcode,
                     scanTime = $"{nowDate:yyyy-MM-dd HH:mm:ss}",
                     deliveryCode = string.Empty,
                     scanPda = scanPda,
-                };
+                };*/
                 //using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
                 using var httpClient = new HttpClient();
                 httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut);

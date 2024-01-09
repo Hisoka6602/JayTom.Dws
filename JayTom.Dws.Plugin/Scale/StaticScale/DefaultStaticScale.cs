@@ -195,22 +195,24 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
                         _weightQueue.TryDequeue(out _);
                     }
 
-                    if (_weightQueue.Max() - _weightQueue.Min() <= _defaultStaticScaleValueParameters.BalanceQty &&
-                        _weightQueue.Max() <= _defaultStaticScaleValueParameters.MaxWeight && _weightQueue.Min() >= _defaultStaticScaleValueParameters.MinWeight) {
-                        StabledTime = DateTime.Now;
-                        var weight = _weightQueue.GroupBy(x => x)
-                            .OrderByDescending(g => g.Count())
-                            .Select(g => g.Key)
-                            .FirstOrDefault();
-                        OnStabledWeight(weight);
-                        //返回原文
-                        OnWeightStabilized(new WeightChangedEventArgs() {
-                            Format = WeightFormat,
-                            FormattedWeight = weight,
-                            OriginalContent = string.Join(",", _weightQueue.ToList()),
-                            Type = WeightType.Static
-                        });
-                        _weightQueue.Clear();
+                    if (_weightQueue.Count >= _defaultStaticScaleValueParameters.BalanceCount) {
+                        if (_weightQueue.Max() - _weightQueue.Min() <= _defaultStaticScaleValueParameters.BalanceQty &&
+                            _weightQueue.Max() <= _defaultStaticScaleValueParameters.MaxWeight && _weightQueue.Min() >= _defaultStaticScaleValueParameters.MinWeight) {
+                            StabledTime = DateTime.Now;
+                            var weight = _weightQueue.GroupBy(x => x)
+                                .OrderByDescending(g => g.Count())
+                                .Select(g => g.Key)
+                                .FirstOrDefault();
+                            OnStabledWeight(weight);
+                            //返回原文
+                            OnWeightStabilized(new WeightChangedEventArgs() {
+                                Format = WeightFormat,
+                                FormattedWeight = weight,
+                                OriginalContent = string.Join(",", _weightQueue.ToList()),
+                                Type = WeightType.Static
+                            });
+                            _weightQueue.Clear();
+                        }
                     }
 
                     if (WeightAdditionalProperties.IsUseMergedWeightTimeout) {
