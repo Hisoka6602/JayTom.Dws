@@ -59,7 +59,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
                             DeviceCode = settingsDto.DeviceCode,
                             RetryCount = settingsDto.RetryCount,
                             RetryInterval = settingsDto.RetryInterval,
-                            SignKey = settingsDto.SignKey
+                            SignKey = settingsDto.SignKey,
+                            OrgCode = settingsDto.OrgCode,
                         };
                     }
                 }
@@ -82,7 +83,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
                             DeviceCode = RoutDataApiInfo.DeviceCode,
                             RetryCount = RoutDataApiInfo.RetryCount,
                             RetryInterval = RoutDataApiInfo.RetryInterval,
-                            SignKey = RoutDataApiInfo.SignKey
+                            SignKey = RoutDataApiInfo.SignKey,
+                            OrgCode = RoutDataApiInfo.OrgCode,
                         })
                     });
                     if (insertOrUpdate) {

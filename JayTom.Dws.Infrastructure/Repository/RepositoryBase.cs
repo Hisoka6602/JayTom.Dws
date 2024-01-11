@@ -7,6 +7,7 @@ using System.Linq.Expressions;
 using Microsoft.Data.SqlClient;
 using JayTom.Dws.Data.Attributes;
 using JayTom.Dws.Domain.Repository;
+using JayTom.Dws.Data.VideoApiData;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -74,7 +75,7 @@ namespace JayTom.Dws.Infrastructure.Repository {
         }
 
         public async Task<bool> Insert(T entity, CancellationToken token) {
-            try {
+            /*try {
                 await using var concardContext = _contextFactory.CreateDbContext();
                 {
                     var name = typeof(T).GetCustomAttribute<TableAttribute>()?.Name;
@@ -113,6 +114,36 @@ namespace JayTom.Dws.Infrastructure.Repository {
                 LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
             }
 
+            return false;*/
+            IDbContextTransaction? contextTransaction = null;
+            try {
+                await using var concardContext = _contextFactory.CreateDbContext();
+                var strategy = concardContext.Database.CreateExecutionStrategy();
+                return await strategy.ExecuteAsync(async () => {
+                    await using (contextTransaction = await concardContext.Database.BeginTransactionAsync(token)) {
+                        if (contextTransaction is not null) {
+                            var videoBarCodeInfoModels = concardContext?.Set<T>();
+                            await videoBarCodeInfoModels.AddAsync(entity, token);
+                            await concardContext?.SaveChangesAsync(token);
+                            await contextTransaction.CommitAsync(token);
+
+                            return true;
+                        }
+                    }
+
+                    return false;
+                });
+            }
+            catch (Win32Exception) {
+                await contextTransaction?.RollbackAsync(token)!;
+            }
+            catch (TaskCanceledException) {
+                await contextTransaction?.RollbackAsync(token)!;
+            }
+            catch (Exception e) {
+                await contextTransaction?.RollbackAsync(token)!;
+                LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
+            }
             return false;
         }
 

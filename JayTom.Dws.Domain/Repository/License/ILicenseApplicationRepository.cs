@@ -8,6 +8,6 @@ using JayTom.Dws.Data.VideoApiData;
 
 namespace JayTom.Dws.Domain.Repository.License {
 
-    public interface ILicenseApplicationRepository : IRepository<LicenseApplicationInfo> {
+    public interface ILicenseApplicationRepository : IMemoryCacheRepository<LicenseApplicationInfo> {
     }
 }

@@ -21,7 +21,7 @@ namespace JayTom.Dws.Data.License {
         /// 修改时间
         /// </summary>
         [Required, Column("ModifyTime"), InsertOrUpdata]
-        public DateTime ModifyTime { get; set; }
+        public DateTime ModifyTime { get; set; } = DateTime.Now;
 
         /// <summary>
         /// 修改IP

@@ -219,7 +219,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                         DeviceCode = routDataApiDto.DeviceCode,
                                         RetryCount = routDataApiDto.RetryCount,
                                         RetryInterval = routDataApiDto.RetryInterval,
-                                        SignKey = routDataApiDto.SignKey
+                                        SignKey = routDataApiDto.SignKey,
+                                        OrgCode = routDataApiDto.OrgCode
                                     };
                                 }
                             }
@@ -564,7 +565,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             DeviceCode = routDataApiDto.DeviceCode,
                             RetryCount = routDataApiDto.RetryCount,
                             RetryInterval = routDataApiDto.RetryInterval,
-                            SignKey = routDataApiDto.SignKey
+                            SignKey = routDataApiDto.SignKey,
+                            OrgCode = routDataApiDto.OrgCode
                         };
                     }
                 }

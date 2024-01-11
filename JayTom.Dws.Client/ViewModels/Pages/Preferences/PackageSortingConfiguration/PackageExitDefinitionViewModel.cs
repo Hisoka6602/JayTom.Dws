@@ -306,6 +306,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                     await Task.Delay(500);
                     if (models?.Any() == true) {
                         //批量添加到数据库
+                        var configInfoModels = await _communicationConnectionConfigRepository.Select(s =>
+                            s.Id > 0, o => o.Id);
+
                         var infoModels = models.Select(s => new PackageExitDefinitionInfoModel {
                             CreateTime = DateTime.Now,
                             ExitName = s.ExitName,
@@ -313,7 +316,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                             ModifyTime = DateTime.Now,
                             Remarks = s.Remarks,
                             Type = s.Type,
-                        }).ToList();
+                            CommunicationConnectionId = configInfoModels.FirstOrDefault(f => f.ConnectionName.Equals(s.CommunicationConnectionName))?.Id ?? 0,
+                            CommunicationConnectionConfigInfo = configInfoModels.FirstOrDefault(f => f.ConnectionName.Equals(s.CommunicationConnectionName))
+                        }).Where(w => w.CommunicationConnectionConfigInfo != null).ToList();
 
                         var insertOrUpdate = await _packageExitDefinitionRepository.InsertRange(infoModels);
                         if (insertOrUpdate) {

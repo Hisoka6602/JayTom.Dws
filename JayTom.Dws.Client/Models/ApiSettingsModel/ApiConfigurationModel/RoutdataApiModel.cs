@@ -14,6 +14,7 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         private int _retryCount;
         private int _retryInterval;
         private string _deviceCode = string.Empty;
+        private string _orgCode = string.Empty;
 
         /// <summary>
         /// Url
@@ -61,6 +62,14 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         public string DeviceCode {
             get => _deviceCode;
             set => SetProperty(ref _deviceCode, value);
+        }
+
+        /// <summary>
+        /// 机构代码
+        /// </summary>
+        public string OrgCode {
+            get => _orgCode;
+            set => SetProperty(ref _orgCode, value);
         }
     }
 }

@@ -24,31 +24,34 @@ namespace JayTom.Dws.Interface.Routdata {
         public async Task<UploadResponse> UploadData(string barcode, double weight, double length = default, double width = default, double height = default,
             double volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default,
             object? other = null, CancellationToken token = default) {
-            var callApiMethod = await CallApiMethod(ApiMethod.MailInfoQuery, barcode, string.Empty, string.Empty,
-                Parameters.DeviceCode, string.Empty, token: token);
-            var orgCode = string.Empty;
+            var callApiMethod = await CallApiMethod(ApiMethod.MailInfoQuery, barcode, "51811101", string.Empty,
+                Parameters.DeviceCode, string.Empty, true, DateTime.Now, token: token);
             var phyBoxCode = string.Empty;
             var theoryBoxCode = string.Empty;
-            var mailInfoQueryResponseContent = callApiMethod.ResponseContent;
-            if (callApiMethod.IsSuccess) {
-                //解析
-                try {
+            var mailInfoQueryResponseContent = callApiMethod.ExceptionMsg;
+            try {
+                if (callApiMethod.IsSuccess) {
+                    //解析
                     var jObject = JObject.Parse(callApiMethod.ResponseContent);
-                    orgCode = jObject?["BODY"]?["201"]?.First?["JGDM"]?.ToString();
+                    //orgCode = jObject?["BODY"]?["201"]?.First?["JGDM"]?.ToString();
                     phyBoxCode = jObject?["BODY"]?["201"]?.First?["WLGK"]?.ToString();
                     theoryBoxCode = jObject?["BODY"]?["201"]?.First?["YLZDONE"]?.ToString();
                 }
-                catch (Exception e) {
-                    mailInfoQueryResponseContent += $"报文解析异常:{e.Message}";
+                else {
+                    var jObject = JObject.Parse(callApiMethod.ResponseContent);
+                    mailInfoQueryResponseContent = $"{jObject?["HEAD"]?["RET_MSG"]?.ToString()}";
                 }
             }
+            catch (Exception e) {
+                mailInfoQueryResponseContent += $"报文解析异常:{e.Message}";
+            }
 
-            PolicyPush(ApiMethod.ScanInfoPush, barcode, orgCode ?? string.Empty, phyBoxCode ?? string.Empty,
+            PolicyPush(ApiMethod.ScanInfoPush, barcode, Parameters.OrgCode, phyBoxCode ?? string.Empty,
                 Parameters.DeviceCode, theoryBoxCode ?? string.Empty,
                 callApiMethod.IsSuccess,
                 callApiMethod.ResponseTime
                 , mailInfoQueryResponseContent, token).ConfigureAwait(false).GetAwaiter();
-            PolicyPush(ApiMethod.PickingInfoPush, barcode, orgCode ?? string.Empty, phyBoxCode ?? string.Empty,
+            PolicyPush(ApiMethod.PickingInfoPush, barcode, Parameters.OrgCode, phyBoxCode ?? string.Empty,
                 Parameters.DeviceCode, theoryBoxCode ?? string.Empty,
                 callApiMethod.IsSuccess,
                 callApiMethod.ResponseTime
@@ -59,31 +62,33 @@ namespace JayTom.Dws.Interface.Routdata {
         public async Task<UploadResponse> UploadData(string barcode, double weight, DateTime scanTime, double length = default, double width = default,
             double height = default, double volume = default, UploadImageInfo? imageInfo = default,
             List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
-            var callApiMethod = await CallApiMethod(ApiMethod.MailInfoQuery, barcode, string.Empty, string.Empty,
-                Parameters.DeviceCode, string.Empty, token: token);
-            var orgCode = string.Empty;
+            var callApiMethod = await CallApiMethod(ApiMethod.MailInfoQuery, barcode, "51811101", string.Empty,
+                Parameters.DeviceCode, string.Empty, true, DateTime.Now, token: token);
             var phyBoxCode = string.Empty;
             var theoryBoxCode = string.Empty;
-            var mailInfoQueryResponseContent = callApiMethod.ResponseContent;
-            if (callApiMethod.IsSuccess) {
-                //解析
-                try {
+            var mailInfoQueryResponseContent = callApiMethod.ExceptionMsg;
+            try {
+                if (callApiMethod.IsSuccess) {
+                    //解析
                     var jObject = JObject.Parse(callApiMethod.ResponseContent);
-                    orgCode = jObject?["BODY"]?["201"]?.First?["JGDM"]?.ToString();
+                    //orgCode = jObject?["BODY"]?["201"]?.First?["JGDM"]?.ToString();
                     phyBoxCode = jObject?["BODY"]?["201"]?.First?["WLGK"]?.ToString();
                     theoryBoxCode = jObject?["BODY"]?["201"]?.First?["YLZDONE"]?.ToString();
                 }
-                catch (Exception e) {
-                    mailInfoQueryResponseContent += $"报文解析异常:{e.Message}";
+                else {
+                    var jObject = JObject.Parse(callApiMethod.ResponseContent);
+                    mailInfoQueryResponseContent = $"{jObject?["HEAD"]?["RET_MSG"]?.ToString()}";
                 }
             }
-
-            PolicyPush(ApiMethod.ScanInfoPush, barcode, orgCode ?? string.Empty, phyBoxCode ?? string.Empty,
+            catch (Exception e) {
+                mailInfoQueryResponseContent += $"报文解析异常:{e.Message}";
+            }
+            PolicyPush(ApiMethod.ScanInfoPush, barcode, Parameters.OrgCode, phyBoxCode ?? string.Empty,
                 Parameters.DeviceCode, theoryBoxCode ?? string.Empty,
                 callApiMethod.IsSuccess,
                 callApiMethod.ResponseTime
                 , mailInfoQueryResponseContent, token).ConfigureAwait(false).GetAwaiter();
-            PolicyPush(ApiMethod.PickingInfoPush, barcode, orgCode ?? string.Empty, phyBoxCode ?? string.Empty,
+            PolicyPush(ApiMethod.PickingInfoPush, barcode, Parameters.OrgCode, phyBoxCode ?? string.Empty,
                 Parameters.DeviceCode, theoryBoxCode ?? string.Empty,
                 callApiMethod.IsSuccess,
                 callApiMethod.ResponseTime
@@ -99,7 +104,7 @@ namespace JayTom.Dws.Interface.Routdata {
                 Parameters.RetryInterval = param.RetryInterval;
                 Parameters.SignKey = param.SignKey;
                 Parameters.TimeOut = param.TimeOut;
-
+                Parameters.OrgCode = param.OrgCode;
                 return Task.FromResult(new KeyValuePair<bool, string>(true, string.Empty));
             }
             else {
@@ -127,8 +132,8 @@ namespace JayTom.Dws.Interface.Routdata {
             string phyBoxCode,
             string deviceCode,
             string theoryBoxCode,
-            bool processingResult = default,
-            DateTime processingTime = default,
+            bool processingResult,
+            DateTime processingTime,
             string mailInfoQueryResponseContent = "",
             CancellationToken token = default) {
             UploadResponse response;
@@ -224,7 +229,7 @@ namespace JayTom.Dws.Interface.Routdata {
                 resultContent = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
                 resultContent = Regex.Unescape(resultContent);
 
-                var jObject = JObject.Parse(requestContent);
+                var jObject = JObject.Parse(resultContent);
 
                 isSuccess = jObject?["HEAD"]?["RET_CODE"]?.ToString()?.Equals("0") == true;
             }
@@ -270,8 +275,8 @@ namespace JayTom.Dws.Interface.Routdata {
             string phyBoxCode,
             string deviceCode,
             string theoryBoxCode,
-            bool processingResult = default,
-            DateTime processingTime = default,
+            bool processingResult,
+            DateTime processingTime,
             string mailInfoQueryResponseContent = "",
             CancellationToken token = default) {
             var waitAndRetryAsync = Policy.HandleResult<UploadResponse>(result => !result.IsSuccess)
@@ -285,7 +290,9 @@ namespace JayTom.Dws.Interface.Routdata {
                         orgCode ?? string.Empty, phyBoxCode, deviceCode, theoryBoxCode, processingResult,
                         processingTime, mailInfoQueryResponseContent, token),
                     ApiMethod.ScanInfoPush => await CallApiMethod(ApiMethod.ScanInfoPush, barcode,
-                        orgCode ?? string.Empty, phyBoxCode, deviceCode, theoryBoxCode, token: token),
+                        orgCode ?? string.Empty, phyBoxCode, deviceCode, theoryBoxCode,
+                        processingResult, processingTime, mailInfoQueryResponseContent, token),
+
                     _ => new UploadResponse()
                 };
             });
@@ -357,6 +364,11 @@ namespace JayTom.Dws.Interface.Routdata {
             /// 设备代码
             /// </summary>
             public string DeviceCode { get; set; } = "51811101007";
+
+            /// <summary>
+            /// 机构代码
+            /// </summary>
+            public string OrgCode { get; set; } = "51811101";
         }
     }
 }

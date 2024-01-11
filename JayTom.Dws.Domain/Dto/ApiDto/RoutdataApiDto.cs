@@ -37,5 +37,10 @@ namespace JayTom.Dws.Domain.Dto.ApiDto {
         /// 设备代码
         /// </summary>
         public string DeviceCode { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 机构代码
+        /// </summary>
+        public string OrgCode { get; set; } = string.Empty;
     }
 }

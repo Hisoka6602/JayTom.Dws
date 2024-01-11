@@ -241,6 +241,38 @@
                                 Text="{Binding RoutDataApiInfo.DeviceCode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                         </Border>
                     </StackPanel>
+                    <!--  机构代码  -->
+                    <StackPanel Orientation="Horizontal">
+                        <!--  图标  -->
+                        <TextBlock
+                            Margin="5,0"
+                            VerticalAlignment="Center"
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="DarkGray"
+                            Text="机构代码:" />
+                        <Border
+                            Margin="5"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Background="#1A696969"
+                            CornerRadius="5">
+                            <TextBox
+                                Width="150"
+                                Height="30"
+                                MaxWidth="500"
+                                Margin="5,0"
+                                materialDesign:TextFieldAssist.HasClearButton="False"
+                                materialDesign:TextFieldAssist.HasFilledTextField="True"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="White"
+                                InputMethod.IsInputMethodEnabled="False"
+                                Text="{Binding RoutDataApiInfo.OrgCode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                        </Border>
+                    </StackPanel>
                 </StackPanel>
             </StackPanel>
         </Border>

@@ -11,7 +11,7 @@ using JayTom.Dws.Domain.Repository.License;
 namespace JayTom.Dws.Infrastructure.Repository.License {
 
     public class LicensePermissionTemplateRepository :
-        RepositoryBase<LicensePermissionTemplateInfo>, ILicensePermissionTemplateRepository {
+        MemoryCacheRepositoryBase<LicensePermissionTemplateInfo>, ILicensePermissionTemplateRepository {
 
         public LicensePermissionTemplateRepository(IDbContextFactory<LicenseApiContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
         }

@@ -1,17 +1,32 @@
 using NLog;
 using NLog.Web;
+using System.Text;
 using Newtonsoft.Json;
 using System.Text.Unicode;
+using JayTom.Dws.Domain.Jwt;
+using JayTom.Dws.Domain.Sign;
 using NLog.Extensions.Logging;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Encodings.Web;
 using JayTom.Dws.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json.Serialization;
+using JayTom.Dws.Infrastructure.Jwt;
+using JayTom.Dws.Infrastructure.Sign;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.FileProviders;
+using JayTom.Dws.Domain.Service.VideoApi;
+using JayTom.Dws.Domain.Repository.License;
+using JayTom.Dws.Domain.Service.LicenseApi;
+using JayTom.Dws.Application.Service.VideoApi;
+using JayTom.Dws.Domain.Repository.VideoApiData;
+using JayTom.Dws.Application.Service.LicenseApi;
+using JayTom.Dws.Infrastructure.Repository.License;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using LogLevel = Microsoft.Extensions.Logging.LogLevel;
+using JayTom.Dws.Infrastructure.Repository.VideoApiData;
 using JayTom.Dws.Infrastructure.SignalR.VideoApi.SignalRMessageHub;
 
 internal class Program {
@@ -37,8 +52,7 @@ internal class Program {
         builder.Services.AddControllersWithViews().AddJsonOptions(options => {
             options.JsonSerializerOptions.Encoder = JavaScriptEncoder.Create(UnicodeRanges.All);
         });
-
-        builder.Services.AddPooledDbContextFactory<VideoApiContext>(options => {
+        builder.Services.AddPooledDbContextFactory<LicenseApiContext>(options => {
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
             options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString))
                 .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTrackingWithIdentityResolution)
@@ -96,8 +110,47 @@ internal class Program {
             options.MaximumParallelInvocationsPerClient = 10;
             options.StreamBufferCapacity = int.MaxValue;
         });
+        //JWT验证
+        builder.Services.Configure<TokenManagement>(builder.Configuration.GetSection("tokenConfig"));
+        var token = builder.Configuration.GetSection("tokenConfig").Get<TokenManagement>();
+        builder.Services.AddAuthentication(x => {
+            x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+            x.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+        }).AddJwtBearer(x => {
+            x.RequireHttpsMetadata = false;
+            x.SaveToken = true;
+            x.TokenValidationParameters = new TokenValidationParameters {
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(token?.Secret ?? string.Empty)),
+                ValidIssuer = token?.Issuer,
+                ValidAudience = token?.Audience,
+                ValidateIssuer = false,
+                ValidateAudience = false
+            };
+        });
+        builder.Services.AddSingleton<IAuthenticateService, TokenIAuthenticateService>();
         //仓储注入
+        {
+            //data
+            {
+                builder.Services.AddSingleton<ILicenseApplicationRepository, LicenseApplicationRepository>();
+                builder.Services.AddSingleton<ILicenseClientBindingRepository, LicenseClientBindingRepository>();
+                builder.Services.AddSingleton<ILicenseCodeRepository, LicenseCodeRepository>();
+                builder.Services.AddSingleton<ILicenseFeatureRepository, LicenseFeatureRepository>();
+                builder.Services.AddSingleton<ILicensePermissionTemplateRepository, LicensePermissionTemplateRepository>();
+                builder.Services.AddSingleton<ILicenseUserDetailsRepository, LicenseUserDetailsRepository>();
+                builder.Services.AddSingleton<ILicenseUserRepository, LicenseUserRepository>();
+            }
+        }
         //Service注入
+        {
+            builder.Services.AddSingleton<ILicenseUserAppService, LicenseUserAppService>();
+            builder.Services.AddSingleton<ILicenseUserService, LicenseUserService>();
+        }
+        //Sign
+        {
+            builder.Services.AddSingleton<ISign, DwsSign>();
+        }
         //后台服务
 
         // Add services to the container.
