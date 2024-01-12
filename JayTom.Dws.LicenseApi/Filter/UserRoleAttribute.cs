@@ -4,9 +4,10 @@ using Microsoft.AspNetCore.Mvc.Filters;
 using JayTom.Dws.Domain.Repository.License;
 
 namespace JayTom.Dws.LicenseApi.Filter {
-
     public class UserRoleAttribute : ActionFilterAttribute {
-        public UserRole Role { get; set; }
+
+        //public UserRole Role { get; set; }
+        public int Role { get; set; }
 
         public override async Task OnActionExecutionAsync(
             ActionExecutingContext context,
@@ -30,7 +31,7 @@ namespace JayTom.Dws.LicenseApi.Filter {
                     return;
                 }
                 else {
-                    if (licenseUserInfo.Role != Role) {
+                    if (((int)licenseUserInfo.Role & Role) == 0) {
                         context.Result = await Task.FromResult(new JsonResult(new { Result = false, Msg = "您无权限访问!" }) { StatusCode = 200 });
                         return;
                     }

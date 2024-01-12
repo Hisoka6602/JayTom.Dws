@@ -20,7 +20,7 @@ namespace JayTom.Dws.Data.License {
         /// </summary>
 
         [Column("LicensePermissionTemplateId")]
-        public long LicensePermissionTemplateId { get; set; }
+        public long? LicensePermissionTemplateId { get; set; }
 
         [ForeignKey("Id")]
         public virtual LicensePermissionTemplateInfo? LicensePermissionTemplate { get; set; }
@@ -38,6 +38,5 @@ namespace JayTom.Dws.Data.License {
         public string Description { get; set; } = string.Empty;
 
         public virtual ICollection<LicenseFeatureInfo>? LicenseFeatureInfos { get; set; }
-        public virtual ICollection<LicenseCodeInfo>? LicenseCodeInfos { get; set; }
     }
 }

@@ -112,7 +112,7 @@ namespace JayTom.Dws.LicenseApi.Controllers {
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
         [Produces("application/json")]
-        [HttpPost("FreezeUser"), Authorize, UserRole(Role = UserRole.SuperAdmin)]
+        [HttpPost("FreezeUser"), Authorize, UserRole(Role = (int)UserRole.SuperAdmin)]
         public async Task<JsonResult> FreezeUser([FromBody] FreezeUserDo param,
             CancellationToken cancellationToken) {
             var (key, value) = await _licenseUserAppService.FreezeUser(param.UserCode,

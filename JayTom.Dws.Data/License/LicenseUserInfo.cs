@@ -63,8 +63,11 @@ namespace JayTom.Dws.Data.License {
         /// 详细信息
         /// </summary>
         public virtual LicenseUserDetailsInfo? UserDetailsInfo { get; set; }
+
+        public ICollection<LicenseCodeInfo>? LicenseCodeInfos { get; set; }
     }
 
+    [Flags]
     public enum UserRole {
 
         /// <summary>
@@ -75,17 +78,17 @@ namespace JayTom.Dws.Data.License {
         /// <summary>
         /// 超级管理员
         /// </summary>
-        SuperAdmin = 1,
+        SuperAdmin = 1 << 0,
 
         /// <summary>
         /// 租户
         /// </summary>
-        Tenant = 2,
+        Tenant = 1 << 1,
 
         /// <summary>
         /// 客户
         /// </summary>
-        Customer = 3
+        Customer = 1 << 2
     }
 
     public enum UserStatus {

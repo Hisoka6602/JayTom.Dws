@@ -22,8 +22,20 @@ namespace JayTom.Dws.Data.License {
         public string TemplateName { get; set; } = string.Empty;
 
         /// <summary>
+        /// 创建人
+        /// </summary>
+        [Required, Column("CreateBy")]
+        public string CreateBy { get; set; } = string.Empty;
+
+        /// <summary>
         /// 应用程序
         /// </summary>
+        [ForeignKey("Id")]
         public virtual LicenseApplicationInfo? LicenseApplicationInfo { get; set; }
+
+        /// <summary>
+        /// 授权码
+        /// </summary>
+        public ICollection<LicenseCodeInfo>? LicenseCodeInfos { get; set; }
     }
 }

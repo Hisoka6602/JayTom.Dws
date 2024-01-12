@@ -28,5 +28,11 @@ namespace JayTom.Dws.Data.License {
         /// </summary>
         [Required, Column("ModifyIp"), InsertOrUpdata]
         public string ModifyIp { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 备注
+        /// </summary>
+        [Required, Column("Remarks"), InsertOrUpdata]
+        public string Remarks { get; set; } = string.Empty;
     }
 }

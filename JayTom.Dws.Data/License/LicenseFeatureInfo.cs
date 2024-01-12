@@ -31,6 +31,12 @@ namespace JayTom.Dws.Data.License {
         public string FeatureName { get; set; } = string.Empty;
 
         /// <summary>
+        /// 功能名称
+        /// </summary>
+        [Required, Column("FeatureGuid")]
+        public string FeatureGuid { get; set; } = string.Empty;
+
+        /// <summary>
         /// 描述
         /// </summary>
         [Required, Column("Description")]
@@ -40,6 +46,6 @@ namespace JayTom.Dws.Data.License {
         /// 是否激活
         /// </summary>
         [Required, Column("IsActive")]
-        public bool IsActive { get; set; }
+        public bool IsActive { get; set; } = true;
     }
 }

@@ -23,9 +23,13 @@ namespace LicenseDBTest.Migrations
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     TemplateName = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
+                    CreateBy = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
                     CreateTime = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     ModifyTime = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     ModifyIp = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Remarks = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4")
                 },
                 constraints: table =>
@@ -55,6 +59,8 @@ namespace LicenseDBTest.Migrations
                     CreateTime = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     ModifyTime = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     ModifyIp = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Remarks = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4")
                 },
                 constraints: table =>
@@ -70,7 +76,7 @@ namespace LicenseDBTest.Migrations
                 {
                     Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    LicensePermissionTemplateId = table.Column<long>(type: "bigint", nullable: false),
+                    LicensePermissionTemplateId = table.Column<long>(type: "bigint", nullable: true),
                     ApplicationName = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     Description = table.Column<string>(type: "longtext", nullable: false)
@@ -78,6 +84,8 @@ namespace LicenseDBTest.Migrations
                     CreateTime = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     ModifyTime = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     ModifyIp = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Remarks = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4")
                 },
                 constraints: table =>
@@ -88,6 +96,50 @@ namespace LicenseDBTest.Migrations
                         column: x => x.LicensePermissionTemplateId,
                         principalSchema: "dbo",
                         principalTable: "App_LicensePermissionTemplateInfo",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "Code_LicenseCodeInfo",
+                schema: "dbo",
+                columns: table => new
+                {
+                    Id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    UserId = table.Column<long>(type: "bigint", nullable: false),
+                    LicensePermissionTemplateInfoId = table.Column<long>(type: "bigint", nullable: false),
+                    LicenseCode = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    MaxClientCount = table.Column<int>(type: "int", nullable: false),
+                    ActivatedClientCount = table.Column<int>(type: "int", nullable: false),
+                    ExpirationDate = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    ClientName = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    IsAvailable = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    CreateTime = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    ModifyTime = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    ModifyIp = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Remarks = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Code_LicenseCodeInfo", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Code_LicenseCodeInfo_App_LicensePermissionTemplateInfo_Licen~",
+                        column: x => x.LicensePermissionTemplateInfoId,
+                        principalSchema: "dbo",
+                        principalTable: "App_LicensePermissionTemplateInfo",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Code_LicenseCodeInfo_Sys_LicenseUserInfo_Id",
+                        column: x => x.Id,
+                        principalSchema: "dbo",
+                        principalTable: "Sys_LicenseUserInfo",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 })
@@ -116,6 +168,8 @@ namespace LicenseDBTest.Migrations
                     CreateTime = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     ModifyTime = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     ModifyIp = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Remarks = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4")
                 },
                 constraints: table =>
@@ -142,12 +196,16 @@ namespace LicenseDBTest.Migrations
                     Pid = table.Column<long>(type: "bigint", nullable: false),
                     FeatureName = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
+                    FeatureGuid = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
                     Description = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     IsActive = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     CreateTime = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     ModifyTime = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     ModifyIp = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Remarks = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4")
                 },
                 constraints: table =>
@@ -158,48 +216,6 @@ namespace LicenseDBTest.Migrations
                         column: x => x.LicenseApplicationInfoId,
                         principalSchema: "dbo",
                         principalTable: "App_LicenseApplicationInfo",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "Code_LicenseCodeInfo",
-                schema: "dbo",
-                columns: table => new
-                {
-                    Id = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    UserId = table.Column<long>(type: "bigint", nullable: false),
-                    LicenseApplicationInfoId = table.Column<long>(type: "bigint", nullable: false),
-                    LicenseCode = table.Column<string>(type: "longtext", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    MaxClientCount = table.Column<int>(type: "int", nullable: false),
-                    ActivatedClientCount = table.Column<int>(type: "int", nullable: false),
-                    ExpirationDate = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    ClientName = table.Column<string>(type: "longtext", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    IsAvailable = table.Column<bool>(type: "tinyint(1)", nullable: false),
-                    CreateTime = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    ModifyTime = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    ModifyIp = table.Column<string>(type: "longtext", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4")
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Code_LicenseCodeInfo", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Code_LicenseCodeInfo_App_LicenseApplicationInfo_LicenseAppli~",
-                        column: x => x.LicenseApplicationInfoId,
-                        principalSchema: "dbo",
-                        principalTable: "App_LicenseApplicationInfo",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Code_LicenseCodeInfo_Sys_LicenseUserInfo_Id",
-                        column: x => x.Id,
-                        principalSchema: "dbo",
-                        principalTable: "Sys_LicenseUserInfo",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 })
@@ -223,6 +239,8 @@ namespace LicenseDBTest.Migrations
                     CreateTime = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     ModifyTime = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     ModifyIp = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Remarks = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4")
                 },
                 constraints: table =>
@@ -265,10 +283,10 @@ namespace LicenseDBTest.Migrations
                 column: "LicenseCodeId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Code_LicenseCodeInfo_LicenseApplicationInfoId",
+                name: "IX_Code_LicenseCodeInfo_LicensePermissionTemplateInfoId",
                 schema: "dbo",
                 table: "Code_LicenseCodeInfo",
-                column: "LicenseApplicationInfoId");
+                column: "LicensePermissionTemplateInfoId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Sys_LicenseUserDetailsInfo_UserId",
@@ -293,19 +311,19 @@ namespace LicenseDBTest.Migrations
                 schema: "dbo");
 
             migrationBuilder.DropTable(
-                name: "Code_LicenseCodeInfo",
-                schema: "dbo");
-
-            migrationBuilder.DropTable(
                 name: "App_LicenseApplicationInfo",
                 schema: "dbo");
 
             migrationBuilder.DropTable(
-                name: "Sys_LicenseUserInfo",
+                name: "Code_LicenseCodeInfo",
                 schema: "dbo");
 
             migrationBuilder.DropTable(
                 name: "App_LicensePermissionTemplateInfo",
+                schema: "dbo");
+
+            migrationBuilder.DropTable(
+                name: "Sys_LicenseUserInfo",
                 schema: "dbo");
         }
     }

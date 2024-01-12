@@ -13,16 +13,16 @@ namespace JayTom.Dws.Data.License {
     public class LicenseCodeInfo : BaseLicenseModel {
 
         [Column("UserId")]
-        public long UserId { get; set; }
+        public long? UserId { get; set; }
 
         [ForeignKey("Id")]
         public virtual LicenseUserInfo? UserInfo { get; set; }
 
-        [Column("LicenseApplicationInfoId")]
-        public long LicenseApplicationInfoId { get; set; }
+        [Column("LicensePermissionTemplateInfoId")]
+        public long? LicensePermissionTemplateInfoId { get; set; }
 
         [ForeignKey("Id")]
-        public virtual LicenseApplicationInfo? LicenseApplicationInfo { get; set; }
+        public virtual LicensePermissionTemplateInfo? LicensePermissionTemplateInfo { get; set; }
 
         /// <summary>
         /// 授权码
@@ -34,13 +34,13 @@ namespace JayTom.Dws.Data.License {
         /// 客户端上限数量
         /// </summary>
         [Required, Column("MaxClientCount"), InsertOrUpdata]
-        public int MaxClientCount { get; set; }
+        public int MaxClientCount { get; set; } = 0;
 
         /// <summary>
         /// 已激活数量
         /// </summary>
         [Required, Column("ActivatedClientCount"), InsertOrUpdata]
-        public int ActivatedClientCount { get; set; }
+        public int ActivatedClientCount { get; set; } = 0;
 
         /// <summary>
         /// 到期时间
@@ -58,7 +58,7 @@ namespace JayTom.Dws.Data.License {
         /// 是否可用
         /// </summary>
         [Required, Column("IsAvailable"), InsertOrUpdata]
-        public bool IsAvailable { get; set; }
+        public bool IsAvailable { get; set; } = true;
 
         public ICollection<LicenseClientBindingInfo>? LicenseClientBindingInfo { get; set; }
     }

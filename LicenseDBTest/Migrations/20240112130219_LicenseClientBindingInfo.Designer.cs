@@ -2,14 +2,16 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace LicenseDBTest.Migrations
 {
     [DbContext(typeof(Program.LicenseApiContext1))]
-    partial class LicenseApiContext1ModelSnapshot : ModelSnapshot
+    [Migration("20240112130219_LicenseClientBindingInfo")]
+    partial class LicenseClientBindingInfo
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -149,7 +151,7 @@ namespace LicenseDBTest.Migrations
                         .HasColumnType("longtext")
                         .HasColumnName("LicenseCode");
 
-                    b.Property<long?>("LicensePermissionTemplateInfoId")
+                    b.Property<long>("LicensePermissionTemplateInfoId")
                         .HasColumnType("bigint")
                         .HasColumnName("LicensePermissionTemplateInfoId");
 
@@ -171,15 +173,13 @@ namespace LicenseDBTest.Migrations
                         .HasColumnType("longtext")
                         .HasColumnName("Remarks");
 
-                    b.Property<long?>("UserId")
+                    b.Property<long>("UserId")
                         .HasColumnType("bigint")
                         .HasColumnName("UserId");
 
                     b.HasKey("Id");
 
                     b.HasIndex("LicensePermissionTemplateInfoId");
-
-                    b.HasIndex("UserId");
 
                     b.ToTable("Code_LicenseCodeInfo", "dbo");
                 });
@@ -443,15 +443,17 @@ namespace LicenseDBTest.Migrations
 
             modelBuilder.Entity("JayTom.Dws.Data.License.LicenseCodeInfo", b =>
                 {
+                    b.HasOne("JayTom.Dws.Data.License.LicenseUserInfo", "UserInfo")
+                        .WithMany()
+                        .HasForeignKey("Id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("JayTom.Dws.Data.License.LicensePermissionTemplateInfo", "LicensePermissionTemplateInfo")
                         .WithMany("LicenseCodeInfos")
                         .HasForeignKey("LicensePermissionTemplateInfoId")
-                        .OnDelete(DeleteBehavior.Cascade);
-
-                    b.HasOne("JayTom.Dws.Data.License.LicenseUserInfo", "UserInfo")
-                        .WithMany("LicenseCodeInfos")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("LicensePermissionTemplateInfo");
 
@@ -499,8 +501,6 @@ namespace LicenseDBTest.Migrations
 
             modelBuilder.Entity("JayTom.Dws.Data.License.LicenseUserInfo", b =>
                 {
-                    b.Navigation("LicenseCodeInfos");
-
                     b.Navigation("UserDetailsInfo");
                 });
 #pragma warning restore 612, 618

@@ -31,12 +31,6 @@ namespace JayTom.Dws.Data.License {
         public string MachineCode { get; set; } = string.Empty;
 
         /// <summary>
-        /// 授权码
-        /// </summary>
-        [Required, Column("LicenseCode"), InsertOrUpdata]
-        public string LicenseCode { get; set; } = string.Empty;
-
-        /// <summary>
         /// 首次激活时间
         /// </summary>
         [Required, Column("FirstActivatedDate"), InsertOrUpdata]

@@ -95,6 +95,7 @@ internal class Program {
             }));
         builder.Services.AddControllers().AddNewtonsoftJson(options => {
             // 格式化返回 JSON
+            options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
             options.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
             options.SerializerSettings.DateTimeZoneHandling = DateTimeZoneHandling.Local; // 设置时区为 UTC
             options.SerializerSettings.DateFormatString = "yyyy-MM-dd HH:mm:ss";
@@ -146,6 +147,12 @@ internal class Program {
         {
             builder.Services.AddSingleton<ILicenseUserAppService, LicenseUserAppService>();
             builder.Services.AddSingleton<ILicenseUserService, LicenseUserService>();
+
+            builder.Services.AddSingleton<ILicenseApplicationAppService, LicenseApplicationAppService>();
+            builder.Services.AddSingleton<ILicenseApplicationService, LicenseApplicationService>();
+
+            builder.Services.AddSingleton<ILicenseCodeAppService, LicenseCodeAppService>();
+            builder.Services.AddSingleton<ILicenseCodeService, LicenseCodeService>();
         }
         //Sign
         {

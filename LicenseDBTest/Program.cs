@@ -76,10 +76,21 @@ internal class Program {
                 .HasForeignKey(n => new { n.LicenseApplicationInfoId })
                 .OnDelete(DeleteBehavior.Cascade);
 
+            /*modelBuilder.Entity<LicensePermissionTemplateInfo>()
+                .HasOne(b => b.LicenseApplicationInfo)
+                .WithMany()
+                .HasForeignKey(b => b.LicenseApplicationInfoId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<LicenseApplicationInfo>()
+                .HasOne(b => b.LicensePermissionTemplate)
+                .WithMany()
+                .HasForeignKey(b => b.LicensePermissionTemplateId);*/
             modelBuilder.Entity<LicensePermissionTemplateInfo>()
                 .HasOne(b => b.LicenseApplicationInfo)
                 .WithOne(n => n.LicensePermissionTemplate)
-                .HasForeignKey<LicenseApplicationInfo>(n => n.LicensePermissionTemplateId);
+                .HasForeignKey<LicenseApplicationInfo>(b => b.LicensePermissionTemplateId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<LicenseCodeInfo>()
                 .HasMany(b => b.LicenseClientBindingInfo)
@@ -87,10 +98,21 @@ internal class Program {
                 .HasForeignKey(n => new { n.LicenseCodeId })
                 .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<LicenseApplicationInfo>()
+            /*
+            modelBuilder.Entity<LicensePermissionTemplateInfo>()
                 .HasMany(b => b.LicenseCodeInfos)
-                .WithOne(n => n.LicenseApplicationInfo)
-                .HasForeignKey(n => new { n.LicenseApplicationInfoId })
+                .WithOne(n => n.LicensePermissionTemplateInfo)
+                .HasForeignKey(n => new { n.LicensePermissionTemplateInfoId })
+                .OnDelete(DeleteBehavior.Cascade);*/
+            modelBuilder.Entity<LicenseCodeInfo>()
+                .HasOne(n => n.LicensePermissionTemplateInfo)
+                .WithMany(b => b.LicenseCodeInfos)
+                .HasForeignKey(n => n.LicensePermissionTemplateInfoId)
+                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<LicenseCodeInfo>()
+                .HasOne(n => n.UserInfo)
+                .WithMany(b => b.LicenseCodeInfos)
+                .HasForeignKey(n => n.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
         }
     }

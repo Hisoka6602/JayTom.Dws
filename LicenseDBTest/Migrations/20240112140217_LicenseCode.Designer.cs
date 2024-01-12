@@ -8,8 +8,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LicenseDBTest.Migrations
 {
     [DbContext(typeof(Program.LicenseApiContext1))]
-    [Migration("20240111042018_Migrations")]
-    partial class Migrations
+    [Migration("20240112140217_LicenseCode")]
+    partial class LicenseCode
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -39,7 +39,7 @@ namespace LicenseDBTest.Migrations
                         .HasColumnType("longtext")
                         .HasColumnName("Description");
 
-                    b.Property<long>("LicensePermissionTemplateId")
+                    b.Property<long?>("LicensePermissionTemplateId")
                         .HasColumnType("bigint")
                         .HasColumnName("LicensePermissionTemplateId");
 
@@ -51,6 +51,11 @@ namespace LicenseDBTest.Migrations
                     b.Property<DateTime>("ModifyTime")
                         .HasColumnType("datetime(6)")
                         .HasColumnName("ModifyTime");
+
+                    b.Property<string>("Remarks")
+                        .IsRequired()
+                        .HasColumnType("longtext")
+                        .HasColumnName("Remarks");
 
                     b.HasKey("Id");
 
@@ -79,11 +84,6 @@ namespace LicenseDBTest.Migrations
                         .HasColumnType("datetime(6)")
                         .HasColumnName("LastVerifiedDate");
 
-                    b.Property<string>("LicenseCode")
-                        .IsRequired()
-                        .HasColumnType("longtext")
-                        .HasColumnName("LicenseCode");
-
                     b.Property<long>("LicenseCodeId")
                         .HasColumnType("bigint")
                         .HasColumnName("LicenseCodeId");
@@ -101,6 +101,11 @@ namespace LicenseDBTest.Migrations
                     b.Property<DateTime>("ModifyTime")
                         .HasColumnType("datetime(6)")
                         .HasColumnName("ModifyTime");
+
+                    b.Property<string>("Remarks")
+                        .IsRequired()
+                        .HasColumnType("longtext")
+                        .HasColumnName("Remarks");
 
                     b.Property<long>("UserId")
                         .HasColumnType("bigint")
@@ -141,14 +146,14 @@ namespace LicenseDBTest.Migrations
                         .HasColumnType("tinyint(1)")
                         .HasColumnName("IsAvailable");
 
-                    b.Property<long>("LicenseApplicationInfoId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("LicenseApplicationInfoId");
-
                     b.Property<string>("LicenseCode")
                         .IsRequired()
                         .HasColumnType("longtext")
                         .HasColumnName("LicenseCode");
+
+                    b.Property<long?>("LicensePermissionTemplateInfoId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("LicensePermissionTemplateInfoId");
 
                     b.Property<int>("MaxClientCount")
                         .HasColumnType("int")
@@ -163,13 +168,18 @@ namespace LicenseDBTest.Migrations
                         .HasColumnType("datetime(6)")
                         .HasColumnName("ModifyTime");
 
-                    b.Property<long>("UserId")
+                    b.Property<string>("Remarks")
+                        .IsRequired()
+                        .HasColumnType("longtext")
+                        .HasColumnName("Remarks");
+
+                    b.Property<long?>("UserId")
                         .HasColumnType("bigint")
                         .HasColumnName("UserId");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("LicenseApplicationInfoId");
+                    b.HasIndex("LicensePermissionTemplateInfoId");
 
                     b.ToTable("Code_LicenseCodeInfo", "dbo");
                 });
@@ -189,6 +199,11 @@ namespace LicenseDBTest.Migrations
                         .IsRequired()
                         .HasColumnType("longtext")
                         .HasColumnName("Description");
+
+                    b.Property<string>("FeatureGuid")
+                        .IsRequired()
+                        .HasColumnType("longtext")
+                        .HasColumnName("FeatureGuid");
 
                     b.Property<string>("FeatureName")
                         .IsRequired()
@@ -216,6 +231,11 @@ namespace LicenseDBTest.Migrations
                         .HasColumnType("bigint")
                         .HasColumnName("Pid");
 
+                    b.Property<string>("Remarks")
+                        .IsRequired()
+                        .HasColumnType("longtext")
+                        .HasColumnName("Remarks");
+
                     b.HasKey("Id");
 
                     b.HasIndex("LicenseApplicationInfoId");
@@ -230,6 +250,11 @@ namespace LicenseDBTest.Migrations
                         .HasColumnType("bigint")
                         .HasColumnName("Id");
 
+                    b.Property<string>("CreateBy")
+                        .IsRequired()
+                        .HasColumnType("longtext")
+                        .HasColumnName("CreateBy");
+
                     b.Property<DateTime>("CreateTime")
                         .HasColumnType("datetime(6)")
                         .HasColumnName("CreateTime");
@@ -242,6 +267,11 @@ namespace LicenseDBTest.Migrations
                     b.Property<DateTime>("ModifyTime")
                         .HasColumnType("datetime(6)")
                         .HasColumnName("ModifyTime");
+
+                    b.Property<string>("Remarks")
+                        .IsRequired()
+                        .HasColumnType("longtext")
+                        .HasColumnName("Remarks");
 
                     b.Property<string>("TemplateName")
                         .IsRequired()
@@ -303,6 +333,11 @@ namespace LicenseDBTest.Migrations
                         .HasColumnType("datetime(6)")
                         .HasColumnName("ModifyTime");
 
+                    b.Property<string>("Remarks")
+                        .IsRequired()
+                        .HasColumnType("longtext")
+                        .HasColumnName("Remarks");
+
                     b.Property<long>("UserId")
                         .HasColumnType("bigint")
                         .HasColumnName("UserId");
@@ -349,6 +384,11 @@ namespace LicenseDBTest.Migrations
                         .HasColumnType("bigint")
                         .HasColumnName("Pid");
 
+                    b.Property<string>("Remarks")
+                        .IsRequired()
+                        .HasColumnType("longtext")
+                        .HasColumnName("Remarks");
+
                     b.Property<int>("Role")
                         .HasColumnType("int")
                         .HasColumnName("Role");
@@ -377,8 +417,7 @@ namespace LicenseDBTest.Migrations
                     b.HasOne("JayTom.Dws.Data.License.LicensePermissionTemplateInfo", "LicensePermissionTemplate")
                         .WithOne("LicenseApplicationInfo")
                         .HasForeignKey("JayTom.Dws.Data.License.LicenseApplicationInfo", "LicensePermissionTemplateId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.Navigation("LicensePermissionTemplate");
                 });
@@ -410,13 +449,12 @@ namespace LicenseDBTest.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("JayTom.Dws.Data.License.LicenseApplicationInfo", "LicenseApplicationInfo")
+                    b.HasOne("JayTom.Dws.Data.License.LicensePermissionTemplateInfo", "LicensePermissionTemplateInfo")
                         .WithMany("LicenseCodeInfos")
-                        .HasForeignKey("LicenseApplicationInfoId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("LicensePermissionTemplateInfoId")
+                        .OnDelete(DeleteBehavior.Cascade);
 
-                    b.Navigation("LicenseApplicationInfo");
+                    b.Navigation("LicensePermissionTemplateInfo");
 
                     b.Navigation("UserInfo");
                 });
@@ -445,8 +483,6 @@ namespace LicenseDBTest.Migrations
 
             modelBuilder.Entity("JayTom.Dws.Data.License.LicenseApplicationInfo", b =>
                 {
-                    b.Navigation("LicenseCodeInfos");
-
                     b.Navigation("LicenseFeatureInfos");
                 });
 
@@ -458,6 +494,8 @@ namespace LicenseDBTest.Migrations
             modelBuilder.Entity("JayTom.Dws.Data.License.LicensePermissionTemplateInfo", b =>
                 {
                     b.Navigation("LicenseApplicationInfo");
+
+                    b.Navigation("LicenseCodeInfos");
                 });
 
             modelBuilder.Entity("JayTom.Dws.Data.License.LicenseUserInfo", b =>
