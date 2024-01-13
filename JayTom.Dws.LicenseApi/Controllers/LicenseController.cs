@@ -66,9 +66,13 @@ namespace JayTom.Dws.LicenseApi.Controllers {
          UserStatus(Status = UserStatus.Active),
          UserRole(Role = (int)(UserRole.SuperAdmin | UserRole.Tenant)),
          Authorize]
-        public async Task<JsonResult> FreezeLicenseCode([FromBody] LoginDo param,
+        public async Task<JsonResult> FreezeLicenseCode([FromBody] FreezeLicenseCodeDo param,
             CancellationToken cancellationToken) {
-            return new JsonResult("");
+            var code = HttpContext.Response.HttpContext.User.Identity?.Name;
+            var (key, value) = await _licenseCodeAppService.FreezeLicenseCode(code ?? string.Empty, param.LicenseCode, param.IsFreeze,
+                cancellationToken);
+
+            return key ? JsonResultVo.Success(value.ToString() ?? string.Empty) : JsonResultVo.Fail(value.ToString() ?? string.Empty);
         }
 
         [Produces("application/json")]
@@ -76,9 +80,20 @@ namespace JayTom.Dws.LicenseApi.Controllers {
          UserStatus(Status = UserStatus.Active),
          UserRole(Role = (int)(UserRole.SuperAdmin | UserRole.Tenant)),
          Authorize]
-        public async Task<JsonResult> BulkExtendLicenseCodeValidity([FromBody] LoginDo param,
+        public async Task<JsonResult> BulkExtendLicenseCodeValidity([FromBody] BulkExtendLicenseCodeValidityDo param,
             CancellationToken cancellationToken) {
-            return new JsonResult("");
+            var code = HttpContext.Response.HttpContext.User.Identity?.Name;
+            var (key, value) = await _licenseCodeAppService.BulkExtendLicenseCodeValidity(code ?? string.Empty, param.LicenseCodes ?? new List<string>(),
+                param.ExpirationDate, cancellationToken);
+
+            return key ? JsonResultVo.Success(value.ToString() ?? string.Empty) : JsonResultVo.Fail(value.ToString() ?? string.Empty);
+        }
+
+        [HttpPost("DownloadLicenseFile")]
+        public async Task<IActionResult> DownloadLicenseFile([FromBody] DownloadLicenseFileDo param) {
+            //下载授权文件/如果没激活则需要激活(绑定)
+
+            return JsonResultVo.Fail("未实现该方法");
         }
     }
 }

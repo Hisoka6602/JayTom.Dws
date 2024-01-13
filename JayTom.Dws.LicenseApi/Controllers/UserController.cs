@@ -4,7 +4,9 @@ using JayTom.Dws.LicenseApi.Do;
 using JayTom.Dws.LicenseApi.Vo;
 using Microsoft.AspNetCore.Http;
 using JayTom.Dws.LicenseApi.Filter;
+using JayTom.Dws.LicenseApi.Attributes;
 using Microsoft.AspNetCore.Authorization;
+using System.ComponentModel.DataAnnotations;
 using JayTom.Dws.Application.Service.LicenseApi;
 
 namespace JayTom.Dws.LicenseApi.Controllers {
@@ -13,9 +15,12 @@ namespace JayTom.Dws.LicenseApi.Controllers {
     [ApiController]
     public class UserController : ControllerBase {
         private readonly ILicenseUserAppService _licenseUserAppService;
+        private readonly ILogger<UserController> _logger;
 
-        public UserController(ILicenseUserAppService licenseUserAppService) {
+        public UserController(ILicenseUserAppService licenseUserAppService,
+            ILogger<UserController> logger) {
             _licenseUserAppService = licenseUserAppService;
+            _logger = logger;
         }
 
         /// <summary>
@@ -118,6 +123,39 @@ namespace JayTom.Dws.LicenseApi.Controllers {
             var (key, value) = await _licenseUserAppService.FreezeUser(param.UserCode,
                 param.IsFreeze, cancellationToken);
             return key ? JsonResultVo.Success(value.ToString() ?? string.Empty) : JsonResultVo.Fail(value.ToString() ?? string.Empty);
+        }
+
+        /// <summary>
+        /// 修改用户头像
+        /// </summary>
+        /// <param name="imageFile"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        [Produces("application/json")]
+        [HttpPost("ChangeUserIcon"), Authorize]
+        public async Task<JsonResult> ChangeUserIcon([Required(ErrorMessage = "图片不能为空"), Image] IFormFile imageFile,
+            CancellationToken cancellationToken) {
+            var code = HttpContext.Response.HttpContext.User.Identity?.Name;
+            var path = $"{Path.Combine(Directory.GetCurrentDirectory(), "wwwroot")}\\Image";
+            if (!Directory.Exists(path)) {
+                Directory.CreateDirectory(path);
+            }
+            var imagePath = $"{path}\\{imageFile.FileName}";
+            try {
+                await using (var stream = new FileStream(imagePath, FileMode.OpenOrCreate, FileAccess.ReadWrite)) {
+                    await imageFile.CopyToAsync(stream, cancellationToken);
+                    await Task.Yield();
+                }
+
+                var iconPath = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}/Scr/Image/{imageFile.FileName}";
+
+                var (key, value) = await _licenseUserAppService.SetUserIcon(code ?? string.Empty, iconPath, cancellationToken);
+                return key ? JsonResultVo.Success(value.ToString() ?? string.Empty) : JsonResultVo.Fail(value.ToString() ?? string.Empty);
+            }
+            catch (Exception e) {
+                _logger.LogError($"图片上传异常:{e}");
+            }
+            return JsonResultVo.Fail("图片上传失败!");
         }
     }
 }

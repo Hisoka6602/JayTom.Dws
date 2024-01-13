@@ -95,5 +95,17 @@ namespace JayTom.Dws.Application.Service.LicenseApi {
             string userCode,
             bool isFreeze,
             CancellationToken token);
+
+        /// <summary>
+        /// 设置用户头像
+        /// </summary>
+        /// <param name="userCode"></param>
+        /// <param name="iconUrlPath"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        public Task<KeyValuePair<bool, object>> SetUserIcon(
+            string userCode,
+            string iconUrlPath,
+            CancellationToken token);
     }
 }

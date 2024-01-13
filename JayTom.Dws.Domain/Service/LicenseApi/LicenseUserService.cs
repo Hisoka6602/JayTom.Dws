@@ -119,5 +119,17 @@ namespace JayTom.Dws.Domain.Service.LicenseApi {
             }
             return new KeyValuePair<bool, object>(false, "账号不存在!");
         }
+
+        public async Task<KeyValuePair<bool, object>> SetUserIcon(string userCode, string iconUrlPath, CancellationToken token) {
+            var licenseUserInfo = await _licenseUserRepository.FirstOrDefault(f =>
+                f.UserCode.Equals(userCode), token);
+            if (licenseUserInfo is not null) {
+                licenseUserInfo.UserIcon = iconUrlPath;
+                var update = await _licenseUserRepository.Update(licenseUserInfo, token);
+
+                return new KeyValuePair<bool, object>(update, $"设置{(update ? "成功" : "失败")}");
+            }
+            return new KeyValuePair<bool, object>(false, "账号不存在!");
+        }
     }
 }

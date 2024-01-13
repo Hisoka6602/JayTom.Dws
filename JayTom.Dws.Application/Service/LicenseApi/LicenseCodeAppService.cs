@@ -33,12 +33,13 @@ namespace JayTom.Dws.Application.Service.LicenseApi {
             return _licenseCodeService.ExtendLicenseCodeValidity(userCode, licenseCode, expirationDate, token);
         }
 
-        public Task<KeyValuePair<bool, object>> FreezeLicenseCode(CancellationToken token) {
-            throw new NotImplementedException();
+        public Task<KeyValuePair<bool, object>> FreezeLicenseCode(string userCode, string licenseCode, bool isFreeze, CancellationToken token) {
+            return _licenseCodeService.FreezeLicenseCode(userCode, licenseCode, isFreeze, token);
         }
 
-        public Task<KeyValuePair<bool, object>> BulkExtendLicenseCodeValidity(CancellationToken token) {
-            throw new NotImplementedException();
+        public Task<KeyValuePair<bool, object>> BulkExtendLicenseCodeValidity(string userCode, List<string> licenseCodes, DateTime expirationDate,
+            CancellationToken token) {
+            return _licenseCodeService.BulkExtendLicenseCodeValidity(userCode, licenseCodes, expirationDate, token);
         }
     }
 }

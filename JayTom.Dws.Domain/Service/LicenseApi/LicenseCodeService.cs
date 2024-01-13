@@ -80,16 +80,73 @@ namespace JayTom.Dws.Domain.Service.LicenseApi {
                     userId = licenseUserInfo.Id;
                 }
 
-                var (key, value) = await _licenseCodeRepository.Details(w =>
-                    userId == 0 || w.UserId.Equals(userId), token);
-
-                if (key && value is List<LicenseCodeInfo> infos) {
-                    if (infos?.Any() == true) {
-                        return new KeyValuePair<bool, object>(true, infos);
-                    }
+                var licenseCodeInfo = await _licenseCodeRepository.FirstOrDefault(w =>
+                    (userId == 0 || w.UserId.Equals(userId)) && w.LicenseCode.Equals(licenseCode), token);
+                if (licenseCodeInfo is not null) {
+                    licenseCodeInfo.ExpirationDate = expirationDate;
+                    var update = await _licenseCodeRepository.Update(licenseCodeInfo, token);
+                    return new KeyValuePair<bool, object>(update, $"操作{(update ? "成功" : "失败")}");
                 }
 
-                return new KeyValuePair<bool, object>(false, "未获取到任何数据");
+                return new KeyValuePair<bool, object>(false, "找不到该授权码!");
+            }
+            else {
+                return new KeyValuePair<bool, object>(false, "您无权限访问");
+            }
+        }
+
+        public async Task<KeyValuePair<bool, object>> FreezeLicenseCode(string userCode, string licenseCode, bool isFreeze, CancellationToken token) {
+            var licenseUserInfo = await _licenseUserRepository.
+                FirstOrDefault(f => f.UserCode.Equals(userCode), token);
+            if (licenseUserInfo is not null) {
+                long userId = 0;
+                if (licenseUserInfo.Role != UserRole.SuperAdmin) {
+                    userId = licenseUserInfo.Id;
+                }
+
+                var licenseCodeInfo = await _licenseCodeRepository.FirstOrDefault(w =>
+                    (userId == 0 || w.UserId.Equals(userId)) && w.LicenseCode.Equals(licenseCode), token);
+                if (licenseCodeInfo is not null) {
+                    licenseCodeInfo.IsAvailable = !isFreeze;
+                    var update = await _licenseCodeRepository.Update(licenseCodeInfo, token);
+                    return new KeyValuePair<bool, object>(update, $"操作{(update ? "成功" : "失败")}");
+                }
+
+                return new KeyValuePair<bool, object>(false, "找不到该授权码!");
+            }
+            else {
+                return new KeyValuePair<bool, object>(false, "您无权限访问");
+            }
+        }
+
+        public async Task<KeyValuePair<bool, object>> BulkExtendLicenseCodeValidity(string userCode, List<string> licenseCodes, DateTime expirationDate,
+            CancellationToken token) {
+            var licenseUserInfo = await _licenseUserRepository.
+                FirstOrDefault(f => f.UserCode.Equals(userCode), token);
+            if (licenseUserInfo is not null) {
+                long userId = 0;
+                if (licenseUserInfo.Role != UserRole.SuperAdmin) {
+                    userId = licenseUserInfo.Id;
+                }
+
+                var licenseCodeInfos = await _licenseCodeRepository
+                    .Select(s =>
+                            (userId == 0 || s.UserId.Equals(userId)) && licenseCodes.Contains(s.LicenseCode),
+                        o => o.Id, token);
+
+                var list = licenseCodeInfos?.Select(s => s.LicenseCode)?.ToList();
+                var excepts = licenseCodes?.Except(list ?? new List<string>())?.ToList();
+
+                if (excepts?.Any() == true) {
+                    return new KeyValuePair<bool, object>(false, $"找不到授权码:{string.Join(",", excepts)}");
+                }
+                foreach (var licenseCodeInfo in licenseCodeInfos ?? new List<LicenseCodeInfo>()) {
+                    licenseCodeInfo.ExpirationDate = expirationDate;
+                }
+
+                var updateRange = await _licenseCodeRepository.UpdateRange(licenseCodeInfos ?? new List<LicenseCodeInfo>(), token);
+
+                return new KeyValuePair<bool, object>(updateRange, $"操作{(updateRange ? "成功" : "失败")}");
             }
             else {
                 return new KeyValuePair<bool, object>(false, "您无权限访问");

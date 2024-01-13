@@ -63,5 +63,9 @@ namespace JayTom.Dws.Application.Service.LicenseApi {
             }
             return new KeyValuePair<bool, object>(false, $"用户不存在");
         }
+
+        public Task<KeyValuePair<bool, object>> SetUserIcon(string userCode, string iconUrlPath, CancellationToken token) {
+            return _licenseUserService.SetUserIcon(userCode, iconUrlPath, token);
+        }
     }
 }

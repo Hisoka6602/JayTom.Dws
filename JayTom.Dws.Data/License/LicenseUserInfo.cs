@@ -60,6 +60,12 @@ namespace JayTom.Dws.Data.License {
         public UserStatus Status { get; set; } = UserStatus.Active;
 
         /// <summary>
+        /// 用户图片
+        /// </summary>
+        [Column("UserIcon")]
+        public string? UserIcon { get; set; }
+
+        /// <summary>
         /// 详细信息
         /// </summary>
         public virtual LicenseUserDetailsInfo? UserDetailsInfo { get; set; }
