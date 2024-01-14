@@ -1,0 +1,28 @@
+﻿@using System.Diagnostics.CodeAnalysis
+<div>
+    <MudCard Style="width:180px;height:180px; position: relative;">
+        <MudCardContent>
+            <MudText Style="font-weight: bold;">@Title</MudText>
+                <MudText Typo="Typo.body2" Class="text-truncate" Style="font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">@Description</MudText>
+
+                <MudImage Style="width: 70px; height: 70px;" Src="images/defaultImage.jpg" Elevation="25" Class="rounded-lg"></MudImage>
+            </MudCardContent>
+            <MudCardActions>
+                <MudTooltip Text="修改">
+                    <MudFab Size="Size.Small" Class="position-absolute" Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Style="left: 0; bottom: 0; margin: 4px;" />
+                </MudTooltip>
+                <MudTooltip Text="删除">
+                    <MudFab Size="Size.Small" Class="position-absolute" Icon="@Icons.Material.Filled.Delete" Color="Color.Dark" Style="right: 0; bottom: 0; margin: 4px;" />
+                </MudTooltip>
+            </MudCardActions>
+        </MudCard>
+    </div>
+    @code {
+    [Parameter] public string Title { get; set; } = "Title";
+
+    [Parameter]
+    public string Description { get; set; } = "Description";
+
+    [Parameter]
+    public string ButtonText { get; set; } = "ButtonText";
+}

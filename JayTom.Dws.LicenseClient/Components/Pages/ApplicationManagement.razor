@@ -1,0 +1,46 @@
+﻿@page "/application-management"
+@using JayTom.Dws.LicenseClient.Models
+@using JayTom.Dws.LicenseClient.Components.Template;
+
+<div style="margin:10px">
+    <MudTooltip Text="Add" Arrow="true" Placement="Placement.Bottom">
+        <MudFab Icon="@Icons.Material.Filled.Apps" Color="Color.Primary" />
+    </MudTooltip>
+</div>
+
+
+<div class="row">
+    @foreach (var story in ApplicationItems) {
+        <div class="col-md-2 mb-4 mx-1">
+            <ApplicationCardTemplate Title="@story.Title" Description="@story.Description" ButtonText="@story.ButtonText" />
+        </div>
+    }
+</div>
+<div style="margin:10px">
+    <MudTooltip Text="Add" Arrow="true" Placement="Placement.Bottom">
+        <MudFab Icon="@Icons.Material.Filled.AddCard" Color="Color.Primary" />
+    </MudTooltip>
+</div>
+
+@code {
+
+    public List<ApplicationItemInfoModel> ApplicationItems { get; set; } = new()
+                                                                                                                                                                                                                                                                                    {
+        new ApplicationItemInfoModel()
+        {
+            Title = "DWS",
+            Description = "DWS分拣系统"
+        },
+        new ApplicationItemInfoModel(){
+            Title = "云端视频",
+            Description = "DWS配套云端视频追溯系统"
+        },
+        new ApplicationItemInfoModel()
+        {
+            Title = "数据云端",
+            Description = "DWS数据云端"
+        },
+        new ApplicationItemInfoModel(),
+    };
+
+}

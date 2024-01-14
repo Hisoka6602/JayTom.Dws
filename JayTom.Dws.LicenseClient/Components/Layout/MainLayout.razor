@@ -26,6 +26,33 @@
 <MudThemeProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
+@*<MudLayout>
+    <MudAppBar Elevation="0">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
+        <MudSpacer />
+        <MudIconButton Icon="@Icons.Custom.Brands.MudBlazor" Color="Color.Inherit" Link="https://mudblazor.com/" Target="_blank" />
+        <MudIconButton Icon="@Icons.Custom.Brands.GitHub" Color="Color.Inherit" Link="https://github.com/MudBlazor/MudBlazor/" Target="_blank" />
+    </MudAppBar>
+    <MudDrawer @bind-Open="_drawerOpen" Elevation="1">
+        <MudDrawerHeader>
+            <MudText Typo="Typo.h6">MudBlazorTemplates1</MudText>
+        </MudDrawerHeader>
+        <NavMenu />
+    </MudDrawer>
+    <MudMainContent>
+        <MudContainer MaxWidth="MaxWidth.Large" Class="my-16 pt-16">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    bool _drawerOpen = true;
+
+    void DrawerToggle() {
+        _drawerOpen = !_drawerOpen;
+    }
+}*@
 <MudLayout>
     <MudDrawer Open="true" Elevation="2" Style="background-color:#594AE2;color:transparent;">
         <MudDrawerHeader>
@@ -37,33 +64,7 @@
                 <span class="iconfont icon-vips" style="color:gold; font-size: 20px; margin-bottom:5px; margin-left:5px;"></span>
             </div>
         </MudDrawerHeader>
-        <MudNavMenu Rounded="true" Margin="Margin.Dense" Color="Color.Surface" Style=" color:white;background-color:transparent">
-            <MudNavLink Class="MudNavLink-active" Match="NavLinkMatch.Prefix">
-                <div style="display:flex; align-items:center;">
-                    <span class="iconfont icon-app" style="font-size: 20px; margin-bottom:5px; margin-right:10px;"></span>
-                    <span>应用管理</span>
-                </div>
-            </MudNavLink>
-            <MudNavLink Class="MudNavLink-active" Match="NavLinkMatch.Prefix">
-                <div style="display:flex; align-items:center;">
-                    <span class="iconfont icon-yonghu" style="font-size: 20px; margin-bottom:5px; margin-right:10px;"></span>
-                    <span>租户管理</span>
-                </div>
-            </MudNavLink>
-            <MudNavLink Class="MudNavLink-active" Match="NavLinkMatch.Prefix">
-                <div style="display:flex; align-items:center;">
-                    <span class="iconfont icon-lingpaiguanli" style="font-size: 20px; margin-bottom:5px; margin-right:10px;"></span>
-                    <span>授权管理</span>
-                </div>
-            </MudNavLink>
-            <MudNavLink Class="MudNavLink-active" Match="NavLinkMatch.Prefix">
-                <div style="display:flex; align-items:center;">
-                    <span class="iconfont icon-shezhi" style="font-size: 20px; margin-bottom:5px; margin-right:10px;"></span>
-                    <span>系统设置</span>
-                </div>
-            </MudNavLink>
-
-        </MudNavMenu>
+        <NavMenu />
     </MudDrawer>
     <MudMainContent Style="padding: 20px;">
         @*三个表*@
@@ -73,140 +74,8 @@
         @*个人信息*@
         @*修改密码*@
 
-        <MudDataGrid Elevation="1" Filterable="false" SortMode="@SortMode.None" Groupable="false" Items="@_elements">
-            <Columns>
-                <PropertyColumn Property="x =>string.Empty" Title="头像" />
-                <PropertyColumn Property="x => x.UserCode" Title="租户代码" />
-                <PropertyColumn Property="x => x.UserName" Title="租户名称" />
-                <PropertyColumn Property="x => x.Phone" Title="租户手机号" />
-                <PropertyColumn Property="x => x.Pid" Title="租户授权码数量" />
-                <PropertyColumn Property="x => x.Status" Title="租户状态" />
-                <TemplateColumn CellClass="d-flex justify-end">
-                    <CellTemplate>
-                        <MudStack Row>
-                            <MudButton Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Primary">取消授权</MudButton>
-                            <MudButton Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Primary">冻结租户</MudButton>
-                        </MudStack>
-                    </CellTemplate>
-                </TemplateColumn>
-            </Columns>
-            <PagerContent>
-                <MudDataGridPager T="LicenseUserInfo" RowsPerPageString="每页行数" />
-            </PagerContent>
-        </MudDataGrid>
+        @Body
     </MudMainContent>
 </MudLayout>
-<style>
-    .MudNavLink-active .mud-nav-link.active:not(.mud-nav-link-disabled) {
-        color: white;
-        font-size: 15px;
-    }
-</style>
-
-@code {
-    private IEnumerable<LicenseUserInfo> _elements = new List<LicenseUserInfo>()
-                                                                                                                                                                                                                                                                        {
-        new LicenseUserInfo()
-        {
-            Phone = "13800013800",
-            Role = 1,
-            Status = 0,
-            UserCode = "Test1",
-            UserName = "测试租户1"
-        },
-        new LicenseUserInfo()
-        {
-            Phone = "13800013800",
-            Role = 1,
-            Status = 0,
-            UserCode = "Test2",
-            UserName = "测试租户2"
-        },
-        new LicenseUserInfo()
-        {
-            Phone = "13800013800",
-            Role = 1,
-            Status = 0,
-            UserCode = "Test3",
-            UserName = "测试租户3"
-        },
-        new LicenseUserInfo()
-        {
-            Phone = "13800013800",
-            Role = 1,
-            Status = 0,
-            UserCode = "Test4",
-            UserName = "测试租户4"
-        },
-        new LicenseUserInfo()
-        {
-            Phone = "13800013800",
-            Role = 1,
-            Status = 0,
-            UserCode = "Test5",
-            UserName = "测试租户5"
-        },
-        new LicenseUserInfo()
-        {
-            Phone = "13800013800",
-            Role = 1,
-            Status = 0,
-            UserCode = "Test6",
-            UserName = "测试租户6"
-        },
-        new LicenseUserInfo()
-        {
-            Phone = "13800013800",
-            Role = 1,
-            Status = 0,
-            UserCode = "Test7",
-            UserName = "测试租户7"
-        },
-    };
 
 
-    public class LicenseUserInfo {
-
-        /// <summary>
-        /// pid
-        /// </summary>
-
-        public long Pid { get; set; }
-
-        /// <summary>
-        /// 用户代码
-        /// </summary>
-
-        public string UserCode { get; set; } = string.Empty;
-
-        /// <summary>
-        /// 用户名
-        /// </summary>
-
-        public string UserName { get; set; } = string.Empty;
-
-        /// <summary>
-        /// 手机号
-        /// </summary>
-
-        public string Phone { get; set; } = string.Empty;
-
-        /// <summary>
-        /// 角色
-        /// </summary>
-
-        public int Role { get; set; }
-
-        /// <summary>
-        /// 用户状态
-        /// </summary>
-
-        public int Status { get; set; }
-
-        /// <summary>
-        /// 用户图片
-        /// </summary>
-
-        public string? UserIcon { get; set; }
-    }
-}
