@@ -21,11 +21,17 @@
         <MudFab Icon="@Icons.Material.Filled.AddCard" Color="Color.Primary" />
     </MudTooltip>
 </div>
-
+<div class="row">
+    @foreach (var story in ApplicationItems) {
+        <div class="col-md-2 mb-4 mx-1">
+            <AuthorizationCardTemplate Title="@story.Title" Description="@story.Description" ButtonText="@story.ButtonText" />
+        </div>
+    }
+</div>
 @code {
 
     public List<ApplicationItemInfoModel> ApplicationItems { get; set; } = new()
-                                                                                                                                                                                                                                                                                    {
+                                                                                                                                                                                                                                                                                                    {
         new ApplicationItemInfoModel()
         {
             Title = "DWS",
