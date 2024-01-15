@@ -20,11 +20,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="MudBlazor" Version="6.11.1" />
+    <Folder Include="ViewModels\" />
+    <Folder Include="wwwroot\_content\MudBlazor\" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="ViewModels\" />
+    <PackageReference Include="MudBlazor" Version="6.12.0" />
   </ItemGroup>
 
 </Project>

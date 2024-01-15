@@ -1,0 +1,72 @@
+﻿@page "/tenant-management"
+@using BlazorApp4.Models
+
+<link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
+<MudCard style="border-radius:60px; width:400px;height:120px;margin-bottom:10px;">
+    <MudCardContent>
+        <div style="display: flex; align-items: center;">
+            <div style=" display: flex; align-items: center; justify-content: center;position: relative; width:90px;height:90px; background-color: rgba(30, 144, 255, 0.1); border-radius: 50%;margin-right:10px">
+                <span class="iconfont icon-yonghu" style="position: relative;color:dodgerblue; font-size: 60px;"></span>
+            </div>
+            <div style=" display: flex;flex-direction: column">
+                <span style="font-size:18px;font-weight:bold">租户管理</span>
+                <span style="color:darkgrey">租户管理</span>
+            </div>
+
+        </div>
+    </MudCardContent>
+
+</MudCard>
+
+<MudDataGrid T="TenantItemInfoModel" Elevation="1" Class="custom-datagrid" Filterable="false" SortMode="@SortMode.None" Groupable="false" Items="@_elements">
+    <Columns>
+        <SelectColumn T="TenantItemInfoModel" />
+        <PropertyColumn Property="x => x.Num" Title="" />
+        <PropertyColumn Property="x => string.Empty" Title="" />
+        <PropertyColumn Property="x => x.UserCode" Title="租户代码" />
+        <PropertyColumn Property="x => x.UserName" Title="租户名称" />
+        <PropertyColumn Property="x => x.Phone" Title="租户手机号" />
+        <PropertyColumn Property="x => x.Status" Title="租户状态" />
+        <PropertyColumn Property="x => x.LicenseCodeCount" Title="租户授权码数量" />
+        <PropertyColumn Property="x => x.RegisterTime" Title="注册时间" />
+        <TemplateColumn CellClass="d-flex justify-center">
+
+            <CellTemplate>
+                <MudStack Row Style="text-align:center">
+                     @*<MudButton Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Primary">取消授权</MudButton>*@
+                     <MudButton Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Primary">冻结租户</MudButton>
+                 </MudStack>
+             </CellTemplate>
+         </TemplateColumn>
+     </Columns>
+     <PagerContent>
+         <MudDataGridPager T="TenantItemInfoModel" DisableRowsPerPage="true" RowsPerPageString="每页行数" />
+     </PagerContent>
+ </MudDataGrid>
+ <style>
+     .custom-datagrid .mud-table-row {
+         height: 30px;
+     }
+
+ </style>
+
+ @code {
+    private List<TenantItemInfoModel> _elements = new() {
+
+    };
+    protected override void OnInitialized() {
+        base.OnInitialized();
+        var tenantItemInfoModels = Enumerable.Range(0, 20).Select(s => new TenantItemInfoModel {
+                Num = s + 1,
+                UserCode = $"用户代码{s}",
+                UserName = $"测试用户名{s + 1}",
+                Phone = "1" + new string(Enumerable.Range(0, 10).Select(_ => new Random().Next(10).ToString()[0]).ToArray()),
+                LicenseCodeCount = new Random().Next(100),
+                RegisterTime = DateTime.Now
+            }).ToList();
+        _elements.AddRange(tenantItemInfoModels);
+    }
+
+
+}
+

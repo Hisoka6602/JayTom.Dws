@@ -1,7 +1,7 @@
 ﻿@page "/tenant-management"
 @using JayTom.Dws.LicenseClient.Models
 
-
+<link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
 <MudCard style="border-radius:60px; width:400px;height:120px;margin-bottom:10px;">
     <MudCardContent>
         <div style="display: flex; align-items: center;">
@@ -18,9 +18,10 @@
 
 </MudCard>
 
-<MudDataGrid Elevation="1" Class="custom-datagrid" Filterable="false" SortMode="@SortMode.None" Groupable="false" Items="@_elements">
+<MudDataGrid T="TenantItemInfoModel" Elevation="1" Class="custom-datagrid" Filterable="false" SortMode="@SortMode.None" Groupable="false" Items="@_elements">
     <Columns>
-        <PropertyColumn Property="x =>x.Num" Title="" />
+        <SelectColumn T="TenantItemInfoModel" />
+        <PropertyColumn Property="x => x.Num" Title="" />
         <PropertyColumn Property="x => string.Empty" Title="" />
         <PropertyColumn Property="x => x.UserCode" Title="租户代码" />
         <PropertyColumn Property="x => x.UserName" Title="租户名称" />
@@ -28,31 +29,28 @@
         <PropertyColumn Property="x => x.Status" Title="租户状态" />
         <PropertyColumn Property="x => x.LicenseCodeCount" Title="租户授权码数量" />
         <PropertyColumn Property="x => x.RegisterTime" Title="注册时间" />
-        <TemplateColumn CellClass="d-flex justify-end" Title="激活/冻结">
-            @*<CellTemplate>
-            <MudSwitch Color="Color.Primary" />
-            </CellTemplate>*@
+        <TemplateColumn CellClass="d-flex justify-center">
+
             <CellTemplate>
-                <MudStack Row>
-                    <MudSwitch Size="@Size.Small" Color="Color.Primary" />
-                    @*<MudButton Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Primary">取消授权</MudButton>
-                    <MudButton Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Primary">冻结租户</MudButton>*@
-                </MudStack>
-            </CellTemplate>
-        </TemplateColumn>
-    </Columns>
-    <PagerContent>
-        <MudDataGridPager T="TenantItemInfoModel" RowsPerPageString="每页行数" />
-    </PagerContent>
-</MudDataGrid>
-<style>
-    .custom-datagrid .mud-table-row {
-        height: 30px;
-    }
+                <MudStack Row Style="text-align:center">
+                     @*<MudButton Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Primary">取消授权</MudButton>*@
+                     <MudButton Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Primary">冻结租户</MudButton>
+                 </MudStack>
+             </CellTemplate>
+         </TemplateColumn>
+     </Columns>
+     <PagerContent>
+         <MudDataGridPager T="TenantItemInfoModel" DisableRowsPerPage="true" RowsPerPageString="每页行数" />
+     </PagerContent>
+ </MudDataGrid>
+ <style>
+     .custom-datagrid .mud-table-row {
+         height: 30px;
+     }
 
-</style>
+ </style>
 
-@code {
+ @code {
     private List<TenantItemInfoModel> _elements = new() {
 
     };
