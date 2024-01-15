@@ -301,6 +301,95 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             _externalDataService.DataSourceEnabled += delegate (object? sender, ExternalDataSourceEventArgs args) {
                 _externalDataSource = args;
             };
+            //外部全量数据
+            _externalDataService.ContentInputReceived += async (sender, args) => {
+                var timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+                if (_communicationsSettingsDto.Type == CommunicationsType.None ||
+                    !_communicationsSettingsDto.DeviceControlSettingsInfo.IsUseCreatePackageByDevice) {
+                    var packageInfo = new PackageInfo() {
+                        Guid = timestamp,
+                        BarCode = args.Barcode,
+                        ScanTime = DateTime.Now,
+                        Timestamp = timestamp,
+                        Weight = args.Weight,
+                        Length = args.Length,
+                        Width = args.Width,
+                        Height = args.Height,
+                        Volume = args.Volume,
+                        CreateTime = DateTime.Now,
+                        IsCreatedByLowerMachine = false,
+                    };
+
+                    //触发全景拍照
+                    var enumerable = _cameras.Where(w => w.BindingType == CameraBindingType.PanoramaCamera);
+                    foreach (var c in enumerable) {
+                        if (c is IIndustrialCamera camera && _deviceService.RunningStatus) {
+                            await camera.TakePhotoAsync(args.Barcode, timestamp);
+                        }
+                    }
+                    packageInfo.PanoramaCameraImageInfo = enumerable?.Select(s => new PanoramaCameraImageInfo {
+                        CameraSerialNumber = s.Info?.SerialNumber ?? string.Empty,
+                    })?.ToList()
+                                                          ?? new List<PanoramaCameraImageInfo>();
+
+                    //判断重量和体积队列
+                    var tryDequeue = false;
+                    do {
+                        tryDequeue = _volumeQueueInfos.TryDequeue(out var volume);
+                        if (tryDequeue && volume is not null &&
+                            DateTime.Now.Subtract(volume.Time).TotalMilliseconds < 500) {
+                            packageInfo.Length = volume.Length;
+                            packageInfo.Width = volume.Width;
+                            packageInfo.Height = volume.Height;
+                            packageInfo.Volume = volume.Volume;
+                            break;
+                        }
+                    } while (tryDequeue && _volumeQueueInfos.Count > 0);
+
+                    do {
+                        tryDequeue = _weightQueueInfos.TryDequeue(out var weight);
+                        if (tryDequeue && weight is not null &&
+                            DateTime.Now.Subtract(weight.Time).TotalMilliseconds < 500) {
+                            packageInfo.Weight = weight.Weight;
+                            break;
+                        }
+                    } while (tryDequeue && _weightQueueInfos.Count > 0);
+                    _packageInfos.Enqueue(packageInfo);
+                    //获取外部数据
+                    //体积
+                    if (_externalDataSource.IsVolumeInput) {
+                        await _externalDataService.GetVolume(args.Barcode);
+                    }
+                    else {
+                        //触发体积测量
+                        var volumeCameras = _cameras?.Where(w => w.BindingType == CameraBindingType.VolumeCamera)?.ToList();
+                        if (volumeCameras?.Any() == true) {
+                            foreach (var volumeCamera in volumeCameras) {
+                                if (volumeCamera is IVolumeCamera vCamera) {
+                                    await vCamera.TriggerMeasurementPhotoAsync(args.Barcode, timestamp, 100);
+                                }
+                            }
+                        }
+                    }
+                }
+                else {
+                    var info = _packageInfos.OrderBy(o => o.CreateTime).FirstOrDefault(f => f.BarCode == null);
+                    if (info != null) {
+                        info.BarCode = args.Barcode;
+                        info.Weight = args.Weight;
+                        info.Length = args.Length;
+                        info.Width = args.Width;
+                        info.Height = args.Height;
+                        info.Volume = args.Volume;
+                        info.ScanTime = DateTime.Now;
+                        info.Timestamp = timestamp;
+                    }
+                }
+                EventAggregator.Instance.Publish(new TriggerPositionEvent() {
+                    IsSuccess = true,
+                    TriggerPosition = TriggerPositionEnum.PackageTrigger
+                });
+            };
             //输入体积
             _externalDataService.VolumeReceived += delegate (object? sender, ExternalVolumeInputEventArgs args) {
                 var info = _packageInfos.OrderBy(o => o.CreateTime).FirstOrDefault(f => f.BarCode.Equals(args.BarCode));
@@ -487,10 +576,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 }
                             }
                         }
-                        EventAggregator.Instance.Publish(new TriggerPositionEvent() {
-                            IsSuccess = true,
-                            TriggerPosition = TriggerPositionEnum.PackageTrigger
-                        });
                     }
                     else {
                         var info = _packageInfos.OrderBy(o => o.CreateTime).FirstOrDefault(f => f.BarCode == null);
@@ -500,6 +585,10 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             info.Timestamp = timestamp;
                         }
                     }
+                    EventAggregator.Instance.Publish(new TriggerPositionEvent() {
+                        IsSuccess = true,
+                        TriggerPosition = TriggerPositionEnum.PackageTrigger
+                    });
                 }
             });
             //配置更改触发事件

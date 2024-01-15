@@ -1,7 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace JayTom.Dws.Client.Service.ExternalDataService {
 
@@ -21,6 +21,11 @@ namespace JayTom.Dws.Client.Service.ExternalDataService {
         /// 获取到外部体积事件
         /// </summary>
         event EventHandler<ExternalVolumeInputEventArgs> VolumeReceived;
+
+        /// <summary>
+        /// 获取外部数据输入事件
+        /// </summary>
+        event EventHandler<ExternalContentInputEventArgs> ContentInputReceived;
 
         /// <summary>
         /// 获取到外部重量事件
@@ -145,5 +150,38 @@ namespace JayTom.Dws.Client.Service.ExternalDataService {
         /// 是否输入图片路径
         /// </summary>
         public bool IsImagePathInput { get; set; }
+    }
+
+    public class ExternalContentInputEventArgs : EventArgs {
+
+        /// <summary>
+        /// 条码
+        /// </summary>
+        public string Barcode { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 重量
+        /// </summary>
+        public float Weight { get; set; }
+
+        /// <summary>
+        /// 长度
+        /// </summary>
+        public float Length { get; set; }
+
+        /// <summary>
+        /// 宽度
+        /// </summary>
+        public float Width { get; set; }
+
+        /// <summary>
+        /// 高度
+        /// </summary>
+        public float Height { get; set; }
+
+        /// <summary>
+        /// 体积
+        /// </summary>
+        public float Volume { get; set; }
     }
 }

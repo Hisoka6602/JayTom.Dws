@@ -5,8 +5,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
 
-namespace JayTom.Dws.Domain.Dto
-{
+namespace JayTom.Dws.Domain.Dto {
 
     public class ContentInputSettingsDto {
 

@@ -293,6 +293,7 @@ namespace JayTom.Dws.Client {
                 services.AddScoped<ITcpCommServer, TouchSocketTcpServer>();
                 services.AddSingleton<ITcpContentOutput>(provider => new TcpContentOutput(new TouchSocketTcpClient(), new TouchSocketTcpServer()));
                 services.AddSingleton<ITcpVolumeInput>(provider => new TcpVolumeInput(new TouchSocketTcpClient(), new TouchSocketTcpServer()));
+                services.AddSingleton<ITcpContentInput>(provider => new TcpContentInput(new TouchSocketTcpClient(), new TouchSocketTcpServer()));
                 services.AddScoped<ISortingSerialPort, SortingSerialPort>();
                 services.AddSingleton<ISortingTcp>(provider => new SortingTcp(new TouchSocketTcpClient(), new TouchSocketTcpServer()));
                 //效验注册
@@ -472,6 +473,7 @@ namespace JayTom.Dws.Client {
 
                         services.AddSingleton(container1.Resolve<ITcpContentOutput>());
                         services.AddSingleton(container1.Resolve<ITcpVolumeInput>());
+                        services.AddSingleton(container1.Resolve<ITcpContentInput>());
 
                         services.AddSingleton(container1.Resolve<IDynamicScale>());
                         services.AddSingleton(container1.Resolve<IStaticScale>());

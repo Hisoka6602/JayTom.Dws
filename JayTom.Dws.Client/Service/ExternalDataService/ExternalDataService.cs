@@ -1,4 +1,5 @@
 ﻿using System;
+using ImTools;
 using System.Linq;
 using Newtonsoft.Json;
 using System.Threading;
@@ -6,6 +7,7 @@ using JayTom.Dws.Domain.Dto;
 using JayTom.Dws.Plugin.Tcp;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using NetTopologySuite.Algorithm;
 using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
@@ -17,13 +19,17 @@ namespace JayTom.Dws.Client.Service.ExternalDataService {
     public class ExternalDataService : IExternalDataService {
         private readonly IConfigRepository _configRepository;
         private readonly ITcpVolumeInput _tcpVolumeInput;
+        private readonly ITcpContentInput _tcpContentInput;
         private VolumeSettingsDto _volumeSettingsDto = new();
+        private ContentInputSettingsDto _contentInputSettingsDto = new();
         private ConcurrentQueue<string> _volumeBarCodeItems = new();
 
         public ExternalDataService(IConfigRepository configRepository,
-            ITcpVolumeInput tcpVolumeInput) {
+            ITcpVolumeInput tcpVolumeInput,
+            ITcpContentInput tcpContentInput) {
             _configRepository = configRepository;
             _tcpVolumeInput = tcpVolumeInput;
+            _tcpContentInput = tcpContentInput;
             _tcpVolumeInput.Exception += delegate (object? sender, Exception exception) {
                 OnExternalDataException(exception);
             };
@@ -41,6 +47,8 @@ namespace JayTom.Dws.Client.Service.ExternalDataService {
         public event EventHandler<ExternalDataSourceEventArgs>? DataSourceEnabled;
 
         public event EventHandler<ExternalVolumeInputEventArgs>? VolumeReceived;
+
+        public event EventHandler<ExternalContentInputEventArgs>? ContentInputReceived;
 
         public event EventHandler<KeyValuePair<bool, string>>? WeightReceived;
 
@@ -132,6 +140,39 @@ namespace JayTom.Dws.Client.Service.ExternalDataService {
                         IsVolumeInput = _volumeSettingsDto.IsUseExternalVolumeInput
                     });
                 }
+
+                var infoModel = await _configRepository.FirstOrDefault(f => f.ConfigName.Equals("ContentInputSettings"), token);
+                if (infoModel is not null) {
+                    _contentInputSettingsDto = JsonConvert.DeserializeObject<ContentInputSettingsDto>(infoModel.Value) ?? new ContentInputSettingsDto();
+
+                    if (_contentInputSettingsDto.IsUseTcpInput) {
+                        if (_contentInputSettingsDto.TcpSettingsInfo.ConnectionMode == TcpConnectionMode.Server) {
+                            //创建服务端
+
+                            if (_tcpContentInput.ConnectionStatus == ConnectionStatus.Connected) {
+                                _tcpContentInput.Close();
+                            }
+                            _tcpContentInput.Communication += TcpContentInputOnCommunication;
+                            var connect = await _tcpContentInput.Connect(_contentInputSettingsDto.TcpSettingsInfo.ServerConfig.IpAddress,
+                                _contentInputSettingsDto.TcpSettingsInfo.ServerConfig.Port, ConnectionType.Server, token: token);
+                            if (!connect) {
+                                OnExternalDataException(new Exception("TCP server creation failed"));
+                            }
+                        }
+                        else {
+                            //创建客户端
+                            if (_tcpContentInput.ConnectionStatus == ConnectionStatus.Connected) {
+                                _tcpContentInput.Close();
+                            }
+                            _tcpContentInput.Communication += TcpContentInputOnCommunication;
+                            var connect = await _tcpContentInput.Connect(_contentInputSettingsDto.TcpSettingsInfo.ClientConfig.IpAddress,
+                                _contentInputSettingsDto.TcpSettingsInfo.ClientConfig.Port, ConnectionType.Client, token: token);
+                            if (!connect) {
+                                OnExternalDataException(new Exception("TCP client creation failed"));
+                            }
+                        }
+                    }
+                }
             }
             catch (Exception e) {
                 OnExternalDataException(e);
@@ -139,6 +180,42 @@ namespace JayTom.Dws.Client.Service.ExternalDataService {
             }
 
             return new KeyValuePair<bool, string>(false, string.Empty);
+        }
+
+        //Tcp内容输入
+        private void TcpContentInputOnCommunication(object? sender, CommunicationInfo e) {
+            if (!string.IsNullOrEmpty(e.Content) && e.Type == CommunicationType.Receive) {
+                //暂时先不管Json格式
+                //默认分隔符= '|'
+                var inputEventArgs = new ExternalContentInputEventArgs();
+                const string separator = "|";
+                var strings = e.Content.Split(separator);
+                //条码、重量、长度、宽度、高度、体积
+                if (strings.Length > 0) {
+                    inputEventArgs.Barcode = strings[0];
+                }
+                if (strings.Length > 1) {
+                    float.TryParse(strings[1], out var weight);
+                    inputEventArgs.Weight = weight;
+                }
+                if (strings.Length > 2) {
+                    float.TryParse(strings[2], out var length);
+                    inputEventArgs.Length = length;
+                }
+                if (strings.Length > 3) {
+                    float.TryParse(strings[3], out var width);
+                    inputEventArgs.Width = width;
+                }
+                if (strings.Length > 4) {
+                    float.TryParse(strings[4], out var height);
+                    inputEventArgs.Height = height;
+                }
+                if (strings.Length > 5) {
+                    float.TryParse(strings[5], out var volume);
+                    inputEventArgs.Volume = volume;
+                }
+                OnContentInputReceived(inputEventArgs);
+            }
         }
 
         private void TcpCommunicationOnCommunication(object? sender, CommunicationInfo e) {
@@ -203,6 +280,12 @@ namespace JayTom.Dws.Client.Service.ExternalDataService {
                     }
                 }
 
+                if (_contentInputSettingsDto.IsUseTcpInput) {
+                    if (_tcpContentInput.ConnectionStatus == ConnectionStatus.Connected) {
+                        _tcpContentInput.Close();
+                        _tcpContentInput.Communication -= TcpContentInputOnCommunication;
+                    }
+                }
                 return new KeyValuePair<bool, string>(true, string.Empty);
             }
             catch (Exception e) {
@@ -224,6 +307,11 @@ namespace JayTom.Dws.Client.Service.ExternalDataService {
         protected virtual async void OnVolumeReceived(ExternalVolumeInputEventArgs e) {
             await Task.Yield();
             VolumeReceived?.Invoke(this, e);
+        }
+
+        protected virtual async void OnContentInputReceived(ExternalContentInputEventArgs e) {
+            await Task.Yield();
+            ContentInputReceived?.Invoke(this, e);
         }
     }
 }
