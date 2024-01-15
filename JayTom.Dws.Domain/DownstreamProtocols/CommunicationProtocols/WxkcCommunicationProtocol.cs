@@ -17,6 +17,7 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
                 var functionData = "00";
                 var interaction = "00";
                 var bytes = HexStringToByteArray(data);
+
                 switch (type) {
                     case FunctionType.SendExit:
                         if (bytes.Length == 2) {

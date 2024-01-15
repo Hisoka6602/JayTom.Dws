@@ -365,7 +365,6 @@ namespace JayTom.Dws.Client {
             base.OnStartup(e);
 
             var container = Container.GetContainer();
-
             {
                 //在这里写默认配置
                 var service = container.GetService<IDefaultConfigurationService>();
@@ -380,7 +379,6 @@ namespace JayTom.Dws.Client {
                 Thread.CurrentThread.CurrentCulture = culture;
                 Thread.CurrentThread.CurrentUICulture = culture;
             }
-
             // 创建主机并注册后台服务
             Task.Run(() => {
                 // 启用硬件加速
@@ -504,6 +502,7 @@ namespace JayTom.Dws.Client {
                         services.AddHostedService<CloudBackgroundService>();//上传云端
                     })
                     .Build();
+
                 _host.Start();
             });
         }

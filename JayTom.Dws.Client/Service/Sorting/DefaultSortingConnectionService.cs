@@ -9,7 +9,9 @@ using TouchSocket.Sockets;
 using JayTom.Dws.Plugin.Tcp;
 using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
+using JayTom.Dws.Data.LocalLog;
 using JayTom.Dws.Data.LocalData;
+using NPOI.SS.Formula.Functions;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using JayTom.Dws.Plugin.Tcp.TcpClient;
@@ -20,7 +22,9 @@ using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Client.Service.Sorting.Communication.TcpComm;
 using JayTom.Dws.Client.Service.Sorting.Communication.SerialComm;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
+using CommunicationType = JayTom.Dws.Plugin.Tcp.CommunicationType;
 using JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig.ConnectionParams;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig.ConnectionParams;
 
@@ -187,6 +191,13 @@ namespace JayTom.Dws.Client.Service.Sorting {
                                 FormatType = communicationInfo.FormatType
                             });
                         };
+                        sortingTcp.Connected += (sender, s) => {
+                            EventAggregator.Instance.Publish(new SortingLogInfoModel {
+                                CreateTime = DateTime.Now,
+                                Message = $"连接:{connectionName},下位机已连接",
+                                Type = LogType.Information
+                            });
+                        };
                         var tcpConfigInfoModel = info.TcpConfigItems?.FirstOrDefault(f => f.Type == 0);
                         if (tcpConfigInfoModel is not null) {
                             var connect = await sortingTcp.Connect(tcpConfigInfoModel.IpAddress, tcpConfigInfoModel.Port,
@@ -254,6 +265,13 @@ namespace JayTom.Dws.Client.Service.Sorting {
                                 FormatType = communicationInfo.FormatType
                             });
                             _replyContentQueue.Enqueue(new KeyValuePair<string, string>(connectionName, communicationInfo.Content));
+                        };
+                        sortingTcp.Connected += (sender, s) => {
+                            EventAggregator.Instance.Publish(new SortingLogInfoModel {
+                                CreateTime = DateTime.Now,
+                                Message = $"连接:{connectionName},下位机已连接",
+                                Type = LogType.Information
+                            });
                         };
                         var tcpConfigInfoModel = info.TcpConfigItems?.FirstOrDefault(f => f.Type != 0);
                         if (tcpConfigInfoModel is not null) {
@@ -646,6 +664,38 @@ namespace JayTom.Dws.Client.Service.Sorting {
         protected virtual async void OnCommunicationInfoEvent(ConnectionCommunicationMessageInfo e) {
             await Task.Yield();
             CommunicationInfoEvent?.Invoke(this, e);
+            if (e is { Type: CommunicationType.Send, ExitName: null }) {
+                EventAggregator.Instance.Publish(new SortingLogInfoModel {
+                    CreateTime = e.Time,
+                    Message = $"连接:{e.ConnectionName},发送内容:{e.Content}",
+                    Type = LogType.Information
+                });
+            }
+            else if (e.Type == CommunicationType.Receive) {
+                var tryGetValue = _connectionInfos.TryGetValue(e.ConnectionName, out var connection);
+                if (tryGetValue && connection is not null) {
+                    if (connection.DeviceCommunicationProtocol is not null) {
+                        var deviceDecodeResult = connection.DeviceCommunicationProtocol.DecodeData(e.Content);
+                        if (deviceDecodeResult is not null) {
+                            OnReceivedInstructionsEvent(new DeviceDecodeResult() {
+                                ProtocolName = deviceDecodeResult.ProtocolName,
+                                KeywordPosition = deviceDecodeResult.KeywordPosition,
+                                Description = deviceDecodeResult.Description,
+                                ExceptionMessage = deviceDecodeResult.ExceptionMessage,
+                                IsException = deviceDecodeResult.IsException,
+                                RawContent = deviceDecodeResult.RawContent,
+                                Keyword = deviceDecodeResult.Keyword,
+                                Type = deviceDecodeResult.Type
+                            });
+                        }
+                    }
+                }
+                EventAggregator.Instance.Publish(new SortingLogInfoModel {
+                    CreateTime = e.Time,
+                    Message = $"连接:{e.ConnectionName},接收内容:{e.Content}",
+                    Type = LogType.Information
+                });
+            }
         }
 
         protected virtual async void OnCommunicationExceptionEvent(Exception e) {
@@ -661,16 +711,31 @@ namespace JayTom.Dws.Client.Service.Sorting {
         protected virtual async void OnHeartbeatError(Exception e) {
             await Task.Yield();
             HeartbeatError?.Invoke(this, e);
+            EventAggregator.Instance.Publish(new SortingLogInfoModel {
+                CreateTime = DateTime.Now,
+                Message = $"心跳包异常",
+                Type = LogType.Exception
+            });
         }
 
         protected virtual async void OnSendError(ExceptionEventArgs e) {
             await Task.Yield();
             SendError?.Invoke(this, e);
+            EventAggregator.Instance.Publish(new SortingLogInfoModel {
+                CreateTime = DateTime.Now,
+                Message = $"发送异常:{e.ExceptionMessage}",
+                Type = LogType.Exception
+            });
         }
 
         protected virtual async void OnDisconnected(ConnectionInfo e) {
             await Task.Yield();
             Disconnected?.Invoke(this, e);
+            EventAggregator.Instance.Publish(new SortingLogInfoModel {
+                CreateTime = DateTime.Now,
+                Message = $"连接:{e.ConnectionName},断开",
+                Type = LogType.Warning
+            });
         }
 
         private byte[] HexStringToByteArray(string hexString) {

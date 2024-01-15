@@ -12,6 +12,7 @@ using System.Windows.Forms;
 using JayTom.Dws.Domain.Dto;
 using MaterialDesignThemes.Wpf;
 using JayTom.Dws.Data.LocalConf;
+using System.Security.Principal;
 using System.Windows.Media.Imaging;
 using JayTom.Dws.Domain.Dto.AppDto;
 using JayTom.Dws.Client.EventMediators;
@@ -201,19 +202,26 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings {
         }
 
         private void SetAutoRun(bool enable) {
+            var isAdministrator = IsAdministrator();
             var mainModuleFileName = Process.GetCurrentProcess().MainModule?.FileName;
             if (!string.IsNullOrEmpty(mainModuleFileName)) {
                 using (var key = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true)) {
                     if (enable) {
                         // 设置开机自动运行
-                        key?.SetValue(mainModuleFileName, System.Reflection.Assembly.GetExecutingAssembly().Location.Replace(".dll", ".exe"));
+                        key?.SetValue("Dws", System.Reflection.Assembly.GetExecutingAssembly().Location.Replace(".dll", ".exe"));
                     }
                     else {
                         // 取消开机自动运行
-                        key?.DeleteValue(mainModuleFileName, false);
+                        key?.DeleteValue("Dws", false);
                     }
                 }
             }
+        }
+
+        public static bool IsAdministrator() {
+            WindowsIdentity identity = WindowsIdentity.GetCurrent();
+            WindowsPrincipal principal = new WindowsPrincipal(identity);
+            return principal.IsInRole(WindowsBuiltInRole.Administrator);
         }
     }
 }

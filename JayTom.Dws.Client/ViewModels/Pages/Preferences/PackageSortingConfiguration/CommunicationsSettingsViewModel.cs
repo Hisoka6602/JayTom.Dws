@@ -623,7 +623,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                                         MaxRetryCount = model?.CommunicationConnectionItem?.DeviceExtensionConfigInfo?.MaxRetryCount ?? 0,
                                         Timeout = model?.CommunicationConnectionItem?.DeviceExtensionConfigInfo?.ValidationTimeout ?? 0,
                                     },
-                                    Protocol = SelectCommunicationProtocol.Value,
+                                    Protocol = model?.CommunicationConnectionItem?.CommunicationProtocol?.Value ?? CommunicationProtocol.None,
                                     DeviceControlSettingsInfo = new DeviceControlSettingsInfo() {
                                         IsUseCreatePackageByDevice = model?.CommunicationConnectionItem?.DeviceExtensionConfigInfo?.CreatePackageByDevice ?? false,
                                         IsUseRemovePackageByDevice = model?.CommunicationConnectionItem?.DeviceExtensionConfigInfo?.RemovePackageByDevice ?? false,
@@ -762,6 +762,40 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                             });
                         if (insertDetailAsync) {
                             //EventAggregator.Instance.Publish(infoModel);
+                            //临时额外保存下位机设置
+
+                            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
+                                ConfigName = "CommunicationsSettings",
+                                Value = JsonConvert.SerializeObject(new CommunicationsSettingsDto() {
+                                    HeartbeatInfo = new HeartbeatInfo() {
+                                        HeartbeatData = model?.CommunicationConnectionItem?.HeartbeatConfigInfo?.HeartbeatContent ?? string.Empty,
+                                        HeartbeatInterval = model?.CommunicationConnectionItem?.HeartbeatConfigInfo?.HeartbeatInterval ?? 0,
+                                        IsHeartbeatEnabled = model?.CommunicationConnectionItem?.HeartbeatConfigInfo?.IsHeartbeatEnabled ?? false,
+                                        IsHeartbeatActive = model?.CommunicationConnectionItem?.HeartbeatConfigInfo?.IsHeartbeatActive ?? false,
+                                    },
+                                    MachineReplyInfo = new MachineReplyInfo() {
+                                        IsVerificationEnabled = model?.CommunicationConnectionItem?.DeviceExtensionConfigInfo?.ValidateDeviceResponse ?? false,
+                                        MaxRetryCount = model?.CommunicationConnectionItem?.DeviceExtensionConfigInfo?.MaxRetryCount ?? 0,
+                                        Timeout = model?.CommunicationConnectionItem?.DeviceExtensionConfigInfo?.ValidationTimeout ?? 0,
+                                    },
+                                    Protocol = model?.CommunicationConnectionItem?.CommunicationProtocol?.Value ?? CommunicationProtocol.None,
+                                    DeviceControlSettingsInfo = new DeviceControlSettingsInfo() {
+                                        IsUseCreatePackageByDevice = model?.CommunicationConnectionItem?.DeviceExtensionConfigInfo?.CreatePackageByDevice ?? false,
+                                        IsUseRemovePackageByDevice = model?.CommunicationConnectionItem?.DeviceExtensionConfigInfo?.RemovePackageByDevice ?? false,
+                                        IsUseStartDeviceByDevice = model?.CommunicationConnectionItem?.DeviceExtensionConfigInfo?.StartRunningByDevice ?? false,
+                                        IsUseStopDeviceByDevice = model?.CommunicationConnectionItem?.DeviceExtensionConfigInfo?.StopRunningByDevice ?? false,
+                                    },
+                                    Type = model?.CommunicationConnectionItem?.CommunicationType.Value ?? CommunicationsType.None,
+                                    IsUsePackageExpiry = model?.CommunicationConnectionItem?.IsUsePackageValidityPeriod ?? false,
+                                    PackageExpiryTime = model?.CommunicationConnectionItem?.ValidityPeriodInMilliseconds ?? 0
+                                })
+                            });
+                            if (insertOrUpdate) {
+                                EventAggregator.Instance.Publish(new SettingsChangedEvent {
+                                    SettingsName = "CommunicationsSettings"
+                                });
+                            }
+
                             CommunicationsSettingsMessageQueue.Enqueue("保存成功");
                         }
                         else {
