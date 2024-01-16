@@ -209,7 +209,6 @@ namespace JayTom.Dws.Ocr.ExpressBill {
         }
 
         private void CopyFiles(string sourceDirectory, string targetDirectory) {
-            return;
             try {
                 // 获取源目录和目标目录中的所有文件
                 var sourceFiles = Directory.GetFiles(sourceDirectory);

@@ -4,13 +4,21 @@ using System.Text;
 using Newtonsoft.Json;
 using System.Net.Http;
 using System.Xml.Linq;
+using System.Text.Json;
+using JayTom.Dws.Plugin;
 using System.Diagnostics;
 using Newtonsoft.Json.Linq;
+using System.ComponentModel;
 using System.Threading.Tasks;
+using JayTom.Dws.Plugin.Excel;
 using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
+using System.Diagnostics.CodeAnalysis;
+using JayTom.Dws.Plugin.Excel.Attributes;
+using static System.Net.Mime.MediaTypeNames;
 using static JayTom.Dws.Interface.Szjy188.SzjyApi;
+using JsonException = Newtonsoft.Json.JsonException;
 
 namespace JayTom.Dws.Interface.Jtexpress {
 
@@ -18,39 +26,103 @@ namespace JayTom.Dws.Interface.Jtexpress {
         private readonly IHttpClientFactory _httpClientFactory;
         public ApiParameter Parameters { get; set; } = new();
         public JtExpressUserInfo UserInfo { get; set; } = new();
+        private static List<ExcelDeliveryCode> _excelDeliveryCodes = new();
+        private IExcel _excel;
 
         public JtExpressApi(IHttpClientFactory httpClientFactory) {
             _httpClientFactory = httpClientFactory;
+            if (_excel is null) {
+                _excel = new NpoiExport();
+            }
+            if (_excelDeliveryCodes?.Any() != true) {
+                //判断文件是否存在
+                var path = $"{AppContext.BaseDirectory}ApiSettingJson\\JtThreeSegmentCodeRout";
+                if (Directory.Exists(path)) {
+                    var excelFile = Directory.GetFiles(path)?.Select(s => new FileInfo(s))
+                        ?.Where(w => w.Extension.Equals(".xlsx"))?.OrderByDescending(o => o.LastWriteTime)
+                        ?.Select(s => s.Name)?.FirstOrDefault();
+                    if (!string.IsNullOrEmpty(excelFile)) {
+                        //读Excel表格内容到列表
+                        //三段码、工号
+                        var models = _excel.ReadExcel<ExcelDeliveryCode>(excelFile,
+                            p => Task.CompletedTask,
+                            e => Task.CompletedTask).GetAwaiter().GetResult();
+                        if (models?.Any() == true) {
+                            _excelDeliveryCodes = models;
+                        }
+                    }
+                }
+            }
         }
 
         public async Task<UploadResponse> UploadData(string barcode, double weight, double length = default, double width = default, double height = default,
             double volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default,
             object? other = null, CancellationToken token = default) {
+            var deliveryCode = string.Empty;
+            var generateSegmentCode = await GenerateSegmentCode(barcode);
+            try {
+                var jtExpressResponseResult = JsonConvert.DeserializeObject<JtExpressResponseResult>(generateSegmentCode.ResponseContent);
+                if (jtExpressResponseResult?.Data is not null) {
+                    var segmentCodeInfos = JsonConvert.DeserializeObject<List<SegmentCodeInfo>>(jtExpressResponseResult.Data.ToString() ?? string.Empty);
+
+                    if (segmentCodeInfos?.Any() == true) {
+                        var segmentCodeInfo = segmentCodeInfos?.FirstOrDefault();
+                        var excelDeliveryCode = _excelDeliveryCodes?.FirstOrDefault(f =>
+                            f.ThirdlyDispatchCode.Equals(segmentCodeInfo?.ThirdlyDispatchCode));
+                        if (excelDeliveryCode is not null) {
+                            deliveryCode = excelDeliveryCode.DeliveryCode;
+                        }
+                    }
+                }
+            }
+            catch {
+                deliveryCode = string.Empty;
+            }
             if (Parameters.BusinessType == BusinessType.ArrivalScan) {
                 ArrivalScan(barcode, weight, DateTime.Now, length, width, height, Parameters.ScanTypeCode
                 , Parameters.TransportTypeCode, Parameters.ScanPda, Parameters.ScanType, Parameters.WeightFlag
                     ).Start();
             }
             else if (Parameters.BusinessType == BusinessType.DepartureScan) {
-                DepartureScan(barcode, Parameters.ScanPda).Start();
+                DepartureScan(barcode, deliveryCode, Parameters.ScanPda).Start();
             }
 
-            return await GenerateSegmentCode(barcode);
+            return generateSegmentCode;
         }
 
         public async Task<UploadResponse> UploadData(string barcode, double weight, DateTime scanTime, double length = default, double width = default,
             double height = default, double volume = default, UploadImageInfo? imageInfo = default,
             List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
+            var deliveryCode = string.Empty;
+            var generateSegmentCode = await GenerateSegmentCode(barcode);
+            try {
+                var jtExpressResponseResult = JsonConvert.DeserializeObject<JtExpressResponseResult>(generateSegmentCode.ResponseContent);
+                if (jtExpressResponseResult?.Data is not null) {
+                    var segmentCodeInfos = JsonConvert.DeserializeObject<List<SegmentCodeInfo>>(jtExpressResponseResult.Data.ToString() ?? string.Empty);
+
+                    if (segmentCodeInfos?.Any() == true) {
+                        var segmentCodeInfo = segmentCodeInfos?.FirstOrDefault();
+                        var excelDeliveryCode = _excelDeliveryCodes?.FirstOrDefault(f =>
+                            f.ThirdlyDispatchCode.Equals(segmentCodeInfo?.ThirdlyDispatchCode));
+                        if (excelDeliveryCode is not null) {
+                            deliveryCode = excelDeliveryCode.DeliveryCode;
+                        }
+                    }
+                }
+            }
+            catch {
+                deliveryCode = string.Empty;
+            }
             if (Parameters.BusinessType == BusinessType.ArrivalScan) {
                 ArrivalScan(barcode, weight, scanTime, length, width, height, Parameters.ScanTypeCode
                     , Parameters.TransportTypeCode, Parameters.ScanPda, Parameters.ScanType, Parameters.WeightFlag
                 ).Start();
             }
             else if (Parameters.BusinessType == BusinessType.DepartureScan) {
-                DepartureScan(barcode, Parameters.ScanPda).Start();
+                DepartureScan(barcode, deliveryCode, Parameters.ScanPda).Start();
             }
 
-            return await GenerateSegmentCode(barcode);
+            return generateSegmentCode;
         }
 
         public Task<KeyValuePair<bool, string>> SetParameters<T>(T parameters) {
@@ -310,9 +382,10 @@ namespace JayTom.Dws.Interface.Jtexpress {
         /// 出仓扫描
         /// </summary>
         /// <param name="barcode"></param>
+        /// <param name="deliveryCode"></param>
         /// <param name="scanPda"></param>
         /// <returns></returns>
-        public async Task DepartureScan(string barcode, string? scanPda = default) {
+        public async Task DepartureScan(string barcode, string deliveryCode, string? scanPda = default) {
             //如果没登录或登录时间超20小时则先登录,
             if (UserInfo.LoginTime is null ||
                 DateTime.Now.Subtract(UserInfo.LoginTime.Value).TotalHours >= 20 ||
@@ -336,7 +409,7 @@ namespace JayTom.Dws.Interface.Jtexpress {
                         listld = $"{UserInfo.NetworkCode}{new DateTimeOffset(nowDate).ToUnixTimeMilliseconds()}",
                         waybillld = barcode,
                         scanTime = $"{nowDate:yyyy-MM-dd HH:mm:ss}",
-                        deliveryCode = string.Empty,
+                        deliveryCode = deliveryCode,
                         scanPda = scanPda,
                     }
                 };
@@ -521,6 +594,21 @@ namespace JayTom.Dws.Interface.Jtexpress {
             /// 业务类型
             /// </summary>
             public BusinessType BusinessType { get; set; }
+        }
+
+        public class ExcelDeliveryCode {
+
+            /// <summary>
+            /// 员工工号
+            /// </summary>
+            [DisplayName("员工工号"), MemberNotNull, ExcelInfo(Width = 4000)]
+            public string DeliveryCode { get; set; } = string.Empty;
+
+            /// <summary>
+            /// 三段码
+            /// </summary>
+            [DisplayName("三段码"), MemberNotNull, ExcelInfo(Width = 4000)]
+            public string ThirdlyDispatchCode { get; set; } = string.Empty;
         }
     }
 }
