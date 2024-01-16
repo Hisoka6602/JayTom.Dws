@@ -1,5 +1,6 @@
 ﻿@page "/authorization-management"
-<MudCard style="border-radius:60px; width:400px;height:120px">
+@using JayTom.Dws.LicenseApiClient.Data.Models
+<MudCard style="border-radius:60px; width:400px;height:120px;margin-bottom:10px;">
     <MudCardContent>
         <div style="display: flex; align-items: center;">
             <div style=" display: flex; align-items: center; justify-content: center;position: relative; width:90px;height:90px; background-color: rgba(30, 144, 255, 0.1); border-radius: 50%;margin-right:10px">
@@ -12,9 +13,85 @@
 
         </div>
     </MudCardContent>
-
 </MudCard>
 
-@code {
+<MudDataGrid Elevation="1" Class="custom-datagrid" Filterable="false" SortMode="@SortMode.None" Groupable="false" Items="@_items">
+    <Columns>
+        <PropertyColumn Property="x => x.Num" Title="" />
+        <PropertyColumn Property="x => x.LicenseCode" Title="授权码" />
+        <PropertyColumn Property="x => x.MaxClientCount" Title="客户端上限数量" />
+        <PropertyColumn Property="x => x.ActivatedClientCount" Title="已激活数量" />
+        <PropertyColumn Property="x => x.ExpirationDate" Title="到期时间" />
+        <TemplateColumn Title="是否可用">
+            <CellTemplate>
+                <MudStack Row Style="text-align:center">
+                     <MudCheckBox Checked="context.Item.IsAvailable" Disabled="true" />
 
+                 </MudStack>
+             </CellTemplate>
+         </TemplateColumn>
+         <TemplateColumn>
+             <CellTemplate>
+                 <MudStack Row Style="text-align:center">
+                     <MudButton Style="border-radius: 15px;" Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Tertiary">详细信息</MudButton>
+                     <MudButton Style="border-radius: 15px;" Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Success">续期</MudButton>
+                     <MudButton Style="border-radius: 15px;" Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Primary">冻结授权码</MudButton>
+                     <MudButton Style="border-radius: 15px;" Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Dark">生成授权文件</MudButton>
+                 </MudStack>
+             </CellTemplate>
+         </TemplateColumn>
+     </Columns>
+     <PagerContent>
+         <MudStack Row Justify="Justify.Center" Style="text-align:center">
+             <div style="flex-grow: 2; flex-basis: 0; text-align: right;">
+                 <MudFab Icon="@Icons.Material.Filled.Add" Color="Color.Primary" />
+             </div>
+             <div style="flex-grow: 1; text-align: right;">
+                 <MudDataGridPager Style="border-top: none" T="LicenseCodeItemInfoModel" DisableRowsPerPage="true" />
+             </div>
+         </MudStack>
+     </PagerContent>
+ </MudDataGrid>
+ <style>
+     .custom-datagrid .mud-table-row {
+         height: 10px;
+     }
+
+ </style>
+ @code {
+    private List<LicenseCodeItemInfoModel> _items = new() {
+
+    };
+    protected override void OnInitialized() {
+        base.OnInitialized();
+        const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        var tenantItemInfoModels = Enumerable.Range(0, 20).Select(s => new LicenseCodeItemInfoModel {
+                Num = s + 1,
+                LicenseCode = new string(Enumerable.Repeat(chars, 32).Select(s => s[new Random().Next(s.Length)]).ToArray()),
+                MaxClientCount = new Random().Next(100),
+                ActivatedClientCount = new Random().Next(100),
+                ExpirationDate = DateTime.Now,
+                IsAvailable = true,
+            }).ToList();
+        _items.AddRange(tenantItemInfoModels);
     }
+
+    private string GetUserStatusChipStyle(UserStatus status) {
+        return status switch {
+            UserStatus.Active => "background-color: rgba(0, 255, 0, 0.2)",
+            UserStatus.Frozen => "background-color: rgba(255, 0, 0, 0.2)",
+            UserStatus.Invalid => "background-color: rgba(128, 128, 128, 0.2)",
+            _ => "background-color: transparent"
+        };
+    }
+
+    private string GetUserStatusDisplay(UserStatus status) {
+        return status switch {
+            UserStatus.Active => "正常",
+            UserStatus.Frozen => "冻结",
+            UserStatus.Invalid => "失效",
+            _ => "未知"
+        };
+    }
+
+}

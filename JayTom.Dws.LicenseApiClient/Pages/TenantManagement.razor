@@ -1,7 +1,6 @@
 ﻿@page "/tenant-management"
 @using JayTom.Dws.LicenseApiClient.Data.Models
 
-<link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
 <MudCard style="border-radius:60px; width:400px;height:120px;margin-bottom:10px;">
     <MudCardContent>
         <div style="display: flex; align-items: center;">
@@ -44,7 +43,7 @@
             <CellTemplate>
                 <MudStack Row Style="text-align:center">
                      @*<MudButton Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Primary">取消授权</MudButton>*@
-                     <MudButton Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Primary">冻结租户</MudButton>
+                     <MudButton Style="border-radius: 15px;" Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Error">冻结租户</MudButton>
                  </MudStack>
              </CellTemplate>
          </TemplateColumn>

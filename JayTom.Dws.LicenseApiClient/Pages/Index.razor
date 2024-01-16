@@ -1,9 +1,12 @@
 ﻿@page "/"
+@inject NavigationManager Navigation
+@code {
+    protected override void OnInitialized() {
+        // 检查用户是否已经登录，例如通过调用身份验证服务的方法或检查存储的身份验证 cookie 等方式
+        var isAuthenticated = false; // 替换为实际的身份验证检查逻辑
 
-<PageTitle>Index</PageTitle>
-
-<h1>Hello, world!</h1>
-
-Welcome to your new app.
-
-<SurveyPrompt Title="How is Blazor working for you?" />
+        if (!isAuthenticated) {
+            Navigation.NavigateTo("/login", forceLoad: true);
+        }
+    }
+}

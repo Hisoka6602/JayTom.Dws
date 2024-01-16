@@ -1,32 +1,51 @@
 ﻿
 <link href="Font/iconfont.css" rel="stylesheet" />
+@using System.Diagnostics
 @inherits LayoutComponentBase
+@inject NavigationManager Navigation
 <MudThemeProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
+@*这里判断页面名称是否调用以下内容*@
 <MudLayout>
-    <MudDrawer Open="true" Elevation="2" Style="background-color:#594AE2;color:transparent;">
-        <MudDrawerHeader>
-            <div style="display:flex; align-items:center;">
-                <MudAvatar>
-                    <MudImage Src="images/defaultImage.jpg"></MudImage>
-                </MudAvatar>
-                <MudText Style="font-weight:bold; margin-left:8px; color:white" Typo="Typo.h6">Hisoka</MudText>
-                <span class="iconfont icon-vips" style="color:gold; font-size: 20px; margin-bottom:5px; margin-left:5px;"></span>
-            </div>
-        </MudDrawerHeader>
-        <NavMenu />
-    </MudDrawer>
-    <MudMainContent Style="padding: 20px;">
-        @*三个表*@
-        @*租户信息*@
-        @*授权码信息*@
-        @*系统设置*@
-        @*个人信息*@
-        @*修改密码*@
+    @{
+        string[] allowedUrls = {
+    $"{Navigation.BaseUri}application-management",
+    $"{Navigation.BaseUri}authorization-management",
+    $"{Navigation.BaseUri}tenant-management",
+    $"{Navigation.BaseUri}systemSettings-management",
+    $"{Navigation.BaseUri}userInfo"
+    };
+    }
+    @if (allowedUrls.Any(url => Navigation.Uri.Equals(url))) {
+
+        <MudDrawer Open="true" Elevation="2" Style="background-color:#594AE2;color:transparent;">
+            <MudDrawerHeader>
+                <div style="display:flex; align-items:center;">
+                    <MudAvatar>
+                        <MudImage Src="images/defaultImage.jpg"></MudImage>
+                    </MudAvatar>
+                    <MudText Style="font-weight:bold; margin-left:8px; color:white" Typo="Typo.h6">Hisoka</MudText>
+                    <span class="iconfont icon-vips" style="color:gold; font-size: 20px; margin-bottom:5px; margin-left:5px;"></span>
+                </div>
+            </MudDrawerHeader>
+            <NavMenu />
+        </MudDrawer>
+        <MudMainContent Style="padding: 20px;">
+            @*三个表*@
+            @*租户信息*@
+            @*授权码信息*@
+            @*系统设置*@
+            @*个人信息*@
+            @*修改密码*@
+            @Body
+        </MudMainContent>
+    }
+    else {
 
         @Body
-    </MudMainContent>
+    }
+
 </MudLayout>
 
 

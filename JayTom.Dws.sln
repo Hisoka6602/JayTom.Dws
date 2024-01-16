@@ -147,9 +147,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LicenseDBTest", "LicenseDBT
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MudBlazorTemplates1", "MudBlazorTemplates1\MudBlazorTemplates1.csproj", "{937BC9ED-F572-4E4B-8934-96E301902129}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorApp4", "BlazorApp4\BlazorApp4.csproj", "{CD72DAD1-EF11-455A-8FBB-40B852DF39A7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlazorApp4", "BlazorApp4\BlazorApp4.csproj", "{CD72DAD1-EF11-455A-8FBB-40B852DF39A7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JayTom.Dws.LicenseApiClient", "JayTom.Dws.LicenseApiClient\JayTom.Dws.LicenseApiClient.csproj", "{B5EC9292-C200-46EC-955F-A3B04BA30942}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "JayTom.Dws.LicenseApiClient", "JayTom.Dws.LicenseApiClient\JayTom.Dws.LicenseApiClient.csproj", "{B5EC9292-C200-46EC-955F-A3B04BA30942}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

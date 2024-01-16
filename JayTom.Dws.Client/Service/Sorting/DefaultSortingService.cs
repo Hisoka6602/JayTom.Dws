@@ -29,6 +29,7 @@ using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig.ConnectionPara
 using static JayTom.Dws.Client.Service.BackgroundService.SubmitApiBackgroundService;
 
 namespace JayTom.Dws.Client.Service.Sorting {
+
     public class DefaultSortingService : ISortingService {
         private readonly IConfigRepository _configRepository;
         private readonly ILogisticsRegexRepository _logisticsRegexRepository;
@@ -153,7 +154,6 @@ namespace JayTom.Dws.Client.Service.Sorting {
                 });
             };
             _sortingConnectionService.ReceivedInstructionsEvent += delegate (object? sender, DeviceDecodeResult result) {
-
                 if (result.Type == FunctionType.CreatePackage) {
                     //创建包裹
                     OnCreatePackageEvent(new PackageInstructionEventArgs() {
@@ -163,7 +163,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                 }
                 else if (result.Type == FunctionType.RemovePackage) {
                     //移除包裹
-                    OnCreatePackageEvent(new PackageInstructionEventArgs() {
+                    OnRemovePackageEvent(new PackageInstructionEventArgs() {
                         Keyword = result.Keyword,
                         Instruction = result.RawContent
                     });

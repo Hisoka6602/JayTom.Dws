@@ -384,8 +384,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         info.ScanTime = DateTime.Now;
                         info.Timestamp = timestamp;
                     }
-                    else {
-                    }
                     //添加到队列
                 }
                 EventAggregator.Instance.Publish(new TriggerPositionEvent() {
