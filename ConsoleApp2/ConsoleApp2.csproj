@@ -22,4 +22,10 @@
     <ProjectReference Include="..\JayTom.Dws.Plugin\JayTom.Dws.Plugin.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="ApiSettingJson\JtThreeSegmentCodeRout\路由表.xlsx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

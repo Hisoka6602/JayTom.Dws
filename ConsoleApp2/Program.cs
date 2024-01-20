@@ -14,6 +14,7 @@ using System.Net.Http.Json;
 using Newtonsoft.Json.Linq;
 using System.Threading.Tasks;
 using System.Linq.Expressions;
+using JayTom.Dws.Plugin.Excel;
 using System.Linq.Dynamic.Core;
 using JayTom.Dws.Interface.Wdt;
 using System.Collections.Generic;
@@ -50,7 +51,33 @@ internal class Program {
         });
         await Task.Delay(TimeSpan.FromSeconds(50));*/
         try {
-            var result = JsonConvert.DeserializeObject<JtExpressResponseResult>("{\"code\":1,\"msg\":\"请求成功\",\"version\":null,\"data\":[{\"waybillNo\":\"JT2065115387368\",\"terminalDispatchCode\":\"150,H297-00,001\",\"firstDispatchCode\":\"150\",\"secondDispatchCode\":\"H297-00\",\"thirdlyDispatchCode\":\"001\",\"customerCode\":null,\"interceptor\":2,\"orderType\":1,\"pickNetworkCode\":\"1755315\",\"destinationCode\":\"442000\",\"extendJson\":\"\",\"codeList\":null}],\"succ\":true,\"fail\":false}", new JsonSerializerSettings {
+            var path = $"{AppContext.BaseDirectory}ApiSettingJson\\JtThreeSegmentCodeRout";
+            if (Directory.Exists(path)) {
+                var excelFile = Directory.GetFiles(path)?.Select(s => new FileInfo(s))
+                    ?.Where(w => w.Extension.Equals(".xlsx"))?.OrderByDescending(o => o.LastWriteTime)
+                    ?.Select(s => s.FullName)?.FirstOrDefault();
+                if (!string.IsNullOrEmpty(excelFile)) {
+                    //读Excel表格内容到列表
+                    //三段码、工号
+                    var models = new NpoiExport().ReadExcel<ExcelDeliveryCode>(excelFile,
+                        p => Task.CompletedTask,
+                        e => {
+                            NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
+                            return Task.CompletedTask;
+                        }
+                    ).GetAwaiter().GetResult();
+                    if (models?.Any() == true) {
+                        Console.WriteLine(models);
+                    }
+                    else {
+                        NLog.LogManager.GetCurrentClassLogger().Error($"读取不到Excel内容");
+                    }
+                }
+                else {
+                    NLog.LogManager.GetCurrentClassLogger().Error($"查找不到文件");
+                }
+            }
+            /*var result = JsonConvert.DeserializeObject<JtExpressResponseResult>("{\"code\":1,\"msg\":\"请求成功\",\"version\":null,\"data\":[{\"waybillNo\":\"JT2065115387368\",\"terminalDispatchCode\":\"150,H297-00,001\",\"firstDispatchCode\":\"150\",\"secondDispatchCode\":\"H297-00\",\"thirdlyDispatchCode\":\"001\",\"customerCode\":null,\"interceptor\":2,\"orderType\":1,\"pickNetworkCode\":\"1755315\",\"destinationCode\":\"442000\",\"extendJson\":\"\",\"codeList\":null}],\"succ\":true,\"fail\":false}", new JsonSerializerSettings {
                 StringEscapeHandling = StringEscapeHandling.EscapeHtml
             });
             var isSuccess = result?.Succ ?? false;
@@ -64,7 +91,7 @@ internal class Program {
 
                 var thirdlyDispatchCode = segmentCodeInfo?.FirstOrDefault()?.ThirdlyDispatchCode;
                 Console.WriteLine(segmentCodeInfo);
-            }
+            }*/
 
             /*string pattern = "\"extendJson\":\"({(?:[^{}]|(?<open>\\\\{)|(?<-open>\\\\}))+(?(open)(?!))})\"";
             Match match = Regex.Match(resultContent, pattern);

@@ -42,16 +42,27 @@ namespace JayTom.Dws.Interface.Jtexpress {
                 if (Directory.Exists(path)) {
                     var excelFile = Directory.GetFiles(path)?.Select(s => new FileInfo(s))
                         ?.Where(w => w.Extension.Equals(".xlsx"))?.OrderByDescending(o => o.LastWriteTime)
-                        ?.Select(s => s.Name)?.FirstOrDefault();
+                        ?.Select(s => s.FullName)?.FirstOrDefault();
                     if (!string.IsNullOrEmpty(excelFile)) {
                         //读Excel表格内容到列表
                         //三段码、工号
                         var models = _excel.ReadExcel<ExcelDeliveryCode>(excelFile,
                             p => Task.CompletedTask,
-                            e => Task.CompletedTask).GetAwaiter().GetResult();
+                            e => {
+                                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
+                                return Task.CompletedTask;
+                            }
+                                ).GetAwaiter().GetResult();
                         if (models?.Any() == true) {
                             _excelDeliveryCodes = models;
+                            NLog.LogManager.GetCurrentClassLogger().Error($"{JsonConvert.SerializeObject(_excelDeliveryCodes)}");
                         }
+                        else {
+                            NLog.LogManager.GetCurrentClassLogger().Error($"读取不到Excel内容");
+                        }
+                    }
+                    else {
+                        NLog.LogManager.GetCurrentClassLogger().Error($"查找不到文件");
                     }
                 }
             }
@@ -509,7 +520,7 @@ namespace JayTom.Dws.Interface.Jtexpress {
                     listId = $"{UserInfo.NetworkCode}{new DateTimeOffset(requestTime).ToUnixTimeMilliseconds()}",
                     waybillId = barcode,
                     scanTime = $"{requestTime:yyyy-MM-dd HH:mm:ss}",
-                    deliveryCode = deliveryCode,
+                    deliveryCode = string.IsNullOrEmpty(deliveryCode)?Parameters.UserName:deliveryCode,
                     scanPda = scanPda,
                 }
             };
