@@ -80,11 +80,11 @@ namespace JayTom.Dws.Interface.Jtexpress {
             }
             if (Parameters.BusinessType == BusinessType.ArrivalScan) {
                 ArrivalScan(barcode, weight, DateTime.Now, length, width, height, Parameters.ScanTypeCode
-                , Parameters.TransportTypeCode, Parameters.ScanPda, Parameters.ScanType, Parameters.WeightFlag
-                    ).Start();
+                    , Parameters.TransportTypeCode, Parameters.ScanPda, Parameters.ScanType, Parameters.WeightFlag
+                );
             }
             else if (Parameters.BusinessType == BusinessType.DepartureScan) {
-                DepartureScan(barcode, deliveryCode, Parameters.ScanPda).Start();
+                DepartureScan(barcode, deliveryCode, Parameters.ScanPda);
             }
 
             return generateSegmentCode;
@@ -116,10 +116,10 @@ namespace JayTom.Dws.Interface.Jtexpress {
             if (Parameters.BusinessType == BusinessType.ArrivalScan) {
                 ArrivalScan(barcode, weight, scanTime, length, width, height, Parameters.ScanTypeCode
                     , Parameters.TransportTypeCode, Parameters.ScanPda, Parameters.ScanType, Parameters.WeightFlag
-                ).Start();
+                );
             }
             else if (Parameters.BusinessType == BusinessType.DepartureScan) {
-                DepartureScan(barcode, deliveryCode, Parameters.ScanPda).Start();
+                DepartureScan(barcode, deliveryCode, Parameters.ScanPda);
             }
 
             return generateSegmentCode;
@@ -179,8 +179,7 @@ namespace JayTom.Dws.Interface.Jtexpress {
                     appKey = appKey,
                     appSecret = appSecret,
                 };
-                //using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
-                using var httpClient = new HttpClient();
+                using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
                 httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut);
                 HttpResponseMessage message;
                 using (Stream dataStream =
@@ -235,8 +234,7 @@ namespace JayTom.Dws.Interface.Jtexpress {
             stopwatch.Start();
 
             try {
-                //using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
-                using var httpClient = new HttpClient();
+                using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
                 httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut);
                 HttpResponseMessage message;
                 using (Stream dataStream =
@@ -244,17 +242,40 @@ namespace JayTom.Dws.Interface.Jtexpress {
                     using (HttpContent content = new StreamContent(dataStream)) {
                         content.Headers.Add("Content-Type", "application/json");
 
-                        message = await httpClient.PostAsync($"{Parameters.Url}{method}", content)
+                        message = await httpClient.PostAsync($"{Parameters.SegmentCodeUrl}{method}", content)
                             .ConfigureAwait(false);
                     }
                 }
 
                 resultContent = await message.Content.ReadAsStringAsync().ConfigureAwait(false);
                 resultContent = Regex.Unescape(resultContent);
+                string pattern = "\"extendJson\":\"({(?:[^{}]|(?<open>\\{)|(?<-open>\\}))+(?(open)(?!))})\"";
+                Match match = Regex.Match(resultContent, pattern);
+
+                if (match.Success) {
+                    string nestedJsonStr = match.Groups[1].Value;
+
+                    // 判断嵌套 JSON 字符串是否为非空
+                    if (!string.IsNullOrEmpty(nestedJsonStr)) {
+                        // 将双引号进行转义
+                        var extendJson = nestedJsonStr.Replace("\"", "\\\"");
+
+                        // 执行其他操作...
+
+                        // 输出结果
+                        resultContent = resultContent.Replace(nestedJsonStr, extendJson);
+                    }
+                }
                 if (!string.IsNullOrEmpty(resultContent)) {
                     //解析登录返回内容
-                    var result = JsonConvert.DeserializeObject<JtExpressResponseResult>(resultContent);
+                    var result = JsonConvert.DeserializeObject<JtExpressResponseResult>(resultContent, new JsonSerializerSettings {
+                        StringEscapeHandling = StringEscapeHandling.EscapeHtml
+                    });
                     isSuccess = result?.Succ ?? false;
+                }
+
+                if (barcode.ToLower().Equals("noread")) {
+                    isSuccess = false;
                 }
             }
             catch (HttpRequestException e) {
@@ -297,7 +318,7 @@ namespace JayTom.Dws.Interface.Jtexpress {
         /// <summary>
         /// 进仓扫描
         /// </summary>
-        public async Task ArrivalScan(string barcode, double weight, DateTime scanTime, double length = default, double width = default,
+        public async void ArrivalScan(string barcode, double weight, DateTime scanTime, double length = default, double width = default,
             double height = default, string? scanTypeCode = default, string? transportTypeCode = default, string? scanPda = default,
             int scanType = 1, string? weightFlag = default) {
             //如果没登录或登录时间超20小时则先登录,
@@ -310,30 +331,37 @@ namespace JayTom.Dws.Interface.Jtexpress {
                     UserInfo = value;
                 }
             }
+            var exceptionMsg = string.Empty;
+            var isSuccess = false;
+            string resultContent = string.Empty;
+            UploadResponse response;
+            var requestTime = DateTime.Now;
+            var stopwatch = new Stopwatch();
+            var method = "/opa/smart/scan/uploadUnloadingArrivalData";
+            var nowDate = DateTime.Now;
+            var data = new object[]
+            {
+                new
+                {
+                    listld = $"{UserInfo.NetworkCode}{new DateTimeOffset(nowDate).ToUnixTimeMilliseconds()}",
+                    waybillld = barcode,
+                    scanTime = $"{nowDate:yyyy-MM-dd HH:mm:ss}",
+                    scanTypeCode = scanTypeCode,
+                    weight = weight,
+                    length = length,
+                    wide = width,
+                    high = height,
+                    transportTypeCode = transportTypeCode,
+                    scanPda = scanPda,
+                    scanType = scanType,
+                    weightFlag = weightFlag
+                }
+            };
+            stopwatch.Start();
             try {
                 //密码加密
                 //转MD5
-                var nowDate = DateTime.Now;
-                string resultContent;
-                var method = "/opa/smart/scan/uploadUnloadingArrivalData";
-                var data = new object[]
-                {
-                    new
-                    {
-                        listld = $"{UserInfo.NetworkCode}{new DateTimeOffset(nowDate).ToUnixTimeMilliseconds()}",
-                        waybillld = barcode,
-                        scanTime = $"{nowDate:yyyy-MM-dd HH:mm:ss}",
-                        scanTypeCode = scanTypeCode,
-                        weight = weight,
-                        length = length,
-                        wide = width,
-                        high = height,
-                        transportTypeCode = transportTypeCode,
-                        scanPda = scanPda,
-                        scanType = scanType,
-                        weightFlag = weightFlag
-                    }
-                };
+
                 /*var data = new {
                     listld = $"{UserInfo.NetworkCode}{new DateTimeOffset(nowDate).ToUnixTimeMilliseconds()}",
                     waybillld = barcode,
@@ -348,8 +376,7 @@ namespace JayTom.Dws.Interface.Jtexpress {
                     scanType = scanType,
                     weightFlag = weightFlag
                 };*/
-                //using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
-                using var httpClient = new HttpClient();
+                using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
                 httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut);
                 HttpResponseMessage message;
                 using (Stream dataStream =
@@ -375,6 +402,21 @@ namespace JayTom.Dws.Interface.Jtexpress {
             }
             catch (Exception e) {
                 NLog.LogManager.GetCurrentClassLogger().Error(e.Message);
+            }
+            finally {
+                stopwatch.Stop();
+                response = new UploadResponse() {
+                    ExceptionMsg = exceptionMsg,
+                    ApiParameters = JsonConvert.SerializeObject(this.Parameters),
+                    IsSuccess = isSuccess,
+                    Duration = stopwatch.Elapsed.TotalSeconds,
+                    RequestContent = $"{Parameters.SegmentCodeUrl}{method}",
+                    RequestTime = requestTime,
+                    RequestUrl = JsonConvert.SerializeObject(data),
+                    ResponseContent = resultContent,
+                    ResponseTime = DateTime.Now
+                };
+                NLog.LogManager.GetCurrentClassLogger().Error(JsonConvert.SerializeObject(response));
             }
         }
 
@@ -385,7 +427,7 @@ namespace JayTom.Dws.Interface.Jtexpress {
         /// <param name="deliveryCode"></param>
         /// <param name="scanPda"></param>
         /// <returns></returns>
-        public async Task DepartureScan(string barcode, string deliveryCode, string? scanPda = default) {
+        public async void DepartureScan(string barcode, string deliveryCode, string? scanPda = default) {
             //如果没登录或登录时间超20小时则先登录,
             if (UserInfo.LoginTime is null ||
                 DateTime.Now.Subtract(UserInfo.LoginTime.Value).TotalHours >= 20 ||
@@ -396,23 +438,29 @@ namespace JayTom.Dws.Interface.Jtexpress {
                     UserInfo = value;
                 }
             }
+            var exceptionMsg = string.Empty;
+            var isSuccess = false;
+            var nowDate = DateTime.Now;
+            string resultContent = string.Empty;
+            var method = "/opa/smart/scan/uploadDeliveryOutStockData";
+            UploadResponse response;
+            var requestTime = DateTime.Now;
+            var stopwatch = new Stopwatch();
+            var data = new object[]
+            {
+                new
+                {
+                    listld = $"{UserInfo.NetworkCode}{new DateTimeOffset(nowDate).ToUnixTimeMilliseconds()}",
+                    waybillld = barcode,
+                    scanTime = $"{nowDate:yyyy-MM-dd HH:mm:ss}",
+                    deliveryCode = deliveryCode,
+                    scanPda = scanPda,
+                }
+            };
             try {
                 //密码加密
                 //转MD5
-                var nowDate = DateTime.Now;
-                string resultContent;
-                var method = "/opa/smart/scan/uploadDeliveryOutStockData";
-                var data = new object[]
-                {
-                    new
-                    {
-                        listld = $"{UserInfo.NetworkCode}{new DateTimeOffset(nowDate).ToUnixTimeMilliseconds()}",
-                        waybillld = barcode,
-                        scanTime = $"{nowDate:yyyy-MM-dd HH:mm:ss}",
-                        deliveryCode = deliveryCode,
-                        scanPda = scanPda,
-                    }
-                };
+
                 /*var data = new {
                     listld = $"{UserInfo.NetworkCode}{new DateTimeOffset(nowDate).ToUnixTimeMilliseconds()}",
                     waybillld = barcode,
@@ -420,8 +468,7 @@ namespace JayTom.Dws.Interface.Jtexpress {
                     deliveryCode = string.Empty,
                     scanPda = scanPda,
                 };*/
-                //using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
-                using var httpClient = new HttpClient();
+                using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
                 httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut);
                 HttpResponseMessage message;
                 using (Stream dataStream =
@@ -447,6 +494,21 @@ namespace JayTom.Dws.Interface.Jtexpress {
             }
             catch (Exception e) {
                 NLog.LogManager.GetCurrentClassLogger().Error(e.Message);
+            }
+            finally {
+                stopwatch.Stop();
+                response = new UploadResponse() {
+                    ExceptionMsg = exceptionMsg,
+                    ApiParameters = JsonConvert.SerializeObject(this.Parameters),
+                    IsSuccess = isSuccess,
+                    Duration = stopwatch.Elapsed.TotalSeconds,
+                    RequestContent = $"{Parameters.SegmentCodeUrl}{method}",
+                    RequestTime = requestTime,
+                    RequestUrl = JsonConvert.SerializeObject(data),
+                    ResponseContent = resultContent,
+                    ResponseTime = DateTime.Now
+                };
+                NLog.LogManager.GetCurrentClassLogger().Error(JsonConvert.SerializeObject(response));
             }
         }
 

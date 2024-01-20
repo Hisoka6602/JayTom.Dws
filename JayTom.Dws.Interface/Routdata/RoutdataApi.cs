@@ -146,8 +146,8 @@ namespace JayTom.Dws.Interface.Routdata {
             var sign = string.Empty;
             stopwatch.Start();
             try {
-                using var httpClient = new HttpClient(new HttpClientHandler { AutomaticDecompression = DecompressionMethods.GZip });
-                //using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+                //using var httpClient = new HttpClient(new HttpClientHandler { AutomaticDecompression = DecompressionMethods.GZip });
+                using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
                 httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut);
                 httpClient.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("gzip"));
                 HttpResponseMessage message;

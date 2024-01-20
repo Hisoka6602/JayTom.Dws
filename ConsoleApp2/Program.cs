@@ -10,6 +10,7 @@ using JayTom.Dws.Camera;
 using System.Collections;
 using System.Diagnostics;
 using System.Net.Http.Json;
+using Newtonsoft.Json.Linq;
 using System.Threading.Tasks;
 using System.Linq.Expressions;
 using System.Linq.Dynamic.Core;
@@ -20,6 +21,7 @@ using JayTom.Dws.Ocr.ExpressBill;
 using JayTom.Dws.Interface.Sunnen;
 using JayTom.Dws.Interface.Szjy188;
 using JayTom.Dws.Interface.Jtexpress;
+using System.Text.RegularExpressions;
 using static System.Text.Json.JsonElement;
 using JayTom.Dws.Infrastructure.IComputer;
 using JayTom.Dws.Domain.DownstreamProtocols;
@@ -45,6 +47,57 @@ internal class Program {
             { "recipient_name", "aa" }
         });
         await Task.Delay(TimeSpan.FromSeconds(50));*/
+        try {
+            var resultContent =
+                "{\"code\":1,\"msg\":\"请求成功\",\"version\":null,\"data\":[{\"waybillNo\":\"JT2064897322643\",\"terminalDispatchCode\":\"150,H297-00,030\",\"firstDispatchCode\":\"150\",\"secondDispatchCode\":\"H297-00\",\"thirdlyDispatchCode\":\"030\",\"customerCode\":null,\"interceptor\":2,\"orderType\":1,\"pickNetworkCode\":\"3510359\",\"destinationCode\":\"442000\",\"extendJson\":null,\"codeList\":null}],\"succ\":true,\"fail\":false}";
+
+            string pattern = "\"extendJson\":\"({(?:[^{}]|(?<open>\\{)|(?<-open>\\}))+(?(open)(?!))})\"";
+            Match match = Regex.Match(resultContent, pattern);
+
+            if (match.Success) {
+                string nestedJsonStr = match.Groups[1].Value;
+
+                // 判断嵌套 JSON 字符串是否为非空
+                if (!string.IsNullOrEmpty(nestedJsonStr)) {
+                    // 将双引号进行转义
+                    var extendJson = nestedJsonStr.Replace("\"", "\\\"");
+
+                    // 执行其他操作...
+
+                    // 输出结果
+                    resultContent = resultContent.Replace(nestedJsonStr, extendJson);
+                }
+            }
+            Console.WriteLine(resultContent);
+            /*string pattern = "\"extendJson\":\"({(?:[^{}]|(?<open>\\\\{)|(?<-open>\\\\}))+(?(open)(?!))})\"";
+            Match match = Regex.Match(resultContent, pattern);
+
+            if (match.Success) {
+                string nestedJsonStr = match.Groups[1].Value;
+
+                // 执行其他操作...
+
+                // 输出结果
+                Console.WriteLine(nestedJsonStr);
+            }*/
+
+            /*var match = Regex.Match(resultContent, "\"extendJson\":\\\"(.+?)\\\"");
+            if (match.Success) {
+                var extendJsonStr = match.Groups[1].Value.Replace("\\\"", "\"").Replace("\"{", "{").Replace("}\"", "}");
+                var data2 = JsonConvert.DeserializeObject<JtExpressApi.JtExpressResponseResult>(extendJsonStr);
+            }*/
+            /*JsonConvert.DeserializeObject<JtExpressApi.JtExpressResponseResult>(resultContent, new JsonSerializerSettings {
+                StringEscapeHandling = StringEscapeHandling.Default,
+            });*/
+            var jObject = JObject.Parse(resultContent);
+            bool.TryParse(jObject["Succ"]?.ToString() ?? string.Empty, out var avResult);
+            Console.WriteLine(avResult);
+        }
+        catch (Exception e) {
+            Console.WriteLine(e);
+        }
+        return;
+
         var jtExpressApi = new JtExpressApi(null);
         var (key1, jtExpressUserInfo) = await jtExpressApi.LogIn("Ls3513222001",
             "JTAa12345", "JTZN001231109",
