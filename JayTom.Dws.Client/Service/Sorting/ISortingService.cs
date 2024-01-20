@@ -2,8 +2,8 @@
 using System.Threading;
 using JayTom.Dws.Interface;
 using System.Threading.Tasks;
+using JayTom.Dws.Data.Package;
 using JayTom.Dws.Data.LocalLog;
-using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
 using System.Diagnostics.Tracing;
 using JayTom.Dws.Client.Service.BackgroundService;

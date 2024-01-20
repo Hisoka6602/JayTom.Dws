@@ -12,7 +12,6 @@ using JayTom.Dws.Plugin.Tcp;
 using System.Threading.Tasks;
 using System.Windows.Controls;
 using JayTom.Dws.Device.Camera;
-using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
 using NetTopologySuite.Algorithm;
 using Microsoft.Extensions.Logging;
@@ -21,8 +20,10 @@ using JayTom.Dws.Interface.WeciMexicoDv;
 using Microsoft.Extensions.Configuration;
 using System.Reflection.PortableExecutable;
 using static Org.BouncyCastle.Math.EC.ECCurve;
+using JayTom.Dws.Data.Package;
 
-namespace JayTom.Dws.TemporaryClient.Service.BackgroundService {
+namespace JayTom.Dws.TemporaryClient.Service.BackgroundService
+{
 
     public class BarcodeScannerBackgroundService : Microsoft.Extensions.Hosting.BackgroundService {
         private readonly IBarcodeScannerService _barcodeScannerService;

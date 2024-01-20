@@ -1,8 +1,9 @@
 ﻿using Prism.Mvvm;
-using JayTom.Dws.Data.LocalData;
 using JayTom.Dws.Client.Models.SettingsCommomModels;
+using JayTom.Dws.Data.Package;
 
-namespace JayTom.Dws.Client.Models.CommunicationsSettingsModel {
+namespace JayTom.Dws.Client.Models.CommunicationsSettingsModel
+{
 
     public class CommunicationsSettingsInfoModel : BindableBase {
         private TcpSettingsInfoModel _tcpSettingsInfo = new();

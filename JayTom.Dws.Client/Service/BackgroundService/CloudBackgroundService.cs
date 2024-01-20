@@ -9,6 +9,7 @@ using Newtonsoft.Json;
 using System.Threading;
 using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
+using JayTom.Dws.Data.Package;
 using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
 using JayTom.Dws.Interface.Cloud;
@@ -24,7 +25,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
     public class CloudBackgroundService : Microsoft.Extensions.Hosting.BackgroundService {
         private readonly IConfigRepository _configRepository;
         private readonly ICloud _cloud;
-        private readonly IBarCodeRepository _barCodeRepository;
+        private readonly IPackageRepository _packageRepository;
         private readonly ICloudVideoUploadRepository _cloudVideoUploadRepository;
         private readonly INvrCameraBindingRepository _nvrCameraBindingRepository;
         private CloudVideoSettingsDto _cloudVideoSettingsDto = new();
@@ -34,12 +35,12 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private SemaphoreSlim _setNvrCameraBindingSlim = new(1);
 
         public CloudBackgroundService(IConfigRepository configRepository,
-            ICloud cloud, IBarCodeRepository barCodeRepository,
+            ICloud cloud, IPackageRepository packageRepository,
             ICloudVideoUploadRepository cloudVideoUploadRepository,
             INvrCameraBindingRepository nvrCameraBindingRepository) {
             _configRepository = configRepository;
             _cloud = cloud;
-            _barCodeRepository = barCodeRepository;
+            _packageRepository = packageRepository;
             _cloudVideoUploadRepository = cloudVideoUploadRepository;
             _nvrCameraBindingRepository = nvrCameraBindingRepository;
             EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async item => {
@@ -92,19 +93,27 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 //提交到云端
                 if (_cloudVideoSettingsDto.IsUseCloudVideoUpload) {
                     if (_cloudVideoUpLoadSlim.CurrentCount > 0) {
-                        var (key, value) = await _barCodeRepository.SelectBarCode(s =>
+                        var (key, value) = await _packageRepository.SelectPackage(s =>
+                                s.PackageCreateTime.CompareTo(_startTime) > 0 &&
+                                s.PackageCreateTime.CompareTo(
+                                    DateTime.Now.AddSeconds(0 - _cloudVideoSettingsDto.UploadIntervalInSeconds)) <= 0 &&
+                                (s.CloudVideoUploadInfo == null || s.CloudVideoUploadInfo.UploadTime == null),
+                            o => o.PackageCreateTime, 0,
+                            _cloudVideoSettingsDto.Concurrency, stoppingToken);
+
+                        /*var (key, value) = await _packageRepository.SelectBarCode(s =>
                                 s.ScanTime.CompareTo(_startTime) > 0 &&
                                 s.ScanTime.CompareTo(DateTime.Now.AddSeconds(0 - _cloudVideoSettingsDto.UploadIntervalInSeconds)) <= 0 &&
                                 (s.CloudVideoUploadInfo == null || s.CloudVideoUploadInfo.UploadTime == null),
                             o => o.ScanTime, 0,
-                            _cloudVideoSettingsDto.Concurrency, stoppingToken);
-                        if (key && value is { } barCodeInfoModels) {
-                            if (barCodeInfoModels?.Any() == true) {
-                                foreach (var barCodeInfoModel in barCodeInfoModels) {
-                                    PolicyCloudVideoUpLoad(barCodeInfoModel, stoppingToken);
+                            _cloudVideoSettingsDto.Concurrency, stoppingToken);*/
+                        if (key && value is { } packageInfoModels) {
+                            if (packageInfoModels?.Any() == true) {
+                                foreach (var packageInfoModel in packageInfoModels) {
+                                    PolicyCloudVideoUpLoad(packageInfoModel, stoppingToken);
                                 }
 
-                                _startTime = barCodeInfoModels.Max(m => m.ScanTime);
+                                _startTime = packageInfoModels.Max(m => m.PackageCreateTime);
                             }
                         }
                     }
@@ -113,13 +122,13 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             }
         }
 
-        private async void PolicyCloudVideoUpLoad(BarCodeInfoModel barCodeInfoModel, CancellationToken token) {
+        private async void PolicyCloudVideoUpLoad(PackageInfoModel packageInfoModel, CancellationToken token) {
             try {
                 await _cloudVideoUpLoadSlim.WaitAsync(token);
                 var retryPolicy = Policy.HandleResult<bool>(result => !result)
                .Or<Exception>().RetryAsync(_cloudVideoSettingsDto.RetryAttempts, (a, b) => {
                    EventAggregator.Instance.Publish(new CloudVideoUploadRetryMessage {
-                       Barcode = barCodeInfoModel.Barcode,
+                       Barcode = packageInfoModel.BarCodeInfo?.Barcode ?? string.Empty,
                        RetryCount = b
                    });
                });
@@ -133,7 +142,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     { "Timeout", _cloudVideoSettingsDto.RequestTimeout },
                     });
                     if (key) {
-                        var cameraSerialNumber = barCodeInfoModel.ImageInfos?.FirstOrDefault(f => f.Type == 0)?.CameraSerialNumber;
+                        var cameraSerialNumber = packageInfoModel.ImageInfos?.FirstOrDefault(f => f.Type == 0)?.CameraSerialNumber;
                         //取出绑定信息
                         List<NvrCameraBindingInfoModel> nvrCameraBindingInfoModels;
                         try {
@@ -147,10 +156,10 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             _setNvrCameraBindingSlim.Release();
                         }
 
-                        var cloudUploadResponse = await _cloud.UploadData(barCodeInfoModel.Barcode,
-                            barCodeInfoModel.ScanTime, barCodeInfoModel.Weight,
+                        var cloudUploadResponse = await _cloud.UploadData(packageInfoModel.BarCodeInfo?.Barcode ?? string.Empty,
+                            packageInfoModel.BarCodeInfo?.ScanTime ?? DateTime.Now, packageInfoModel.WeightInfo?.FormattedWeight ?? 0,
                             _cloudVideoSettingsDto.NodeName,
-                            null, barCodeInfoModel.ImageInfos?.Select(s =>
+                            null, packageInfoModel.ImageInfos?.Select(s =>
                                 new CloudUploadImageInfo {
                                     CameraSerialNumber = s.CameraSerialNumber,
                                     CameraName = s.CameraName,
@@ -167,16 +176,16 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                Username = nvr.Username
                            })?.ToList() ?? new List<CloudNvrCameraBindingInfo>(), token: token);
                         EventAggregator.Instance.Publish(new CloudVideoUploadMessage {
-                            Barcode = barCodeInfoModel.Barcode,
+                            Barcode = packageInfoModel.BarCodeInfo?.Barcode ?? string.Empty,
                             IsSuccessful = cloudUploadResponse.IsSuccessful,
-                            PanoramaImageCount = barCodeInfoModel.ImageInfos?.Count(c => c.Type == 1) ?? 0,
-                            ScanImageCount = barCodeInfoModel.ImageInfos?.Count(c => c.Type == 0) ?? 0,
-                            ScanTime = barCodeInfoModel.ScanTime
+                            PanoramaImageCount = packageInfoModel.ImageInfos?.Count(c => c.Type == 1) ?? 0,
+                            ScanImageCount = packageInfoModel.ImageInfos?.Count(c => c.Type == 0) ?? 0,
+                            ScanTime = packageInfoModel.PackageCreateTime
                         });
 
                         if (cloudUploadResponse.IsSuccessful) {
                             var cloudVideoUploadInfoModel = await _cloudVideoUploadRepository.FirstOrDefault(f =>
-                                f.BarcodeId.Equals(barCodeInfoModel.Id), token);
+                                f.PackageId.Equals(packageInfoModel.Id), token);
                             if (cloudVideoUploadInfoModel is not null) {
                                 //更新
                                 cloudVideoUploadInfoModel.ResponseContent = cloudUploadResponse.ResponseContent;
@@ -184,23 +193,23 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 cloudVideoUploadInfoModel.UploadTime = cloudUploadResponse.UploadTime;
                                 cloudVideoUploadInfoModel.UploadContent = cloudUploadResponse.UploadContent;
                                 cloudVideoUploadInfoModel.UploadDuration = cloudUploadResponse.UploadDuration;
-                                cloudVideoUploadInfoModel.ScanImageCount = barCodeInfoModel.ImageInfos?.Count(c => c.Type == 0) ?? 0;
+                                cloudVideoUploadInfoModel.ScanImageCount = packageInfoModel.ImageInfos?.Count(c => c.Type == 0) ?? 0;
                                 cloudVideoUploadInfoModel.PanoramaImageCount =
-                                    barCodeInfoModel.ImageInfos?.Count(c => c.Type == 1) ?? 0;
+                                    packageInfoModel.ImageInfos?.Count(c => c.Type == 1) ?? 0;
 
                                 return await _cloudVideoUploadRepository.Update(cloudVideoUploadInfoModel, token);
                             }
                             else {
                                 return await _cloudVideoUploadRepository.Insert(new CloudVideoUploadInfoModel() {
-                                    BarcodeId = barCodeInfoModel.Id,
+                                    PackageId = packageInfoModel.Id,
                                     ResponseContent = cloudUploadResponse.ResponseContent,
                                     TargetAddress = cloudUploadResponse.TargetAddress,
                                     UploadTime = cloudUploadResponse.UploadTime,
                                     UploadContent = cloudUploadResponse.UploadContent,
                                     UploadDuration = cloudUploadResponse.UploadDuration,
-                                    ScanImageCount = barCodeInfoModel.ImageInfos?.Count(c => c.Type == 0) ?? 0,
+                                    ScanImageCount = packageInfoModel.ImageInfos?.Count(c => c.Type == 0) ?? 0,
                                     PanoramaImageCount =
-                                        barCodeInfoModel.ImageInfos?.Count(c => c.Type == 1) ?? 0
+                                        packageInfoModel.ImageInfos?.Count(c => c.Type == 1) ?? 0
                                 }, token);
                             }
                         }

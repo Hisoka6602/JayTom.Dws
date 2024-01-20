@@ -5,10 +5,11 @@ using System.Windows;
 using System.Windows.Data;
 using System.Globalization;
 using System.Threading.Tasks;
-using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
+using JayTom.Dws.Data.Package;
 
-namespace JayTom.Dws.Client.Converters {
+namespace JayTom.Dws.Client.Converters
+{
 
     public class UploadStatusNegatedToVisibilityConverter : IValueConverter {
 

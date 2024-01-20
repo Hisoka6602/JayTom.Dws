@@ -5,10 +5,10 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace JayTom.Dws.Data.LocalData {
+namespace JayTom.Dws.Data.Package {
 
     [Table("Data_VolumeInfo", Schema = "dbo")]
-    public class VolumeInfoModel : BaseBarCodeForeignKeyInfo {
+    public class VolumeInfoModel : BasePackageForeignKeyInfoModel {
 
         /// <summary>
         /// 来源类型

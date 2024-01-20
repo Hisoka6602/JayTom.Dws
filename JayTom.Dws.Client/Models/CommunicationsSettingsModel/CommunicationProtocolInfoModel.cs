@@ -1,7 +1,8 @@
 ﻿using Prism.Mvvm;
-using JayTom.Dws.Data.LocalData;
+using JayTom.Dws.Data.Package;
 
-namespace JayTom.Dws.Client.Models.CommunicationsSettingsModel {
+namespace JayTom.Dws.Client.Models.CommunicationsSettingsModel
+{
 
     public class CommunicationProtocolInfoModel : BindableBase {
         private string _name = "None";

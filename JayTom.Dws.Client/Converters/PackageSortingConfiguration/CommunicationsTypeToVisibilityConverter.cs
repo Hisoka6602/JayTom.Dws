@@ -2,10 +2,11 @@
 using System.Windows;
 using System.Windows.Data;
 using System.Globalization;
-using JayTom.Dws.Data.LocalData;
 using JayTom.Dws.Client.Models.CommunicationsSettingsModel;
+using JayTom.Dws.Data.Package;
 
-namespace JayTom.Dws.Client.Converters.PackageSortingConfiguration {
+namespace JayTom.Dws.Client.Converters.PackageSortingConfiguration
+{
 
     public class CommunicationsTypeToVisibilityConverter : IValueConverter {
 

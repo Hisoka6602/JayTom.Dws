@@ -1,11 +1,12 @@
 ﻿using System;
 using Prism.Mvvm;
 using System.ComponentModel;
-using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
 using JayTom.Dws.Plugin.Excel.Attributes;
+using JayTom.Dws.Data.Package;
 
-namespace JayTom.Dws.Client.Models.DataModels {
+namespace JayTom.Dws.Client.Models.DataModels
+{
 
     public class BarCodeItemModel : BindableBase {
         private float _volume;

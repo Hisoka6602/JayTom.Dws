@@ -4,13 +4,14 @@ using System.Linq;
 using System.Text;
 using System.Windows.Input;
 using System.Threading.Tasks;
-using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
 using JayTom.Dws.Client.Models.CommunicationsSettingsModel;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig.ConnectionParams;
 using JayTom.Dws.Client.Models.PackageSorting.CommunicationConnectionSub;
+using JayTom.Dws.Data.Package;
 
-namespace JayTom.Dws.Client.Models.PackageSorting {
+namespace JayTom.Dws.Client.Models.PackageSorting
+{
     public class CommunicationConnectionItemInfoModel : BasePackageSortingItemInfoModel {
         private string _connectionName = string.Empty;
         private bool _isActive;

@@ -11,7 +11,6 @@ using JayTom.Dws.Client.Models;
 using JayTom.Dws.Data.LocalLog;
 using MaterialDesignThemes.Wpf;
 using JayTom.Dws.Data.LocalConf;
-using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Views.Dialog;
@@ -36,8 +35,10 @@ using JayTom.Dws.Client.Models.PackageSorting.CommunicationConnectionSub;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig.ConnectionParams;
 using JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration.SortingMethodEditors;
 using JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.SortingMethodEditors;
+using JayTom.Dws.Data.Package;
 
-namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration {
+namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration
+{
 
     public class CommunicationsSettingsViewModel : BindableBase {
         private readonly IConfigRepository _configRepository;

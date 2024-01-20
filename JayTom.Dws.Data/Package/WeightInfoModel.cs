@@ -6,22 +6,16 @@ using System.Collections.Generic;
 using System.Security.AccessControl;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace JayTom.Dws.Data.LocalData {
+namespace JayTom.Dws.Data.Package {
 
     [Table("Data_WeightInfo", Schema = "dbo")]
-    public class WeightInfoModel : BaseBarCodeForeignKeyInfo {
+    public class WeightInfoModel : BasePackageForeignKeyInfoModel {
 
         /// <summary>
         /// 来源类型
         /// </summary>
         [Column("SourceType")]
         public SourceType SourceType { get; set; }
-
-        /// <summary>
-        /// 串口名称
-        /// </summary>
-        [Column("SerialPortName")]
-        public string SerialPortName { get; set; } = string.Empty;
 
         /// <summary>
         /// 源字符
@@ -40,28 +34,65 @@ namespace JayTom.Dws.Data.LocalData {
         /// </summary>
         [Column("CreateTime")]
         public DateTime CreateTime { get; set; } = DateTime.Now;
+
+        /// <summary>
+        /// 称重模式
+        /// </summary>
+        [Column("WeighingMode")]
+        public WeighingMode WeighingMode { get; set; } = WeighingMode.None;
     }
 
     public enum SourceType {
 
         /// <summary>
+        /// 无
+        /// </summary>
+        None = 0,
+
+        /// <summary>
         /// 串口
         /// </summary>
-        SerialPort,
+        SerialPort = 1,
 
         /// <summary>
         /// Tcp
         /// </summary>
-        Tcp,
+        Tcp = 2,
 
         /// <summary>
         /// 输入
         /// </summary>
-        Input,
+        Input = 3,
 
         /// <summary>
         /// 相机
         /// </summary>
-        Camera
+        Camera = 4,
+
+        /// <summary>
+        /// Ocr创建
+        /// </summary>
+        Ocr = 5,
+    }
+
+    /// <summary>
+    /// 称重模式
+    /// </summary>
+    public enum WeighingMode {
+
+        /// <summary>
+        /// 无
+        /// </summary>
+        None = 0,
+
+        /// <summary>
+        /// 动态
+        /// </summary>
+        Dynamic = 1,
+
+        /// <summary>
+        /// 静态
+        /// </summary>
+        Static = 2
     }
 }

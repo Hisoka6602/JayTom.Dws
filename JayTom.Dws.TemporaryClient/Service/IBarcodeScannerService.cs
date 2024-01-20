@@ -2,10 +2,11 @@
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
+using JayTom.Dws.Data.Package;
 
-namespace JayTom.Dws.TemporaryClient.Service {
+namespace JayTom.Dws.TemporaryClient.Service
+{
 
     public interface IBarcodeScannerService {
 

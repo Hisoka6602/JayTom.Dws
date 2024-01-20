@@ -5,28 +5,16 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace JayTom.Dws.Data.LocalData {
+namespace JayTom.Dws.Data.Package {
 
     [Table("Data_SortingInfo", Schema = "dbo")]
-    public class SortingInfoModel : BaseBarCodeForeignKeyInfo {
+    public class SortingInfoModel : BasePackageForeignKeyInfoModel {
 
         /// <summary>
         /// 是否使用分拣
         /// </summary>
         [Column("IsSortingUsed")]
         public bool IsSortingUsed { get; set; }
-
-        /// <summary>
-        /// 格口Id
-        /// </summary>
-        [Column("ExitId")]
-        public long ExitId { get; set; }
-
-        /// <summary>
-        /// 物流Id
-        /// </summary>
-        [Column("LogisticsId")]
-        public long LogisticsId { get; set; }
 
         /// <summary>
         /// 分拣模式
@@ -41,16 +29,22 @@ namespace JayTom.Dws.Data.LocalData {
         public string SentInstruction { get; set; } = string.Empty;
 
         /// <summary>
+        /// 发送时间
+        /// </summary>
+        [Column("SendTime")]
+        public DateTime SendTime { get; set; }
+
+        /// <summary>
         /// 接收的指令
         /// </summary>
         [Column("ReceivedInstruction")]
         public string ReceivedInstruction { get; set; } = string.Empty;
 
         /// <summary>
-        /// 创建包裹时间
+        /// 接收时间
         /// </summary>
-        [Column("PackageCreationTime")]
-        public DateTime PackageCreationTime { get; set; }
+        [Column("ReceivedTime")]
+        public DateTime ReceivedTime { get; set; }
 
         /// <summary>
         /// 创建包裹指令
@@ -81,6 +75,12 @@ namespace JayTom.Dws.Data.LocalData {
         /// </summary>
         [Column("ChecksumProtocolName")]
         public string ChecksumProtocolName { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 连接名称
+        /// </summary>
+        [Column("ConnectionName")]
+        public string ConnectionName { get; set; } = string.Empty;
     }
 
     public enum SortMode {

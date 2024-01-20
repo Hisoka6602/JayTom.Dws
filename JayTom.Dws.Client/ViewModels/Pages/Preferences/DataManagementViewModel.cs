@@ -13,9 +13,9 @@ using JayTom.Dws.Domain.Dto;
 using Prism.Services.Dialogs;
 using System.Threading.Tasks;
 using System.Windows.Controls;
+using JayTom.Dws.Data.Package;
 using MaterialDesignThemes.Wpf;
 using System.Windows.Threading;
-using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
 using JayTom.Dws.Domain.Converters;
 using JayTom.Dws.Client.Views.Dialog;
@@ -35,9 +35,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
     public class DataManagementViewModel : BindableBase {
         private readonly IDialogService _dialogService;
         private readonly IExcel _excel;
-        private readonly IBarCodeRepository _barCodeRepository;
         private readonly IConfigRepository _configRepository;
         private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
+        private readonly IPackageRepository _packageRepository;
         private DateTime? _startTime;
         private DateTime? _endTime;
         private int _pageCount;
@@ -100,13 +100,15 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         private VolumeUnit _volumeUnit;
 
         public DataManagementViewModel(IDialogService dialogService,
-            IExcel excel, IBarCodeRepository barCodeRepository,
-            IConfigRepository configRepository, IPackageExitDefinitionRepository packageExitDefinitionRepository) {
+            IExcel excel,
+            IConfigRepository configRepository,
+            IPackageExitDefinitionRepository packageExitDefinitionRepository,
+            IPackageRepository packageRepository) {
             _dialogService = dialogService;
             _excel = excel;
-            _barCodeRepository = barCodeRepository;
             _configRepository = configRepository;
             _packageExitDefinitionRepository = packageExitDefinitionRepository;
+            _packageRepository = packageRepository;
             EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async info => {
                 if (info is SettingsChangedEvent model) {
                     if (model.SettingsName.Equals("VolumeSettings")) {
@@ -564,43 +566,47 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     //获取格口集合
                     var exitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0, o => o.CreateTime);
                     //获取条数
-                    var total = await _barCodeRepository.Total(s =>
-                            (StartTime == null || s.ScanTime.CompareTo(StartTime) >= 0) &&
-                            (EndTime == null || s.ScanTime.CompareTo(EndTime) <= 0) &&
-                            (string.IsNullOrWhiteSpace(BarCode) || s.Barcode.Contains(BarCode)) &&
-                            (TimestampedGuid <= 0 || s.TimestampedGuid.Equals(TimestampedGuid)) &&
-                            (MinWeight <= 0 || s.Weight >= MinWeight) &&
-                            (MaxWeight <= 0 || s.Weight <= MaxWeight) &&
-                            (SelectedUploadStatus == null || s.RequestStatus.Equals(SelectedUploadStatus)),
+                    var total = await _packageRepository.Total(s =>
+                            s.BarCodeInfo != null && s.WeightInfo != null &&
+                            s.UploadInfo != null &&
+                            (StartTime == null || s.PackageCreateTime.CompareTo(StartTime) >= 0) &&
+                            (EndTime == null || s.PackageCreateTime.CompareTo(EndTime) <= 0) &&
+                            (string.IsNullOrWhiteSpace(BarCode) || s.BarCodeInfo.Barcode.Contains(BarCode)) &&
+                            (TimestampedGuid <= 0 || s.PackageTimestamped.Equals(TimestampedGuid)) &&
+                            (MinWeight <= 0 || s.WeightInfo.FormattedWeight >= MinWeight) &&
+                            (MaxWeight <= 0 || s.WeightInfo.FormattedWeight <= MaxWeight) &&
+                            (SelectedUploadStatus == null || s.UploadInfo.RequestStatus.Equals(SelectedUploadStatus)),
                         new CancellationToken(false));
                     if (total > 0) {
                         PageCount = total / pageSize + (total % pageSize > 0 ? 1 : 0);
-                        var (key, infoModels) = await _barCodeRepository.SelectBarCodeOrderByDescending(s =>
-                                (StartTime == null || s.ScanTime.CompareTo(StartTime) >= 0) &&
-                                (EndTime == null || s.ScanTime.CompareTo(EndTime) <= 0) &&
-                                (string.IsNullOrWhiteSpace(BarCode) || s.Barcode.Contains(BarCode)) &&
-                                (TimestampedGuid <= 0 || s.TimestampedGuid.Equals(TimestampedGuid)) &&
-                                (MinWeight <= 0 || s.Weight >= MinWeight) &&
-                                (MaxWeight <= 0 || s.Weight <= MaxWeight) &&
-                                (SelectedUploadStatus == null || s.RequestStatus.Equals(SelectedUploadStatus)),
-                            o => o.ScanTime, pageIndex - 1, pageSize, new CancellationToken(false));
+                        var (key, infoModels) = await _packageRepository.SelectPackageOrderByDescending(s =>
+                                s.BarCodeInfo != null && s.WeightInfo != null &&
+                                s.UploadInfo != null &&
+                                (StartTime == null || s.PackageCreateTime.CompareTo(StartTime) >= 0) &&
+                                (EndTime == null || s.PackageCreateTime.CompareTo(EndTime) <= 0) &&
+                                (string.IsNullOrWhiteSpace(BarCode) || s.BarCodeInfo.Barcode.Contains(BarCode)) &&
+                                (TimestampedGuid <= 0 || s.PackageTimestamped.Equals(TimestampedGuid)) &&
+                                (MinWeight <= 0 || s.WeightInfo.FormattedWeight >= MinWeight) &&
+                                (MaxWeight <= 0 || s.WeightInfo.FormattedWeight <= MaxWeight) &&
+                                (SelectedUploadStatus == null || s.UploadInfo.RequestStatus.Equals(SelectedUploadStatus)),
+                            o => o.PackageCreateTime, pageIndex - 1, pageSize, new CancellationToken(false));
 
                         if (infoModels?.Any() == true) {
                             var itemModels = infoModels?.Select((s, i) => new BarCodeItemModel {
                                 Num = i + 1,
-                                TimestampedGuid = s.TimestampedGuid,
-                                Barcode = s.Barcode,
-                                Weight = s.Weight,
-                                Length = s.Length,
-                                Width = s.Width,
-                                Height = s.Height,
-                                Volume = s.Volume,
-                                ScanTime = s.ScanTime,
-                                RequestStatus = s.RequestStatus,
+                                TimestampedGuid = s.PackageTimestamped,
+                                Barcode = s.BarCodeInfo?.Barcode ?? string.Empty,
+                                Weight = (float)(s.WeightInfo?.FormattedWeight ?? 0),
+                                Length = (float)(s.VolumeInfo?.FormattedLength ?? 0),
+                                Width = (float)(s.VolumeInfo?.FormattedWidth ?? 0),
+                                Height = (float)(s.VolumeInfo?.FormattedHeight ?? 0),
+                                Volume = (float)(s.VolumeInfo?.FormattedVolume ?? 0),
+                                ScanTime = s.BarCodeInfo?.ScanTime ?? s.PackageCreateTime,
+                                RequestStatus = s.UploadInfo?.RequestStatus ?? UploadStatus.NotUploaded,
                                 BarcodeImagePath = s.ImageInfos?.LastOrDefault(l => l.Type == 0)?.LocalPath ?? string.Empty,
                                 IsBarcodeImageExists = s.ImageInfos?.LastOrDefault(l => l.Type == 0)?.LocalPath?.IsFileExists() ?? false,
                                 Other = s.Other ?? string.Empty,
-                                ExitName = exitDefinitionInfoModels?.FirstOrDefault(f => f.Id.Equals(s.SortingInfo?.ExitId ?? 0))?.ExitName ?? string.Empty,
+                                ExitName = s.ExitInfo?.PhysicalExit ?? string.Empty,
                                 PanoramaImageItems = s.ImageInfos?.Where(w => w.Type == 1)?.Select(ps =>
                                 new PanoramaImageItemModel() {
                                     IsPanoramaImageExists = ps.LocalPath?.IsFileExists() ?? false,
@@ -610,7 +616,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                                     DurationInSeconds = s.UploadInfo?.DurationInSeconds ?? 0,
                                     ExceptionMessage = s.UploadInfo?.ExceptionMessage ?? string.Empty,
                                     InterfaceParameters = s.UploadInfo?.InterfaceParameters ?? string.Empty,
-                                    IsSuccess = s.UploadInfo?.IsSuccess ?? false,
+                                    IsSuccess = s.UploadInfo?.RequestStatus == UploadStatus.Succeeded,
                                     RequestContent = s.UploadInfo?.RequestContent ?? string.Empty,
                                     RequestTime = s.UploadInfo?.RequestTime,
                                     RequestUrl = s.UploadInfo?.RequestUrl ?? string.Empty,
@@ -621,7 +627,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                                     CreateTime = s.WeightInfo?.CreateTime,
                                     FormattedWeight = s.WeightInfo?.FormattedWeight ?? 0,
                                     OriginalText = s.WeightInfo?.OriginalText ?? string.Empty,
-                                    SerialPortName = s.WeightInfo?.SerialPortName ?? string.Empty,
                                     SourceType = s.WeightInfo?.SourceType ?? SourceType.SerialPort
                                 },
                                 SortingInfo = new SortingItemModel {
@@ -630,12 +635,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                                     CommunicationMethod = s.SortingInfo?.CommunicationMethod ?? CommunicationsType.None,
                                     IsCreatedByLowerMachine = s.SortingInfo?.IsCreatedByLowerMachine ?? false,
                                     PackageCreationInstruction = s.SortingInfo?.PackageCreationInstruction ?? string.Empty,
-                                    PackageCreationTime = s.SortingInfo?.PackageCreationTime ?? DateTime.MinValue,
+                                    PackageCreationTime = s.PackageCreateTime,
                                     ReceivedInstruction = s.SortingInfo?.ReceivedInstruction ?? string.Empty,
                                     SentInstruction = s.SortingInfo?.SentInstruction ?? string.Empty,
-                                    ExitId = s.SortingInfo?.ExitId ?? 0,
                                     IsSortingUsed = s.SortingInfo?.IsSortingUsed ?? false,
-                                    LogisticsId = s.SortingInfo?.LogisticsId ?? 0,
                                     SortingMode = s.SortingInfo?.SortingMode ?? SortMode.None,
                                 },
                                 VolumeInfo = new VolumeItemModel() {
@@ -648,10 +651,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                                     SourceType = s.VolumeInfo?.SourceType ?? SourceType.Camera
                                 },
                                 OcrInfo = new OcrItemInfo() {
-                                    CreateTime = s.OcrInfo?.CreateTime,
-                                    OcrInterfaceName = s.OcrInfo?.OcrInterfaceName ?? string.Empty,
+                                    CreateTime = s.OcrInfo?.RecognizeTime,
+                                    /*OcrInterfaceName = s.OcrInfo?.OcrInterfaceName ?? string.Empty,
                                     OriginalContent = s.OcrInfo?.OriginalContent ?? string.Empty,
-                                    ParsedContent = s.OcrInfo?.ParsedContent ?? string.Empty
+                                    ParsedContent = s.OcrInfo?.ParsedContent ?? string.Empty*/
                                 },
                                 IsUploadedToCloudVideo = s.CloudVideoUploadInfo is { UploadTime: not null }
                             })?.ToList();

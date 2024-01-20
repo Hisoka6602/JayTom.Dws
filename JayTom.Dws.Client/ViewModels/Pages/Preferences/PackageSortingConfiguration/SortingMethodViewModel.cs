@@ -8,13 +8,14 @@ using JayTom.Dws.Domain.Dto;
 using System.Windows.Controls;
 using MaterialDesignThemes.Wpf;
 using JayTom.Dws.Data.LocalConf;
-using JayTom.Dws.Data.LocalData;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Client.Models.PackageSorting;
+using JayTom.Dws.Data.Package;
 
-namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration {
+namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration
+{
 
     public class SortingMethodViewModel : BindableBase {
         private readonly IConfigRepository _configRepository;

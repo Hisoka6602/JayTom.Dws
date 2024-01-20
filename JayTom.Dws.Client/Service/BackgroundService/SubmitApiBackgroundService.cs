@@ -48,15 +48,15 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             _configRepository = configRepository;
             EventAggregator.Instance.Subscribe<PackageInfo>(item => {
                 if (item is PackageInfo model) {
-                    if (!string.IsNullOrEmpty(model.BarCode)) {
+                    if (model.BarCodeInfo != null) {
                         _submitItems.Enqueue(new SubmitItemInfo() {
-                            Barcode = model.BarCode,
-                            Weight = (float)(model.Weight ?? 0),
-                            Length = (float)(model.Length ?? 0),
-                            Width = (float)(model.Width ?? 0),
-                            Height = (float)(model.Height ?? 0),
-                            Volume = (float)(model.Volume ?? 0),
-                            ScanTime = model.ScanTime,
+                            Barcode = model?.BarCodeInfo?.Barcode ?? string.Empty,
+                            Height = (float)(model?.VolumeInfo?.FormattedHeight ?? 0),
+                            ScanTime = model?.BarCodeInfo?.ScanTime ?? DateTime.Now,
+                            Weight = (float)(model.WeightInfo?.FormattedWeight ?? 0),
+                            Length = (float)(model.VolumeInfo?.FormattedLength ?? 0),
+                            Width = (float)(model.VolumeInfo?.FormattedWidth ?? 0),
+                            Volume = (float)(model.VolumeInfo?.FormattedVolume ?? 0),
                             Guid = model.Guid,
                             //图片暂时不写
                         });

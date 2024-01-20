@@ -1,7 +1,8 @@
 ﻿using Prism.Mvvm;
-using JayTom.Dws.Data.LocalData;
+using JayTom.Dws.Data.Package;
 
-namespace JayTom.Dws.Client.Models.PackageSorting {
+namespace JayTom.Dws.Client.Models.PackageSorting
+{
 
     public class SortModeInfoModel : BindableBase {
         private SortMode _value = SortMode.None;

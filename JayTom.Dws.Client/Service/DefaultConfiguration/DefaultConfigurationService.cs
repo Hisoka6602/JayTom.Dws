@@ -21,6 +21,7 @@ using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Repository.LocalData;
 using JayTom.Dws.Domain.Dto.CommunicationsSettings;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.StartPanel;
+using JayTom.Dws.Data.Package;
 
 namespace JayTom.Dws.Client.Service.DefaultConfiguration {
 

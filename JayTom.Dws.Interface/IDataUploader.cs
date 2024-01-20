@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
 namespace JayTom.Dws.Interface {
+
     public interface IDataUploader {
 
         /// <summary>
@@ -103,6 +104,44 @@ namespace JayTom.Dws.Interface {
         /// 异常信息
         /// </summary>
         public string ExceptionMsg { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Api异常类型
+        /// </summary>
+        public ApiExceptionType ApiExceptionType { get; set; } = ApiExceptionType.None;
+    }
+
+    public enum ApiExceptionType {
+
+        /// <summary>
+        /// 无
+        /// </summary>
+        None = 0,
+
+        /// <summary>
+        /// 访问超时
+        /// </summary>
+        Timeout = 1,
+
+        /// <summary>
+        /// Url无法访问
+        /// </summary>
+        UnreachableUrl = 2,
+
+        /// <summary>
+        /// 未通过逻辑效验
+        /// </summary>
+        LogicValidationFailed = 3,
+
+        /// <summary>
+        /// 内容解析异常
+        /// </summary>
+        ContentParsingException = 4,
+
+        /// <summary>
+        /// 其他
+        /// </summary>
+        Other = 5
     }
 
     public class UploadImageInfo {

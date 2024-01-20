@@ -2,10 +2,11 @@
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
+using JayTom.Dws.Data.Package;
 
-namespace JayTom.Dws.Domain.Repository.LocalData {
+namespace JayTom.Dws.Domain.Repository.LocalData
+{
 
     public interface IUploadRepository : IRepository<UploadInfoModel> {
     }

@@ -1,4 +1,5 @@
-﻿using JayTom.Dws.Data.LocalLog;
+﻿using JayTom.Dws.Data.Package;
+using JayTom.Dws.Data.LocalLog;
 using JayTom.Dws.Data.LocalData;
 using JayTom.Dws.Data.LocalConf;
 using Microsoft.EntityFrameworkCore;
@@ -29,83 +30,124 @@ namespace JayTom.Dws.Infrastructure {
         protected override void OnModelCreating(ModelBuilder modelBuilder) {
             //data
             {
+                modelBuilder.Entity<PackageInfoModel>()
+                    .HasKey(c => new {
+                        c.Id
+                    });
+                modelBuilder.Entity<PackageInfoModel>()
+                    .HasIndex(b => b.PackageTimestamped)
+                    .IsUnique(false);
+                modelBuilder.Entity<PackageInfoModel>()
+                    .HasIndex(b => b.PackageCreateTime)
+                    .IsUnique(false)
+                    .HasAnnotation("IndexSortOrder", "Descending");
+                //条码信息
+                modelBuilder.Entity<PackageInfoModel>()
+                    .HasOne(b => b.BarCodeInfo)
+                    .WithOne(n => n.PackageInfo)
+                    .HasForeignKey<BarCodeInfoModel>(n => n.PackageId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
                 modelBuilder.Entity<BarCodeInfoModel>()
                     .HasKey(c => new {
                         c.Id
                     });
-
                 modelBuilder.Entity<BarCodeInfoModel>()
                     .HasIndex(b => b.Barcode)
-                    .IsUnique(false);
-                modelBuilder.Entity<BarCodeInfoModel>()
-                    .HasIndex(b => b.TimestampedGuid)
                     .IsUnique(false);
                 modelBuilder.Entity<BarCodeInfoModel>()
                     .HasIndex(b => b.ScanTime)
                     .IsUnique(false)
                     .HasAnnotation("IndexSortOrder", "Descending");
-                //图片信息
-                modelBuilder.Entity<BarCodeInfoModel>()
-                    .HasMany(b => b.ImageInfos)
-                    .WithOne(n => n.BarCodeInfo)
-                    .HasForeignKey(n => new { n.BarcodeId })
-                    .OnDelete(DeleteBehavior.Cascade);
-                modelBuilder.Entity<ImageInfoModel>().HasKey(c => new {
-                    c.Id
-                });
-                /*modelBuilder.Entity<PanoramaImageInfoModel>().HasKey(c => new {
-                    c.Id
-                });*/
-                //体积信息
-                modelBuilder.Entity<BarCodeInfoModel>()
-                    .HasOne(b => b.VolumeInfo)
-                    .WithOne(n => n.BarCodeInfo)
-                    .HasForeignKey<VolumeInfoModel>(n => n.BarcodeId)
-                    .OnDelete(DeleteBehavior.Cascade);
-                modelBuilder.Entity<VolumeInfoModel>().HasKey(c => new {
-                    c.Id
-                });
                 //称重信息
-                modelBuilder.Entity<BarCodeInfoModel>()
+                modelBuilder.Entity<PackageInfoModel>()
                     .HasOne(b => b.WeightInfo)
-                    .WithOne(n => n.BarCodeInfo)
-                    .HasForeignKey<WeightInfoModel>(n => n.BarcodeId)
+                    .WithOne(n => n.PackageInfo)
+                    .HasForeignKey<WeightInfoModel>(n => n.PackageId)
                     .OnDelete(DeleteBehavior.Cascade);
                 modelBuilder.Entity<WeightInfoModel>().HasKey(c => new {
                     c.Id
                 });
+                //体积信息
+                modelBuilder.Entity<PackageInfoModel>()
+                    .HasOne(b => b.VolumeInfo)
+                    .WithOne(n => n.PackageInfo)
+                    .HasForeignKey<VolumeInfoModel>(n => n.PackageId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                modelBuilder.Entity<VolumeInfoModel>().HasKey(c => new {
+                    c.Id
+                });
+
                 //上传信息
-                modelBuilder.Entity<BarCodeInfoModel>()
+                modelBuilder.Entity<PackageInfoModel>()
                     .HasOne(b => b.UploadInfo)
-                    .WithOne(n => n.BarCodeInfo)
-                    .HasForeignKey<UploadInfoModel>(n => n.BarcodeId)
+                    .WithOne(n => n.PackageInfo)
+                    .HasForeignKey<UploadInfoModel>(n => n.PackageId)
                     .OnDelete(DeleteBehavior.Cascade);
                 modelBuilder.Entity<UploadInfoModel>().HasKey(c => new {
                     c.Id
                 });
+
+                //格口信息
+                modelBuilder.Entity<PackageInfoModel>()
+                    .HasOne(b => b.ExitInfo)
+                    .WithOne(n => n.PackageInfo)
+                    .HasForeignKey<ExitInfoModel>(n => n.PackageId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                modelBuilder.Entity<ExitInfoModel>().HasKey(c => new {
+                    c.Id
+                });
                 //分拣信息
-                modelBuilder.Entity<BarCodeInfoModel>()
+                modelBuilder.Entity<PackageInfoModel>()
                     .HasOne(b => b.SortingInfo)
-                    .WithOne(n => n.BarCodeInfo)
-                    .HasForeignKey<SortingInfoModel>(n => n.BarcodeId)
+                    .WithOne(n => n.PackageInfo)
+                    .HasForeignKey<SortingInfoModel>(n => n.PackageId)
                     .OnDelete(DeleteBehavior.Cascade);
                 modelBuilder.Entity<SortingInfoModel>().HasKey(c => new {
                     c.Id
                 });
+
+                //物流信息
+                modelBuilder.Entity<PackageInfoModel>()
+                    .HasOne(b => b.LogisticsInfo)
+                    .WithOne(n => n.PackageInfo)
+                    .HasForeignKey<LogisticsInfoModel>(n => n.PackageId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                modelBuilder.Entity<LogisticsInfoModel>().HasKey(c => new {
+                    c.Id
+                });
                 //Ocr
-                modelBuilder.Entity<BarCodeInfoModel>()
+                modelBuilder.Entity<PackageInfoModel>()
                     .HasOne(b => b.OcrInfo)
-                    .WithOne(n => n.BarCodeInfo)
-                    .HasForeignKey<OcrInfoModel>(n => n.BarcodeId)
+                    .WithOne(n => n.PackageInfo)
+                    .HasForeignKey<OcrInfoModel>(n => n.PackageId)
                     .OnDelete(DeleteBehavior.Cascade);
                 modelBuilder.Entity<OcrInfoModel>().HasKey(c => new {
                     c.Id
                 });
+                //Ocr详细信息
+                modelBuilder.Entity<OcrInfoModel>()
+                    .HasMany(b => b.OcrDetailedInfos)
+                    .WithOne(n => n.OcrInfo)
+                    .HasForeignKey(n => new { n.OcrInfoId })
+                    .OnDelete(DeleteBehavior.Cascade);
+                modelBuilder.Entity<OcrDetailedInfoModel>().HasKey(c => new {
+                    c.Id
+                });
+                //图片信息
+                modelBuilder.Entity<PackageInfoModel>()
+                    .HasMany(b => b.ImageInfos)
+                    .WithOne(n => n.PackageInfo)
+                    .HasForeignKey(n => new { n.PackageId })
+                    .OnDelete(DeleteBehavior.Cascade);
+                modelBuilder.Entity<ImageInfoModel>().HasKey(c => new {
+                    c.Id
+                });
                 //视频云
-                modelBuilder.Entity<BarCodeInfoModel>()
+                modelBuilder.Entity<PackageInfoModel>()
                     .HasOne(b => b.CloudVideoUploadInfo)
-                    .WithOne(n => n.BarCodeInfo)
-                    .HasForeignKey<CloudVideoUploadInfoModel>(n => n.BarcodeId)
+                    .WithOne(n => n.PackageInfo)
+                    .HasForeignKey<CloudVideoUploadInfoModel>(n => n.PackageId)
                     .OnDelete(DeleteBehavior.Cascade);
                 modelBuilder.Entity<CloudVideoUploadInfoModel>().HasKey(c => new {
                     c.Id

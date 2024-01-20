@@ -6,13 +6,14 @@ using Newtonsoft.Json;
 using System.Windows.Input;
 using JayTom.Dws.Domain.Dto;
 using MaterialDesignThemes.Wpf;
-using JayTom.Dws.Data.LocalData;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Models.PackageSorting;
 using JayTom.Dws.Client.Models.PackageSorting.Rule;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
+using JayTom.Dws.Data.Package;
 
-namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.SortingMethodEditors {
+namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.SortingMethodEditors
+{
     public class ApiSortingRuleEditorViewModel : BindableBase {
         private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
         private string _identifier = string.Empty;

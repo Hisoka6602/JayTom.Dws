@@ -1,11 +1,12 @@
-﻿using JayTom.Dws.Data.LocalData;
+﻿using JayTom.Dws.Data.Package;
 using System;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media;
 
-namespace JayTom.Dws.Client.Converters {
+namespace JayTom.Dws.Client.Converters
+{
     public class UploadStatusConverter : IValueConverter {
 
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {

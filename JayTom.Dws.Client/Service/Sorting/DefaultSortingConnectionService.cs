@@ -10,7 +10,6 @@ using JayTom.Dws.Plugin.Tcp;
 using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
 using JayTom.Dws.Data.LocalLog;
-using JayTom.Dws.Data.LocalData;
 using NPOI.SS.Formula.Functions;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
@@ -27,8 +26,10 @@ using JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig.ConnectionParams;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig.ConnectionParams;
+using JayTom.Dws.Data.Package;
 
-namespace JayTom.Dws.Client.Service.Sorting {
+namespace JayTom.Dws.Client.Service.Sorting
+{
 
     public class DefaultSortingConnectionService : ISortingConnectionService {
         private readonly ICommunicationConnectionConfigRepository _communicationConnectionConfigRepository;

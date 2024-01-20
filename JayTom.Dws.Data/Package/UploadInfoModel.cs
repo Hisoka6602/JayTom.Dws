@@ -7,16 +7,16 @@ using System.Diagnostics.CodeAnalysis;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace JayTom.Dws.Data.LocalData {
+namespace JayTom.Dws.Data.Package {
 
     [Table("Data_UploadInfo", Schema = "dbo")]
-    public class UploadInfoModel : BaseBarCodeForeignKeyInfo {
+    public class UploadInfoModel : BasePackageForeignKeyInfoModel {
 
         /// <summary>
-        /// 是否成功
+        /// 上传状态(1成功、2失败、0未上传)
         /// </summary>
-        [Column("IsSuccess")]
-        public bool IsSuccess { get; set; }
+        [Column("RequestStatus")]
+        public UploadStatus RequestStatus { get; set; } = UploadStatus.NotUploaded;
 
         /// <summary>
         /// 上传内容
@@ -65,5 +65,62 @@ namespace JayTom.Dws.Data.LocalData {
         /// </summary>
         [Column("ExceptionMessage")]
         public string ExceptionMessage { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Api异常类型
+        /// </summary>
+        [Column("ApiExceptionType")]
+        public ApiExceptionType ApiExceptionType { get; set; } = ApiExceptionType.None;
+    }
+
+    public enum ApiExceptionType {
+
+        /// <summary>
+        /// 无
+        /// </summary>
+        None = 0,
+
+        /// <summary>
+        /// 访问超时
+        /// </summary>
+        Timeout = 1,
+
+        /// <summary>
+        /// Url无法访问
+        /// </summary>
+        UnreachableUrl = 2,
+
+        /// <summary>
+        /// 未通过逻辑效验
+        /// </summary>
+        LogicValidationFailed = 3,
+
+        /// <summary>
+        /// 内容解析异常
+        /// </summary>
+        ContentParsingException = 4,
+
+        /// <summary>
+        /// 其他
+        /// </summary>
+        Other = 5
+    }
+
+    public enum UploadStatus {
+
+        /// <summary>
+        /// 上传成功
+        /// </summary>
+        Succeeded = 0,
+
+        /// <summary>
+        /// 上传失败
+        /// </summary>
+        Failed = 1,
+
+        /// <summary>
+        /// 未上传
+        /// </summary>
+        NotUploaded = 2
     }
 }

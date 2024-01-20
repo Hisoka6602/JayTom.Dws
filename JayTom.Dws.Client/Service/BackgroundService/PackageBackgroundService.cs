@@ -8,9 +8,9 @@ using System.Threading;
 using JayTom.Dws.Camera;
 using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
+using JayTom.Dws.Data.Package;
 using JayTom.Dws.Data.LocalLog;
 using JayTom.Dws.Data.LocalConf;
-using JayTom.Dws.Data.LocalData;
 using NPOI.SS.Formula.Functions;
 using System.Collections.Generic;
 using System.Windows.Media.Media3D;
@@ -45,8 +45,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private ConcurrentQueue<CameraImageInfo> _panoramaImageItems = new();
         private ConcurrentQueue<CameraImageInfo> _volumeCameraImageItems = new();
         private ConcurrentQueue<PackageInfo> _packageInfos = new();
-        private ConcurrentQueue<WeightQueueInfo> _weightQueueInfos = new();
-        private ConcurrentQueue<VolumeQueueInfo> _volumeQueueInfos = new();
+        private ConcurrentQueue<WeightInfoModel> _weightQueueInfos = new();
+        private ConcurrentQueue<VolumeInfoModel> _volumeQueueInfos = new();
 
         public PackageBackgroundService(IDeviceService deviceService,
             IResultOutputService resultOutputService,
@@ -87,11 +87,13 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     !_communicationsSettingsDto.DeviceControlSettingsInfo.IsUseCreatePackageByDevice) {
                     var packageInfo = new PackageInfo() {
                         Guid = args.Timestamp,
-                        BarCode = args.Barcode,
-                        CameraSerialNumber = args.CameraSerialNumber,
+                        BarCodeInfo = new BarCodeInfoModel() {
+                            Barcode = args.Barcode,
+                            CameraSerialNumber = args.CameraSerialNumber,
+                            ScanTime = args.ScanTime,
+                            Source = SourceType.Camera
+                        },
                         Image = args.Image,
-                        ScanTime = args.ScanTime,
-                        Timestamp = args.Timestamp,
                     };
                     //触发全景拍照
                     var list = _panoramaCameras?.Where(w => w.SelectedCameraSerialNumber.Equals(args.CameraSerialNumber))?
@@ -116,20 +118,17 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     do {
                         tryDequeue = _volumeQueueInfos.TryDequeue(out var volume);
                         if (tryDequeue && volume is not null &&
-                            DateTime.Now.Subtract(volume.Time).TotalMilliseconds < 500) {
-                            packageInfo.Length = volume.Length;
-                            packageInfo.Width = volume.Width;
-                            packageInfo.Height = volume.Height;
-                            packageInfo.Volume = volume.Volume;
+                            DateTime.Now.Subtract(volume.CreateTime).TotalMilliseconds < 500) {
+                            packageInfo.VolumeInfo = volume;
                             break;
                         }
                     } while (tryDequeue && _volumeQueueInfos.Count > 0);
 
                     do {
-                        tryDequeue = _weightQueueInfos.TryDequeue(out var weight);
-                        if (tryDequeue && weight is not null &&
-                            DateTime.Now.Subtract(weight.Time).TotalMilliseconds < 500) {
-                            packageInfo.Weight = weight.Weight;
+                        tryDequeue = _weightQueueInfos.TryDequeue(out var weightInfo);
+                        if (tryDequeue && weightInfo is not null &&
+                            DateTime.Now.Subtract(weightInfo.CreateTime).TotalMilliseconds < 500) {
+                            packageInfo.WeightInfo = weightInfo;
                             break;
                         }
                     } while (tryDequeue && _weightQueueInfos.Count > 0);
@@ -158,13 +157,15 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     }
                 }
                 else {
-                    var info = _packageInfos.OrderBy(o => o.CreateTime).FirstOrDefault(f => f.BarCode == null);
+                    var info = _packageInfos.OrderBy(o => o.CreateTime).FirstOrDefault(f => f.BarCodeInfo == null);
                     if (info != null) {
-                        info.BarCode = args.Barcode;
-                        info.CameraSerialNumber = args.CameraSerialNumber;
+                        info.BarCodeInfo = new BarCodeInfoModel() {
+                            Barcode = args.Barcode,
+                            CameraSerialNumber = args.CameraSerialNumber,
+                            ScanTime = args.ScanTime,
+                            Source = SourceType.Camera
+                        };
                         info.Image = args.Image;
-                        info.ScanTime = args.ScanTime;
-                        info.Timestamp = args.Timestamp;
                     }
                 }
             };
@@ -179,11 +180,13 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         !_communicationsSettingsDto.DeviceControlSettingsInfo.IsUseCreatePackageByDevice) {
                         var packageInfo = new PackageInfo() {
                             Guid = args.Timestamp,
-                            BarCode = args.Barcode,
-                            CameraSerialNumber = args.CameraSerialNumber,
+                            BarCodeInfo = new BarCodeInfoModel() {
+                                Barcode = args.Barcode,
+                                CameraSerialNumber = args.CameraSerialNumber,
+                                ScanTime = args.ScanTime,
+                                Source = SourceType.Camera
+                            },
                             Image = args.Image,
-                            ScanTime = args.ScanTime,
-                            Timestamp = args.Timestamp,
                         };
                         //触发全景拍照
                         var list = _panoramaCameras?.Where(w => w.SelectedCameraSerialNumber.Equals(args.CameraSerialNumber))?
@@ -206,22 +209,19 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         //判断重量和体积队列
                         var tryDequeue = false;
                         do {
-                            tryDequeue = _volumeQueueInfos.TryDequeue(out var volume);
-                            if (tryDequeue && volume is not null &&
-                                DateTime.Now.Subtract(volume.Time).TotalMilliseconds < 500) {
-                                packageInfo.Length = volume.Length;
-                                packageInfo.Width = volume.Width;
-                                packageInfo.Height = volume.Height;
-                                packageInfo.Volume = volume.Volume;
+                            tryDequeue = _volumeQueueInfos.TryDequeue(out var volumeInfo);
+                            if (tryDequeue && volumeInfo is not null &&
+                                DateTime.Now.Subtract(volumeInfo.CreateTime).TotalMilliseconds < 500) {
+                                packageInfo.VolumeInfo = volumeInfo;
                                 break;
                             }
                         } while (tryDequeue && _volumeQueueInfos.Count > 0);
 
                         do {
-                            tryDequeue = _weightQueueInfos.TryDequeue(out var weight);
-                            if (tryDequeue && weight is not null &&
-                                DateTime.Now.Subtract(weight.Time).TotalMilliseconds < 500) {
-                                packageInfo.Weight = weight.Weight;
+                            tryDequeue = _weightQueueInfos.TryDequeue(out var weightInfo);
+                            if (tryDequeue && weightInfo is not null &&
+                                DateTime.Now.Subtract(weightInfo.CreateTime).TotalMilliseconds < 500) {
+                                packageInfo.WeightInfo = weightInfo;
                                 break;
                             }
                         } while (tryDequeue && _weightQueueInfos.Count > 0);
@@ -233,13 +233,14 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         });
                     }
                     else {
-                        var info = _packageInfos.OrderBy(o => o.CreateTime).FirstOrDefault(f => f.BarCode == null);
+                        var info = _packageInfos.OrderBy(o => o.CreateTime).FirstOrDefault(f => f.BarCodeInfo == null);
                         if (info != null) {
-                            info.BarCode = args.Barcode;
-                            info.CameraSerialNumber = args.CameraSerialNumber;
+                            info.BarCodeInfo = new BarCodeInfoModel() {
+                                Barcode = args.Barcode,
+                                CameraSerialNumber = args.CameraSerialNumber,
+                                ScanTime = args.ScanTime,
+                            };
                             info.Image = args.Image;
-                            info.ScanTime = args.ScanTime;
-                            info.Timestamp = args.Timestamp;
                         }
                     }
                     //获取外部数据
@@ -262,37 +263,47 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             //体积相机
             _deviceService.VolumeCaptured += async delegate (object? sender, VolumeCapturedEventArgs args) {
                 //填充长宽高
-                var info = _packageInfos.FirstOrDefault(f => f.Length == null ||
-                                                             f.Width == null ||
-                                                             f.Height == null);
+                var info = _packageInfos.FirstOrDefault(f => f.VolumeInfo == null);
                 //增加体积单位转换
                 if (info is not null) {
-                    info.Length = args.Length - info.LengthToDeduct;
-                    info.Width = args.Width - info.WidthToDeduct;
-                    info.Height = args.Height - info.HeightToDeduct;
-                    info.Volume = args.Volume - info.VolumeToDeduct;
+                    info.VolumeInfo = new VolumeInfoModel() {
+                        CreateTime = args.Timestamp,
+                        FormattedHeight = args.Height - info.LengthToDeduct,
+                        FormattedWidth = args.Width - info.WidthToDeduct,
+                        FormattedLength = args.Length - info.LengthToDeduct,
+                        FormattedVolume = args.Volume - info.VolumeToDeduct,
+                        SourceType = SourceType.Camera,
+                    };
                 }
                 else {
-                    _volumeQueueInfos.Enqueue(new VolumeQueueInfo() {
-                        Time = DateTime.Now,
-                        Length = args.Length,
-                        Width = args.Width,
-                        Height = args.Height,
-                        Volume = args.Volume,
+                    _volumeQueueInfos.Enqueue(new VolumeInfoModel {
+                        CreateTime = args.Timestamp,
+                        FormattedHeight = args.Height,
+                        FormattedWidth = args.Width,
+                        FormattedLength = args.Length,
+                        FormattedVolume = args.Volume,
+                        SourceType = SourceType.Camera,
                     });
                 }
             };
             //称重
             _deviceService.StableWeight += async delegate (object? sender, StableWeightEventArgs args) {
-                var info = _packageInfos.OrderBy(o => o.CreateTime).FirstOrDefault(f => !f.IsCompleted && f.Weight is null);
+                var info = _packageInfos.OrderBy(o => o.CreateTime).FirstOrDefault(f => !f.IsCompleted && f.WeightInfo is null);
                 if (info is not null) {
-                    info.Weight = args.Weight;
+                    info.WeightInfo = new WeightInfoModel {
+                        CreateTime = DateTime.Now,
+                        FormattedWeight = args.Weight,
+                        SourceType = SourceType.SerialPort,
+                        WeighingMode = WeighingMode.Static
+                    };
                 }
                 else {
                     if (_weightSettingsDto.Mode == WeightMode.Dynamic) {
-                        _weightQueueInfos.Enqueue(new WeightQueueInfo() {
-                            Time = DateTime.Now,
-                            Weight = args.Weight,
+                        _weightQueueInfos.Enqueue(new WeightInfoModel {
+                            CreateTime = DateTime.Now,
+                            FormattedWeight = args.Weight,
+                            SourceType = SourceType.SerialPort,
+                            WeighingMode = WeighingMode.Static
                         });
                     }
                 }
@@ -308,14 +319,26 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     !_communicationsSettingsDto.DeviceControlSettingsInfo.IsUseCreatePackageByDevice) {
                     var packageInfo = new PackageInfo() {
                         Guid = timestamp,
-                        BarCode = args.Barcode,
-                        ScanTime = DateTime.Now,
-                        Timestamp = timestamp,
-                        Weight = args.Weight,
-                        Length = args.Length,
-                        Width = args.Width,
-                        Height = args.Height,
-                        Volume = args.Volume,
+                        BarCodeInfo = new BarCodeInfoModel() {
+                            Barcode = args.Barcode,
+                            ScanTime = DateTime.Now,
+                            Source = SourceType.Input,
+                        },
+                        WeightInfo = new WeightInfoModel() {
+                            CreateTime = DateTime.Now,
+                            FormattedWeight = args.Weight,
+                            SourceType = SourceType.Input,
+                            OriginalText = args.SourceContent
+                        },
+                        VolumeInfo = new VolumeInfoModel() {
+                            CreateTime = DateTime.Now,
+                            FormattedHeight = args.Height,
+                            FormattedLength = args.Length,
+                            FormattedVolume = args.Volume,
+                            FormattedWidth = args.Width,
+                            SourceType = SourceType.Input,
+                            OriginalText = args.SourceContent
+                        },
                         CreateTime = DateTime.Now,
                         IsCreatedByLowerMachine = false,
                     };
@@ -335,22 +358,19 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     //判断重量和体积队列
                     var tryDequeue = false;
                     do {
-                        tryDequeue = _volumeQueueInfos.TryDequeue(out var volume);
-                        if (tryDequeue && volume is not null &&
-                            DateTime.Now.Subtract(volume.Time).TotalMilliseconds < 500) {
-                            packageInfo.Length = volume.Length;
-                            packageInfo.Width = volume.Width;
-                            packageInfo.Height = volume.Height;
-                            packageInfo.Volume = volume.Volume;
+                        tryDequeue = _volumeQueueInfos.TryDequeue(out var volumeInfo);
+                        if (tryDequeue && volumeInfo is not null &&
+                            DateTime.Now.Subtract(volumeInfo.CreateTime).TotalMilliseconds < 500) {
+                            packageInfo.VolumeInfo = volumeInfo;
                             break;
                         }
                     } while (tryDequeue && _volumeQueueInfos.Count > 0);
 
                     do {
-                        tryDequeue = _weightQueueInfos.TryDequeue(out var weight);
-                        if (tryDequeue && weight is not null &&
-                            DateTime.Now.Subtract(weight.Time).TotalMilliseconds < 500) {
-                            packageInfo.Weight = weight.Weight;
+                        tryDequeue = _weightQueueInfos.TryDequeue(out var weightInfo);
+                        if (tryDequeue && weightInfo is not null &&
+                            DateTime.Now.Subtract(weightInfo.CreateTime).TotalMilliseconds < 500) {
+                            packageInfo.WeightInfo = weightInfo;
                             break;
                         }
                     } while (tryDequeue && _weightQueueInfos.Count > 0);
@@ -373,16 +393,28 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     }
                 }
                 else {
-                    var info = _packageInfos.OrderBy(o => o.CreateTime).FirstOrDefault(f => f.BarCode == null);
+                    var info = _packageInfos.OrderBy(o => o.CreateTime).FirstOrDefault(f => f.BarCodeInfo == null);
                     if (info != null) {
-                        info.BarCode = args.Barcode;
-                        info.Weight = args.Weight;
-                        info.Length = args.Length;
-                        info.Width = args.Width;
-                        info.Height = args.Height;
-                        info.Volume = args.Volume;
-                        info.ScanTime = DateTime.Now;
-                        info.Timestamp = timestamp;
+                        info.BarCodeInfo = new BarCodeInfoModel() {
+                            Barcode = args.Barcode,
+                            ScanTime = DateTime.Now,
+                            Source = SourceType.Input,
+                        };
+                        info.WeightInfo = new WeightInfoModel() {
+                            CreateTime = DateTime.Now,
+                            FormattedWeight = args.Weight,
+                            SourceType = SourceType.Input,
+                            OriginalText = args.SourceContent
+                        };
+                        info.VolumeInfo = new VolumeInfoModel() {
+                            CreateTime = DateTime.Now,
+                            FormattedHeight = args.Height,
+                            FormattedLength = args.Length,
+                            FormattedVolume = args.Volume,
+                            FormattedWidth = args.Width,
+                            SourceType = SourceType.Input,
+                            OriginalText = args.SourceContent
+                        };
                     }
                     //添加到队列
                 }
@@ -393,21 +425,25 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             };
             //输入体积
             _externalDataService.VolumeReceived += delegate (object? sender, ExternalVolumeInputEventArgs args) {
-                var info = _packageInfos.OrderBy(o => o.CreateTime).FirstOrDefault(f => f.BarCode.Equals(args.BarCode));
+                var info = _packageInfos.OrderBy(o => o.CreateTime).FirstOrDefault(f => f.VolumeInfo == null);
                 if (info is not null) {
-                    //增加体积单位转换
-                    info.Length = args.Length - info.LengthToDeduct;
-                    info.Width = args.Width - info.WidthToDeduct;
-                    info.Height = args.Height - info.HeightToDeduct;
-                    info.Volume = args.Volume - info.VolumeToDeduct;
+                    info.VolumeInfo = new VolumeInfoModel() {
+                        CreateTime = DateTime.Now,
+                        FormattedHeight = args.Height - info.LengthToDeduct,
+                        FormattedWidth = args.Width - info.WidthToDeduct,
+                        FormattedLength = args.Length - info.LengthToDeduct,
+                        FormattedVolume = args.Volume - info.VolumeToDeduct,
+                        SourceType = SourceType.Tcp,
+                    };
                 }
                 else {
-                    _volumeQueueInfos.Enqueue(new VolumeQueueInfo() {
-                        Time = DateTime.Now,
-                        Length = args.Length,
-                        Width = args.Width,
-                        Height = args.Height,
-                        Volume = args.Volume,
+                    _volumeQueueInfos.Enqueue(new VolumeInfoModel {
+                        CreateTime = DateTime.Now,
+                        FormattedHeight = args.Height,
+                        FormattedWidth = args.Width,
+                        FormattedLength = args.Length,
+                        FormattedVolume = args.Volume,
+                        SourceType = SourceType.Tcp,
                     });
                 }
                 EventAggregator.Instance.Publish(new VolumeLogInfoModel() {
@@ -417,6 +453,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 });
             };
             //下位机(创建包裹)
+
             _sortingService.CreatePackageEvent += delegate (object? sender, PackageInstructionEventArgs args) {
                 if (_communicationsSettingsDto.Protocol == CommunicationProtocol.Wxkc) {
                     var tryParse = int.TryParse(args.Keyword, out var num);
@@ -461,11 +498,13 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     !_communicationsSettingsDto.DeviceControlSettingsInfo.IsUseCreatePackageByDevice) {
                     var packageInfo = new PackageInfo() {
                         Guid = args.RecognitionTimestamp,
-                        BarCode = args.BarCode,
-                        CameraSerialNumber = args.CameraSerialNumber,
+                        BarCodeInfo = new BarCodeInfoModel() {
+                            Barcode = args.BarCode,
+                            ScanTime = DateTime.Now,
+                            CameraSerialNumber = args.CameraSerialNumber,
+                            Source = SourceType.Ocr
+                        },
                         Image = args.Image,
-                        ScanTime = args.RecognitionTime,
-                        Timestamp = args.RecognitionTimestamp,
                     };
                     _packageInfos.Enqueue(packageInfo);
                     EventAggregator.Instance.Publish(new TriggerPositionEvent() {
@@ -491,13 +530,15 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     });
                 }
                 else {
-                    var info = _packageInfos.OrderBy(o => o.CreateTime).FirstOrDefault(f => f.BarCode == null);
+                    var info = _packageInfos.OrderBy(o => o.CreateTime).FirstOrDefault(f => f.BarCodeInfo == null);
                     if (info != null) {
-                        info.BarCode = args.BarCode;
-                        info.CameraSerialNumber = args.CameraSerialNumber;
+                        info.BarCodeInfo = new BarCodeInfoModel() {
+                            Barcode = args.BarCode,
+                            ScanTime = DateTime.Now,
+                            CameraSerialNumber = args.CameraSerialNumber,
+                            Source = SourceType.Ocr
+                        };
                         info.Image = args.Image;
-                        info.ScanTime = args.RecognitionTime;
-                        info.Timestamp = args.RecognitionTimestamp;
                     }
                 }
                 //获取外部数据
@@ -515,9 +556,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         !_communicationsSettingsDto.DeviceControlSettingsInfo.IsUseCreatePackageByDevice) {
                         var packageInfo = new PackageInfo() {
                             Guid = timestamp,
-                            BarCode = args.Barcode,
-                            ScanTime = DateTime.Now,
-                            Timestamp = timestamp,
+                            BarCodeInfo = new BarCodeInfoModel() {
+                                Barcode = args.Barcode,
+                                ScanTime = DateTime.Now,
+                                Source = SourceType.Input
+                            },
                             HeightToDeduct = args.HeightToDeduct,
                             WidthToDeduct = args.WidthToDeduct,
                             LengthToDeduct = args.LengthToDeduct,
@@ -541,22 +584,19 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         //判断重量和体积队列
                         var tryDequeue = false;
                         do {
-                            tryDequeue = _volumeQueueInfos.TryDequeue(out var volume);
-                            if (tryDequeue && volume is not null &&
-                                DateTime.Now.Subtract(volume.Time).TotalMilliseconds < 500) {
-                                packageInfo.Length = volume.Length;
-                                packageInfo.Width = volume.Width;
-                                packageInfo.Height = volume.Height;
-                                packageInfo.Volume = volume.Volume;
+                            tryDequeue = _volumeQueueInfos.TryDequeue(out var volumeInfo);
+                            if (tryDequeue && volumeInfo is not null &&
+                                DateTime.Now.Subtract(volumeInfo.CreateTime).TotalMilliseconds < 500) {
+                                packageInfo.VolumeInfo = volumeInfo;
                                 break;
                             }
                         } while (tryDequeue && _volumeQueueInfos.Count > 0);
 
                         do {
-                            tryDequeue = _weightQueueInfos.TryDequeue(out var weight);
-                            if (tryDequeue && weight is not null &&
-                                DateTime.Now.Subtract(weight.Time).TotalMilliseconds < 500) {
-                                packageInfo.Weight = weight.Weight;
+                            tryDequeue = _weightQueueInfos.TryDequeue(out var weightInfo);
+                            if (tryDequeue && weightInfo is not null &&
+                                DateTime.Now.Subtract(weightInfo.CreateTime).TotalMilliseconds < 500) {
+                                packageInfo.WeightInfo = weightInfo;
                                 break;
                             }
                         } while (tryDequeue && _weightQueueInfos.Count > 0);
@@ -579,11 +619,13 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         }
                     }
                     else {
-                        var info = _packageInfos.OrderBy(o => o.CreateTime).FirstOrDefault(f => f.BarCode == null);
+                        var info = _packageInfos.OrderBy(o => o.CreateTime).FirstOrDefault(f => f.BarCodeInfo == null);
                         if (info != null) {
-                            info.BarCode = args.Barcode;
-                            info.ScanTime = DateTime.Now;
-                            info.Timestamp = timestamp;
+                            info.BarCodeInfo = new BarCodeInfoModel() {
+                                Barcode = args.Barcode,
+                                ScanTime = DateTime.Now,
+                                Source = SourceType.Input
+                            };
                         }
                     }
                     EventAggregator.Instance.Publish(new TriggerPositionEvent() {
@@ -672,20 +714,18 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             }
                         }
                         //取出一个未完成包裹
-                        var packageInfo = _packageInfos.OrderBy(o => o.CreateTime).FirstOrDefault(f => f is { IsCompleted: false, BarCode: not null });
+                        var packageInfo = _packageInfos.OrderBy(o => o.CreateTime).FirstOrDefault(f => f is { IsCompleted: false, BarCodeInfo: not null });
                         if (packageInfo != null) {
                             //判断填充包裹信息
-                            if (packageInfo.Length is not null &&
-                                packageInfo.Width is not null &&
-                                packageInfo.Height is not null &&
-                                packageInfo.Weight is not null &&
-                                !string.IsNullOrEmpty(packageInfo.BarCode)) {
+                            if (packageInfo.VolumeInfo is not null &&
+                                packageInfo.WeightInfo is not null &&
+                                packageInfo.BarCodeInfo is not null) {
                                 //执行输出
                                 _resultOutputService.ExecuteOutput(
-                                    packageInfo.BarCode, (float)(packageInfo.Weight ?? 0),
-                                    packageInfo.ScanTime, (float)(packageInfo.Length ?? 0),
-                                    (float)(packageInfo.Width ?? 0), (float)(packageInfo.Height ?? 0),
-                                    (float)(packageInfo.Volume ?? 0), packageInfo.CameraSerialNumber,
+                                    packageInfo.BarCodeInfo.Barcode, (float)(packageInfo.WeightInfo.FormattedWeight),
+                                    packageInfo.BarCodeInfo.ScanTime, (float)(packageInfo.VolumeInfo.FormattedLength),
+                                    (float)(packageInfo.VolumeInfo.FormattedWidth), (float)(packageInfo.VolumeInfo.FormattedHeight),
+                                    (float)(packageInfo.VolumeInfo.FormattedVolume), packageInfo.BarCodeInfo.CameraSerialNumber,
                                     stoppingToken);
                                 packageInfo.IsCompleted = true;
                                 EventAggregator.Instance.Publish(packageInfo);
@@ -697,26 +737,28 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                     (_volumeSettingsDto.IsUseFusionTimeout &&
                                      DateTime.Now.Subtract(packageInfo.CreateTime).TotalMilliseconds > _volumeSettingsDto.FusionTimeout)) {
                                     //判断是否开启Tcp体积输入
-                                    packageInfo.Length = 0;
-                                    packageInfo.Width = 0;
-                                    packageInfo.Height = 0;
-                                    packageInfo.Volume = 0;
+                                    packageInfo.VolumeInfo = new VolumeInfoModel() {
+                                        CreateTime = DateTime.Now,
+                                        SourceType = SourceType.None
+                                    };
                                 }
                                 //填充重量信息
                                 if (_deviceService.ScaleType == ScaleType.None ||
                                     (_weightSettingsDto.AdditionalWeight.IsUseMergedWeightTimeout &&
                                      DateTime.Now.Subtract(packageInfo.CreateTime).TotalMilliseconds >
                                      _weightSettingsDto.AdditionalWeight.MergedWeightTimeout)) {
-                                    packageInfo.Weight = 0;
+                                    packageInfo.WeightInfo = new WeightInfoModel() {
+                                        CreateTime = DateTime.Now,
+                                        SourceType = SourceType.None
+                                    };
                                 }
                             }
                         }
                         if (_panoramaImageItems.Count > 0) {
                             _panoramaImageItems.TryDequeue(out var panoramaImageInfo);
                             if (panoramaImageInfo is not null) {
-                                var info = _packageInfos.FirstOrDefault(f => !string.IsNullOrEmpty(f.BarCode) &&
-                                                                             f.Timestamp.Equals(panoramaImageInfo.BarcodeTimestamp) && f.BarCode.Equals(panoramaImageInfo.Barcode));
-                                if (info is { Weight: not null, Length: not null, Width: not null, Height: not null, Volume: not null, BarCode: not null }) {
+                                var info = _packageInfos.FirstOrDefault(f => f.BarCodeInfo != null && f.BarCodeInfo?.Barcode.Equals(panoramaImageInfo.Barcode) == true);
+                                if (info is { WeightInfo: not null, VolumeInfo: not null, BarCodeInfo: not null }) {
                                     //全景图数量+1
 
                                     var panoramaCameraImageInfo = info.PanoramaCameraImageInfo.FirstOrDefault(f =>
@@ -725,15 +767,15 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                     if (panoramaCameraImageInfo is not null) {
                                         panoramaCameraImageInfo.IsExists = true;
                                         EventAggregator.Instance.Publish(new ImageMessageInfo {
-                                            BarCode = info.BarCode,
+                                            BarCode = info.BarCodeInfo.Barcode,
                                             CameraSerialNumber = panoramaImageInfo.CameraSerialNumber,
-                                            Weight = (float)info.Weight,
-                                            Height = (float)info.Height,
+                                            Weight = (float)info.WeightInfo.FormattedWeight,
+                                            Height = (float)info.VolumeInfo.FormattedHeight,
                                             Image = panoramaImageInfo.Image,
-                                            Length = (float)info.Length,
-                                            Width = (float)info.Width,
-                                            Volume = (float)info.Volume,
-                                            ScanTime = info.ScanTime,
+                                            Length = (float)info.VolumeInfo.FormattedLength,
+                                            Width = (float)info.VolumeInfo.FormattedWidth,
+                                            Volume = (float)info.VolumeInfo.FormattedVolume,
+                                            ScanTime = info.BarCodeInfo.ScanTime,
                                             Type = SaveImageType.PanoramaImage,
                                             CameraName = _cameras.FirstOrDefault(f => (bool)f.Info?.SerialNumber.Equals(panoramaImageInfo.CameraSerialNumber))?.Info?.Name ?? string.Empty,
                                             CameraCustomName = _cameras.FirstOrDefault(f => (bool)f.Info?.SerialNumber.Equals(panoramaImageInfo.CameraSerialNumber))?.Info?.CustomName ?? string.Empty,
@@ -752,19 +794,19 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         if (_volumeCameraImageItems.Count > 0) {
                             _volumeCameraImageItems.TryDequeue(out var volumeCameraImageInfo);
                             if (volumeCameraImageInfo is not null) {
-                                var info = _packageInfos.FirstOrDefault(f => !string.IsNullOrEmpty(f.BarCode) && f.BarCode.Equals(volumeCameraImageInfo.Barcode));
-                                if (info is { Weight: not null, Length: not null, Width: not null, Height: not null, Volume: not null, BarCode: not null }
+                                var info = _packageInfos.FirstOrDefault(f => f.BarCodeInfo != null && f.BarCodeInfo.Barcode.Equals(volumeCameraImageInfo.Barcode));
+                                if (info is { WeightInfo: not null, VolumeInfo: not null, BarCodeInfo: not null }
                                    ) {
                                     EventAggregator.Instance.Publish(new ImageMessageInfo {
-                                        BarCode = info.BarCode,
+                                        BarCode = info.BarCodeInfo.Barcode,
                                         CameraSerialNumber = volumeCameraImageInfo.CameraSerialNumber,
-                                        Weight = (float)info.Weight,
-                                        Height = (float)info.Height,
+                                        Weight = (float)info.WeightInfo.FormattedWeight,
+                                        Height = (float)info.VolumeInfo.FormattedHeight,
                                         Image = volumeCameraImageInfo.Image,
-                                        Length = (float)info.Length,
-                                        Width = (float)info.Width,
-                                        Volume = (float)info.Volume,
-                                        ScanTime = info.ScanTime,
+                                        Length = (float)info.VolumeInfo.FormattedLength,
+                                        Width = (float)info.VolumeInfo.FormattedWidth,
+                                        Volume = (float)info.VolumeInfo.FormattedVolume,
+                                        ScanTime = info.BarCodeInfo.ScanTime,
                                         Type = SaveImageType.VolumeImage,
                                         CameraName = _cameras.FirstOrDefault(f => (bool)f.Info?.SerialNumber.Equals(volumeCameraImageInfo.CameraSerialNumber))?.Info?.Name ?? string.Empty,
                                     });
@@ -778,24 +820,23 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         if (_packageInfos.Count > 0) {
                             //判断存图路径等于空
                             var codeInfo = _packageInfos.FirstOrDefault(f => f is {
-                                Weight: not null, Length: not null, Width: not null,
-                                Height: not null, Volume: not null, IsSavedImage: false,
-                                BarCode: not null
+                                WeightInfo: not null, VolumeInfo: not null, IsSavedImage: false,
+                                BarCodeInfo: not null
                             });
                             if (codeInfo is not null) {
                                 EventAggregator.Instance.Publish(new ImageMessageInfo {
-                                    BarCode = codeInfo.BarCode ?? string.Empty,
-                                    CameraSerialNumber = codeInfo.CameraSerialNumber,
-                                    Weight = (float)(codeInfo.Weight ?? 0),
-                                    Height = (float)(codeInfo.Height ?? 0),
+                                    BarCode = codeInfo.BarCodeInfo?.Barcode ?? string.Empty,
+                                    CameraSerialNumber = codeInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
+                                    Weight = (float)(codeInfo.WeightInfo?.FormattedWeight ?? 0),
+                                    Height = (float)(codeInfo.VolumeInfo?.FormattedHeight ?? 0),
                                     Image = codeInfo.Image,
-                                    Length = (float)(codeInfo.Length ?? 0),
-                                    Width = (float)(codeInfo.Width ?? 0),
-                                    Volume = (float)(codeInfo.Volume ?? 0),
-                                    ScanTime = codeInfo.ScanTime,
+                                    Length = (float)(codeInfo.VolumeInfo?.FormattedLength ?? 0),
+                                    Width = (float)(codeInfo.VolumeInfo?.FormattedWidth ?? 0),
+                                    Volume = (float)(codeInfo.VolumeInfo?.FormattedVolume ?? 0),
+                                    ScanTime = codeInfo.BarCodeInfo?.ScanTime ?? DateTime.Now,
                                     Type = SaveImageType.BarcodeImage,
-                                    CameraName = _cameras.FirstOrDefault(f => (bool)f.Info?.SerialNumber.Equals(codeInfo.CameraSerialNumber))?.Info?.Name ?? string.Empty,
-                                    CameraCustomName = _cameras.FirstOrDefault(f => (bool)f.Info?.SerialNumber.Equals(codeInfo.CameraSerialNumber))?.Info?.CustomName ?? string.Empty,
+                                    CameraName = _cameras.FirstOrDefault(f => (bool)f.Info?.SerialNumber.Equals(codeInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty))?.Info?.Name ?? string.Empty,
+                                    CameraCustomName = _cameras.FirstOrDefault(f => (bool)f.Info?.SerialNumber.Equals(codeInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty))?.Info?.CustomName ?? string.Empty,
                                 });
                                 codeInfo.IsSavedImage = true;
                             }
@@ -811,7 +852,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             _packageInfos.TryDequeue(out var info);
                             if (info is null) continue;
 
-                            if (!packageInfos.Any(a => a.BarCode != null && a.BarCode.Equals(info.BarCode))) {
+                            if (!packageInfos.Any(a => a.BarCodeInfo != null && a.BarCodeInfo.Barcode.Equals(info.BarCodeInfo?.Barcode))) {
                                 _packageInfos.Enqueue(info);
                             }
                         }
@@ -838,17 +879,20 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         /// </summary>
         public long Guid { get; set; }
 
+        /*
+
         /// <summary>
         /// 条码
         /// </summary>
         public string? BarCode { get; set; }
+        */
 
         /// <summary>
         /// 条码图片
         /// </summary>
         public Image? Image { get; set; }
 
-        /// <summary>
+        /*/// <summary>
         /// 重量
         /// </summary>
         public double? Weight { get; set; }
@@ -871,12 +915,27 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         /// <summary>
         /// 体积
         /// </summary>
-        public double? Volume { get; set; }
+        public double? Volume { get; set; }*/
 
         /// <summary>
+        /// 条码信息
+        /// </summary>
+        public BarCodeInfoModel? BarCodeInfo { get; set; }
+
+        /// <summary>
+        /// 体积信息
+        /// </summary>
+        public VolumeInfoModel? VolumeInfo { get; set; }
+
+        /// <summary>
+        /// 称重信息
+        /// </summary>
+        public WeightInfoModel? WeightInfo { get; set; }
+
+        /*/// <summary>
         /// 相机序列号
         /// </summary>
-        public string CameraSerialNumber { get; set; } = string.Empty;
+        public string CameraSerialNumber { get; set; } = string.Empty;*/
 
         /// <summary>
         /// 是否已完成(完成输出、上传、但未从集合删除)
@@ -888,7 +947,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         /// </summary>
         public bool IsSavedImage;
 
-        /// <summary>
+        /*/// <summary>
         /// 扫码时间
         /// </summary>
         public DateTime ScanTime;
@@ -896,10 +955,14 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         /// <summary>
         /// 条码时间戳
         /// </summary>
-        public long Timestamp { get; set; }
+        public long Timestamp { get; set; }*/
+        /*/// <summary>
+        /// /需要扣除的重量
+        /// </summary>
+        public float WeightToDeduct { get; set; }*/
 
         /// <summary>
-        /// 需要扣除的重量
+        /// 需要扣除的长度
         /// </summary>
         public float LengthToDeduct { get; set; }
 
@@ -907,11 +970,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         /// 需要扣除的宽度
         /// </summary>
         public float WidthToDeduct { get; set; }
-
-        /// <summary>
-        /// /需要扣除的重量
-        /// </summary>
-        public float WeightToDeduct { get; set; }
 
         /// <summary>
         /// 需要扣除的高度
@@ -932,16 +990,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         /// 是否由下位机创建
         /// </summary>
         public bool IsCreatedByLowerMachine { get; set; }
-
-        /*/// <summary>
-        /// 全景图数量
-        /// </summary>
-        public int PanoramaImageCount { get; set; }
-
-        /// <summary>
-        /// 全景相机数量
-        /// </summary>
-        public List<string> PanoramaCamera { get; set; } = new();*/
 
         /// <summary>
         /// 全景图信息
@@ -1121,22 +1169,5 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         /// 是否已存在
         /// </summary>
         public bool IsExists { get; set; }
-    }
-
-    public class VolumeQueueInfo {
-        public DateTime Time { get; set; }
-        public double? Length { get; set; }
-        public double? Width { get; set; }
-        public double? Height { get; set; }
-        public double? Volume { get; set; }
-    }
-
-    public class WeightQueueInfo {
-        public DateTime Time { get; set; }
-
-        /// <summary>
-        /// 重量
-        /// </summary>
-        public double? Weight { get; set; }
     }
 }

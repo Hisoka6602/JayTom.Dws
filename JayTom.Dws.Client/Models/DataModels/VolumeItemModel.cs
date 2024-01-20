@@ -1,8 +1,9 @@
 ﻿using System;
 using Prism.Mvvm;
-using JayTom.Dws.Data.LocalData;
+using JayTom.Dws.Data.Package;
 
-namespace JayTom.Dws.Client.Models.DataModels {
+namespace JayTom.Dws.Client.Models.DataModels
+{
 
     public class VolumeItemModel : BindableBase {
         private SourceType _sourceType;

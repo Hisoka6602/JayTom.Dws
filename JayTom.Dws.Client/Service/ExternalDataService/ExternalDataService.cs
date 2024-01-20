@@ -272,9 +272,9 @@ namespace JayTom.Dws.Client.Service.ExternalDataService {
             try {
                 if (_volumeSettingsDto.IsUseExternalVolumeInput) {
                     if (_volumeSettingsDto.VolumeInformationRequesterInfo.VolumeRequesterType == VolumeRequesterType.Tcp) {
+                        _tcpVolumeInput.Communication -= TcpCommunicationOnCommunication;
                         if (_tcpVolumeInput.ConnectionStatus == ConnectionStatus.Connected) {
                             _tcpVolumeInput.Close();
-                            _tcpVolumeInput.Communication -= TcpCommunicationOnCommunication;
                         }
                     }
                     else if (_volumeSettingsDto.VolumeInformationRequesterInfo.VolumeRequesterType ==
@@ -283,9 +283,9 @@ namespace JayTom.Dws.Client.Service.ExternalDataService {
                 }
 
                 if (_contentInputSettingsDto.IsUseTcpInput) {
+                    _tcpContentInput.Communication -= TcpContentInputOnCommunication;
                     if (_tcpContentInput.ConnectionStatus == ConnectionStatus.Connected) {
                         _tcpContentInput.Close();
-                        _tcpContentInput.Communication -= TcpContentInputOnCommunication;
                     }
                 }
                 return new KeyValuePair<bool, string>(true, string.Empty);

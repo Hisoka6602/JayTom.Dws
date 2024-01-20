@@ -10,9 +10,9 @@ using JayTom.Dws.Interface;
 using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
 using System.Linq.Expressions;
+using JayTom.Dws.Data.Package;
 using System.Linq.Dynamic.Core;
 using JayTom.Dws.Data.LocalLog;
-using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
 using JayTom.Dws.PluginInterface;
 using System.Text.RegularExpressions;
@@ -226,13 +226,13 @@ namespace JayTom.Dws.Client.Service.Sorting {
                         _sortingMethodDto.SortMode != SortMode.OcrSorting) {
                         ExecuteSorting(new SortingParam() {
                             Guid = model.Guid,
-                            BarCode = model.BarCode ?? string.Empty,
-                            Height = (float)(model.Height ?? 0),
-                            Length = (float)(model.Length ?? 0),
-                            ScanTime = model.ScanTime,
-                            Volume = (float)(model.Volume ?? 0),
-                            Width = (float)(model.Width ?? 0),
-                            Weight = (float)(model.Weight ?? 0),
+                            BarCode = model?.BarCodeInfo?.Barcode ?? string.Empty,
+                            Height = (float)(model?.VolumeInfo?.FormattedHeight ?? 0),
+                            ScanTime = model.BarCodeInfo?.ScanTime ?? DateTime.Now,
+                            Weight = (float)(model.WeightInfo?.FormattedWeight ?? 0),
+                            Length = (float)(model.VolumeInfo?.FormattedLength ?? 0),
+                            Width = (float)(model.VolumeInfo?.FormattedWidth ?? 0),
+                            Volume = (float)(model.VolumeInfo?.FormattedVolume ?? 0),
                             PackageCreationTime = model.CreateTime,
                             PackageCreationInstruction = model.PackageCreationInstruction,
                             IsCreatedByLowerMachine = model.IsCreatedByLowerMachine

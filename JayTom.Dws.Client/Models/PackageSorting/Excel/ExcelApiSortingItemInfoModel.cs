@@ -1,9 +1,10 @@
 ﻿using System.ComponentModel;
-using JayTom.Dws.Data.LocalData;
 using System.Diagnostics.CodeAnalysis;
 using JayTom.Dws.Plugin.Excel.Attributes;
+using JayTom.Dws.Data.Package;
 
-namespace JayTom.Dws.Client.Models.PackageSorting.Excel {
+namespace JayTom.Dws.Client.Models.PackageSorting.Excel
+{
 
     public class ExcelApiSortingItemInfoModel : BasePackageSortingItemInfoModel {
         private long? _exitId;

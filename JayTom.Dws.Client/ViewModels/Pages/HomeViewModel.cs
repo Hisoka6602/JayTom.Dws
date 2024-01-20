@@ -13,12 +13,12 @@ using JayTom.Dws.Domain.Dto;
 using Prism.Services.Dialogs;
 using System.Threading.Tasks;
 using System.Windows.Controls;
+using JayTom.Dws.Data.Package;
 using JayTom.Dws.Client.Models;
 using MaterialDesignThemes.Wpf;
 using System.Windows.Threading;
 using JayTom.Dws.Data.LocalLog;
 using JayTom.Dws.Client.Service;
-using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
 using JayTom.Dws.Interface.Cloud;
 using JayTom.Dws.Domain.Converters;
@@ -372,13 +372,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                 //填充数据到列表
                 if (info is PackageInfo model) {
                     AddNewRow(new BarCodeItemModel() {
-                        Barcode = model.BarCode,
-                        ScanTime = model.ScanTime,
-                        Weight = (float)(model.Weight ?? 0),
-                        Length = (float)(model.Length ?? 0),
-                        Width = (float)(model.Width ?? 0),
-                        Height = (float)(model.Height ?? 0),
-                        Volume = (float)(model.Volume ?? 0)
+                        Barcode = model.BarCodeInfo?.Barcode ?? string.Empty,
+                        ScanTime = model.BarCodeInfo?.ScanTime ?? DateTime.Now,
+                        Weight = (float)(model.WeightInfo?.FormattedWeight ?? 0),
+                        Length = (float)(model.VolumeInfo?.FormattedLength ?? 0),
+                        Width = (float)(model.VolumeInfo?.FormattedWidth ?? 0),
+                        Height = (float)(model.VolumeInfo?.FormattedHeight ?? 0),
+                        Volume = (float)(model.VolumeInfo?.FormattedVolume ?? 0)
                     });
                 }
             });

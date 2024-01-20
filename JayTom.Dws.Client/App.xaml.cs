@@ -223,6 +223,7 @@ namespace JayTom.Dws.Client {
                 //本地数据表注册
                 //data
 
+                services.AddScoped<IPackageRepository, PackageRepository>();
                 services.AddScoped<IBarCodeRepository, BarCodeRepository>();
                 services.AddScoped<ISoundRepository, SoundRepository>();
                 services.AddScoped<IVolumeRepository, VolumeRepository>();
@@ -389,6 +390,8 @@ namespace JayTom.Dws.Client {
                         services.AddSingleton(container1.Resolve<IHttpClientFactory>());
 
                         //data
+
+                        services.AddSingleton(container1.Resolve<IPackageRepository>());
                         services.AddSingleton(container1.Resolve<IBarCodeRepository>());
                         services.AddSingleton(container1.Resolve<IPanoramaCameraConfigRepository>());
                         services.AddSingleton(container1.Resolve<ISoundRepository>());

@@ -13,7 +13,6 @@ using MaterialDesignThemes.Wpf;
 using System.Windows.Threading;
 using JayTom.Dws.Plugin.Speech;
 using JayTom.Dws.Device.Camera;
-using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using JayTom.Dws.TemporaryClient.Models;
@@ -24,8 +23,10 @@ using JayTom.Dws.TemporaryClient.Views.Editors;
 using JayTom.Dws.TemporaryClient.ViewModels.Dialog;
 using JayTom.Dws.TemporaryClient.ViewModels.Editors;
 using JayTom.Dws.Infrastructure.Repository.LocalData;
+using JayTom.Dws.Data.Package;
 
-namespace JayTom.Dws.TemporaryClient.ViewModels {
+namespace JayTom.Dws.TemporaryClient.ViewModels
+{
     public class MainWindowViewModel : BindableBase {
         private readonly IRegionManager _regionManager;
         private readonly IExcel _excel;

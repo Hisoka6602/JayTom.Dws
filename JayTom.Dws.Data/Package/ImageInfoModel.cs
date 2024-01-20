@@ -6,10 +6,10 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace JayTom.Dws.Data.LocalData {
+namespace JayTom.Dws.Data.Package {
 
     [Table("Data_ImageInfo", Schema = "dbo")]
-    public class ImageInfoModel : BaseBarCodeForeignKeyInfo {
+    public class ImageInfoModel : BasePackageForeignKeyInfoModel {
 
         /// <summary>
         /// 相机名称

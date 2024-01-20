@@ -5,10 +5,10 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace JayTom.Dws.Data.LocalData {
+namespace JayTom.Dws.Data.Package {
 
     [Table("Data_CloudVideoUploadInfo", Schema = "dbo")]
-    public class CloudVideoUploadInfoModel : BaseBarCodeForeignKeyInfo {
+    public class CloudVideoUploadInfoModel : BasePackageForeignKeyInfoModel {
 
         /// <summary>
         /// 上传时间
