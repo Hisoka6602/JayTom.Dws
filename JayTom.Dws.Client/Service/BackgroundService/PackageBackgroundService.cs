@@ -453,7 +453,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 });
             };
             //下位机(创建包裹)
-
             _sortingService.CreatePackageEvent += delegate (object? sender, PackageInstructionEventArgs args) {
                 if (_communicationsSettingsDto.Protocol == CommunicationProtocol.Wxkc) {
                     var tryParse = int.TryParse(args.Keyword, out var num);
