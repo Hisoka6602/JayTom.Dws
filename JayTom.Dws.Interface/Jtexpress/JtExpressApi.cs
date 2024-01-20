@@ -5,6 +5,7 @@ using Newtonsoft.Json;
 using System.Net.Http;
 using System.Xml.Linq;
 using System.Text.Json;
+using TouchSocket.Core;
 using JayTom.Dws.Plugin;
 using System.Diagnostics;
 using Newtonsoft.Json.Linq;
@@ -17,6 +18,7 @@ using System.Text.RegularExpressions;
 using System.Diagnostics.CodeAnalysis;
 using JayTom.Dws.Plugin.Excel.Attributes;
 using static System.Net.Mime.MediaTypeNames;
+using MD5 = System.Security.Cryptography.MD5;
 using static JayTom.Dws.Interface.Szjy188.SzjyApi;
 using JsonException = Newtonsoft.Json.JsonException;
 
@@ -25,7 +27,7 @@ namespace JayTom.Dws.Interface.Jtexpress {
     public class JtExpressApi : IDataUploader {
         private readonly IHttpClientFactory _httpClientFactory;
         public ApiParameter Parameters { get; set; } = new();
-        public JtExpressUserInfo UserInfo { get; set; } = new();
+        public static JtExpressUserInfo UserInfo { get; set; } = new();
         private static List<ExcelDeliveryCode> _excelDeliveryCodes = new();
         private IExcel _excel;
 
@@ -86,6 +88,12 @@ namespace JayTom.Dws.Interface.Jtexpress {
             else if (Parameters.BusinessType == BusinessType.DepartureScan) {
                 DepartureScan(barcode, deliveryCode, Parameters.ScanPda);
             }
+            else if (Parameters.BusinessType == BusinessType.ArrivalScanAndDepartureScan) {
+                ArrivalScan(barcode, weight, DateTime.Now, length, width, height, Parameters.ScanTypeCode
+                    , Parameters.TransportTypeCode, Parameters.ScanPda, Parameters.ScanType, Parameters.WeightFlag
+                );
+                DepartureScan(barcode, deliveryCode, Parameters.ScanPda);
+            }
 
             return generateSegmentCode;
         }
@@ -119,6 +127,12 @@ namespace JayTom.Dws.Interface.Jtexpress {
                 );
             }
             else if (Parameters.BusinessType == BusinessType.DepartureScan) {
+                DepartureScan(barcode, deliveryCode, Parameters.ScanPda);
+            }
+            else if (Parameters.BusinessType == BusinessType.ArrivalScanAndDepartureScan) {
+                ArrivalScan(barcode, weight, scanTime, length, width, height, Parameters.ScanTypeCode
+                    , Parameters.TransportTypeCode, Parameters.ScanPda, Parameters.ScanType, Parameters.WeightFlag
+                );
                 DepartureScan(barcode, deliveryCode, Parameters.ScanPda);
             }
 
@@ -171,7 +185,7 @@ namespace JayTom.Dws.Interface.Jtexpress {
                     var strResult = BitConverter.ToString(result);
                     sign = strResult.Replace("-", "");
                 }
-                string resultContent;
+
                 var method = "/opa/smartLogin";
                 var data = new {
                     account = userName,
@@ -191,19 +205,35 @@ namespace JayTom.Dws.Interface.Jtexpress {
                     }
                 }
 
-                resultContent = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                var resultContent = message.Content.ReadAsStringAsync(token).ConfigureAwait(false).GetAwaiter().GetResult();
                 resultContent = Regex.Unescape(resultContent);
                 if (!string.IsNullOrEmpty(resultContent)) {
                     //解析登录返回内容
 
                     var result = JsonConvert.DeserializeObject<JtExpressResponseResult>(resultContent);
                     if (result?.Succ == true) {
-                        var jtExpressUserInfo = JsonConvert.DeserializeObject<JtExpressUserInfo>(result?.Data?.ToString() ?? string.Empty);
+                        var jtExpressUserInfo =
+                            JsonConvert.DeserializeObject<JtExpressUserInfo>(result?.Data?.ToString() ?? string.Empty);
 
                         if (jtExpressUserInfo is not null) {
                             return new KeyValuePair<bool, JtExpressUserInfo>(true, jtExpressUserInfo);
                         }
+                        else {
+                            return new KeyValuePair<bool, JtExpressUserInfo>(false, new JtExpressUserInfo() {
+                                ExceptionMsg = "内容解析失败"
+                            });
+                        }
                     }
+                    else {
+                        return new KeyValuePair<bool, JtExpressUserInfo>(false, new JtExpressUserInfo() {
+                            ExceptionMsg = "登录失败"
+                        });
+                    }
+                }
+                else {
+                    return new KeyValuePair<bool, JtExpressUserInfo>(false, new JtExpressUserInfo() {
+                        ExceptionMsg = "返回内容为空"
+                    });
                 }
             }
             catch (Exception e) {
@@ -211,9 +241,6 @@ namespace JayTom.Dws.Interface.Jtexpress {
                     ExceptionMsg = e.Message
                 });
             }
-            return new KeyValuePair<bool, JtExpressUserInfo>(false, new JtExpressUserInfo() {
-                ExceptionMsg = "未知错误"
-            });
         }
 
         /// <summary>
@@ -272,10 +299,24 @@ namespace JayTom.Dws.Interface.Jtexpress {
                         StringEscapeHandling = StringEscapeHandling.EscapeHtml
                     });
                     isSuccess = result?.Succ ?? false;
+                    if (isSuccess) {
+                        var segmentCodeInfo = JsonConvert.DeserializeObject<List<SegmentCodeInfo>>(result?.Data?.ToString() ?? string.Empty, new JsonSerializerSettings {
+                            StringEscapeHandling = StringEscapeHandling.EscapeHtml
+                        });
+                        if (string.IsNullOrEmpty(segmentCodeInfo?.FirstOrDefault()?.ThirdlyDispatchCode)) {
+                            isSuccess = false;
+                            exceptionMsg = "三段码为空";
+                        }
+                        if (isSuccess && _excelDeliveryCodes?.Any(a => a.ThirdlyDispatchCode.Equals(segmentCodeInfo?.FirstOrDefault()?.ThirdlyDispatchCode ?? string.Empty)) != true) {
+                            isSuccess = false;
+                            exceptionMsg = "服务器返回的三段码不在对应分拣路由表里";
+                        }
+                    }
                 }
 
-                if (barcode.ToLower().Equals("noread")) {
+                if (isSuccess && barcode.ToLower().Equals("noread")) {
                     isSuccess = false;
+                    exceptionMsg = "条码为NoRead";
                 }
             }
             catch (HttpRequestException e) {
@@ -325,11 +366,20 @@ namespace JayTom.Dws.Interface.Jtexpress {
             if (UserInfo.LoginTime is null ||
                 DateTime.Now.Subtract(UserInfo.LoginTime.Value).TotalHours >= 20 ||
                 string.IsNullOrEmpty(UserInfo.Token)) {
-                var (key, value) = await LogIn(Parameters.UserName, Parameters.Password,
-                    Parameters.AppKey, Parameters.AppSecret);
+                var (key, value) = LogIn(Parameters.UserName, Parameters.Password,
+                    Parameters.AppKey, Parameters.AppSecret).GetAwaiter().GetResult(); ; ;
                 if (key) {
                     UserInfo = value;
                 }
+                else {
+                    NLog.LogManager.GetCurrentClassLogger().Error(JsonConvert.SerializeObject(value));
+                    return;
+                }
+            }
+
+            if (string.IsNullOrEmpty(UserInfo.Token)) {
+                NLog.LogManager.GetCurrentClassLogger().Error("Token为空!");
+                return;
             }
             var exceptionMsg = string.Empty;
             var isSuccess = false;
@@ -338,14 +388,13 @@ namespace JayTom.Dws.Interface.Jtexpress {
             var requestTime = DateTime.Now;
             var stopwatch = new Stopwatch();
             var method = "/opa/smart/scan/uploadUnloadingArrivalData";
-            var nowDate = DateTime.Now;
             var data = new object[]
             {
                 new
                 {
-                    listld = $"{UserInfo.NetworkCode}{new DateTimeOffset(nowDate).ToUnixTimeMilliseconds()}",
-                    waybillld = barcode,
-                    scanTime = $"{nowDate:yyyy-MM-dd HH:mm:ss}",
+                    listId = $"{UserInfo.NetworkCode}{new DateTimeOffset(requestTime).ToUnixTimeMilliseconds()}",
+                    waybillId = barcode,
+                    scanTime = $"{requestTime:yyyy-MM-dd HH:mm:ss}",
                     scanTypeCode = scanTypeCode,
                     weight = weight,
                     length = length,
@@ -410,13 +459,12 @@ namespace JayTom.Dws.Interface.Jtexpress {
                     ApiParameters = JsonConvert.SerializeObject(this.Parameters),
                     IsSuccess = isSuccess,
                     Duration = stopwatch.Elapsed.TotalSeconds,
-                    RequestContent = $"{Parameters.SegmentCodeUrl}{method}",
+                    RequestContent = JsonConvert.SerializeObject(data),
                     RequestTime = requestTime,
-                    RequestUrl = JsonConvert.SerializeObject(data),
+                    RequestUrl = $"{Parameters.Url}{method}",
                     ResponseContent = resultContent,
                     ResponseTime = DateTime.Now
                 };
-                NLog.LogManager.GetCurrentClassLogger().Error(JsonConvert.SerializeObject(response));
             }
         }
 
@@ -432,15 +480,23 @@ namespace JayTom.Dws.Interface.Jtexpress {
             if (UserInfo.LoginTime is null ||
                 DateTime.Now.Subtract(UserInfo.LoginTime.Value).TotalHours >= 20 ||
                 string.IsNullOrEmpty(UserInfo.Token)) {
-                var (key, value) = await LogIn(Parameters.UserName, Parameters.Password,
-                    Parameters.AppKey, Parameters.AppSecret);
+                NLog.LogManager.GetCurrentClassLogger().Error("需要登录");
+                var (key, value) = LogIn(Parameters.UserName, Parameters.Password,
+                    Parameters.AppKey, Parameters.AppSecret).GetAwaiter().GetResult();
                 if (key) {
                     UserInfo = value;
                 }
+                else {
+                    NLog.LogManager.GetCurrentClassLogger().Error(JsonConvert.SerializeObject(value));
+                    return;
+                }
+            }
+            if (string.IsNullOrEmpty(UserInfo.Token)) {
+                NLog.LogManager.GetCurrentClassLogger().Error("Token为空!");
+                return;
             }
             var exceptionMsg = string.Empty;
             var isSuccess = false;
-            var nowDate = DateTime.Now;
             string resultContent = string.Empty;
             var method = "/opa/smart/scan/uploadDeliveryOutStockData";
             UploadResponse response;
@@ -450,9 +506,9 @@ namespace JayTom.Dws.Interface.Jtexpress {
             {
                 new
                 {
-                    listld = $"{UserInfo.NetworkCode}{new DateTimeOffset(nowDate).ToUnixTimeMilliseconds()}",
-                    waybillld = barcode,
-                    scanTime = $"{nowDate:yyyy-MM-dd HH:mm:ss}",
+                    listId = $"{UserInfo.NetworkCode}{new DateTimeOffset(requestTime).ToUnixTimeMilliseconds()}",
+                    waybillId = barcode,
+                    scanTime = $"{requestTime:yyyy-MM-dd HH:mm:ss}",
                     deliveryCode = deliveryCode,
                     scanPda = scanPda,
                 }
@@ -502,13 +558,12 @@ namespace JayTom.Dws.Interface.Jtexpress {
                     ApiParameters = JsonConvert.SerializeObject(this.Parameters),
                     IsSuccess = isSuccess,
                     Duration = stopwatch.Elapsed.TotalSeconds,
-                    RequestContent = $"{Parameters.SegmentCodeUrl}{method}",
+                    RequestContent = JsonConvert.SerializeObject(data),
                     RequestTime = requestTime,
-                    RequestUrl = JsonConvert.SerializeObject(data),
+                    RequestUrl = $"{Parameters.Url}{method}",
                     ResponseContent = resultContent,
                     ResponseTime = DateTime.Now
                 };
-                NLog.LogManager.GetCurrentClassLogger().Error(JsonConvert.SerializeObject(response));
             }
         }
 
@@ -525,7 +580,12 @@ namespace JayTom.Dws.Interface.Jtexpress {
             /// <summary>
             /// 出仓扫描
             /// </summary>
-            DepartureScan = 1
+            DepartureScan = 1,
+
+            /// <summary>
+            /// 到派一体
+            /// </summary>
+            ArrivalScanAndDepartureScan = 2,
         }
 
         public class JtExpressUserInfo {

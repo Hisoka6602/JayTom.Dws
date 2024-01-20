@@ -16,6 +16,7 @@ using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Models.Cameras;
 using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Domain.Repository.LocalLog;
+using JayTom.Dws.Client.Service.ExternalDataService;
 using static JayTom.Dws.Client.Service.BackgroundService.SubmitApiBackgroundService;
 
 namespace JayTom.Dws.Client.Service.BackgroundService {
@@ -37,6 +38,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private readonly ICleanupLogRepository _cleanupLogRepository;
         private readonly IExceptionLogRepository _exceptionLogRepository;
         private readonly IDeviceService _deviceService;
+        private readonly IExternalDataService _externalDataService;
         private ConcurrentQueue<ExceptionLogInfoModel> _exceptionItems = new();
         private ConcurrentQueue<AppLogInfoModel> _appLogItems = new();
         private ConcurrentQueue<CameraLogInfoModel> _cameraLogItems = new();
@@ -63,7 +65,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             IFtpLogRepository ftpLogRepository,
             ICleanupLogRepository cleanupLogRepository,
             IExceptionLogRepository exceptionLogRepository,
-            IDeviceService deviceService) {
+            IDeviceService deviceService,
+            IExternalDataService externalDataService) {
             _appLogRepository = appLogRepository;
             _cameraLogRepository = cameraLogRepository;
             _sortingLogRepository = sortingLogRepository;
@@ -77,6 +80,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             _cleanupLogRepository = cleanupLogRepository;
             _exceptionLogRepository = exceptionLogRepository;
             _deviceService = deviceService;
+            _externalDataService = externalDataService;
             EventAggregator.Instance.Subscribe<SettingsChangedEvent>(item => {
                 if (item is SettingsChangedEvent model) {
                     _appLogItems.Enqueue(new AppLogInfoModel() {
@@ -297,6 +301,16 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     CommunicationType = CommunicationType.Receive,
                 });
             };
+            _externalDataService.ContentInputReceived += (sender, args) => {
+                //外部输入输入
+                EventAggregator.Instance.Publish(new InputLogInfoModel() {
+                    Type = LogType.Information,
+                    DataSourceType = DataSourceType.ExternalInput,
+                    InputContent = args.SourceContent,
+                    Message = $"获取到外部TCP输入:{args.SourceContent}",
+                });
+            };
+
             //http
             EventAggregator.Instance.Subscribe<ApiResponseReceived>(item => {
                 if (item is ApiResponseReceived model) {

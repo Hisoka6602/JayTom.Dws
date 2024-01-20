@@ -118,6 +118,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                             Remarks = model.Remarks,
                             Type = model.Type,
                             Id = model.Id,
+                            CommunicationConnectionId = model.CommunicationConnectionId
                         });
                         if (insertOrUpdate) {
                             PackageExitDefinitionMessageQueue.Enqueue("保存成功");

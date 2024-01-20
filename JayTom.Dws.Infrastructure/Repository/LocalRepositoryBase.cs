@@ -391,7 +391,7 @@ namespace JayTom.Dws.Infrastructure.Repository {
         }
 
         public async Task<bool> Update(T entity, CancellationToken token) {
-            try {
+            /*try {
                 await _changeSlim.WaitAsync(token);
                 await using var concardContext = _contextFactory.CreateDbContext();
                 {
@@ -434,6 +434,36 @@ namespace JayTom.Dws.Infrastructure.Repository {
                 _changeSlim.Release();
             }
 
+            return false;*/
+            IDbContextTransaction? contextTransaction = null;
+            try {
+                await using var concardContext = _contextFactory.CreateDbContext();
+                var strategy = concardContext.Database.CreateExecutionStrategy();
+                return await strategy.ExecuteAsync(async () => {
+                    await using (contextTransaction = await concardContext.Database.BeginTransactionAsync(token)) {
+                        if (contextTransaction is not null) {
+                            var dbSet = concardContext?.Set<T>();
+                            dbSet.Update(entity);
+                            await concardContext?.SaveChangesAsync(token);
+                            await contextTransaction.CommitAsync(token);
+
+                            return true;
+                        }
+                    }
+
+                    return false;
+                });
+            }
+            catch (Win32Exception) {
+                await contextTransaction?.RollbackAsync(token)!;
+            }
+            catch (TaskCanceledException) {
+                await contextTransaction?.RollbackAsync(token)!;
+            }
+            catch (Exception e) {
+                await contextTransaction?.RollbackAsync(token)!;
+                LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
+            }
             return false;
         }
 

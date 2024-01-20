@@ -73,6 +73,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     OnAddLog(model.CreateTime, $"[Ocr]-{model.Message}");
                 }
             });
+            EventAggregator.Instance.Subscribe<InputLogInfoModel>(item => {
+                if (item is InputLogInfoModel model) {
+                    //添加
+                    OnAddLog(model.CreateTime, $"[输入]-{model.Message}");
+                }
+            });
             /*//输出日志队列
             EventAggregator.Instance.Subscribe<OutputLogInfoModel>(item => {
                 if (item is OutputLogInfoModel model) {

@@ -6,6 +6,7 @@ using System.Drawing;
 using JayTom.Dws.Ocr;
 using Newtonsoft.Json;
 using System.Text.Json;
+using TouchSocket.Core;
 using JayTom.Dws.Camera;
 using System.Collections;
 using System.Diagnostics;
@@ -27,6 +28,7 @@ using JayTom.Dws.Infrastructure.IComputer;
 using JayTom.Dws.Domain.DownstreamProtocols;
 using static JayTom.Dws.Interface.Szjy188.SzjyApi;
 using JayTom.Dws.Camera.Cameras.VolumeCamera.Irayple;
+using static JayTom.Dws.Interface.Jtexpress.JtExpressApi;
 using JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols;
 
 internal class Program {
@@ -48,27 +50,22 @@ internal class Program {
         });
         await Task.Delay(TimeSpan.FromSeconds(50));*/
         try {
-            var resultContent =
-                "{\"code\":1,\"msg\":\"请求成功\",\"version\":null,\"data\":[{\"waybillNo\":\"JT2064897322643\",\"terminalDispatchCode\":\"150,H297-00,030\",\"firstDispatchCode\":\"150\",\"secondDispatchCode\":\"H297-00\",\"thirdlyDispatchCode\":\"030\",\"customerCode\":null,\"interceptor\":2,\"orderType\":1,\"pickNetworkCode\":\"3510359\",\"destinationCode\":\"442000\",\"extendJson\":null,\"codeList\":null}],\"succ\":true,\"fail\":false}";
-
-            string pattern = "\"extendJson\":\"({(?:[^{}]|(?<open>\\{)|(?<-open>\\}))+(?(open)(?!))})\"";
-            Match match = Regex.Match(resultContent, pattern);
-
-            if (match.Success) {
-                string nestedJsonStr = match.Groups[1].Value;
-
-                // 判断嵌套 JSON 字符串是否为非空
-                if (!string.IsNullOrEmpty(nestedJsonStr)) {
-                    // 将双引号进行转义
-                    var extendJson = nestedJsonStr.Replace("\"", "\\\"");
-
-                    // 执行其他操作...
-
-                    // 输出结果
-                    resultContent = resultContent.Replace(nestedJsonStr, extendJson);
+            var result = JsonConvert.DeserializeObject<JtExpressResponseResult>("{\"code\":1,\"msg\":\"请求成功\",\"version\":null,\"data\":[{\"waybillNo\":\"JT2065115387368\",\"terminalDispatchCode\":\"150,H297-00,001\",\"firstDispatchCode\":\"150\",\"secondDispatchCode\":\"H297-00\",\"thirdlyDispatchCode\":\"001\",\"customerCode\":null,\"interceptor\":2,\"orderType\":1,\"pickNetworkCode\":\"1755315\",\"destinationCode\":\"442000\",\"extendJson\":\"\",\"codeList\":null}],\"succ\":true,\"fail\":false}", new JsonSerializerSettings {
+                StringEscapeHandling = StringEscapeHandling.EscapeHtml
+            });
+            var isSuccess = result?.Succ ?? false;
+            if (isSuccess) {
+                var segmentCodeInfo = JsonConvert.DeserializeObject<List<SegmentCodeInfo>>(result?.Data?.ToString() ?? string.Empty, new JsonSerializerSettings {
+                    StringEscapeHandling = StringEscapeHandling.EscapeHtml
+                });
+                if (string.IsNullOrEmpty(segmentCodeInfo?.FirstOrDefault()?.ThirdlyDispatchCode)) {
+                    isSuccess = false;
                 }
+
+                var thirdlyDispatchCode = segmentCodeInfo?.FirstOrDefault()?.ThirdlyDispatchCode;
+                Console.WriteLine(segmentCodeInfo);
             }
-            Console.WriteLine(resultContent);
+
             /*string pattern = "\"extendJson\":\"({(?:[^{}]|(?<open>\\\\{)|(?<-open>\\\\}))+(?(open)(?!))})\"";
             Match match = Regex.Match(resultContent, pattern);
 
@@ -89,9 +86,6 @@ internal class Program {
             /*JsonConvert.DeserializeObject<JtExpressApi.JtExpressResponseResult>(resultContent, new JsonSerializerSettings {
                 StringEscapeHandling = StringEscapeHandling.Default,
             });*/
-            var jObject = JObject.Parse(resultContent);
-            bool.TryParse(jObject["Succ"]?.ToString() ?? string.Empty, out var avResult);
-            Console.WriteLine(avResult);
         }
         catch (Exception e) {
             Console.WriteLine(e);

@@ -187,7 +187,9 @@ namespace JayTom.Dws.Client.Service.ExternalDataService {
             if (!string.IsNullOrEmpty(e.Content) && e.Type == CommunicationType.Receive) {
                 //暂时先不管Json格式
                 //默认分隔符= '|'
-                var inputEventArgs = new ExternalContentInputEventArgs();
+                var inputEventArgs = new ExternalContentInputEventArgs {
+                    SourceContent = e.Content
+                };
                 const string separator = "|";
                 var strings = e.Content.Split(separator);
                 //条码、重量、长度、宽度、高度、体积

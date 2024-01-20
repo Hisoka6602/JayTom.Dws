@@ -4,7 +4,6 @@ using System.Diagnostics.CodeAnalysis;
 using JayTom.Dws.Plugin.Excel.Attributes;
 
 namespace JayTom.Dws.Client.Models.PackageSorting {
-
     public class SortingInstructionBindingItemInfoModel : BasePackageSortingItemInfoModel {
         private ObservableCollection<SortingInstructionItemInfoModel> _sortingInstructionItems = new();
         private string _sortingInstructionGroup = string.Empty;
@@ -12,7 +11,7 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         private string? _exitName;
         private int _delaySendMilliseconds;
         private int _sendIntervalMilliseconds;
-        private bool _isActive;
+        private bool _isActive = true;
 
         /// <summary>
         /// 分拣指令组(字符串)

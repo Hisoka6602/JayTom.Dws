@@ -183,5 +183,10 @@ namespace JayTom.Dws.Client.Service.ExternalDataService {
         /// 体积
         /// </summary>
         public float Volume { get; set; }
+
+        /// <summary>
+        /// 源内容
+        /// </summary>
+        public string SourceContent { get; set; } = string.Empty;
     }
 }

@@ -19,6 +19,7 @@ using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
+
     public class JtExpressApiPageViewModel : BindableBase {
         private readonly IConfigRepository _configRepository;
         private readonly IHttpClientFactory _httpClientFactory;
@@ -97,6 +98,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
             {
                 Name = "出仓扫描",
                 Value = 1
+            },
+            new IntegerItemModel()
+            {
+                Name = "到派一体",
+                Value = 2
             },
         };
 
