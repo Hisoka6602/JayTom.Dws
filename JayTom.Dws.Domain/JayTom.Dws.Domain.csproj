@@ -16,4 +16,8 @@
     <ProjectReference Include="..\JayTom.Dws.Data\JayTom.Dws.Data.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Service\CloudApi\" />
+  </ItemGroup>
+
 </Project>

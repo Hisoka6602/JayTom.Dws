@@ -6,6 +6,7 @@ using JayTom.Dws.Data.Package;
 using System.Linq.Expressions;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Caching.Memory;
 using JayTom.Dws.Domain.Repository.LocalData;
 
@@ -24,8 +25,6 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalData {
                 var dbSet = concardContext?.Set<PackageInfoModel>();
                 if (dbSet is null) return new KeyValuePair<bool, List<PackageInfoModel>>(false, new List<PackageInfoModel>());
                 var barCodeInfoModels = await dbSet.AsNoTracking()
-                    .Where(where)
-                    .OrderByDescending(order)
                     .Include(b => b.BarCodeInfo)
                     .Include(b => b.WeightInfo)
                     .Include(b => b.VolumeInfo)
@@ -37,6 +36,8 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalData {
                     .ThenInclude(c => c.OcrDetailedInfos)
                     .Include(b => b.ImageInfos)
                     .Include(b => b.CloudVideoUploadInfo)
+                    .Where(where)
+                    .OrderByDescending(order)
                     .Skip(pageIndex * pageSize)
                     .Take(pageSize)
                     .ToListAsync(cancellationToken: token);
@@ -56,7 +57,6 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalData {
                 var dbSet = concardContext?.Set<PackageInfoModel>();
                 if (dbSet is null) return new KeyValuePair<bool, List<PackageInfoModel>>(false, new List<PackageInfoModel>());
                 var barCodeInfoModels = await dbSet.AsNoTracking()
-                    .Where(where)
                     .Include(b => b.BarCodeInfo)
                     .Include(b => b.WeightInfo)
                     .Include(b => b.VolumeInfo)
@@ -68,6 +68,7 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalData {
                     .ThenInclude(c => c.OcrDetailedInfos)
                     .Include(b => b.ImageInfos)
                     .Include(b => b.CloudVideoUploadInfo)
+                    .Where(where)
                     .Skip(pageIndex * pageSize)
                     .Take(pageSize)
                     .ToListAsync(cancellationToken: token);
@@ -104,6 +105,34 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalData {
             catch (Exception e) {
                 NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
                 return new KeyValuePair<bool, PackageInfoModel>(false, new PackageInfoModel());
+            }
+        }
+
+        public new async Task<int> Total([NotNull] Expression<Func<PackageInfoModel, bool>> @where,
+            CancellationToken token = default) {
+            try {
+                //联表
+                await using var concardContext = _contextFactory.CreateDbContext();
+                var dbSet = concardContext?.Set<PackageInfoModel>();
+                if (dbSet is null) return 0;
+                return await dbSet.AsNoTracking()
+                     .Include(b => b.BarCodeInfo)
+                     .Include(b => b.WeightInfo)
+                     .Include(b => b.VolumeInfo)
+                     .Include(b => b.UploadInfo)
+                     .Include(b => b.ExitInfo)
+                     .Include(b => b.SortingInfo)
+                     .Include(b => b.LogisticsInfo)
+                     .Include(b => b.OcrInfo)
+                     .ThenInclude(c => c.OcrDetailedInfos)
+                     .Include(b => b.ImageInfos)
+                     .Include(b => b.CloudVideoUploadInfo)
+                     .Where(where)
+                     .CountAsync(cancellationToken: token);
+            }
+            catch (Exception e) {
+                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
+                return 0;
             }
         }
     }

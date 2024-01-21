@@ -233,6 +233,8 @@ namespace JayTom.Dws.Client {
                 services.AddScoped<IOcrRepository, OcrRepository>();
                 services.AddScoped<IImageRepository, ImageRepository>();
                 services.AddScoped<ICloudVideoUploadRepository, CloudVideoUploadRepository>();
+                services.AddScoped<IExitInfoRepository, ExitInfoRepository>();
+
                 //config
                 services.AddScoped<IBarcodeScannerCameraConfigRepository, BarcodeScannerCameraConfigRepository>();
                 services.AddScoped<IPanoramaCameraConfigRepository, PanoramaCameraConfigRepository>();
@@ -403,6 +405,8 @@ namespace JayTom.Dws.Client {
                         services.AddSingleton(container1.Resolve<IOcrRepository>());
                         services.AddSingleton(container1.Resolve<IImageRepository>());
                         services.AddSingleton(container1.Resolve<ICloudVideoUploadRepository>());
+                        services.AddSingleton(container1.Resolve<IExitInfoRepository>());
+
                         //config
                         services.AddSingleton(container1.Resolve<IBarcodeScannerCameraConfigRepository>());
                         services.AddSingleton(container1.Resolve<IPanoramaCameraConfigRepository>());

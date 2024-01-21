@@ -60,7 +60,7 @@ namespace JayTom.Dws.Infrastructure.Repository {
         }
 
         public async Task<bool> Insert(T entity, CancellationToken token) {
-            try {
+            /*try {
                 await _changeSlim.WaitAsync(token);
                 await using var concardContext = _contextFactory.CreateDbContext();
                 {
@@ -97,12 +97,41 @@ namespace JayTom.Dws.Infrastructure.Repository {
             finally {
                 _changeSlim.Release();
             }
+            return false;*/
+            IDbContextTransaction? contextTransaction = null;
+            try {
+                await using var concardContext = _contextFactory.CreateDbContext();
+                var strategy = concardContext.Database.CreateExecutionStrategy();
+                return await strategy.ExecuteAsync(async () => {
+                    await using (contextTransaction = await concardContext.Database.BeginTransactionAsync(token)) {
+                        if (contextTransaction is not null) {
+                            var dbSet = concardContext?.Set<T>();
+                            await dbSet.AddAsync(entity, token);
+                            await concardContext?.SaveChangesAsync(token);
+                            await contextTransaction.CommitAsync(token);
 
+                            return true;
+                        }
+                    }
+
+                    return false;
+                });
+            }
+            catch (Win32Exception) {
+                await contextTransaction?.RollbackAsync(token)!;
+            }
+            catch (TaskCanceledException) {
+                await contextTransaction?.RollbackAsync(token)!;
+            }
+            catch (Exception e) {
+                await contextTransaction?.RollbackAsync(token)!;
+                LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
+            }
             return false;
         }
 
         public async void InsertAsync(T entity, CancellationToken token) {
-            try {
+            /*try {
                 await _changeSlim.WaitAsync(token);
                 await using var concardContext = _contextFactory.CreateDbContext();
                 {
@@ -131,6 +160,40 @@ namespace JayTom.Dws.Infrastructure.Repository {
             catch (TaskCanceledException) {
             }
             catch (Exception e) {
+                LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
+            }
+            finally {
+                _changeSlim.Release();
+            }*/
+
+            IDbContextTransaction? contextTransaction = null;
+            try {
+                await _changeSlim.WaitAsync(token);
+                await using var concardContext = _contextFactory.CreateDbContext();
+                var strategy = concardContext.Database.CreateExecutionStrategy();
+                await strategy.ExecuteAsync(async () => {
+                    await using (contextTransaction = await concardContext.Database.BeginTransactionAsync(token)) {
+                        if (contextTransaction is not null) {
+                            var dbSet = concardContext?.Set<T>();
+                            await dbSet.AddAsync(entity, token);
+                            await concardContext?.SaveChangesAsync(token);
+                            await contextTransaction.CommitAsync(token);
+
+                            return true;
+                        }
+                    }
+
+                    return false;
+                });
+            }
+            catch (Win32Exception) {
+                await contextTransaction?.RollbackAsync(token)!;
+            }
+            catch (TaskCanceledException) {
+                await contextTransaction?.RollbackAsync(token)!;
+            }
+            catch (Exception e) {
+                await contextTransaction?.RollbackAsync(token)!;
                 LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
             }
             finally {

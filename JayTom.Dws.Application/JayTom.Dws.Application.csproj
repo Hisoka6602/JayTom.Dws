@@ -15,4 +15,9 @@
     <ProjectReference Include="..\JayTom.Dws.Domain\JayTom.Dws.Domain.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Dto\CloudApiDto\" />
+    <Folder Include="Service\CloudApi\" />
+  </ItemGroup>
+
 </Project>

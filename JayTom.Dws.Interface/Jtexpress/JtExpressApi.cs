@@ -272,62 +272,70 @@ namespace JayTom.Dws.Interface.Jtexpress {
             stopwatch.Start();
 
             try {
-                using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
-                httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut);
-                HttpResponseMessage message;
-                using (Stream dataStream =
-                       new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data)))) {
-                    using (HttpContent content = new StreamContent(dataStream)) {
-                        content.Headers.Add("Content-Type", "application/json");
-
-                        message = await httpClient.PostAsync($"{Parameters.SegmentCodeUrl}{method}", content)
-                            .ConfigureAwait(false);
-                    }
-                }
-
-                resultContent = await message.Content.ReadAsStringAsync().ConfigureAwait(false);
-                resultContent = Regex.Unescape(resultContent);
-                string pattern = "\"extendJson\":\"({(?:[^{}]|(?<open>\\{)|(?<-open>\\}))+(?(open)(?!))})\"";
-                Match match = Regex.Match(resultContent, pattern);
-
-                if (match.Success) {
-                    string nestedJsonStr = match.Groups[1].Value;
-
-                    // 判断嵌套 JSON 字符串是否为非空
-                    if (!string.IsNullOrEmpty(nestedJsonStr)) {
-                        // 将双引号进行转义
-                        var extendJson = nestedJsonStr.Replace("\"", "\\\"");
-
-                        // 执行其他操作...
-
-                        // 输出结果
-                        resultContent = resultContent.Replace(nestedJsonStr, extendJson);
-                    }
-                }
-                if (!string.IsNullOrEmpty(resultContent)) {
-                    //解析登录返回内容
-                    var result = JsonConvert.DeserializeObject<JtExpressResponseResult>(resultContent, new JsonSerializerSettings {
-                        StringEscapeHandling = StringEscapeHandling.EscapeHtml
-                    });
-                    isSuccess = result?.Succ ?? false;
-                    if (isSuccess) {
-                        var segmentCodeInfo = JsonConvert.DeserializeObject<List<SegmentCodeInfo>>(result?.Data?.ToString() ?? string.Empty, new JsonSerializerSettings {
-                            StringEscapeHandling = StringEscapeHandling.EscapeHtml
-                        });
-                        if (string.IsNullOrEmpty(segmentCodeInfo?.FirstOrDefault()?.ThirdlyDispatchCode)) {
-                            isSuccess = false;
-                            exceptionMsg = "三段码为空";
-                        }
-                        if (isSuccess && _excelDeliveryCodes?.Any(a => a.ThirdlyDispatchCode.Equals(segmentCodeInfo?.FirstOrDefault()?.ThirdlyDispatchCode ?? string.Empty)) != true) {
-                            isSuccess = false;
-                            exceptionMsg = "服务器返回的三段码不在对应分拣路由表里";
-                        }
-                    }
-                }
-
-                if (isSuccess && barcode.ToLower().Equals("noread")) {
+                if (barcode.ToLower().Equals("noread")) {
                     isSuccess = false;
                     exceptionMsg = "条码为NoRead";
+                    resultContent = JsonConvert.SerializeObject(new JtExpressResponseResult {
+                        Code = 500,
+                        Fail = true,
+                        Msg = "noread",
+                        Succ = false,
+                        Data = "noread"
+                    });
+                }
+                else {
+                    using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+                    httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut);
+                    HttpResponseMessage message;
+                    using (Stream dataStream =
+                           new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data)))) {
+                        using (HttpContent content = new StreamContent(dataStream)) {
+                            content.Headers.Add("Content-Type", "application/json");
+
+                            message = await httpClient.PostAsync($"{Parameters.SegmentCodeUrl}{method}", content)
+                                .ConfigureAwait(false);
+                        }
+                    }
+
+                    resultContent = await message.Content.ReadAsStringAsync().ConfigureAwait(false);
+                    resultContent = Regex.Unescape(resultContent);
+                    string pattern = "\"extendJson\":\"({(?:[^{}]|(?<open>\\{)|(?<-open>\\}))+(?(open)(?!))})\"";
+                    Match match = Regex.Match(resultContent, pattern);
+
+                    if (match.Success) {
+                        string nestedJsonStr = match.Groups[1].Value;
+
+                        // 判断嵌套 JSON 字符串是否为非空
+                        if (!string.IsNullOrEmpty(nestedJsonStr)) {
+                            // 将双引号进行转义
+                            var extendJson = nestedJsonStr.Replace("\"", "\\\"");
+
+                            // 执行其他操作...
+
+                            // 输出结果
+                            resultContent = resultContent.Replace(nestedJsonStr, extendJson);
+                        }
+                    }
+                    if (!string.IsNullOrEmpty(resultContent)) {
+                        //解析登录返回内容
+                        var result = JsonConvert.DeserializeObject<JtExpressResponseResult>(resultContent, new JsonSerializerSettings {
+                            StringEscapeHandling = StringEscapeHandling.EscapeHtml
+                        });
+                        isSuccess = result?.Succ ?? false;
+                        if (isSuccess) {
+                            var segmentCodeInfo = JsonConvert.DeserializeObject<List<SegmentCodeInfo>>(result?.Data?.ToString() ?? string.Empty, new JsonSerializerSettings {
+                                StringEscapeHandling = StringEscapeHandling.EscapeHtml
+                            });
+                            if (string.IsNullOrEmpty(segmentCodeInfo?.FirstOrDefault()?.ThirdlyDispatchCode)) {
+                                isSuccess = false;
+                                exceptionMsg = "三段码为空";
+                            }
+                            if (isSuccess && _excelDeliveryCodes?.Any(a => a.ThirdlyDispatchCode.Equals(segmentCodeInfo?.FirstOrDefault()?.ThirdlyDispatchCode ?? string.Empty)) != true) {
+                                isSuccess = false;
+                                exceptionMsg = "服务器返回的三段码不在对应分拣路由表里";
+                            }
+                        }
+                    }
                 }
             }
             catch (HttpRequestException e) {

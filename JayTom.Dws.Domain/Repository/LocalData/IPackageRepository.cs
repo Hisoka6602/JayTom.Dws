@@ -38,5 +38,7 @@ namespace JayTom.Dws.Domain.Repository.LocalData {
         /// <param name="token"></param>
         /// <returns></returns>
         Task<KeyValuePair<bool, PackageInfoModel>> FirstOrDefaultInfo([NotNull] Expression<Func<PackageInfoModel, bool>> @where, CancellationToken token = default);
+
+        new Task<int> Total([NotNull] Expression<Func<PackageInfoModel, bool>> @where, CancellationToken token = default);
     }
 }

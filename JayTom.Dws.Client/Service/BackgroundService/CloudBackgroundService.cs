@@ -94,8 +94,9 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 if (_cloudVideoSettingsDto.IsUseCloudVideoUpload) {
                     if (_cloudVideoUpLoadSlim.CurrentCount > 0) {
                         var (key, value) = await _packageRepository.SelectPackage(s =>
-                                s.PackageCreateTime.CompareTo(_startTime) > 0 &&
-                                s.PackageCreateTime.CompareTo(
+                            s.BarCodeInfo != null &&
+                                s.BarCodeInfo.ScanTime.CompareTo(_startTime) > 0 &&
+                                s.BarCodeInfo.ScanTime.CompareTo(
                                     DateTime.Now.AddSeconds(0 - _cloudVideoSettingsDto.UploadIntervalInSeconds)) <= 0 &&
                                 (s.CloudVideoUploadInfo == null || s.CloudVideoUploadInfo.UploadTime == null),
                             o => o.PackageCreateTime, 0,
@@ -113,7 +114,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                     PolicyCloudVideoUpLoad(packageInfoModel, stoppingToken);
                                 }
 
-                                _startTime = packageInfoModels.Max(m => m.PackageCreateTime);
+                                _startTime = packageInfoModels.Max(m => m.BarCodeInfo.ScanTime);
                             }
                         }
                     }
@@ -180,7 +181,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             IsSuccessful = cloudUploadResponse.IsSuccessful,
                             PanoramaImageCount = packageInfoModel.ImageInfos?.Count(c => c.Type == 1) ?? 0,
                             ScanImageCount = packageInfoModel.ImageInfos?.Count(c => c.Type == 0) ?? 0,
-                            ScanTime = packageInfoModel.PackageCreateTime
+                            ScanTime = packageInfoModel.BarCodeInfo?.ScanTime ?? DateTime.Now
                         });
 
                         if (cloudUploadResponse.IsSuccessful) {

@@ -21,7 +21,7 @@ namespace JayTom.Dws.Data.Package {
         /// 包裹创建时间
         /// </summary>
         [Column("PackageCreateTime"), Required]
-        public DateTime PackageCreateTime { get; set; } = DateTime.MinValue;
+        public DateTime PackageCreateTime { get; set; } = DateTime.Now;
 
         /// <summary>
         /// 其他项

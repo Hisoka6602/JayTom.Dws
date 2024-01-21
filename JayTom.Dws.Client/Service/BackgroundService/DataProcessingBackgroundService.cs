@@ -33,6 +33,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private readonly IUploadRepository _uploadRepository;
         private readonly IImageRepository _imageRepository;
         private readonly IBarcodeScannerCameraConfigRepository _barcodeScannerCameraConfigRepository;
+        private readonly IExitInfoRepository _exitInfoRepository;
         private ConcurrentQueue<PackageInfoModel> _insertItems = new();
         private ConcurrentQueue<ApiResponseReceived> _updateResponseItems = new();
         private ConcurrentQueue<SavedImageInfo> _savedImageItems = new();
@@ -42,13 +43,15 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             IImageStorageService imageStorageService, ISortingRepository sortingRepository,
             IUploadRepository uploadRepository,
             IImageRepository imageRepository,
-            IBarcodeScannerCameraConfigRepository barcodeScannerCameraConfigRepository) {
+            IBarcodeScannerCameraConfigRepository barcodeScannerCameraConfigRepository,
+            IExitInfoRepository exitInfoRepository) {
             _packageRepository = packageRepository;
             _imageStorageService = imageStorageService;
             _sortingRepository = sortingRepository;
             _uploadRepository = uploadRepository;
             _imageRepository = imageRepository;
             _barcodeScannerCameraConfigRepository = barcodeScannerCameraConfigRepository;
+            _exitInfoRepository = exitInfoRepository;
             _imageStorageService.ImageSaved += delegate (object? sender, ImageSavedEventArgs args) {
                 //保存后触发
                 _savedImageItems.Enqueue(new SavedImageInfo() {
@@ -222,7 +225,13 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             SortingMode = sortingModel.SortingMode,
                             PackageCreationInstruction = sortingModel.PackageCreationInstruction,
                         }, stoppingToken);
-                        if (!insert) {
+                        var b = await _exitInfoRepository.Insert(new ExitInfoModel() {
+                            PackageId = packageInfoModel.Id,
+                            PhysicalExit = sortingModel.ExitName,
+                            PhysicalExitId = sortingModel.ExitId,
+                        }, stoppingToken);
+
+                        if (!insert || !b) {
                             _instructionItems.Enqueue(sortingModel);
                         }
                     }

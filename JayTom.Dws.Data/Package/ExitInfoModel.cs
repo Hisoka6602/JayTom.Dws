@@ -21,5 +21,11 @@ namespace JayTom.Dws.Data.Package {
         /// </summary>
         [Column("PhysicalExit")]
         public string PhysicalExit { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 物理格口Id
+        /// </summary>
+        [Column("PhysicalExitId")]
+        public long PhysicalExitId { get; set; }
     }
 }
