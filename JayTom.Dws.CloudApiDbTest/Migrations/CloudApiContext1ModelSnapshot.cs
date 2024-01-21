@@ -16,31 +16,6 @@ namespace JayTom.Dws.CloudApiDbTest.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 64)
                 .HasAnnotation("ProductVersion", "5.0.17");
 
-            modelBuilder.Entity("JayTom.Dws.Data.LocalData.SoundInfoModel", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
-                        .HasColumnName("Id");
-
-                    b.Property<byte[]>("SoundFile")
-                        .IsRequired()
-                        .HasColumnType("longblob")
-                        .HasColumnName("SoundFile");
-
-                    b.Property<string>("SoundName")
-                        .IsRequired()
-                        .HasColumnType("varchar(255)")
-                        .HasColumnName("SoundName");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("SoundName")
-                        .IsUnique();
-
-                    b.ToTable("Data_SoundInfo", "dbo");
-                });
-
             modelBuilder.Entity("JayTom.Dws.Data.Package.BarCodeInfoModel", b =>
                 {
                     b.Property<long>("Id")
@@ -124,10 +99,41 @@ namespace JayTom.Dws.CloudApiDbTest.Migrations
 
                     b.HasKey("Id");
 
+                    b.ToTable("Data_CloudVideoUploadInfo", "dbo");
+                });
+
+            modelBuilder.Entity("JayTom.Dws.Data.Package.DeviceInfoModel", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("Id");
+
+                    b.Property<string>("DeviceName")
+                        .IsRequired()
+                        .HasColumnType("longtext")
+                        .HasColumnName("DeviceName");
+
+                    b.Property<string>("MachineCode")
+                        .IsRequired()
+                        .HasColumnType("longtext")
+                        .HasColumnName("MachineCode");
+
+                    b.Property<string>("NodeName")
+                        .IsRequired()
+                        .HasColumnType("longtext")
+                        .HasColumnName("NodeName");
+
+                    b.Property<long>("PackageId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("PackageId");
+
+                    b.HasKey("Id");
+
                     b.HasIndex("PackageId")
                         .IsUnique();
 
-                    b.ToTable("Data_CloudVideoUploadInfo", "dbo");
+                    b.ToTable("Data_DeviceInfo", "dbo");
                 });
 
             modelBuilder.Entity("JayTom.Dws.Data.Package.ExitInfoModel", b =>
@@ -600,7 +606,18 @@ namespace JayTom.Dws.CloudApiDbTest.Migrations
                 {
                     b.HasOne("JayTom.Dws.Data.Package.PackageInfoModel", "PackageInfo")
                         .WithOne("CloudVideoUploadInfo")
-                        .HasForeignKey("JayTom.Dws.Data.Package.CloudVideoUploadInfoModel", "PackageId")
+                        .HasForeignKey("JayTom.Dws.Data.Package.CloudVideoUploadInfoModel", "Id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("PackageInfo");
+                });
+
+            modelBuilder.Entity("JayTom.Dws.Data.Package.DeviceInfoModel", b =>
+                {
+                    b.HasOne("JayTom.Dws.Data.Package.PackageInfoModel", "PackageInfo")
+                        .WithOne("DeviceInfo")
+                        .HasForeignKey("JayTom.Dws.Data.Package.DeviceInfoModel", "PackageId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -716,6 +733,8 @@ namespace JayTom.Dws.CloudApiDbTest.Migrations
                     b.Navigation("BarCodeInfo");
 
                     b.Navigation("CloudVideoUploadInfo");
+
+                    b.Navigation("DeviceInfo");
 
                     b.Navigation("ExitInfo");
 

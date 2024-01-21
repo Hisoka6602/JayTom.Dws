@@ -78,5 +78,10 @@ namespace JayTom.Dws.Data.Package {
         /// 视频云信息
         /// </summary>
         public virtual CloudVideoUploadInfoModel? CloudVideoUploadInfo { get; set; }
+
+        /// <summary>
+        /// 设备信息
+        /// </summary>
+        public virtual DeviceInfoModel? DeviceInfo { get; set; }
     }
 }

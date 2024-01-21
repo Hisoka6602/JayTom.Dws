@@ -131,22 +131,15 @@ namespace JayTom.Dws.Infrastructure {
                 modelBuilder.Entity<ImageInfoModel>().HasKey(c => new {
                     c.Id
                 });
-                //视频云
+                //设备
                 modelBuilder.Entity<PackageInfoModel>()
-                    .HasOne(b => b.CloudVideoUploadInfo)
+                    .HasOne(b => b.DeviceInfo)
                     .WithOne(n => n.PackageInfo)
-                    .HasForeignKey<CloudVideoUploadInfoModel>(n => n.PackageId)
+                    .HasForeignKey<DeviceInfoModel>(n => n.PackageId)
                     .OnDelete(DeleteBehavior.Cascade);
-                modelBuilder.Entity<CloudVideoUploadInfoModel>().HasKey(c => new {
+                modelBuilder.Entity<DeviceInfoModel>().HasKey(c => new {
                     c.Id
                 });
-
-                modelBuilder.Entity<SoundInfoModel>().HasKey(c => new {
-                    c.Id
-                });
-                modelBuilder.Entity<SoundInfoModel>()
-                    .HasIndex(b => b.SoundName)
-                    .IsUnique();
             }
         }
     }

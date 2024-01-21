@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace JayTom.Dws.CloudApiDbTest.Migrations
 {
-    public partial class InitialCreate : Migration
+    public partial class Migrations : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -29,23 +29,6 @@ namespace JayTom.Dws.CloudApiDbTest.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Data_PackageInfo", x => x.Id);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "Data_SoundInfo",
-                schema: "dbo",
-                columns: table => new
-                {
-                    Id = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    SoundName = table.Column<string>(type: "varchar(255)", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    SoundFile = table.Column<byte[]>(type: "longblob", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Data_SoundInfo", x => x.Id);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
@@ -100,7 +83,35 @@ namespace JayTom.Dws.CloudApiDbTest.Migrations
                 {
                     table.PrimaryKey("PK_Data_CloudVideoUploadInfo", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Data_CloudVideoUploadInfo_Data_PackageInfo_PackageId",
+                        name: "FK_Data_CloudVideoUploadInfo_Data_PackageInfo_Id",
+                        column: x => x.Id,
+                        principalSchema: "dbo",
+                        principalTable: "Data_PackageInfo",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "Data_DeviceInfo",
+                schema: "dbo",
+                columns: table => new
+                {
+                    Id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    MachineCode = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    DeviceName = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    NodeName = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PackageId = table.Column<long>(type: "bigint", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Data_DeviceInfo", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Data_DeviceInfo_Data_PackageInfo_PackageId",
                         column: x => x.PackageId,
                         principalSchema: "dbo",
                         principalTable: "Data_PackageInfo",
@@ -412,9 +423,9 @@ namespace JayTom.Dws.CloudApiDbTest.Migrations
                 column: "ScanTime");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Data_CloudVideoUploadInfo_PackageId",
+                name: "IX_Data_DeviceInfo_PackageId",
                 schema: "dbo",
-                table: "Data_CloudVideoUploadInfo",
+                table: "Data_DeviceInfo",
                 column: "PackageId",
                 unique: true);
 
@@ -465,13 +476,6 @@ namespace JayTom.Dws.CloudApiDbTest.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_Data_SoundInfo_SoundName",
-                schema: "dbo",
-                table: "Data_SoundInfo",
-                column: "SoundName",
-                unique: true);
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Data_UploadInfo_PackageId",
                 schema: "dbo",
                 table: "Data_UploadInfo",
@@ -509,6 +513,10 @@ namespace JayTom.Dws.CloudApiDbTest.Migrations
                 schema: "dbo");
 
             migrationBuilder.DropTable(
+                name: "Data_DeviceInfo",
+                schema: "dbo");
+
+            migrationBuilder.DropTable(
                 name: "Data_ExitInfo",
                 schema: "dbo");
 
@@ -522,10 +530,6 @@ namespace JayTom.Dws.CloudApiDbTest.Migrations
 
             migrationBuilder.DropTable(
                 name: "Data_SortingInfo",
-                schema: "dbo");
-
-            migrationBuilder.DropTable(
-                name: "Data_SoundInfo",
                 schema: "dbo");
 
             migrationBuilder.DropTable(

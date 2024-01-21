@@ -1,4 +1,5 @@
 ﻿using JayTom.Dws.CloudApi.Vo;
+using JayTom.Dws.CloudApi.Do;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
 using System.Diagnostics.CodeAnalysis;
@@ -32,31 +33,17 @@ namespace JayTom.Dws.CloudApi.Controllers {
         /// <summary>
         /// 数据-查询详细列表(条件、分页)
         /// </summary>
+        /// <param name="param"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
         [Produces("application/json")]
         [HttpPost("Packages")]
-        public async Task<JsonResult> GetPackages(/*[FromQuery] PackageFilter filter,
-            [FromQuery] Pagination pagination,*/
+        public async Task<JsonResult> GetPackages([FromBody] PackagesDo param,
             CancellationToken cancellationToken) {
             // 查询数据库，返回符合条件的 PackageDto 列表
 
             //PackageDto
 
-            return JsonResultVo.Success("测试回调");
-        }
-
-        /// <summary>
-        /// 数据-查询详细列表(条件、分页)
-        /// </summary>
-        /// <param name="id"></param>
-        /// <param name="cancellationToken"></param>
-        /// <returns></returns>
-        [Produces("application/json")]
-        [HttpPost("Package")]
-        public async Task<JsonResult> GetPackage(string id, CancellationToken cancellationToken) {
-            // 查询数据库，返回指定id的 PackageDto
-            //PackageDto
             return JsonResultVo.Success("测试回调");
         }
 

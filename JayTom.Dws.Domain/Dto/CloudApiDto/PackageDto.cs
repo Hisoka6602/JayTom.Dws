@@ -68,6 +68,11 @@ namespace JayTom.Dws.Domain.Dto.CloudApiDto {
         /// 图片信息
         /// </summary>
         public List<ImageInfoDto>? ImageInfos { get; set; }
+
+        /// <summary>
+        /// 设备信息
+        /// </summary>
+        public DeviceInfoDto? DeviceInfos { get; set; }
     }
 
     /// <summary>
@@ -438,5 +443,26 @@ namespace JayTom.Dws.Domain.Dto.CloudApiDto {
         /// 信息类型(收件人信息、发件人信息)
         /// </summary>
         public InfoType InformationType { get; set; }
+    }
+
+    /// <summary>
+    /// 设备信息
+    /// </summary>
+    public class DeviceInfoDto {
+
+        /// <summary>
+        /// 机器码
+        /// </summary>
+        public string MachineCode { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 设备名称
+        /// </summary>
+        public string DeviceName { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 节点名称
+        /// </summary>
+        public string NodeName { get; set; } = string.Empty;
     }
 }
