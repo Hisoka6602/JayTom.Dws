@@ -505,7 +505,6 @@ namespace JayTom.Dws.Interface.Jtexpress {
             if (UserInfo.LoginTime is null ||
                 DateTime.Now.Subtract(UserInfo.LoginTime.Value).TotalHours >= 20 ||
                 string.IsNullOrEmpty(UserInfo.Token)) {
-                NLog.LogManager.GetCurrentClassLogger().Error("需要登录");
                 var (key, value) = LogIn(Parameters.UserName, Parameters.Password,
                     Parameters.AppKey, Parameters.AppSecret).GetAwaiter().GetResult();
                 if (key) {
