@@ -13,29 +13,11 @@ namespace JayTom.Dws.Interface.Cloud {
         /// <summary>
         /// 上传数据
         /// </summary>
-        /// <param name="barcode">条码</param>
-        /// <param name="scanTime">扫码时间</param>
-        /// <param name="weight">重量</param>
-        /// <param name="scanNodName">节点</param>
-        /// <param name="volumeInfo">体积信息</param>
-        /// <param name="imageInfos">图片信息</param>
-        /// <param name="ocrInfo">Ocr信息</param>
-        /// <param name="uploadApiInfo">Api上传信息</param>
-        /// <param name="sortingInfo">分拣信息</param>
-        /// <param name="nvrCameraBindingInfos"></param>
+        /// <param name="packageCloudInfo"></param>
         /// <param name="other">其他</param>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<CloudUploadResponse> UploadData([NotNull] string barcode,
-            [NotNull] DateTime scanTime,
-            [NotNull] double weight,
-            [NotNull] string scanNodName,
-            CloudUploadVolumeInfo? volumeInfo = default,
-            List<CloudUploadImageInfo>? imageInfos = default,
-            CloudUploadOcrInfo? ocrInfo = default,
-            CloudUploadApiInfo? uploadApiInfo = default,
-            CloudUploadSortingInfo? sortingInfo = default,
-            List<CloudNvrCameraBindingInfo>? nvrCameraBindingInfos = default,
+        Task<CloudUploadResponse> UploadData([NotNull] PackageCloudInfo packageCloudInfo,
             object? other = null, CancellationToken token = default);
 
         /// <summary>
@@ -134,36 +116,396 @@ namespace JayTom.Dws.Interface.Cloud {
         public string ExceptionMsg { get; set; } = string.Empty;
     }
 
+    public class PackageCloudInfo {
+
+        /// <summary>
+        /// 包裹时间戳Id
+        /// </summary>
+        public long PackageTimestamped { get; set; }
+
+        /// <summary>
+        /// 包裹创建时间
+        /// </summary>
+        public DateTime PackageCreateTime { get; set; } = DateTime.Now;
+
+        /// <summary>
+        /// 其他项
+        /// </summary>
+        public string? Other { get; set; }
+
+        /// <summary>
+        /// 条码信息
+        /// </summary>
+        public PackageCloudBarCodeInfo? BarCodeInfo { get; set; }
+
+        /// <summary>
+        /// 称重信息
+        /// </summary>
+        public PackageCloudWeightInfo? WeightInfo { get; set; }
+
+        /// <summary>
+        /// 体积信息
+        /// </summary>
+        public PackageCloudVolumeInfo? VolumeInfo { get; set; }
+
+        /// <summary>
+        /// 上传信息
+        /// </summary>
+        public PackageCloudUploadInfo? UploadInfo { get; set; }
+
+        /// <summary>
+        /// 格口信息
+        /// </summary>
+        public PackageCloudExitInfo? ExitInfo { get; set; }
+
+        /// <summary>
+        /// 分拣信息
+        /// </summary>
+        public PackageCloudSortingInfo? SortingInfo { get; set; }
+
+        /// <summary>
+        /// 物流信息
+        /// </summary>
+        public PackageCloudLogisticsInfo? LogisticsInfo { get; set; }
+
+        /// <summary>
+        /// Ocr信息
+        /// </summary>
+        public PackageCloudOcrInfo? OcrInfo { get; set; }
+
+        /// <summary>
+        /// 图片信息
+        /// </summary>
+        public List<PackageCloudImageInfo>? ImageInfos { get; set; }
+
+        /// <summary>
+        /// 设备信息
+        /// </summary>
+        public PackageCloudDeviceInfo? DeviceInfos { get; set; }
+
+        /// <summary>
+        /// Nvr信息
+        /// </summary>
+        public List<PackageCloudNvrCameraBindingInfo>? CloudNvrCameraBindingInfos { get; set; }
+    }
+
+    /// <summary>
+    /// 条码信息
+    /// </summary>
+    public class PackageCloudBarCodeInfo {
+
+        /// <summary>
+        /// 条码
+        /// </summary>
+        public string Barcode { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 扫码时间
+        /// </summary>
+        public DateTime ScanTime { get; set; } = DateTime.MinValue;
+
+        /// <summary>
+        /// 来源
+        /// </summary>
+        public int Source { get; set; }
+
+        /// <summary>
+        /// 相机序列号
+        /// </summary>
+        public string CameraSerialNumber { get; set; } = string.Empty;
+    }
+
+    /// <summary>
+    /// 称重信息
+    /// </summary>
+    public class PackageCloudWeightInfo {
+
+        /// <summary>
+        /// 来源类型
+        /// </summary>
+        public int SourceType { get; set; }
+
+        /// <summary>
+        /// 源字符
+        /// </summary>
+        public string OriginalText { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 格式化后重量
+        /// </summary>
+        public double FormattedWeight { get; set; }
+
+        /// <summary>
+        /// 创建时间
+        /// </summary>
+        public DateTime CreateTime { get; set; } = DateTime.Now;
+
+        /// <summary>
+        /// 称重模式
+        /// </summary>
+        public int WeighingMode { get; set; }
+    }
+
     /// <summary>
     /// 体积信息
     /// </summary>
-    public class CloudUploadVolumeInfo {
+    public class PackageCloudVolumeInfo {
 
         /// <summary>
-        /// 长
+        /// 来源类型
         /// </summary>
-        public float Length { get; set; }
+        public int SourceType { get; set; }
 
         /// <summary>
-        /// 宽
+        /// 源字符
         /// </summary>
-        public float Width { get; set; }
+        public string OriginalText { get; set; } = string.Empty;
 
         /// <summary>
-        /// 高
+        /// 格式化后的长
         /// </summary>
-        public float Height { get; set; }
+        public double FormattedLength { get; set; }
 
         /// <summary>
-        /// 体积
+        /// 格式化后的宽
         /// </summary>
-        public float Volume { get; set; }
+        public double FormattedWidth { get; set; }
+
+        /// <summary>
+        /// 格式化后的高
+        /// </summary>
+        public double FormattedHeight { get; set; }
+
+        /// <summary>
+        /// 格式化的体积
+        /// </summary>
+        public double FormattedVolume { get; set; }
+
+        /// <summary>
+        /// 创建时间
+        /// </summary>
+        public DateTime CreateTime { get; set; } = DateTime.Now;
+    }
+
+    /// <summary>
+    /// 上传信息
+    /// </summary>
+    public class PackageCloudUploadInfo {
+
+        /// <summary>
+        /// 上传状态(1成功、2失败、0未上传)
+        /// </summary>
+        public int RequestStatus { get; set; }
+
+        /// <summary>
+        /// 上传内容
+        /// </summary>
+        public string RequestContent { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 响应内容
+        /// </summary>
+        public string ResponseContent { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 请求时间
+        /// </summary>
+        public DateTime RequestTime { get; set; }
+
+        /// <summary>
+        /// 响应时间
+        /// </summary>
+        public DateTime ResponseTime { get; set; }
+
+        /// <summary>
+        /// 耗时(秒)
+        /// </summary>
+        public double DurationInSeconds { get; set; }
+
+        /// <summary>
+        /// 接口参数
+        /// </summary>
+        public string InterfaceParameters { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 请求地址
+        /// </summary>
+        public string RequestUrl { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 异常信息
+        /// </summary>
+        public string ExceptionMessage { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Api异常类型
+        /// </summary>
+        public ApiExceptionType ApiExceptionType { get; set; } = ApiExceptionType.None;
+    }
+
+    /// <summary>
+    /// 格口信息
+    /// </summary>
+    public class PackageCloudExitInfo {
+
+        /// <summary>
+        /// 理论格口
+        /// </summary>
+        public string TheoreticalExit { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 物理格口
+        /// </summary>
+        public string PhysicalExit { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 物理格口Id
+        /// </summary>
+        public long PhysicalExitId { get; set; }
+    }
+
+    /// <summary>
+    /// 分拣信息
+    /// </summary>
+    public class PackageCloudSortingInfo {
+
+        /// <summary>
+        /// 是否使用分拣
+        /// </summary>
+        public bool IsSortingUsed { get; set; }
+
+        /// <summary>
+        /// 分拣模式
+        /// </summary>
+        public int SortingMode { get; set; }
+
+        /// <summary>
+        /// 发送的指令
+        /// </summary>
+        public string SentInstruction { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 发送时间
+        /// </summary>
+        public DateTime SendTime { get; set; }
+
+        /// <summary>
+        /// 接收的指令
+        /// </summary>
+        public string ReceivedInstruction { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 接收时间
+        /// </summary>
+        public DateTime ReceivedTime { get; set; }
+
+        /// <summary>
+        /// 创建包裹指令
+        /// </summary>
+        public string PackageCreationInstruction { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 是否有下位机创建
+        /// </summary>
+        public bool IsCreatedByLowerMachine { get; set; }
+
+        /// <summary>
+        /// 指令目标
+        /// </summary>
+        public string CommandTarget { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 通讯方式
+        /// </summary>
+        public int CommunicationMethod { get; set; }
+
+        /// <summary>
+        /// 效验协议名称
+        /// </summary>
+        public string ChecksumProtocolName { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 连接名称
+        /// </summary>
+        public string ConnectionName { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 是否异常分拣
+        /// </summary>
+        public bool IsAbnormalSorting { get; set; }
+    }
+
+    /// <summary>
+    /// 物流信息
+    /// </summary>
+    public class PackageCloudLogisticsInfo {
+
+        /// <summary>
+        /// 物流代码
+        /// </summary>
+        public string LogisticsCode { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 物流名称
+        /// </summary>
+        public string LogisticsName { get; set; } = string.Empty;
+    }
+
+    /// <summary>
+    /// Ocr信息
+    /// </summary>
+    public class PackageCloudOcrInfo {
+
+        /// <summary>
+        /// 原始内容
+        /// </summary>
+        public string OriginalContent { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 是否使用Ocr
+        /// </summary>
+        public bool IsUseOcr { get; set; }
+
+        /// <summary>
+        /// 三段码
+        /// </summary>
+        public string ThreeSegmentCode { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 识别耗时
+        /// </summary>
+        public long ElapsedMilliseconds { get; set; }
+
+        /// <summary>
+        /// 识别时间
+        /// </summary>
+        public DateTime RecognizeTime { get; set; }
+
+        /// <summary>
+        /// 虚拟号码后四位。
+        /// </summary>
+        public string VirtualNumberLast4 { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 相机序列号
+        /// </summary>
+        public string CameraSerialNumber { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 提交图时间
+        /// </summary>
+        public long SubmitTimestamp { get; set; }
+
+        /// <summary>
+        /// Ocr详细信息
+        /// </summary>
+        public List<PackageCloudOcrDetailedInfo>? OcrDetailedInfos { get; set; }
     }
 
     /// <summary>
     /// 图片信息
     /// </summary>
-    public class CloudUploadImageInfo {
+    public class PackageCloudImageInfo {
 
         /// <summary>
         /// 相机名称
@@ -171,7 +513,7 @@ namespace JayTom.Dws.Interface.Cloud {
         public string CameraName { get; set; } = string.Empty;
 
         /// <summary>
-        /// 相机自定义名称
+        /// 相机自定义名
         /// </summary>
         public string CustomCameraName { get; set; } = string.Empty;
 
@@ -186,34 +528,67 @@ namespace JayTom.Dws.Interface.Cloud {
         public int Type { get; set; }
 
         /// <summary>
+        /// 图片名称
+        /// </summary>
+        public string ImageName { get; set; } = string.Empty;
+
+        /// <summary>
         /// 图片
         /// </summary>
         public Image? Image { get; set; }
     }
 
     /// <summary>
-    /// Ocr信息
+    /// Ocr详细信息
     /// </summary>
+    public class PackageCloudOcrDetailedInfo {
 
-    public class CloudUploadOcrInfo {
+        /// <summary>
+        /// 姓名
+        /// </summary>
+        public string Name { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 地址
+        /// </summary>
+        public string Address { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 电话
+        /// </summary>
+        public string Phone { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 信息类型(收件人信息、发件人信息)
+        /// </summary>
+        public int InformationType { get; set; }
     }
 
     /// <summary>
-    /// 接口上传信息
+    /// 设备信息
     /// </summary>
-    public class CloudUploadApiInfo {
-    }
+    public class PackageCloudDeviceInfo {
 
-    /// <summary>
-    /// 分拣信息
-    /// </summary>
-    public class CloudUploadSortingInfo {
+        /// <summary>
+        /// 机器码
+        /// </summary>
+        public string MachineCode { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 设备名称
+        /// </summary>
+        public string DeviceName { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 节点名称
+        /// </summary>
+        public string NodeName { get; set; } = string.Empty;
     }
 
     /// <summary>
     /// NVR绑定信息
     /// </summary>
-    public class CloudNvrCameraBindingInfo {
+    public class PackageCloudNvrCameraBindingInfo {
 
         /// <summary>
         /// IP地址

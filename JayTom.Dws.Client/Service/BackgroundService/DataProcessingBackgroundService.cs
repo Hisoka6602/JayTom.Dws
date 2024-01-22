@@ -90,31 +90,21 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             while (!stoppingToken.IsCancellationRequested) {
                 var tryDequeue = _insertItems.TryDequeue(out var insertModel);
                 if (tryDequeue && insertModel is not null) {
-                    _packageRepository.InsertAsync(insertModel, stoppingToken);
+                    var insert = await _packageRepository.Insert(insertModel, stoppingToken);
+                    if (!insert) {
+                        _insertItems.Enqueue(insertModel);
+                    }
                 }
 
                 var dequeue = _updateResponseItems.TryDequeue(out var responseModel);
                 if (dequeue && responseModel is not null) {
                     //更新
                     var (key, value) = await _packageRepository.FirstOrDefaultInfo(f => f.BarCodeInfo != null &&
-                            f.BarCodeInfo.Barcode.Equals(responseModel.Barcode),
+                            f.BarCodeInfo.Barcode.Equals(responseModel.Barcode) &&
+                        f.BarCodeInfo.ScanTime.Equals(responseModel.ScanTime),
                         stoppingToken);
 
                     if (key && value is { } packageInfoModel && responseModel.UploadResponse is not null) {
-                        packageInfoModel.UploadInfo = new UploadInfoModel() {
-                            RequestStatus = responseModel.UploadResponse.IsSuccess
-                                ? UploadStatus.Succeeded
-                                : UploadStatus.Failed,
-                            RequestContent = responseModel.UploadResponse.RequestContent,
-                            ResponseContent = responseModel.UploadResponse.ResponseContent,
-                            RequestTime = responseModel.UploadResponse.RequestTime,
-                            ResponseTime = responseModel.UploadResponse.ResponseTime,
-                            DurationInSeconds = responseModel.UploadResponse.Duration,
-                            InterfaceParameters = responseModel.UploadResponse.ApiParameters,
-                            RequestUrl = responseModel.UploadResponse.RequestUrl,
-                            ExceptionMessage = responseModel.UploadResponse.ExceptionMsg,
-                            ApiExceptionType = (ApiExceptionType)responseModel.UploadResponse.ApiExceptionType,
-                        };
                         var insert = await _uploadRepository.Insert(new UploadInfoModel() {
                             PackageId = packageInfoModel.Id,
                             RequestStatus = responseModel.UploadResponse.IsSuccess

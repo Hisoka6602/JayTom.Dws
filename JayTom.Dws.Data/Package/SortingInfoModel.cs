@@ -81,6 +81,12 @@ namespace JayTom.Dws.Data.Package {
         /// </summary>
         [Column("ConnectionName")]
         public string ConnectionName { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 是否异常分拣
+        /// </summary>
+        [Column("IsAbnormalSorting")]
+        public bool IsAbnormalSorting { get; set; }
     }
 
     public enum SortMode {

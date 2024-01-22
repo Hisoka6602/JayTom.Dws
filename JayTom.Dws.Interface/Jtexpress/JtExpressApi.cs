@@ -91,19 +91,22 @@ namespace JayTom.Dws.Interface.Jtexpress {
             catch {
                 deliveryCode = string.Empty;
             }
-            if (Parameters.BusinessType == BusinessType.ArrivalScan) {
-                ArrivalScan(barcode, weight, DateTime.Now, length, width, height, Parameters.ScanTypeCode
-                    , Parameters.TransportTypeCode, Parameters.ScanPda, Parameters.ScanType, Parameters.WeightFlag
-                );
-            }
-            else if (Parameters.BusinessType == BusinessType.DepartureScan) {
-                DepartureScan(barcode, deliveryCode, Parameters.ScanPda);
-            }
-            else if (Parameters.BusinessType == BusinessType.ArrivalScanAndDepartureScan) {
-                ArrivalScan(barcode, weight, DateTime.Now, length, width, height, Parameters.ScanTypeCode
-                    , Parameters.TransportTypeCode, Parameters.ScanPda, Parameters.ScanType, Parameters.WeightFlag
-                );
-                DepartureScan(barcode, deliveryCode, Parameters.ScanPda);
+
+            if (!generateSegmentCode.ExceptionMsg.Equals("条码为NoRead")) {
+                if (Parameters.BusinessType == BusinessType.ArrivalScan) {
+                    ArrivalScan(barcode, weight, DateTime.Now, length, width, height, Parameters.ScanTypeCode
+                        , Parameters.TransportTypeCode, Parameters.ScanPda, Parameters.ScanType, Parameters.WeightFlag
+                    );
+                }
+                else if (Parameters.BusinessType == BusinessType.DepartureScan) {
+                    DepartureScan(barcode, deliveryCode, Parameters.ScanPda);
+                }
+                else if (Parameters.BusinessType == BusinessType.ArrivalScanAndDepartureScan) {
+                    ArrivalScan(barcode, weight, DateTime.Now, length, width, height, Parameters.ScanTypeCode
+                        , Parameters.TransportTypeCode, Parameters.ScanPda, Parameters.ScanType, Parameters.WeightFlag
+                    );
+                    DepartureScan(barcode, deliveryCode, Parameters.ScanPda);
+                }
             }
 
             return generateSegmentCode;
@@ -132,19 +135,22 @@ namespace JayTom.Dws.Interface.Jtexpress {
             catch {
                 deliveryCode = string.Empty;
             }
-            if (Parameters.BusinessType == BusinessType.ArrivalScan) {
-                ArrivalScan(barcode, weight, scanTime, length, width, height, Parameters.ScanTypeCode
-                    , Parameters.TransportTypeCode, Parameters.ScanPda, Parameters.ScanType, Parameters.WeightFlag
-                );
-            }
-            else if (Parameters.BusinessType == BusinessType.DepartureScan) {
-                DepartureScan(barcode, deliveryCode, Parameters.ScanPda);
-            }
-            else if (Parameters.BusinessType == BusinessType.ArrivalScanAndDepartureScan) {
-                ArrivalScan(barcode, weight, scanTime, length, width, height, Parameters.ScanTypeCode
-                    , Parameters.TransportTypeCode, Parameters.ScanPda, Parameters.ScanType, Parameters.WeightFlag
-                );
-                DepartureScan(barcode, deliveryCode, Parameters.ScanPda);
+
+            if (!generateSegmentCode.ExceptionMsg.Equals("条码为NoRead")) {
+                if (Parameters.BusinessType == BusinessType.ArrivalScan) {
+                    ArrivalScan(barcode, weight, scanTime, length, width, height, Parameters.ScanTypeCode
+                        , Parameters.TransportTypeCode, Parameters.ScanPda, Parameters.ScanType, Parameters.WeightFlag
+                    );
+                }
+                else if (Parameters.BusinessType == BusinessType.DepartureScan) {
+                    DepartureScan(barcode, deliveryCode, Parameters.ScanPda);
+                }
+                else if (Parameters.BusinessType == BusinessType.ArrivalScanAndDepartureScan) {
+                    ArrivalScan(barcode, weight, scanTime, length, width, height, Parameters.ScanTypeCode
+                        , Parameters.TransportTypeCode, Parameters.ScanPda, Parameters.ScanType, Parameters.WeightFlag
+                    );
+                    DepartureScan(barcode, deliveryCode, Parameters.ScanPda);
+                }
             }
 
             return generateSegmentCode;
@@ -365,9 +371,9 @@ namespace JayTom.Dws.Interface.Jtexpress {
                     ApiParameters = JsonConvert.SerializeObject(this.Parameters),
                     IsSuccess = isSuccess,
                     Duration = stopwatch.Elapsed.TotalSeconds,
-                    RequestContent = $"{Parameters.SegmentCodeUrl}{method}",
+                    RequestUrl = $"{Parameters.SegmentCodeUrl}{method}",
                     RequestTime = requestTime,
-                    RequestUrl = JsonConvert.SerializeObject(data),
+                    RequestContent = JsonConvert.SerializeObject(data),
                     ResponseContent = resultContent,
                     ResponseTime = DateTime.Now
                 };

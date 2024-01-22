@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace JayTom.Dws.CloudApiDbTest.Migrations
 {
     [DbContext(typeof(Program.CloudApiContext1))]
-    [Migration("20240121110606_Migrations")]
+    [Migration("20240122132129_Migrations")]
     partial class Migrations
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -393,6 +393,10 @@ namespace JayTom.Dws.CloudApiDbTest.Migrations
                         .IsRequired()
                         .HasColumnType("longtext")
                         .HasColumnName("ConnectionName");
+
+                    b.Property<bool>("IsAbnormalSorting")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("IsAbnormalSorting");
 
                     b.Property<bool>("IsCreatedByLowerMachine")
                         .HasColumnType("tinyint(1)")

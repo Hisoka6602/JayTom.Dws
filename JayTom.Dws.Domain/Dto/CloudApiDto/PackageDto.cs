@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Linq;
 using System.Text;
+using System.Drawing;
 using System.Threading.Tasks;
 using JayTom.Dws.Data.Package;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace JayTom.Dws.Domain.Dto.CloudApiDto {
 
@@ -314,6 +316,12 @@ namespace JayTom.Dws.Domain.Dto.CloudApiDto {
         /// 连接名称
         /// </summary>
         public string ConnectionName { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 是否异常分拣
+        /// </summary>
+
+        public bool IsAbnormalSorting { get; set; }
     }
 
     /// <summary>
@@ -411,12 +419,25 @@ namespace JayTom.Dws.Domain.Dto.CloudApiDto {
         /// <summary>
         /// 图片本地路径
         /// </summary>
+        [JsonIgnore]
         public string LocalPath { get; set; } = string.Empty;
 
         /// <summary>
         /// 图片网络路径
         /// </summary>
         public string ImageUrl { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 图片名称
+        /// </summary>
+        [JsonIgnore]
+        public string ImageName { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 图像
+        /// </summary>
+        [JsonIgnore]
+        public Bitmap? Image { get; set; }
     }
 
     /// <summary>

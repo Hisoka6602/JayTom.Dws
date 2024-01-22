@@ -434,7 +434,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             EventAggregator.Instance.Subscribe<ApiResponseReceived>(async item => {
                 if (item is ApiResponseReceived model) {
                     try {
-                        await Task.Delay(100);
+                        await Task.Delay(500);
                         await _updateSlim.WaitAsync();
                         var barCodeItemModel = BarCodeItems.FirstOrDefault(f => f.Barcode.Equals(model.Barcode) &&
                             f.ScanTime.Equals(model.ScanTime));

@@ -392,6 +392,10 @@ namespace JayTom.Dws.CloudApiDbTest.Migrations
                         .HasColumnType("longtext")
                         .HasColumnName("ConnectionName");
 
+                    b.Property<bool>("IsAbnormalSorting")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("IsAbnormalSorting");
+
                     b.Property<bool>("IsCreatedByLowerMachine")
                         .HasColumnType("tinyint(1)")
                         .HasColumnName("IsCreatedByLowerMachine");

@@ -12,7 +12,11 @@ using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http.Features;
 using JayTom.Dws.Domain.Service.VideoApi;
 using Microsoft.Extensions.FileProviders;
+using JayTom.Dws.Domain.Service.CloudApi;
+using JayTom.Dws.Domain.Repository.CloudApi;
+using JayTom.Dws.Application.Service.CloudApi;
 using JayTom.Dws.Domain.Repository.VideoApiData;
+using JayTom.Dws.Infrastructure.Repository.CloudApi;
 using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 using JayTom.Dws.Infrastructure.Repository.VideoApiData;
 using JayTom.Dws.Infrastructure.SignalR.VideoApi.SignalRMessageHub;
@@ -43,7 +47,7 @@ internal class Program {
         });
 
         // Add services to the container.
-        builder.Services.AddPooledDbContextFactory<VideoApiContext>(options => {
+        builder.Services.AddPooledDbContextFactory<CloudApiContext>(options => {
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
             options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString))
                 .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTrackingWithIdentityResolution)
@@ -86,6 +90,7 @@ internal class Program {
             }));
         builder.Services.AddControllers().AddNewtonsoftJson(options => {
             // 格式化返回 JSON
+            options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
             options.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
             options.SerializerSettings.DateTimeZoneHandling = DateTimeZoneHandling.Local; // 设置时区为 UTC
             options.SerializerSettings.DateFormatString = "yyyy-MM-dd HH:mm:ss";
@@ -105,17 +110,14 @@ internal class Program {
         {
             //data
             {
-                /*builder.Services.AddSingleton<IVideoBarCodeRepository, VideoBarCodeRepository>();
-                builder.Services.AddSingleton<IVideoNodeImageRepository, VideoNodeImageRepository>();
-
-                builder.Services.AddSingleton<IVideoScanNodeRepository, VideoScanNodeRepository>();*/
+                builder.Services.AddSingleton<ICloudPackageRepository, CloudPackageRepository>();
             }
         }
         //Service注入
         {
-            /*builder.Services.AddSingleton<IVideoBarCodeAppService, VideoBarCodeAppService>();
-            builder.Services.AddSingleton<IVideoBarCodeService, VideoBarCodeService>();
-            builder.Services.AddSingleton<IMessageHub, MessageHub>();*/
+            builder.Services.AddSingleton<ICloudAppService, CloudAppService>();
+            builder.Services.AddSingleton<ICloudService, CloudService>();
+            //builder.Services.AddSingleton<IMessageHub, MessageHub>();
         }
         //后台服务
 

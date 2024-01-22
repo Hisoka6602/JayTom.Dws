@@ -265,6 +265,7 @@ namespace JayTom.Dws.CloudApiDbTest.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     ConnectionName = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
+                    IsAbnormalSorting = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     PackageId = table.Column<long>(type: "bigint", nullable: false)
                 },
                 constraints: table =>

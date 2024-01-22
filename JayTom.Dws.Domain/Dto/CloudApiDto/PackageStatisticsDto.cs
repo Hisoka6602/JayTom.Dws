@@ -41,7 +41,7 @@ namespace JayTom.Dws.Domain.Dto.CloudApiDto {
         /// <summary>
         /// 分拣效率（单位：包裹/时）
         /// </summary>
-        public double SortingEfficiency { get; set; }
+        public int SortingEfficiency { get; set; }
 
         /// <summary>
         /// 格口统计信息

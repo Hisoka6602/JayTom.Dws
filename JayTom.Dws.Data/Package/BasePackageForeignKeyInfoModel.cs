@@ -3,13 +3,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace JayTom.Dws.Data.Package {
-
     public class BasePackageForeignKeyInfoModel : BaseModel {
 
-        [Column("PackageId")]
+        [Column("PackageId"), JsonIgnore]
         public long PackageId { get; set; }
 
         [ForeignKey("Id")]
