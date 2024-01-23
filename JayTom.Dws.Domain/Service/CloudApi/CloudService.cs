@@ -120,8 +120,8 @@ namespace JayTom.Dws.Domain.Service.CloudApi {
                     w.BarCodeInfo != null &&
                     w.WeightInfo != null &&
                     (string.IsNullOrEmpty(barcode) || w.BarCodeInfo.Barcode.Contains(barcode)) &&
-                    (startScanTime == null || w.BarCodeInfo.ScanTime.CompareTo(startScanTime) >= 0) &&
-                    (endScanTime == null || w.BarCodeInfo.ScanTime.CompareTo(endScanTime) <= 0) &&
+                    (startScanTime == null || w.BarCodeInfo.ScanTime >= startScanTime) &&
+                    (endScanTime == null || w.BarCodeInfo.ScanTime <= endScanTime) &&
                     (string.IsNullOrEmpty(cameraSerialNumber) ||
                      w.BarCodeInfo.CameraSerialNumber.Contains(cameraSerialNumber)) &&
                     (minWeight == null || w.WeightInfo.FormattedWeight >= minWeight) &&
@@ -146,8 +146,8 @@ namespace JayTom.Dws.Domain.Service.CloudApi {
                         w.BarCodeInfo != null &&
                         w.WeightInfo != null &&
                         (string.IsNullOrEmpty(barcode) || w.BarCodeInfo.Barcode.Contains(barcode)) &&
-                        (startScanTime == null || w.BarCodeInfo.ScanTime.CompareTo(startScanTime) >= 0) &&
-                        (endScanTime == null || w.BarCodeInfo.ScanTime.CompareTo(endScanTime) <= 0) &&
+                        (startScanTime == null || w.BarCodeInfo.ScanTime >= startScanTime) &&
+                        (endScanTime == null || w.BarCodeInfo.ScanTime <= endScanTime) &&
                         (string.IsNullOrEmpty(cameraSerialNumber) ||
                          w.BarCodeInfo.CameraSerialNumber.Contains(cameraSerialNumber)) &&
                         (minWeight == null || w.WeightInfo.FormattedWeight >= minWeight) &&

@@ -1,0 +1,149 @@
+﻿@using Microsoft.JSInterop
+@using Newtonsoft.Json
+<MudNavMenu Rounded="true" Dense="true" Color="Color.Transparent" Style="color:white;background-color:transparent">
+    @foreach (var link in links) {
+        <MudNavLink Href="@link.Href"
+                    Match="NavLinkMatch.Prefix"
+                    Class="@GetNavLinkClass(link.IsFocused,link.IsSelected)"
+                    @onmouseover="() => HandleMouseOver(link)"
+                    @onmouseout="() => HandleMouseOut(link)">
+            <div class="@GetDivClass(link.IsFocused,link.IsSelected)" @onclick="() => HandleClick(link)">
+                <span class=@link.Icon style="font-size: 20px; margin-bottom:5px; margin-right:10px;"></span>
+                <span style="font-weight:bold; font-size: 13px;">@link.Title</span>
+            </div>
+        </MudNavLink>
+    }
+</MudNavMenu>
+
+<style>
+    .navlink_dev_focused {
+        display: flex;
+        align-items: center;
+        color: white
+    }
+
+    .navlink_dev_unfocused {
+        display: flex;
+        align-items: center;
+        color: dimgray
+    }
+
+    .focused:hover {
+        background-position: 100% 0;
+    }
+
+    .focused {
+        margin-top: 5px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 50px;
+        margin-left: 10px;
+        margin-right: 10px;
+        border-radius: 15px;
+        width: 220px;
+        background: linear-gradient(90deg, #3D7AEF, #395EF4);
+        background-color: #395EF4;
+        background-size: 200% 100%;
+        background-position: -100% 0;
+        transition: background-position 0.9s ease;
+    }
+
+    .unfocused {
+        margin-top: 5px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 50px;
+        color: dimgray;
+        margin-left: 10px;
+        margin-right: 10px;
+        border-radius: 15px;
+        width: 220px;
+        background-color: white;
+        transition: background-color 0.9s ease;
+    }
+</style>
+
+@code {
+    private List<LinkData> links = new List<LinkData>();
+    protected override void OnInitialized() {
+        base.OnInitialized();
+
+        links = new List<LinkData>() {
+            new LinkData() { Title = "图表主页", Icon ="iconfont icon-icons_statistics", Href = "/data-charthome"},
+            new LinkData() { Title = "详细数据", Icon = "iconfont icon-shujubiao1" },
+            new LinkData() { Title = "数据分析", Icon = "iconfont icon-tubiao1" },
+            new LinkData() { Title = "扫码设备", Icon = "iconfont icon-saoma" }
+        };
+
+    }
+
+    [Inject]
+    private IJSRuntime JSRuntime { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender) {
+        if (firstRender) {
+            // 检查是否存在会话存储的选中状态
+            var invokeAsync = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "isSelected");
+            if (!string.IsNullOrEmpty(invokeAsync)) {
+                var deserializeObject = JsonConvert.DeserializeObject<LinkData>(invokeAsync);
+                if (deserializeObject is not null) {
+                    links.ForEach(f => { f.IsSelected = f.Title.Equals(deserializeObject.Title); });
+                }
+
+            }
+            else {
+                var linkData = links.FirstOrDefault(f => f.Title.Equals("图表主页"));
+                if (linkData is not null) {
+                    linkData.IsSelected = true;
+                }
+            }
+
+            StateHasChanged();
+
+        }
+    }
+
+    private string GetNavLinkClass(bool focused, bool selected) {
+        return (focused || selected) ? "focused" : "unfocused";
+    }
+
+    private void HandleMouseOver(LinkData link) {
+        link.IsFocused = true;
+    }
+
+    private void HandleMouseOut(LinkData link) {
+        link.IsFocused = false;
+    }
+
+    private string GetDivClass(bool focused, bool selected) {
+        return (focused || selected) ? "navlink_dev_focused" : "navlink_dev_unfocused";
+    }
+
+    private async Task HandleClick(LinkData clickedLink) {
+        foreach (var link in links) {
+            if (link == clickedLink) {
+                link.IsSelected = true;
+            }
+            else {
+                link.IsSelected = false;
+            }
+        }
+
+        var serializeObject = JsonConvert.SerializeObject(clickedLink);
+
+        // 将选中状态保存到会话存储中
+        await JSRuntime.InvokeVoidAsync("sessionStorage.setItem", "isSelected", serializeObject);
+
+        StateHasChanged();
+    }
+
+    private class LinkData {
+        public bool IsFocused { get; set; }
+        public bool IsSelected { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public string Icon { get; set; } = string.Empty;
+        public string Href { get; set; }
+    }
+}

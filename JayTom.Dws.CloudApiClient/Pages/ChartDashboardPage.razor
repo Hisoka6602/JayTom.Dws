@@ -1,0 +1,145 @@
+﻿@using JayTom.Dws.CloudApiClient.Data.Models
+@page "/data-charthome"
+@using JayTom.Dws.CloudApiClient.Template;
+@using JayTom.Dws.CloudApiClient.Data.Models
+@using Color = System.Drawing.Color
+@using System.Drawing
+@using ApexCharts
+<div class="grid-container">
+    @foreach (var story in SimpleDataItems) {
+        <div class="grid-item">
+            <SimpleDataTemplate Icon="@story.Icon" Description="@story.Description" Value="@story.Value" Unit="@story.Unit" IconColor="@ColorTranslator.ToHtml(story.IconColor)" TrayColor="@ToHtmlColor(story.TrayColor)" />
+        </div>
+    }
+</div>
+
+<div style="display: flex; margin:10px;">
+    <div style="flex: 40%;">
+        <MudCard Style="width:550px;height:350px; position: relative; border-radius:15px;">
+
+            @*
+            <MudChart c ChartType="ChartType.Donut" LegendPosition="Position.Right" Width="500px" Height="260px"
+            InputData="@data" InputLabels="@labels" CanHideSeries="false" ChartOptions="@Options">
+            <CustomGraphics>
+            <text class="donut-inner-text" x="47%" y="35%" dominant-baseline="middle" text-anchor="middle" fill="black" font-size="2">总数</text>
+            <text class="donut-inner-text" x="47%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="black" font-size="5">@data.Sum().ToString()</text>
+            </CustomGraphics>
+
+            </MudChart>*@
+            <div style="display:flex; flex-direction: column; ">
+                <span style="font-weight:bold; font-size: 15px; margin-top:20px; margin-left:30px;color:gray">异常数据分布</span>
+                <MudDivider DividerType="DividerType.Middle" Style="height:2px:margin:2px" />
+                <ApexChart Width="500" Height="300" TItem="DonutItemModel">
+
+                    <ApexPointSeries TItem="DonutItemModel"
+                                     Items="DonutItems"
+                                     ShowDataLabels="true"
+                                     Name="Net Profit"
+                                     PointColor="e=>e.Color"
+                                     SeriesType="SeriesType.Donut"
+                                     XValue="e => e.Name"
+                                     YValue="e=> e.Value" />
+
+                </ApexChart>
+            </div>
+
+
+        </MudCard>
+        @*异常统计图*@
+
+    </div>
+    <div style="flex: 60%;">
+        <MudCard Style="height:350px; position: relative; border-radius:15px;">
+
+        </MudCard>
+        @*格口分布图*@
+    </div>
+</div>
+
+
+
+
+
+<style>
+    .grid-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(10%, 1fr));
+        grid-gap: 10px;
+    }
+
+    .grid-item {
+        padding: 5px;
+    }
+</style>
+@code {
+    private List<DonutItemModel> DonutItems { get; set; } = new()
+                                                                                                                                                                                                                                                                            {
+        new DonutItemModel(){Name ="无物理格口",Value = 25,Color ="#1E90FF" },
+        new DonutItemModel(){Name ="网络超时",Value = 77,Color ="#687DE8"},
+        new DonutItemModel(){Name ="条码未识别",Value = 28,Color ="#876BCE"},
+        new DonutItemModel(){Name ="其他异常",Value = 5,Color =ColorTranslator.ToHtml(Color.Gray)},
+    };
+    string ToHtmlColor(Color color) {
+        return $"rgba({color.R}, {color.G}, {color.B}, {color.A / 255.0})";
+    }
+
+    public ChartOptions Options = new ChartOptions() {
+            DisableLegend = false,
+            ChartPalette = new string[] { "pink", "#770000" }
+        };
+    public List<SimpleDataModel> SimpleDataItems { get; set; } = new() {
+        new SimpleDataModel()
+        {
+            Description = "分拣总数",
+            Value = "1000",
+            Icon = "iconfont icon-baoguomian",
+            IconColor = Color.DodgerBlue,
+            TrayColor =  Color.FromArgb((int)(255 * 0.1f), Color.DodgerBlue),
+        },
+        new SimpleDataModel()
+        {
+            Description = "正常分拣",
+            Value = "500",
+            Icon = "iconfont icon-baoguowancheng",
+            IconColor = Color.ForestGreen,
+            TrayColor = Color.FromArgb((int)(255 * 0.1f), Color.ForestGreen),
+        },
+        new SimpleDataModel()
+        {
+            Description = "异常分拣",
+            Value = "500",
+            Icon = "iconfont icon-qijianbaoguo",
+            IconColor = Color.OrangeRed,
+            TrayColor = Color.FromArgb((int)(255 * 0.1f), Color.OrangeRed),
+        },
+        new SimpleDataModel()
+        {
+            Description = "异常占比",
+            Value = "50",
+            Unit = "%",
+            Icon = "iconfont icon-a-Group134134gaishuai",
+            IconColor = Color.DeepSkyBlue,
+            TrayColor =Color.FromArgb((int)(255 * 0.1f), Color.DeepSkyBlue),
+        },
+        new SimpleDataModel()
+        {
+            Description = "识别率",
+            Value = "80.3",
+            Unit = "%",
+            Icon = "iconfont icon-fengxianshibie1",
+            IconColor = Color.DimGray,
+            TrayColor =Color.FromArgb((int)(255 * 0.1f), Color.DimGray),
+        },
+        new SimpleDataModel()
+        {
+            Description = "分拣效率",
+            Value = "300",
+            Unit = "件/时",
+            Icon = "iconfont icon-fahuoshixiao",
+            IconColor = Color.DimGray,
+            TrayColor =Color.FromArgb((int)(255 * 0.1f), Color.DimGray),
+        },
+    };
+    public double[] data = { 25, 77, 28, 5 };
+    public string[] labels = { "无物理格口", "网络超时", "条码未识别", "其他异常" };
+}

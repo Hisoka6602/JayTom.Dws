@@ -47,5 +47,10 @@ namespace JayTom.Dws.Domain.Dto.CloudApiDto {
         /// 格口统计信息
         /// </summary>
         public List<StatisticsDto>? ExitStatisticsInfo { get; set; }
+
+        /// <summary>
+        /// 异常统计
+        /// </summary>
+        public List<StatisticsDto>? ErrorStatistics { get; set; }
     }
 }

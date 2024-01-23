@@ -397,7 +397,6 @@ namespace JayTom.Dws.Interface.Jtexpress {
                     UserInfo = value;
                 }
                 else {
-                    NLog.LogManager.GetCurrentClassLogger().Error(JsonConvert.SerializeObject(value));
                     return;
                 }
             }

@@ -13,6 +13,9 @@ namespace JayTom.Dws.Data.LocalConf.PackageSortingConfig {
         [Column("InstructionBindingId"), Required, InsertOrUpdata]
         public long InstructionBindingId { get; set; }
 
+        [ForeignKey("Id")]
+        public virtual SortingInstructionBindingInfoModel? SortingInstructionBindingInfo { get; set; }
+
         /// <summary>
         /// 指令
         /// </summary>
@@ -24,8 +27,5 @@ namespace JayTom.Dws.Data.LocalConf.PackageSortingConfig {
         /// </summary>
         [Column("ReplyContent"), Required, InsertOrUpdata]
         public string ReplyContent { get; set; } = string.Empty;
-
-        [ForeignKey("Id")]
-        public virtual SortingInstructionBindingInfoModel? SortingInstructionBindingInfo { get; set; }
     }
 }

@@ -1,0 +1,24 @@
+﻿@inherits LayoutComponentBase
+@inject NavigationManager Navigation
+<MudThemeProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+<MudLayout Style="display: flex; flex-direction: column; height: 100vh;">
+    <MudDrawer Open="true" Elevation="2" Style="background-color:transparent;color:transparent;">
+        <MudDrawerHeader>
+            <div style="display:flex; align-items:center;">
+                <MudAvatar>
+                    <MudImage Src="images/defaultImage.jpg"></MudImage>
+                </MudAvatar>
+                <MudText Style="font-weight:bold; margin-left:8px; color:white" Typo="Typo.h6">Hisoka</MudText>
+                <span class="iconfont icon-vips" style="color:gold; font-size: 20px; margin-bottom:5px; margin-left:5px;"></span>
+            </div>
+        </MudDrawerHeader>
+        <NavMenu />
+    </MudDrawer>
+    <MudMainContent Style="padding: 20px; background-color:#F2F5FA;display: flex;  flex-direction: column;height:max-content;">
+        @Body
+    </MudMainContent>
+
+
+</MudLayout>

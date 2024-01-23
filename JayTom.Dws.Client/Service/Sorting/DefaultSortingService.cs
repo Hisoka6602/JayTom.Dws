@@ -449,12 +449,14 @@ namespace JayTom.Dws.Client.Service.Sorting {
             if (packageExitDefinitionInfoModel is not null) {
                 //执行分拣
                 //判断指令提交方式
-                var sortingInstructionInfoModels = _sortingInstructionInfoModels.Where(w =>
-                        w.InstructionBindingId.Equals(packageExitDefinitionInfoModel.Id))
-                    ?.ToList();
                 var sortingInstructionBindingInfoModel = _sortingInstructionBindingInfoModels.FirstOrDefault(f =>
                     f.ExitId.Equals(packageExitDefinitionInfoModel.Id));
+
                 if (sortingInstructionBindingInfoModel is not null) {
+                    var sortingInstructionInfoModels = _sortingInstructionInfoModels.Where(w =>
+                            w.InstructionBindingId.Equals(sortingInstructionBindingInfoModel.Id))
+                        ?.ToList();
+
                     await Task.Delay(sortingInstructionBindingInfoModel.DelaySendMilliseconds, token);
                     _sortingConnectionService.SendInstructions(param.Tag ?? new object(), sortingInstructionBindingInfoModel.ExitId ?? 0,
                         sortingInstructionInfoModels ?? new List<SortingInstructionInfoModel>(),
@@ -632,8 +634,24 @@ namespace JayTom.Dws.Client.Service.Sorting {
         }
 
         public void ApiResponseSorting(SortingParam param, CancellationToken token = default) {
-            var apiRuleInfoModel = _apiRuleInfoModels.FirstOrDefault(f =>
-                ValidateApiRule(param.ApiResponse, f.JsonContent));
+            var apiRuleInfoModel = _apiRuleInfoModels
+                ?.Select(o => {
+                    try {
+                        var apiRuleJsonDto = JsonConvert.DeserializeObject<ApiRuleJsonDto>(o.JsonContent);
+                        return new { ApiRuleInfo = o, ApiRuleJsonDto = apiRuleJsonDto };
+                    }
+                    catch (Exception e) {
+                        return new { ApiRuleInfo = o, ApiRuleJsonDto = (ApiRuleJsonDto)null };
+                    }
+                })
+                ?.OrderBy(x => x.ApiRuleJsonDto?.ResponseStatus ?? UploadStatus.NotUploaded)
+                ?.ThenByDescending(x => x.ApiRuleJsonDto?.IsUseJsonField ?? false)
+                ?.Select(x => x.ApiRuleInfo)
+                ?.ToList()
+                ?.FirstOrDefault(f =>
+                    ValidateApiRule(param.ApiResponse, f.JsonContent));
+            /*var apiRuleInfoModel = _apiRuleInfoModels.FirstOrDefault(f =>
+                ValidateApiRule(param.ApiResponse, f.JsonContent));*/
             if (apiRuleInfoModel != null) {
                 var apiSortingInfoModel = _apiSortingInfoModels.FirstOrDefault(f => f.Id.Equals(apiRuleInfoModel.ApiSortingId));
                 if (apiSortingInfoModel is not null) {

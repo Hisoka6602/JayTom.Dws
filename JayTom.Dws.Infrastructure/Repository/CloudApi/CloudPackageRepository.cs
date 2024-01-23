@@ -4,6 +4,7 @@ using System.Text;
 using System.Threading.Tasks;
 using JayTom.Dws.Data.Package;
 using System.Linq.Expressions;
+using NPOI.SS.Formula.Functions;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics.CodeAnalysis;
@@ -158,56 +159,102 @@ namespace JayTom.Dws.Infrastructure.Repository.CloudApi {
                     .Include(b => b.CloudVideoUploadInfo)
                     .Where(w => w.BarCodeInfo != null &&
                                 (startDateTime == null ||
-                                 w.BarCodeInfo.ScanTime.CompareTo(startDateTime) >= 0) &&
+                                 w.BarCodeInfo.ScanTime >= startDateTime) &&
                                 (endDateTime == null ||
-                                 w.BarCodeInfo.ScanTime.CompareTo(endDateTime) <= 0) &&
+                                 w.BarCodeInfo.ScanTime <= endDateTime) &&
                                 (string.IsNullOrEmpty(deviceName) || (w.DeviceInfo != null &&
                                                                       w.DeviceInfo.DeviceName.Contains(deviceName)))
                     );
                 //总数
                 var totalPackages = await queryable.CountAsync(cancellationToken: cancellationToken);
-                //正常分拣
-                var normalSortingCount = await queryable.Where(w =>
-                        w.SortingInfo != null && w.SortingInfo.IsSortingUsed && !w.SortingInfo.IsAbnormalSorting)
-                    .CountAsync(cancellationToken: cancellationToken);
-                //异常分拣
-                var abnormalSortingCount = await queryable.Where(w =>
-                         w.SortingInfo != null && w.SortingInfo.IsSortingUsed && w.SortingInfo.IsAbnormalSorting)
-                     .CountAsync(cancellationToken: cancellationToken);
-                //平均重量
-                var averageWeight = await queryable.Where(w =>
-                        w.WeightInfo != null && w.WeightInfo.FormattedWeight >= 0)
-                    .AverageAsync(a => a.WeightInfo.FormattedWeight,
-                        cancellationToken: cancellationToken);
-                //识别数
-                var recognitionCount = await queryable.Where(w =>
-                         w.BarCodeInfo != null && !w.BarCodeInfo.Barcode.ToLower().Equals("noread"))
-                     .CountAsync(cancellationToken: cancellationToken);
-                //小时数
-                var hour = await queryable.Where(w => w.BarCodeInfo != null).GroupBy(g => g.BarCodeInfo.ScanTime.Hour)
-                     .CountAsync(cancellationToken: cancellationToken);
+                if (totalPackages > 0) {
+                    //正常分拣
+                    var normalSortingCount = await queryable.Where(w =>
+                            w.SortingInfo != null && w.SortingInfo.IsSortingUsed && !w.SortingInfo.IsAbnormalSorting)
+                        .CountAsync(cancellationToken: cancellationToken);
+                    //异常分拣
+                    var abnormalSortingCount = await queryable.Where(w =>
+                             w.SortingInfo != null && w.SortingInfo.IsSortingUsed && w.SortingInfo.IsAbnormalSorting)
+                         .CountAsync(cancellationToken: cancellationToken);
+                    //平均重量
+                    var averageWeight = await queryable.Where(w =>
+                            w.WeightInfo != null && w.WeightInfo.FormattedWeight >= 0)
+                        .AverageAsync(a => a.WeightInfo.FormattedWeight,
+                            cancellationToken: cancellationToken);
+                    //识别数
+                    var recognitionCount = await queryable.Where(w =>
+                             w.BarCodeInfo != null && !w.BarCodeInfo.Barcode.ToLower().Equals("noread"))
+                         .CountAsync(cancellationToken: cancellationToken);
+                    //小时数
+                    var hour = await queryable.Where(w => w.BarCodeInfo != null).GroupBy(g => g.BarCodeInfo.ScanTime.Hour)
+                         .CountAsync(cancellationToken: cancellationToken);
 
-                //格口组
+                    //格口组
 
-                var statisticsDtos = await queryable.Where(w => w.ExitInfo != null)
-                    .GroupBy(g => g.ExitInfo.PhysicalExit)
-                    .Select(s => new StatisticsDto {
-                        Name = s.Key,
-                        Quantity = s.Key.Count(),
-                        Percentage = Math.Round((double)s.Key.Count() / totalPackages, 3),
+                    var statisticsDtos = await queryable.Where(w => w.ExitInfo != null)
+                        .GroupBy(g => g.ExitInfo.PhysicalExit)
+                        .Select(s => new StatisticsDto {
+                            Name = s.Key,
+                            Quantity = s.Key.Count(),
+                            Percentage = Math.Round((double)s.Key.Count() / totalPackages, 3),
+                            TotalCount = totalPackages
+                        }
+                        )?.ToListAsync(cancellationToken: cancellationToken);
+
+                    //网络超时
+                    var timeoutCount = await queryable.Where(w => w.UploadInfo != null
+                                                             && w.UploadInfo.ApiExceptionType == ApiExceptionType.Timeout)
+                        .CountAsync(cancellationToken: cancellationToken);
+                    //无条码
+                    var noReadCount = await queryable.Where(w => w.BarCodeInfo != null
+                                                            && (w.BarCodeInfo.Barcode.ToLower().Equals("noread") ||
+                                                                string.IsNullOrEmpty(w.BarCodeInfo.Barcode)))
+                        .CountAsync(cancellationToken: cancellationToken);
+
+                    //无物理格口
+                    var physicalExitCount = await queryable.Where(w => w.ExitInfo != null &&
+                                                                  string.IsNullOrEmpty(w.ExitInfo.PhysicalExit))
+                        .CountAsync(cancellationToken: cancellationToken);
+
+                    var dtos = new List<StatisticsDto>()
+                    {
+                    new()
+                    {
+                        Name = "Timeout",
+                        Quantity = timeoutCount,
+                        Percentage = Math.Round((double)timeoutCount / totalPackages, 3),
                         TotalCount = totalPackages
-                    }
-                    )?.ToListAsync(cancellationToken: cancellationToken);
-                return new KeyValuePair<bool, object>(true, new PackageStatisticsDto {
-                    TotalPackages = totalPackages,
-                    NormalSortingCount = normalSortingCount,
-                    AbnormalSortingCount = abnormalSortingCount,
-                    AbnormalSortingRate = Math.Round((double)abnormalSortingCount / totalPackages, 3),
-                    AverageWeight = Math.Round(averageWeight, 3),
-                    RecognitionRate = Math.Round((double)recognitionCount / totalPackages, 3),
-                    SortingEfficiency = totalPackages / hour,
-                    ExitStatisticsInfo = statisticsDtos
-                });
+                    },
+                    new()
+                    {
+                        Name = "NoRead",
+                        Quantity = noReadCount,
+                        Percentage = Math.Round((double)noReadCount / totalPackages, 3),
+                        TotalCount = totalPackages
+                    },
+                    new()
+                    {
+                        Name = "PhysicalExitEmpty",
+                        Quantity = physicalExitCount,
+                        Percentage = Math.Round((double)physicalExitCount / totalPackages, 3),
+                        TotalCount = totalPackages
+                    },
+                   };
+                    return new KeyValuePair<bool, object>(true, new PackageStatisticsDto {
+                        TotalPackages = totalPackages,
+                        NormalSortingCount = normalSortingCount,
+                        AbnormalSortingCount = abnormalSortingCount,
+                        AbnormalSortingRate = Math.Round((double)abnormalSortingCount / totalPackages, 3),
+                        AverageWeight = Math.Round(averageWeight, 3),
+                        RecognitionRate = Math.Round((double)recognitionCount / totalPackages, 3),
+                        SortingEfficiency = totalPackages / hour,
+                        ExitStatisticsInfo = statisticsDtos,
+                        ErrorStatistics = dtos
+                    });
+                }
+                else {
+                    return new KeyValuePair<bool, object>(false, "包裹总数为0,无法获取统计数据");
+                }
             }
             catch (Exception e) {
                 NLog.LogManager.GetCurrentClassLogger().Error($"{e}");

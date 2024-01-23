@@ -223,20 +223,7 @@ namespace JayTom.Dws.CloudApi.Controllers {
             if (key && value is PackageStatisticsDto info) {
                 return JsonResultVo.Success("查询成功", data: info);
             }
-
             return JsonResultVo.Fail(value?.ToString() ?? string.Empty);
-        }
-
-        /// <summary>
-        /// 统计-查询(时间、入参分类:无物理格口、网络超时、条码无识别)
-        /// </summary>
-        /// <param name="cancellationToken"></param>
-        /// <returns></returns>
-        [HttpPost("ErrorStatistics")]
-        public async Task<JsonResult> GetErrorStatistics(/*[FromQuery] ErrorStatisticsFilter filter, */CancellationToken cancellationToken) {
-            // 查询数据库，返回符合条件的错误统计数据
-            // List< StatisticsDto >
-            return JsonResultVo.Success("测试回调");
         }
     }
 }

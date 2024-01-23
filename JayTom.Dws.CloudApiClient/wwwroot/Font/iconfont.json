@@ -1,0 +1,373 @@
+{
+  "id": "4420930",
+  "name": "JayTom.Dws.CloudApiClient",
+  "font_family": "iconfont",
+  "css_prefix_text": "icon-",
+  "description": "",
+  "glyphs": [
+    {
+      "icon_id": "6119533",
+      "name": "图片识别-35",
+      "font_class": "tupianshibie-",
+      "unicode": "e632",
+      "unicode_decimal": 58930
+    },
+    {
+      "icon_id": "7701307",
+      "name": "时效系数",
+      "font_class": "shixiaoxishu",
+      "unicode": "e74f",
+      "unicode_decimal": 59215
+    },
+    {
+      "icon_id": "10526886",
+      "name": "组合图识别",
+      "font_class": "zuhetushibie",
+      "unicode": "e8c0",
+      "unicode_decimal": 59584
+    },
+    {
+      "icon_id": "21366747",
+      "name": "统计与概率",
+      "font_class": "tongjiyugaishuai",
+      "unicode": "e605",
+      "unicode_decimal": 58885
+    },
+    {
+      "icon_id": "24732521",
+      "name": "扫描",
+      "font_class": "saomiao",
+      "unicode": "ecac",
+      "unicode_decimal": 60588
+    },
+    {
+      "icon_id": "26074401",
+      "name": "单点识别",
+      "font_class": "dandianshibie",
+      "unicode": "e64e",
+      "unicode_decimal": 58958
+    },
+    {
+      "icon_id": "27198544",
+      "name": "发货时效",
+      "font_class": "fahuoshixiao",
+      "unicode": "e64a",
+      "unicode_decimal": 58954
+    },
+    {
+      "icon_id": "28605504",
+      "name": "时效",
+      "font_class": "shixiao",
+      "unicode": "ea3b",
+      "unicode_decimal": 59963
+    },
+    {
+      "icon_id": "30319930",
+      "name": "icon-概率-面性-双色",
+      "font_class": "icon-gaishuai-mianxing-shuangse",
+      "unicode": "e7f4",
+      "unicode_decimal": 59380
+    },
+    {
+      "icon_id": "34148275",
+      "name": "识别",
+      "font_class": "shibie",
+      "unicode": "e663",
+      "unicode_decimal": 58979
+    },
+    {
+      "icon_id": "35297976",
+      "name": "Group 134134概率",
+      "font_class": "a-Group134134gaishuai",
+      "unicode": "e6b2",
+      "unicode_decimal": 59058
+    },
+    {
+      "icon_id": "37386919",
+      "name": "风险识别",
+      "font_class": "fengxianshibie",
+      "unicode": "e6b3",
+      "unicode_decimal": 59059
+    },
+    {
+      "icon_id": "37390619",
+      "name": "风险识别",
+      "font_class": "fengxianshibie1",
+      "unicode": "e6c5",
+      "unicode_decimal": 59077
+    },
+    {
+      "icon_id": "2507580",
+      "name": "包裹默认",
+      "font_class": "baoguomoren",
+      "unicode": "e610",
+      "unicode_decimal": 58896
+    },
+    {
+      "icon_id": "2510212",
+      "name": "弃件包裹",
+      "font_class": "qijianbaoguo",
+      "unicode": "e61a",
+      "unicode_decimal": 58906
+    },
+    {
+      "icon_id": "2510515",
+      "name": "包裹默认",
+      "font_class": "baoguomoren1",
+      "unicode": "e61c",
+      "unicode_decimal": 58908
+    },
+    {
+      "icon_id": "7972557",
+      "name": "快递； 速递；包裹",
+      "font_class": "kuaidi-mian",
+      "unicode": "e602",
+      "unicode_decimal": 58882
+    },
+    {
+      "icon_id": "12380321",
+      "name": "总数量",
+      "font_class": "zongshuliang",
+      "unicode": "e792",
+      "unicode_decimal": 59282
+    },
+    {
+      "icon_id": "15684918",
+      "name": "包裹_揽收",
+      "font_class": "baoguo_lanshou",
+      "unicode": "e6ad",
+      "unicode_decimal": 59053
+    },
+    {
+      "icon_id": "15684919",
+      "name": "包裹_领件",
+      "font_class": "baoguo_lingjian",
+      "unicode": "e6ae",
+      "unicode_decimal": 59054
+    },
+    {
+      "icon_id": "15684921",
+      "name": "包裹_发货",
+      "font_class": "baoguo_fahuo",
+      "unicode": "e6af",
+      "unicode_decimal": 59055
+    },
+    {
+      "icon_id": "15684923",
+      "name": "包裹_收货",
+      "font_class": "baoguo_shouhuo",
+      "unicode": "e6b0",
+      "unicode_decimal": 59056
+    },
+    {
+      "icon_id": "15684931",
+      "name": "包裹_取消收货",
+      "font_class": "baoguo_quxiaoshouhuo",
+      "unicode": "e6b1",
+      "unicode_decimal": 59057
+    },
+    {
+      "icon_id": "17384643",
+      "name": "包裹",
+      "font_class": "baoguo",
+      "unicode": "e6ed",
+      "unicode_decimal": 59117
+    },
+    {
+      "icon_id": "17631690",
+      "name": "包裹完成",
+      "font_class": "baoguowancheng",
+      "unicode": "e6a8",
+      "unicode_decimal": 59048
+    },
+    {
+      "icon_id": "18474711",
+      "name": "caigouruku",
+      "font_class": "caigouruku",
+      "unicode": "e611",
+      "unicode_decimal": 58897
+    },
+    {
+      "icon_id": "18474712",
+      "name": "chukudan",
+      "font_class": "chukudan",
+      "unicode": "e612",
+      "unicode_decimal": 58898
+    },
+    {
+      "icon_id": "18474716",
+      "name": "huowu",
+      "font_class": "huowu",
+      "unicode": "e613",
+      "unicode_decimal": 58899
+    },
+    {
+      "icon_id": "18474718",
+      "name": "xiaoshouchukudan",
+      "font_class": "xiaoshouchukudan",
+      "unicode": "e614",
+      "unicode_decimal": 58900
+    },
+    {
+      "icon_id": "24722934",
+      "name": "收货包裹",
+      "font_class": "shouhuobaoguo",
+      "unicode": "e6ba",
+      "unicode_decimal": 59066
+    },
+    {
+      "icon_id": "25562383",
+      "name": "包裹箱子",
+      "font_class": "baoguoxiangzi",
+      "unicode": "e731",
+      "unicode_decimal": 59185
+    },
+    {
+      "icon_id": "28997095",
+      "name": "包裹",
+      "font_class": "baoguo1",
+      "unicode": "e60b",
+      "unicode_decimal": 58891
+    },
+    {
+      "icon_id": "32585113",
+      "name": "未发包裹",
+      "font_class": "weifabaoguo",
+      "unicode": "e615",
+      "unicode_decimal": 58901
+    },
+    {
+      "icon_id": "32585114",
+      "name": "已发包裹",
+      "font_class": "yifabaoguo",
+      "unicode": "e616",
+      "unicode_decimal": 58902
+    },
+    {
+      "icon_id": "33201639",
+      "name": "包裹登记",
+      "font_class": "baoguodengji",
+      "unicode": "e75d",
+      "unicode_decimal": 59229
+    },
+    {
+      "icon_id": "33414062",
+      "name": "首页_物流_包裹",
+      "font_class": "shouye_wuliu_baoguo",
+      "unicode": "e858",
+      "unicode_decimal": 59480
+    },
+    {
+      "icon_id": "35653789",
+      "name": "包裹面",
+      "font_class": "baoguomian",
+      "unicode": "e641",
+      "unicode_decimal": 58945
+    },
+    {
+      "icon_id": "36043382",
+      "name": "包裹-提货短信",
+      "font_class": "baoguo-tihuoduanxin",
+      "unicode": "e606",
+      "unicode_decimal": 58886
+    },
+    {
+      "icon_id": "36043392",
+      "name": "包裹-领件",
+      "font_class": "baoguo-lingjian",
+      "unicode": "e607",
+      "unicode_decimal": 58887
+    },
+    {
+      "icon_id": "36305565",
+      "name": "icon_我的包裹",
+      "font_class": "icon_wodebaoguo",
+      "unicode": "e623",
+      "unicode_decimal": 58915
+    },
+    {
+      "icon_id": "12111553",
+      "name": "扫码",
+      "font_class": "saoma",
+      "unicode": "e634",
+      "unicode_decimal": 58932
+    },
+    {
+      "icon_id": "5398578",
+      "name": "图表",
+      "font_class": "tubiao",
+      "unicode": "e600",
+      "unicode_decimal": 58880
+    },
+    {
+      "icon_id": "6651969",
+      "name": "icons_statistics",
+      "font_class": "icons_statistics",
+      "unicode": "e633",
+      "unicode_decimal": 58931
+    },
+    {
+      "icon_id": "8489299",
+      "name": "图表",
+      "font_class": "tubiao1",
+      "unicode": "e61b",
+      "unicode_decimal": 58907
+    },
+    {
+      "icon_id": "8685696",
+      "name": "数据表",
+      "font_class": "shujubiao",
+      "unicode": "e601",
+      "unicode_decimal": 58881
+    },
+    {
+      "icon_id": "11227011",
+      "name": "3-数据3",
+      "font_class": "-shuju",
+      "unicode": "e625",
+      "unicode_decimal": 58917
+    },
+    {
+      "icon_id": "12694851",
+      "name": "图表",
+      "font_class": "tubiao2",
+      "unicode": "e621",
+      "unicode_decimal": 58913
+    },
+    {
+      "icon_id": "19055014",
+      "name": "私美天使数据表~",
+      "font_class": "simeitianshishujubiao",
+      "unicode": "e636",
+      "unicode_decimal": 58934
+    },
+    {
+      "icon_id": "24781716",
+      "name": "数据表模型icon",
+      "font_class": "shujubiaomoxingicon",
+      "unicode": "e6d1",
+      "unicode_decimal": 59089
+    },
+    {
+      "icon_id": "27657521",
+      "name": "数据表",
+      "font_class": "shujubiao1",
+      "unicode": "e643",
+      "unicode_decimal": 58947
+    },
+    {
+      "icon_id": "33470784",
+      "name": "数据表格",
+      "font_class": "shujubiaoge",
+      "unicode": "e60a",
+      "unicode_decimal": 58890
+    },
+    {
+      "icon_id": "36630160",
+      "name": "数据表总数",
+      "font_class": "shujubiaozongshu",
+      "unicode": "e9b7",
+      "unicode_decimal": 59831
+    }
+  ]
+}
