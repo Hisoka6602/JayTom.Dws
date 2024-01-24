@@ -150,6 +150,11 @@ namespace JayTom.Dws.Interface.WeciMexicoDv {
                 return Task.FromResult(new KeyValuePair<bool, string>(true, "参数类型不匹配"));
             }
         }
+
+        public void UploadInBackground(string barcode, double weight, DateTime scanTime, double length = default,
+            double width = default, double height = default, double volume = default, UploadImageInfo? imageInfo = default,
+            List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
+        }
     }
 
     public class WeciMexicoDvApiParam {

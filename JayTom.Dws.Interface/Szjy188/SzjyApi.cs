@@ -266,6 +266,11 @@ namespace JayTom.Dws.Interface.Szjy188 {
             }
         }
 
+        public void UploadInBackground(string barcode, double weight, DateTime scanTime, double length = default,
+            double width = default, double height = default, double volume = default, UploadImageInfo? imageInfo = default,
+            List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
+        }
+
         /// <summary>
         /// 登录
         /// </summary>

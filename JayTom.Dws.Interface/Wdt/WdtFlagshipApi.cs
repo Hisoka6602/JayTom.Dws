@@ -247,6 +247,11 @@ namespace JayTom.Dws.Interface.Wdt {
             }
         }
 
+        public void UploadInBackground(string barcode, double weight, DateTime scanTime, double length = default,
+            double width = default, double height = default, double volume = default, UploadImageInfo? imageInfo = default,
+            List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
+        }
+
         public class ApiParameter {
 
             /// <summary>

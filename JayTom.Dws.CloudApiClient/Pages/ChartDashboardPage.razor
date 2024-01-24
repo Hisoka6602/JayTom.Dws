@@ -17,19 +17,22 @@
     <div style="flex: 40%;">
         <MudCard Style="width:550px;height:350px; position: relative; border-radius:15px;">
 
-            <div style="display:flex; flex-direction: column; ">
-                <span style="font-weight:bold; font-size: 15px; margin-top:20px; margin-left:30px;color:gray">异常数据分布</span>
-                <MudDivider DividerType="DividerType.Middle" Style="height:2px:margin:2px" />
+            <div style="display:flex; flex-direction: column;  ">
+                <div style="margin-bottom:2px; display: flex; height:40px; align-items: center; background-color: dodgerblue; border-top-left-radius: 15px; border-top-right-radius: 15px; padding: 10px;">
+                    <span class="iconfont icon-tianchongxing-" style="color: white; font-size: 26px; margin-right: 10px;"></span>
+                    <span style="font-weight: bold; font-size: 15px; margin-left: 30px; color: white;">异常数据分布</span>
+                </div>
+
                 <ApexChart Width="500" Height="300" TItem="DonutItemModel">
 
                     <ApexPointSeries TItem="DonutItemModel"
                                      Items="DonutItems"
                                      ShowDataLabels="true"
                                      Name="异常分布"
-                                     PointColor="e=>e.Color"
+                                     PointColor="e => e.Color"
                                      SeriesType="SeriesType.Donut"
                                      XValue="e => e.Name"
-                                     YValue="e=> e.Value" />
+                                     YValue="e => e.Value" />
 
                 </ApexChart>
             </div>
@@ -42,7 +45,10 @@
     <div style="flex: 60%;">
         <MudCard Style="height:350px; position: relative; border-radius:15px;">
             <div style="display:flex; flex-direction: column; ">
-                <span style="font-weight:bold; font-size: 15px; margin-top:20px; margin-left:30px;color:gray">格口数据分布</span>
+                <div style="margin-bottom:2px; display: flex; height:40px; align-items: center; background-color: #594AE2; border-top-left-radius: 15px; border-top-right-radius: 15px; padding: 10px;">
+                    <span class="iconfont icon-tianchongxing-" style="color: white; font-size: 26px; margin-right: 10px;"></span>
+                    <span style="font-weight: bold; font-size: 15px; margin-left: 30px; color: white;">格口数据分布</span>
+                </div>
                 <MudDivider DividerType="DividerType.Middle" Style="height:2px:margin:2px" />
                 <MudDataGrid HeaderClass="custom-header" Height="310px" FixedHeader="true" Elevation="1" Class="custom-datagrid" Filterable="false" SortMode="@SortMode.None" Groupable="false" Items="@ExitDistributionItems">
                     <Columns>
@@ -122,7 +128,7 @@
     private List<RealTimeDataItemModel> YesterdayRealTimeDataItems { get; set; } = new();
 
     private List<ExitDistributionItemModel> ExitDistributionItems { get; set; } = new()
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        {
         new ExitDistributionItemModel()
         {
             ExitName = "格口1",
@@ -174,7 +180,7 @@
         },
     };
     private List<DonutItemModel> DonutItems { get; set; } = new()
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                {
         new DonutItemModel(){Name ="无物理格口",Value = 25,Color ="#1E90FF" },
         new DonutItemModel(){Name ="网络超时",Value = 77,Color ="#687DE8"},
         new DonutItemModel(){Name ="条码未识别",Value = 28,Color ="#876BCE"},

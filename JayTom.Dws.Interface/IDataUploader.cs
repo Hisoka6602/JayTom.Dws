@@ -56,6 +56,12 @@ namespace JayTom.Dws.Interface {
         /// <param name="parameters"></param>
         /// <returns></returns>
         Task<KeyValuePair<bool, string>> SetParameters<T>(T parameters);
+
+        /// <summary>
+        /// 包裹结束后上传(无返回接收)
+        /// </summary>
+        void UploadInBackground([NotNull] string barcode, [NotNull] double weight, DateTime scanTime, double length = default, double width = default, double height = default,
+            double volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default);
     }
 
     public class UploadResponse {
