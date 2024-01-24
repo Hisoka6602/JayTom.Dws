@@ -1,8 +1,8 @@
 @font-face {
   font-family: "iconfont"; /* Project id 4420930 */
-  src: url('iconfont.woff2?t=1706004587860') format('woff2'),
-       url('iconfont.woff?t=1706004587860') format('woff'),
-       url('iconfont.ttf?t=1706004587860') format('truetype');
+  src: url('iconfont.woff2?t=1706084460311') format('woff2'),
+       url('iconfont.woff?t=1706084460311') format('woff'),
+       url('iconfont.ttf?t=1706084460311') format('truetype');
 }
 
 .iconfont {
@@ -11,6 +11,70 @@
   font-style: normal;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+.icon-sousuo:before {
+  content: "\e60c";
+}
+
+.icon-xiazai1:before {
+  content: "\e77f";
+}
+
+.icon-api:before {
+  content: "\e6e3";
+}
+
+.icon-weiye:before {
+  content: "\e68c";
+}
+
+.icon-xiayiyeshi:before {
+  content: "\e798";
+}
+
+.icon-shangyiyeshi:before {
+  content: "\e7a5";
+}
+
+.icon-24gf-play:before {
+  content: "\ea82";
+}
+
+.icon-shujuliebiao:before {
+  content: "\e60f";
+}
+
+.icon-icon-shujucaiji:before {
+  content: "\e65e";
+}
+
+.icon-dapingpeizhi:before {
+  content: "\e637";
+}
+
+.icon-tupian:before {
+  content: "\e63a";
+}
+
+.icon-8tupian-2:before {
+  content: "\e66b";
+}
+
+.icon-tupian-filled:before {
+  content: "\e7df";
+}
+
+.icon-tupian1:before {
+  content: "\e62e";
+}
+
+.icon-tupian2:before {
+  content: "\f896";
+}
+
+.icon-tupian3:before {
+  content: "\e7bf";
 }
 
 .icon-tupianshibie-:before {

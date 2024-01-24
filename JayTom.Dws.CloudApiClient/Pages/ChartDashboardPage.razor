@@ -17,15 +17,6 @@
     <div style="flex: 40%;">
         <MudCard Style="width:550px;height:350px; position: relative; border-radius:15px;">
 
-            @*
-            <MudChart c ChartType="ChartType.Donut" LegendPosition="Position.Right" Width="500px" Height="260px"
-            InputData="@data" InputLabels="@labels" CanHideSeries="false" ChartOptions="@Options">
-            <CustomGraphics>
-            <text class="donut-inner-text" x="47%" y="35%" dominant-baseline="middle" text-anchor="middle" fill="black" font-size="2">总数</text>
-            <text class="donut-inner-text" x="47%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="black" font-size="5">@data.Sum().ToString()</text>
-            </CustomGraphics>
-
-            </MudChart>*@
             <div style="display:flex; flex-direction: column; ">
                 <span style="font-weight:bold; font-size: 15px; margin-top:20px; margin-left:30px;color:gray">异常数据分布</span>
                 <MudDivider DividerType="DividerType.Middle" Style="height:2px:margin:2px" />
@@ -34,7 +25,7 @@
                     <ApexPointSeries TItem="DonutItemModel"
                                      Items="DonutItems"
                                      ShowDataLabels="true"
-                                     Name="Net Profit"
+                                     Name="异常分布"
                                      PointColor="e=>e.Color"
                                      SeriesType="SeriesType.Donut"
                                      XValue="e => e.Name"
@@ -50,13 +41,56 @@
     </div>
     <div style="flex: 60%;">
         <MudCard Style="height:350px; position: relative; border-radius:15px;">
+            <div style="display:flex; flex-direction: column; ">
+                <span style="font-weight:bold; font-size: 15px; margin-top:20px; margin-left:30px;color:gray">格口数据分布</span>
+                <MudDivider DividerType="DividerType.Middle" Style="height:2px:margin:2px" />
+                <MudDataGrid HeaderClass="custom-header" Height="310px" FixedHeader="true" Elevation="1" Class="custom-datagrid" Filterable="false" SortMode="@SortMode.None" Groupable="false" Items="@ExitDistributionItems">
+                    <Columns>
+                        <PropertyColumn Property="x => x.Num" Title="" />
+                        <PropertyColumn Property="x => x.ExitName" Title="格口名称" />
+                        <PropertyColumn Property="x => x.Quantity" Title="数量" />
+                        <PropertyColumn Property="x => x.Ratio" Title="占比" Format="P2" />
+                        <TemplateColumn Title="">
+                            <CellTemplate>
+                                <MudProgressLinear Style="height:10px;width:90px" Color="@MudBlazor.Color.Primary" Rounded="true" Size="@MudBlazor.Size.Small" Value="context.Item.Ratio" Max="1" />
+                            </CellTemplate>
+                        </TemplateColumn>
+                    </Columns>
+                </MudDataGrid>
 
+            </div>
         </MudCard>
         @*格口分布图*@
     </div>
 </div>
 
+@*实时图*@
 
+<div style="max-height:500px">
+    <ApexChart Height="320" TItem="RealTimeDataItemModel" Options="@_options" Debug="true">
+
+        <ApexPointSeries TItem="RealTimeDataItemModel"
+                         Items="TodayRealTimeDataItems"
+                         ShowDataLabels="true"
+                         Name="今天数据"
+                         Stroke="@(new ApexCharts.SeriesStroke { Color ="DodgerBlue", DashSpace = 0, Width = 3 })"
+                         SeriesType="SeriesType.Area"
+                         XValue="e => e.Timestamp"
+                         YValue="e => e.Quantity">
+
+        </ApexPointSeries>
+        <ApexPointSeries TItem="RealTimeDataItemModel"
+                         Items="YesterdayRealTimeDataItems"
+                         ShowDataLabels="true"
+                         Name="昨天数据"
+                         Stroke="@(new ApexCharts.SeriesStroke { Color ="gray", DashSpace = 0, Width = 3 })"
+                         SeriesType="SeriesType.Area"
+                         XValue="e => e.Timestamp"
+                         YValue="e => e.Quantity">
+        </ApexPointSeries>
+    </ApexChart>
+
+</div>
 
 
 
@@ -70,23 +104,129 @@
     .grid-item {
         padding: 5px;
     }
+
+    .custom-header {
+        color: black;
+        font-size: 15px;
+    }
+
+    .custom-datagrid .mud-table-row {
+        height: 10px;
+    }
 </style>
 @code {
+
+    private ApexChartOptions<RealTimeDataItemModel> _options = new();
+
+    private List<RealTimeDataItemModel> TodayRealTimeDataItems { get; set; } = new();
+    private List<RealTimeDataItemModel> YesterdayRealTimeDataItems { get; set; } = new();
+
+    private List<ExitDistributionItemModel> ExitDistributionItems { get; set; } = new()
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                {
+        new ExitDistributionItemModel()
+        {
+            ExitName = "格口1",
+            Num = 1,
+            Quantity = 1000,
+            Ratio = 0.2f
+        },
+        new ExitDistributionItemModel()
+        {
+            ExitName = "格口2",
+            Num = 2,
+            Quantity = 3000,
+            Ratio = 0.3f
+        },
+        new ExitDistributionItemModel()
+        {
+            ExitName = "格口3",
+            Num = 3,
+            Quantity = 3000,
+            Ratio = 0.3f
+        },
+        new ExitDistributionItemModel()
+        {
+            ExitName = "格口4",
+            Num = 4,
+            Quantity = 3000,
+            Ratio = 0.3f
+        },
+        new ExitDistributionItemModel()
+        {
+            ExitName = "格口2",
+            Num = 2,
+            Quantity = 3000,
+            Ratio = 0.3f
+        },
+        new ExitDistributionItemModel()
+        {
+            ExitName = "格口3",
+            Num = 3,
+            Quantity = 3000,
+            Ratio = 0.3f
+        },
+        new ExitDistributionItemModel()
+        {
+            ExitName = "格口4",
+            Num = 4,
+            Quantity = 3000,
+            Ratio = 0.3f
+        },
+    };
     private List<DonutItemModel> DonutItems { get; set; } = new()
-                                                                                                                                                                                                                                                                                                    {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        {
         new DonutItemModel(){Name ="无物理格口",Value = 25,Color ="#1E90FF" },
         new DonutItemModel(){Name ="网络超时",Value = 77,Color ="#687DE8"},
         new DonutItemModel(){Name ="条码未识别",Value = 28,Color ="#876BCE"},
         new DonutItemModel(){Name ="其他异常",Value = 5,Color =ColorTranslator.ToHtml(Color.Gray)},
     };
+
+    protected override void OnInitialized() {
+        base.OnInitialized();
+        Random random = new Random();
+        DateTime startTime = DateTime.Now;
+        for (var i = 0; i < 60; i++) {
+            var time = startTime.AddMinutes(i);
+
+            TodayRealTimeDataItems.Add(new RealTimeDataItemModel {
+                    Timestamp = time.ToUnixTimeMilliseconds(),
+                    Quantity = random.Next(1, 100),
+                    Color = "blue"
+                });
+            YesterdayRealTimeDataItems.Add(new RealTimeDataItemModel {
+                    Timestamp = time.ToUnixTimeMilliseconds(),
+                    Quantity = random.Next(1, 100),
+                    Color = "gray"
+                });
+        }
+
+        _options.Debug = true;
+        _options.Tooltip = new ApexCharts.Tooltip { X = new TooltipX { Format = @"yy-MM-dd HH:mm:ss" } };
+        _options.Xaxis = new XAxis {
+                Type = XAxisType.Datetime,
+                Title = new AxisTitle {
+                    OffsetY = 5,
+                    Text = "分钟",
+                    Style = new AxisTitleStyle { FontSize = "14px", Color = "lightgrey" }
+                },
+                AxisBorder = new AxisBorder {
+                    Height = 2
+                },
+
+            };
+        _options.Yaxis = new List<YAxis>();
+        _options.Yaxis.Add(new YAxis {
+                DecimalsInFloat = 0,
+                Labels = new YAxisLabels { Rotate = -45, Style = new AxisLabelStyle { FontSize = "10px" } },
+                Title = new AxisTitle { Text = "数量", Style = new AxisTitleStyle { FontSize = "14px", Color = "lightgrey" } }
+            });
+
+    }
+
+
     string ToHtmlColor(Color color) {
         return $"rgba({color.R}, {color.G}, {color.B}, {color.A / 255.0})";
     }
-
-    public ChartOptions Options = new ChartOptions() {
-            DisableLegend = false,
-            ChartPalette = new string[] { "pink", "#770000" }
-        };
     public List<SimpleDataModel> SimpleDataItems { get; set; } = new() {
         new SimpleDataModel()
         {
