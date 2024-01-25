@@ -1,8 +1,8 @@
 @font-face {
   font-family: "iconfont"; /* Project id 4420930 */
-  src: url('iconfont.woff2?t=1706095528772') format('woff2'),
-       url('iconfont.woff?t=1706095528772') format('woff'),
-       url('iconfont.ttf?t=1706095528772') format('truetype');
+  src: url('iconfont.woff2?t=1706164423117') format('woff2'),
+       url('iconfont.woff?t=1706164423117') format('woff'),
+       url('iconfont.ttf?t=1706164423117') format('truetype');
 }
 
 .iconfont {
@@ -35,6 +35,10 @@
 
 .icon-api:before {
   content: "\e6e3";
+}
+
+.icon-weiye-copy-copy:before {
+  content: "\f898";
 }
 
 .icon-weiye:before {

@@ -48,6 +48,13 @@
       "unicode_decimal": 59107
     },
     {
+      "icon_id": "39109884",
+      "name": "首页-copy",
+      "font_class": "weiye-copy-copy",
+      "unicode": "f898",
+      "unicode_decimal": 63640
+    },
+    {
       "icon_id": "694111",
       "name": "尾页",
       "font_class": "weiye",

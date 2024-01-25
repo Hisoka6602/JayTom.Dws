@@ -980,7 +980,9 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
             // 绘制图像
             try {
                 await _semaphoreSlim.WaitAsync();
+
                 Marshal.Copy(pData, imageBuffBytes, 0, (int)stFrameInfoEx2.nFrameLen);
+
                 switch (stFrameInfoEx2.enPixelType) {
                     case MvCodeReader.MvCodeReaderGvspPixelType.PixelType_CodeReader_Gvsp_Mono8: {
                             var pImage = Marshal.UnsafeAddrOfPinnedArrayElement(imageBuffBytes, 0);
@@ -1136,7 +1138,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
             RealtimeImage?.Invoke(this, e);
         }
 
-        public static Image? GenerateThumbnail(Image? sourceImage, int thumbnailWidth = 800, int thumbnailHeight = 600) {
+        public static Bitmap? GenerateThumbnail(Bitmap? sourceImage, int thumbnailWidth = 800, int thumbnailHeight = 600) {
             if (sourceImage is null) {
                 return null;
             }
@@ -1168,16 +1170,16 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
             return thumbnail;
         }
 
-        public unsafe Bitmap? GenerateThumbnail(Bitmap? sourceImage, int thumbnailWidth = 800, int thumbnailHeight = 600) {
+        public unsafe Bitmap? GenerateThumbnail1(Bitmap? sourceImage, int thumbnailWidth = 800, int thumbnailHeight = 600) {
             if (sourceImage is null) {
                 return null;
             }
 
-            var sourceData = sourceImage.LockBits(new Rectangle(0, 0, sourceImage.Width, sourceImage.Height), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
+            var sourceData = sourceImage.LockBits(new Rectangle(0, 0, sourceImage.Width, sourceImage.Height), ImageLockMode.ReadOnly, sourceImage.PixelFormat == PixelFormat.Format24bppRgb ? PixelFormat.Format24bppRgb : PixelFormat.Format32bppRgb);
 
             try {
                 var thumbnail = new Bitmap(thumbnailWidth, thumbnailHeight);
-                var thumbnailData = thumbnail.LockBits(new Rectangle(0, 0, thumbnailWidth, thumbnailHeight), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
+                var thumbnailData = sourceImage.LockBits(new Rectangle(0, 0, sourceImage.Width, sourceImage.Height), ImageLockMode.ReadOnly, sourceImage.PixelFormat == PixelFormat.Format24bppRgb ? PixelFormat.Format24bppRgb : PixelFormat.Format32bppRgb);
 
                 try {
                     byte* sourcePtr = (byte*)sourceData.Scan0;

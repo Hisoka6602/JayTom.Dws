@@ -159,7 +159,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "JayTom.Dws.CloudApiClient",
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Test-Api", "Test-Api", "{771FEC7A-2904-46BA-BFE8-D64821B2FF44}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApiTest", "ApiTest\ApiTest.csproj", "{CDCC88FE-6473-4C30-BB6A-DEBBC19B30B2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ApiTest", "ApiTest\ApiTest.csproj", "{CDCC88FE-6473-4C30-BB6A-DEBBC19B30B2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
