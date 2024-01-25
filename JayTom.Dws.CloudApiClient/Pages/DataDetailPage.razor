@@ -28,28 +28,62 @@
                         <div>
                             <div class="grid-container">
                                 @*开始时间-结束时间*@
-                                <div class="grid-item;" style="background-color:transparent">
-                                    <DateTimeEditors></DateTimeEditors>
+                                <div class="grid-item">
+                                    <span style="margin-left:3px;margin-right:5px; color:gray;  font-size: 13px;">开始时间:</span>
+                                    <DateTimeEditors @bind-DateTime="StartDateTime"></DateTimeEditors>
+                                </div>
+
+                                <div class="grid-item" style="display: flex; justify-content: center; align-items: center;">
+                                    <span style="margin-left:3px;margin-right:5px; color:gray;  font-size: 13px;">结束时间:</span>
+                                    <DateTimeEditors @bind-DateTime="EndDateTime"></DateTimeEditors>
                                 </div>
                                 @*最大最小重量*@
                                 <div class="grid-item">
+                                    <span style="margin-left:3px;margin-right:5px; color:gray;  font-size: 13px;">重量:</span>
+                                    <MudInput @bind-Value="MinWeight" DisableUnderLine="false" Style="border-block-width:0px; border-color:#3D7AEF; width:110px; height: 30px;display: flex; " Variant="Variant.Text" />
+                                    <span style="margin-left:3px;margin-right:5px; color:gray;  font-size: 13px;">~</span>
+                                    <MudInput @bind-Value="MaxWeight" DisableUnderLine="false" Style="border-block-width:0px; border-color:#3D7AEF; width:110px; height: 30px;display: flex; " Variant="Variant.Text" />
                                 </div>
                                 @*相机序列号*@
-                                <div class="grid-item"></div>
+                                <div class="grid-item">
+                                    <span style="margin-left:3px;margin-right:5px; color:gray;  font-size: 13px;">相机序列号:</span>
+                                    <MudInput @bind-Value="MinWeight" DisableUnderLine="false" Style="border-block-width:0px; border-color:#3D7AEF; width:180px; height: 30px;display: flex; " Variant="Variant.Text" />
+                                </div>
                                 @*上传状态*@
-                                <div class="grid-item">4</div>
+                                <div class="grid-item">
+                                    <span style="margin-left:3px;margin-right:5px; color:gray;  font-size: 13px;">上传状态:</span>
+                                    <MudInput @bind-Value="MinWeight" DisableUnderLine="false" Style="border-block-width:0px; border-color:#3D7AEF; width:180px; height: 30px;display: flex; " Variant="Variant.Text" />
+                                </div>
                                 @* 物理格口 *@
-                                <div class="grid-item">5</div>
+                                <div class="grid-item">
+                                    <span style="margin-left:3px;margin-right:5px; color:gray;  font-size: 13px;">物理格口:</span>
+                                    <MudInput @bind-Value="MinWeight" DisableUnderLine="false" Style="border-block-width:0px; border-color:#3D7AEF; width:180px; height: 30px;display: flex; " Variant="Variant.Text" />
+                                </div>
                                 @*发送的指令*@
-                                <div class="grid-item">6</div>
+                                <div class="grid-item">
+                                    <span style="margin-left:3px;margin-right:5px; color:gray;  font-size: 13px;">发送的指令:</span>
+                                    <MudInput @bind-Value="MinWeight" DisableUnderLine="false" Style="border-block-width:0px; border-color:#3D7AEF; width:180px; height: 30px;display: flex; " Variant="Variant.Text" />
+                                </div>
                                 @*物流名称*@
-                                <div class="grid-item">7</div>
+                                <div class="grid-item">
+                                    <span style="margin-left:3px;margin-right:5px; color:gray;  font-size: 13px;">物流名称:</span>
+                                    <MudInput @bind-Value="MinWeight" DisableUnderLine="false" Style="border-block-width:0px; border-color:#3D7AEF; width:180px; height: 30px;display: flex; " Variant="Variant.Text" />
+                                </div>
                                 @*三段码*@
-                                <div class="grid-item">8</div>
+                                <div class="grid-item">
+                                    <span style="margin-left:3px;margin-right:5px; color:gray;  font-size: 13px;">三段码:</span>
+                                    <MudInput @bind-Value="MinWeight" DisableUnderLine="false" Style="border-block-width:0px; border-color:#3D7AEF; width:180px; height: 30px;display: flex; " Variant="Variant.Text" />
+                                </div>
                                 @*节点名称*@
-                                <div class="grid-item">9</div>
+                                <div class="grid-item">
+                                    <span style="margin-left:3px;margin-right:5px; color:gray;  font-size: 13px;">节点名称:</span>
+                                    <MudInput @bind-Value="MinWeight" DisableUnderLine="false" Style="border-block-width:0px; border-color:#3D7AEF; width:180px; height: 30px;display: flex; " Variant="Variant.Text" />
+                                </div>
                                 @*设备名称*@
-                                <div class="grid-item">10</div>
+                                <div class="grid-item">
+                                    <span style="margin-left:3px;margin-right:5px; color:gray;  font-size: 13px;">设备名称:</span>
+                                    <MudInput @bind-Value="MinWeight" DisableUnderLine="false" Style="border-block-width:0px; border-color:#3D7AEF; width:180px; height: 30px;display: flex; " Variant="Variant.Text" />
+                                </div>
 
                             </div>
 
@@ -58,8 +92,11 @@
                 </MudPopover>
             </div>
 
-            <MudIconButton Style="background-color:#3D7AEF;color: white; height: 40px; width: 80px; border-radius: 20px;margin-right:5px;" Variant="Variant.Filled" Size="Size.Small">
+            <MudIconButton Style="margin-right:1px;background-color:#3D7AEF;color: white; height: 40px; width: 60px; border-top-right-radius: 0px;border-bottom-right-radius: 0px; border-top-left-radius: 20px;border-bottom-left-radius: 20px;" Variant="Variant.Filled" Size="Size.Small">
                 <span class="iconfont icon-sousuo" style="font-size: 20px;"></span>
+            </MudIconButton>
+            <MudIconButton Style="margin-right:5px; background-color:darkviolet;color: white; height: 40px; width: 60px;  border-top-right-radius: 20px;border-bottom-right-radius: 20px; border-top-left-radius: 0px;border-bottom-left-radius: 0px;" Variant="Variant.Filled" Size="Size.Small">
+                <span class="iconfont icon-xiazai1" style="font-size: 20px;"></span>
             </MudIconButton>
         </div>
 
@@ -139,11 +176,16 @@
         grid-template-columns: repeat(1, 1fr);
         grid-auto-rows: 1fr;
         gap: 10px;
+        justify-items: start;
     }
 
     .grid-item {
-        background-color: #ccc;
+        height: 40px;
         padding: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: transparent;
     }
 
     .custom-header {
@@ -162,6 +204,10 @@
     public string searchBarcode { get; set; } = string.Empty;
     public List<DetailInfoItemModel> DetailInfoItems { get; set; } = new();
 
+    public DateTime? StartDateTime { get; set; }
+    public DateTime? EndDateTime { get; set; }
+    public float? MinWeight { get; set; }
+    public float? MaxWeight { get; set; }
     protected override void OnInitialized() {
         base.OnInitialized();
 
@@ -191,7 +237,7 @@
                         ImageUrl = "https://img2.baidu.com/it/u=621048240,333776885&fm=253&fmt=auto&app=138&f=GIF?w=1024&h=435"
                     },
                     PanoramaImageInfos = new List<ImageInfoModel>()
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    {
                     new ImageInfoModel()
                     {
                         ImageUrl = "https://n.sinaimg.cn/translate/366/w700h466/20191130/54fa-ikcaceq7124230.jpg",
@@ -216,6 +262,7 @@
     public void SwitchExpanded() {
         isExpanded = !isExpanded;
         SwitchExpandedTitle = $"{(isExpanded ? "隐藏其他" : "展开更多")}搜索条件";
+        Console.WriteLine(StartDateTime);
     }
 
 }

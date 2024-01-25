@@ -1,8 +1,9 @@
 ﻿@using System.Globalization
 
 <div class="d-flex">
-    <div style="height:30px; display: flex; justify-content: flex-end;">
-        <MudInput ReadOnly="true" Clearable="true" DisableUnderLine="false" Style="border-block-width:0px; border-color:#3D7AEF; min-width:190px; max-width:60px; height: 30px;display: flex; " @bind-Value="DisplayDateTime" Variant="Variant.Text" />
+    <div style="height:30px; display: flex; justify-content: flex-end;align-items: center;">
+
+        <MudInput ReadOnly="true" DisableUnderLine="false" Style="border-block-width:0px; border-color:#3D7AEF; max-width:160px;  height: 30px;display: flex; " @bind-Value="DisplayDateTime" Variant="Variant.Text" />
         <MudIconButton OnClick="@ToggleOpen" Size="@Size.Small"
                        Icon="@Icons.Material.Filled.DateRange" Style="color:gray;width:30px;height:30px;">
         </MudIconButton>
@@ -28,8 +29,10 @@
 
 @code {
     [Parameter]
-    public EventCallback<DateTime?> DateTime { get; set; }
+    public DateTime? DateTime { get; set; }
 
+    [Parameter]
+    public EventCallback<DateTime?> DateTimeChanged { get; set; }
     private string DisplayDateTime { get; set; } = string.Empty;
     private DateTime? _date;
     private TimeSpan? _time;
@@ -39,7 +42,7 @@
         get => _date;
         set {
             _date = value;
-            UpdateDateTime();
+            TimeChanged();
         }
     }
 
@@ -47,18 +50,31 @@
         get => _time;
         set {
             _time = value;
-            UpdateDateTime();
+            TimeChanged();
         }
     }
 
-    private Task UpdateDateTime() {
-        if (Date != null && Time != null) {
-            DisplayDateTime = $"{Date.Value:yyyy-MM-dd} {Time.Value:hh\\:mm\\:ss}";
-            return DateTime.InvokeAsync(new DateTime(Date.Value.Year, Date.Value.Month, Date.Value.Day, Time.Value.Hours, Time.Value.Minutes, Time.Value.Seconds));
+    protected override void OnInitialized() {
+        base.OnInitialized();
+        if (DateTime != null) {
+            DisplayDateTime = $"{DateTime.Value:yyyy-MM-dd HH:mm:ss}";
+            Date = DateTime.Value;
+            Time = DateTime.Value.TimeOfDay;
         }
+    }
 
+    private Task TimeChanged() {
+        if (Date != null && Time != null) {
+            DateTime = new DateTime(Date.Value.Year, Date.Value.Month, Date.Value.Day, Time.Value.Hours, Time.Value.Minutes, Time.Value.Seconds);
+            DisplayDateTime = $"{Date.Value:yyyy-MM-dd} {Time.Value:hh\\:mm\\:ss}";
+            return DateTimeChanged.InvokeAsync(DateTime);
+        }
+        else {
+            DisplayDateTime = string.Empty;
+        }
         return Task.CompletedTask;
     }
+
 
     public void ToggleOpen() {
         _isOpen = !_isOpen;
@@ -67,18 +83,22 @@
     public void GetToday() {
         Date = System.DateTime.Today;
         Time = new TimeSpan(0, 0, 0, 0);
+        ToggleOpen();
     }
 
     public void GetCurrent() {
         Date = System.DateTime.Now;
         Time = new TimeSpan(System.DateTime.Now.Hour, System.DateTime.Now.Minute, 0);
+        ToggleOpen();
     }
 
     public void Confirm() {
-
+        ToggleOpen();
     }
 
     public void Cancel() {
-
+        Date = null;
+        Time = null;
+        ToggleOpen();
     }
 }
