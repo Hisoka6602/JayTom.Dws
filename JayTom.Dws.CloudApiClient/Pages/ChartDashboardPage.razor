@@ -5,100 +5,160 @@
 @using Color = System.Drawing.Color
 @using System.Drawing
 @using ApexCharts
-<div class="grid-container">
-    @foreach (var story in SimpleDataItems) {
-        <div class="grid-item">
-            <SimpleDataTemplate Icon="@story.Icon" Description="@story.Description" Value="@story.Value" Unit="@story.Unit" IconColor="@ColorTranslator.ToHtml(story.IconColor)" TrayColor="@ToHtmlColor(story.TrayColor)" />
+@using JayTom.Dws.CloudApiClient.Api
+@using Size = MudBlazor.Size
+@using JayTom.Dws.CloudApiClient.Data.Models
+@using JayTom.Dws.CloudApiClient.Editors
+@inject IHttpClientFactory HttpClientFactory
+@inject IConfiguration Configuration
+@inject ICloudApiRequest CloudApiRequest
+@*时间搜索*@
+<MudCard Style="height:50px; width:780px; margin-bottom:10px;border-radius:25px">
+    <div style="height: 50px; display: flex; align-items: center;">
+        <div style="margin-right: auto;">
+            <div style=" display: flex; align-items: center;background-color:#3D7AEF; margin-right:5px; height: 50px;border-top-left-radius: 25px;border-bottom-left-radius: 25px;">
+                <span style="margin-left:10px;margin-right:10px; color:white; font-weight:bold; font-size: 13px;">时段:</span>
+            </div>
+
         </div>
+        <DateTimeEditors @bind-DateTime="StartDateTime"></DateTimeEditors>
+        <span style="margin-left:3px;margin-right:5px; color:gray;  font-size: 13px;"> ~ </span>
+        <DateTimeEditors @bind-DateTime="EndDateTime"></DateTimeEditors>
+
+
+        <div style="height: 40px; padding: 10px; display: flex;justify-content: center;align-items: center;background-color: transparent;">
+            <span style="margin-left:3px;margin-right:5px; color:gray;  font-size: 13px;">设备名称:</span>
+            <MudInput @bind-Value="DeviceName" DisableUnderLine="false" Style="border-block-width:0px; border-color:#3D7AEF; width:180px; height: 30px;display: flex; " Variant="Variant.Text" />
+        </div>
+        <MudIconButton OnClick="OnSearchClicked" Style="margin-left:10px;margin-right:10px; color:white; border-radius:20px; height:40px;width:40px; background-color: #3D7AEF;" Variant="Variant.Filled" Color="MudBlazor.Color.Inherit" Size="Size.Medium">
+            <span class="iconfont icon-sousuo" style="font-size: 20px;"></span>
+        </MudIconButton>
+    </div>
+
+</MudCard>
+
+
+<div class="grid-container">
+    @if (!_dataLoaded) {
+        for (int i = 0; i < 6; i++) {
+            <div class="grid-item">
+                <MudSkeleton Style="width:200px;height:180px; position: relative; border-radius:15px;" SkeletonType="SkeletonType.Rectangle" />
+            </div>
+
+        }
     }
+    else {
+        foreach (var story in SimpleDataItems) {
+            <div class="grid-item">
+                <SimpleDataTemplate Icon="@story.Icon" Description="@story.Description" Value="@story.Value" Unit="@story.Unit" IconColor="@ColorTranslator.ToHtml(story.IconColor)" TrayColor="@ToHtmlColor(story.TrayColor)" />
+            </div>
+        }
+    }
+
 </div>
 
 <div style="display: flex; margin:10px;">
     <div style="flex: 40%;">
-        <MudCard Style="width:550px;height:350px; position: relative; border-radius:15px;">
+        @if (!_dataLoaded) {
+            <MudSkeleton Style="width:550px;height:350px; position: relative; border-radius:15px;" SkeletonType="SkeletonType.Rectangle" />
+        }
+        else {
+            <MudCard Style="width:550px;height:350px; position: relative; border-radius:15px;">
 
-            <div style="display:flex; flex-direction: column;  ">
-                <div style="margin-bottom:2px; display: flex; height:40px; align-items: center; background-color: dodgerblue; border-top-left-radius: 15px; border-top-right-radius: 15px; padding: 10px;">
-                    <span class="iconfont icon-tianchongxing-" style="color: white; font-size: 26px; margin-right: 10px;"></span>
-                    <span style="font-weight: bold; font-size: 15px; margin-left: 30px; color: white;">异常数据分布</span>
+                <div style="display:flex; flex-direction: column;  ">
+                    <div style="margin-bottom:2px; display: flex; height:40px; align-items: center; background-color: dodgerblue; border-top-left-radius: 15px; border-top-right-radius: 15px; padding: 10px;">
+                        <span class="iconfont icon-tianchongxing-" style="color: white; font-size: 26px; margin-right: 10px;"></span>
+                        <span style="font-weight: bold; font-size: 15px; margin-left: 30px; color: white;">异常数据分布</span>
+                    </div>
+
+                    <ApexChart Width="500" Height="300" TItem="DonutItemModel">
+
+                        <ApexPointSeries TItem="DonutItemModel"
+                                         Items="DonutItems"
+                                         ShowDataLabels="true"
+                                         Name="异常分布"
+                                         PointColor="e => e.Color"
+                                         SeriesType="SeriesType.Donut"
+                                         XValue="e => e.Name"
+                                         YValue="e => e.Value" />
+
+                    </ApexChart>
                 </div>
 
-                <ApexChart Width="500" Height="300" TItem="DonutItemModel">
 
-                    <ApexPointSeries TItem="DonutItemModel"
-                                     Items="DonutItems"
-                                     ShowDataLabels="true"
-                                     Name="异常分布"
-                                     PointColor="e => e.Color"
-                                     SeriesType="SeriesType.Donut"
-                                     XValue="e => e.Name"
-                                     YValue="e => e.Value" />
+            </MudCard>
+        }
 
-                </ApexChart>
-            </div>
-
-
-        </MudCard>
         @*异常统计图*@
 
     </div>
     <div style="flex: 60%;">
-        <MudCard Style="height:350px; position: relative; border-radius:15px;">
-            <div style="display:flex; flex-direction: column; ">
-                <div style="margin-bottom:2px; display: flex; height:40px; align-items: center; background-color: #594AE2; border-top-left-radius: 15px; border-top-right-radius: 15px; padding: 10px;">
-                    <span class="iconfont icon-tianchongxing-" style="color: white; font-size: 26px; margin-right: 10px;"></span>
-                    <span style="font-weight: bold; font-size: 15px; margin-left: 30px; color: white;">格口数据分布</span>
-                </div>
-                <MudDivider DividerType="DividerType.Middle" Style="height:2px:margin:2px" />
-                <MudDataGrid HeaderClass="custom-header" Height="310px" FixedHeader="true" Elevation="1" Class="custom-datagrid" Filterable="false" SortMode="@SortMode.None" Groupable="false" Items="@ExitDistributionItems">
-                    <Columns>
-                        <PropertyColumn Property="x => x.Num" Title="" />
-                        <PropertyColumn Property="x => x.ExitName" Title="格口名称" />
-                        <PropertyColumn Property="x => x.Quantity" Title="数量" />
-                        <PropertyColumn Property="x => x.Ratio" Title="占比" Format="P2" />
-                        <TemplateColumn Title="">
-                            <CellTemplate>
-                                <MudProgressLinear Style="height:10px;width:90px" Color="@MudBlazor.Color.Primary" Rounded="true" Size="@MudBlazor.Size.Small" Value="context.Item.Ratio" Max="1" />
-                            </CellTemplate>
-                        </TemplateColumn>
-                    </Columns>
-                </MudDataGrid>
+        @if (!_dataLoaded) {
+            <MudSkeleton Style="height:350px; position: relative; border-radius:15px;" SkeletonType="SkeletonType.Rectangle" />
+        }
+        else {
+            <MudCard Style="height:350px; position: relative; border-radius:15px;">
+                <div style="display:flex; flex-direction: column; ">
+                    <div style="margin-bottom:2px; display: flex; height:40px; align-items: center; background-color: #594AE2; border-top-left-radius: 15px; border-top-right-radius: 15px; padding: 10px;">
+                        <span class="iconfont icon-tianchongxing-" style="color: white; font-size: 26px; margin-right: 10px;"></span>
+                        <span style="font-weight: bold; font-size: 15px; margin-left: 30px; color: white;">格口数据分布</span>
+                    </div>
+                    <MudDivider DividerType="DividerType.Middle" Style="height:2px:margin:2px" />
+                    <MudDataGrid HeaderClass="custom-header" Height="310px" FixedHeader="true" Elevation="1" Class="custom-datagrid" Filterable="false" SortMode="@SortMode.None" Groupable="false" Items="@ExitDistributionItems">
+                        <Columns>
+                            <PropertyColumn Property="x => x.Num" Title="" />
+                            <PropertyColumn Property="x => x.ExitName" Title="格口名称" />
+                            <PropertyColumn Property="x => x.Quantity" Title="数量" />
+                            <PropertyColumn Property="x => x.Ratio" Title="占比" Format="P2" />
+                            <TemplateColumn Title="">
+                                <CellTemplate>
+                                    <MudProgressLinear Style="height:10px;width:90px" Color="@MudBlazor.Color.Primary" Rounded="true" Size="@MudBlazor.Size.Small" Value="context.Item.Ratio" Max="1" />
+                                </CellTemplate>
+                            </TemplateColumn>
+                        </Columns>
+                    </MudDataGrid>
 
-            </div>
-        </MudCard>
+                </div>
+            </MudCard>
+        }
+
         @*格口分布图*@
     </div>
 </div>
 
 @*实时图*@
 
-<div style="max-height:500px">
-    <ApexChart Height="320" TItem="RealTimeDataItemModel" Options="@_options" Debug="true">
+<div style="max-height:480px">
+    @if (!_dataLoaded) {
+        <MudSkeleton Style="height:280px;" SkeletonType="SkeletonType.Rectangle" />
+    }
+    else {
+        <ApexChart Height="280" TItem="RealTimeDataItemModel" Options="@_options" Debug="true">
 
-        <ApexPointSeries TItem="RealTimeDataItemModel"
-                         Items="TodayRealTimeDataItems"
-                         ShowDataLabels="true"
-                         Name="今天数据"
-                         Stroke="@(new ApexCharts.SeriesStroke { Color ="DodgerBlue", DashSpace = 0, Width = 3 })"
-                         SeriesType="SeriesType.Area"
-                         XValue="e => e.Timestamp"
-                         YValue="e => e.Quantity">
+            <ApexPointSeries TItem="RealTimeDataItemModel"
+                             Items="TodayRealTimeDataItems"
+                             ShowDataLabels="true"
+                             Name="今天数据"
+                             Stroke="@(new ApexCharts.SeriesStroke { Color = "DodgerBlue", DashSpace = 0, Width = 3 })"
+                             SeriesType="SeriesType.Area"
+                             XValue="e => e.Timestamp"
+                             YValue="e => e.Quantity">
 
-        </ApexPointSeries>
-        <ApexPointSeries TItem="RealTimeDataItemModel"
-                         Items="YesterdayRealTimeDataItems"
-                         ShowDataLabels="true"
-                         Name="昨天数据"
-                         Stroke="@(new ApexCharts.SeriesStroke { Color ="gray", DashSpace = 0, Width = 3 })"
-                         SeriesType="SeriesType.Area"
-                         XValue="e => e.Timestamp"
-                         YValue="e => e.Quantity">
-        </ApexPointSeries>
-    </ApexChart>
+            </ApexPointSeries>
+            <ApexPointSeries TItem="RealTimeDataItemModel"
+                             Items="YesterdayRealTimeDataItems"
+                             ShowDataLabels="true"
+                             Name="昨天数据"
+                             Stroke="@(new ApexCharts.SeriesStroke { Color = "gray", DashSpace = 0, Width = 3 })"
+                             SeriesType="SeriesType.Area"
+                             XValue="e => e.Timestamp"
+                             YValue="e => e.Quantity">
+            </ApexPointSeries>
+        </ApexChart>
+    }
+
 
 </div>
-
-
 
 <style>
     .grid-container {
@@ -121,14 +181,14 @@
     }
 </style>
 @code {
-
+    [Inject] private IDialogService DialogService { get; set; }
     private ApexChartOptions<RealTimeDataItemModel> _options = new();
 
-    private List<RealTimeDataItemModel> TodayRealTimeDataItems { get; set; } = new();
-    private List<RealTimeDataItemModel> YesterdayRealTimeDataItems { get; set; } = new();
+    private List<RealTimeDataItemModel> TodayRealTimeDataItems { get; init; } = new();
+    private List<RealTimeDataItemModel> YesterdayRealTimeDataItems { get; init; } = new();
 
-    private List<ExitDistributionItemModel> ExitDistributionItems { get; set; } = new()
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            {
+    private List<ExitDistributionItemModel> ExitDistributionItems { get; init; } = new()
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    {
         new ExitDistributionItemModel()
         {
             ExitName = "格口1",
@@ -179,14 +239,19 @@
             Ratio = 0.3f
         },
     };
-    private List<DonutItemModel> DonutItems { get; set; } = new()
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    {
+    private List<DonutItemModel> DonutItems { get; init; } = new()
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            {
         new DonutItemModel(){Name ="无物理格口",Value = 25,Color ="#1E90FF" },
         new DonutItemModel(){Name ="网络超时",Value = 77,Color ="#687DE8"},
         new DonutItemModel(){Name ="条码未识别",Value = 28,Color ="#876BCE"},
         new DonutItemModel(){Name ="其他异常",Value = 5,Color =ColorTranslator.ToHtml(Color.Gray)},
     };
 
+    private bool _dataLoaded = true;
+    public static DateTime? StartDateTime { get; set; }
+    public static DateTime? EndDateTime { get; set; }
+    public static string? BaseUrl { get; set; }
+    public static string? DeviceName { get; set; }
     protected override void OnInitialized() {
         base.OnInitialized();
         Random random = new Random();
@@ -227,13 +292,24 @@
                 Title = new AxisTitle { Text = "数量", Style = new AxisTitleStyle { FontSize = "14px", Color = "lightgrey" } }
             });
 
-    }
+        //正式逻辑
+        if (StartDateTime is null) {
+            StartDateTime = DateTime.Today;
+        }
 
+        if (EndDateTime is null) {
+            EndDateTime = DateTime.Now;
+
+        }
+
+        BaseUrl ??= Configuration.GetValue<string>("BaseUrl");
+    }
 
     string ToHtmlColor(Color color) {
+
         return $"rgba({color.R}, {color.G}, {color.B}, {color.A / 255.0})";
     }
-    public List<SimpleDataModel> SimpleDataItems { get; set; } = new() {
+    public List<SimpleDataModel> SimpleDataItems { get; init; } = new() {
         new SimpleDataModel()
         {
             Description = "分拣总数",
@@ -286,6 +362,87 @@
             TrayColor =Color.FromArgb((int)(255 * 0.1f), Color.DimGray),
         },
     };
-    public double[] data = { 25, 77, 28, 5 };
-    public string[] labels = { "无物理格口", "网络超时", "条码未识别", "其他异常" };
+
+    public void OnSearchClicked() {
+        GetStatistics();
+    }
+
+    public async void GetStatistics() {
+        if (_dataLoaded) {
+
+            _dataLoaded = false;
+            //锁
+            //骨架屏
+            //初始数据
+            SimpleDataItems.ForEach(f => {
+                f.Value = "0";
+            });
+            ExitDistributionItems.Clear();
+            DonutItems.Clear();
+            CloudApiRequest.SetBaseUrl(BaseUrl ?? string.Empty);
+            var (key, value) = await CloudApiRequest.GetStatistics(StartDateTime, EndDateTime, DeviceName);
+            if (key && value is StatisticsInfoModel model) {
+                var simpleDataModel = SimpleDataItems.FirstOrDefault(f => f.Description.Equals("分拣总数"));
+                if (simpleDataModel is not null) {
+                    simpleDataModel.Value = model.TotalPackages.ToString();
+
+                }
+                simpleDataModel = SimpleDataItems.FirstOrDefault(f => f.Description.Equals("正常分拣"));
+                if (simpleDataModel is not null) {
+                    simpleDataModel.Value = model.NormalSortingCount.ToString();
+
+                }
+                simpleDataModel = SimpleDataItems.FirstOrDefault(f => f.Description.Equals("异常分拣"));
+                if (simpleDataModel is not null) {
+                    simpleDataModel.Value = model.AbnormalSortingCount.ToString();
+
+                }
+                simpleDataModel = SimpleDataItems.FirstOrDefault(f => f.Description.Equals("异常占比"));
+                if (simpleDataModel is not null) {
+                    simpleDataModel.Value = model.AbnormalSortingRate.ToString("P2");
+
+                }
+                simpleDataModel = SimpleDataItems.FirstOrDefault(f => f.Description.Equals("识别率"));
+                if (simpleDataModel is not null) {
+                    simpleDataModel.Value = model.AbnormalSortingRate.ToString("P2");
+
+                }
+                simpleDataModel = SimpleDataItems.FirstOrDefault(f => f.Description.Equals("分拣效率"));
+                if (simpleDataModel is not null) {
+                    simpleDataModel.Value = model.AbnormalSortingCount.ToString();
+
+                }
+
+                var itemModels = model.ExitStatisticsInfo?.Select((s, i) => new ExitDistributionItemModel {
+                        ExitName = s.Name,
+                        Num = i + 1,
+                        Quantity = s.Quantity,
+                        Ratio = (float)s.Percentage
+                    })?.ToList();
+                ExitDistributionItems.AddRange(itemModels ?? new List<ExitDistributionItemModel>());
+                //model.ErrorStatistics?.Select(s=>new)
+            }
+            else if (key && value is ApiResult apiResult) {
+
+                await DialogService.ShowMessageBox(
+                    "Api后端接口",
+                    apiResult.Msg);
+                StateHasChanged();
+            }
+            else {
+                await DialogService.ShowMessageBox(
+                    "Api后端接口",
+                    value.ToString());
+                StateHasChanged();
+            }
+
+            _dataLoaded = true;
+        }
+
+    }
+    //点击查询事件
+    //操作实时折线图事件
+    //操作饼图事件
+    //获取统计接口数据
+
 }

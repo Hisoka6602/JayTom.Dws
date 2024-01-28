@@ -22,6 +22,7 @@
     <PackageReference Include="FluentFTP" Version="47.1.0" />
     <PackageReference Include="NLog" Version="5.2.0" />
     <PackageReference Include="NPOI" Version="2.6.0" />
+    <PackageReference Include="S7netplus" Version="0.20.0" />
     <PackageReference Include="System.IO.Ports" Version="7.0.0" />
     <PackageReference Include="System.Speech" Version="7.0.0" />
     <PackageReference Include="TouchSocket" Version="1.3.6" />

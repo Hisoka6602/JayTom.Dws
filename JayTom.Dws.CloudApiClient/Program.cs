@@ -1,4 +1,6 @@
+using ApexCharts;
 using MudBlazor.Services;
+using JayTom.Dws.CloudApiClient.Api;
 using JayTom.Dws.CloudApiClient.Data;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
@@ -12,6 +14,21 @@ internal class Program {
         builder.Services.AddRazorPages();
         builder.Services.AddServerSideBlazor();
         builder.Services.AddSingleton<WeatherForecastService>();
+        builder.Services.AddHttpClient("INSURANCE", httpClient => {
+            // httpClient.Timeout = TimeSpan.FromSeconds(10);
+        }).ConfigurePrimaryHttpMessageHandler(() => {
+            var handler = new HttpClientHandler() {
+                UseDefaultCredentials = true,
+                MaxConnectionsPerServer = 600,
+                ServerCertificateCustomValidationCallback = (m, c, ch, _) => true,
+                //UseProxy = false
+            };
+
+            return handler;
+        });
+
+        //½Ó¿Ú×¢Èë
+        builder.Services.AddSingleton<ICloudApiRequest, CloudApiRequest>();
 
         var app = builder.Build();
 

@@ -770,8 +770,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                         if (!RunningStatus) {
                             //效验
                             var machineCode = await _computer.GenerateMachineCode();
-                            //判断机器码
-                            /*if (!machineCode.Equals("FA934375569532C76E010057A1F7AF8E")) {
+                            /*//判断机器码
+                            if (!machineCode.Equals("424FEADFE57E9A504377DDDAF64DE1A0")) {
+                                return;
                             }*/
                             //判断时间
                             var validateTime = await _certificateValidationService.ValidateTime();

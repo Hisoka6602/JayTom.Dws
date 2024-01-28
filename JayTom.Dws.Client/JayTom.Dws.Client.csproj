@@ -135,6 +135,9 @@
     <None Update="App.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="ConfigurationFiles\SortingConfigFiles\WxckExitMonitorSorting.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="Nlog.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -156,6 +159,12 @@
     <Content Include="..\JayTom.Dws.Camera\UsbCameraDll\**\*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Remove="Service\新文件夹\**" />
+    <EmbeddedResource Remove="Service\新文件夹\**" />
+    <None Remove="Service\新文件夹\**" />
+    <Page Remove="Service\新文件夹\**" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="DynamsoftCommon">

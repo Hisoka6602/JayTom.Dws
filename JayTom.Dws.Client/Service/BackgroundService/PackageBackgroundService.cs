@@ -157,7 +157,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     }
                 }
                 else {
-                    var info = _packageInfos.OrderBy(o => o.CreateTime).FirstOrDefault(f => f.BarCodeInfo == null);
+                    var info = _packageInfos.OrderBy(o => o.CreateTime).LastOrDefault(f => f.BarCodeInfo == null);
+                    //var info = _packageInfos.OrderBy(o => o.CreateTime).FirstOrDefault(f => f.BarCodeInfo == null);
                     if (info != null) {
                         info.BarCodeInfo = new BarCodeInfoModel() {
                             Barcode = args.Barcode,
@@ -171,6 +172,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             };
             //空包裹
             _deviceService.NotBarcodeHitEvent += async delegate (object? sender, BarcodeReadEventArgs args) {
+                return;
                 await Task.Delay(100);
                 //等200ms,如果仍没有创建包裹则由空条码创建创建(有危险，看实际应用调整)
                 var orDefault = _packageInfos.OrderBy(o => o.CreateTime)

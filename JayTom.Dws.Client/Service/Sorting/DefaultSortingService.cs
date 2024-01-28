@@ -52,6 +52,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
         private readonly ICommunicationConnectionConfigRepository _communicationConnectionConfigRepository;
 
         private readonly IApiRuleRepository _apiRuleRepository;
+        private readonly IExitMonitor _exitMonitor;
 
         //private readonly IInventoryManagementService _inventoryManagementService;
         private SemaphoreSlim _semaphore = new(1);
@@ -117,7 +118,8 @@ namespace JayTom.Dws.Client.Service.Sorting {
             IApiSortingRepository apiSortingRepository,
            ISortingConnectionService sortingConnectionService,
            ICommunicationConnectionConfigRepository communicationConnectionConfigRepository,
-            IApiRuleRepository apiRuleRepository) {
+            IApiRuleRepository apiRuleRepository,
+            IExitMonitor exitMonitor) {
             _configRepository = configRepository;
             _logisticsRegexRepository = logisticsRegexRepository;
             _logisticsCodeRecognitionRepository = logisticsCodeRecognitionRepository;
@@ -138,6 +140,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
             _sortingConnectionService = sortingConnectionService;
             _communicationConnectionConfigRepository = communicationConnectionConfigRepository;
             _apiRuleRepository = apiRuleRepository;
+            _exitMonitor = exitMonitor;
 
             //事件
             _sortingConnectionService.HeartbeatError += delegate (object? sender, Exception exception) {
@@ -273,6 +276,20 @@ namespace JayTom.Dws.Client.Service.Sorting {
                     }
                 }
             });
+            //锁格
+            _exitMonitor.LockExitEvent += (sender, model) => {
+                var infoModel = _packageExitDefinitionInfos.FirstOrDefault(f => f.Id.Equals(model.Id));
+                if (infoModel is not null) {
+                    infoModel.IsLockExit = model.IsLockExit;
+                }
+            };
+            //解锁
+            _exitMonitor.UnLockExitEvent += (sender, model) => {
+                var infoModel = _packageExitDefinitionInfos.FirstOrDefault(f => f.Id.Equals(model.Id));
+                if (infoModel is not null) {
+                    infoModel.IsLockExit = model.IsLockExit;
+                }
+            };
         }
 
         public void ExecuteSorting(SortingParam param, CancellationToken token = default) {
@@ -406,6 +423,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                     _connectionConfigInfoModels = await _communicationConnectionConfigRepository.CommunicationConnectionConfigItems(
                         s => s.Id > 0, token);
                     await _sortingConnectionService.ConfigurationInitializer();
+                    await _exitMonitor.Start(token);
                 }
                 catch (Exception e) {
                     OnExceptionOccurred(new ExceptionEventArgs() {
@@ -439,6 +457,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
             //停止
             //关闭心跳包
             await _sortingConnectionService.DisconnectAll();
+            await _exitMonitor.Stop(token);
             RunningStatus = false;
             return new KeyValuePair<bool, string>(true, "已停止");
         }
@@ -696,7 +715,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
             //取出格口指令
             //判断格口是否生效
             var packageExitDefinitionInfoModel = _packageExitDefinitionInfos.FirstOrDefault(f => f.Id.Equals(param.ExitId) &&
-                f.IsActive);
+                f is { IsActive: true, IsLockExit: false });
             if (packageExitDefinitionInfoModel is not null) {
                 var sortingInstructionBindingInfoModel = _sortingInstructionBindingInfoModels.FirstOrDefault(f =>
                     f.ExitId.Equals(param.ExitId));

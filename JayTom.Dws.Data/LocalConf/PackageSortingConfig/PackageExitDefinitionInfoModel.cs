@@ -41,6 +41,12 @@ namespace JayTom.Dws.Data.LocalConf.PackageSortingConfig {
         /// </summary>
         [Column("IsActive"), Required, InsertOrUpdata]
         public bool IsActive { get; set; }
+
+        /// <summary>
+        /// 是否锁格
+        /// </summary>
+        [Column("IsLockExit"), NotMapped]
+        public bool IsLockExit { get; set; }
     }
 
     public enum ExitType {

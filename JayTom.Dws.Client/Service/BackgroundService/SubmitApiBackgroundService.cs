@@ -58,6 +58,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             Width = (float)(model.VolumeInfo?.FormattedWidth ?? 0),
                             Volume = (float)(model.VolumeInfo?.FormattedVolume ?? 0),
                             Guid = model.Guid,
+                            IsCreatedByLowerMachine = (bool)model?.IsCreatedByLowerMachine,
+                            PackageCreationInstruction = model?.PackageCreationInstruction ?? string.Empty,
                             //图片暂时不写
                         });
                     }
@@ -407,7 +409,10 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 Guid = info.Guid,
                                 Barcode = info.Barcode,
                                 ScanTime = info.ScanTime,
-                                UploadResponse = uploadResponse
+                                UploadResponse = uploadResponse,
+                                PackageCreationInstruction = info.PackageCreationInstruction,
+                                PackageCreationTime = info.PackageCreationTime,
+                                IsCreatedByLowerMachine = info.IsCreatedByLowerMachine
                             });
                             EventAggregator.Instance.Publish(new TriggerPositionEvent() {
                                 IsSuccess = uploadResponse?.IsSuccess ?? false,
@@ -624,6 +629,21 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             /// 全景图
             /// </summary>
             public Bitmap? PanoramaImage { get; set; }
+
+            /// <summary>
+            /// 创建包裹时间
+            /// </summary>
+            public DateTime PackageCreationTime { get; set; }
+
+            /// <summary>
+            /// 创建包裹指令
+            /// </summary>
+            public string PackageCreationInstruction { get; set; } = string.Empty;
+
+            /// <summary>
+            /// 是否由下位机创建
+            /// </summary>
+            public bool IsCreatedByLowerMachine { get; set; }
         }
 
         /// <summary>

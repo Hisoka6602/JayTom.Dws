@@ -296,7 +296,7 @@ namespace JayTom.Dws.Interface.Jtexpress {
                 }
                 else {
                     using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
-                    httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut);
+                    httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.SegmentCodeTimeOut);
                     HttpResponseMessage message;
                     using (Stream dataStream =
                            new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data)))) {

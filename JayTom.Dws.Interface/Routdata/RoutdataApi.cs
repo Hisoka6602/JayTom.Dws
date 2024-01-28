@@ -24,7 +24,7 @@ namespace JayTom.Dws.Interface.Routdata {
         public async Task<UploadResponse> UploadData(string barcode, double weight, double length = default, double width = default, double height = default,
             double volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default,
             object? other = null, CancellationToken token = default) {
-            var callApiMethod = await CallApiMethod(ApiMethod.MailInfoQuery, barcode, "51811101", string.Empty,
+            var callApiMethod = await CallApiMethod(ApiMethod.MailInfoQuery, barcode, Parameters.OrgCode, string.Empty,
                 Parameters.DeviceCode, string.Empty, true, DateTime.Now, token: token);
             var phyBoxCode = string.Empty;
             var theoryBoxCode = string.Empty;
@@ -40,19 +40,22 @@ namespace JayTom.Dws.Interface.Routdata {
                 else {
                     var jObject = JObject.Parse(callApiMethod.ResponseContent);
                     mailInfoQueryResponseContent = $"{jObject?["HEAD"]?["RET_MSG"]?.ToString()}";
+                    if (callApiMethod.ApiExceptionType == ApiExceptionType.None) {
+                        callApiMethod.ApiExceptionType = ApiExceptionType.LogicValidationFailed;
+                    }
                 }
             }
             catch (Exception e) {
                 mailInfoQueryResponseContent += $"报文解析异常:{e.Message}";
             }
 
-            PolicyPush(ApiMethod.ScanInfoPush, barcode, Parameters.OrgCode, phyBoxCode ?? string.Empty,
-                Parameters.DeviceCode, theoryBoxCode ?? string.Empty,
+            PolicyPush(ApiMethod.ScanInfoPush, barcode, Parameters.OrgCode, phyBoxCode ?? "99",
+                Parameters.DeviceCode, theoryBoxCode ?? "99",
                 callApiMethod.IsSuccess,
                 callApiMethod.ResponseTime
                 , mailInfoQueryResponseContent, token).ConfigureAwait(false).GetAwaiter();
-            PolicyPush(ApiMethod.PickingInfoPush, barcode, Parameters.OrgCode, phyBoxCode ?? string.Empty,
-                Parameters.DeviceCode, theoryBoxCode ?? string.Empty,
+            PolicyPush(ApiMethod.PickingInfoPush, barcode, Parameters.OrgCode, phyBoxCode ?? "99",
+                Parameters.DeviceCode, theoryBoxCode ?? "99",
                 callApiMethod.IsSuccess,
                 callApiMethod.ResponseTime
                 , callApiMethod.IsSuccess ? string.Empty : mailInfoQueryResponseContent, token).ConfigureAwait(false).GetAwaiter();
@@ -62,7 +65,7 @@ namespace JayTom.Dws.Interface.Routdata {
         public async Task<UploadResponse> UploadData(string barcode, double weight, DateTime scanTime, double length = default, double width = default,
             double height = default, double volume = default, UploadImageInfo? imageInfo = default,
             List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
-            var callApiMethod = await CallApiMethod(ApiMethod.MailInfoQuery, barcode, "51811101", string.Empty,
+            var callApiMethod = await CallApiMethod(ApiMethod.MailInfoQuery, barcode, Parameters.OrgCode, string.Empty,
                 Parameters.DeviceCode, string.Empty, true, DateTime.Now, token: token);
             var phyBoxCode = string.Empty;
             var theoryBoxCode = string.Empty;
@@ -78,18 +81,21 @@ namespace JayTom.Dws.Interface.Routdata {
                 else {
                     var jObject = JObject.Parse(callApiMethod.ResponseContent);
                     mailInfoQueryResponseContent = $"{jObject?["HEAD"]?["RET_MSG"]?.ToString()}";
+                    if (callApiMethod.ApiExceptionType == ApiExceptionType.None) {
+                        callApiMethod.ApiExceptionType = ApiExceptionType.LogicValidationFailed;
+                    }
                 }
             }
             catch (Exception e) {
                 mailInfoQueryResponseContent += $"报文解析异常:{e.Message}";
             }
-            PolicyPush(ApiMethod.ScanInfoPush, barcode, Parameters.OrgCode, phyBoxCode ?? string.Empty,
-                Parameters.DeviceCode, theoryBoxCode ?? string.Empty,
+            PolicyPush(ApiMethod.ScanInfoPush, barcode, Parameters.OrgCode, phyBoxCode ?? "99",
+                Parameters.DeviceCode, theoryBoxCode ?? "99",
                 callApiMethod.IsSuccess,
                 callApiMethod.ResponseTime
                 , mailInfoQueryResponseContent, token).ConfigureAwait(false).GetAwaiter();
-            PolicyPush(ApiMethod.PickingInfoPush, barcode, Parameters.OrgCode, phyBoxCode ?? string.Empty,
-                Parameters.DeviceCode, theoryBoxCode ?? string.Empty,
+            PolicyPush(ApiMethod.PickingInfoPush, barcode, Parameters.OrgCode, phyBoxCode ?? "99",
+                Parameters.DeviceCode, theoryBoxCode ?? "99",
                 callApiMethod.IsSuccess,
                 callApiMethod.ResponseTime
                 , callApiMethod.IsSuccess ? string.Empty : mailInfoQueryResponseContent, token).ConfigureAwait(false).GetAwaiter();
@@ -149,9 +155,11 @@ namespace JayTom.Dws.Interface.Routdata {
             var stopwatch = new Stopwatch();
             var requestContent = string.Empty;
             var sign = string.Empty;
+            var exceptionType = ApiExceptionType.None;
             stopwatch.Start();
             try {
                 //using var httpClient = new HttpClient(new HttpClientHandler { AutomaticDecompression = DecompressionMethods.GZip });
+
                 using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
                 httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut);
                 httpClient.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("gzip"));
@@ -241,22 +249,27 @@ namespace JayTom.Dws.Interface.Routdata {
             catch (HttpRequestException e) {
                 isSuccess = false;
                 resultContent += e.Message;
+                exceptionType = ApiExceptionType.UnreachableUrl;
             }
             catch (AggregateException) {
                 isSuccess = false;
                 resultContent += "接口访问异常!";
+                exceptionType = ApiExceptionType.UnreachableUrl;
             }
             catch (JsonException) {
                 isSuccess = false;
                 exceptionMsg += "报文解析异常!";
+                exceptionType = ApiExceptionType.ContentParsingException;
             }
             catch (TaskCanceledException) {
                 isSuccess = false;
                 resultContent += "接口访问返回超时!";
+                exceptionType = ApiExceptionType.Timeout;
             }
             catch (Exception e) {
                 isSuccess = false;
                 resultContent += e.Message;
+                exceptionType = ApiExceptionType.Other;
             }
             finally {
                 stopwatch.Stop();
@@ -269,7 +282,8 @@ namespace JayTom.Dws.Interface.Routdata {
                     RequestTime = requestTime,
                     RequestUrl = $"{Parameters.Url}?SIGN={sign}",
                     ResponseContent = resultContent,
-                    ResponseTime = DateTime.Now
+                    ResponseTime = DateTime.Now,
+                    ApiExceptionType = exceptionType
                 };
             }
             return response;

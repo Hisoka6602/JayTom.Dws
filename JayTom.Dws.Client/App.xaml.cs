@@ -323,8 +323,8 @@ namespace JayTom.Dws.Client {
                 services.AddScoped<ICacheCleanupService, CacheCleanupService>();
                 //分拣注册
                 services.AddScoped<ISortingService, DefaultSortingService>();
-                //分拣指令服务
-                //services.AddScoped<IInventoryManagementService, DefaultInventoryManagementService>();
+                //锁格监控注册
+                services.AddScoped<IExitMonitor, DefaultExitMonitor>();
                 services.AddScoped<ISortingConnectionService, DefaultSortingConnectionService>();
                 //云视频云端
                 services.AddScoped<ICloud, CloudVideoUploadApi>();
@@ -493,6 +493,8 @@ namespace JayTom.Dws.Client {
 
                         //注册分拣服务
                         services.AddSingleton(container1.Resolve<ISortingService>());
+                        //注册锁格监控服务
+                        services.AddSingleton(container1.Resolve<IExitMonitor>());
                         services.AddSingleton(container1.Resolve<ISortingConnectionService>());
                         //云端
                         services.AddSingleton(container1.Resolve<ICloud>());

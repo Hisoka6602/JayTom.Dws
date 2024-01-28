@@ -10,6 +10,7 @@ using System.Text.RegularExpressions;
 using JayTom.Dws.Plugin.Scale.ScaleValueParameters;
 
 namespace JayTom.Dws.Plugin.Scale.DynamicScale {
+
     public class DefaultDynamicScale : IDynamicScale {
         private System.IO.Ports.SerialPort? _serialPort { get; set; }
         private DefaultDynamicScaleValueParameters _defaultDynamicScaleValueParameters = new();
@@ -28,6 +29,7 @@ namespace JayTom.Dws.Plugin.Scale.DynamicScale {
         public ScaleWeightFormat WeightFormat { get; set; }
 
         public event EventHandler<float>? StabledWeight;
+
         public event EventHandler<WeightChangedEventArgs>? WeightStabilized;
 
         public event EventHandler<string>? Received;
@@ -170,7 +172,7 @@ namespace JayTom.Dws.Plugin.Scale.DynamicScale {
                     var weightSubstring = hexString.Substring(4, 10);
                     var processedWeight = string.Concat(weightSubstring.Where((ch, index) => index % 2 == 1));
                     int.TryParse(processedWeight, out var weightInt);
-                    return weightInt / 1000f;
+                    return weightInt / 100f;
                 }
             }
             catch {
