@@ -92,7 +92,7 @@
                 </MudPopover>
             </div>
 
-            <MudIconButton Style="margin-right:1px;background-color:#3D7AEF;color: white; height: 40px; width: 60px; border-top-right-radius: 0px;border-bottom-right-radius: 0px; border-top-left-radius: 20px;border-bottom-left-radius: 20px;" Variant="Variant.Filled" Size="Size.Small">
+            <MudIconButton OnClick="OnSearchClicked" Style="margin-right:1px;background-color:#3D7AEF;color: white; height: 40px; width: 60px; border-top-right-radius: 0px;border-bottom-right-radius: 0px; border-top-left-radius: 20px;border-bottom-left-radius: 20px;" Variant="Variant.Filled" Size="Size.Small">
                 <span class="iconfont icon-sousuo" style="font-size: 20px;"></span>
             </MudIconButton>
             <MudIconButton Style="margin-right:5px; background-color:darkviolet;color: white; height: 40px; width: 60px;  border-top-right-radius: 20px;border-bottom-right-radius: 20px; border-top-left-radius: 0px;border-bottom-left-radius: 0px;" Variant="Variant.Filled" Size="Size.Small">
@@ -105,68 +105,85 @@
 @*列表*@
 <div style="display:flex; flex-direction: column; height:89vh;border-radius:10px">
     @*列表*@
-    <MudDataGrid Height="100%" Style="max-height:95%; width:100%; border-radius:10px" DragDropColumnReordering="true" FixedHeader="true" ColumnResizeMode="ResizeMode.Column" HeaderClass="custom-header" Filterable="false" SortMode="@SortMode.None" Groupable="false" Items="@DetailInfoItems">
-        <Columns>
-            <PropertyColumn Property="x => x.Num" Title="" />
-            <PropertyColumn Property="x => x.BarCodeInfo.ScanTime" Title="扫码时间" Format="yyyy-MM-dd HH:mm:ss.fff" />
-            <PropertyColumn Property="x => x.BarCodeInfo.Barcode" Title="条码" />
-            <PropertyColumn Property="x => x.WeightInfo.FormattedWeight" Title="重量" Format="F3" />
-            <PropertyColumn Property="x => x.VolumeInfo.FormattedLength" Title="长度" Format="F3" />
-            <PropertyColumn Property="x => x.VolumeInfo.FormattedWidth" Title="宽度" Format="F3" />
-            <PropertyColumn Property="x => x.VolumeInfo.FormattedHeight" Title="高度" Format="F3" />
-            <PropertyColumn Property="x => x.VolumeInfo.FormattedVolume" Title="体积" Format="F3" />
-            <PropertyColumn Property="x => x.UploadInfo.RequestStatus" Title="Api上传状态" />
-            <PropertyColumn Property="x => x.ExitInfo.PhysicalExit" Title="物理格口" />
-            <PropertyColumn Property="x => x.DeviceInfos.DeviceName" Title="设备" />
-            <TemplateColumn Title="扫码图">
-                <CellTemplate>
-                    <MudIconButton Style="width:30px;height:30px;">
-                        <span class="iconfont icon-8tupian-2" style="font-size: 20px;color:#008DFF"></span>
-                    </MudIconButton>
-                </CellTemplate>
-
-            </TemplateColumn>
-            <TemplateColumn Title="全景图">
-                <CellTemplate>
-                    @foreach (var image in context.Item.PanoramaImageInfos) {
+    @if (!_dataLoaded) {
+        for (int i = 0; i < 15; i++) {
+            <MudSkeleton Animation="Animation.Wave" Width="100%" Height="110px;" />
+        }
+    }
+    else {
+        <MudDataGrid Height="100%" Style="max-height:95%; width:100%; border-radius:10px" DragDropColumnReordering="true" FixedHeader="true" ColumnResizeMode="ResizeMode.Column" HeaderClass="custom-header" Filterable="false" SortMode="@SortMode.None" Groupable="false" Items="@DetailInfoItems">
+            <Columns>
+                <PropertyColumn Property="x => x.Num" Title="" />
+                <PropertyColumn Property="x => x.BarCodeInfo.ScanTime" Title="扫码时间" Format="yyyy-MM-dd HH:mm:ss.fff" />
+                <PropertyColumn Property="x => x.BarCodeInfo.Barcode" Title="条码" />
+                <PropertyColumn Property="x => x.WeightInfo.FormattedWeight" Title="重量" Format="F3" />
+                <PropertyColumn Property="x => x.VolumeInfo.FormattedLength" Title="长度" Format="F3" />
+                <PropertyColumn Property="x => x.VolumeInfo.FormattedWidth" Title="宽度" Format="F3" />
+                <PropertyColumn Property="x => x.VolumeInfo.FormattedHeight" Title="高度" Format="F3" />
+                <PropertyColumn Property="x => x.VolumeInfo.FormattedVolume" Title="体积" Format="F3" />
+                <PropertyColumn Property="x => x.UploadInfo.RequestStatus" Title="Api上传状态" />
+                <PropertyColumn Property="x => x.ExitInfo.PhysicalExit" Title="物理格口" />
+                <PropertyColumn Property="x => x.DeviceInfos.DeviceName" Title="设备" />
+                <TemplateColumn Title="扫码图">
+                    <CellTemplate>
                         <MudIconButton Style="width:30px;height:30px;">
-                            <span class="iconfont icon-8tupian-2" style="font-size: 20px;color:#4A4453"></span>
+                            <span class="iconfont icon-8tupian-2" style="font-size: 20px;color:#008DFF"></span>
                         </MudIconButton>
-                    }
-                </CellTemplate>
+                    </CellTemplate>
 
-            </TemplateColumn>
-            <TemplateColumn Title="详细信息">
-                <CellTemplate>
-                    <MudButton Style="background-color:#3D7AEF;color: white; border-radius: 15px;" Size="@Size.Small" Variant="@Variant.Filled">详细信息</MudButton>
-                </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="全景图">
+                    <CellTemplate>
+                        @foreach (var image in context.Item.PanoramaImageInfos) {
+                            <MudIconButton Style="width:30px;height:30px;">
+                                <span class="iconfont icon-8tupian-2" style="font-size: 20px;color:#4A4453"></span>
+                            </MudIconButton>
+                        }
+                    </CellTemplate>
 
-            </TemplateColumn>
-        </Columns>
-    </MudDataGrid>
+                </TemplateColumn>
+                <TemplateColumn Title="详细信息">
+                    <CellTemplate>
+                        <MudButton Style="background-color:#3D7AEF;color: white; border-radius: 15px;" Size="@Size.Small" Variant="@Variant.Filled">详细信息</MudButton>
+                    </CellTemplate>
+
+                </TemplateColumn>
+            </Columns>
+        </MudDataGrid>
+    }
+
     @*翻页*@
     <div style="height: 50px; display: flex; align-items: center; justify-content: center; margin-top:15px;">
-        <MudIconButton Style="background-color:#3D7AEF;color: white; height: 40px; width: 60px; border-top-right-radius: 0px;border-bottom-right-radius: 0px; border-top-left-radius: 20px;border-bottom-left-radius: 20px;" Variant="Variant.Filled" Size="Size.Small">
-            <span class="iconfont icon-weiye-copy-copy" style="font-size: 20px;"></span>
-        </MudIconButton>
-        <MudIconButton Style="background-color:#3D7AEF;color: white; height: 40px; width: 60px; border-radius:0px" Variant="Variant.Filled" Size="Size.Small">
-            <span class="iconfont icon-shangyiyeshi" style="font-size: 20px;"></span>
-        </MudIconButton>
+
+        @if (!_dataLoaded) {
+            <MudSkeleton Style="width:300px;height:50px; border-radius:25px;" SkeletonType="SkeletonType.Rectangle" Animation="Animation.Wave" />
+
+        }
+        else {
+
+            <MudIconButton Style="background-color:#3D7AEF;color: white; height: 40px; width: 60px; border-top-right-radius: 0px;border-bottom-right-radius: 0px; border-top-left-radius: 20px;border-bottom-left-radius: 20px;" Variant="Variant.Filled" Size="Size.Small">
+                <span class="iconfont icon-weiye-copy-copy" style="font-size: 20px;"></span>
+            </MudIconButton>
+            <MudIconButton Style="background-color:#3D7AEF;color: white; height: 40px; width: 60px; border-radius:0px" Variant="Variant.Filled" Size="Size.Small">
+                <span class="iconfont icon-shangyiyeshi" style="font-size: 20px;"></span>
+            </MudIconButton>
 
 
-        <div style=" display: flex; align-items: center; justify-content: center; margin-left:10px;margin-right:10px;">
-            <MudInput @bind-Value="pageIndex" DisableUnderLine="false" Style="color:gray; font-weight:bold; font-size: 13px; width:25px; border-color:#3D7AEF;display: flex;" Variant="Variant.Text" />
-            <span style=" color:gray; font-weight:bold; font-size: 13px;">/</span>
-            <span style=" color:gray; font-weight:bold; font-size: 13px;">10</span>
-        </div>
+            <div style=" display: flex; align-items: center; justify-content: center; margin-left:10px;margin-right:10px;">
+                <MudInput @bind-Value="pageIndex" DisableUnderLine="false" Style="color:gray; font-weight:bold; font-size: 13px; width:25px; border-color:#3D7AEF;display: flex;" Variant="Variant.Text" />
+                <span style=" color:gray; font-weight:bold; font-size: 13px;">/</span>
+                <span style=" color:gray; font-weight:bold; font-size: 13px;">10</span>
+            </div>
 
 
-        <MudIconButton Style="background-color:#3D7AEF;color: white; height: 40px; width: 60px; border-radius:0px;" Variant="Variant.Filled" Size="Size.Small">
-            <span class="iconfont icon-xiayiyeshi" style="font-size: 20px;"></span>
-        </MudIconButton>
-        <MudIconButton Style="background-color:#3D7AEF;color: white; height: 40px; width: 60px;  border-top-right-radius: 20px;border-bottom-right-radius: 20px; border-top-left-radius: 0px;border-bottom-left-radius: 0px;" Variant="Variant.Filled" Size="Size.Small">
-            <span class="iconfont icon-weiye" style="font-size: 20px;"></span>
-        </MudIconButton>
+            <MudIconButton Style="background-color:#3D7AEF;color: white; height: 40px; width: 60px; border-radius:0px;" Variant="Variant.Filled" Size="Size.Small">
+                <span class="iconfont icon-xiayiyeshi" style="font-size: 20px;"></span>
+            </MudIconButton>
+            <MudIconButton Style="background-color:#3D7AEF;color: white; height: 40px; width: 60px;  border-top-right-radius: 20px;border-bottom-right-radius: 20px; border-top-left-radius: 0px;border-bottom-left-radius: 0px;" Variant="Variant.Filled" Size="Size.Small">
+                <span class="iconfont icon-weiye" style="font-size: 20px;"></span>
+            </MudIconButton>
+        }
+
     </div>
 </div>
 
@@ -208,6 +225,7 @@
     public DateTime? EndDateTime { get; set; }
     public float? MinWeight { get; set; }
     public float? MaxWeight { get; set; }
+    private bool _dataLoaded = true;
     protected override void OnInitialized() {
         base.OnInitialized();
 
@@ -237,7 +255,7 @@
                         ImageUrl = "https://img2.baidu.com/it/u=621048240,333776885&fm=253&fmt=auto&app=138&f=GIF?w=1024&h=435"
                     },
                     PanoramaImageInfos = new List<ImageInfoModel>()
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    {
                     new ImageInfoModel()
                     {
                         ImageUrl = "https://n.sinaimg.cn/translate/366/w700h466/20191130/54fa-ikcaceq7124230.jpg",
@@ -264,5 +282,19 @@
         SwitchExpandedTitle = $"{(isExpanded ? "隐藏其他" : "展开更多")}搜索条件";
         Console.WriteLine(StartDateTime);
     }
+    public void OnSearchClicked() {
+        GetPackages();
 
+    }
+
+    public async void GetPackages() {
+        if (_dataLoaded) {
+            _dataLoaded = false;
+            await Task.Delay(1000);
+
+
+            _dataLoaded = true;
+            StateHasChanged();
+        }
+    }
 }
