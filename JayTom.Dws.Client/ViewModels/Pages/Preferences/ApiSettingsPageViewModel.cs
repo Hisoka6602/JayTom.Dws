@@ -65,6 +65,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                 Name = "络道科技Api",
                 Value = ApiType.RoutDataApi
             },
+            new ApiTypeInfoModel()
+            {
+                Name = "Geek+",
+                Value = ApiType.GeekPlusApi
+            },
         };
 
         private ApiTypeInfoModel? _selectApiType = new();

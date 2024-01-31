@@ -188,7 +188,7 @@
     private List<RealTimeDataItemModel> YesterdayRealTimeDataItems { get; init; } = new();
 
     private List<ExitDistributionItemModel> ExitDistributionItems { get; init; } = new()
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    {
         new ExitDistributionItemModel()
         {
             ExitName = "格口1",
@@ -240,7 +240,7 @@
         },
     };
     private List<DonutItemModel> DonutItems { get; init; } = new()
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            {
         new DonutItemModel(){Name ="无物理格口",Value = 25,Color ="#1E90FF" },
         new DonutItemModel(){Name ="网络超时",Value = 77,Color ="#687DE8"},
         new DonutItemModel(){Name ="条码未识别",Value = 28,Color ="#876BCE"},
@@ -303,6 +303,7 @@
         }
 
         BaseUrl ??= Configuration.GetValue<string>("BaseUrl");
+        OnSearchClicked();
     }
 
     string ToHtmlColor(Color color) {
@@ -399,17 +400,17 @@
                 }
                 simpleDataModel = SimpleDataItems.FirstOrDefault(f => f.Description.Equals("异常占比"));
                 if (simpleDataModel is not null) {
-                    simpleDataModel.Value = model.AbnormalSortingRate.ToString("P2");
+                    simpleDataModel.Value = model.AbnormalSortingRate.ToString("P1").Replace("%", string.Empty);
 
                 }
                 simpleDataModel = SimpleDataItems.FirstOrDefault(f => f.Description.Equals("识别率"));
                 if (simpleDataModel is not null) {
-                    simpleDataModel.Value = model.AbnormalSortingRate.ToString("P2");
+                    simpleDataModel.Value = model.RecognitionRate.ToString("P1").Replace("%", string.Empty);
 
                 }
                 simpleDataModel = SimpleDataItems.FirstOrDefault(f => f.Description.Equals("分拣效率"));
                 if (simpleDataModel is not null) {
-                    simpleDataModel.Value = model.AbnormalSortingCount.ToString();
+                    simpleDataModel.Value = model.SortingEfficiency.ToString();
 
                 }
 
@@ -420,7 +421,6 @@
                         Ratio = (float)s.Percentage
                     })?.ToList();
                 ExitDistributionItems.AddRange(itemModels ?? new List<ExitDistributionItemModel>());
-                //model.ErrorStatistics?.Select(s=>new)
             }
             else if (key && value is ApiResult apiResult) {
 

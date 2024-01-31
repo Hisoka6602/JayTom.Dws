@@ -61,5 +61,10 @@ namespace JayTom.Dws.Domain.Dto {
         /// 络道科技Api
         /// </summary>
         RoutDataApi = 9,
+
+        /// <summary>
+        /// Geek+
+        /// </summary>
+        GeekPlusApi = 10,
     }
 }

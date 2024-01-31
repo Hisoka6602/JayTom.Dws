@@ -52,7 +52,7 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
             var description = string.Empty;
             var key = string.Empty;
             var keywordPosition = 0;
-            if (bytes.Length == 8) {
+            if (bytes.Length is 8 or 7) {
                 //不效验
                 string hexString;
                 int number;

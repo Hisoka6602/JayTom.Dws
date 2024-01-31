@@ -16,15 +16,35 @@ using System.Collections.Generic;
 using JayTom.Dws.Interface.Cloud;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Configuration;
 
 namespace JayTom.Dws.Interface.geek_ {
 
     public class GeekPlusApi : IDataUploader {
         private readonly IHttpClientFactory _httpClientFactory;
-        public ApiParameters Parameters { get; private set; } = new();
+        public ApiParameters? Parameters { get; private set; }
 
         public GeekPlusApi(IHttpClientFactory httpClientFactory) {
             _httpClientFactory = httpClientFactory;
+            lock (httpClientFactory) {
+                try {
+                    if (Parameters is null) {
+                        IConfiguration configuration = new ConfigurationBuilder()
+                            .SetBasePath($"{AppContext.BaseDirectory}ApiSettingJson")
+                            .AddJsonFile("GeekPlusApiSetting.json", optional: false, reloadOnChange: true)
+                            .Build();
+                        Parameters = new ApiParameters() {
+                            BaseUrl = configuration["BaseUrl"],
+                            TimeOut = Convert.ToInt32(configuration["TimeOut"]),
+                            SellerId = Convert.ToInt32(configuration["SellerId"]),
+                            Key = configuration["Key"],
+                        };
+                    }
+                }
+                catch (Exception e) {
+                }
+                _httpClientFactory = httpClientFactory;
+            }
         }
 
         public async Task<UploadResponse> UploadData(string barcode, double weight, double length = default, double width = default, double height = default,
@@ -40,13 +60,13 @@ namespace JayTom.Dws.Interface.geek_ {
                 barcode = barcode,
                 height = Math.Round(Convert.ToDecimal(height), 3).ToString(),
                 length = Math.Round(Convert.ToDecimal(length), 3).ToString(),
-                seller_id = Parameters.SellerId,
+                seller_id = Parameters?.SellerId,
                 timestamp = DateTimeOffset.Now.ToUnixTimeSeconds(),
                 volume = Math.Round(Convert.ToDecimal(volume), 3).ToString(),
                 weight = Math.Round(Convert.ToDecimal(weight), 3).ToString(),
                 width = Math.Round(Convert.ToDecimal(width), 3).ToString(),
             };
-            using (var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(Parameters.Key))) {
+            using (var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(Parameters?.Key ?? string.Empty))) {
                 var hashBytes = hmac.ComputeHash(Encoding.UTF8.GetBytes($"{Parameters.BaseUrl}{method}|{JsonConvert.SerializeObject(data)}"));
 
                 hashString = BitConverter.ToString(hashBytes).Replace("-", "").ToLower();
@@ -134,14 +154,14 @@ namespace JayTom.Dws.Interface.geek_ {
                 barcode = barcode,
                 height = Math.Round(Convert.ToDecimal(height), 3).ToString(),
                 length = Math.Round(Convert.ToDecimal(length), 3).ToString(),
-                seller_id = Parameters.SellerId,
+                seller_id = Parameters?.SellerId,
                 timestamp = DateTimeOffset.Now.ToUnixTimeSeconds(),
                 volume = Math.Round(Convert.ToDecimal(volume), 3).ToString(),
                 weight = Math.Round(Convert.ToDecimal(weight), 3).ToString(),
                 width = Math.Round(Convert.ToDecimal(width), 3).ToString(),
             };
-            using (var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(Parameters.Key))) {
-                var hashBytes = hmac.ComputeHash(Encoding.UTF8.GetBytes($"{Parameters.BaseUrl}{method}|{JsonConvert.SerializeObject(data)}"));
+            using (var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(Parameters?.Key ?? string.Empty))) {
+                var hashBytes = hmac.ComputeHash(Encoding.UTF8.GetBytes($"{Parameters?.BaseUrl}{method}|{JsonConvert.SerializeObject(data)}"));
 
                 hashString = BitConverter.ToString(hashBytes).Replace("-", "").ToLower();
             }
@@ -155,14 +175,14 @@ namespace JayTom.Dws.Interface.geek_ {
                 //var httpClient = _httpClientFactory.CreateClient("INSURANCE")
 
                 using (var httpClient = new HttpClient()) {
-                    httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut);
+                    httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters?.TimeOut ?? 3000);
                     httpClient.DefaultRequestHeaders.Add("Authorization", hashString);
                     HttpResponseMessage message;
                     using (Stream dataStream =
                            new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data)))) {
                         using (HttpContent content = new StreamContent(dataStream)) {
                             content.Headers.Add("Content-Type", "application/json");
-                            message = await httpClient.PostAsync($"{Parameters.BaseUrl}{method}", content, token)
+                            message = await httpClient.PostAsync($"{Parameters?.BaseUrl}{method}", content, token)
                                 .ConfigureAwait(false);
                         }
                     }
@@ -208,7 +228,7 @@ namespace JayTom.Dws.Interface.geek_ {
                     Duration = stopwatch.Elapsed.TotalSeconds,
                     RequestContent = JsonConvert.SerializeObject(data),
                     RequestTime = requestTime,
-                    RequestUrl = $"{Parameters.BaseUrl}{method}",
+                    RequestUrl = $"{Parameters?.BaseUrl}{method}",
                     ResponseContent = resultContent,
                     ResponseTime = DateTime.Now
                 };
@@ -217,7 +237,7 @@ namespace JayTom.Dws.Interface.geek_ {
         }
 
         public Task<KeyValuePair<bool, string>> SetParameters<T>(T parameters) {
-            throw new NotImplementedException();
+            return Task.FromResult(new KeyValuePair<bool, string>(true, "无可设置参数"));
         }
 
         public async void UploadInBackground(string barcode, double weight, DateTime scanTime, double length = default,
@@ -235,7 +255,7 @@ namespace JayTom.Dws.Interface.geek_ {
             var stopwatch = new Stopwatch();
             var data = new {
                 barcode = barcode,
-                seller_id = Parameters.SellerId,
+                seller_id = Parameters?.SellerId,
                 timestamp = DateTimeOffset.Now.ToUnixTimeSeconds(),
             };
             stopwatch.Start();
@@ -266,17 +286,17 @@ namespace JayTom.Dws.Interface.geek_ {
                     }
                 }
 
-                using (var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(Parameters.Key))) {
-                    var hashBytes = hmac.ComputeHash(Encoding.UTF8.GetBytes($"{Parameters.BaseUrl}{method}|{JsonConvert.SerializeObject(data)}"));
+                using (var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(Parameters?.Key ?? string.Empty))) {
+                    var hashBytes = hmac.ComputeHash(Encoding.UTF8.GetBytes($"{Parameters?.BaseUrl}{method}|{JsonConvert.SerializeObject(data)}"));
 
                     hashString = BitConverter.ToString(hashBytes).Replace("-", "").ToLower();
                 }
 
                 using var httpClient = new HttpClient();
                 //using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
-                httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut);
+                httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters?.TimeOut ?? 3000);
                 httpClient.DefaultRequestHeaders.Add("Authorization", hashString);
-                var message = await httpClient.PostAsync($"{Parameters.BaseUrl}{method}", formData, token);
+                var message = await httpClient.PostAsync($"{Parameters?.BaseUrl}{method}", formData, token);
                 resultContent = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
                 resultContent = Regex.Unescape(resultContent);
                 isSuccess = resultContent.ToLower().Contains("true");
@@ -310,7 +330,7 @@ namespace JayTom.Dws.Interface.geek_ {
                     Duration = stopwatch.Elapsed.TotalSeconds,
                     RequestContent = JsonConvert.SerializeObject(data),
                     RequestTime = requestTime,
-                    RequestUrl = $"{Parameters.BaseUrl}{method}",
+                    RequestUrl = $"{Parameters?.BaseUrl}{method}",
                     ResponseContent = resultContent,
                     ResponseTime = DateTime.Now
                 };

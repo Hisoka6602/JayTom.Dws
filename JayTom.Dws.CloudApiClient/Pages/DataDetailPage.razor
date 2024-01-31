@@ -1,7 +1,10 @@
 ﻿@page "/data-detail"
 @using JayTom.Dws.CloudApiClient.Data.Models
 @using JayTom.Dws.CloudApiClient.Editors
-
+@using JayTom.Dws.CloudApiClient.Api
+@inject IHttpClientFactory HttpClientFactory
+@inject IConfiguration Configuration
+@inject ICloudApiRequest CloudApiRequest
 @*搜索条件框*@
 <MudCard Style="height:50px; margin-bottom:10px;border-radius:25px">
     <div style="height: 50px; display: flex; align-items: center;">
@@ -215,14 +218,16 @@
     }
 </style>
 @code {
+    [Inject] private IDialogService DialogService { get; set; }
     public int pageIndex { get; set; }
     public bool isExpanded { get; set; }
     public string SwitchExpandedTitle { get; set; } = "展开更多搜索条件";
     public string searchBarcode { get; set; } = string.Empty;
     public List<DetailInfoItemModel> DetailInfoItems { get; set; } = new();
-
+    public static string? BaseUrl { get; set; }
     public DateTime? StartDateTime { get; set; }
     public DateTime? EndDateTime { get; set; }
+    public string? Barcode { get; set; }
     public float? MinWeight { get; set; }
     public float? MaxWeight { get; set; }
     private bool _dataLoaded = true;
@@ -255,7 +260,7 @@
                         ImageUrl = "https://img2.baidu.com/it/u=621048240,333776885&fm=253&fmt=auto&app=138&f=GIF?w=1024&h=435"
                     },
                     PanoramaImageInfos = new List<ImageInfoModel>()
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    {
                     new ImageInfoModel()
                     {
                         ImageUrl = "https://n.sinaimg.cn/translate/366/w700h466/20191130/54fa-ikcaceq7124230.jpg",
@@ -274,7 +279,8 @@
                 };
             DetailInfoItems.Add(model);
         }
-
+        BaseUrl ??= Configuration.GetValue<string>("BaseUrl");
+        OnSearchClicked();
     }
 
     public void SwitchExpanded() {
@@ -290,7 +296,34 @@
     public async void GetPackages() {
         if (_dataLoaded) {
             _dataLoaded = false;
-            await Task.Delay(1000);
+            DetailInfoItems.Clear();
+            CloudApiRequest.SetBaseUrl(BaseUrl ?? string.Empty);
+            var (key, value) = await CloudApiRequest.GetPackages(Barcode, StartDateTime, EndDateTime,
+                null, null, null, null, null,
+                null, null, null, null, null,
+                0, 100);
+            if (key && value is List<DetailInfoItemModel> models) {
+
+                for (int i = 0; i < models.Count; i++) {
+                    models[i].Num = i + 1;
+                }
+                DetailInfoItems.AddRange(models);
+            }
+            else if (key && value is ApiResult apiResult) {
+
+                await DialogService.ShowMessageBox(
+                    "Api后端接口",
+                    apiResult.Msg);
+            }
+            else {
+                await DialogService.ShowMessageBox(
+                    "Api后端接口",
+                    value.ToString());
+
+            }
+
+
+
 
 
             _dataLoaded = true;

@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using JayTom.Dws.Interface.Wdt;
 using JayTom.Dws.Data.LocalConf;
 using JayTom.Dws.PluginInterface;
+using JayTom.Dws.Interface.geek_;
 using JayTom.Dws.Interface.Sunnen;
 using JayTom.Dws.Interface.JdyWms;
 using JayTom.Dws.Domain.Dto.ApiDto;
@@ -18,6 +19,7 @@ using JayTom.Dws.Interface.Routdata;
 using JayTom.Dws.Interface.Jtexpress;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Client.Service.ImageStorage;
 using UploadResponse = JayTom.Dws.Interface.UploadResponse;
 
 namespace JayTom.Dws.Client.Service.BackgroundService {
@@ -28,6 +30,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
     public class SubmitApiBackgroundService : Microsoft.Extensions.Hosting.BackgroundService {
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IConfigRepository _configRepository;
+        private readonly IImageStorageService _imageStorageService;
         private ConcurrentQueue<SubmitItemInfo> _submitItems = new();
         private ApiSettingsDto? _apiSettingsDto;
         private static DefaultApi.DefaultApiParameters _defaultApiParameters = new();
@@ -36,6 +39,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private static WdtFlagshipApi.ApiParameter _wdtFlagshipApiParameter = new();
         private static JtExpressApi.ApiParameter _jtExpressApiParam = new();
         private static RoutDataApi.ApiParameters _rstDataApiParam = new();
+        private ConcurrentQueue<SavedImageInfo> _savedImageItems = new();
 
         #region 非通用版本变量(临时)
 
@@ -43,9 +47,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
         #endregion 非通用版本变量(临时)
 
-        public SubmitApiBackgroundService(IHttpClientFactory httpClientFactory, IConfigRepository configRepository) {
+        public SubmitApiBackgroundService(IHttpClientFactory httpClientFactory,
+            IConfigRepository configRepository, IImageStorageService imageStorageService) {
             _httpClientFactory = httpClientFactory;
             _configRepository = configRepository;
+            _imageStorageService = imageStorageService;
             EventAggregator.Instance.Subscribe<PackageInfo>(item => {
                 if (item is PackageInfo model) {
                     if (model.BarCodeInfo != null) {
@@ -242,6 +248,16 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     }
                 }
             });
+            _imageStorageService.ImageSaved += delegate (object? sender, ImageSavedEventArgs args) {
+                //保存后触发
+                _savedImageItems.Enqueue(new SavedImageInfo() {
+                    BarCode = args.BarCode,
+                    FilePath = args.FilePath,
+                    ImageType = args.ImageType,
+                    CameraSerialNumber = args.CameraSerialNumber ?? string.Empty,
+                    ScanTime = args.ScanTime,
+                });
+            };
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
@@ -401,6 +417,25 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                     }
                                     break;
                                 }
+                            case ApiType.GeekPlusApi: {
+                                    uploader = new GeekPlusApi(_httpClientFactory);
+                                    var (key, value) = await uploader.SetParameters(_rstDataApiParam);
+                                    if (key) {
+                                        uploadResponse = await uploader.UploadData(info.Barcode ?? string.Empty,
+                                            info.Weight, info.ScanTime,
+                                            info.Length, info.Width,
+                                            info.Height, info.Volume,
+                                            null, null,
+                                            null, stoppingToken);
+                                    }
+                                    else {
+                                        uploadResponse = new UploadResponse() {
+                                            ExceptionMsg = value
+                                        };
+                                        Console.WriteLine("设置参数失败!");
+                                    }
+                                    break;
+                                }
                         }
                         if (_apiSettingsDto?.Type is not null &&
                             _apiSettingsDto.Type != ApiType.None) {
@@ -418,6 +453,33 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 IsSuccess = uploadResponse?.IsSuccess ?? false,
                                 TriggerPosition = TriggerPositionEnum.HttpOutput
                             });
+                        }
+                    });
+                }
+
+                //取出图片
+                var dequeue = _savedImageItems.TryDequeue(out var model);
+                if (dequeue && model is not null && !string.IsNullOrEmpty(model.FilePath) &&
+                    model.ImageType == SaveImageType.BarcodeImage) {
+                    Task.Factory.StartNew(() => {
+                        //后续上传
+                        IDataUploader uploader;
+                        UploadResponse? uploadResponse = null;
+                        switch (_apiSettingsDto?.Type) {
+                            case ApiType.None:
+                                return;
+
+                            case ApiType.GeekPlusApi:
+
+                                uploader = new GeekPlusApi(_httpClientFactory);
+                                uploader.UploadInBackground(model.BarCode ?? string.Empty, 0,
+                                    model.ScanTime, imageInfo: new UploadImageInfo() {
+                                        CameraCustomName = model.CameraSerialNumber,
+                                        CameraName = model.CameraSerialNumber,
+                                        CameraSerialNumber = model.CameraSerialNumber,
+                                        Image = Image.FromFile(model.FilePath ?? string.Empty)
+                                    }, token: stoppingToken);
+                                break;
                         }
                     });
                 }

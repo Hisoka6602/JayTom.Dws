@@ -771,7 +771,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                             //效验
                             var machineCode = await _computer.GenerateMachineCode();
                             /*//判断机器码
-                            if (!machineCode.Equals("424FEADFE57E9A504377DDDAF64DE1A0")) {
+                            if (!machineCode.Equals("1E371E8FB7F89C94D93B274DDE14AC46")) {
                                 return;
                             }*/
                             //判断时间

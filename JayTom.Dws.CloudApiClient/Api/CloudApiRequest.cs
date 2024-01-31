@@ -57,6 +57,7 @@ namespace JayTom.Dws.CloudApiClient.Api {
 
                     //解码
                     var result = JsonConvert.DeserializeObject<ApiResult>(httpResult);
+                    NLog.LogManager.GetCurrentClassLogger().Error(JsonConvert.SerializeObject(result));
                     if (result is { Result: true, Data: not null }) {
                         var statisticsInfoModel = JsonConvert.DeserializeObject<StatisticsInfoModel>(result.Data.ToString() ?? string.Empty);
                         return statisticsInfoModel is not null ? new KeyValuePair<bool, object>(true, statisticsInfoModel) : new KeyValuePair<bool, object>(false, result ?? new ApiResult());
@@ -132,6 +133,7 @@ namespace JayTom.Dws.CloudApiClient.Api {
 
                     //解码
                     var result = JsonConvert.DeserializeObject<ApiResult>(httpResult);
+                    NLog.LogManager.GetCurrentClassLogger().Error($"{result?.Data?.ToString()}");
                     if (result is { Result: true, Data: not null }) {
                         var detailInfoItemModels = JsonConvert.DeserializeObject<List<DetailInfoItemModel>>(result.Data.ToString() ?? string.Empty);
                         return detailInfoItemModels?.Any() == true ? new KeyValuePair<bool, object>(true, detailInfoItemModels) : new KeyValuePair<bool, object>(false, result);
@@ -150,7 +152,7 @@ namespace JayTom.Dws.CloudApiClient.Api {
             catch (TaskCanceledException) {
                 return new KeyValuePair<bool, object>(false, "接口访问返回超时!");
             }
-            catch (Exception) {
+            catch (Exception e) {
                 return new KeyValuePair<bool, object>(false, "接口访问异常!");
             }
         }

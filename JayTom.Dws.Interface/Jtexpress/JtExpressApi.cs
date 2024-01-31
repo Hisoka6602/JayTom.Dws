@@ -26,7 +26,7 @@ namespace JayTom.Dws.Interface.Jtexpress {
 
     public class JtExpressApi : IDataUploader {
         private readonly IHttpClientFactory _httpClientFactory;
-        public ApiParameter Parameters { get; set; } = new();
+        public static ApiParameter Parameters { get; set; } = new();
         public static JtExpressUserInfo UserInfo { get; set; } = new();
         private static List<ExcelDeliveryCode> _excelDeliveryCodes = new();
         private IExcel _excel;
@@ -373,7 +373,7 @@ namespace JayTom.Dws.Interface.Jtexpress {
                 stopwatch.Stop();
                 response = new UploadResponse() {
                     ExceptionMsg = exceptionMsg,
-                    ApiParameters = JsonConvert.SerializeObject(this.Parameters),
+                    ApiParameters = JsonConvert.SerializeObject(Parameters),
                     IsSuccess = isSuccess,
                     Duration = stopwatch.Elapsed.TotalSeconds,
                     RequestUrl = $"{Parameters.SegmentCodeUrl}{method}",
@@ -485,7 +485,7 @@ namespace JayTom.Dws.Interface.Jtexpress {
                 stopwatch.Stop();
                 response = new UploadResponse() {
                     ExceptionMsg = exceptionMsg,
-                    ApiParameters = JsonConvert.SerializeObject(this.Parameters),
+                    ApiParameters = JsonConvert.SerializeObject(Parameters),
                     IsSuccess = isSuccess,
                     Duration = stopwatch.Elapsed.TotalSeconds,
                     RequestContent = JsonConvert.SerializeObject(data),
@@ -583,7 +583,7 @@ namespace JayTom.Dws.Interface.Jtexpress {
                 stopwatch.Stop();
                 response = new UploadResponse() {
                     ExceptionMsg = exceptionMsg,
-                    ApiParameters = JsonConvert.SerializeObject(this.Parameters),
+                    ApiParameters = JsonConvert.SerializeObject(Parameters),
                     IsSuccess = isSuccess,
                     Duration = stopwatch.Elapsed.TotalSeconds,
                     RequestContent = JsonConvert.SerializeObject(data),

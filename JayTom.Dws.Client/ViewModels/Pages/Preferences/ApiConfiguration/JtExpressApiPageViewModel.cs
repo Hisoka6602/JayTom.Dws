@@ -218,6 +218,22 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
                     IsLoggingIn = true;
                     IsLoginSuccessful = false;
+                    //ApiParameter
+                    await new JtExpressApi(_httpClientFactory).SetParameters(new JtExpressApi.ApiParameter() {
+                        AppKey = JtExpressApiInfo.AppKey,
+                        AppSecret = JtExpressApiInfo.AppSecret,
+                        BusinessType = (JtExpressApi.BusinessType)JtExpressApiInfo.BusinessType.Value,
+                        Password = JtExpressApiInfo.Password,
+                        ScanPda = JtExpressApiInfo.ScanPda,
+                        SegmentCodeTimeOut = JtExpressApiInfo.SegmentCodeTimeOut,
+                        ScanType = JtExpressApiInfo.ScanType.Value,
+                        ScanTypeCode = JtExpressApiInfo.ScanTypeCode.Value,
+                        SegmentCodeUrl = JtExpressApiInfo.SegmentCodeUrl,
+                        TimeOut = JtExpressApiInfo.SegmentCodeTimeOut,
+                        TransportTypeCode = JtExpressApiInfo.TransportTypeCode.Value,
+                        UserName = JtExpressApiInfo.UserName,
+                        Url = JtExpressApiInfo.Url,
+                    });
                     var (key, value) = await new JtExpressApi(_httpClientFactory).LogIn(JtExpressApiInfo.UserName,
                         JtExpressApiInfo.Password, JtExpressApiInfo.AppKey,
                         JtExpressApiInfo.AppSecret);

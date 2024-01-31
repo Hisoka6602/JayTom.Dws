@@ -13,10 +13,12 @@ using JayTom.Dws.Data.Package;
 using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
 using JayTom.Dws.Interface.Cloud;
+using System.Collections.Concurrent;
 using JayTom.Dws.Domain.Dto.CloudDto;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Infrastructure.IComputer;
 using JayTom.Dws.Data.LocalConf.CloudConfig;
+using JayTom.Dws.Client.Service.ImageStorage;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Repository.LocalData;
 using JayTom.Dws.Domain.Repository.LocalConf.CloudConfig;
@@ -36,6 +38,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private SemaphoreSlim _cloudVideoUpLoadSlim = new(2);
         private List<NvrCameraBindingInfoModel> _nvrCameraBindingInfoModels = new();
         private SemaphoreSlim _setNvrCameraBindingSlim = new(1);
+        private ConcurrentQueue<SavedImageInfo> _savedImageItems = new();
 
         public CloudBackgroundService(IConfigRepository configRepository,
             ICloud cloud, IPackageRepository packageRepository,
@@ -48,6 +51,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             _cloudVideoUploadRepository = cloudVideoUploadRepository;
             _nvrCameraBindingRepository = nvrCameraBindingRepository;
             _computer = computer;
+
             EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async item => {
                 if (item is SettingsChangedEvent { SettingsName: "CloudVideoSettings" }) {
                     try {

@@ -1,5 +1,6 @@
 ﻿using System;
 using S7.Net;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -37,6 +38,9 @@ namespace JayTom.Dws.Client.Service.Sorting {
 
         public async Task<KeyValuePair<bool, string>> Start(CancellationToken token = default) {
             try {
+                if (!Directory.Exists($"{AppContext.BaseDirectory}ConfigurationFiles\\SortingConfigFiles")) {
+                    return new KeyValuePair<bool, string>(false, string.Empty);
+                }
                 IConfiguration configuration = new ConfigurationBuilder()
                     .SetBasePath($"{AppContext.BaseDirectory}ConfigurationFiles\\SortingConfigFiles")
                     .AddJsonFile("WxckExitMonitorSorting.json", optional: false, reloadOnChange: true)
