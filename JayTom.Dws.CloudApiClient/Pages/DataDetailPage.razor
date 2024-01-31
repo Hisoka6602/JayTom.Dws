@@ -58,42 +58,42 @@
                                 @*相机序列号*@
                                 <div class="grid-item">
                                     <span style="margin-left:3px;margin-right:5px; color:gray;  font-size: 13px;">相机序列号:</span>
-                                    <MudInput @bind-Value="MinWeight" DisableUnderLine="false" Style="border-block-width:0px; border-color:#3D7AEF; width:180px; height: 30px;display: flex; " Variant="Variant.Text" />
+                                    <MudInput @bind-Value="CameraSerialNumber" DisableUnderLine="false" Style="border-block-width:0px; border-color:#3D7AEF; width:180px; height: 30px;display: flex; " Variant="Variant.Text" />
                                 </div>
                                 @*上传状态*@
                                 <div class="grid-item">
                                     <span style="margin-left:3px;margin-right:5px; color:gray;  font-size: 13px;">上传状态:</span>
-                                    <MudInput @bind-Value="MinWeight" DisableUnderLine="false" Style="border-block-width:0px; border-color:#3D7AEF; width:180px; height: 30px;display: flex; " Variant="Variant.Text" />
+                                    <MudInput @bind-Value="RequestStatus" DisableUnderLine="false" Style="border-block-width:0px; border-color:#3D7AEF; width:180px; height: 30px;display: flex; " Variant="Variant.Text" />
                                 </div>
                                 @* 物理格口 *@
                                 <div class="grid-item">
                                     <span style="margin-left:3px;margin-right:5px; color:gray;  font-size: 13px;">物理格口:</span>
-                                    <MudInput @bind-Value="MinWeight" DisableUnderLine="false" Style="border-block-width:0px; border-color:#3D7AEF; width:180px; height: 30px;display: flex; " Variant="Variant.Text" />
+                                    <MudInput @bind-Value="PhysicalExit" DisableUnderLine="false" Style="border-block-width:0px; border-color:#3D7AEF; width:180px; height: 30px;display: flex; " Variant="Variant.Text" />
                                 </div>
                                 @*发送的指令*@
                                 <div class="grid-item">
                                     <span style="margin-left:3px;margin-right:5px; color:gray;  font-size: 13px;">发送的指令:</span>
-                                    <MudInput @bind-Value="MinWeight" DisableUnderLine="false" Style="border-block-width:0px; border-color:#3D7AEF; width:180px; height: 30px;display: flex; " Variant="Variant.Text" />
+                                    <MudInput @bind-Value="SentInstruction" DisableUnderLine="false" Style="border-block-width:0px; border-color:#3D7AEF; width:180px; height: 30px;display: flex; " Variant="Variant.Text" />
                                 </div>
                                 @*物流名称*@
                                 <div class="grid-item">
                                     <span style="margin-left:3px;margin-right:5px; color:gray;  font-size: 13px;">物流名称:</span>
-                                    <MudInput @bind-Value="MinWeight" DisableUnderLine="false" Style="border-block-width:0px; border-color:#3D7AEF; width:180px; height: 30px;display: flex; " Variant="Variant.Text" />
+                                    <MudInput @bind-Value="LogisticsName" DisableUnderLine="false" Style="border-block-width:0px; border-color:#3D7AEF; width:180px; height: 30px;display: flex; " Variant="Variant.Text" />
                                 </div>
                                 @*三段码*@
                                 <div class="grid-item">
                                     <span style="margin-left:3px;margin-right:5px; color:gray;  font-size: 13px;">三段码:</span>
-                                    <MudInput @bind-Value="MinWeight" DisableUnderLine="false" Style="border-block-width:0px; border-color:#3D7AEF; width:180px; height: 30px;display: flex; " Variant="Variant.Text" />
+                                    <MudInput @bind-Value="ThreeSegmentCode" DisableUnderLine="false" Style="border-block-width:0px; border-color:#3D7AEF; width:180px; height: 30px;display: flex; " Variant="Variant.Text" />
                                 </div>
                                 @*节点名称*@
                                 <div class="grid-item">
                                     <span style="margin-left:3px;margin-right:5px; color:gray;  font-size: 13px;">节点名称:</span>
-                                    <MudInput @bind-Value="MinWeight" DisableUnderLine="false" Style="border-block-width:0px; border-color:#3D7AEF; width:180px; height: 30px;display: flex; " Variant="Variant.Text" />
+                                    <MudInput @bind-Value="NodeName" DisableUnderLine="false" Style="border-block-width:0px; border-color:#3D7AEF; width:180px; height: 30px;display: flex; " Variant="Variant.Text" />
                                 </div>
                                 @*设备名称*@
                                 <div class="grid-item">
                                     <span style="margin-left:3px;margin-right:5px; color:gray;  font-size: 13px;">设备名称:</span>
-                                    <MudInput @bind-Value="MinWeight" DisableUnderLine="false" Style="border-block-width:0px; border-color:#3D7AEF; width:180px; height: 30px;display: flex; " Variant="Variant.Text" />
+                                    <MudInput @bind-Value="DeviceName" DisableUnderLine="false" Style="border-block-width:0px; border-color:#3D7AEF; width:180px; height: 30px;display: flex; " Variant="Variant.Text" />
                                 </div>
 
                             </div>
@@ -245,12 +245,20 @@
     public string? Barcode { get; set; }
     public float? MinWeight { get; set; }
     public float? MaxWeight { get; set; }
+    public string? CameraSerialNumber { get; set; }
+    public int? RequestStatus { get; set; }
+    public string? PhysicalExit { get; set; }
+    public string? DeviceName { get; set; }
+    public string? NodeName { get; set; }
+    public string? ThreeSegmentCode { get; set; }
+    public string? LogisticsName { get; set; }
+    public string? SentInstruction { get; set; }
     private bool _dataLoaded = true;
     private ElementReference inputRef;
     protected override void OnInitialized() {
         base.OnInitialized();
 
-        for (int i = 0; i < 100; i++) {
+        for (var i = 0; i < 100; i++) {
             var model = new DetailInfoItemModel() {
                     Num = i + 1,
                     BarCodeInfo = new BarCodeInfoModel() {
@@ -276,7 +284,7 @@
                         ImageUrl = "https://img2.baidu.com/it/u=621048240,333776885&fm=253&fmt=auto&app=138&f=GIF?w=1024&h=435"
                     },
                     PanoramaImageInfos = new List<ImageInfoModel>()
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    {
                     new ImageInfoModel()
                     {
                         ImageUrl = "https://n.sinaimg.cn/translate/366/w700h466/20191130/54fa-ikcaceq7124230.jpg",
@@ -315,10 +323,8 @@
     }
     public void OnGoToPreviousPage() {
         if (PageIndex > 1 && PageIndex <= PageCount) {
-
             PageIndex -= 1;
             GetPackages();
-
         }
 
 
@@ -348,9 +354,7 @@
     private async Task OpenImageLink(string link) {
         if (!string.IsNullOrEmpty(link)) {
             await JSRuntime.InvokeVoidAsync("window.open", link, "_blank");
-
         }
-
     }
     public async void GetPackages() {
         if (_dataLoaded) {
@@ -359,8 +363,8 @@
             PageCount = 0;
             CloudApiRequest.SetBaseUrl(BaseUrl ?? string.Empty);
             var (key, value) = await CloudApiRequest.GetPackages(Barcode, StartDateTime, EndDateTime,
-                null, null, null, null, null,
-                null, null, null, null, null,
+                CameraSerialNumber, MinWeight, MaxWeight, RequestStatus, PhysicalExit,
+                SentInstruction, LogisticsName, ThreeSegmentCode, NodeName, DeviceName,
                 PageIndex - 1, PageSize);
             if (key && value is ApiResult result) {
                 PageCount = result.Total / PageSize + (result.Total % PageSize > 0 ? 1 : 0);
@@ -384,8 +388,7 @@
                 }
 
             }
-
-            else if (key && value is ApiResult apiResult) {
+            else if (value is ApiResult apiResult) {
 
                 await DialogService.ShowMessageBox(
                     "Api后端接口",
@@ -397,17 +400,11 @@
                     value.ToString());
 
             }
-
-
-
-
-
             _dataLoaded = true;
             StateHasChanged();
         }
 
     }
-
     public async void DownloadExcel() {
         var excelDetailInfoModels = DetailInfoItems.Select(s => new ExcelDetailInfoModel {
                 Num = s.Num,

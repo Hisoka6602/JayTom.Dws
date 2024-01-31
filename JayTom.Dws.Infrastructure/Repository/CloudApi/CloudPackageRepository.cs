@@ -191,16 +191,6 @@ namespace JayTom.Dws.Infrastructure.Repository.CloudApi {
                          .CountAsync(cancellationToken: cancellationToken);
 
                     //格口组
-                    var packageInfoModels = await queryable.Where(w => w.ExitInfo != null).ToListAsync(cancellationToken: cancellationToken);
-
-                    var list = packageInfoModels.GroupBy(g => g.ExitInfo.PhysicalExit)
-                        .Select(s => new StatisticsDto {
-                            Name = s.Key,
-                            Quantity = s.Key.Count(),
-                            Percentage = Math.Round((double)s.Key.Count() / totalPackages, 3),
-                            TotalCount = totalPackages
-                        })?.ToList();
-
                     var statisticsDtos = await queryable.Where(w => w.ExitInfo != null)
                         .GroupBy(g => g.ExitInfo.PhysicalExit)
                         .Select(s => new StatisticsDto {
