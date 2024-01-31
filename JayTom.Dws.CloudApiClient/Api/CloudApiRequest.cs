@@ -5,7 +5,6 @@ using System.Threading;
 using JayTom.Dws.CloudApiClient.Data.Models;
 
 namespace JayTom.Dws.CloudApiClient.Api {
-
     public class CloudApiRequest : ICloudApiRequest {
         private readonly IHttpClientFactory _httpClientFactory;
         public static string Domain { get; private set; } = "http://192.168.31.199";
@@ -35,7 +34,7 @@ namespace JayTom.Dws.CloudApiClient.Api {
                     await using (Stream dataStream = new MemoryStream(Encoding.UTF8.GetBytes(requestJson))) {
                         using (HttpContent content = new StreamContent(dataStream)) {
                             content.Headers.Add("Content-Type", "application/json");
-                            message = await httpClient.PostAsync($"http://{Domain}{"/api/Package/Statistics"}", content, token)
+                            message = await httpClient.PostAsync($"{Domain}{"/api/Package/Statistics"}", content, token)
                                 .ConfigureAwait(false);
                         }
                     }
@@ -57,7 +56,6 @@ namespace JayTom.Dws.CloudApiClient.Api {
 
                     //解码
                     var result = JsonConvert.DeserializeObject<ApiResult>(httpResult);
-                    NLog.LogManager.GetCurrentClassLogger().Error(JsonConvert.SerializeObject(result));
                     if (result is { Result: true, Data: not null }) {
                         var statisticsInfoModel = JsonConvert.DeserializeObject<StatisticsInfoModel>(result.Data.ToString() ?? string.Empty);
                         return statisticsInfoModel is not null ? new KeyValuePair<bool, object>(true, statisticsInfoModel) : new KeyValuePair<bool, object>(false, result ?? new ApiResult());
@@ -111,7 +109,7 @@ namespace JayTom.Dws.CloudApiClient.Api {
                     await using (Stream dataStream = new MemoryStream(Encoding.UTF8.GetBytes(requestJson))) {
                         using (HttpContent content = new StreamContent(dataStream)) {
                             content.Headers.Add("Content-Type", "application/json");
-                            message = await httpClient.PostAsync($"http://{Domain}{"/api/Package/Packages"}", content, token)
+                            message = await httpClient.PostAsync($"{Domain}{"/api/Package/Packages"}", content, token)
                                 .ConfigureAwait(false);
                         }
                     }

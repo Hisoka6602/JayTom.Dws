@@ -8,12 +8,12 @@ using NPOI.XSSF.UserModel;
 using System.ComponentModel;
 using System.Text.RegularExpressions;
 using System.Diagnostics.CodeAnalysis;
-using JayTom.Dws.Plugin.Excel.Attributes;
 using System.ComponentModel.DataAnnotations;
+using JayTom.Dws.CloudApiClient.Plugin.Excel.Attributes;
 
-namespace JayTom.Dws.Plugin.Excel {
+namespace JayTom.Dws.CloudApiClient.Plugin.Excel {
 
-    public class NpoiExport : IExcel {
+    public class NpoiExport : IExcelService {
         private ICellStyle? TitleStyle { get; set; } = null;
         private ICellStyle? HeaderStyle { get; set; } = null;
         private ICellStyle? ContentStyle { get; set; } = null;

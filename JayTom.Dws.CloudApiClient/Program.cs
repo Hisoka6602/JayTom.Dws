@@ -4,6 +4,7 @@ using JayTom.Dws.CloudApiClient.Api;
 using JayTom.Dws.CloudApiClient.Data;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using JayTom.Dws.CloudApiClient.Plugin.Excel;
 
 internal class Program {
 
@@ -29,7 +30,8 @@ internal class Program {
 
         //接口注入
         builder.Services.AddSingleton<ICloudApiRequest, CloudApiRequest>();
-
+        //插件注入
+        builder.Services.AddSingleton<IExcelService, NpoiExport>();
         var app = builder.Build();
 
         // Configure the HTTP request pipeline.

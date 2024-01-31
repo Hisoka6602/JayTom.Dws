@@ -2,9 +2,9 @@
 using NPOI.SS.UserModel;
 using System.Diagnostics.CodeAnalysis;
 
-namespace JayTom.Dws.Plugin {
+namespace JayTom.Dws.CloudApiClient.Plugin.Excel {
 
-    public interface IExcel {
+    public interface IExcelService {
 
         /// <summary>
         /// 读内容

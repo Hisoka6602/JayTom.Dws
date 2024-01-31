@@ -2,9 +2,16 @@
 @using JayTom.Dws.CloudApiClient.Data.Models
 @using JayTom.Dws.CloudApiClient.Editors
 @using JayTom.Dws.CloudApiClient.Api
+@using JayTom.Dws.CloudApiClient.Data.Models.ExcelModels
+@using JayTom.Dws.CloudApiClient.Plugin.Excel
+@using System.Reflection.Metadata
 @inject IHttpClientFactory HttpClientFactory
 @inject IConfiguration Configuration
 @inject ICloudApiRequest CloudApiRequest
+@inject IExcelService ExcelService
+@inject IJSRuntime JSRuntime
+
+
 @*搜索条件框*@
 <MudCard Style="height:50px; margin-bottom:10px;border-radius:25px">
     <div style="height: 50px; display: flex; align-items: center;">
@@ -98,7 +105,7 @@
             <MudIconButton OnClick="OnSearchClicked" Style="margin-right:1px;background-color:#3D7AEF;color: white; height: 40px; width: 60px; border-top-right-radius: 0px;border-bottom-right-radius: 0px; border-top-left-radius: 20px;border-bottom-left-radius: 20px;" Variant="Variant.Filled" Size="Size.Small">
                 <span class="iconfont icon-sousuo" style="font-size: 20px;"></span>
             </MudIconButton>
-            <MudIconButton Style="margin-right:5px; background-color:darkviolet;color: white; height: 40px; width: 60px;  border-top-right-radius: 20px;border-bottom-right-radius: 20px; border-top-left-radius: 0px;border-bottom-left-radius: 0px;" Variant="Variant.Filled" Size="Size.Small">
+            <MudIconButton OnClick="DownloadExcel" Style="margin-right:5px; background-color:darkviolet;color: white; height: 40px; width: 60px;  border-top-right-radius: 20px;border-bottom-right-radius: 20px; border-top-left-radius: 0px;border-bottom-left-radius: 0px;" Variant="Variant.Filled" Size="Size.Small">
                 <span class="iconfont icon-xiazai1" style="font-size: 20px;"></span>
             </MudIconButton>
         </div>
@@ -114,7 +121,7 @@
         }
     }
     else {
-        <MudDataGrid Height="100%" Style="max-height:95%; width:100%; border-radius:10px" DragDropColumnReordering="true" FixedHeader="true" ColumnResizeMode="ResizeMode.Column" HeaderClass="custom-header" Filterable="false" SortMode="@SortMode.None" Groupable="false" Items="@DetailInfoItems">
+        <MudDataGrid Height="100%" Style="min-height:95%; width:100%; border-radius:10px" DragDropColumnReordering="true" FixedHeader="true" ColumnResizeMode="ResizeMode.Column" HeaderClass="custom-header" Filterable="false" SortMode="@SortMode.None" Groupable="false" Items="@DetailInfoItems">
             <Columns>
                 <PropertyColumn Property="x => x.Num" Title="" />
                 <PropertyColumn Property="x => x.BarCodeInfo.ScanTime" Title="扫码时间" Format="yyyy-MM-dd HH:mm:ss.fff" />
@@ -216,7 +223,9 @@
     .custom-datagrid .mud-table-row {
         height: 10px;
     }
+
 </style>
+
 @code {
     [Inject] private IDialogService DialogService { get; set; }
     public int pageIndex { get; set; }
@@ -260,7 +269,7 @@
                         ImageUrl = "https://img2.baidu.com/it/u=621048240,333776885&fm=253&fmt=auto&app=138&f=GIF?w=1024&h=435"
                     },
                     PanoramaImageInfos = new List<ImageInfoModel>()
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    {
                     new ImageInfoModel()
                     {
                         ImageUrl = "https://n.sinaimg.cn/translate/366/w700h466/20191130/54fa-ikcaceq7124230.jpg",
@@ -330,4 +339,44 @@
             StateHasChanged();
         }
     }
+
+    public async void DownloadExcel() {
+        var excelDetailInfoModels = DetailInfoItems.Select(s => new ExcelDetailInfoModel {
+                Num = s.Num,
+                Barcode = s.BarCodeInfo.Barcode,
+                ScanTime = s.BarCodeInfo.ScanTime,
+                Weight = s.WeightInfo.FormattedWeight,
+                Length = s.VolumeInfo.FormattedLength,
+                Width = s.VolumeInfo.FormattedWidth,
+                Height = s.VolumeInfo.FormattedHeight,
+                Volume = s.VolumeInfo.FormattedVolume,
+                RequestStatus = s.UploadInfo.RequestStatus switch {
+                    0 => "未上传",
+                    1 => "成功",
+                    _ => "失败"
+                },
+                TheoreticalExit = s.ExitInfo.TheoreticalExit,
+                PhysicalExit = s.ExitInfo.PhysicalExit,
+                DeviceName = s.DeviceInfos.DeviceName
+            })?.ToList();
+
+
+        //ExcelDetailInfoModel
+
+        var (key, value) = await ExcelService.Export("数据列表", "数据列表", excelDetailInfoModels,
+            new List<string>() { },
+            p => {
+
+            }, async ex => {
+                await DialogService.ShowMessageBox(
+                    "导出异常",
+                    ex.Message);
+            });
+        if (key && value is not null) {
+            var fileName = "数据列表.xlsx";
+            await JSRuntime.InvokeVoidAsync("saveAsFile", fileName, Convert.ToBase64String(value), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        }
+
+    }
 }
+

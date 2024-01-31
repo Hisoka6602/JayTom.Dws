@@ -1,4 +1,6 @@
-﻿namespace JayTom.Dws.CloudApiClient.Data.Models {
+﻿using System.ComponentModel;
+
+namespace JayTom.Dws.CloudApiClient.Data.Models {
 
     public class DetailInfoItemModel {
         public int Num { get; set; }
@@ -21,6 +23,7 @@
         /// <summary>
         /// 条码信息
         /// </summary>
+        [DisplayName("包裹创建时间")]
         public BarCodeInfoModel BarCodeInfo { get; set; } = new();
 
         /// <summary>
