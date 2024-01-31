@@ -5,6 +5,7 @@ using System.Threading;
 using JayTom.Dws.CloudApiClient.Data.Models;
 
 namespace JayTom.Dws.CloudApiClient.Api {
+
     public class CloudApiRequest : ICloudApiRequest {
         private readonly IHttpClientFactory _httpClientFactory;
         public static string Domain { get; private set; } = "http://192.168.31.199";
@@ -131,14 +132,7 @@ namespace JayTom.Dws.CloudApiClient.Api {
 
                     //解码
                     var result = JsonConvert.DeserializeObject<ApiResult>(httpResult);
-                    NLog.LogManager.GetCurrentClassLogger().Error($"{result?.Data?.ToString()}");
-                    if (result is { Result: true, Data: not null }) {
-                        var detailInfoItemModels = JsonConvert.DeserializeObject<List<DetailInfoItemModel>>(result.Data.ToString() ?? string.Empty);
-                        return detailInfoItemModels?.Any() == true ? new KeyValuePair<bool, object>(true, detailInfoItemModels) : new KeyValuePair<bool, object>(false, result);
-                    }
-                    else {
-                        return new KeyValuePair<bool, object>(false, result ?? new ApiResult());
-                    }
+                    return new KeyValuePair<bool, object>(result?.Result ?? false, result ?? new ApiResult());
                 }
             }
             catch (HttpRequestException) {

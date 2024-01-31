@@ -141,7 +141,7 @@ namespace JayTom.Dws.Infrastructure.Repository {
                 await contextTransaction?.RollbackAsync(token)!;
             }
             catch (Exception e) {
-                await contextTransaction?.RollbackAsync(token)!;
+                //await contextTransaction?.RollbackAsync(token)!;
                 LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
             }
             return false;
