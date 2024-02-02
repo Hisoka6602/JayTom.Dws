@@ -52,5 +52,28 @@ namespace JayTom.Dws.Domain.Dto.CloudApiDto {
         /// 异常统计
         /// </summary>
         public List<StatisticsDto>? ErrorStatistics { get; set; }
+
+        /// <summary>
+        /// 走势数据
+        /// </summary>
+        public List<TrendDataInfo>? TrendDataItems { get; set; }
+    }
+
+    public class TrendDataInfo {
+
+        /// <summary>
+        /// 时间
+        /// </summary>
+        public DateTime Time { get; set; }
+
+        /// <summary>
+        /// 数量
+        /// </summary>
+        public int Quantity { get; set; }
+
+        /// <summary>
+        /// 分割单位
+        /// </summary>
+        public string Unit { get; set; } = "小时";
     }
 }

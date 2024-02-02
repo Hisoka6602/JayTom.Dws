@@ -50,6 +50,16 @@ namespace JayTom.Dws.CloudApi.Controllers {
             _saveImagePath ??= _webHostEnvironment.WebRootPath;
             var packageDto = JsonConvert.DeserializeObject<PackageDto>(packageInfo);
             if (packageDto is not null) {
+                /*//临时测试
+                var random = new Random();
+                var randomType = Enum.GetValues(typeof(AbnormalSortingType))
+                    .OfType<AbnormalSortingType>()
+                    .OrderBy(x => random.Next())
+                    .FirstOrDefault();
+                packageDto.SortingInfo ??= new SortingInfoDto();
+                packageDto.SortingInfo.IsAbnormalSorting = true;
+                packageDto.SortingInfo.AbnormalSortingType = randomType;
+                packageDto.SortingInfo.IsSortingUsed = true;*/
                 //扫码图
                 if (barcodeImage is not null) {
                     var barcodeImageInfo = Path.GetFileNameWithoutExtension(barcodeImage.FileName)?.Split("_");

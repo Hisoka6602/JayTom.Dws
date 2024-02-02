@@ -322,6 +322,11 @@ namespace JayTom.Dws.Domain.Dto.CloudApiDto {
         /// </summary>
 
         public bool IsAbnormalSorting { get; set; }
+
+        /// <summary>
+        /// 分拣异常类型
+        /// </summary>
+        public AbnormalSortingType AbnormalSortingType { get; set; } = AbnormalSortingType.None;
     }
 
     /// <summary>

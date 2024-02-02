@@ -87,6 +87,12 @@ namespace JayTom.Dws.Data.Package {
         /// </summary>
         [Column("IsAbnormalSorting")]
         public bool IsAbnormalSorting { get; set; }
+
+        /// <summary>
+        /// 异常分拣类型
+        /// </summary>
+        [Column("AbnormalSortingType")]
+        public AbnormalSortingType AbnormalSortingType { get; set; } = AbnormalSortingType.None;
     }
 
     public enum SortMode {
@@ -231,5 +237,43 @@ namespace JayTom.Dws.Data.Package {
         /// 江腾窄带
         /// </summary>
         JT_ST,
+    }
+
+    public enum AbnormalSortingType {
+
+        /// <summary>
+        /// 无
+        /// </summary>
+        None,
+
+        /// <summary>
+        /// 网络超时
+        /// </summary>
+        NetworkTimeout,
+
+        /// <summary>
+        /// Api异常访问
+        /// </summary>
+        ApiAccessError,
+
+        /// <summary>
+        /// 无条码
+        /// </summary>
+        NoRead,
+
+        /// <summary>
+        /// 多条码识别
+        /// </summary>
+        MultipleBarCode,
+
+        /// <summary>
+        /// 无分拣指令
+        /// </summary>
+        NoSortingInstruction,
+
+        /// <summary>
+        /// 无物理格口(无适应规则)
+        /// </summary>
+        NoPhysicalMailbox,
     }
 }

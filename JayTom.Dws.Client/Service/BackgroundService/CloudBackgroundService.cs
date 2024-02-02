@@ -23,6 +23,7 @@ using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Repository.LocalData;
 using JayTom.Dws.Domain.Repository.LocalConf.CloudConfig;
 using ApiExceptionType = JayTom.Dws.Interface.ApiExceptionType;
+using AbnormalSortingType = JayTom.Dws.Interface.Cloud.AbnormalSortingType;
 
 namespace JayTom.Dws.Client.Service.BackgroundService {
 
@@ -241,7 +242,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 SentInstruction = packageInfoModel.SortingInfo?.SentInstruction ?? string.Empty,
                                 SortingMode = (int)(packageInfoModel.SortingInfo?.SortingMode ?? 0),
                                 IsSortingUsed = packageInfoModel.SortingInfo?.IsSortingUsed ?? false,
-                                IsAbnormalSorting = packageInfoModel.SortingInfo?.IsAbnormalSorting ?? false
+                                IsAbnormalSorting = packageInfoModel.SortingInfo?.IsAbnormalSorting ?? false,
+                                AbnormalSortingType = (PackageCloudAbnormalSortingType)(packageInfoModel.SortingInfo?.AbnormalSortingType ?? AbnormalSortingType.None)
                             },
                             LogisticsInfo = new PackageCloudLogisticsInfo() {
                                 LogisticsCode = packageInfoModel.LogisticsInfo?.LogisticsCode ?? string.Empty,

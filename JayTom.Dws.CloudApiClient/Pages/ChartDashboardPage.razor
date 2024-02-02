@@ -128,7 +128,7 @@
 
 @*实时图*@
 
-<div style="max-height:480px">
+<div style="max-height:480px;margin-right:30px">
     @if (!_dataLoaded) {
         <MudSkeleton Style="height:280px;" SkeletonType="SkeletonType.Rectangle" />
     }
@@ -136,24 +136,24 @@
         <ApexChart Height="280" TItem="RealTimeDataItemModel" Options="@_options" Debug="true">
 
             <ApexPointSeries TItem="RealTimeDataItemModel"
-                             Items="TodayRealTimeDataItems"
+                             Items="TrendDataItems"
                              ShowDataLabels="true"
-                             Name="今天数据"
+                             Name="数据"
                              Stroke="@(new ApexCharts.SeriesStroke { Color = "DodgerBlue", DashSpace = 0, Width = 3 })"
                              SeriesType="SeriesType.Area"
                              XValue="e => e.Timestamp"
                              YValue="e => e.Quantity">
 
             </ApexPointSeries>
-            <ApexPointSeries TItem="RealTimeDataItemModel"
-                             Items="YesterdayRealTimeDataItems"
-                             ShowDataLabels="true"
-                             Name="昨天数据"
-                             Stroke="@(new ApexCharts.SeriesStroke { Color = "gray", DashSpace = 0, Width = 3 })"
-                             SeriesType="SeriesType.Area"
-                             XValue="e => e.Timestamp"
-                             YValue="e => e.Quantity">
-            </ApexPointSeries>
+            @*<ApexPointSeries TItem="RealTimeDataItemModel"
+        Items="YesterdayRealTimeDataItems"
+        ShowDataLabels="true"
+        Name="昨天数据"
+        Stroke="@(new ApexCharts.SeriesStroke { Color = "gray", DashSpace = 0, Width = 3 })"
+        SeriesType="SeriesType.Area"
+        XValue="e => e.Timestamp"
+        YValue="e => e.Quantity">
+        </ApexPointSeries>*@
         </ApexChart>
     }
 
@@ -186,75 +186,31 @@
 
     private List<RealTimeDataItemModel> TodayRealTimeDataItems { get; init; } = new();
     private List<RealTimeDataItemModel> YesterdayRealTimeDataItems { get; init; } = new();
-
-    private List<ExitDistributionItemModel> ExitDistributionItems { get; init; } = new()
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        {
-        new ExitDistributionItemModel()
-        {
-            ExitName = "格口1",
-            Num = 1,
-            Quantity = 1000,
-            Ratio = 0.2f
-        },
-        new ExitDistributionItemModel()
-        {
-            ExitName = "格口2",
-            Num = 2,
-            Quantity = 3000,
-            Ratio = 0.3f
-        },
-        new ExitDistributionItemModel()
-        {
-            ExitName = "格口3",
-            Num = 3,
-            Quantity = 3000,
-            Ratio = 0.3f
-        },
-        new ExitDistributionItemModel()
-        {
-            ExitName = "格口4",
-            Num = 4,
-            Quantity = 3000,
-            Ratio = 0.3f
-        },
-        new ExitDistributionItemModel()
-        {
-            ExitName = "格口2",
-            Num = 2,
-            Quantity = 3000,
-            Ratio = 0.3f
-        },
-        new ExitDistributionItemModel()
-        {
-            ExitName = "格口3",
-            Num = 3,
-            Quantity = 3000,
-            Ratio = 0.3f
-        },
-        new ExitDistributionItemModel()
-        {
-            ExitName = "格口4",
-            Num = 4,
-            Quantity = 3000,
-            Ratio = 0.3f
-        },
-    };
-    private List<DonutItemModel> DonutItems { get; init; } = new()
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                {
-        new DonutItemModel(){Name ="无物理格口",Value = 25,Color ="#1E90FF" },
-        new DonutItemModel(){Name ="网络超时",Value = 77,Color ="#687DE8"},
-        new DonutItemModel(){Name ="条码未识别",Value = 28,Color ="#876BCE"},
-        new DonutItemModel(){Name ="其他异常",Value = 5,Color =ColorTranslator.ToHtml(Color.Gray)},
-    };
+    private List<RealTimeDataItemModel> TrendDataItems { get; init; } = new();
+    private List<ExitDistributionItemModel> ExitDistributionItems { get; init; } = new();
+    private List<DonutItemModel> DonutItems { get; init; } = new();
 
     private bool _dataLoaded = true;
     public static DateTime? StartDateTime { get; set; }
     public static DateTime? EndDateTime { get; set; }
     public static string? BaseUrl { get; set; }
     public static string? DeviceName { get; set; }
+
+    public List<string> DonutItemColors = new()
+                                                                                                                                                                                                                                                {
+        "#1E90FF",
+        "#687DE8",
+        "#876BCE",
+        "#9759B1",
+        "#9E4994",
+        "#9D3B77",
+        "#414756",
+        "#A5ABBD",
+        "#94ABE1"
+    };
     protected override void OnInitialized() {
         base.OnInitialized();
-        Random random = new Random();
+        /*Random random = new Random();
         DateTime startTime = DateTime.Now;
         for (var i = 0; i < 60; i++) {
             var time = startTime.AddMinutes(i);
@@ -269,7 +225,7 @@
                     Quantity = random.Next(1, 100),
                     Color = "gray"
                 });
-        }
+        }*/
 
         _options.Debug = true;
         _options.Tooltip = new ApexCharts.Tooltip { X = new TooltipX { Format = @"yy-MM-dd HH:mm:ss" } };
@@ -277,7 +233,7 @@
                 Type = XAxisType.Datetime,
                 Title = new AxisTitle {
                     OffsetY = 5,
-                    Text = "分钟",
+                    Text = "小时",
                     Style = new AxisTitleStyle { FontSize = "14px", Color = "lightgrey" }
                 },
                 AxisBorder = new AxisBorder {
@@ -285,22 +241,19 @@
                 },
 
             };
-        _options.Yaxis = new List<YAxis>();
-        _options.Yaxis.Add(new YAxis {
+        _options.Yaxis = new List<YAxis>
+                                                                                                                                                                                {
+            new YAxis {
                 DecimalsInFloat = 0,
                 Labels = new YAxisLabels { Rotate = -45, Style = new AxisLabelStyle { FontSize = "10px" } },
                 Title = new AxisTitle { Text = "数量", Style = new AxisTitleStyle { FontSize = "14px", Color = "lightgrey" } }
-            });
+            }
+        };
 
         //正式逻辑
-        if (StartDateTime is null) {
-            StartDateTime = DateTime.Today;
-        }
+        StartDateTime ??= DateTime.Today;
 
-        if (EndDateTime is null) {
-            EndDateTime = DateTime.Now;
-
-        }
+        EndDateTime ??= DateTime.Now;
 
         BaseUrl ??= Configuration.GetValue<string>("BaseUrl");
         OnSearchClicked();
@@ -365,6 +318,7 @@
     };
 
     public void OnSearchClicked() {
+
         GetStatistics();
     }
 
@@ -380,6 +334,7 @@
             });
             ExitDistributionItems.Clear();
             DonutItems.Clear();
+            TrendDataItems.Clear();
             CloudApiRequest.SetBaseUrl(BaseUrl ?? string.Empty);
             var (key, value) = await CloudApiRequest.GetStatistics(StartDateTime, EndDateTime, DeviceName);
             if (key && value is StatisticsInfoModel model) {
@@ -421,6 +376,32 @@
                         Ratio = (float)s.Percentage
                     })?.ToList();
                 ExitDistributionItems.AddRange(itemModels ?? new List<ExitDistributionItemModel>());
+
+                var donutItemModels = model.ErrorStatistics?.Select((s, i) => new DonutItemModel {
+                        Color = DonutItemColors.ElementAtOrDefault(i % DonutItemColors.Count) ?? string.Empty,
+                        Name = ConvertErrorStatisticsName(s.Name),
+                        Value = s.Quantity
+
+                    })?.ToList();
+                DonutItems.AddRange(donutItemModels ?? new List<DonutItemModel>());
+                var timeDataItemModels = model.TrendDataItems?.Select(s => new RealTimeDataItemModel() {
+                        Color = "bule",
+                        Quantity = s.Quantity,
+                        Timestamp = s.Time.ToUnixTimeMilliseconds()
+                    })?.ToList();
+                TrendDataItems.AddRange(timeDataItemModels ?? new List<RealTimeDataItemModel>());
+                _options.Xaxis = new XAxis {
+                        Type = XAxisType.Datetime,
+                        Title = new AxisTitle {
+                            OffsetY = 5,
+                            Text = model.TrendDataItems?.FirstOrDefault()?.Unit ?? "小时",
+                            Style = new AxisTitleStyle { FontSize = "14px", Color = "lightgrey" }
+                        },
+                        AxisBorder = new AxisBorder {
+                            Height = 2
+                        },
+
+                    };
             }
             else if (value is ApiResult apiResult) {
 
@@ -439,6 +420,18 @@
             StateHasChanged();
         }
 
+    }
+
+    public string ConvertErrorStatisticsName(string name) {
+        return name switch {
+            "NetworkTimeout" => "网络超时",
+            "ApiAccessError" => "Api异常访问",
+            "NoRead" => "无条码",
+            "MultipleBarCode" => "多条码识别",
+            "NoSortingInstruction" => "无分拣指令",
+            "NoPhysicalMailbox" => "无物理格口",
+            _ => "未知"
+        };
     }
     //点击查询事件
     //操作实时折线图事件

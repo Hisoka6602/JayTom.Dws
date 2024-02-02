@@ -8,7 +8,6 @@ using JayTom.Dws.Domain.Dto.CloudApiDto;
 using JayTom.Dws.Domain.Repository.CloudApi;
 
 namespace JayTom.Dws.Domain.Service.CloudApi {
-
     public class CloudService : ICloudService {
         private readonly ICloudPackageRepository _cloudPackageRepository;
 
@@ -72,7 +71,9 @@ namespace JayTom.Dws.Domain.Service.CloudApi {
                     SendTime = packageInfo.SortingInfo?.SendTime ?? DateTime.MinValue,
                     SentInstruction = packageInfo.SortingInfo?.SentInstruction ?? string.Empty,
                     SortingMode = packageInfo.SortingInfo?.SortingMode ?? SortMode.None,
-                    IsSortingUsed = packageInfo.SortingInfo?.IsSortingUsed ?? false
+                    IsSortingUsed = packageInfo.SortingInfo?.IsSortingUsed ?? false,
+                    IsAbnormalSorting = packageInfo.SortingInfo?.IsAbnormalSorting ?? false,
+                    AbnormalSortingType = packageInfo.SortingInfo?.AbnormalSortingType ?? AbnormalSortingType.None,
                 },
                 LogisticsInfo = new LogisticsInfoModel() {
                     LogisticsCode = packageInfo.LogisticsInfo?.LogisticsCode ?? string.Empty,

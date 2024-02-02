@@ -433,6 +433,11 @@ namespace JayTom.Dws.Interface.Cloud {
         /// 是否异常分拣
         /// </summary>
         public bool IsAbnormalSorting { get; set; }
+
+        /// <summary>
+        /// 分拣异常类型
+        /// </summary>
+        public PackageCloudAbnormalSortingType AbnormalSortingType { get; set; } = PackageCloudAbnormalSortingType.None;
     }
 
     /// <summary>
@@ -619,5 +624,43 @@ namespace JayTom.Dws.Interface.Cloud {
         /// 扫码相机序列号
         /// </summary>
         public string BarcodeScannerSerialNumber { get; set; } = string.Empty;
+    }
+
+    public enum PackageCloudAbnormalSortingType {
+
+        /// <summary>
+        /// 无
+        /// </summary>
+        None,
+
+        /// <summary>
+        /// 网络超时
+        /// </summary>
+        NetworkTimeout,
+
+        /// <summary>
+        /// Api异常访问
+        /// </summary>
+        ApiAccessError,
+
+        /// <summary>
+        /// 无条码
+        /// </summary>
+        NoRead,
+
+        /// <summary>
+        /// 多条码识别
+        /// </summary>
+        MultipleBarCode,
+
+        /// <summary>
+        /// 无分拣指令
+        /// </summary>
+        NoSortingInstruction,
+
+        /// <summary>
+        /// 无物理格口(无适应规则)
+        /// </summary>
+        NoPhysicalMailbox,
     }
 }

@@ -201,45 +201,90 @@ namespace JayTom.Dws.Infrastructure.Repository.CloudApi {
                         }
                         )?.ToListAsync(cancellationToken: cancellationToken);
 
-                    //网络超时
-                    var timeoutCount = await queryable.Where(w => w.UploadInfo != null
-                                                             && w.UploadInfo.ApiExceptionType == ApiExceptionType.Timeout)
+                    var abnormalCount = await queryable.Where(w => w.SortingInfo != null &&
+                                                              w.SortingInfo.IsSortingUsed && w.SortingInfo.IsAbnormalSorting)
                         .CountAsync(cancellationToken: cancellationToken);
-                    //无条码
-                    var noReadCount = await queryable.Where(w => w.BarCodeInfo != null
-                                                            && (w.BarCodeInfo.Barcode.ToLower().Equals("noread") ||
-                                                                string.IsNullOrEmpty(w.BarCodeInfo.Barcode)))
-                        .CountAsync(cancellationToken: cancellationToken);
+                    //异常分拣类型
 
-                    //无物理格口
-                    var physicalExitCount = await queryable.Where(w => w.ExitInfo != null &&
-                                                                  string.IsNullOrEmpty(w.ExitInfo.PhysicalExit))
-                        .CountAsync(cancellationToken: cancellationToken);
+                    var errorStatistics = await queryable.Where(w => w.SortingInfo != null &&
+                                                                     w.SortingInfo.IsSortingUsed &&
+                                                                     w.SortingInfo.IsAbnormalSorting &&
+                                                                     w.SortingInfo.AbnormalSortingType != AbnormalSortingType.None)
+                        .GroupBy(g => g.SortingInfo.AbnormalSortingType)
+                        .Select(s => new StatisticsDto {
+                            Name = s.Key.ToString(),
+                            Quantity = s.Count(),
+                            Percentage = Math.Round((double)s.Count() / abnormalCount, 3),
+                            TotalCount = abnormalCount
+                        }
+                        )?.ToListAsync(cancellationToken: cancellationToken)!;
+                    //获取走势数据
 
-                    var dtos = new List<StatisticsDto>()
-                    {
-                    new()
-                    {
-                        Name = "Timeout",
-                        Quantity = timeoutCount,
-                        Percentage = Math.Round((double)timeoutCount / totalPackages, 3),
-                        TotalCount = totalPackages
-                    },
-                    new()
-                    {
-                        Name = "NoRead",
-                        Quantity = noReadCount,
-                        Percentage = Math.Round((double)noReadCount / totalPackages, 3),
-                        TotalCount = totalPackages
-                    },
-                    new()
-                    {
-                        Name = "PhysicalExitEmpty",
-                        Quantity = physicalExitCount,
-                        Percentage = Math.Round((double)physicalExitCount / totalPackages, 3),
-                        TotalCount = totalPackages
-                    },
-                   };
+                    var trendDataInfos = await queryable.Where(w => w.BarCodeInfo != null)
+                        .GroupBy(g => new { ScanMinute = g.BarCodeInfo.ScanTime.Minute, ScanHour = g.BarCodeInfo.ScanTime.Hour, ScanDay = g.BarCodeInfo.ScanTime.Date })
+                        .Select(s => new TrendDataInfo {
+                            Time = new DateTime(s.Key.ScanDay.Year, s.Key.ScanDay.Month, s.Key.ScanDay.Day, s.Key.ScanHour, s.Key.ScanMinute, 0),
+                            Quantity = s.Count()
+                        }).ToListAsync(cancellationToken: cancellationToken);
+                    //整合走势图,如果不需要则回填trendDataInfos
+                    var timeSpan = endDateTime.Value - startDateTime.Value;
+                    var nodeCount = 30;
+                    var unit = "";
+
+                    // 根据时间跨度确定单位和节点数
+                    if (timeSpan.TotalMinutes <= 60) {
+                        nodeCount = Convert.ToInt32(Math.Ceiling(timeSpan.TotalMinutes));
+                        unit = "分钟";
+                    }
+                    else if (timeSpan.TotalHours <= 24) {
+                        nodeCount = Convert.ToInt32(Math.Ceiling(timeSpan.TotalHours));
+                        unit = "小时";
+                    }
+                    else switch (timeSpan.TotalDays) {
+                            case <= 31:
+                                nodeCount = Convert.ToInt32(Math.Ceiling(timeSpan.TotalDays));
+                                unit = "天数";
+                                break;
+
+                            case >= 365:
+                                nodeCount = Convert.ToInt32(Math.Ceiling(timeSpan.TotalDays / 365));
+                                unit = "年份";
+                                break;
+
+                            default:
+                                // 计算开始和结束日期之间的完整月份差异
+                                var monthsApart = 12 * (endDateTime.Value.Year - startDateTime.Value.Year) + endDateTime.Value.Month - startDateTime.Value.Month;
+                                if (startDateTime.Value.AddMonths(monthsApart) < endDateTime.Value) {
+                                    // 如果增加月份后的日期仍旧小于结束日期，表示有额外的日子需要被覆盖
+                                    monthsApart++;
+                                }
+                                nodeCount = monthsApart;
+                                unit = "月份";
+                                break;
+                        }
+
+                    List<TrendDataInfo> result = new();
+                    var currentStartTime = startDateTime.Value;
+
+                    for (var i = 0; i < nodeCount; i++) {
+                        var startTime = currentStartTime;
+                        var endTime = AddTime(currentStartTime, unit);
+
+                        if (endTime > endDateTime) {
+                            endTime = endDateTime.Value;
+                        }
+
+                        var quantity = trendDataInfos.Where(t => t.Time >= startTime && t.Time < endTime).Sum(t => t.Quantity);
+
+                        result.Add(new TrendDataInfo {
+                            Time = startTime,
+                            Quantity = quantity,
+                            Unit = unit
+                        });
+
+                        currentStartTime = endTime;
+                    }
+
                     return new KeyValuePair<bool, object>(true, new PackageStatisticsDto {
                         TotalPackages = totalPackages,
                         NormalSortingCount = normalSortingCount,
@@ -249,7 +294,8 @@ namespace JayTom.Dws.Infrastructure.Repository.CloudApi {
                         RecognitionRate = Math.Round((double)recognitionCount / totalPackages, 3),
                         SortingEfficiency = totalPackages / hour,
                         ExitStatisticsInfo = statisticsDtos,
-                        ErrorStatistics = dtos
+                        ErrorStatistics = errorStatistics,
+                        TrendDataItems = result
                     });
                 }
                 else {
@@ -260,6 +306,17 @@ namespace JayTom.Dws.Infrastructure.Repository.CloudApi {
                 NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
                 return new KeyValuePair<bool, object>(false, "查询失败");
             }
+        }
+
+        private DateTime AddTime(DateTime time, string unit) {
+            return unit switch {
+                "分钟" => time.AddMinutes(1),
+                "小时" => time.AddHours(1),
+                "天数" => time.AddDays(1),
+                "月份" => time.AddMonths(1),
+                "年份" => time.AddYears(1),
+                _ => time
+            };
         }
     }
 }

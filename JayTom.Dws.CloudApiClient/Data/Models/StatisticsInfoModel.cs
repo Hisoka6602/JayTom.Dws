@@ -46,6 +46,11 @@
         /// 异常统计
         /// </summary>
         public List<StatisticsInfoItemInfo>? ErrorStatistics { get; set; }
+
+        /// <summary>
+        /// 走势数据
+        /// </summary>
+        public List<StatisticsTrendDataInfo>? TrendDataItems { get; set; }
     }
 
     public class StatisticsInfoItemInfo {
@@ -69,5 +74,23 @@
         /// 占比
         /// </summary>
         public double Percentage { get; set; }
+    }
+
+    public class StatisticsTrendDataInfo {
+
+        /// <summary>
+        /// 时间
+        /// </summary>
+        public DateTime Time { get; set; }
+
+        /// <summary>
+        /// 数量
+        /// </summary>
+        public int Quantity { get; set; }
+
+        /// <summary>
+        /// 分割单位
+        /// </summary>
+        public string Unit { get; set; } = "小时";
     }
 }
