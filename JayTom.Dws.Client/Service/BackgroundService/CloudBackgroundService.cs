@@ -23,7 +23,6 @@ using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Repository.LocalData;
 using JayTom.Dws.Domain.Repository.LocalConf.CloudConfig;
 using ApiExceptionType = JayTom.Dws.Interface.ApiExceptionType;
-using AbnormalSortingType = JayTom.Dws.Interface.Cloud.AbnormalSortingType;
 
 namespace JayTom.Dws.Client.Service.BackgroundService {
 

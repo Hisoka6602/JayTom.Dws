@@ -5,15 +5,19 @@
             <MudText Style="font-weight: bold;">@Title</MudText>
                 <MudText Typo="Typo.body2" Class="text-truncate" Style="color:gray;font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">@Description</MudText>
 
-                <MudImage Style="width: 70px; height: 70px;" Src="images/defaultImage.jpg" Elevation="25" Class="rounded-lg"></MudImage>
+                <MudImage Style="width: 70px; height: 70px;" Src="images/defaultImage.jpg" Elevation="2" Class="rounded-lg"></MudImage>
             </MudCardContent>
             <MudCardActions>
-                <MudTooltip Text="编辑">
-                    <MudFab Size="Size.Small" Class="position-absolute" Icon="@Icons.Material.Filled.Key" Color="Color.Primary" Style="left: 0; bottom: 0; margin: 4px;" />
-                </MudTooltip>
-                <MudTooltip Text="删除">
-                    <MudFab Size="Size.Small" Class="position-absolute" Icon="@Icons.Material.Filled.Delete" Color="Color.Dark" Style="right: 0; bottom: 0; margin: 4px;" />
-                </MudTooltip>
+                <div style="width:20px; position: absolute; left: 20px; bottom: 0; margin: 4px; ">
+                    <MudTooltip Arrow="true" Placement="Placement.Bottom" Text="编辑">
+                        <MudFab Size="Size.Small" Class="position-absolute" Icon="@Icons.Material.Filled.Key" Color="Color.Primary" Style="left: -20px; bottom: 0; " />
+                    </MudTooltip>
+                </div>
+                <div style="width:20px; position: absolute; right: 0; bottom: 0; margin: 4px;">
+                    <MudTooltip Arrow="true" Placement="Placement.Bottom" Text="删除">
+                        <MudFab Size="Size.Small" Class="position-absolute" Icon="@Icons.Material.Filled.Delete" Color="Color.Dark" Style="right: 0; bottom: 0; " />
+                    </MudTooltip>
+                </div>
             </MudCardActions>
         </MudCard>
     </div>
@@ -25,7 +29,4 @@
 
     [Parameter]
     public string ButtonText { get; set; } = "ButtonText";
-}
-@code {
-
 }

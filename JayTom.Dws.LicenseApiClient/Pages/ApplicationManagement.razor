@@ -1,53 +1,56 @@
 ﻿@page "/application-management"
-@using JayTom.Dws.LicenseApiClient.Template;
+
 @using JayTom.Dws.LicenseApiClient.Data.Models
+@using JayTom.Dws.LicenseApiClient.Editors
+<MudPaper Elevation="0" Style="height:95.7vh">
+    @*应用程序编辑器*@
+    <MudOverlay Visible="AppModuleEditorIsVisible" DarkBackground="true" Absolute="true">
 
-<MudCard style="border-radius:60px; width:400px;height:120px">
-    <MudCardContent>
-        <div style="display: flex; align-items: center;">
-            <div style=" display: flex; align-items: center; justify-content: center;position: relative; width:90px;height:90px; background-color: rgba(30, 144, 255, 0.1); border-radius: 50%;margin-right:10px">
-                <span class="iconfont icon-app" style="position: relative;color:dodgerblue; font-size: 60px;"></span>
+        <AppModuleEditor>
+
+
+
+
+        </AppModuleEditor>
+
+
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(e => { AppModuleEditorIsVisible = false;})">Hide Overlay</MudButton>
+    </MudOverlay>
+
+    <PageTitleTemplate Title="应用管理" Description="应用管理" IconClass="iconfont icon-app"></PageTitleTemplate>
+    <div style="margin:10px">
+        <MudTooltip Text="Add" Arrow="true" Placement="Placement.Bottom">
+            <MudFab OnClick="@(e => { AppModuleEditorIsVisible = true;})" Icon="@Icons.Material.Filled.Apps" Color="Color.Primary" />
+        </MudTooltip>
+    </div>
+
+
+    <div class="row">
+        @foreach (var story in ApplicationItems) {
+            <div class="col-md-2 mb-4 mx-1">
+                <ApplicationCardTemplate Title="@story.Title" Description="@story.Description" ButtonText="@story.ButtonText" />
             </div>
-            <div style=" display: flex;flex-direction: column">
-                <span style="font-size:18px;font-weight:bold">应用管理</span>
-                <span style="color:darkgrey">应用管理</span>
+        }
+    </div>
+    <MudDivider DividerType="DividerType.Middle" Style="height:2px" Class="my-9" />
+    <div style="margin:10px">
+        <MudTooltip Text="Add" Arrow="true" Placement="Placement.Bottom">
+            <MudFab Icon="@Icons.Material.Filled.AddCard" Color="Color.Primary" />
+        </MudTooltip>
+    </div>
+    <div class="row">
+        @foreach (var story in ApplicationItems) {
+            <div class="col-md-2 mb-4 mx-1">
+                <AuthorizationCardTemplate Title="@story.Title" Description="@story.Description" ButtonText="@story.ButtonText" />
             </div>
+        }
+    </div>
+</MudPaper>
 
-        </div>
-    </MudCardContent>
-
-</MudCard>
-<div style="margin:10px">
-    <MudTooltip Text="Add" Arrow="true" Placement="Placement.Bottom">
-        <MudFab Icon="@Icons.Material.Filled.Apps" Color="Color.Primary" />
-    </MudTooltip>
-</div>
-
-
-<div class="row">
-    @foreach (var story in ApplicationItems) {
-        <div class="col-md-2 mb-4 mx-1">
-            <ApplicationCardTemplate Title="@story.Title" Description="@story.Description" ButtonText="@story.ButtonText" />
-        </div>
-    }
-</div>
-<MudDivider DividerType="DividerType.Middle" Style="height:2px" Class="my-9" />
-<div style="margin:10px">
-    <MudTooltip Text="Add" Arrow="true" Placement="Placement.Bottom">
-        <MudFab Icon="@Icons.Material.Filled.AddCard" Color="Color.Primary" />
-    </MudTooltip>
-</div>
-<div class="row">
-    @foreach (var story in ApplicationItems) {
-        <div class="col-md-2 mb-4 mx-1">
-            <AuthorizationCardTemplate Title="@story.Title" Description="@story.Description" ButtonText="@story.ButtonText" />
-        </div>
-    }
-</div>
 @code {
 
     public List<ApplicationItemInfoModel> ApplicationItems { get; set; } = new()
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                {
         new ApplicationItemInfoModel()
         {
             Title = "DWS",
@@ -65,4 +68,5 @@
         new ApplicationItemInfoModel(),
     };
 
+    public bool AppModuleEditorIsVisible = false;
 }

@@ -1,20 +1,7 @@
 ﻿@page "/authorization-management"
 @using JayTom.Dws.LicenseApiClient.Data.Models
-<MudCard style="border-radius:60px; width:400px;height:120px;margin-bottom:10px;">
-    <MudCardContent>
-        <div style="display: flex; align-items: center;">
-            <div style=" display: flex; align-items: center; justify-content: center;position: relative; width:90px;height:90px; background-color: rgba(30, 144, 255, 0.1); border-radius: 50%;margin-right:10px">
-                <span class="iconfont icon-lingpaiguanli" style="position: relative;color:dodgerblue; font-size: 60px;"></span>
-            </div>
-            <div style=" display: flex;flex-direction: column">
-                <span style="font-size:18px;font-weight:bold">授权管理</span>
-                <span style="color:darkgrey">授权管理</span>
-            </div>
 
-        </div>
-    </MudCardContent>
-</MudCard>
-
+<PageTitleTemplate Title="授权管理" Description="授权管理" IconClass="iconfont icon-lingpaiguanli"></PageTitleTemplate>
 <MudDataGrid Elevation="1" Class="custom-datagrid" Filterable="false" SortMode="@SortMode.None" Groupable="false" Items="@_items">
     <Columns>
         <PropertyColumn Property="x => x.Num" Title="" />

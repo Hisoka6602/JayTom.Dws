@@ -1,0 +1,143 @@
+﻿@using JayTom.Dws.LicenseApiClient.Data.Models
+<div>
+
+    <MudCard Style="width:600px;height:600px; border-radius:20px;">
+        <MudCardContent Class="center">
+
+            <div style="width:260px; margin:auto; width:100%;">
+                @*图标*@
+                <div class="center">
+                    <MudFileUpload T="IBrowserFile"
+                                   Accept=".png, .jpg"
+                                   OnFilesChanged="OnInputFileChanged"
+                                   Hidden="@false"
+                                   InputStyle="opacity:0">
+                        <ButtonTemplate>
+                            <MudButton HtmlTag="label"
+                                       Variant="Variant.Text"
+                                       Color="Color.Primary"
+                                       for="@context.Id">
+                                <MudImage Style="width: 70px; height: 70px;" Src="@ImagePath" Elevation="2" Class="rounded-lg"></MudImage>
+                            </MudButton>
+                        </ButtonTemplate>
+                    </MudFileUpload>
+                </div>
+
+                <MudTextField FullWidth="true" @bind-Value="ApplicationName" Label="应用程序名称" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
+
+            </div>
+
+        </MudCardContent>
+        @*列表*@
+        <div>
+            <MudTable Style="width:600px;min-height:360px" Items="@ApplicationInfo.FeatureItems"
+                      Dense="false" Hover="true" CanCancelEdit="true"
+                      RowEditPreview="BackupItem" RowEditCancel="ResetItemToOriginalValues"
+                      IsEditRowSwitchingBlocked="true"
+                      ApplyButtonPosition="@applyButtonPosition"
+                      EditButtonPosition="@editButtonPosition"
+                      EditTrigger="@editTrigger">
+                <HeaderContent>
+                    <MudTh>序号</MudTh>
+                    <MudTh>模块名称</MudTh>
+                    <MudTh>模块Guid</MudTh>
+                    <MudTh>说明</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="序号">@context.Num</MudTd>
+                        <MudTd DataLabel="模块名称">@context.FeatureName</MudTd>
+                        <MudTd DataLabel="模块Guid">@context.FeatureGuid</MudTd>
+                        <MudTd DataLabel="说明">@context.Description</MudTd>
+                    </RowTemplate>
+                    <RowEditingTemplate>
+                        <MudTd DataLabel="模块名称">
+                            <MudTextField @bind-Value="@context.FeatureName" Required />
+                     </MudTd>
+                     <MudTd DataLabel="模块Guid">
+                         <MudTextField @bind-Value="@context.FeatureGuid" Required />
+                     </MudTd>
+                     <MudTd DataLabel="说明">
+                         <MudTextField @bind-Value="@context.Description" Required />
+                     </MudTd>
+                 </RowEditingTemplate>
+             </MudTable>
+         </div>
+         <MudCardActions Class="card-actions-right">
+             <MudButton Variant="Variant.Filled" Color="Color.Primary">Hide Overlay</MudButton>
+         </MudCardActions>
+     </MudCard>
+
+ </div>
+ <style>
+     .card-actions-right {
+         display: flex;
+         justify-content: flex-end;
+         align-items: flex-end;
+     @*height: 95%; width: 99%;*@
+     }
+
+     .center {
+         margin: auto;
+         width: 50%;
+     }
+ </style>
+ @code {
+
+    [Parameter]
+    public string ApplicationName { get; set; } = string.Empty;
+    [Parameter]
+    public string ImagePath { get; set; } = string.Empty;
+
+    [Parameter]
+    public ApplicationItemInfoModel ApplicationInfo { get; set; } = new() {
+            FeatureItems = new List<FeatureItemModel>()
+                                                                    {
+            new FeatureItemModel()
+            {
+                Num = 1,
+                FeatureGuid = Guid.NewGuid().ToString(),
+                Description = "这是说明",
+                FeatureName = "功能1"
+            }
+        }
+        };
+
+    public FeatureItemModel? FeatureInfoBeforeEdit;
+    private TableApplyButtonPosition applyButtonPosition = TableApplyButtonPosition.End;
+    private TableEditButtonPosition editButtonPosition = TableEditButtonPosition.End;
+    private TableEditTrigger editTrigger = TableEditTrigger.RowClick;
+    private readonly List<string> _fileNames = new();
+    // 异步方法处理文件改变事件
+    private async Task OnInputFileChanged(InputFileChangeEventArgs e) {
+        var file = e.File;
+        if (file != null) {
+            using var stream = file.OpenReadStream();
+            using var memoryStream = new MemoryStream();
+            await stream.CopyToAsync(memoryStream);
+
+            var base64String = Convert.ToBase64String(memoryStream.ToArray());
+
+            ImagePath = $"data:image/{file.ContentType};base64,{base64String}";
+            StateHasChanged();
+        }
+    }
+    private void BackupItem(object element) {
+        Console.WriteLine(element);
+        /*FeatureInfoBeforeEdit = new() {
+
+            Sign = ((Element)element).Sign,
+            Name = ((Element)element).Name,
+            Molar = ((Element)element).Molar,
+            Position = ((Element)element).Position
+        };
+        AddEditionEvent($"RowEditPreview event: made a backup of Element {((Element)element).Name}");*/
+    }
+    private void ResetItemToOriginalValues(object element) {
+        Console.WriteLine(element);
+        /*((Element)element).Sign = elementBeforeEdit.Sign;
+        ((Element)element).Name = elementBeforeEdit.Name;
+        ((Element)element).Molar = elementBeforeEdit.Molar;
+        ((Element)element).Position = elementBeforeEdit.Position;
+        AddEditionEvent($"RowEditCancel event: Editing of Element {((Element)element).Name} canceled");*/
+    }
+}

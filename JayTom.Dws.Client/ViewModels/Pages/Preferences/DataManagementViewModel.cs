@@ -32,6 +32,7 @@ using JayTom.Dws.Domain.Repository.LocalData;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
+
     public class DataManagementViewModel : BindableBase {
         private readonly IDialogService _dialogService;
         private readonly IExcel _excel;
@@ -569,8 +570,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     var total = await _packageRepository.Total(s =>
                             s.BarCodeInfo != null && s.WeightInfo != null &&
 
-                            (StartTime == null || s.BarCodeInfo.ScanTime.CompareTo(StartTime) >= 0) &&
-                            (EndTime == null || s.BarCodeInfo.ScanTime.CompareTo(EndTime) <= 0) &&
+                            (StartTime == null || s.BarCodeInfo.ScanTime >= StartTime) &&
+                            (EndTime == null || s.BarCodeInfo.ScanTime <= EndTime) &&
                             (string.IsNullOrWhiteSpace(BarCode) || s.BarCodeInfo.Barcode.Contains(BarCode)) &&
                             (TimestampedGuid <= 0 || s.PackageTimestamped.Equals(TimestampedGuid)) &&
                             (MinWeight <= 0 || s.WeightInfo.FormattedWeight >= MinWeight) &&
@@ -581,8 +582,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                         PageCount = total / pageSize + (total % pageSize > 0 ? 1 : 0);
                         var (key, infoModels) = await _packageRepository.SelectPackageOrderByDescending(s =>
                                 s.BarCodeInfo != null && s.WeightInfo != null &&
-                                (StartTime == null || s.BarCodeInfo.ScanTime.CompareTo(StartTime) >= 0) &&
-                                (EndTime == null || s.BarCodeInfo.ScanTime.CompareTo(EndTime) <= 0) &&
+                                (StartTime == null || s.BarCodeInfo.ScanTime >= StartTime) &&
+                                (EndTime == null || s.BarCodeInfo.ScanTime <= EndTime) &&
                                 (string.IsNullOrWhiteSpace(BarCode) || s.BarCodeInfo.Barcode.Contains(BarCode)) &&
                                 (TimestampedGuid <= 0 || s.PackageTimestamped.Equals(TimestampedGuid)) &&
                                 (MinWeight <= 0 || s.WeightInfo.FormattedWeight >= MinWeight) &&

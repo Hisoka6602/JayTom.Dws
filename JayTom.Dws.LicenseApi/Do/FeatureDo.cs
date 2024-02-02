@@ -8,7 +8,7 @@ namespace JayTom.Dws.LicenseApi.Do {
          MaxLength(30, ErrorMessage = "应用程序名称不能超过30个字符")]
         public string FeatureName { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Guid能为空!"),
+        [Required(ErrorMessage = "Guid不能为空!"),
          MaxLength(30, ErrorMessage = "Guid能为空不能超过30个字符")]
         public string FeatureGuid { get; set; } = string.Empty;
 

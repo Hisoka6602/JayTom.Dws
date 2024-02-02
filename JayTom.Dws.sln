@@ -163,11 +163,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ApiTest", "ApiTest\ApiTest.
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Test-Plc", "Test-Plc", "{A79EE624-3D44-480E-BA3B-285032D07979}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleApp6", "ConsoleApp6\ConsoleApp6.csproj", "{9510B038-0056-4568-82C2-FB119F99BFCA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConsoleApp6", "ConsoleApp6\ConsoleApp6.csproj", "{9510B038-0056-4568-82C2-FB119F99BFCA}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Test-GenerateMachineCode", "Test-GenerateMachineCode", "{C5637145-49DC-44E2-BCDD-6F8EA7563AC5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GenerateMachineCode", "GenerateMachineCode\GenerateMachineCode.csproj", "{262D6224-774B-4237-BB88-96CC44EB61D6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GenerateMachineCode", "GenerateMachineCode\GenerateMachineCode.csproj", "{262D6224-774B-4237-BB88-96CC44EB61D6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

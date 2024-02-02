@@ -66,15 +66,15 @@
 </style>
 
 @code {
-    private List<LinkData> links = new List<LinkData>();
+    private List<LinkData> links = new();
     protected override void OnInitialized() {
         base.OnInitialized();
 
         links = new List<LinkData>() {
-            new LinkData() { Title = "图表主页", Icon ="iconfont icon-icons_statistics", Href = "/data-charthome"},
-            new LinkData() { Title = "详细数据", Icon = "iconfont icon-shujubiao1",Href = "/data-detail"},
-            new LinkData() { Title = "数据分析", Icon = "iconfont icon-tubiao1" },
-            new LinkData() { Title = "扫码设备", Icon = "iconfont icon-saoma" }
+            new() { Title = "图表主页", Icon ="iconfont icon-icons_statistics", Href = "/data-charthome"},
+            new() { Title = "详细数据", Icon = "iconfont icon-shujubiao1",Href = "/data-detail"},
+            new() { Title = "数据分析", Icon = "iconfont icon-tubiao1" },
+            new() { Title = "扫码设备", Icon = "iconfont icon-saoma" }
         };
 
     }
@@ -123,12 +123,7 @@
 
     private async Task HandleClick(LinkData clickedLink) {
         foreach (var link in links) {
-            if (link == clickedLink) {
-                link.IsSelected = true;
-            }
-            else {
-                link.IsSelected = false;
-            }
+            link.IsSelected = link == clickedLink;
         }
 
         var serializeObject = JsonConvert.SerializeObject(clickedLink);
@@ -144,6 +139,6 @@
         public bool IsSelected { get; set; }
         public string Title { get; set; } = string.Empty;
         public string Icon { get; set; } = string.Empty;
-        public string Href { get; set; }
+        public string Href { get; set; } = string.Empty;
     }
 }

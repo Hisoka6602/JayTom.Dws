@@ -157,8 +157,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     }
                 }
                 else {
-                    var info = _packageInfos.OrderBy(o => o.CreateTime).LastOrDefault(f => f.BarCodeInfo == null && DateTime.Now.Subtract(f.CreateTime).TotalMicroseconds > 100);
-                    //var info = _packageInfos.OrderBy(o => o.CreateTime).FirstOrDefault(f => f.BarCodeInfo == null);
+                    //var info = _packageInfos.OrderBy(o => o.CreateTime).LastOrDefault(f => f.BarCodeInfo == null && DateTime.Now.Subtract(f.CreateTime).TotalMicroseconds > 100);
+                    var info = _packageInfos.OrderBy(o => o.CreateTime).FirstOrDefault(f => f.BarCodeInfo == null);
                     if (info != null) {
                         info.BarCodeInfo = new BarCodeInfoModel() {
                             Barcode = args.Barcode,

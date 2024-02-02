@@ -6,5 +6,7 @@
         public string Description { get; set; } = "Description";
 
         public string ButtonText { get; set; } = "ButtonText";
+
+        public List<FeatureItemModel> FeatureItems { get; set; } = new();
     }
 }

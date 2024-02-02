@@ -1,29 +1,12 @@
 ﻿<MudNavMenu Rounded="true" Margin="Margin.Dense" Color="Color.Inherit" Style=" color:white;background-color:transparent">
-    <MudNavLink Href="/application-management" Class="MudNavLink-active" Match="NavLinkMatch.Prefix">
-        <div style="display:flex; align-items:center;">
-            <span class="iconfont icon-app" style="font-size: 20px; margin-bottom:5px; margin-right:10px;"></span>
-            <span>应用管理</span>
-        </div>
-    </MudNavLink>
-    <MudNavLink Href="/tenant-management" Class="MudNavLink-active" Match="NavLinkMatch.Prefix">
-        <div style="display:flex; align-items:center;">
-            <span class="iconfont icon-yonghu" style="font-size: 20px; margin-bottom:5px; margin-right:10px;"></span>
-            <span>租户管理</span>
-        </div>
-    </MudNavLink>
-    <MudNavLink Href="/authorization-management" Class="MudNavLink-active" Match="NavLinkMatch.Prefix">
-        <div style="display:flex; align-items:center;">
-            <span class="iconfont icon-lingpaiguanli" style="font-size: 20px; margin-bottom:5px; margin-right:10px;"></span>
-            <span>授权管理</span>
-        </div>
-    </MudNavLink>
-    <MudNavLink Href="/systemSettings-management" Class="MudNavLink-active" Match="NavLinkMatch.Prefix">
-        <div style="display:flex; align-items:center;">
-            <span class="iconfont icon-shezhi" style="font-size: 20px; margin-bottom:5px; margin-right:10px;"></span>
-            <span>系统设置</span>
-        </div>
-    </MudNavLink>
-
+    @foreach (var item in links) {
+        <MudNavLink Href="@item.Href" Class="MudNavLink-active" Match="NavLinkMatch.Prefix">
+            <div style="display: flex;align-items: center;color: white">
+                <span class="@item.Icon" style="font-size: 20px; margin-bottom:5px; margin-right:10px;"></span>
+                <span>@item.Title</span>
+            </div>
+        </MudNavLink>
+    }
 </MudNavMenu>
 <style>
     .MudNavLink-active.mud-nav-link.active:not(.mud-nav-link-disabled) {
@@ -31,3 +14,26 @@
         font-size: 15px;
     }
 </style>
+
+@code
+{
+    private List<LinkData> links = new();
+    protected override void OnInitialized() {
+        base.OnInitialized();
+
+        links = new List<LinkData>() {
+            new() { Title = "应用管理", Icon ="iconfont icon-app", Href = "/application-management"},
+            new() { Title = "租户管理", Icon = "iconfont icon-yonghu",Href = "/tenant-management"},
+            new() { Title = "授权管理", Icon = "iconfont icon-lingpaiguanli",Href = "/authorization-management" },
+            new() { Title = "系统设置", Icon = "iconfont icon-shezhi" ,Href = "/systemSettings-management"}
+        };
+
+    }
+
+    private class LinkData {
+        public bool IsFocused { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public string Icon { get; set; } = string.Empty;
+        public string Href { get; set; } = string.Empty;
+    }
+}

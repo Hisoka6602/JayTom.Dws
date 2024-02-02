@@ -91,7 +91,7 @@ namespace JayTom.Dws.Data.Package {
         /// <summary>
         /// 异常分拣类型
         /// </summary>
-        [Column("AbnormalSortingType")]
+        [Column("AbnormalSortingType"), NotMapped]
         public AbnormalSortingType AbnormalSortingType { get; set; } = AbnormalSortingType.None;
     }
 

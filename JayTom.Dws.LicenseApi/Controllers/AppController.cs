@@ -64,7 +64,6 @@ namespace JayTom.Dws.LicenseApi.Controllers {
             var code = HttpContext.Response.HttpContext.User.Identity?.Name;
             var (key, value) = await _licenseApplicationAppService.CreateApplicationTemplate(param.LicenseApplicationInfoId,
                 param.TemplateName, code ?? string.Empty, cancellationToken);
-
             return key ? JsonResultVo.Success(value.ToString() ?? string.Empty) : JsonResultVo.Fail(value.ToString() ?? string.Empty);
         }
 
