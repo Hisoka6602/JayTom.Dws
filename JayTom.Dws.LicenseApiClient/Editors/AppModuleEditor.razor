@@ -1,7 +1,7 @@
 ﻿@using JayTom.Dws.LicenseApiClient.Data.Models
 <div>
 
-    <MudCard Style="width:600px;height:600px; border-radius:20px;">
+    <MudCard Style="width:600px;height:730px; border-radius:20px;">
         <MudCardContent Class="center">
 
             <div style="width:260px; margin:auto; width:100%;">
@@ -11,7 +11,8 @@
                                    Accept=".png, .jpg"
                                    OnFilesChanged="OnInputFileChanged"
                                    Hidden="@false"
-                                   InputStyle="opacity:0">
+                                   InputStyle="opacity:0"
+                                   @ref="_mudFileUpload">
                         <ButtonTemplate>
                             <MudButton HtmlTag="label"
                                        Variant="Variant.Text"
@@ -23,15 +24,18 @@
                     </MudFileUpload>
                 </div>
 
-                <MudTextField FullWidth="true" @bind-Value="ApplicationName" Label="应用程序名称" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
+                <MudTextField FullWidth="true" @bind-Value="CurrentApplicationInfo.Title" Label="应用程序名称" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
+
 
             </div>
 
         </MudCardContent>
+        <MudTextField Lines="3" FullWidth="true" Style="margin-left:20px; margin-right:20px; height:80px" @bind-Value="CurrentApplicationInfo.Description" Label="程序描述" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
         @*列表*@
         <div>
-            <MudTable Style="width:600px;min-height:360px" Items="@ApplicationInfo.FeatureItems"
+            <MudTable @ref="_table" Height="360px" Breakpoint="Breakpoint.Sm" FixedHeader="true" Style="width:600px;min-height:360px;max-height:360px;" Items="@CurrentApplicationInfo.FeatureItems"
                       Dense="false" Hover="true" CanCancelEdit="true"
+                      SelectOnRowClick="true"
                       RowEditPreview="BackupItem" RowEditCancel="ResetItemToOriginalValues"
                       IsEditRowSwitchingBlocked="true"
                       ApplyButtonPosition="@applyButtonPosition"
@@ -50,8 +54,11 @@
                         <MudTd DataLabel="说明">@context.Description</MudTd>
                     </RowTemplate>
                     <RowEditingTemplate>
-                        <MudTd DataLabel="模块名称">
-                            <MudTextField @bind-Value="@context.FeatureName" Required />
+                        <MudTd DataLabel="序号">
+                            <MudTextField @bind-Value="@context.Num" Required ReadOnly="true" />
+                     </MudTd>
+                     <MudTd DataLabel="模块名称">
+                         <MudTextField @bind-Value="@context.FeatureName" Required />
                      </MudTd>
                      <MudTd DataLabel="模块Guid">
                          <MudTextField @bind-Value="@context.FeatureGuid" Required />
@@ -62,14 +69,18 @@
                  </RowEditingTemplate>
              </MudTable>
          </div>
+
          <MudCardActions Class="card-actions-right">
-             <MudButton Variant="Variant.Filled" Color="Color.Primary">Hide Overlay</MudButton>
+             <MudButton Style="margin-right:10px" Variant="Variant.Filled" OnClick="AddItem" Color="Color.Primary">添加模块</MudButton>
+             <MudButton Style="margin-right:10px" Variant="Variant.Filled" OnClick="Confirm" Color="Color.Primary">确认保存</MudButton>
+             <MudButton Variant="Variant.Filled" OnClick="Cancel" Color="Color.Error">取消</MudButton>
          </MudCardActions>
      </MudCard>
 
  </div>
  <style>
      .card-actions-right {
+         margin-right: 10px;
          display: flex;
          justify-content: flex-end;
          align-items: flex-end;
@@ -83,30 +94,54 @@
  </style>
  @code {
 
+
+
     [Parameter]
-    public string ApplicationName { get; set; } = string.Empty;
+    public ApplicationItemInfoModel? ApplicationInfo { get; set; }
     [Parameter]
+    public EventCallback<ApplicationItemInfoModel> OnConfirm { get; set; }
+
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
     public string ImagePath { get; set; } = string.Empty;
-
-    [Parameter]
-    public ApplicationItemInfoModel ApplicationInfo { get; set; } = new() {
-            FeatureItems = new List<FeatureItemModel>()
-                                                                    {
-            new FeatureItemModel()
-            {
-                Num = 1,
-                FeatureGuid = Guid.NewGuid().ToString(),
-                Description = "这是说明",
-                FeatureName = "功能1"
-            }
-        }
-        };
-
+    public ApplicationItemInfoModel CurrentApplicationInfo { get; set; } = new();
+    private MudTable<FeatureItemModel>? _table;
+    private MudFileUpload<IBrowserFile>? _mudFileUpload;
     public FeatureItemModel? FeatureInfoBeforeEdit;
     private TableApplyButtonPosition applyButtonPosition = TableApplyButtonPosition.End;
     private TableEditButtonPosition editButtonPosition = TableEditButtonPosition.End;
     private TableEditTrigger editTrigger = TableEditTrigger.RowClick;
     private readonly List<string> _fileNames = new();
+    protected override async Task OnInitializedAsync() {
+        await base.OnInitializedAsync();
+        CurrentApplicationInfo.FeatureItems.Clear();
+        if (ApplicationInfo is not null) {
+            CurrentApplicationInfo = new ApplicationItemInfoModel() {
+                    Id = ApplicationInfo.Id,
+                    Title = ApplicationInfo.Title,
+                    Description = ApplicationInfo.Description,
+                    FeatureItems = ApplicationInfo.FeatureItems?.Select((s, i) => new FeatureItemModel {
+                        Description = s.Description,
+                        FeatureGuid = s.FeatureGuid,
+                        FeatureName = s.FeatureName,
+                        IsActive = s.IsActive,
+                        Num = i + 1
+                    })?.ToList() ?? new List<FeatureItemModel>()
+                };
+            if (ApplicationInfo.Image is not null) {
+
+                using var memoryStream = new MemoryStream();
+                await ApplicationInfo.Image.CopyToAsync(memoryStream);
+
+                var base64String = Convert.ToBase64String(memoryStream.ToArray());
+
+                ImagePath = $"data:image/jpg;base64,{base64String}";
+            }
+
+        }
+
+    }
+
     // 异步方法处理文件改变事件
     private async Task OnInputFileChanged(InputFileChangeEventArgs e) {
         var file = e.File;
@@ -139,5 +174,37 @@
         ((Element)element).Molar = elementBeforeEdit.Molar;
         ((Element)element).Position = elementBeforeEdit.Position;
         AddEditionEvent($"RowEditCancel event: Editing of Element {((Element)element).Name} canceled");*/
+    }
+
+    private void AddItem() {
+
+        var featureItemModel = new FeatureItemModel() {
+                Num = CurrentApplicationInfo.FeatureItems.Count + 1
+            };
+        CurrentApplicationInfo.FeatureItems.Add(featureItemModel);
+    }
+
+    private async void Confirm() {
+        ApplicationInfo = new ApplicationItemInfoModel() {
+                Id = CurrentApplicationInfo.Id,
+                Title = CurrentApplicationInfo.Title,
+                Description = CurrentApplicationInfo.Description,
+                FeatureItems = CurrentApplicationInfo.FeatureItems?.Select((s, i) => new FeatureItemModel {
+                    Description = s.Description,
+                    FeatureGuid = s.FeatureGuid,
+                    FeatureName = s.FeatureName,
+                    IsActive = s.IsActive,
+                    Num = i + 1
+                })?.ToList() ?? new List<FeatureItemModel>()
+            };
+        var openReadStream = _mudFileUpload?.Files?.OpenReadStream();
+        if (openReadStream is not null) {
+            ApplicationInfo.Image = openReadStream;
+        }
+        await OnConfirm.InvokeAsync(ApplicationInfo);
+    }
+
+    public async void Cancel() {
+        await OnCancel.InvokeAsync(null);
     }
 }

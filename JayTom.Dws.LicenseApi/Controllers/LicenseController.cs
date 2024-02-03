@@ -21,6 +21,12 @@ namespace JayTom.Dws.LicenseApi.Controllers {
             _licenseCodeAppService = licenseCodeAppService;
         }
 
+        /// <summary>
+        /// 创建授权码
+        /// </summary>
+        /// <param name="param"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         [Produces("application/json")]
         [HttpPost("CreateLicenseCode"),
          UserStatus(Status = UserStatus.Active),
@@ -35,6 +41,11 @@ namespace JayTom.Dws.LicenseApi.Controllers {
             return key ? JsonResultVo.Success("创建成功", data: value) : JsonResultVo.Fail(value.ToString() ?? string.Empty);
         }
 
+        /// <summary>
+        /// 授权码数据列表
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         [Produces("application/json")]
         [HttpGet("LicenseCodeData"),
          UserStatus(Status = UserStatus.Active),
@@ -47,6 +58,12 @@ namespace JayTom.Dws.LicenseApi.Controllers {
             return key ? JsonResultVo.Success("查询成功", value) : JsonResultVo.Fail(value.ToString() ?? string.Empty);
         }
 
+        /// <summary>
+        /// 延期授权码
+        /// </summary>
+        /// <param name="param"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         [Produces("application/json")]
         [HttpPost("ExtendLicenseCodeValidity"),
          UserStatus(Status = UserStatus.Active),
@@ -61,6 +78,12 @@ namespace JayTom.Dws.LicenseApi.Controllers {
             return key ? JsonResultVo.Success(value.ToString() ?? string.Empty) : JsonResultVo.Fail(value.ToString() ?? string.Empty);
         }
 
+        /// <summary>
+        /// 冻结授权码
+        /// </summary>
+        /// <param name="param"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         [Produces("application/json")]
         [HttpPost("FreezeLicenseCode"),
          UserStatus(Status = UserStatus.Active),

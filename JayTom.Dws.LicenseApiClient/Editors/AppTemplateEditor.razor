@@ -1,11 +1,187 @@
-﻿<div>
+﻿@using JayTom.Dws.LicenseApiClient.Data.Models
+<div>
 
-    <MudCard Style="width:400px;height:600px; position: relative;">
-        <MudCardContent />
-    </MudCard>
+    <MudCard Style="width:600px;height:620px; border-radius:20px;">
+        <MudCardContent Class="center">
 
-</div>
+            <div style="width:260px; margin:auto; width:100%;">
+                @*图标*@
+                <div class="center">
+                    <MudImage Style="width: 70px; height: 70px;" Src="@ImagePath" Elevation="2" Class="rounded-lg"></MudImage>
+                </div>
+                <MudSelect Style="margin-top:10px;margin-bottom:10px;" ReadOnly="@_isEdit" SelectedValuesChanged="models => { ApplicationInfoSelectedValuesChanged( models.FirstOrDefault());}" ToStringFunc="@ConvertApplicationInfo" Margin="Margin.Dense" T="ApplicationItemInfoModel" Label="应用程序" Variant="Variant.Outlined">
+                    @foreach (var info in ApplicationInfoItems) {
+                        <MudSelectItem Value="@info" />
+                    }
 
-@code {
+                </MudSelect>
+                <MudTextField FullWidth="true" @bind-Value="CurrentAppTemplateInfo.Title" Label="模板名称" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
+            </div>
 
-}
+        </MudCardContent>
+        @*列表*@
+        <div>
+            <MudTable Height="360px" Breakpoint="Breakpoint.Sm" FixedHeader="true" Style="width:600px;min-height:360px;max-height:360px;" Items="@CurrentAppTemplateInfo.FeatureItems"
+                      Dense="false" Hover="true" CanCancelEdit="true"
+                      SelectOnRowClick="true"
+                      RowEditPreview="BackupItem" RowEditCancel="ResetItemToOriginalValues"
+                      IsEditRowSwitchingBlocked="true">
+                <HeaderContent>
+                    <MudTh>序号</MudTh>
+                    <MudTh>模块名称</MudTh>
+                    <MudTh>是否激活</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="序号">@context.Num</MudTd>
+                        <MudTd DataLabel="模块名称">@context.FeatureName</MudTd>
+                        <MudTd DataLabel="是否激活">
+                            <MudSwitch @bind-Value="@context.IsActive" Color="Color.Primary" Size="Size.Small" />
+                        </MudTd>
+                    </RowTemplate>
+
+                </MudTable>
+            </div>
+
+            <MudCardActions Class="card-actions-right">
+                <MudButton Style="margin-right:10px" Variant="Variant.Filled" OnClick="Confirm" Color="Color.Primary">确认保存</MudButton>
+                <MudButton Variant="Variant.Filled" OnClick="Cancel" Color="Color.Error">取消</MudButton>
+            </MudCardActions>
+        </MudCard>
+
+    </div>
+    <style>
+        .card-actions-right {
+            margin-right: 10px;
+            display: flex;
+            justify-content: flex-end;
+            align-items: flex-end;
+        @*height: 95%; width: 99%;*@
+        }
+
+        .center {
+            margin: auto;
+            width: 50%;
+        }
+    </style>
+    @code {
+
+
+    [Parameter]
+    public List<ApplicationItemInfoModel> ApplicationInfoItems { get; set; } = new();
+    [Parameter]
+    public AppTemplateItemInfoModel? AppTemplateInfo { get; set; }
+    [Parameter]
+    public EventCallback<AppTemplateItemInfoModel> OnConfirm { get; set; }
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+    public string ImagePath { get; set; } = string.Empty;
+    public AppTemplateItemInfoModel CurrentAppTemplateInfo { get; set; } = new();
+
+    private readonly List<string> _fileNames = new();
+    private bool _isEdit = false;
+    protected override async Task OnInitializedAsync() {
+        await base.OnInitializedAsync();
+        CurrentAppTemplateInfo.FeatureItems.Clear();
+        if (AppTemplateInfo is not null) {
+            CurrentAppTemplateInfo = new AppTemplateItemInfoModel() {
+                    Id = AppTemplateInfo.Id,
+                    LicenseApplicationInfoId = AppTemplateInfo.LicenseApplicationInfoId,
+                    TemplateName = AppTemplateInfo.TemplateName,
+                    Title = AppTemplateInfo.Title,
+                    Description = AppTemplateInfo.Description,
+                    FeatureItems = AppTemplateInfo.FeatureItems?.Select((s, i) => new FeatureItemModel {
+                        Description = s.Description,
+                        FeatureGuid = s.FeatureGuid,
+                        FeatureName = s.FeatureName,
+                        IsActive = s.IsActive,
+                        Num = i + 1
+                    })?.ToList() ?? new List<FeatureItemModel>()
+                };
+            if (AppTemplateInfo.Image is not null) {
+
+                using var memoryStream = new MemoryStream();
+                await AppTemplateInfo.Image.CopyToAsync(memoryStream);
+
+                var base64String = Convert.ToBase64String(memoryStream.ToArray());
+
+                ImagePath = $"data:image/jpg;base64,{base64String}";
+            }
+            _isEdit = true;
+        }
+
+    }
+
+    // 异步方法处理文件改变事件
+    private async Task OnInputFileChanged(InputFileChangeEventArgs e) {
+        var file = e.File;
+        if (file != null) {
+            using var stream = file.OpenReadStream();
+            using var memoryStream = new MemoryStream();
+            await stream.CopyToAsync(memoryStream);
+
+            var base64String = Convert.ToBase64String(memoryStream.ToArray());
+
+            ImagePath = $"data:image/{file.ContentType};base64,{base64String}";
+            StateHasChanged();
+        }
+    }
+    private void BackupItem(object element) {
+        Console.WriteLine(element);
+        /*FeatureInfoBeforeEdit = new() {
+
+            Sign = ((Element)element).Sign,
+            Name = ((Element)element).Name,
+            Molar = ((Element)element).Molar,
+            Position = ((Element)element).Position
+        };
+        AddEditionEvent($"RowEditPreview event: made a backup of Element {((Element)element).Name}");*/
+    }
+    private void ResetItemToOriginalValues(object element) {
+        Console.WriteLine(element);
+        /*((Element)element).Sign = elementBeforeEdit.Sign;
+        ((Element)element).Name = elementBeforeEdit.Name;
+        ((Element)element).Molar = elementBeforeEdit.Molar;
+        ((Element)element).Position = elementBeforeEdit.Position;
+        AddEditionEvent($"RowEditCancel event: Editing of Element {((Element)element).Name} canceled");*/
+    }
+
+
+    private async void Confirm() {
+        AppTemplateInfo = new AppTemplateItemInfoModel() {
+                Id = CurrentAppTemplateInfo.Id,
+                Title = CurrentAppTemplateInfo.Title,
+                Description = CurrentAppTemplateInfo.Description,
+                FeatureItems = CurrentAppTemplateInfo.FeatureItems?.Select((s, i) => new FeatureItemModel {
+                    Description = s.Description,
+                    FeatureGuid = s.FeatureGuid,
+                    FeatureName = s.FeatureName,
+                    IsActive = s.IsActive,
+                    Num = i + 1
+                })?.ToList() ?? new List<FeatureItemModel>()
+            };
+        await OnConfirm.InvokeAsync(AppTemplateInfo);
+    }
+
+    public async void Cancel() {
+        await OnCancel.InvokeAsync(null);
+    }
+
+
+    public string ConvertApplicationInfo(ApplicationItemInfoModel? info) {
+        return info is not null ? info.Title : string.Empty;
+    }
+
+    public void ApplicationInfoSelectedValuesChanged(ApplicationItemInfoModel info) {
+        CurrentAppTemplateInfo.FeatureItems.Clear();
+        CurrentAppTemplateInfo.FeatureItems = info.FeatureItems.Select(s => new FeatureItemModel() {
+                Description = s.Description,
+                FeatureGuid = s.FeatureGuid,
+                FeatureName = s.FeatureName,
+                IsActive = s.IsActive,
+                Num = s.Num
+            })?.ToList() ?? new List<FeatureItemModel>();
+    }
+
+
+
+ }
