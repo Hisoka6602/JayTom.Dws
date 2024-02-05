@@ -22,9 +22,14 @@
         <MudDrawer Open="true" Elevation="2" Style="background-color:#594AE2;color:transparent;">
             <MudDrawerHeader>
                 <div style="display:flex; align-items:center;">
-                    <MudAvatar>
-                        <MudImage Src="images/defaultImage.jpg"></MudImage>
-                    </MudAvatar>
+
+                    <button onclick="@GoToUserInfo">
+                        <MudAvatar>
+                            <MudImage Src="images/defaultImage.jpg">
+                            </MudImage>
+                        </MudAvatar>
+                    </button>
+
                     <MudText Style="font-weight:bold; margin-left:8px; color:white" Typo="Typo.h6">Hisoka</MudText>
                     <span class="iconfont icon-vips" style="color:gold; font-size: 20px; margin-bottom:5px; margin-left:5px;"></span>
                 </div>
@@ -48,4 +53,10 @@
 
 </MudLayout>
 
+@code
+{
+    public void GoToUserInfo() {
+        Navigation.NavigateTo("/userInfo");
+    }
+}
 

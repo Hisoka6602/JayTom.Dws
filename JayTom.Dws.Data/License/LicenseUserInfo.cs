@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
 using JayTom.Dws.Data.Attributes;
+using System.Text.Json.Serialization;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -38,7 +39,7 @@ namespace JayTom.Dws.Data.License {
         /// <summary>
         /// 密码
         /// </summary>
-        [Required, Column("PassWord"), InsertOrUpdata]
+        [Required, Column("PassWord"), InsertOrUpdata, JsonIgnore]
         public string PassWord { get; set; } = string.Empty;
 
         /// <summary>
