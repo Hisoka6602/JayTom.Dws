@@ -1,44 +1,64 @@
 ﻿@page "/authorization-management"
 @using JayTom.Dws.LicenseApiClient.Data.Models
+@using JayTom.Dws.LicenseApiClient.Editors
+<MudPaper Elevation="0" Style="height:95.7vh">
+    <MudOverlay Visible="AuthCodeEditorIsVisible" DarkBackground="true" Absolute="true">
 
-<PageTitleTemplate Title="授权管理" Description="授权管理" IconClass="iconfont icon-lingpaiguanli"></PageTitleTemplate>
-<MudDataGrid Elevation="1" Class="custom-datagrid" Filterable="false" SortMode="@SortMode.None" Groupable="false" Items="@_items">
-    <Columns>
-        <PropertyColumn Property="x => x.Num" Title="" />
-        <PropertyColumn Property="x => x.LicenseCode" Title="授权码" />
-        <PropertyColumn Property="x => x.MaxClientCount" Title="客户端上限数量" />
-        <PropertyColumn Property="x => x.ActivatedClientCount" Title="已激活数量" />
-        <PropertyColumn Property="x => x.ExpirationDate" Title="到期时间" />
-        <TemplateColumn Title="是否可用">
-            <CellTemplate>
-                <MudStack Row Style="text-align:center">
-                     <MudCheckBox Checked="context.Item.IsAvailable" Disabled="true" />
+        <AuthCodeEditor OnConfirm="HandleConfirm" OnCancel="() => { AuthCodeEditorIsVisible = false; }" />
 
-                 </MudStack>
-             </CellTemplate>
-         </TemplateColumn>
-         <TemplateColumn>
-             <CellTemplate>
-                 <MudStack Row Style="text-align:center">
-                     <MudButton Style="border-radius: 15px;" Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Tertiary">详细信息</MudButton>
-                     <MudButton Style="border-radius: 15px;" Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Success">续期</MudButton>
-                     <MudButton Style="border-radius: 15px;" Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Primary">冻结授权码</MudButton>
-                     <MudButton Style="border-radius: 15px;" Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Dark">生成授权文件</MudButton>
-                 </MudStack>
-             </CellTemplate>
-         </TemplateColumn>
-     </Columns>
-     <PagerContent>
-         <MudStack Row Justify="Justify.Center" Style="text-align:center">
-             <div style="flex-grow: 2; flex-basis: 0; text-align: right;">
-                 <MudFab Icon="@Icons.Material.Filled.Add" Color="Color.Primary" />
-             </div>
-             <div style="flex-grow: 1; text-align: right;">
-                 <MudDataGridPager Style="border-top: none" T="LicenseCodeItemInfoModel" DisableRowsPerPage="true" />
-             </div>
-         </MudStack>
-     </PagerContent>
- </MudDataGrid>
+    </MudOverlay>
+    <MudOverlay Visible="LicenseRenewalEditorIsVisible" DarkBackground="true" Absolute="true">
+
+        <LicenseRenewalEditor OnConfirm="HandleLicenseRenewalConfirm" OnCancel="() => { LicenseRenewalEditorIsVisible = false; }" />
+
+    </MudOverlay>
+    <MudOverlay Visible="MachineCodeEditorsIsVisible" DarkBackground="true" Absolute="true">
+
+        <MachineCodeEditors LicenseCodeItemInfo="@SelectInfoModel" OnConfirm="() => { MachineCodeEditorsIsVisible = false; }" />
+
+    </MudOverlay>
+
+    <PageTitleTemplate Title="授权管理" Description="授权管理" IconClass="iconfont icon-lingpaiguanli"></PageTitleTemplate>
+    <MudDataGrid Elevation="1" Class="custom-datagrid" Filterable="false" SortMode="@SortMode.None" Groupable="false" Items="@_items">
+        <Columns>
+            <PropertyColumn Property="x => x.Num" Title="" />
+            <PropertyColumn Property="x => x.LicenseCode" Title="授权码" />
+            <PropertyColumn Property="x => x.MaxClientCount" Title="客户端上限数量" />
+            <PropertyColumn Property="x => x.ActivatedClientCount" Title="已激活数量" />
+            <PropertyColumn Property="x => x.ExpirationDate" Title="到期时间" />
+            <PropertyColumn Property="x => x.ClientName" Title="客户" />
+            <TemplateColumn Title="是否可用">
+                <CellTemplate>
+                    <MudStack Row Style="text-align:center">
+                         <MudCheckBox Checked="context.Item.IsAvailable" Disabled="true" />
+
+                     </MudStack>
+                 </CellTemplate>
+             </TemplateColumn>
+             <TemplateColumn>
+                 <CellTemplate>
+                     <MudStack Row Style="text-align:center">
+                         <MudButton Style="border-radius: 15px;" Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Tertiary" OnClick="() => {SelectInfoModel= context.Item;  MachineCodeEditorsIsVisible = true; }">详细信息</MudButton>
+                         <MudButton Style="border-radius: 15px;" Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Success" OnClick="() => { LicenseRenewalEditorIsVisible = true; }">续期</MudButton>
+                         <MudButton Style="border-radius: 15px;" Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Primary">冻结授权码</MudButton>
+                         <MudButton Style="border-radius: 15px;" Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Dark">生成授权文件</MudButton>
+                     </MudStack>
+                 </CellTemplate>
+             </TemplateColumn>
+         </Columns>
+         <PagerContent>
+             <MudStack Row Justify="Justify.Center" Style="text-align:center">
+                 <div style="flex-grow: 2; flex-basis: 0; text-align: right;">
+                     <MudFab OnClick="@(e => { AuthCodeEditorIsVisible = true;})" Icon="@Icons.Material.Filled.Add" Color="Color.Primary" />
+                 </div>
+                 <div style="flex-grow: 1; text-align: right;">
+                     <MudDataGridPager Style="border-top: none" T="LicenseCodeItemInfoModel" DisableRowsPerPage="true" />
+                 </div>
+             </MudStack>
+         </PagerContent>
+     </MudDataGrid>
+ </MudPaper>
+
  <style>
      .custom-datagrid .mud-table-row {
          height: 10px;
@@ -46,9 +66,14 @@
 
  </style>
  @code {
+    public bool AuthCodeEditorIsVisible { get; set; }
+    public bool LicenseRenewalEditorIsVisible { get; set; }
+    public bool MachineCodeEditorsIsVisible { get; set; }
     private List<LicenseCodeItemInfoModel> _items = new() {
 
     };
+
+    public LicenseCodeItemInfoModel SelectInfoModel { get; set; } = new();
     protected override void OnInitialized() {
         base.OnInitialized();
         const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -80,5 +105,14 @@
             _ => "未知"
         };
     }
-
+    private void HandleConfirm(AuthCodeInfoModel info) {
+        AuthCodeEditorIsVisible = false;
+        //提交到Api
+        //AuthCodeInfoModel
+    }
+    private void HandleLicenseRenewalConfirm(int days) {
+        LicenseRenewalEditorIsVisible = false;
+        //提交到Api
+        //AuthCodeInfoModel
+    }
 }

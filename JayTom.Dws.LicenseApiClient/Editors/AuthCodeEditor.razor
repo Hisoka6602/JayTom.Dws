@@ -1,0 +1,58 @@
+﻿@using JayTom.Dws.LicenseApiClient.Data.Models
+
+<div>
+    <MudCard Style="width:300px;height:330px; border-radius:20px;">
+        <MudCardContent Class="center">
+            @*客户端上限数量*@
+            <div style="display: flex;margin-top:10px;display: flex; align-items: center;">
+                <span style="font-weight:bold; margin-left:8px; color:#A9A9A9; font-size: 13px;">客户端上限数量:</span>
+                <MudNumericField Style="margin-left:10px; margin-bottom:30px;width:140px" @bind-Value="AuthCodeInfo.MaxClientCount" Variant="Variant.Text" Min="1" Max="100" />
+            </div>
+
+            @*到期时间*@
+            <div style="display: flex;margin-top:10px;display: flex; align-items: center;">
+                <span style="font-weight:bold; margin-left:8px; color:#A9A9A9; font-size: 13px;">到期时间:</span>
+                <DateTimeEditors @bind-DateTime="AuthCodeInfo.ExpirationDate"></DateTimeEditors>
+            </div>
+
+            @*客户*@
+            <div style="display: flex;margin-top:10px;display: flex; align-items: center;">
+                <span style="font-weight:bold; margin-left:8px; color:#A9A9A9; font-size: 13px;">客户:</span>
+                <MudTextField Style="margin-left:10px;margin-bottom:30px;width:180px" @bind-Value="AuthCodeInfo.ClientName" Variant="Variant.Text"></MudTextField>
+            </div>
+        </MudCardContent>
+        <MudCardActions Class="card-actions-right">
+            <MudButton Style="margin-right:10px" Variant="Variant.Filled" OnClick="Confirm" Color="Color.Primary">添加</MudButton>
+            <MudButton Variant="Variant.Filled" OnClick="Cancel" Color="Color.Error">取消</MudButton>
+        </MudCardActions>
+
+        @*添加、取消按钮*@
+    </MudCard>
+
+</div>
+<style>
+    .card-actions-right {
+        margin-right: 10px;
+        display: flex;
+        justify-content: flex-end;
+        align-items: flex-end;
+    @*height: 95%; width: 99%;*@
+    }
+</style>
+@code {
+
+    public AuthCodeInfoModel AuthCodeInfo { get; set; } = new();
+    [Parameter]
+    public EventCallback<AuthCodeInfoModel> OnConfirm { get; set; }
+
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+    private async void Confirm() {
+
+        await OnConfirm.InvokeAsync(AuthCodeInfo);
+    }
+
+    public async void Cancel() {
+        await OnCancel.InvokeAsync(null);
+    }
+}

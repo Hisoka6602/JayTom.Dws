@@ -112,6 +112,11 @@ namespace JayTom.Dws.LicenseApi.Controllers {
             return key ? JsonResultVo.Success(value.ToString() ?? string.Empty) : JsonResultVo.Fail(value.ToString() ?? string.Empty);
         }
 
+        /// <summary>
+        /// 下载授权文件
+        /// </summary>
+        /// <param name="param"></param>
+        /// <returns></returns>
         [HttpPost("DownloadLicenseFile")]
         public async Task<IActionResult> DownloadLicenseFile([FromBody] DownloadLicenseFileDo param) {
             //下载授权文件/如果没激活则需要激活(绑定)

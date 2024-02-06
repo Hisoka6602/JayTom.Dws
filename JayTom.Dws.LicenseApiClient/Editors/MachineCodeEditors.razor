@@ -1,0 +1,55 @@
+﻿@using JayTom.Dws.LicenseApiClient.Data.Models
+
+<MudCard Style="width:600px;height:730px; border-radius:20px;">
+    <MudCardContent Class="center">
+
+        <div style="display: flex;margin-top:10px;margin-bottom:20px;display: flex; align-items: center;">
+            <span style="font-weight:bold; margin-left:8px; color:#A9A9A9; font-size: 16px;">应用模板:</span>
+            <span style="font-weight:bold; margin-left:8px; color:#A9A9A9; font-size: 16px;">@LicenseCodeItemInfo.TemplateName</span>
+        </div>
+        <div style="display: flex;margin-top:10px;margin-bottom:20px;display: flex; align-items: center;">
+            <span style="font-weight:bold; margin-left:8px; color:#A9A9A9; font-size: 16px;">授权码:</span>
+            <span style="font-weight:bold; margin-left:8px; color:#A9A9A9; font-size: 16px;">@LicenseCodeItemInfo.LicenseCode</span>
+        </div>
+        @*列表*@
+        <div>
+            <MudTable Height="540px" Breakpoint="Breakpoint.Sm" FixedHeader="true" Style="width:570px;min-height:360px;max-height:540px;" Items="@LicenseCodeItemInfo.MachineCodeItem"
+                      Dense="false" Hover="true" CanCancelEdit="true">
+                <HeaderContent>
+                    <MudTh>机器码</MudTh>
+                    <MudTh>首次激活时间</MudTh>
+                    <MudTh>最后效验时间</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="机器码">@context.MachineCode</MudTd>
+                        <MudTd DataLabel="首次激活时间">@context.FirstActivatedDate</MudTd>
+                        <MudTd DataLabel="最后效验时间">@context.LastVerifiedDate</MudTd>
+                    </RowTemplate>
+                </MudTable>
+            </div>
+
+        </MudCardContent>
+        <MudCardActions Class="card-actions-right">
+            <MudButton Style="margin-right:10px" Variant="Variant.Filled" OnClick="Confirm" Color="Color.Primary">确定</MudButton>
+        </MudCardActions>
+    </MudCard>
+    <style>
+        .card-actions-right {
+            margin-right: 10px;
+            display: flex;
+            justify-content: flex-end;
+            align-items: flex-end;
+        @*height: 95%; width: 99%;*@
+        }
+    </style>
+    @code {
+
+    [Parameter]
+    public LicenseCodeItemInfoModel LicenseCodeItemInfo { get; set; } = new();
+    [Parameter]
+    public EventCallback<AuthCodeInfoModel> OnConfirm { get; set; }
+    private async void Confirm() {
+
+        await OnConfirm.InvokeAsync();
+    }
+}

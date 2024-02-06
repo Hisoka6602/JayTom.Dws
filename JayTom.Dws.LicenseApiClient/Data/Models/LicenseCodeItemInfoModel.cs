@@ -3,6 +3,11 @@
     public class LicenseCodeItemInfoModel : BaseItemInfoModel {
 
         /// <summary>
+        /// 模板名称
+        /// </summary>
+        public string TemplateName { get; set; } = string.Empty;
+
+        /// <summary>
         /// 授权码
         /// </summary>
         public string LicenseCode { get; set; } = string.Empty;
