@@ -40,6 +40,11 @@ namespace JayTom.Dws.LicenseApi.Dto {
         public string? UserIcon { get; set; }
 
         /// <summary>
+        /// 注册时间
+        /// </summary>
+        public DateTime RegisterTime { get; set; }
+
+        /// <summary>
         /// 详细信息
         /// </summary>
         public LicenseUserDetailsInfo? UserDetailsInfo { get; set; }

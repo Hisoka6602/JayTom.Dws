@@ -10,12 +10,12 @@
 @inject NotificationService NotificationService
 <MudPaper Elevation="0" Style="height:95.2vh">
     @*应用程序编辑器*@
-    <MudOverlay Visible="AppModuleEditorIsVisible" DarkBackground="true" Absolute="true">
+    <MudOverlay Visible="AppModuleEditorIsVisible" DarkBackground="true">
 
         <AppModuleEditor ApplicationInfo="@ApplicationItemInfo" OnCancel="() => { AppModuleEditorIsVisible = false; ApplicationItemInfo=null; }" OnConfirm="HandleConfirm" />
 
     </MudOverlay>
-    <MudOverlay Visible="AppTemplateEditorIsVisible" DarkBackground="true" Absolute="true">
+    <MudOverlay Visible="AppTemplateEditorIsVisible" DarkBackground="true">
 
         <AppTemplateEditor ApplicationInfoItems="@ApplicationItems" AppTemplateInfo="@AppTemplateItemInfo" OnCancel="() => { AppTemplateEditorIsVisible = false; AppTemplateItemInfo=null; }" OnConfirm="HandleTemplateConfirm" />
 

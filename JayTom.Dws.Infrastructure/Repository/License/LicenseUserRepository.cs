@@ -3,6 +3,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using JayTom.Dws.Data.License;
+using System.Linq.Expressions;
 using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
@@ -28,6 +29,24 @@ namespace JayTom.Dws.Infrastructure.Repository.License {
                     .Include(b => b.UserDetailsInfo)
                     .FirstOrDefaultAsync(cancellationToken: token);
                 return new KeyValuePair<bool, object>(true, licenseUserInfo);
+            }
+            catch (Exception e) {
+                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
+                return new KeyValuePair<bool, object>(false, "查询失败");
+            }
+        }
+
+        public new async Task<KeyValuePair<bool, object>> SelectOrderByDescending<TOrder>(Expression<Func<LicenseUserInfo, bool>> where, Expression<Func<LicenseUserInfo, TOrder>> order, CancellationToken token) {
+            try {
+                //联表
+                await using var concardContext = _contextFactory.CreateDbContext();
+                var dbSet = concardContext?.Set<LicenseUserInfo>();
+                if (dbSet is null) return new KeyValuePair<bool, object>(false, "查询失败");
+                dbSet.AsNoTracking();
+                var licenseUserInfos = await dbSet.Where(where)
+                    .Include(b => b.UserDetailsInfo)
+                    .ToListAsync(cancellationToken: token);
+                return new KeyValuePair<bool, object>(true, licenseUserInfos);
             }
             catch (Exception e) {
                 NLog.LogManager.GetCurrentClassLogger().Error($"{e}");

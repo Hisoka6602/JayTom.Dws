@@ -1,5 +1,11 @@
 ﻿@page "/tenant-management"
 @using JayTom.Dws.LicenseApiClient.Data.Models
+@using JayTom.Dws.LicenseApiClient.Notification
+@using JayTom.Dws.LicenseApiClient.Api
+@inject ILicenseApiRequest LicenseApiRequest
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+@inject NotificationService NotificationService
 <PageTitleTemplate Title="租户管理" Description="租户管理" IconClass="iconfont icon-yonghu"></PageTitleTemplate>
 <MudDataGrid Elevation="1" Class="custom-datagrid" Filterable="false" SortMode="@SortMode.None" Groupable="false" Items="@_elements">
     <Columns>
@@ -27,29 +33,29 @@
             <CellTemplate>
                 <MudStack Row Style="text-align:center">
                      @*<MudButton Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Primary">取消授权</MudButton>*@
-                     <MudButton Style="border-radius: 15px;" Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Error">冻结租户</MudButton>
-                 </MudStack>
-             </CellTemplate>
-         </TemplateColumn>
-     </Columns>
-     <PagerContent>
-         <MudDataGridPager T="TenantItemInfoModel" DisableRowsPerPage="true" />
-     </PagerContent>
- </MudDataGrid>
- <style>
-     .custom-datagrid .mud-table-row {
-         height: 10px;
-     }
+                     <MudButton OnClick="()=>{FreezeUser(context.Item);}" Style="border-radius: 15px;" Size="@Size.Small" Variant="@Variant.Filled" Color="@ConvertStatusButtonColor(context.Item.Status)">@ConvertStatusButtonText(context.Item.Status)</MudButton>
+                    </MudStack>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent>
+            <MudDataGridPager T="TenantItemInfoModel" DisableRowsPerPage="true" />
+        </PagerContent>
+    </MudDataGrid>
+    <style>
+        .custom-datagrid .mud-table-row {
+            height: 10px;
+        }
 
- </style>
+    </style>
 
- @code {
+    @code {
     private List<TenantItemInfoModel> _elements = new() {
 
     };
     protected override void OnInitialized() {
         base.OnInitialized();
-        var tenantItemInfoModels = Enumerable.Range(0, 20).Select(s => new TenantItemInfoModel {
+        /*var tenantItemInfoModels = Enumerable.Range(0, 20).Select(s => new TenantItemInfoModel {
                 Num = s + 1,
                 UserCode = $"用户代码{s}",
                 UserName = $"测试用户名{s + 1}",
@@ -59,9 +65,26 @@
                 Status = (UserStatus)new Random().Next(2),
                 UserIcon = "https://ts1.cn.mm.bing.net/th/id/R-C.d3b5ea640ea75bd349f945dc679bbafa?rik=GUiZLEviHRjyeQ&riu=http%3a%2f%2fqimg.hxnews.com%2f2019%2f0614%2f1560501688985.jpg&ehk=Dxo5WvpKJ%2fZiJd5jLhzByDw%2fVD1VTHOlhU9YYQ%2fZp3I%3d&risl=&pid=ImgRaw&r=0"
             }).ToList();
-        _elements.AddRange(tenantItemInfoModels);
+        _elements.AddRange(tenantItemInfoModels);*/
     }
 
+    protected override async Task OnAfterRenderAsync(bool firstRender) {
+
+
+        await base.OnAfterRenderAsync(firstRender);
+
+
+        if (!await LicenseApiRequest.IsLoggedIn()) {
+            Navigation.NavigateTo("/login");
+        }
+        if (firstRender) {
+
+            await base.OnAfterRenderAsync(firstRender);
+            await GetTenantInfos();
+            StateHasChanged();
+        }
+
+    }
     private string GetUserStatusChipStyle(UserStatus status) {
         return status switch {
             UserStatus.Active => "background-color: rgba(0, 255, 0, 0.2)",
@@ -80,5 +103,74 @@
         };
     }
 
+    private async Task GetTenantInfos() {
+        var (key, value) = await LicenseApiRequest.TenantInfos();
+
+        if (key && value is List<JayTom.Dws.LicenseApiClient.Data.Models.UserInfo> items) {
+            _elements.Clear();
+            _elements = items.Select((s, i) => new TenantItemInfoModel {
+                    LicenseCodeCount = s.LicenseCodeInfos?.Count ?? 0,
+                    UserCode = s.UserCode,
+                    UserIcon = s.UserIcon,
+                    UserName = s.UserName,
+                    Phone = s.Phone,
+                    Status = s.Status,
+                    RegisterTime = s.RegisterTime,
+                    Num = i + 1
+                })?.ToList() ?? new List<TenantItemInfoModel>();
+        }
+        else if (value is ApiResult result) {
+
+            Snackbar.Clear();
+            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+            Snackbar.Add(result.Msg, result.Result ? Severity.Success : Severity.Error);
+        }
+        else {
+            Snackbar.Clear();
+            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+            Snackbar.Add(value.ToString(), Severity.Error);
+        }
+    }
+
+    private string ConvertStatusButtonText(UserStatus status) {
+        if (status == UserStatus.Active) {
+
+            return "冻结租户";
+        }
+        else {
+            return "解冻租户";
+        }
+    }
+
+    private Color ConvertStatusButtonColor(UserStatus status) {
+        if (status == UserStatus.Active) {
+
+            return Color.Error;
+        }
+        else {
+            return Color.Primary;
+        }
+    }
+
+    public async void FreezeUser(TenantItemInfoModel info) {
+
+
+        var (key, value) = await LicenseApiRequest.FreezeUser(info.UserCode, info.Status == UserStatus.Active);
+        if (value is ApiResult result) {
+
+            Snackbar.Clear();
+            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+            Snackbar.Add(result.Msg, result.Result ? Severity.Success : Severity.Error);
+            if (key) {
+
+                Navigation.NavigateTo("/tenant-management", true);
+            }
+        }
+        else {
+            Snackbar.Clear();
+            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+            Snackbar.Add(value.ToString(), Severity.Error);
+        }
+    }
 }
 

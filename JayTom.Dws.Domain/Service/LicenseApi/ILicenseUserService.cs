@@ -106,5 +106,12 @@ namespace JayTom.Dws.Domain.Service.LicenseApi {
             string userCode,
             string iconUrlPath,
             CancellationToken token);
+
+        /// <summary>
+        /// 获取所有租户信息
+        /// </summary>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        public Task<KeyValuePair<bool, object>> TenantInfos(CancellationToken token);
     }
 }

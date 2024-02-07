@@ -131,5 +131,9 @@ namespace JayTom.Dws.Domain.Service.LicenseApi {
             }
             return new KeyValuePair<bool, object>(false, "账号不存在!");
         }
+
+        public Task<KeyValuePair<bool, object>> TenantInfos(CancellationToken token) {
+            return _licenseUserRepository.SelectOrderByDescending(s => s.Role == UserRole.Tenant, o => o.Id, token);
+        }
     }
 }

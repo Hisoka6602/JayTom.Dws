@@ -56,7 +56,7 @@ namespace JayTom.Dws.Application.Service.LicenseApi {
         public async Task<KeyValuePair<bool, object>> FreezeUser(string userCode, bool isFreeze, CancellationToken token) {
             var (key, value) = await _licenseUserService.Info(userCode, token);
             if (key && value is LicenseUserInfo info) {
-                if (info.Status == UserStatus.Active == isFreeze) {
+                if (info.Status == UserStatus.Active != isFreeze) {
                     return new KeyValuePair<bool, object>(false, $"用户当前已经是:{(isFreeze ? "激活" : "冻结")}状态,无需重复操作");
                 }
                 return await _licenseUserService.FreezeUser(userCode, isFreeze, token);
@@ -66,6 +66,10 @@ namespace JayTom.Dws.Application.Service.LicenseApi {
 
         public Task<KeyValuePair<bool, object>> SetUserIcon(string userCode, string iconUrlPath, CancellationToken token) {
             return _licenseUserService.SetUserIcon(userCode, iconUrlPath, token);
+        }
+
+        public Task<KeyValuePair<bool, object>> TenantInfos(CancellationToken token) {
+            return _licenseUserService.TenantInfos(token);
         }
     }
 }

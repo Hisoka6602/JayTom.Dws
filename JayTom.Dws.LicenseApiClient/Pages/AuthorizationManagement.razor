@@ -2,17 +2,17 @@
 @using JayTom.Dws.LicenseApiClient.Data.Models
 @using JayTom.Dws.LicenseApiClient.Editors
 <MudPaper Elevation="0" Style="height:95.2vh">
-    <MudOverlay Visible="AuthCodeEditorIsVisible" DarkBackground="true" Absolute="true">
+    <MudOverlay Visible="AuthCodeEditorIsVisible" DarkBackground="true">
 
         <AuthCodeEditor OnConfirm="HandleConfirm" OnCancel="() => { AuthCodeEditorIsVisible = false; }" />
 
     </MudOverlay>
-    <MudOverlay Visible="LicenseRenewalEditorIsVisible" DarkBackground="true" Absolute="true">
+    <MudOverlay Visible="LicenseRenewalEditorIsVisible" DarkBackground="true">
 
         <LicenseRenewalEditor OnConfirm="HandleLicenseRenewalConfirm" OnCancel="() => { LicenseRenewalEditorIsVisible = false; }" />
 
     </MudOverlay>
-    <MudOverlay Visible="MachineCodeEditorsIsVisible" DarkBackground="true" Absolute="true">
+    <MudOverlay Visible="MachineCodeEditorsIsVisible" DarkBackground="true">
 
         <MachineCodeEditors LicenseCodeItemInfo="@SelectInfoModel" OnConfirm="() => { MachineCodeEditorsIsVisible = false; }" />
 

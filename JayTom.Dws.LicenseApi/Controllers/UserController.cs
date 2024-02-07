@@ -119,6 +119,7 @@ namespace JayTom.Dws.LicenseApi.Controllers {
                     Role = info.Role,
                     Status = info.Status,
                     UserIcon = info.UserIcon,
+                    RegisterTime = info.CreateTime,
                     LicenseCodeInfos = info.LicenseCodeInfos?.Select(s => new LicenseCodeInfo {
                         LicenseCode = s.LicenseCode,
                         MaxClientCount = s.MaxClientCount,
@@ -187,6 +188,48 @@ namespace JayTom.Dws.LicenseApi.Controllers {
                 _logger.LogError($"图片上传异常:{e}");
             }
             return JsonResultVo.Fail("图片上传失败!");
+        }
+
+        /// <summary>
+        /// 租户信息
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        [Produces("application/json")]
+        [HttpGet("TenantInfos"), Authorize, UserRole(Role = (int)UserRole.SuperAdmin), UserStatus(Status = UserStatus.Active)]
+        public async Task<JsonResult> TenantInfos(CancellationToken cancellationToken) {
+            var (key, value) = await _licenseUserAppService.TenantInfos(cancellationToken);
+            if (key && value is List<LicenseUserInfo> infos) {
+                var userInfoDtos = infos?.Select(info => new UserInfoDto() {
+                    Pid = info.Pid,
+                    UserName = info.UserName,
+                    UserCode = info.UserCode,
+                    Phone = DataUtils.MaskPhoneNumber(info.Phone),
+                    Role = info.Role,
+                    Status = info.Status,
+                    UserIcon = info.UserIcon,
+                    RegisterTime = info.CreateTime,
+                    LicenseCodeInfos = info.LicenseCodeInfos?.Select(s => new LicenseCodeInfo {
+                        LicenseCode = s.LicenseCode,
+                        MaxClientCount = s.MaxClientCount,
+                        ActivatedClientCount = s.ActivatedClientCount,
+                        ExpirationDate = s.ExpirationDate,
+                        ClientName = s.ClientName,
+                        IsAvailable = s.IsAvailable
+                    })?.ToList(),
+                    UserDetailsInfo = new LicenseUserDetailsInfo() {
+                        CompanyAddress = info.UserDetailsInfo?.CompanyAddress ?? string.Empty,
+                        CompanyName = info.UserDetailsInfo?.CompanyName ?? string.Empty,
+                        ContactEmail = info.UserDetailsInfo?.ContactEmail ?? string.Empty,
+                        Description = info.UserDetailsInfo?.Description ?? string.Empty,
+                        ContractFilePath = info.UserDetailsInfo?.ContractFilePath ?? string.Empty,
+                        BusinessLicenseFilePath = info.UserDetailsInfo?.BusinessLicenseFilePath ?? string.Empty,
+                    }
+                })?.ToList() ?? new List<UserInfoDto>();
+                return JsonResultVo.Success("查询成功", data: userInfoDtos);
+            }
+
+            return key ? JsonResultVo.Success("查询成功", data: value) : JsonResultVo.Fail(value.ToString() ?? string.Empty);
         }
     }
 }

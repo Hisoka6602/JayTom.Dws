@@ -85,7 +85,7 @@ namespace JayTom.Dws.LicenseApiClient.Api {
         /// <returns></returns>
         Task<KeyValuePair<bool, object>> FreezeUser(string userCode,
             bool isFreeze,
-            CancellationToken token);
+            CancellationToken token = default);
 
         /// <summary>
         /// 修改用户头像
@@ -94,6 +94,13 @@ namespace JayTom.Dws.LicenseApiClient.Api {
         /// <param name="token"></param>
         /// <returns></returns>
         Task<KeyValuePair<bool, object>> ChangeUserIcon(System.Drawing.Image iconImage, CancellationToken token);
+
+        /// <summary>
+        /// 租户信息
+        /// </summary>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        Task<KeyValuePair<bool, object>> TenantInfos(CancellationToken token = default);
 
         //---------------------------------
         /// <summary>

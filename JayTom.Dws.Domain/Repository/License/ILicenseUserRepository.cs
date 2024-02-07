@@ -3,7 +3,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using JayTom.Dws.Data.License;
+using System.Linq.Expressions;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace JayTom.Dws.Domain.Repository.License {
 
@@ -16,5 +18,14 @@ namespace JayTom.Dws.Domain.Repository.License {
         /// <param name="token"></param>
         /// <returns></returns>
         Task<KeyValuePair<bool, object>> DetailsInfo(string userCode, CancellationToken token);
+
+        /// <summary>
+        /// 查询列表
+        /// </summary>
+        /// <param name="order"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        new Task<KeyValuePair<bool, object>> SelectOrderByDescending<TOrder>([NotNull] Expression<Func<LicenseUserInfo, bool>> @where,
+            [NotNull] Expression<Func<LicenseUserInfo, TOrder>> order, CancellationToken token);
     }
 }
