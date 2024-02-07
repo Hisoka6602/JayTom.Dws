@@ -25,7 +25,7 @@ namespace JayTom.Dws.LicenseApiClient.Api {
         /// <param name="userName"></param>
         /// <param name="passWord"></param>
         /// <returns></returns>
-        Task<KeyValuePair<bool, object>> Register(string userCode, string userName, string passWord, string phone, CancellationToken token);
+        Task<KeyValuePair<bool, object>> Register(string userCode, string userName, string passWord, string phone, CancellationToken token = default);
 
         /// <summary>
         /// 登录
@@ -178,14 +178,14 @@ namespace JayTom.Dws.LicenseApiClient.Api {
             int maxClientCount,
             DateTime expirationDate,
             string clientName,
-            CancellationToken token);
+            CancellationToken token = default);
 
         /// <summary>
         /// 授权码数据列表
         /// </summary>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<KeyValuePair<bool, object>> LicenseCodeData(CancellationToken token);
+        Task<KeyValuePair<bool, object>> LicenseCodeData(CancellationToken token = default);
 
         /// <summary>
         /// 延期授权码
@@ -196,7 +196,7 @@ namespace JayTom.Dws.LicenseApiClient.Api {
         /// <returns></returns>
         Task<KeyValuePair<bool, object>> ExtendLicenseCodeValidity(string licenseCode,
             DateTime expirationDate,
-            CancellationToken token);
+            CancellationToken token = default);
 
         /// <summary>
         /// 冻结授权码
@@ -207,7 +207,7 @@ namespace JayTom.Dws.LicenseApiClient.Api {
         /// <returns></returns>
         Task<KeyValuePair<bool, object>> FreezeLicenseCode(string licenseCode,
             bool isFreeze,
-            CancellationToken token);
+            CancellationToken token = default);
 
         /// <summary>
         /// 下载授权文件
@@ -218,7 +218,7 @@ namespace JayTom.Dws.LicenseApiClient.Api {
         /// <returns></returns>
         Task<KeyValuePair<bool, object>> DownloadLicenseFile(string licenseCode,
             string machineCode,
-            CancellationToken token);
+            CancellationToken token = default);
     }
 
     public class ApiResult {

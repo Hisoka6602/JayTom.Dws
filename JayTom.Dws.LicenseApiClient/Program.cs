@@ -31,6 +31,8 @@ internal class Program {
         builder.Services.AddScoped<ILicenseApiRequest, LicenseApiRequest>();
         //¶©ÔÄÊÂ¼þ
         builder.Services.AddScoped<NotificationService>();
+        builder.Services.AddOptions();
+        builder.Services.AddAuthorizationCore();
         var app = builder.Build();
 
         // Configure the HTTP request pipeline.

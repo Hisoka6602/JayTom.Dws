@@ -53,20 +53,6 @@
     private List<TenantItemInfoModel> _elements = new() {
 
     };
-    protected override void OnInitialized() {
-        base.OnInitialized();
-        /*var tenantItemInfoModels = Enumerable.Range(0, 20).Select(s => new TenantItemInfoModel {
-                Num = s + 1,
-                UserCode = $"用户代码{s}",
-                UserName = $"测试用户名{s + 1}",
-                Phone = "1" + new string(Enumerable.Range(0, 10).Select(_ => new Random().Next(10).ToString()[0]).ToArray()),
-                LicenseCodeCount = new Random().Next(100),
-                RegisterTime = DateTime.Now,
-                Status = (UserStatus)new Random().Next(2),
-                UserIcon = "https://ts1.cn.mm.bing.net/th/id/R-C.d3b5ea640ea75bd349f945dc679bbafa?rik=GUiZLEviHRjyeQ&riu=http%3a%2f%2fqimg.hxnews.com%2f2019%2f0614%2f1560501688985.jpg&ehk=Dxo5WvpKJ%2fZiJd5jLhzByDw%2fVD1VTHOlhU9YYQ%2fZp3I%3d&risl=&pid=ImgRaw&r=0"
-            }).ToList();
-        _elements.AddRange(tenantItemInfoModels);*/
-    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender) {
 
@@ -76,6 +62,7 @@
 
         if (!await LicenseApiRequest.IsLoggedIn()) {
             Navigation.NavigateTo("/login");
+            return;
         }
         if (firstRender) {
 
@@ -108,7 +95,7 @@
 
         if (key && value is List<JayTom.Dws.LicenseApiClient.Data.Models.UserInfo> items) {
             _elements.Clear();
-            _elements = items.Select((s, i) => new TenantItemInfoModel {
+            _elements.AddRange(items.Select((s, i) => new TenantItemInfoModel {
                     LicenseCodeCount = s.LicenseCodeInfos?.Count ?? 0,
                     UserCode = s.UserCode,
                     UserIcon = s.UserIcon,
@@ -117,7 +104,7 @@
                     Status = s.Status,
                     RegisterTime = s.RegisterTime,
                     Num = i + 1
-                })?.ToList() ?? new List<TenantItemInfoModel>();
+                })?.ToList() ?? new List<TenantItemInfoModel>());
         }
         else if (value is ApiResult result) {
 
@@ -163,7 +150,8 @@
             Snackbar.Add(result.Msg, result.Result ? Severity.Success : Severity.Error);
             if (key) {
 
-                Navigation.NavigateTo("/tenant-management", true);
+                await GetTenantInfos();
+                StateHasChanged();
             }
         }
         else {

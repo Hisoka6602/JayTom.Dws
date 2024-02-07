@@ -3,6 +3,7 @@ using JayTom.Dws.LicenseApi.Do;
 using Microsoft.AspNetCore.Mvc;
 using JayTom.Dws.LicenseApi.Vo;
 using Microsoft.AspNetCore.Http;
+using JayTom.Dws.LicenseApi.Dto;
 using JayTom.Dws.LicenseApi.Filter;
 using Microsoft.AspNetCore.Authorization;
 using JayTom.Dws.Application.Service.LicenseApi;
@@ -54,7 +55,26 @@ namespace JayTom.Dws.LicenseApi.Controllers {
         public async Task<JsonResult> LicenseCodeData(CancellationToken cancellationToken) {
             var code = HttpContext.Response.HttpContext.User.Identity?.Name;
             var (key, value) = await _licenseCodeAppService.LicenseCodeData(code ?? string.Empty, cancellationToken);
-
+            if (key && value is List<LicenseCodeInfo> infos) {
+                var licenseInfoDtos = infos.Select(s => new LicenseInfoDto {
+                    Id = s.Id,
+                    TemplateName = s.LicensePermissionTemplateInfo?.TemplateName ?? string.Empty,
+                    LicenseCode = s.LicenseCode,
+                    MaxClientCount = s.MaxClientCount,
+                    ActivatedClientCount = s.ActivatedClientCount,
+                    ExpirationDate = s.ExpirationDate,
+                    ClientName = s.ClientName,
+                    IsAvailable = s.IsAvailable,
+                    UserName = s.UserInfo?.UserName ?? string.Empty,
+                    UserCode = s.UserInfo?.UserCode ?? string.Empty,
+                    MachineCodeItem = s.LicenseClientBindingInfo?.Select(s1 => new LicenseClientBindingDto {
+                        FirstActivatedDate = s1.FirstActivatedDate,
+                        LastVerifiedDate = s1.LastVerifiedDate,
+                        MachineCode = s1.MachineCode
+                    })?.ToList() ?? new List<LicenseClientBindingDto>(),
+                })?.ToList() ?? new List<LicenseInfoDto>();
+                return JsonResultVo.Success("查询成功", data: licenseInfoDtos);
+            }
             return key ? JsonResultVo.Success("查询成功", value) : JsonResultVo.Fail(value.ToString() ?? string.Empty);
         }
 
@@ -116,12 +136,20 @@ namespace JayTom.Dws.LicenseApi.Controllers {
         /// 下载授权文件
         /// </summary>
         /// <param name="param"></param>
+        /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        [HttpPost("DownloadLicenseFile")]
-        public async Task<IActionResult> DownloadLicenseFile([FromBody] DownloadLicenseFileDo param) {
+        [HttpPost("DownloadLicenseFile"), UserStatus(Status = UserStatus.Active),
+         UserRole(Role = (int)(UserRole.SuperAdmin | UserRole.Tenant)),
+         Authorize]
+        public async Task<IActionResult> DownloadLicenseFile([FromBody] DownloadLicenseFileDo param, CancellationToken cancellationToken) {
             //下载授权文件/如果没激活则需要激活(绑定)
 
-            return JsonResultVo.Fail("未实现该方法");
+            var code = HttpContext.Response.HttpContext.User.Identity?.Name;
+            var (key, value) = await _licenseCodeAppService.GetLicenseFileUrl(code, param.LicenseCode, param.MachineCode, cancellationToken);
+            if (!key) return JsonResultVo.Fail(value.ToString() ?? string.Empty);
+            var filePath = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}/Scr/LicenseFile/{value.ToString()}";
+
+            return JsonResultVo.Success("生成成功", filePath);
         }
     }
 }

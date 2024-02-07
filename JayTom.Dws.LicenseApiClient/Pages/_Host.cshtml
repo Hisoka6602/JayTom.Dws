@@ -17,6 +17,21 @@
     <link rel="icon" type="image/png" href="favicon.png" />
     <component type="typeof(HeadOutlet)" render-mode="ServerPrerendered" />
 </head>
+<script>
+    window.downloadFileFromUrl = function (fileUrl) {
+        fetch(fileUrl)
+            .then(response => response.blob())
+            .then(blob => {
+                const url = URL.createObjectURL(blob);
+                window.open(url);
+            })
+            .catch(error => {
+                console.error('Error downloading file: ', error);
+            });
+    };
+</script>
+
+
 <body>
     <component type="typeof(App)" render-mode="ServerPrerendered" />
 

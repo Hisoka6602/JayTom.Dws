@@ -1,6 +1,7 @@
-﻿namespace JayTom.Dws.LicenseApiClient.Data.Models {
+﻿namespace JayTom.Dws.LicenseApi.Dto {
 
-    public class LicenseCodeItemInfoModel : BaseItemInfoModel {
+    public class LicenseInfoDto {
+        public long Id { get; set; }
 
         /// <summary>
         /// 模板名称
@@ -28,7 +29,7 @@
         public DateTime ExpirationDate { get; set; }
 
         /// <summary>
-        /// 客户名称/客户信息
+        /// 客户
         /// </summary>
         public string ClientName { get; set; } = string.Empty;
 
@@ -47,9 +48,25 @@
         /// </summary>
         public string UserName { get; set; } = string.Empty;
 
+        public List<LicenseClientBindingDto> MachineCodeItem { get; set; } = new();
+    }
+
+    public class LicenseClientBindingDto {
+
         /// <summary>
         /// 机器码
         /// </summary>
-        public List<MachineCodeItemInfoModel> MachineCodeItem { get; set; } = new();
+        public string MachineCode { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 首次激活时间
+        /// </summary>
+        public DateTime FirstActivatedDate { get; set; }
+
+        /// <summary>
+        /// 最后效验时间
+        /// </summary>
+
+        public DateTime LastVerifiedDate { get; set; }
     }
 }

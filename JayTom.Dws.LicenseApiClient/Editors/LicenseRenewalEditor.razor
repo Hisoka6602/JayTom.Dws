@@ -1,4 +1,6 @@
-﻿<div>
+﻿@using JayTom.Dws.LicenseApiClient.Data.Models
+@using System.Reflection.Metadata
+<div>
     <MudCard Style="width:300px;height:200px; border-radius:20px;">
         <MudCardContent Class="center">
             @*客户端上限数量*@
@@ -28,14 +30,22 @@
 </style>
 @code {
     public int RenewalDays { get; set; }
+
     [Parameter]
-    public EventCallback<int> OnConfirm { get; set; }
+    public LicenseCodeItemInfoModel Info { get; set; } = new();
+    [Parameter]
+    public EventCallback<RenewalLicenseCodeInfo> OnConfirm { get; set; }
 
     [Parameter]
     public EventCallback OnCancel { get; set; }
+
+
     private async void Confirm() {
 
-        await OnConfirm.InvokeAsync(RenewalDays);
+        await OnConfirm.InvokeAsync(new RenewalLicenseCodeInfo {
+                Days = RenewalDays,
+                Info = Info
+            });
     }
 
     public async void Cancel() {

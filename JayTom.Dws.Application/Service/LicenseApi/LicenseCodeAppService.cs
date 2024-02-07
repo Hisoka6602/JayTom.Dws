@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Linq;
 using System.Text;
+using JayTom.Dws.License;
 using System.Threading.Tasks;
+using JayTom.Dws.Data.License;
 using System.Collections.Generic;
 using JayTom.Dws.Domain.Service.LicenseApi;
 
@@ -40,6 +42,47 @@ namespace JayTom.Dws.Application.Service.LicenseApi {
         public Task<KeyValuePair<bool, object>> BulkExtendLicenseCodeValidity(string userCode, List<string> licenseCodes, DateTime expirationDate,
             CancellationToken token) {
             return _licenseCodeService.BulkExtendLicenseCodeValidity(userCode, licenseCodes, expirationDate, token);
+        }
+
+        public async Task<KeyValuePair<bool, object>> GetLicenseFileUrl(string userCode, string licenseCode, string machineCode, CancellationToken token) {
+            var (key, value) = await _licenseCodeService.LicenseCodeData(userCode, token);
+            if (key && value is List<LicenseCodeInfo> infos) {
+                var licenseCodeInfo = infos?.FirstOrDefault(f => f.LicenseCode.Equals(licenseCode));
+                if (licenseCodeInfo != null) {
+                    if (!licenseCodeInfo.IsAvailable) {
+                        return new KeyValuePair<bool, object>(false, "授权码不可用");
+                    }
+
+                    if (licenseCodeInfo.MaxClientCount <= licenseCodeInfo.ActivatedClientCount) {
+                        return new KeyValuePair<bool, object>(false, "无可激活数量");
+                    }
+
+                    if (DateTime.Now.CompareTo(licenseCodeInfo.ExpirationDate) >= 0) {
+                        return new KeyValuePair<bool, object>(false, "授权码已到期");
+                    }
+                    var path = $"{Path.Combine(Directory.GetCurrentDirectory(), "wwwroot")}\\LicenseFile";
+                    if (!Directory.Exists(path)) {
+                        Directory.CreateDirectory(path);
+                    }
+
+                    var unixTimeMilliseconds = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+                    JayTom.Dws.License.LicenseManager.GenerateKeyPair(out var publicKeyXml, out var privateKeyXml);
+                    LicenseManager.GenerateAuthorizationFile(new LicenseData() {
+                        ExpirationDate = licenseCodeInfo.ExpirationDate,
+                        MachineCode = machineCode,
+                        Signature = licenseCode,
+                        UserName = userCode
+                    }, publicKeyXml, $"{path}\\{unixTimeMilliseconds}.key");
+                    return new KeyValuePair<bool, object>(true, $"{unixTimeMilliseconds}.key");
+                }
+                else {
+                    return new KeyValuePair<bool, object>(false, "未获取到授权码");
+                }
+            }
+            else {
+                return new KeyValuePair<bool, object>(false, "未获取到授权码");
+            }
+            //
         }
     }
 }

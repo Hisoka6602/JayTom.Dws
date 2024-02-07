@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\JayTom.Dws.Domain\JayTom.Dws.Domain.csproj" />
+    <ProjectReference Include="..\JayTom.Dws.License\JayTom.Dws.License.csproj" />
   </ItemGroup>
 
   <ItemGroup>

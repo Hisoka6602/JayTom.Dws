@@ -1,11 +1,19 @@
-﻿<MudNavMenu Rounded="true" Margin="Margin.Dense" Color="Color.Inherit" Style=" color:white;background-color:transparent">
+﻿@using JayTom.Dws.LicenseApiClient.Data.Models
+@using JayTom.Dws.LicenseApiClient.Notification
+@using Newtonsoft.Json
+@inject NotificationService NotificationService
+<MudNavMenu Rounded="true" Margin="Margin.Dense" Color="Color.Inherit" Style=" color:white;background-color:transparent">
     @foreach (var item in links) {
-        <MudNavLink Href="@item.Href" Class="MudNavLink-active" Match="NavLinkMatch.Prefix">
-            <div style="display: flex;align-items: center;color: white">
-                <span class="@item.Icon" style="font-size: 20px; margin-bottom:5px; margin-right:10px;"></span>
-                <span>@item.Title</span>
-            </div>
-        </MudNavLink>
+        if (!item.Title.Equals("租户管理") || Info is { Role: 1 }) {
+            <MudNavLink Href="@item.Href" Class="MudNavLink-active" Match="NavLinkMatch.Prefix">
+                <div style="display: flex;align-items: center;color: white">
+                    <span class="@item.Icon" style="font-size: 20px; margin-bottom:5px; margin-right:10px;"></span>
+                    <span>@item.Title</span>
+                </div>
+            </MudNavLink>
+        }
+
+
     }
 </MudNavMenu>
 <style>
@@ -19,6 +27,7 @@
 {
     private List<LinkData> links = new();
     protected override void OnInitialized() {
+        NotificationService.Subscribe<UserInfo>(HandleUserInfoNotification);
         base.OnInitialized();
 
         links = new List<LinkData>() {
@@ -35,5 +44,39 @@
         public string Title { get; set; } = string.Empty;
         public string Icon { get; set; } = string.Empty;
         public string Href { get; set; } = string.Empty;
+    }
+
+    [Inject]
+    private IJSRuntime JSRuntime { get; set; }
+    public UserInfo Info = new();
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender) {
+        if (firstRender) {
+            var invokeAsync = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "info");
+            if (!string.IsNullOrEmpty(invokeAsync)) {
+                try {
+                    Info = JsonConvert.DeserializeObject<UserInfo>(invokeAsync) ?? new UserInfo();
+                }
+                catch (Exception e) {
+                    Info = new UserInfo();
+
+                }
+
+
+            }
+            StateHasChanged();
+        }
+
+
+    }
+
+    private async void HandleUserInfoNotification(UserInfo obj) {
+        Info = obj;
+        await JSRuntime.InvokeVoidAsync("sessionStorage.setItem", "info", JsonConvert.SerializeObject(Info));
+        StateHasChanged();
+    }
+    public void Dispose() {
+        NotificationService.Unsubscribe<UserInfo>(HandleUserInfoNotification);
     }
 }

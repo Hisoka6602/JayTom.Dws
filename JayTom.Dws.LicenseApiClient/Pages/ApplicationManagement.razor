@@ -60,7 +60,8 @@
 </MudPaper>
 
 @code {
-
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthenticationState { get; set; }
     public List<ApplicationItemInfoModel> ApplicationItems { get; set; } = new();
 
     public List<AppTemplateItemInfoModel> AppTemplateItemItems = new();
@@ -161,7 +162,9 @@
             Snackbar.Add(result.Msg, result.Result ? Severity.Success : Severity.Error);
             if (key) {
 
-                Navigation.NavigateTo("/application-management", true);
+                await GetApplicationData();
+                await GetApplicationTemplate();
+                StateHasChanged();
             }
         }
         else {
@@ -195,20 +198,22 @@
             Snackbar.Add(value.ToString(), Severity.Error);
         }
     }
-    protected override async Task OnAfterRenderAsync(bool firstRender) {
 
-        await base.OnAfterRenderAsync(firstRender);
+    protected override async Task OnAfterRenderAsync(bool firstRender) {
 
 
         if (!await LicenseApiRequest.IsLoggedIn()) {
             Navigation.NavigateTo("/login");
+            return;
         }
+
         if (firstRender) {
 
-            await base.OnAfterRenderAsync(firstRender);
+
             await GetApplicationData();
             await GetApplicationTemplate();
             StateHasChanged();
+            await base.OnAfterRenderAsync(firstRender);
         }
 
 

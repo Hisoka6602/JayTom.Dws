@@ -1,15 +1,23 @@
 ﻿@page "/authorization-management"
 @using JayTom.Dws.LicenseApiClient.Data.Models
 @using JayTom.Dws.LicenseApiClient.Editors
+@using JayTom.Dws.LicenseApiClient.Notification
+@using JayTom.Dws.LicenseApiClient.Api
+@using Newtonsoft.Json
+@inject ILicenseApiRequest LicenseApiRequest
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+@inject NotificationService NotificationService
+@inject IJSRuntime JSRuntime
 <MudPaper Elevation="0" Style="height:95.2vh">
     <MudOverlay Visible="AuthCodeEditorIsVisible" DarkBackground="true">
 
-        <AuthCodeEditor OnConfirm="HandleConfirm" OnCancel="() => { AuthCodeEditorIsVisible = false; }" />
+        <AuthCodeEditor AppTemplateItemItems="AppTemplateItemItems" OnConfirm="HandleConfirm" OnCancel="() => { AuthCodeEditorIsVisible = false; }" />
 
     </MudOverlay>
     <MudOverlay Visible="LicenseRenewalEditorIsVisible" DarkBackground="true">
 
-        <LicenseRenewalEditor OnConfirm="HandleLicenseRenewalConfirm" OnCancel="() => { LicenseRenewalEditorIsVisible = false; }" />
+        <LicenseRenewalEditor Info="@SelectInfoModel" OnConfirm="HandleLicenseRenewalConfirm" OnCancel="() => { LicenseRenewalEditorIsVisible = false; }" />
 
     </MudOverlay>
     <MudOverlay Visible="MachineCodeEditorsIsVisible" DarkBackground="true">
@@ -25,6 +33,9 @@
             <PropertyColumn Property="x => x.LicenseCode" Title="授权码" />
             <PropertyColumn Property="x => x.MaxClientCount" Title="客户端上限数量" />
             <PropertyColumn Property="x => x.ActivatedClientCount" Title="已激活数量" />
+            @if (Info is { Role: 1 }) {
+                <PropertyColumn Property="x => x.UserName" Title="租户" />
+            }
             <PropertyColumn Property="x => x.ExpirationDate" Title="到期时间" />
             <PropertyColumn Property="x => x.ClientName" Title="客户" />
             <TemplateColumn Title="是否可用">
@@ -39,15 +50,15 @@
                  <CellTemplate>
                      <MudStack Row Style="text-align:center">
                          <MudButton Style="border-radius: 15px;" Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Tertiary" OnClick="() => {SelectInfoModel= context.Item;  MachineCodeEditorsIsVisible = true; }">详细信息</MudButton>
-                         <MudButton Style="border-radius: 15px;" Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Success" OnClick="() => { LicenseRenewalEditorIsVisible = true; }">续期</MudButton>
-                         <MudButton Style="border-radius: 15px;" Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Primary">冻结授权码</MudButton>
-                         <MudButton Style="border-radius: 15px;" Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Dark">生成授权文件</MudButton>
-                     </MudStack>
-                 </CellTemplate>
-             </TemplateColumn>
-         </Columns>
-         <PagerContent>
-             <MudStack Row Justify="Justify.Center" Style="text-align:center">
+                         <MudButton Style="border-radius: 15px;" Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Success" OnClick="() => {SelectInfoModel= context.Item; LicenseRenewalEditorIsVisible = true; }">续期</MudButton>
+                         <MudButton OnClick="()=>{FreezeLicenseCode(context.Item);}" Style="border-radius: 15px;" Size="@Size.Small" Variant="@Variant.Filled" Color="@ConvertStatusButtonColor(context.Item.IsAvailable)">@ConvertStatusButtonText(context.Item.IsAvailable)</MudButton>
+                            <MudButton Style="border-radius: 15px;" Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Dark" OnClick="()=>{DownloadLicenseFile(context.Item);}">生成授权文件</MudButton>
+                        </MudStack>
+                    </CellTemplate>
+                </TemplateColumn>
+            </Columns>
+            <PagerContent>
+                <MudStack Row Justify="Justify.Center" Style="text-align:center">
                  <div style="flex-grow: 2; flex-basis: 0; text-align: right;">
                      <MudFab OnClick="@(e => { AuthCodeEditorIsVisible = true;})" Icon="@Icons.Material.Filled.Add" Color="Color.Primary" />
                  </div>
@@ -69,24 +80,10 @@
     public bool AuthCodeEditorIsVisible { get; set; }
     public bool LicenseRenewalEditorIsVisible { get; set; }
     public bool MachineCodeEditorsIsVisible { get; set; }
-    private List<LicenseCodeItemInfoModel> _items = new() {
-
-    };
+    private List<LicenseCodeItemInfoModel> _items = new();
 
     public LicenseCodeItemInfoModel SelectInfoModel { get; set; } = new();
-    protected override void OnInitialized() {
-        base.OnInitialized();
-        const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-        var tenantItemInfoModels = Enumerable.Range(0, 20).Select(s => new LicenseCodeItemInfoModel {
-                Num = s + 1,
-                LicenseCode = new string(Enumerable.Repeat(chars, 32).Select(s => s[new Random().Next(s.Length)]).ToArray()),
-                MaxClientCount = new Random().Next(100),
-                ActivatedClientCount = new Random().Next(100),
-                ExpirationDate = DateTime.Now,
-                IsAvailable = true,
-            }).ToList();
-        _items.AddRange(tenantItemInfoModels);
-    }
+    public List<AppTemplateItemInfoModel> AppTemplateItemItems { get; set; } = new();
 
     private string GetUserStatusChipStyle(UserStatus status) {
         return status switch {
@@ -105,14 +102,222 @@
             _ => "未知"
         };
     }
-    private void HandleConfirm(AuthCodeInfoModel info) {
+    private async void HandleConfirm(AuthCodeInfoModel info) {
         AuthCodeEditorIsVisible = false;
         //提交到Api
         //AuthCodeInfoModel
+
+        //效验数据是否为空
+        if (info.TemplateInfoId <= 0) {
+            Snackbar.Clear();
+            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+            Snackbar.Add("模板不能为空", Severity.Error);
+            return;
+
+        }
+        else if (info.MaxClientCount <= 0) {
+            Snackbar.Clear();
+            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+            Snackbar.Add("客户端上限数据必须大于0", Severity.Error);
+            return;
+        }
+        else if (info.ExpirationDate is null) {
+            Snackbar.Clear();
+            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+            Snackbar.Add("到期时间不能为空", Severity.Error);
+            return;
+        }
+        else if (string.IsNullOrEmpty(info.ClientName)) {
+            Snackbar.Clear();
+            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+            Snackbar.Add("客户名称不能为空", Severity.Error);
+            return;
+        }
+        var (key, value) = await LicenseApiRequest.CreateLicenseCode(info.TemplateInfoId, info.MaxClientCount,
+            info.ExpirationDate.Value, info.ClientName);
+        if (value is ApiResult result) {
+
+            Snackbar.Clear();
+            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+            Snackbar.Add(result.Msg, result.Result ? Severity.Success : Severity.Error);
+            if (key) {
+
+                await GetLicenseInfos();
+                StateHasChanged();
+            }
+        }
+        else {
+            Snackbar.Clear();
+            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+            Snackbar.Add(value.ToString(), Severity.Error);
+        }
     }
-    private void HandleLicenseRenewalConfirm(int days) {
+    private async void HandleLicenseRenewalConfirm(RenewalLicenseCodeInfo info) {
         LicenseRenewalEditorIsVisible = false;
+        var (key, value) = await LicenseApiRequest.ExtendLicenseCodeValidity(info.Info.LicenseCode,
+            info.Info.ExpirationDate.AddDays(info.Days));
+        if (value is ApiResult result) {
+
+            Snackbar.Clear();
+            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+            Snackbar.Add(result.Msg, result.Result ? Severity.Success : Severity.Error);
+            if (key) {
+                await GetLicenseInfos();
+                StateHasChanged();
+            }
+        }
+        else {
+            Snackbar.Clear();
+            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+            Snackbar.Add(value.ToString(), Severity.Error);
+        }
         //提交到Api
         //AuthCodeInfoModel
     }
-}
+    protected override async Task OnAfterRenderAsync(bool firstRender) {
+
+        if (!await LicenseApiRequest.IsLoggedIn()) {
+            Navigation.NavigateTo("/login");
+            return;
+        }
+
+        if (firstRender) {
+            var invokeAsync = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "info");
+            if (!string.IsNullOrEmpty(invokeAsync)) {
+                try {
+                    Info = JsonConvert.DeserializeObject<JayTom.Dws.LicenseApiClient.Data.Models.UserInfo>(invokeAsync) ?? new JayTom.Dws.LicenseApiClient.Data.Models.UserInfo();
+                }
+                catch (Exception e) {
+                    Info = new JayTom.Dws.LicenseApiClient.Data.Models.UserInfo();
+
+                }
+
+
+            }
+            await GetLicenseInfos();
+            await GetApplicationTemplate();
+            StateHasChanged();
+            await base.OnAfterRenderAsync(firstRender);
+        }
+
+    }
+
+    private async Task GetLicenseInfos() {
+        var (key, value) = await LicenseApiRequest.LicenseCodeData();
+        if (key && value is List<LicenseCodeItemInfoModel> items) {
+            _items.Clear();
+            var licenseCodeItemInfoModels = items.Select(s => new LicenseCodeItemInfoModel {
+                    ActivatedClientCount = s.ActivatedClientCount,
+                    TemplateName = s.TemplateName,
+                    LicenseCode = s.LicenseCode,
+                    MachineCodeItem = s.MachineCodeItem,
+                    MaxClientCount = s.MaxClientCount,
+                    IsAvailable = s.IsAvailable,
+                    ExpirationDate = s.ExpirationDate,
+                    ClientName = s.ClientName,
+                    UserName = s.UserName,
+                    UserCode = s.UserCode
+                })?.ToList() ?? new List<LicenseCodeItemInfoModel>();
+            _items.AddRange(licenseCodeItemInfoModels);
+        }
+        else if (value is ApiResult result) {
+
+            Snackbar.Clear();
+            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+            Snackbar.Add(result.Msg, result.Result ? Severity.Success : Severity.Error);
+        }
+        else {
+            Snackbar.Clear();
+            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+            Snackbar.Add(value.ToString(), Severity.Error);
+        }
+    }
+    public async Task GetApplicationTemplate() {
+        var (key, value) = await LicenseApiRequest.TemplateData();
+        if (key && value is List<AppTemplateItemInfoModel> items) {
+
+            AppTemplateItemItems = items;
+        }
+        else if (value is ApiResult result) {
+
+            Snackbar.Clear();
+            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+            Snackbar.Add(result.Msg, result.Result ? Severity.Success : Severity.Error);
+        }
+        else {
+            Snackbar.Clear();
+            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+            Snackbar.Add(value.ToString(), Severity.Error);
+        }
+    }
+
+    public async Task FreezeLicenseCode(LicenseCodeItemInfoModel info) {
+
+        var (key, value) = await LicenseApiRequest.FreezeLicenseCode(info.LicenseCode, info.IsAvailable);
+        if (value is ApiResult result) {
+
+            Snackbar.Clear();
+            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+            Snackbar.Add(result.Msg, result.Result ? Severity.Success : Severity.Error);
+            if (key) {
+                await GetLicenseInfos();
+                StateHasChanged();
+            }
+        }
+        else {
+            Snackbar.Clear();
+            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+            Snackbar.Add(value.ToString(), Severity.Error);
+        }
+    }
+    private string ConvertStatusButtonText(bool status) {
+        if (status) {
+
+            return "冻结授权码";
+        }
+        else {
+            return "激活授权码";
+        }
+    }
+    private Color ConvertStatusButtonColor(bool status) {
+        if (status) {
+
+            return Color.Error;
+        }
+        else {
+            return Color.Primary;
+        }
+    }
+
+    public async Task DownloadLicenseFile(LicenseCodeItemInfoModel info) {
+        var (key, value) = await LicenseApiRequest.DownloadLicenseFile(info.LicenseCode, string.Empty);
+        if (value is ApiResult result) {
+
+            Snackbar.Clear();
+            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+            Snackbar.Add(result.Msg, result.Result ? Severity.Success : Severity.Error);
+            if (key) {
+                await JSRuntime.InvokeVoidAsync("window.open", result.Data.ToString(), "_blank");
+            }
+        }
+        else {
+            Snackbar.Clear();
+            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+            Snackbar.Add(value.ToString(), Severity.Error);
+        }
+    }
+
+
+    public JayTom.Dws.LicenseApiClient.Data.Models.UserInfo Info = new();
+
+
+
+    private async void HandleUserInfoNotification(JayTom.Dws.LicenseApiClient.Data.Models.UserInfo obj) {
+        Info = obj;
+        await JSRuntime.InvokeVoidAsync("sessionStorage.setItem", "info", JsonConvert.SerializeObject(Info));
+        StateHasChanged();
+    }
+    public void Dispose() {
+        NotificationService.Unsubscribe<JayTom.Dws.LicenseApiClient.Data.Models.UserInfo>(HandleUserInfoNotification);
+    }
+ }

@@ -26,8 +26,8 @@ internal class Program {
         public LicenseApiContext1 CreateDbContext(string[] args) {
             var optionsBuilder = new DbContextOptionsBuilder<LicenseApiContext1>();
 
-            optionsBuilder.UseMySql("Server=localhost;Port=3306;Password=f6vQDiiWpXLDUCxR;Database=License;User=root;",
-                ServerVersion.AutoDetect("Server=localhost;Port=3306;Password=f6vQDiiWpXLDUCxR;Database=License;User=root;"),
+            optionsBuilder.UseMySql("Server=localhost;Port=3306;Password=ZMWbIG53dPG0N4vO;Database=License;User=root;",
+                ServerVersion.AutoDetect("Server=localhost;Port=3306;Password=ZMWbIG53dPG0N4vO;Database=License;User=root;"),
             builder => {
                 builder.SchemaBehavior(MySqlSchemaBehavior.Ignore);
             });

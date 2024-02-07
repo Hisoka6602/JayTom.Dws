@@ -1,12 +1,12 @@
 ﻿@page "/"
+@using JayTom.Dws.LicenseApiClient.Api
 @inject NavigationManager Navigation
+@inject IConfiguration Configuration
+@inject ILicenseApiRequest LicenseApiRequest
 @code {
     protected override void OnInitialized() {
-        // 检查用户是否已经登录，例如通过调用身份验证服务的方法或检查存储的身份验证 cookie 等方式
-        var isAuthenticated = false; // 替换为实际的身份验证检查逻辑
-
-        if (!isAuthenticated) {
-            Navigation.NavigateTo("/login", forceLoad: true);
-        }
+        var value = Configuration.GetValue<string>("BaseUrl") ?? string.Empty;
+        LicenseApiRequest.SetBaseUrl(value);
+        Navigation.NavigateTo("/login");
     }
 }

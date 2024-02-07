@@ -14,8 +14,7 @@ namespace JayTom.Dws.LicenseApi.Do {
         /// <summary>
         /// 机器码
         /// </summary>
-        [Required(ErrorMessage = "机器码不能为空"),
-        RegularExpression("^[A-F0-9]{32}$", ErrorMessage = "机器码格式错误!")]
+        [RegularExpression("^[A-F0-9]{32}$", ErrorMessage = "机器码格式错误!")]
         public string MachineCode { get; set; } = string.Empty;
     }
 }

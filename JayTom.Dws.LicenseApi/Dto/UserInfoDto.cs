@@ -3,6 +3,7 @@
 namespace JayTom.Dws.LicenseApi.Dto {
 
     public class UserInfoDto {
+        public long Id { get; set; }
 
         /// <summary>
         /// pid

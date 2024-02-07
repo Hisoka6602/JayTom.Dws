@@ -1,0 +1,78 @@
+﻿@page "/register"
+@using JayTom.Dws.LicenseApiClient.Data.Models
+@using System.ComponentModel.DataAnnotations
+@using System.Security.Claims
+@using JayTom.Dws.LicenseApiClient.Api
+@using Newtonsoft.Json
+@inject ILicenseApiRequest LicenseApiRequest
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+<EditForm Model="@_model" OnValidSubmit="OnValidSubmit">
+    <ValidationSummary />
+    <div style="min-width:700px; display: flex; justify-content: center; align-items: center; height: 100vh;overflow: hidden;">
+        <img src="images/12345.png" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; opacity: 0.9;" />
+        <MudPaper Elevation="3" Style="width:400px;height:530px; position: relative; border-radius: 15px; display: flex; flex-direction: column; align-items: center;">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <div style="padding:50px;width: 100%;">
+                    <MudTextField s Variant="Variant.Text" @bind-Value="@_model.UserCode" Style="margin-bottom:30px" T="string" Label="账号" For="@(() => _model.UserCode)" />
+                    <MudTextField Variant="Variant.Text" @bind-Value="@_model.UserName" Style="margin-bottom:30px" T="string" Label="用户名" For="@(() => _model.UserName)" />
+                    <MudTextField @bind-Value="@_model.PassWord" Variant="Variant.Text" Style="margin-bottom:30px" T="string" Label="登录密码" For="@(() => _model.PassWord)" />
+                    <MudTextField @bind-Value="@_model.Phone" Variant="Variant.Text" Style="margin-bottom:30px" T="string" Label="手机号码" For="@(() => _model.Phone)" />
+
+                    <div style="display: flex; justify-content: center;">
+                        <MudButton Style="width:130px; border-radius: 30px;" ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">注册</MudButton>
+                    </div>
+                </div>
+
+
+            </div>
+        </MudPaper>
+    </div>
+</EditForm>
+
+
+
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthenticationState { get; set; }
+    bool isShow;
+    InputType PasswordInput = InputType.Password;
+    string PasswordInputIcon = Icons.Material.Filled.VisibilityOff;
+
+    void ButtonTestclick() {
+        @if (isShow) {
+            isShow = false;
+            PasswordInputIcon = Icons.Material.Filled.VisibilityOff;
+            PasswordInput = InputType.Password;
+        }
+        else {
+            isShow = true;
+            PasswordInputIcon = Icons.Material.Filled.Visibility;
+            PasswordInput = InputType.Text;
+        }
+    }
+    RegisterAccountForm _model = new();
+    bool success;
+    private async void OnValidSubmit(EditContext context) {
+        success = true;
+        StateHasChanged();
+
+        var (key, value) = await LicenseApiRequest.Register(_model.UserCode, _model.UserName, _model.PassWord, _model.Phone);
+        if (value is ApiResult result) {
+
+            Snackbar.Clear();
+            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+            Snackbar.Add(result.Msg, result.Result ? Severity.Success : Severity.Error);
+            if (key) {
+                await Task.Delay(500);
+                Navigation.NavigateTo("/login");
+            }
+        }
+        else {
+            Snackbar.Clear();
+            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+            Snackbar.Add(value.ToString(), Severity.Error);
+        }
+    }
+
+}
