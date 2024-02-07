@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using JayTom.Dws.LicenseApi.Do;
 using JayTom.Dws.LicenseApi.Vo;
 using Microsoft.AspNetCore.Http;
+using JayTom.Dws.LicenseApi.Dto;
+using JayTom.Dws.LicenseApi.Utils;
 using JayTom.Dws.LicenseApi.Filter;
 using JayTom.Dws.LicenseApi.Attributes;
 using Microsoft.AspNetCore.Authorization;
@@ -92,7 +94,7 @@ namespace JayTom.Dws.LicenseApi.Controllers {
         public async Task<JsonResult> ChangePassword([FromBody] ChangePasswordDo param,
             CancellationToken cancellationToken) {
             var code = HttpContext.Response.HttpContext.User.Identity?.Name;
-            var (key, value) = await _licenseUserAppService.ChangePassword(code ?? string.Empty, param.NewPassWord,
+            var (key, value) = await _licenseUserAppService.ChangePassword(code ?? string.Empty, param.OldPassWord,
                 param.NewPassWord, cancellationToken);
             return key ? JsonResultVo.Success(value.ToString() ?? string.Empty) : JsonResultVo.Fail(value.ToString() ?? string.Empty);
         }
@@ -107,6 +109,35 @@ namespace JayTom.Dws.LicenseApi.Controllers {
         public async Task<JsonResult> Info(CancellationToken cancellationToken) {
             var code = HttpContext.Response.HttpContext.User.Identity?.Name;
             var (key, value) = await _licenseUserAppService.Info(code, cancellationToken);
+
+            if (key && value is LicenseUserInfo info) {
+                return JsonResultVo.Success("查询成功", data: new UserInfoDto() {
+                    Pid = info.Pid,
+                    UserName = info.UserName,
+                    UserCode = info.UserCode,
+                    Phone = DataUtils.MaskPhoneNumber(info.Phone),
+                    Role = info.Role,
+                    Status = info.Status,
+                    UserIcon = info.UserIcon,
+                    LicenseCodeInfos = info.LicenseCodeInfos?.Select(s => new LicenseCodeInfo {
+                        LicenseCode = s.LicenseCode,
+                        MaxClientCount = s.MaxClientCount,
+                        ActivatedClientCount = s.ActivatedClientCount,
+                        ExpirationDate = s.ExpirationDate,
+                        ClientName = s.ClientName,
+                        IsAvailable = s.IsAvailable
+                    })?.ToList(),
+                    UserDetailsInfo = new LicenseUserDetailsInfo() {
+                        CompanyAddress = info.UserDetailsInfo?.CompanyAddress ?? string.Empty,
+                        CompanyName = info.UserDetailsInfo?.CompanyName ?? string.Empty,
+                        ContactEmail = info.UserDetailsInfo?.ContactEmail ?? string.Empty,
+                        Description = info.UserDetailsInfo?.Description ?? string.Empty,
+                        ContractFilePath = info.UserDetailsInfo?.ContractFilePath ?? string.Empty,
+                        BusinessLicenseFilePath = info.UserDetailsInfo?.BusinessLicenseFilePath ?? string.Empty,
+                    }
+                });
+            }
+
             return key ? JsonResultVo.Success("查询成功", data: value) : JsonResultVo.Fail(value.ToString() ?? string.Empty);
         }
 

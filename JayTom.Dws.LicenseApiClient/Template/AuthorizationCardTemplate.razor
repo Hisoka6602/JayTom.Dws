@@ -1,32 +1,45 @@
 ﻿@using System.Diagnostics.CodeAnalysis
+@using JayTom.Dws.LicenseApiClient.Data.Models
 <div>
     <MudCard Style="width:180px;height:180px; position: relative;">
         <MudCardContent>
-            <MudText Style="font-weight: bold;">@Title</MudText>
-                <MudText Typo="Typo.body2" Class="text-truncate" Style="color:gray;font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">@Description</MudText>
+            <MudText Style="font-weight: bold;">@AppTemplateItemInfo.TemplateName</MudText>
+                <MudText Typo="Typo.body2" Class="text-truncate" Style="color:gray;font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">@AppTemplateItemInfo.LicenseApplicationInfo.ApplicationName</MudText>
 
                 <MudImage Style="width: 70px; height: 70px;" Src="images/defaultImage.jpg" Elevation="2" Class="rounded-lg"></MudImage>
             </MudCardContent>
             <MudCardActions>
                 <div style="width:20px; position: absolute; left: 20px; bottom: 0; margin: 4px; ">
                     <MudTooltip Arrow="true" Placement="Placement.Bottom" Text="编辑">
-                        <MudFab Size="Size.Small" Class="position-absolute" Icon="@Icons.Material.Filled.EditNote" Color="Color.Primary" Style="left: -20px; bottom: 0; " />
+                        <MudFab OnClick="EditHandler" Size="Size.Small" Class="position-absolute" Icon="@Icons.Material.Filled.EditNote" Color="Color.Primary" Style="left: -20px; bottom: 0; " />
                     </MudTooltip>
                 </div>
                 <div style="width:20px; position: absolute; right: 0; bottom: 0; margin: 4px;">
                     <MudTooltip Arrow="true" Placement="Placement.Bottom" Text="删除">
-                        <MudFab Size="Size.Small" Class="position-absolute" Icon="@Icons.Material.Filled.Delete" Color="Color.Dark" Style="right: 0; bottom: 0; " />
+                        <MudFab OnClick="DeleteHandler" Size="Size.Small" Class="position-absolute" Icon="@Icons.Material.Filled.Delete" Color="Color.Dark" Style="right: 0; bottom: 0; " />
                     </MudTooltip>
                 </div>
             </MudCardActions>
         </MudCard>
     </div>
     @code {
-    [Parameter] public string Title { get; set; } = "Title";
+    [Parameter]
+    public AppTemplateItemInfoModel AppTemplateItemInfo { get; set; } = new();
 
     [Parameter]
-    public string Description { get; set; } = "Description";
+    public EventCallback<AppTemplateItemInfoModel> OnEdit { get; set; }
 
     [Parameter]
-    public string ButtonText { get; set; } = "ButtonText";
+    public EventCallback<AppTemplateItemInfoModel> OnDelete { get; set; }
+
+    private async Task EditHandler() {
+
+        await OnEdit.InvokeAsync(AppTemplateItemInfo);
+    }
+
+
+    private async Task DeleteHandler() {
+
+        await OnDelete.InvokeAsync(AppTemplateItemInfo);
+    }
 }

@@ -1,8 +1,13 @@
 ﻿
 <link href="Font/iconfont.css" rel="stylesheet" />
 @using System.Diagnostics
+@using JayTom.Dws.LicenseApiClient.Data.Models
+@using JayTom.Dws.LicenseApiClient.Notification
+@using Newtonsoft.Json
 @inherits LayoutComponentBase
 @inject NavigationManager Navigation
+@inject NotificationService NotificationService
+
 <MudThemeProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
@@ -17,7 +22,7 @@
     $"{Navigation.BaseUri}userInfo"
     };
     }
-    @if (allowedUrls.Any(url => Navigation.Uri.Equals(url))) {
+    @if (allowedUrls.Any(url => Navigation.Uri.ToLower().Equals(url.ToLower()))) {
 
         <MudDrawer Open="true" Elevation="2" Style="background-color:#594AE2;color:transparent;">
             <MudDrawerHeader>
@@ -25,13 +30,15 @@
 
                     <button onclick="@GoToUserInfo">
                         <MudAvatar>
-                            <MudImage Src="images/defaultImage.jpg">
+                            <MudImage Src="@Info.UserIcon">
                             </MudImage>
                         </MudAvatar>
                     </button>
 
-                    <MudText Style="font-weight:bold; margin-left:8px; color:white" Typo="Typo.h6">Hisoka</MudText>
-                    <span class="iconfont icon-vips" style="color:gold; font-size: 20px; margin-bottom:5px; margin-left:5px;"></span>
+                    <MudText Style="font-weight:bold; margin-left:8px; color:white" Typo="Typo.h6">@Info.UserName</MudText>
+                        @if (Info.Role == 1) {
+                        <span class="iconfont icon-vips" style="color:gold; font-size: 20px; margin-bottom:5px; margin-left:5px;"></span>
+                    }
                 </div>
             </MudDrawerHeader>
             <NavMenu />
@@ -55,6 +62,41 @@
 
 @code
 {
+    [Inject]
+    private IJSRuntime JSRuntime { get; set; }
+    public UserInfo Info = new();
+    protected override void OnInitialized() {
+        NotificationService.Subscribe<UserInfo>(HandleUserInfoNotification);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender) {
+        if (firstRender) {
+            var invokeAsync = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "info");
+            if (!string.IsNullOrEmpty(invokeAsync)) {
+                try {
+                    Info = JsonConvert.DeserializeObject<UserInfo>(invokeAsync) ?? new UserInfo();
+                }
+                catch (Exception e) {
+                    Info = new UserInfo();
+
+                }
+
+
+            }
+            StateHasChanged();
+        }
+
+
+    }
+
+    private async void HandleUserInfoNotification(UserInfo obj) {
+        Info = obj;
+        await JSRuntime.InvokeVoidAsync("sessionStorage.setItem", "info", JsonConvert.SerializeObject(Info));
+        StateHasChanged();
+    }
+    public void Dispose() {
+        NotificationService.Unsubscribe<UserInfo>(HandleUserInfoNotification);
+    }
     public void GoToUserInfo() {
         Navigation.NavigateTo("/userInfo");
     }

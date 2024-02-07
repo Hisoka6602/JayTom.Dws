@@ -5,6 +5,18 @@ namespace JayTom.Dws.LicenseApiClient.Api {
     public interface ILicenseApiRequest {
 
         /// <summary>
+        /// 是否已登录
+        /// </summary>
+        /// <returns></returns>
+        Task<bool> IsLoggedIn();
+
+        /// <summary>
+        /// 设置url
+        /// </summary>
+        /// <param name="url"></param>
+        void SetBaseUrl(string url);
+
+        /// <summary>
         /// 注册
         /// </summary>
         /// <param name="phone"></param>
@@ -22,7 +34,7 @@ namespace JayTom.Dws.LicenseApiClient.Api {
         /// <param name="token"></param>
         /// <param name="loginCode"></param>
         /// <returns></returns>
-        Task<KeyValuePair<bool, object>> Login(string loginCode, string passWord, CancellationToken token);
+        Task<KeyValuePair<bool, object>> Login(string loginCode, string passWord, CancellationToken token = default);
 
         /// <summary>
         /// 修改资料
@@ -44,7 +56,7 @@ namespace JayTom.Dws.LicenseApiClient.Api {
             string description,
             string contractFilePath,
             string businessLicenseFilePath,
-            CancellationToken token);
+            CancellationToken token = default);
 
         /// <summary>
         /// 修改密码
@@ -55,14 +67,14 @@ namespace JayTom.Dws.LicenseApiClient.Api {
         /// <returns></returns>
         Task<KeyValuePair<bool, object>> ChangePassword(string oldPassWord,
             string newPassWord,
-            CancellationToken token);
+            CancellationToken token = default);
 
         /// <summary>
         /// 个人信息
         /// </summary>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<KeyValuePair<bool, object>> Info(CancellationToken token);
+        Task<KeyValuePair<bool, object>> Info(CancellationToken token = default);
 
         /// <summary>
         /// 冻结用户
@@ -91,7 +103,7 @@ namespace JayTom.Dws.LicenseApiClient.Api {
         Task<KeyValuePair<bool, object>> CreateApplication(string applicationName,
             string description,
             List<FeatureItemModel>? featureInfos,
-            CancellationToken token);
+            CancellationToken token = default);
 
         /// <summary>
         /// 创建应用模板
@@ -103,7 +115,7 @@ namespace JayTom.Dws.LicenseApiClient.Api {
         Task<KeyValuePair<bool, object>> CreateApplicationTemplate(
             long licenseApplicationInfoId,
             string templateName,
-            CancellationToken token);
+            CancellationToken token = default);
 
         /// <summary>
         /// 设置模板权限
@@ -114,21 +126,21 @@ namespace JayTom.Dws.LicenseApiClient.Api {
         /// <returns></returns>
         Task<KeyValuePair<bool, object>> SetTemplatePermissions(long templateId,
             List<FeatureItemModel>? featureInfos,
-            CancellationToken token);
+            CancellationToken token = default);
 
         /// <summary>
         /// 获取应用列表
         /// </summary>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<KeyValuePair<bool, object>> ApplicationData(CancellationToken token);
+        Task<KeyValuePair<bool, object>> ApplicationData(CancellationToken token = default);
 
         /// <summary>
         /// 获取模板列表
         /// </summary>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<KeyValuePair<bool, object>> TemplateData(CancellationToken token);
+        Task<KeyValuePair<bool, object>> TemplateData(CancellationToken token = default);
 
         /// <summary>
         /// 删除应用
@@ -136,7 +148,7 @@ namespace JayTom.Dws.LicenseApiClient.Api {
         /// <param name="deleteApplicationId"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<KeyValuePair<bool, object>> DeleteApplication(long deleteApplicationId, CancellationToken token);
+        Task<KeyValuePair<bool, object>> DeleteApplication(long deleteApplicationId, CancellationToken token = default);
 
         /// <summary>
         /// 删除模板
@@ -144,7 +156,7 @@ namespace JayTom.Dws.LicenseApiClient.Api {
         /// <param name="deleteTemplateId"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<KeyValuePair<bool, object>> DeleteTemplate(long deleteTemplateId, CancellationToken token);
+        Task<KeyValuePair<bool, object>> DeleteTemplate(long deleteTemplateId, CancellationToken token = default);
 
         /// <summary>
         /// 创建授权码
@@ -200,5 +212,12 @@ namespace JayTom.Dws.LicenseApiClient.Api {
         Task<KeyValuePair<bool, object>> DownloadLicenseFile(string licenseCode,
             string machineCode,
             CancellationToken token);
+    }
+
+    public class ApiResult {
+        public bool Result { get; set; }
+        public object? Data { get; set; }
+        public string Msg { get; set; } = string.Empty;
+        public int Total { get; set; }
     }
 }

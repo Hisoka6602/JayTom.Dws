@@ -2,7 +2,13 @@
 
 @using JayTom.Dws.LicenseApiClient.Data.Models
 @using JayTom.Dws.LicenseApiClient.Editors
-<MudPaper Elevation="0" Style="height:95.7vh">
+@using JayTom.Dws.LicenseApiClient.Api
+@using JayTom.Dws.LicenseApiClient.Notification
+@inject ILicenseApiRequest LicenseApiRequest
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+@inject NotificationService NotificationService
+<MudPaper Elevation="0" Style="height:95.2vh">
     @*应用程序编辑器*@
     <MudOverlay Visible="AppModuleEditorIsVisible" DarkBackground="true" Absolute="true">
 
@@ -40,9 +46,9 @@
     <div class="row">
         <div class="col-12" style="max-height: 300px; overflow-y: scroll;">
             <div class="d-flex flex-wrap">
-                @foreach (var story in ApplicationItems) {
-                    <div class="col-md-2 mb-4 mx-1" style="width: calc(100% / 6)">
-                        <AuthorizationCardTemplate Title="@story.Title" Description="@story.Description" ButtonText="@story.ButtonText" />
+                @foreach (var story in AppTemplateItemItems) {
+                    <div class="col-md-2 mb-4 mx-1">
+                        <AuthorizationCardTemplate AppTemplateItemInfo="@story" OnEdit="HandleTemplateEdit" OnDelete="HandleTemplateDelete" />
                     </div>
                 }
             </div>
@@ -55,38 +61,7 @@
 
 @code {
 
-    public List<ApplicationItemInfoModel> ApplicationItems { get; set; } = new()
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            {
-        new ApplicationItemInfoModel()
-        {
-            Id = 1,
-            Title = "DWS",
-            Description = "DWS分拣系统",
-            FeatureItems = new List<FeatureItemModel>()
-            {
-                new FeatureItemModel()
-                {
-                    Description = "测试说明",
-                    FeatureGuid = Guid.NewGuid().ToString(),
-                    FeatureName = "测试功能",
-                    IsActive = true,
-                    Num = 1
-                }
-            }
-        },
-        new ApplicationItemInfoModel(){
-            Id = 2,
-            Title = "云端视频",
-            Description = "DWS配套云端视频追溯系统"
-        },
-        new ApplicationItemInfoModel()
-        {
-            Id = 3,
-            Title = "数据云端",
-            Description = "DWS数据云端"
-        },
-        new ApplicationItemInfoModel(),
-    };
+    public List<ApplicationItemInfoModel> ApplicationItems { get; set; } = new();
 
     public List<AppTemplateItemInfoModel> AppTemplateItemItems = new();
 
@@ -97,7 +72,7 @@
 
     public bool AppModuleEditorIsVisible = false;
     public bool AppTemplateEditorIsVisible = false;
-    private void HandleConfirm(ApplicationItemInfoModel info) {
+    private async void HandleConfirm(ApplicationItemInfoModel info) {
         AppModuleEditorIsVisible = false;
         if (info.Id != 0) {
             //编辑
@@ -108,31 +83,172 @@
 
             //添加到Api
             //添加到本地(从新刷新)
-            ApplicationItems.Add(info);
+
+            var (key, value) = await LicenseApiRequest.CreateApplication(info.ApplicationName, info.Description,
+                info.LicenseFeatureInfos);
+            if (value is ApiResult result) {
+
+                Snackbar.Clear();
+                Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+                Snackbar.Add(result.Msg, result.Result ? Severity.Success : Severity.Error);
+                if (key) {
+
+                    Navigation.NavigateTo("/application-management", true);
+                }
+            }
+            else {
+                Snackbar.Clear();
+                Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+                Snackbar.Add(value.ToString(), Severity.Error);
+            }
+
         }
     }
-
-    private void HandleTemplateConfirm(AppTemplateItemInfoModel info) {
+    private async void HandleTemplateConfirm(AppTemplateItemInfoModel info) {
         AppTemplateEditorIsVisible = false;
         if (info.Id != 0) {
             //编辑
             //更新到Api
+            var (key, value) = await LicenseApiRequest.SetTemplatePermissions(info.Id, info.LicenseApplicationInfo.LicenseFeatureInfos);
+            if (value is ApiResult result) {
+
+                Snackbar.Clear();
+                Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+                Snackbar.Add(result.Msg, result.Result ? Severity.Success : Severity.Error);
+                if (key) {
+
+                    Navigation.NavigateTo("/application-management", true);
+                }
+            }
+            else {
+                Snackbar.Clear();
+                Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+                Snackbar.Add(value.ToString(), Severity.Error);
+            }
         }
         else {
-            //新增
-
-            //添加到Api
             //添加到本地(从新刷新)
-            AppTemplateItemItems.Add(info);
+            var (key, value) = await LicenseApiRequest.CreateApplicationTemplate(info.LicenseApplicationInfoId, info.TemplateName);
+            if (value is ApiResult result) {
+
+                Snackbar.Clear();
+                Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+                Snackbar.Add(result.Msg, result.Result ? Severity.Success : Severity.Error);
+                if (key) {
+
+                    Navigation.NavigateTo("/application-management", true);
+                }
+            }
+            else {
+                Snackbar.Clear();
+                Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+                Snackbar.Add(value.ToString(), Severity.Error);
+            }
         }
     }
     private void HandleAppEdit(ApplicationItemInfoModel info) {
         AppModuleEditorIsVisible = true;
         ApplicationItemInfo = info;
     }
-    private void HandleAppDelete(ApplicationItemInfoModel info) {
-        //从Api删除
-        //从本地删除
-        ApplicationItems.Remove(info);
+    private async void HandleAppDelete(ApplicationItemInfoModel info) {
+
+
+        var (key, value) = await LicenseApiRequest.DeleteApplication(info.Id);
+        if (value is ApiResult result) {
+
+            Snackbar.Clear();
+            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+            Snackbar.Add(result.Msg, result.Result ? Severity.Success : Severity.Error);
+            if (key) {
+
+                Navigation.NavigateTo("/application-management", true);
+            }
+        }
+        else {
+            Snackbar.Clear();
+            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+            Snackbar.Add(value.ToString(), Severity.Error);
+        }
+    }
+
+    private void HandleTemplateEdit(AppTemplateItemInfoModel info) {
+        AppTemplateEditorIsVisible = true;
+        AppTemplateItemInfo = info;
+        ApplicationItems = ApplicationItems;
+    }
+    private async void HandleTemplateDelete(AppTemplateItemInfoModel info) {
+
+        var (key, value) = await LicenseApiRequest.DeleteTemplate(info.Id);
+        if (value is ApiResult result) {
+
+            Snackbar.Clear();
+            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+            Snackbar.Add(result.Msg, result.Result ? Severity.Success : Severity.Error);
+            if (key) {
+
+                Navigation.NavigateTo("/application-management", true);
+            }
+        }
+        else {
+            Snackbar.Clear();
+            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+            Snackbar.Add(value.ToString(), Severity.Error);
+        }
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender) {
+
+        await base.OnAfterRenderAsync(firstRender);
+
+
+        if (!await LicenseApiRequest.IsLoggedIn()) {
+            Navigation.NavigateTo("/login");
+        }
+        if (firstRender) {
+
+            await base.OnAfterRenderAsync(firstRender);
+            await GetApplicationData();
+            await GetApplicationTemplate();
+            StateHasChanged();
+        }
+
+
+    }
+
+    public async Task GetApplicationData() {
+        var (key, value) = await LicenseApiRequest.ApplicationData();
+        if (key && value is List<ApplicationItemInfoModel> items) {
+
+            ApplicationItems = items;
+        }
+        else if (value is ApiResult result) {
+
+            Snackbar.Clear();
+            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+            Snackbar.Add(result.Msg, result.Result ? Severity.Success : Severity.Error);
+        }
+        else {
+            Snackbar.Clear();
+            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+            Snackbar.Add(value.ToString(), Severity.Error);
+        }
+    }
+
+    public async Task GetApplicationTemplate() {
+        var (key, value) = await LicenseApiRequest.TemplateData();
+        if (key && value is List<AppTemplateItemInfoModel> items) {
+
+            AppTemplateItemItems = items;
+        }
+        else if (value is ApiResult result) {
+
+            Snackbar.Clear();
+            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+            Snackbar.Add(result.Msg, result.Result ? Severity.Success : Severity.Error);
+        }
+        else {
+            Snackbar.Clear();
+            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+            Snackbar.Add(value.ToString(), Severity.Error);
+        }
     }
 }

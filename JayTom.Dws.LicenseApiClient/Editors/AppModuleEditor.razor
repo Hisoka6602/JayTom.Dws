@@ -24,7 +24,7 @@
                     </MudFileUpload>
                 </div>
 
-                <MudTextField FullWidth="true" @bind-Value="CurrentApplicationInfo.Title" Label="应用程序名称" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
+                <MudTextField FullWidth="true" @bind-Value="CurrentApplicationInfo.ApplicationName" Label="应用程序名称" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
 
 
             </div>
@@ -33,7 +33,7 @@
         <MudTextField Lines="3" FullWidth="true" Style="margin-left:20px; margin-right:20px; height:80px" @bind-Value="CurrentApplicationInfo.Description" Label="程序描述" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
         @*列表*@
         <div>
-            <MudTable @ref="_table" Height="360px" Breakpoint="Breakpoint.Sm" FixedHeader="true" Style="width:600px;min-height:360px;max-height:360px;" Items="@CurrentApplicationInfo.FeatureItems"
+            <MudTable @ref="_table" Height="360px" Breakpoint="Breakpoint.Sm" FixedHeader="true" Style="width:600px;min-height:360px;max-height:360px;" Items="@CurrentApplicationInfo.LicenseFeatureInfos"
                       Dense="false" Hover="true" CanCancelEdit="true"
                       SelectOnRowClick="true"
                       RowEditPreview="BackupItem" RowEditCancel="ResetItemToOriginalValues"
@@ -114,13 +114,13 @@
     private readonly List<string> _fileNames = new();
     protected override async Task OnInitializedAsync() {
         await base.OnInitializedAsync();
-        CurrentApplicationInfo.FeatureItems.Clear();
+        CurrentApplicationInfo.LicenseFeatureInfos.Clear();
         if (ApplicationInfo is not null) {
             CurrentApplicationInfo = new ApplicationItemInfoModel() {
                     Id = ApplicationInfo.Id,
-                    Title = ApplicationInfo.Title,
+                    ApplicationName = ApplicationInfo.ApplicationName,
                     Description = ApplicationInfo.Description,
-                    FeatureItems = ApplicationInfo.FeatureItems?.Select((s, i) => new FeatureItemModel {
+                    LicenseFeatureInfos = ApplicationInfo.LicenseFeatureInfos?.Select((s, i) => new FeatureItemModel {
                         Description = s.Description,
                         FeatureGuid = s.FeatureGuid,
                         FeatureName = s.FeatureName,
@@ -179,17 +179,17 @@
     private void AddItem() {
 
         var featureItemModel = new FeatureItemModel() {
-                Num = CurrentApplicationInfo.FeatureItems.Count + 1
+                Num = CurrentApplicationInfo.LicenseFeatureInfos.Count + 1
             };
-        CurrentApplicationInfo.FeatureItems.Add(featureItemModel);
+        CurrentApplicationInfo.LicenseFeatureInfos.Add(featureItemModel);
     }
 
     private async void Confirm() {
         ApplicationInfo = new ApplicationItemInfoModel() {
                 Id = CurrentApplicationInfo.Id,
-                Title = CurrentApplicationInfo.Title,
+                ApplicationName = CurrentApplicationInfo.ApplicationName,
                 Description = CurrentApplicationInfo.Description,
-                FeatureItems = CurrentApplicationInfo.FeatureItems?.Select((s, i) => new FeatureItemModel {
+                LicenseFeatureInfos = CurrentApplicationInfo.LicenseFeatureInfos?.Select((s, i) => new FeatureItemModel {
                     Description = s.Description,
                     FeatureGuid = s.FeatureGuid,
                     FeatureName = s.FeatureName,

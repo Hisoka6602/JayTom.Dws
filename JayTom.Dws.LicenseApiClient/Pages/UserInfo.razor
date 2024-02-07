@@ -1,44 +1,53 @@
 ﻿@page "/userInfo"
-
+@using JayTom.Dws.LicenseApiClient.Api
+@using JayTom.Dws.LicenseApiClient.Data.Models
+@using JayTom.Dws.LicenseApiClient.Notification
+@inject ILicenseApiRequest LicenseApiRequest
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+@inject NotificationService NotificationService
 <div style="display: flex;">
     <MudCard Style="margin-right: 30px;width:500px;height:800px; display: flex;flex-direction: column; justify-content: flex-start; align-items: center;">
-        <MudImage Elevation="2" Style="margin-top:10px; border-radius:100px" Width="200" Height="200" Src="images/defaultImage.jpg">
+        <MudImage Elevation="2" Style="margin-top:10px; border-radius:100px" Width="200" Height="200" Src="@_info.UserIcon">
         </MudImage>
         @*名字*@
         <div style="display: flex;margin-top:10px;">
-            <MudText Style="font-weight:bold; margin-left:8px; color:dimgray" Typo="Typo.h5">Hisoka</MudText>
-            <span class="iconfont icon-vips" style="color:gold; font-size: 20px; margin-bottom:5px; margin-left:5px;"></span>
+            <MudText Style="font-weight:bold; margin-left:8px; color:dimgray" Typo="Typo.h5">@_info.UserName</MudText>
+                @if (_info.Role == 1) {
+                <span class="iconfont icon-vips" style="color:gold; font-size: 20px; margin-bottom:5px; margin-left:5px;"></span>
+            }
+
         </div>
         @*用户代码*@
         <div style="display: flex;margin-top:10px;display: flex; align-items: center;">
             <span class="iconfont icon-renyuanjianguan" style="color:#A9A9A9; font-size: 30px; margin-bottom:5px; margin-left:5px;"></span>
-            <span style="font-weight:bold; margin-left:8px; color:#A9A9A9; font-size: 13px;">用户代码AAA</span>
+            <span style="font-weight:bold; margin-left:8px; color:#A9A9A9; font-size: 13px;">@_info.UserCode</span>
         </div>
         @*手机号*@
         @*用户代码*@
         <div style="display: flex;margin-top:10px;display: flex; align-items: center;">
             <span class="iconfont icon-shouji" style="color:#A9A9A9; font-size: 30px; margin-bottom:5px; margin-left:5px;"></span>
-            <span style="font-weight:bold; margin-left:8px; color:#A9A9A9; font-size: 13px;">158****6602</span>
+            <span style="font-weight:bold; margin-left:8px; color:#A9A9A9; font-size: 13px;">@_info.Phone</span>
         </div>
         @*角色*@
         @*用户代码*@
         <div style="display: flex;margin-top:10px;display: flex; align-items: center;">
             <span class="iconfont icon-jiaosequanxianguanli" style="color:#A9A9A9; font-size: 30px; margin-bottom:5px; margin-left:5px;"></span>
-            <span style="font-weight:bold; margin-left:8px; color:#A9A9A9; font-size: 13px;">租户</span>
+            <span style="font-weight:bold; margin-left:8px; color:#A9A9A9; font-size: 13px;">@ConvertUserRole(_info.Role)</span>
         </div>
         @*用户状态*@
         <div style="display: flex;margin-top:10px;display: flex; align-items: center;">
             <span class="iconfont icon-zhuangtai1" style="color:#A9A9A9; font-size: 30px; margin-bottom:5px; margin-left:5px;"></span>
-            <span style="font-weight:bold; margin-left:8px; color:#A9A9A9; font-size: 13px;">正常使用</span>
+            <span style="font-weight:bold; margin-left:8px; color:#A9A9A9; font-size: 13px;">@ConvertUserStatus(_info.Status)</span>
         </div>
         @*修改密码*@
         <div>
             <MudCard Elevation="2" Style="width:400px;height:200px">
                 <MudCardContent>
                     <div>
-                        <MudTextField Variant="Variant.Outlined" T="string" Label="新密码" InputType="InputType.Password" Adornment="Adornment.End" AdornmentAriaLabel="Show Password" />
-                        <MudTextField Variant="Variant.Outlined" T="string" Label="重复密码" InputType="InputType.Password" Adornment="Adornment.End" AdornmentAriaLabel="Show Password" />
-                        <MudButton Style="padding:0px; flex; align-items: center;margin-top:10px; width:130px; border-radius: 10px;" ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">
+                        <MudTextField @bind-Value="OldPassWord" Variant="Variant.Outlined" T="string" Label="旧密码" InputType="InputType.Password" Adornment="Adornment.End" AdornmentAriaLabel="Show Password" />
+                        <MudTextField @bind-Value="NewPassWord" Variant="Variant.Outlined" T="string" Label="新密码" InputType="InputType.Password" Adornment="Adornment.End" AdornmentAriaLabel="Show Password" />
+                        <MudButton OnClick="ChangePassword" Style="padding:0px; flex; align-items: center;margin-top:10px; width:130px; border-radius: 10px;" ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">
                             <span class="iconfont icon-mima" style="color:white; font-size: 20px; margin-bottom:5px; margin-right:5px;"></span>
                             修改密码
                         </MudButton>
@@ -51,24 +60,24 @@
         @*公司名称*@
         <div style="display: flex;margin-top:10px;display: flex; align-items: center;">
             <span style="font-weight:bold; margin-left:8px; color:#A9A9A9; font-size: 13px;">公司名称:</span>
-            <MudTextField Variant="Variant.Text" Style="width:300px;margin-left:10px; margin-bottom:30px" T="string" />
+            <MudTextField @bind-Value="_info.UserDetailsInfo.CompanyName" Variant="Variant.Text" Style="width:300px;margin-left:10px; margin-bottom:30px" T="string" />
         </div>
         @*公司地址*@
         <div style="display: flex;margin-top:10px;display: flex; align-items: center;">
             <span style="font-weight:bold; margin-left:8px; color:#A9A9A9; font-size: 13px;">公司地址:</span>
-            <MudTextField Variant="Variant.Text" Style="width:300px;margin-left:10px; margin-bottom:30px" T="string" />
+            <MudTextField @bind-Value="_info.UserDetailsInfo.CompanyAddress" Variant="Variant.Text" Style="width:300px;margin-left:10px; margin-bottom:30px" T="string" />
         </div>
         @*联系邮箱*@
         <div style="display: flex;margin-top:10px;display: flex; align-items: center;">
             <span style="font-weight:bold; margin-left:8px; color:#A9A9A9; font-size: 13px;">联系邮箱:</span>
-            <MudTextField Variant="Variant.Text" Style="width:300px;margin-left:10px; margin-bottom:30px" T="string" />
+            <MudTextField @bind-Value="_info.UserDetailsInfo.ContactEmail" Variant="Variant.Text" Style="width:300px;margin-left:10px; margin-bottom:30px" T="string" />
         </div>
         @*描述*@
         <div style="display: flex;margin-top:10px;display: flex; align-items: center;">
             <span style="font-weight:bold; margin-left:8px; color:#A9A9A9; font-size: 13px;">信息描述:</span>
-            <MudTextField Variant="Variant.Text" Style="width:300px;margin-left:10px; margin-bottom:30px" T="string" />
+            <MudTextField @bind-Value="_info.UserDetailsInfo.Description" Variant="Variant.Text" Style="width:300px;margin-left:10px; margin-bottom:30px" T="string" />
         </div>
-        <MudButton Style="flex; align-items: center;margin-top:10px; width:130px; border-radius: 10px;" ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">
+        <MudButton OnClick="UpdateProfile" Style="flex; align-items: center;margin-top:10px; width:130px; border-radius: 10px;" ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">
             信息变更
         </MudButton>
     </MudCard>
@@ -80,5 +89,92 @@
     }
 </style>
 @code {
+    public string OldPassWord { get; set; } = string.Empty;
+    public string NewPassWord { get; set; } = string.Empty;
+    public JayTom.Dws.LicenseApiClient.Data.Models.UserInfo _info = new();
 
+    protected override async Task OnInitializedAsync() {
+        await base.OnInitializedAsync();
+
+
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender) {
+        if (!await LicenseApiRequest.IsLoggedIn()) {
+            Navigation.NavigateTo("/login");
+        }
+        if (firstRender) {
+
+            await base.OnAfterRenderAsync(firstRender);
+            var (key, value) = await LicenseApiRequest.Info();
+            if (key && value is JayTom.Dws.LicenseApiClient.Data.Models.UserInfo info) {
+                _info = info;
+                NotificationService.Notify(info);
+            }
+            else {
+                Navigation.NavigateTo("/login");
+            }
+            StateHasChanged();
+        }
+
+    }
+
+    public async void ChangePassword() {
+        var (key, value) = await LicenseApiRequest.ChangePassword(OldPassWord, NewPassWord);
+        if (value is ApiResult result) {
+
+            if (result.Result) {
+
+                Navigation.NavigateTo("/login");
+            }
+            else {
+                Snackbar.Clear();
+                Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+                Snackbar.Add(result.Msg, Severity.Error);
+            }
+
+        }
+        else {
+            Snackbar.Clear();
+            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+            Snackbar.Add(value.ToString(), Severity.Error);
+        }
+    }
+
+    public async void UpdateProfile() {
+        var (key, value) = await LicenseApiRequest.UpdateProfile(_info.UserName, null, _info.UserDetailsInfo.CompanyName,
+            _info.UserDetailsInfo.CompanyAddress, _info.UserDetailsInfo.ContactEmail,
+            _info.UserDetailsInfo.Description,
+            _info.UserDetailsInfo.ContractFilePath,
+            _info.UserDetailsInfo.BusinessLicenseFilePath);
+        if (value is ApiResult result) {
+
+            Snackbar.Clear();
+            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+            Snackbar.Add(result.Msg, result.Result ? Severity.Success : Severity.Error);
+
+        }
+        else {
+            Snackbar.Clear();
+            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+            Snackbar.Add(value.ToString(), Severity.Error);
+        }
+    }
+    public string ConvertUserRole(int role) {
+        return role switch {
+            0 => "无",
+            1 => "超级管理员",
+            2 => "租户",
+            3 => "客户",
+            _ => "无"
+        };
+    }
+    public string ConvertUserStatus(UserStatus status) {
+        return status switch {
+            UserStatus.Active => "激活",
+            UserStatus.Frozen => "冻结",
+            UserStatus.Invalid => "失效",
+            _ => "无"
+        };
+    }
 }

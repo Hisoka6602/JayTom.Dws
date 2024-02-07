@@ -1,34 +1,292 @@
-﻿using System.Drawing;
+﻿using System.Net;
+using System.Text;
+using System.Drawing;
+using System.Net.Http;
+using Newtonsoft.Json;
+using Microsoft.JSInterop;
+using Newtonsoft.Json.Linq;
 using JayTom.Dws.LicenseApiClient.Data.Models;
+using Microsoft.AspNetCore.DataProtection.KeyManagement;
 
 namespace JayTom.Dws.LicenseApiClient.Api {
 
     public class LicenseApiRequest : ILicenseApiRequest {
-        public static string? Token { get; private set; }
+        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly IJSRuntime _jsRuntime;
 
-        public LicenseApiRequest() {
-            //读配置文件(获取域名)
+        public static string Domain { get; private set; } = "http://localhost:5101";
+
+        public LicenseApiRequest(IHttpClientFactory httpClientFactory,
+            IJSRuntime jsRuntime) {
+            _httpClientFactory = httpClientFactory;
+            _jsRuntime = jsRuntime;
+        }
+
+        public async Task<bool> IsLoggedIn() {
+            var invokeAsync = await _jsRuntime.InvokeAsync<string>("sessionStorage.getItem", "token");
+            return !string.IsNullOrEmpty(invokeAsync);
+        }
+
+        public void SetBaseUrl(string url) {
+            Domain = url;
         }
 
         public Task<KeyValuePair<bool, object>> Register(string userCode, string userName, string passWord, string phone, CancellationToken token) {
             throw new NotImplementedException();
         }
 
-        public Task<KeyValuePair<bool, object>> Login(string loginCode, string passWord, CancellationToken token) {
-            throw new NotImplementedException();
+        public async Task<KeyValuePair<bool, object>> Login(string loginCode, string passWord, CancellationToken token = default) {
+            try {
+                //组包
+
+                var requestJson = JsonConvert.SerializeObject(new {
+                    loginCode = loginCode,
+                    passWord = passWord,
+                });
+
+                using (var httpClient = _httpClientFactory.CreateClient("INSURANCE")) {
+                    httpClient.Timeout = TimeSpan.FromSeconds(20);
+                    HttpResponseMessage message;
+                    await using (Stream dataStream = new MemoryStream(Encoding.UTF8.GetBytes(requestJson))) {
+                        using (HttpContent content = new StreamContent(dataStream)) {
+                            content.Headers.Add("Content-Type", "application/json");
+                            message = await httpClient.PostAsync($"{Domain}{"/api/User/Login"}", content, token)
+                                .ConfigureAwait(false);
+                        }
+                    }
+                    string httpResult;
+                    switch (message.StatusCode) {
+                        case HttpStatusCode.OK: {
+                                using (message) {
+                                    httpResult = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                                }
+                                break;
+                            }
+                        case HttpStatusCode.NotFound:
+                            return new KeyValuePair<bool, object>(false, $"该地址不存在!");
+
+                        default:
+                            httpResult = $"{message}";
+                            break;
+                    }
+
+                    //解码
+                    var result = JsonConvert.DeserializeObject<ApiResult>(httpResult);
+                    if (result is not null) {
+                        await _jsRuntime.InvokeVoidAsync("sessionStorage.setItem", token, "token", result?.Data?.ToString() ?? string.Empty);
+                    }
+                    return new KeyValuePair<bool, object>(result?.Result ?? false, result ?? new ApiResult());
+                }
+            }
+            catch (HttpRequestException) {
+                return new KeyValuePair<bool, object>(false, "Http访问异常!");
+            }
+            catch (AggregateException) {
+                return new KeyValuePair<bool, object>(false, "接口访问异常!");
+            }
+            catch (TaskCanceledException) {
+                return new KeyValuePair<bool, object>(false, "接口访问返回超时!");
+            }
+            catch (Exception) {
+                return new KeyValuePair<bool, object>(false, "接口访问异常!");
+            }
         }
 
-        public Task<KeyValuePair<bool, object>> UpdateProfile(string? userName, string? phone, string companyName, string companyAddress, string contactEmail,
+        public async Task<KeyValuePair<bool, object>> UpdateProfile(string? userName, string? phone, string companyName, string companyAddress, string contactEmail,
             string description, string contractFilePath, string businessLicenseFilePath, CancellationToken token) {
-            throw new NotImplementedException();
+            var invokeAsync = await _jsRuntime.InvokeAsync<string>("sessionStorage.getItem", token, "token");
+            if (!string.IsNullOrEmpty(invokeAsync)) {
+                try {
+                    //组包
+
+                    var requestJson = JsonConvert.SerializeObject(new {
+                        companyName = companyName,
+                        companyAddress = companyAddress,
+                        contactEmail = contactEmail,
+                        description = description,
+                        contractFilePath = contractFilePath,
+                        businessLicenseFilePath = businessLicenseFilePath,
+                    });
+
+                    using (var httpClient = _httpClientFactory.CreateClient("INSURANCE")) {
+                        httpClient.Timeout = TimeSpan.FromSeconds(20);
+                        httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {invokeAsync}");
+                        HttpResponseMessage message;
+                        await using (Stream dataStream = new MemoryStream(Encoding.UTF8.GetBytes(requestJson))) {
+                            using (HttpContent content = new StreamContent(dataStream)) {
+                                content.Headers.Add("Content-Type", "application/json");
+                                message = await httpClient.PostAsync($"{Domain}{"/api/User/UpdateProfile"}", content, token)
+                                    .ConfigureAwait(false);
+                            }
+                        }
+                        string httpResult;
+                        switch (message.StatusCode) {
+                            case HttpStatusCode.OK: {
+                                    using (message) {
+                                        httpResult = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                                    }
+                                    break;
+                                }
+                            case HttpStatusCode.NotFound:
+                                return new KeyValuePair<bool, object>(false, $"该地址不存在!");
+
+                            case HttpStatusCode.Unauthorized:
+                                await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", token, "token");
+                                return new KeyValuePair<bool, object>(false, $"用户未登录!");
+
+                            default:
+                                httpResult = $"{message}";
+                                break;
+                        }
+
+                        //解码
+                        var result = JsonConvert.DeserializeObject<ApiResult>(httpResult);
+                        return new KeyValuePair<bool, object>(result?.Result ?? false, result ?? new ApiResult());
+                    }
+                }
+                catch (HttpRequestException) {
+                    return new KeyValuePair<bool, object>(false, "Http访问异常!");
+                }
+                catch (AggregateException) {
+                    return new KeyValuePair<bool, object>(false, "接口访问异常!");
+                }
+                catch (TaskCanceledException) {
+                    return new KeyValuePair<bool, object>(false, "接口访问返回超时!");
+                }
+                catch (Exception) {
+                    return new KeyValuePair<bool, object>(false, "接口访问异常!");
+                }
+            }
+            else {
+                return new KeyValuePair<bool, object>(false, "用户未登录");
+            }
         }
 
-        public Task<KeyValuePair<bool, object>> ChangePassword(string oldPassWord, string newPassWord, CancellationToken token) {
-            throw new NotImplementedException();
+        public async Task<KeyValuePair<bool, object>> ChangePassword(string oldPassWord, string newPassWord, CancellationToken token) {
+            var invokeAsync = await _jsRuntime.InvokeAsync<string>("sessionStorage.getItem", token, "token");
+            if (!string.IsNullOrEmpty(invokeAsync)) {
+                try {
+                    //组包
+
+                    var requestJson = JsonConvert.SerializeObject(new {
+                        oldPassWord = oldPassWord,
+                        newPassWord = newPassWord,
+                    });
+
+                    using (var httpClient = _httpClientFactory.CreateClient("INSURANCE")) {
+                        httpClient.Timeout = TimeSpan.FromSeconds(20);
+                        httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {invokeAsync}");
+                        HttpResponseMessage message;
+                        await using (Stream dataStream = new MemoryStream(Encoding.UTF8.GetBytes(requestJson))) {
+                            using (HttpContent content = new StreamContent(dataStream)) {
+                                content.Headers.Add("Content-Type", "application/json");
+                                message = await httpClient.PostAsync($"{Domain}{"/api/User/ChangePassword"}", content, token)
+                                    .ConfigureAwait(false);
+                            }
+                        }
+                        string httpResult;
+                        switch (message.StatusCode) {
+                            case HttpStatusCode.OK: {
+                                    using (message) {
+                                        httpResult = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                                    }
+                                    break;
+                                }
+                            case HttpStatusCode.NotFound:
+                                return new KeyValuePair<bool, object>(false, $"该地址不存在!");
+
+                            case HttpStatusCode.Unauthorized:
+                                await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", token, "token");
+                                return new KeyValuePair<bool, object>(false, $"用户未登录!");
+
+                            default:
+                                httpResult = $"{message}";
+                                break;
+                        }
+
+                        //解码
+                        var result = JsonConvert.DeserializeObject<ApiResult>(httpResult);
+                        if (result is not null && result.Result) {
+                            await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", token, "token");
+                        }
+                        return new KeyValuePair<bool, object>(result?.Result ?? false, result ?? new ApiResult());
+                    }
+                }
+                catch (HttpRequestException) {
+                    return new KeyValuePair<bool, object>(false, "Http访问异常!");
+                }
+                catch (AggregateException) {
+                    return new KeyValuePair<bool, object>(false, "接口访问异常!");
+                }
+                catch (TaskCanceledException) {
+                    return new KeyValuePair<bool, object>(false, "接口访问返回超时!");
+                }
+                catch (Exception) {
+                    return new KeyValuePair<bool, object>(false, "接口访问异常!");
+                }
+            }
+            else {
+                return new KeyValuePair<bool, object>(false, "用户未登录");
+            }
         }
 
-        public Task<KeyValuePair<bool, object>> Info(CancellationToken token) {
-            throw new NotImplementedException();
+        public async Task<KeyValuePair<bool, object>> Info(CancellationToken token) {
+            var invokeAsync = await _jsRuntime.InvokeAsync<string>("sessionStorage.getItem", token, "token");
+            if (!string.IsNullOrEmpty(invokeAsync)) {
+                try {
+                    using (var httpClient = _httpClientFactory.CreateClient("INSURANCE")) {
+                        httpClient.Timeout = TimeSpan.FromSeconds(20);
+                        httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {invokeAsync}");
+                        HttpResponseMessage message;
+                        message = await httpClient.GetAsync($"{Domain}{"/api/User/Info"}", token)
+                            .ConfigureAwait(false);
+                        string httpResult;
+                        switch (message.StatusCode) {
+                            case HttpStatusCode.OK: {
+                                    using (message) {
+                                        httpResult = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                                    }
+                                    break;
+                                }
+                            case HttpStatusCode.NotFound:
+                                return new KeyValuePair<bool, object>(false, $"该地址不存在!");
+
+                            case HttpStatusCode.Unauthorized:
+                                await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", token, "token");
+                                return new KeyValuePair<bool, object>(false, $"用户未登录!");
+
+                            default:
+                                httpResult = $"{message}";
+                                break;
+                        }
+
+                        //解码
+                        var result = JsonConvert.DeserializeObject<ApiResult>(httpResult);
+                        if (result is not null) {
+                            var userInfo = JsonConvert.DeserializeObject<UserInfo>(result?.Data?.ToString() ?? string.Empty);
+                            if (userInfo is not null) {
+                                return new KeyValuePair<bool, object>(true, userInfo);
+                            }
+                        }
+                        return new KeyValuePair<bool, object>(result?.Result ?? false, result ?? new ApiResult());
+                    }
+                }
+                catch (HttpRequestException) {
+                    return new KeyValuePair<bool, object>(false, "Http访问异常!");
+                }
+                catch (AggregateException) {
+                    return new KeyValuePair<bool, object>(false, "接口访问异常!");
+                }
+                catch (TaskCanceledException) {
+                    return new KeyValuePair<bool, object>(false, "接口访问返回超时!");
+                }
+                catch (Exception) {
+                    return new KeyValuePair<bool, object>(false, "接口访问异常!");
+                }
+            }
+            else {
+                return new KeyValuePair<bool, object>(false, "用户未登录");
+            }
         }
 
         public Task<KeyValuePair<bool, object>> FreezeUser(string userCode, bool isFreeze, CancellationToken token) {
@@ -39,32 +297,452 @@ namespace JayTom.Dws.LicenseApiClient.Api {
             throw new NotImplementedException();
         }
 
-        public Task<KeyValuePair<bool, object>> CreateApplication(string applicationName, string description, List<FeatureItemModel>? featureInfos, CancellationToken token) {
-            throw new NotImplementedException();
+        public async Task<KeyValuePair<bool, object>> CreateApplication(string applicationName, string description, List<FeatureItemModel>? featureInfos, CancellationToken token) {
+            var invokeAsync = await _jsRuntime.InvokeAsync<string>("sessionStorage.getItem", token, "token");
+            if (!string.IsNullOrEmpty(invokeAsync)) {
+                try {
+                    //组包
+
+                    var requestJson = JsonConvert.SerializeObject(new {
+                        applicationName = applicationName,
+                        description = description,
+                        featureInfos = featureInfos
+                    });
+
+                    using (var httpClient = _httpClientFactory.CreateClient("INSURANCE")) {
+                        httpClient.Timeout = TimeSpan.FromSeconds(20);
+                        httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {invokeAsync}");
+                        HttpResponseMessage message;
+                        await using (Stream dataStream = new MemoryStream(Encoding.UTF8.GetBytes(requestJson))) {
+                            using (HttpContent content = new StreamContent(dataStream)) {
+                                content.Headers.Add("Content-Type", "application/json");
+                                message = await httpClient.PostAsync($"{Domain}{"/api/App/CreateApplication"}", content, token)
+                                    .ConfigureAwait(false);
+                            }
+                        }
+                        string httpResult;
+                        switch (message.StatusCode) {
+                            case HttpStatusCode.OK: {
+                                    using (message) {
+                                        httpResult = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                                    }
+                                    break;
+                                }
+                            case HttpStatusCode.NotFound:
+                                return new KeyValuePair<bool, object>(false, $"该地址不存在!");
+
+                            case HttpStatusCode.Unauthorized:
+                                await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", token, "token");
+                                return new KeyValuePair<bool, object>(false, $"用户未登录!");
+
+                            default:
+                                httpResult = $"{message}";
+                                break;
+                        }
+
+                        //解码
+                        var result = JsonConvert.DeserializeObject<ApiResult>(httpResult);
+                        return new KeyValuePair<bool, object>(result?.Result ?? false, result ?? new ApiResult());
+                    }
+                }
+                catch (HttpRequestException) {
+                    return new KeyValuePair<bool, object>(false, "Http访问异常!");
+                }
+                catch (AggregateException) {
+                    return new KeyValuePair<bool, object>(false, "接口访问异常!");
+                }
+                catch (TaskCanceledException) {
+                    return new KeyValuePair<bool, object>(false, "接口访问返回超时!");
+                }
+                catch (Exception) {
+                    return new KeyValuePair<bool, object>(false, "接口访问异常!");
+                }
+            }
+            else {
+                return new KeyValuePair<bool, object>(false, "用户未登录");
+            }
         }
 
-        public Task<KeyValuePair<bool, object>> CreateApplicationTemplate(long licenseApplicationInfoId, string templateName, CancellationToken token) {
-            throw new NotImplementedException();
+        public async Task<KeyValuePair<bool, object>> CreateApplicationTemplate(long licenseApplicationInfoId, string templateName, CancellationToken token) {
+            var invokeAsync = await _jsRuntime.InvokeAsync<string>("sessionStorage.getItem", token, "token");
+            if (!string.IsNullOrEmpty(invokeAsync)) {
+                try {
+                    //组包
+
+                    var requestJson = JsonConvert.SerializeObject(new {
+                        licenseApplicationInfoId = licenseApplicationInfoId,
+                        templateName = templateName,
+                    });
+
+                    using (var httpClient = _httpClientFactory.CreateClient("INSURANCE")) {
+                        httpClient.Timeout = TimeSpan.FromSeconds(20);
+                        httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {invokeAsync}");
+                        HttpResponseMessage message;
+                        await using (Stream dataStream = new MemoryStream(Encoding.UTF8.GetBytes(requestJson))) {
+                            using (HttpContent content = new StreamContent(dataStream)) {
+                                content.Headers.Add("Content-Type", "application/json");
+                                message = await httpClient.PostAsync($"{Domain}{"/api/App/CreateApplicationTemplate"}", content, token)
+                                    .ConfigureAwait(false);
+                            }
+                        }
+                        string httpResult;
+                        switch (message.StatusCode) {
+                            case HttpStatusCode.OK: {
+                                    using (message) {
+                                        httpResult = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                                    }
+                                    break;
+                                }
+                            case HttpStatusCode.NotFound:
+                                return new KeyValuePair<bool, object>(false, $"该地址不存在!");
+
+                            case HttpStatusCode.Unauthorized:
+                                await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", token, "token");
+                                return new KeyValuePair<bool, object>(false, $"用户未登录!");
+
+                            default:
+                                httpResult = $"{message}";
+                                break;
+                        }
+
+                        //解码
+                        var result = JsonConvert.DeserializeObject<ApiResult>(httpResult);
+                        return new KeyValuePair<bool, object>(result?.Result ?? false, result ?? new ApiResult());
+                    }
+                }
+                catch (HttpRequestException) {
+                    return new KeyValuePair<bool, object>(false, "Http访问异常!");
+                }
+                catch (AggregateException) {
+                    return new KeyValuePair<bool, object>(false, "接口访问异常!");
+                }
+                catch (TaskCanceledException) {
+                    return new KeyValuePair<bool, object>(false, "接口访问返回超时!");
+                }
+                catch (Exception) {
+                    return new KeyValuePair<bool, object>(false, "接口访问异常!");
+                }
+            }
+            else {
+                return new KeyValuePair<bool, object>(false, "用户未登录");
+            }
         }
 
-        public Task<KeyValuePair<bool, object>> SetTemplatePermissions(long templateId, List<FeatureItemModel>? featureInfos, CancellationToken token) {
-            throw new NotImplementedException();
+        public async Task<KeyValuePair<bool, object>> SetTemplatePermissions(long templateId, List<FeatureItemModel>? featureInfos, CancellationToken token) {
+            var invokeAsync = await _jsRuntime.InvokeAsync<string>("sessionStorage.getItem", token, "token");
+            if (!string.IsNullOrEmpty(invokeAsync)) {
+                try {
+                    //组包
+
+                    var requestJson = JsonConvert.SerializeObject(new {
+                        templateId = templateId,
+                        featureInfos = featureInfos
+                    });
+
+                    using (var httpClient = _httpClientFactory.CreateClient("INSURANCE")) {
+                        httpClient.Timeout = TimeSpan.FromSeconds(20);
+                        httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {invokeAsync}");
+                        HttpResponseMessage message;
+                        await using (Stream dataStream = new MemoryStream(Encoding.UTF8.GetBytes(requestJson))) {
+                            using (HttpContent content = new StreamContent(dataStream)) {
+                                content.Headers.Add("Content-Type", "application/json");
+                                message = await httpClient.PostAsync($"{Domain}{"/api/App/SetTemplatePermissions"}", content, token)
+                                    .ConfigureAwait(false);
+                            }
+                        }
+                        string httpResult;
+                        switch (message.StatusCode) {
+                            case HttpStatusCode.OK: {
+                                    using (message) {
+                                        httpResult = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                                    }
+                                    break;
+                                }
+                            case HttpStatusCode.NotFound:
+                                return new KeyValuePair<bool, object>(false, $"该地址不存在!");
+
+                            case HttpStatusCode.Unauthorized:
+                                await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", token, "token");
+                                return new KeyValuePair<bool, object>(false, $"用户未登录!");
+
+                            default:
+                                httpResult = $"{message}";
+                                break;
+                        }
+
+                        //解码
+                        var result = JsonConvert.DeserializeObject<ApiResult>(httpResult);
+                        return new KeyValuePair<bool, object>(result?.Result ?? false, result ?? new ApiResult());
+                    }
+                }
+                catch (HttpRequestException) {
+                    return new KeyValuePair<bool, object>(false, "Http访问异常!");
+                }
+                catch (AggregateException) {
+                    return new KeyValuePair<bool, object>(false, "接口访问异常!");
+                }
+                catch (TaskCanceledException) {
+                    return new KeyValuePair<bool, object>(false, "接口访问返回超时!");
+                }
+                catch (Exception) {
+                    return new KeyValuePair<bool, object>(false, "接口访问异常!");
+                }
+            }
+            else {
+                return new KeyValuePair<bool, object>(false, "用户未登录");
+            }
         }
 
-        public Task<KeyValuePair<bool, object>> ApplicationData(CancellationToken token) {
-            throw new NotImplementedException();
+        public async Task<KeyValuePair<bool, object>> ApplicationData(CancellationToken token) {
+            var invokeAsync = await _jsRuntime.InvokeAsync<string>("sessionStorage.getItem", token, "token");
+            if (!string.IsNullOrEmpty(invokeAsync)) {
+                try {
+                    //组包
+
+                    using (var httpClient = _httpClientFactory.CreateClient("INSURANCE")) {
+                        httpClient.Timeout = TimeSpan.FromSeconds(20);
+                        httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {invokeAsync}");
+                        HttpResponseMessage message;
+                        message = await httpClient.GetAsync($"{Domain}{"/api/App/ApplicationData"}", token)
+                            .ConfigureAwait(false);
+                        string httpResult;
+                        switch (message.StatusCode) {
+                            case HttpStatusCode.OK: {
+                                    using (message) {
+                                        httpResult = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                                    }
+                                    break;
+                                }
+                            case HttpStatusCode.NotFound:
+                                return new KeyValuePair<bool, object>(false, $"该地址不存在!");
+
+                            case HttpStatusCode.Unauthorized:
+                                await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", token, "token");
+                                return new KeyValuePair<bool, object>(false, $"用户未登录!");
+
+                            default:
+                                httpResult = $"{message}";
+                                break;
+                        }
+
+                        //解码
+                        var result = JsonConvert.DeserializeObject<ApiResult>(httpResult);
+                        if (result is { Result: true, Data: not null }) {
+                            var models = JsonConvert.DeserializeObject<List<ApplicationItemInfoModel>>(result.Data.ToString() ??
+                                string.Empty);
+                            if (models is not null) {
+                                return new KeyValuePair<bool, object>(true, models);
+                            }
+                        }
+                        return new KeyValuePair<bool, object>(result?.Result ?? false, result ?? new ApiResult());
+                    }
+                }
+                catch (HttpRequestException) {
+                    return new KeyValuePair<bool, object>(false, "Http访问异常!");
+                }
+                catch (AggregateException) {
+                    return new KeyValuePair<bool, object>(false, "接口访问异常!");
+                }
+                catch (TaskCanceledException) {
+                    return new KeyValuePair<bool, object>(false, "接口访问返回超时!");
+                }
+                catch (Exception) {
+                    return new KeyValuePair<bool, object>(false, "接口访问异常!");
+                }
+            }
+            else {
+                return new KeyValuePair<bool, object>(false, "用户未登录");
+            }
         }
 
-        public Task<KeyValuePair<bool, object>> TemplateData(CancellationToken token) {
-            throw new NotImplementedException();
+        public async Task<KeyValuePair<bool, object>> TemplateData(CancellationToken token) {
+            var invokeAsync = await _jsRuntime.InvokeAsync<string>("sessionStorage.getItem", token, "token");
+            if (!string.IsNullOrEmpty(invokeAsync)) {
+                try {
+                    //组包
+
+                    using (var httpClient = _httpClientFactory.CreateClient("INSURANCE")) {
+                        httpClient.Timeout = TimeSpan.FromSeconds(20);
+                        httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {invokeAsync}");
+                        HttpResponseMessage message;
+                        message = await httpClient.GetAsync($"{Domain}{"/api/App/TemplateData"}", token)
+                            .ConfigureAwait(false);
+                        string httpResult;
+                        switch (message.StatusCode) {
+                            case HttpStatusCode.OK: {
+                                    using (message) {
+                                        httpResult = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                                    }
+                                    break;
+                                }
+                            case HttpStatusCode.NotFound:
+                                return new KeyValuePair<bool, object>(false, $"该地址不存在!");
+
+                            case HttpStatusCode.Unauthorized:
+                                await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", token, "token");
+                                return new KeyValuePair<bool, object>(false, $"用户未登录!");
+
+                            default:
+                                httpResult = $"{message}";
+                                break;
+                        }
+
+                        //解码
+                        var result = JsonConvert.DeserializeObject<ApiResult>(httpResult);
+                        if (result is { Result: true, Data: not null }) {
+                            var models = JsonConvert.DeserializeObject<List<AppTemplateItemInfoModel>>(result.Data.ToString() ??
+                                string.Empty);
+                            if (models is not null) {
+                                return new KeyValuePair<bool, object>(true, models);
+                            }
+                        }
+                        return new KeyValuePair<bool, object>(result?.Result ?? false, result ?? new ApiResult());
+                    }
+                }
+                catch (HttpRequestException) {
+                    return new KeyValuePair<bool, object>(false, "Http访问异常!");
+                }
+                catch (AggregateException) {
+                    return new KeyValuePair<bool, object>(false, "接口访问异常!");
+                }
+                catch (TaskCanceledException) {
+                    return new KeyValuePair<bool, object>(false, "接口访问返回超时!");
+                }
+                catch (Exception) {
+                    return new KeyValuePair<bool, object>(false, "接口访问异常!");
+                }
+            }
+            else {
+                return new KeyValuePair<bool, object>(false, "用户未登录");
+            }
         }
 
-        public Task<KeyValuePair<bool, object>> DeleteApplication(long deleteApplicationId, CancellationToken token) {
-            throw new NotImplementedException();
+        public async Task<KeyValuePair<bool, object>> DeleteApplication(long deleteApplicationId, CancellationToken token) {
+            var invokeAsync = await _jsRuntime.InvokeAsync<string>("sessionStorage.getItem", token, "token");
+            if (!string.IsNullOrEmpty(invokeAsync)) {
+                try {
+                    //组包
+
+                    var requestJson = JsonConvert.SerializeObject(new {
+                        deleteApplicationId = deleteApplicationId,
+                    });
+
+                    using (var httpClient = _httpClientFactory.CreateClient("INSURANCE")) {
+                        httpClient.Timeout = TimeSpan.FromSeconds(20);
+                        httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {invokeAsync}");
+                        HttpResponseMessage message;
+                        await using (Stream dataStream = new MemoryStream(Encoding.UTF8.GetBytes(requestJson))) {
+                            using (HttpContent content = new StreamContent(dataStream)) {
+                                content.Headers.Add("Content-Type", "application/json");
+                                message = await httpClient.PostAsync($"{Domain}{"/api/App/DeleteApplication"}", content, token)
+                                    .ConfigureAwait(false);
+                            }
+                        }
+                        string httpResult;
+                        switch (message.StatusCode) {
+                            case HttpStatusCode.OK: {
+                                    using (message) {
+                                        httpResult = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                                    }
+                                    break;
+                                }
+                            case HttpStatusCode.NotFound:
+                                return new KeyValuePair<bool, object>(false, $"该地址不存在!");
+
+                            case HttpStatusCode.Unauthorized:
+                                await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", token, "token");
+                                return new KeyValuePair<bool, object>(false, $"用户未登录!");
+
+                            default:
+                                httpResult = $"{message}";
+                                break;
+                        }
+
+                        //解码
+                        var result = JsonConvert.DeserializeObject<ApiResult>(httpResult);
+                        return new KeyValuePair<bool, object>(result?.Result ?? false, result ?? new ApiResult());
+                    }
+                }
+                catch (HttpRequestException) {
+                    return new KeyValuePair<bool, object>(false, "Http访问异常!");
+                }
+                catch (AggregateException) {
+                    return new KeyValuePair<bool, object>(false, "接口访问异常!");
+                }
+                catch (TaskCanceledException) {
+                    return new KeyValuePair<bool, object>(false, "接口访问返回超时!");
+                }
+                catch (Exception) {
+                    return new KeyValuePair<bool, object>(false, "接口访问异常!");
+                }
+            }
+            else {
+                return new KeyValuePair<bool, object>(false, "用户未登录");
+            }
         }
 
-        public Task<KeyValuePair<bool, object>> DeleteTemplate(long deleteTemplateId, CancellationToken token) {
-            throw new NotImplementedException();
+        public async Task<KeyValuePair<bool, object>> DeleteTemplate(long deleteTemplateId, CancellationToken token) {
+            var invokeAsync = await _jsRuntime.InvokeAsync<string>("sessionStorage.getItem", token, "token");
+            if (!string.IsNullOrEmpty(invokeAsync)) {
+                try {
+                    //组包
+
+                    var requestJson = JsonConvert.SerializeObject(new {
+                        deleteTemplateId = deleteTemplateId,
+                    });
+
+                    using (var httpClient = _httpClientFactory.CreateClient("INSURANCE")) {
+                        httpClient.Timeout = TimeSpan.FromSeconds(20);
+                        httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {invokeAsync}");
+                        HttpResponseMessage message;
+                        await using (Stream dataStream = new MemoryStream(Encoding.UTF8.GetBytes(requestJson))) {
+                            using (HttpContent content = new StreamContent(dataStream)) {
+                                content.Headers.Add("Content-Type", "application/json");
+                                message = await httpClient.PostAsync($"{Domain}{"/api/App/DeleteTemplate"}", content, token)
+                                    .ConfigureAwait(false);
+                            }
+                        }
+                        string httpResult;
+                        switch (message.StatusCode) {
+                            case HttpStatusCode.OK: {
+                                    using (message) {
+                                        httpResult = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                                    }
+                                    break;
+                                }
+                            case HttpStatusCode.NotFound:
+                                return new KeyValuePair<bool, object>(false, $"该地址不存在!");
+
+                            case HttpStatusCode.Unauthorized:
+                                await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", token, "token");
+                                return new KeyValuePair<bool, object>(false, $"用户未登录!");
+
+                            default:
+                                httpResult = $"{message}";
+                                break;
+                        }
+
+                        //解码
+                        var result = JsonConvert.DeserializeObject<ApiResult>(httpResult);
+                        return new KeyValuePair<bool, object>(result?.Result ?? false, result ?? new ApiResult());
+                    }
+                }
+                catch (HttpRequestException) {
+                    return new KeyValuePair<bool, object>(false, "Http访问异常!");
+                }
+                catch (AggregateException) {
+                    return new KeyValuePair<bool, object>(false, "接口访问异常!");
+                }
+                catch (TaskCanceledException) {
+                    return new KeyValuePair<bool, object>(false, "接口访问返回超时!");
+                }
+                catch (Exception) {
+                    return new KeyValuePair<bool, object>(false, "接口访问异常!");
+                }
+            }
+            else {
+                return new KeyValuePair<bool, object>(false, "用户未登录");
+            }
         }
 
         public Task<KeyValuePair<bool, object>> CreateLicenseCode(long templateInfoId, int maxClientCount, DateTime expirationDate, string clientName,

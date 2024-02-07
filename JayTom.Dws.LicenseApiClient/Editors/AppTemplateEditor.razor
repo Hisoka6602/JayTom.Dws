@@ -15,13 +15,13 @@
                     }
 
                 </MudSelect>
-                <MudTextField FullWidth="true" @bind-Value="CurrentAppTemplateInfo.Title" Label="模板名称" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
+                <MudTextField FullWidth="true" @bind-Value="CurrentAppTemplateInfo.TemplateName" Label="模板名称" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
             </div>
 
         </MudCardContent>
         @*列表*@
         <div>
-            <MudTable Height="360px" Breakpoint="Breakpoint.Sm" FixedHeader="true" Style="width:600px;min-height:360px;max-height:360px;" Items="@CurrentAppTemplateInfo.FeatureItems"
+            <MudTable Height="360px" Breakpoint="Breakpoint.Sm" FixedHeader="true" Style="width:600px;min-height:360px;max-height:360px;" Items="@CurrentAppTemplateInfo.LicenseApplicationInfo.LicenseFeatureInfos"
                       Dense="false" Hover="true" CanCancelEdit="true"
                       SelectOnRowClick="true"
                       RowEditPreview="BackupItem" RowEditCancel="ResetItemToOriginalValues"
@@ -81,21 +81,24 @@
     private bool _isEdit = false;
     protected override async Task OnInitializedAsync() {
         await base.OnInitializedAsync();
-        CurrentAppTemplateInfo.FeatureItems.Clear();
+        CurrentAppTemplateInfo.LicenseApplicationInfo.LicenseFeatureInfos.Clear();
         if (AppTemplateInfo is not null) {
             CurrentAppTemplateInfo = new AppTemplateItemInfoModel() {
                     Id = AppTemplateInfo.Id,
                     LicenseApplicationInfoId = AppTemplateInfo.LicenseApplicationInfoId,
                     TemplateName = AppTemplateInfo.TemplateName,
-                    Title = AppTemplateInfo.Title,
-                    Description = AppTemplateInfo.Description,
-                    FeatureItems = AppTemplateInfo.FeatureItems?.Select((s, i) => new FeatureItemModel {
-                        Description = s.Description,
-                        FeatureGuid = s.FeatureGuid,
-                        FeatureName = s.FeatureName,
-                        IsActive = s.IsActive,
-                        Num = i + 1
-                    })?.ToList() ?? new List<FeatureItemModel>()
+                    LicenseApplicationInfo = new ApplicationItemInfoModel() {
+
+                        ApplicationName = AppTemplateInfo.LicenseApplicationInfo.ApplicationName,
+                        Description = AppTemplateInfo.LicenseApplicationInfo.Description,
+                        LicenseFeatureInfos = AppTemplateInfo.LicenseApplicationInfo.LicenseFeatureInfos?.Select((s, i) => new FeatureItemModel {
+                            Description = s.Description,
+                            FeatureGuid = s.FeatureGuid,
+                            FeatureName = s.FeatureName,
+                            IsActive = s.IsActive,
+                            Num = i + 1
+                        })?.ToList() ?? new List<FeatureItemModel>()
+                    }
                 };
             if (AppTemplateInfo.Image is not null) {
 
@@ -108,7 +111,7 @@
             }
             _isEdit = true;
         }
-
+        StateHasChanged();
     }
 
     // 异步方法处理文件改变事件
@@ -149,15 +152,20 @@
     private async void Confirm() {
         AppTemplateInfo = new AppTemplateItemInfoModel() {
                 Id = CurrentAppTemplateInfo.Id,
-                Title = CurrentAppTemplateInfo.Title,
-                Description = CurrentAppTemplateInfo.Description,
-                FeatureItems = CurrentAppTemplateInfo.FeatureItems?.Select((s, i) => new FeatureItemModel {
-                    Description = s.Description,
-                    FeatureGuid = s.FeatureGuid,
-                    FeatureName = s.FeatureName,
-                    IsActive = s.IsActive,
-                    Num = i + 1
-                })?.ToList() ?? new List<FeatureItemModel>()
+                TemplateName = CurrentAppTemplateInfo.TemplateName,
+                LicenseApplicationInfoId = CurrentAppTemplateInfo.LicenseApplicationInfoId,
+                LicenseApplicationInfo = new ApplicationItemInfoModel() {
+                    ApplicationName = CurrentAppTemplateInfo.LicenseApplicationInfo.ApplicationName,
+                    Description = CurrentAppTemplateInfo.LicenseApplicationInfo.Description,
+                    LicenseFeatureInfos = CurrentAppTemplateInfo.LicenseApplicationInfo.LicenseFeatureInfos?.Select((s, i) => new FeatureItemModel {
+                        Description = s.Description,
+                        FeatureGuid = s.FeatureGuid,
+                        FeatureName = s.FeatureName,
+                        IsActive = s.IsActive,
+                        Num = i + 1
+                    })?.ToList() ?? new List<FeatureItemModel>()
+                }
+
             };
         await OnConfirm.InvokeAsync(AppTemplateInfo);
     }
@@ -168,18 +176,19 @@
 
 
     public string ConvertApplicationInfo(ApplicationItemInfoModel? info) {
-        return info is not null ? info.Title : string.Empty;
+        return info is not null ? info.ApplicationName : string.Empty;
     }
 
     public void ApplicationInfoSelectedValuesChanged(ApplicationItemInfoModel info) {
-        CurrentAppTemplateInfo.FeatureItems.Clear();
-        CurrentAppTemplateInfo.FeatureItems = info.FeatureItems.Select(s => new FeatureItemModel() {
+        CurrentAppTemplateInfo.LicenseApplicationInfo.LicenseFeatureInfos.Clear();
+        CurrentAppTemplateInfo.LicenseApplicationInfo.LicenseFeatureInfos = info.LicenseFeatureInfos.Select(s => new FeatureItemModel() {
                 Description = s.Description,
                 FeatureGuid = s.FeatureGuid,
                 FeatureName = s.FeatureName,
                 IsActive = s.IsActive,
                 Num = s.Num
             })?.ToList() ?? new List<FeatureItemModel>();
+        CurrentAppTemplateInfo.LicenseApplicationInfoId = info.Id;
     }
 
 

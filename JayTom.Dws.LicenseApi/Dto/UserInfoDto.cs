@@ -1,6 +1,8 @@
-﻿namespace JayTom.Dws.LicenseApiClient.Data.Models {
+﻿using JayTom.Dws.Data.License;
 
-    public class UserInfo {
+namespace JayTom.Dws.LicenseApi.Dto {
+
+    public class UserInfoDto {
 
         /// <summary>
         /// pid
@@ -25,7 +27,7 @@
         /// <summary>
         /// 角色
         /// </summary>
-        public int Role { get; set; }
+        public UserRole Role { get; set; } = UserRole.None;
 
         /// <summary>
         /// 用户状态
@@ -40,6 +42,8 @@
         /// <summary>
         /// 详细信息
         /// </summary>
-        public virtual UserDetailsInfo UserDetailsInfo { get; set; } = new();
+        public LicenseUserDetailsInfo? UserDetailsInfo { get; set; }
+
+        public List<LicenseCodeInfo>? LicenseCodeInfos { get; set; }
     }
 }

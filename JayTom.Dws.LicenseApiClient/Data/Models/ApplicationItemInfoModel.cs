@@ -2,13 +2,13 @@
 
     public class ApplicationItemInfoModel {
         public long Id { get; set; }
-        public string Title { get; set; } = "Title";
+        public string ApplicationName { get; set; } = "Title";
 
         public string Description { get; set; } = "Description";
 
         public string ButtonText { get; set; } = "ButtonText";
         public Stream? Image { get; set; }
 
-        public List<FeatureItemModel> FeatureItems { get; set; } = new();
+        public List<FeatureItemModel> LicenseFeatureInfos { get; set; } = new();
     }
 }
