@@ -151,5 +151,30 @@ namespace JayTom.Dws.LicenseApi.Controllers {
 
             return JsonResultVo.Success("生成成功", filePath);
         }
+
+        /// <summary>
+        /// 创建远程创建授权
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost("CreateAuthorization")]
+        public async Task<IActionResult> CreateAuthorization([FromBody] DownloadLicenseFileDo param, CancellationToken cancellationToken) {
+            //根据授权码取出用户Code
+            //调用GetLicenseFileUrl
+
+            return JsonResultVo.Fail("111");
+        }
+
+        /// <summary>
+        /// 激活授权
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost("ActivateAuthorization")]
+        public async Task<IActionResult> ActivateAuthorization([FromBody] DownloadLicenseFileDo param, CancellationToken cancellationToken) {
+            //判断机器码是否已经被激活
+            //判断剩余激活量
+            //修改剩余激活量
+
+            return JsonResultVo.Fail("111");
+        }
     }
 }
