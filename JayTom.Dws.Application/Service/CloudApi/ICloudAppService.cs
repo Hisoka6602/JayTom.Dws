@@ -69,5 +69,22 @@ namespace JayTom.Dws.Application.Service.CloudApi {
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
         Task<KeyValuePair<bool, object>> GetStatistics(DateTime? startDateTime, DateTime? endDateTime, string? deviceName, CancellationToken cancellationToken);
+
+        /// <summary>
+        /// 删除N天前的数据
+        /// </summary>
+        /// <param name="days"></param>
+        /// <param name="rootImagePath"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        public Task<KeyValuePair<bool, object>> CleanupDataDaysAgo(int days, string rootImagePath, CancellationToken token = default);
+
+        /// <summary>
+        /// 清理最早图像文件
+        /// </summary>
+        /// <param name="folderPath"></param>
+        /// <param name="minFreeSpaceInMb"></param>
+        /// <returns></returns>
+        public Task CleanEarliestImageFiles(string folderPath, long minFreeSpaceInMb);
     }
 }

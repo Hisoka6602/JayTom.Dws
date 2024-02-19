@@ -8,6 +8,7 @@ using JayTom.Dws.Domain.Dto.CloudApiDto;
 using JayTom.Dws.Domain.Repository.CloudApi;
 
 namespace JayTom.Dws.Domain.Service.CloudApi {
+
     public class CloudService : ICloudService {
         private readonly ICloudPackageRepository _cloudPackageRepository;
 
@@ -182,6 +183,25 @@ namespace JayTom.Dws.Domain.Service.CloudApi {
 
         public Task<KeyValuePair<bool, object>> GetStatistics(DateTime? startDateTime, DateTime? endDateTime, string? deviceName, CancellationToken cancellationToken) {
             return _cloudPackageRepository.GetStatistics(startDateTime, endDateTime, deviceName, cancellationToken);
+        }
+
+        public async Task<KeyValuePair<bool, object>> CleanupDataDaysAgo(int days, CancellationToken token = default) {
+            var dateTime = DateTime.Now.AddDays(0 - days);
+            var total = await _cloudPackageRepository.Total(w => w.BarCodeInfo != null &&
+                                                                 w.BarCodeInfo.ScanTime < dateTime, token);
+            if (total > 0) {
+                var (key, value) = await _cloudPackageRepository.SelectPackage(w => w.BarCodeInfo != null &&
+                        w.BarCodeInfo.ScanTime < dateTime,
+                    o => o.Id, 0, total, token);
+                if (key) {
+                    await _cloudPackageRepository.DeleteRange(value, token);
+                }
+
+                return new KeyValuePair<bool, object>(true, "删除成功");
+            }
+            else {
+                return new KeyValuePair<bool, object>(false, "未获取到相关数据");
+            }
         }
     }
 }

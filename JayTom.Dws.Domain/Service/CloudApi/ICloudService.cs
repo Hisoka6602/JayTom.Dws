@@ -64,5 +64,14 @@ namespace JayTom.Dws.Domain.Service.CloudApi {
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
         Task<KeyValuePair<bool, object>> GetStatistics(DateTime? startDateTime, DateTime? endDateTime, string? deviceName, CancellationToken cancellationToken);
+
+        /// <summary>
+        /// 删除数据
+        /// </summary>
+        /// <param name="days"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        public Task<KeyValuePair<bool, object>> CleanupDataDaysAgo(int days,
+            CancellationToken token = default);
     }
 }

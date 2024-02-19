@@ -72,5 +72,76 @@ namespace JayTom.Dws.Application.Service.CloudApi {
             CancellationToken cancellationToken) {
             return _cloudService.GetStatistics(startDateTime, endDateTime, deviceName, cancellationToken);
         }
+
+        public async Task<KeyValuePair<bool, object>> CleanupDataDaysAgo(int days, string rootImagePath, CancellationToken token = default) {
+            var dateTime = DateTime.Now.AddDays(0 - days);
+            var files = new List<string>();
+            var barcodeImageRootPath = $"{rootImagePath}\\barcodeImages";
+
+            if (Directory.Exists(barcodeImageRootPath)) {
+                var filesBeforeDate = GetFilesBeforeDate(barcodeImageRootPath, dateTime);
+                files.AddRange(filesBeforeDate);
+            }
+
+            var panoramaRootImage = $"{rootImagePath}\\panoramaImages";
+
+            if (Directory.Exists(panoramaRootImage)) {
+                var filesBeforeDate = GetFilesBeforeDate(panoramaRootImage, dateTime);
+                files.AddRange(filesBeforeDate);
+            }
+
+            if (files.Any()) {
+                Parallel.ForEach(files, File.Delete);
+            }
+            //删除数据
+
+            return await _cloudService.CleanupDataDaysAgo(days, token);
+        }
+
+        public async Task CleanEarliestImageFiles(string folderPath, long minFreeSpaceInMb) {
+            var driveInfo = new DriveInfo(Path.GetPathRoot(folderPath) ?? string.Empty);
+            if (driveInfo is not null) {
+                var convertBytesToMb = ConvertBytesToMb(driveInfo.TotalFreeSpace);
+                if (convertBytesToMb < (double)minFreeSpaceInMb) {
+                    var directoryInfo = new DirectoryInfo(folderPath);
+                    var imageFiles = directoryInfo.GetFiles()
+                        .OrderBy(f => f.LastWriteTime)
+                        .ToArray();
+
+                    long totalSpaceToFreeUp = 0;
+                    foreach (var file in imageFiles) {
+                        totalSpaceToFreeUp += file.Length;
+                        if (totalSpaceToFreeUp >= minFreeSpaceInMb * 1024 * 1024 * 2) {
+                            // 达到最低保障空间大小后停止删除文件
+                            break;
+                        }
+                        file.Delete();
+                    }
+
+                    foreach (var directory in directoryInfo.GetDirectories()) {
+                        await CleanEarliestImageFiles(directory.FullName, minFreeSpaceInMb);
+                    }
+                }
+            }
+        }
+
+        public double ConvertBytesToMb(long bytes) {
+            return (bytes / 1024f) / 1024f;
+        }
+
+        public List<string> GetFilesBeforeDate(string path, DateTime targetDate) {
+            var files = new List<string>();
+
+            files.AddRange(Directory.GetFiles(path)
+                .Where(f => File.GetCreationTime(f) < targetDate));
+
+            var subDirectories = Directory.GetDirectories(path);
+
+            foreach (var subDirectory in subDirectories) {
+                files.AddRange(GetFilesBeforeDate(subDirectory, targetDate));
+            }
+
+            return files;
+        }
     }
 }

@@ -14,6 +14,7 @@ using JayTom.Dws.Domain.Service.VideoApi;
 using Microsoft.Extensions.FileProviders;
 using JayTom.Dws.Domain.Service.CloudApi;
 using JayTom.Dws.Domain.Repository.CloudApi;
+using JayTom.Dws.CloudApi.BackgroundService;
 using JayTom.Dws.Application.Service.CloudApi;
 using JayTom.Dws.Domain.Repository.VideoApiData;
 using JayTom.Dws.Infrastructure.Repository.CloudApi;
@@ -119,8 +120,9 @@ internal class Program {
             builder.Services.AddSingleton<ICloudService, CloudService>();
             //builder.Services.AddSingleton<IMessageHub, MessageHub>();
         }
-        //后台服务
 
+        //后台服务
+        builder.Services.AddHostedService<DataCleanupService>();
         builder.Services.AddControllers();
         // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
         builder.Services.AddEndpointsApiExplorer();
