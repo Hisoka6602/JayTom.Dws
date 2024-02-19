@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using JayTom.Dws.LicenseApi.Vo;
 using Microsoft.AspNetCore.Http;
 using JayTom.Dws.LicenseApi.Dto;
+using NPOI.SS.Formula.Functions;
 using JayTom.Dws.LicenseApi.Filter;
 using Microsoft.AspNetCore.Authorization;
 using JayTom.Dws.Application.Service.LicenseApi;
@@ -158,10 +159,16 @@ namespace JayTom.Dws.LicenseApi.Controllers {
         /// <returns></returns>
         [HttpPost("CreateAuthorization")]
         public async Task<IActionResult> CreateAuthorization([FromBody] DownloadLicenseFileDo param, CancellationToken cancellationToken) {
-            //根据授权码取出用户Code
-            //调用GetLicenseFileUrl
-
-            return JsonResultVo.Fail("111");
+            var (key, value) = await _licenseCodeAppService.GetUserCode(param.LicenseCode, cancellationToken);
+            if (key && value is LicenseCodeInfo { UserInfo: not null } info) {
+                var (b, o) = await _licenseCodeAppService.GetLicenseFileUrl(info.UserInfo.UserCode, param.LicenseCode, param.MachineCode, cancellationToken);
+                if (!b) return JsonResultVo.Fail(value.ToString() ?? string.Empty);
+                var filePath = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}/Scr/LicenseFile/{value.ToString()}";
+                return JsonResultVo.Success("生成成功", filePath);
+            }
+            else {
+                return JsonResultVo.Fail(value.ToString() ?? string.Empty);
+            }
         }
 
         /// <summary>

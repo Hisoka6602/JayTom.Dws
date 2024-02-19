@@ -24,6 +24,20 @@ namespace JayTom.Dws.Application.Service.LicenseApi {
             List<LicenseFeatureDto> licenseFeatures, CancellationToken token);
 
         /// <summary>
+        /// 更新应用信息
+        /// </summary>
+        /// <param name="applicationId"></param>
+        /// <param name="description"></param>
+        /// <param name="ipAddress"></param>
+        /// <param name="licenseFeatures"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        public Task<KeyValuePair<bool, object>> UpdateApplication(long applicationId,
+            string description,
+            string ipAddress,
+            List<LicenseFeatureDto> licenseFeatures, CancellationToken token);
+
+        /// <summary>
         /// 创建应用模板
         /// </summary>
         /// <param name="templateName"></param>

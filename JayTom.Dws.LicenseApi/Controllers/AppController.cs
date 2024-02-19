@@ -48,6 +48,24 @@ namespace JayTom.Dws.LicenseApi.Controllers {
             return key ? JsonResultVo.Success(value.ToString() ?? string.Empty) : JsonResultVo.Fail(value.ToString() ?? string.Empty);
         }
 
+        [Produces("application/json")]
+        [HttpPost("UpdateApplication")]
+        public async Task<JsonResult> UpdateApplication([FromBody] UpdateApplicationDo param,
+            CancellationToken cancellationToken) {
+            var ipAddress = HttpContext?.Connection?.RemoteIpAddress?.ToString();
+            var (key, value) = await _licenseApplicationAppService.UpdateApplication(param.ApplicationId,
+                 param.Description,
+                 ipAddress ?? string.Empty,
+            (param.FeatureInfos ?? new List<FeatureDo>()).Select(s =>
+                     new LicenseFeatureDto() {
+                         Description = s.Description,
+                         FeatureGuid = s.FeatureGuid,
+                         FeatureName = s.FeatureName,
+                         IsActive = s.IsActive
+                     }).ToList(), cancellationToken);
+            return key ? JsonResultVo.Success(value.ToString() ?? string.Empty) : JsonResultVo.Fail(value.ToString() ?? string.Empty);
+        }
+
         /// <summary>
         /// 创建应用模板
         /// </summary>

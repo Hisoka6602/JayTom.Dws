@@ -22,6 +22,12 @@ namespace JayTom.Dws.Application.Service.LicenseApi {
                  token);
         }
 
+        public Task<KeyValuePair<bool, object>> UpdateApplication(long applicationId, string description, string ipAddress, List<LicenseFeatureDto> licenseFeatures,
+            CancellationToken token) {
+            return _licenseApplicationService.UpdateApplication(applicationId, description, ipAddress, licenseFeatures,
+                token);
+        }
+
         public Task<KeyValuePair<bool, object>> CreateApplicationTemplate(long licenseApplicationInfoId, string templateName, string createBy, CancellationToken token) {
             return _licenseApplicationService.CreateApplicationTemplate(licenseApplicationInfoId, templateName, createBy,
                 token);

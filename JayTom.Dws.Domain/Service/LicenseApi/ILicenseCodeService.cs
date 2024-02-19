@@ -67,5 +67,22 @@ namespace JayTom.Dws.Domain.Service.LicenseApi {
         /// <returns></returns>
         public Task<KeyValuePair<bool, object>> BulkExtendLicenseCodeValidity(string userCode,
             List<string> licenseCodes, DateTime expirationDate, CancellationToken token);
+
+        /// <summary>
+        /// 获取UserCode
+        /// </summary>
+        /// <param name="licenseCode"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        public Task<KeyValuePair<bool, object>> GetUserCode(string licenseCode, CancellationToken token);
+
+        /// <summary>
+        /// 激活授权码
+        /// </summary>
+        /// <param name="licenseCode"></param>
+        /// <param name="machineCode"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        public Task<KeyValuePair<bool, object>> ActivateAuthorization(string licenseCode, string machineCode, CancellationToken token);
     }
 }

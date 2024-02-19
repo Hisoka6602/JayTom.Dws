@@ -152,5 +152,60 @@ namespace JayTom.Dws.Domain.Service.LicenseApi {
                 return new KeyValuePair<bool, object>(false, "您无权限访问");
             }
         }
+
+        public async Task<KeyValuePair<bool, object>> GetUserCode(string licenseCode, CancellationToken token) {
+            if (!string.IsNullOrEmpty(licenseCode)) {
+                return await _licenseCodeRepository.FirstDetails(f => f.LicenseCode.Equals(licenseCode), token);
+            }
+            else {
+                return new KeyValuePair<bool, object>(false, "授权码不能为空");
+            }
+        }
+
+        public async Task<KeyValuePair<bool, object>> ActivateAuthorization(string licenseCode, string machineCode, CancellationToken token) {
+            var (key, value) = await GetUserCode(licenseCode, token);
+            if (key && value is LicenseCodeInfo { UserInfo: not null } info) {
+                if (!info.IsAvailable) {
+                    return new KeyValuePair<bool, object>(false, "授权码不可用");
+                }
+                if (info.MaxClientCount <= info.ActivatedClientCount) {
+                    return new KeyValuePair<bool, object>(false, "无可激活数量");
+                }
+                if (DateTime.Now.CompareTo(info.ExpirationDate) >= 0) {
+                    return new KeyValuePair<bool, object>(false, "授权码已到期");
+                }
+                if (info.LicenseClientBindingInfo?.Any(a => a.MachineCode.Equals(machineCode)) == true) {
+                    var licenseClientBindingInfo = await _licenseClientBindingRepository.FirstOrDefault(f => f.MachineCode.Equals(machineCode) &&
+                        f.LicenseCodeId.Equals(info.Id), token);
+                    if (licenseClientBindingInfo is not null) {
+                        licenseClientBindingInfo.LastVerifiedDate = DateTime.Now;
+                        _licenseClientBindingRepository.Update(licenseClientBindingInfo);
+                    }
+
+                    return new KeyValuePair<bool, object>(true, "该机器码已激活过");
+                }
+                //插入绑定机器码
+                //增加已激活数量
+
+                var insert = await _licenseClientBindingRepository.Insert(new LicenseClientBindingInfo() {
+                    CreateTime = DateTime.Now,
+                    FirstActivatedDate = DateTime.Now,
+                    LastVerifiedDate = DateTime.Now,
+                    LicenseCodeId = info.Id,
+                    MachineCode = machineCode,
+                }, token);
+                if (insert) {
+                    info.ActivatedClientCount += 1;
+                    var update = await _licenseCodeRepository.Update(info, token);
+                    return update ? new KeyValuePair<bool, object>(true, "激活成功") : new KeyValuePair<bool, object>(false, "激活失败");
+                }
+                else {
+                    return new KeyValuePair<bool, object>(false, "设置机器码失败");
+                }
+            }
+            else {
+                return new KeyValuePair<bool, object>(false, value.ToString() ?? string.Empty);
+            }
+        }
     }
 }

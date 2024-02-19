@@ -84,5 +84,13 @@ namespace JayTom.Dws.Application.Service.LicenseApi {
             }
             //
         }
+
+        public Task<KeyValuePair<bool, object>> GetUserCode(string licenseCode, CancellationToken token) {
+            return _licenseCodeService.GetUserCode(licenseCode, token);
+        }
+
+        public Task<KeyValuePair<bool, object>> ActivateAuthorization(string licenseCode, string machineCode, CancellationToken token) {
+            return _licenseCodeService.ActivateAuthorization(licenseCode, machineCode, token);
+        }
     }
 }

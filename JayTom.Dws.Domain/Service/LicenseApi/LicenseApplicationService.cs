@@ -8,6 +8,7 @@ using JayTom.Dws.Domain.Dto.LicenseApi;
 using JayTom.Dws.Domain.Repository.License;
 
 namespace JayTom.Dws.Domain.Service.LicenseApi {
+
     public class LicenseApplicationService : ILicenseApplicationService {
         private readonly ILicenseApplicationRepository _licenseApplicationRepository;
         private readonly ILicensePermissionTemplateRepository _licensePermissionTemplateRepository;
@@ -41,6 +42,51 @@ namespace JayTom.Dws.Domain.Service.LicenseApi {
                 }).ToList()
             }, token);
             return new KeyValuePair<bool, object>(insert, $"创建{(insert ? "成功" : "失败")}");
+        }
+
+        public async Task<KeyValuePair<bool, object>> UpdateApplication(long applicationId, string description, string ipAddress, List<LicenseFeatureDto> licenseFeatures,
+            CancellationToken token) {
+            var licenseApplicationInfo = await _licenseApplicationRepository.FirstOrDefault(f => f.Id.Equals(applicationId),
+                token);
+
+            if (licenseApplicationInfo is not null) {
+                licenseApplicationInfo.Description = description;
+                licenseApplicationInfo.ModifyIp = ipAddress;
+                licenseApplicationInfo.ModifyTime = DateTime.Now;
+                //相同模板的也需要修改
+
+                var licenseFeatureInfos = await _licenseFeatureRepository.Select(s =>
+                        s.LicenseApplicationInfoId.Equals(applicationId),
+                    o => o.Id);
+                //删除
+
+                var deleteRange = await _licenseFeatureRepository.DeleteRange(licenseFeatureInfos, token);
+                if (deleteRange) {
+                    var insertRange = await _licenseFeatureRepository.InsertRange(licenseFeatures.Select(s => new LicenseFeatureInfo {
+                        CreateTime = DateTime.Now,
+                        Description = s.Description,
+                        FeatureGuid = s.FeatureGuid,
+                        FeatureName = s.FeatureName,
+                        IsActive = s.IsActive,
+                        ModifyIp = ipAddress,
+                        ModifyTime = DateTime.Now,
+                        LicenseApplicationInfoId = licenseApplicationInfo.Id,
+                    })?.ToList() ?? new List<LicenseFeatureInfo>(), token);
+                    if (insertRange) {
+                        var update = await _licenseApplicationRepository.Update(licenseApplicationInfo, token);
+                        return new KeyValuePair<bool, object>(update, update ? "更新成功" : "更新失败");
+                    }
+                    else {
+                        return new KeyValuePair<bool, object>(false, "模块更新失败!");
+                    }
+                }
+                else {
+                    return new KeyValuePair<bool, object>(false, "程序更新失败!");
+                }
+            }
+            else {
+                return new KeyValuePair<bool, object>(false, "应用不存在!");
+            }
         }
 
         public async Task<KeyValuePair<bool, object>> ApplicationData(CancellationToken token) {
@@ -187,15 +233,12 @@ namespace JayTom.Dws.Domain.Service.LicenseApi {
                                         f.FeatureGuid.Equals(s.FeatureGuid))?.LicenseApplicationInfoId ?? 0,
                             })?.ToList();
 
-
                         var featureInfos = await _licenseFeatureRepository.Select(s =>
                             s.LicenseApplicationInfoId.Equals(info.LicenseApplicationInfo.Id), o => o.Id, token);
-
 
                         var deleteRange = await _licenseFeatureRepository.DeleteRange(
                             featureInfos,
                             token);
-
 
                         info.LicenseApplicationInfo.LicenseFeatureInfos = licenseFeatureInfos;
 
