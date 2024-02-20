@@ -70,9 +70,10 @@ namespace JayTom.Dws.Application.Service.LicenseApi {
                     LicenseManager.GenerateAuthorizationFile(new LicenseData() {
                         ExpirationDate = licenseCodeInfo.ExpirationDate,
                         MachineCode = machineCode,
-                        Signature = licenseCode,
-                        UserName = userCode
-                    }, publicKeyXml, $"{path}\\{unixTimeMilliseconds}.key");
+                        LicenseCode = licenseCode,
+                        UserName = userCode,
+                        CreationTime = DateTime.Now
+                    }, publicKeyXml, privateKeyXml, $"{path}\\{unixTimeMilliseconds}.key");
                     return new KeyValuePair<bool, object>(true, $"{unixTimeMilliseconds}.key");
                 }
                 else {

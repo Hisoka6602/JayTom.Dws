@@ -1,5 +1,6 @@
 ﻿using System;
 using DryIoc;
+using System.IO;
 using Prism.Mvvm;
 using System.Linq;
 using Prism.Commands;
@@ -8,6 +9,7 @@ using JayTom.Dws.Ocr;
 using Newtonsoft.Json;
 using System.Threading;
 using JayTom.Dws.Camera;
+using JayTom.Dws.License;
 using System.Windows.Input;
 using JayTom.Dws.Domain.Dto;
 using Prism.Services.Dialogs;
@@ -23,6 +25,7 @@ using System.Collections.Generic;
 using JayTom.Dws.Interface.Cloud;
 using JayTom.Dws.Domain.Converters;
 using JayTom.Dws.Domain.Dto.AppDto;
+using JayTom.Dws.Interface.License;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Service.Device;
@@ -59,9 +62,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         private readonly ISortingService _sortingService;
         private readonly IComputer _computer;
         private readonly ICertificateValidationService _certificateValidationService;
+        private readonly IClientLicenseApi _clientLicenseApi;
         private ObservableCollection<CameraItemInfoModel> _cameraItems = new();
 
-        private ObservableCollection<BarCodeItemModel> _barCodeItems;
+        private ObservableCollection<BarCodeItemModel> _barCodeItems = new();
 
         private DataGrid? _dataGrid = null;
         private int _totalDataCount;
@@ -224,7 +228,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             IBarcodeScannerCameraConfigRepository barcodeScannerCameraConfigRepository,
             ISortingService sortingService,
             IComputer computer,
-            ICertificateValidationService certificateValidationService) {
+            ICertificateValidationService certificateValidationService,
+            IClientLicenseApi clientLicenseApi) {
             _dialogService = dialogService;
             _computerInfoReporter = computerInfoReporter;
             _barCodeRepository = barCodeRepository;
@@ -237,6 +242,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             _sortingService = sortingService;
             _computer = computer;
             _certificateValidationService = certificateValidationService;
+            _clientLicenseApi = clientLicenseApi;
             CameraItems = new() {
                 /*new CameraItemInfoModel()
                 {
@@ -769,14 +775,48 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                         IsSwitchingState = true;
                         if (!RunningStatus) {
                             //效验
+                            /*
                             var machineCode = await _computer.GenerateMachineCode();
-                            /*//判断机器码
+                            /#1#/判断机器码
                             if (!machineCode.Equals("1E371E8FB7F89C94D93B274DDE14AC46")) {
                                 return;
-                            }*/
+                            }#1#
                             //判断时间
                             var validateTime = await _certificateValidationService.ValidateTime();
                             if (!validateTime) {
+                                return;
+                            }
+                            */
+
+                            var licenseDirectory = Path.Combine(Directory.GetCurrentDirectory(), "License");
+                            var firstOrDefault = Directory.GetFiles(licenseDirectory, "*.key").FirstOrDefault();
+                            if (firstOrDefault is not null) {
+                                //解密授权
+                                var (b, s) = LicenseManager.DecryptAuthorizationFile(firstOrDefault, out var data);
+                                if (!b) {
+                                    EventAggregator.Instance.Publish(new AppLogInfoModel {
+                                        CreateTime = DateTime.Now,
+                                        Message = s,
+                                        Type = LogType.Exception
+                                    });
+                                    HomeMessageQueue.Enqueue(s);
+                                    return;
+                                }
+                                else if (b && data is not null) {
+                                    //提交激活
+
+                                    await Task.Run(async () => {
+                                        await _clientLicenseApi.ActivateAuthorization(data.LicenseCode, data.MachineCode);
+                                    });
+                                }
+                            }
+                            else {
+                                EventAggregator.Instance.Publish(new AppLogInfoModel {
+                                    CreateTime = DateTime.Now,
+                                    Message = "未检测到授权文件",
+                                    Type = LogType.Exception
+                                });
+                                HomeMessageQueue.Enqueue("未检测到授权文件");
                                 return;
                             }
 

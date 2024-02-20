@@ -65,7 +65,7 @@
                         FontSize="16"
                         FontWeight="Bold"
                         Foreground="DarkGray"
-                        Text="是否开启云视频上传:" />
+                        Text="是否开启数据上传:" />
                     <ToggleButton
                         Name="IsUseCloudVideoUploadToggleButton"
                         materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
@@ -208,7 +208,7 @@
                             FontSize="13"
                             FontWeight="Bold"
                             Foreground="DarkGray"
-                            Text="IP/域名:" />
+                            Text="上传地址:" />
                         <Border
                             Margin="5"
                             HorizontalAlignment="Center"

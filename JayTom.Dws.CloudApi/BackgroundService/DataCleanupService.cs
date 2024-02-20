@@ -24,7 +24,7 @@ namespace JayTom.Dws.CloudApi.BackgroundService {
         protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
             //读配置
             _daysAgo = _configuration.GetValue<int>("CleanupDataDaysAgo", 0);
-            _minFreeSpaceInMb = _configuration.GetValue<int>("MinFreeSpaceInMb", 100);
+            _minFreeSpaceInMb = _configuration.GetValue<long>("MinFreeSpaceInMb", 100);
             while (!stoppingToken.IsCancellationRequested) {
                 //判断最低空间保障
                 await _cloudAppService.CleanEarliestImageFiles(_webHostEnvironment.WebRootPath, _minFreeSpaceInMb);

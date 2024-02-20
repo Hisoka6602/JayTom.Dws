@@ -193,6 +193,7 @@ namespace JayTom.Dws.Domain.Service.LicenseApi {
                     LastVerifiedDate = DateTime.Now,
                     LicenseCodeId = info.Id,
                     MachineCode = machineCode,
+                    UserId = info.UserInfo.Id
                 }, token);
                 if (insert) {
                     info.ActivatedClientCount += 1;

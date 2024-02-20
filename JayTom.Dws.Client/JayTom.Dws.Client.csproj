@@ -89,6 +89,7 @@
     <ProjectReference Include="..\JayTom.Dws.Camera\JayTom.Dws.Camera.csproj" />
     <ProjectReference Include="..\JayTom.Dws.Infrastructure\JayTom.Dws.Infrastructure.csproj" />
     <ProjectReference Include="..\JayTom.Dws.Interface\JayTom.Dws.Interface.csproj" />
+    <ProjectReference Include="..\JayTom.Dws.License\JayTom.Dws.License.csproj" />
     <ProjectReference Include="..\JayTom.Dws.Nvr\JayTom.Dws.Nvr.csproj" />
     <ProjectReference Include="..\JayTom.Dws.PluginInterface\JayTom.Dws.PluginInterface.csproj" />
     <ProjectReference Include="..\JayTom.Dws.Plugin\JayTom.Dws.Plugin.csproj" />
@@ -136,6 +137,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="ConfigurationFiles\SortingConfigFiles\WxckExitMonitorSorting.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="License\License.key">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Nlog.config">

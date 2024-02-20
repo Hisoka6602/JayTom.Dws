@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
+
     public class AppSettingsViewModel : BindableBase {
         private readonly IRegionManager _regionManager;
         private ObservableCollection<MenuItemInfoModel> _appSettingsMenuItems;
@@ -48,6 +49,19 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     },
                     Description = "列表设置",
                     PageClassName = "GridSettingsPage",
+                    ClickCommand = ClickCommand
+                },
+                new()
+                {
+                    Title = "授权信息",
+                    IconFont = new IconInfoModel()
+                    {
+                        IconFont = "pack://application:,,,/Fonts/#iconfont",
+                        IconCode = "\xe90f",
+                        IconSize = 25
+                    },
+                    Description = "授权信息",
+                    PageClassName = "LicensePage",
                     ClickCommand = ClickCommand
                 },
             };

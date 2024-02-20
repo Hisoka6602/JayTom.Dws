@@ -69,7 +69,7 @@ namespace JayTom.Dws.License {
         /// <param name="publicKeyXml"></param>
         /// <returns></returns>
 
-        public static string DecryptAuthorizationFile(byte[] encryptedData, string publicKeyXml) {
+        public static string DecryptAuthorizationByte(byte[] encryptedData, string publicKeyXml) {
             string decryptedData;
             using var rsa = RSA.Create();
             rsa.FromXmlString(publicKeyXml);
@@ -128,7 +128,7 @@ namespace JayTom.Dws.License {
         /// <param name="filePath"></param>
         /// <param name="data"></param>
         /// <returns></returns>
-        public static bool DecryptAuthorizationFile(string privateKeyXml, string filePath, out LicenseData? data) {
+        public static KeyValuePair<bool, string> DecryptAuthorizationFile(string privateKeyXml, string filePath, out LicenseData? data) {
             byte[] encryptedData;
             byte[] key;
             byte[] iv;
@@ -157,18 +157,21 @@ namespace JayTom.Dws.License {
                             data = JsonConvert.DeserializeObject<LicenseData>(s);
 
                             if (data is null) {
-                                return false;
+                                return new KeyValuePair<bool, string>(false, "授权文件解析错误!");
                             }
                             //机器码不匹配则不通过
                             if (!data.MachineCode.Equals(GenerateMachineCode())) {
-                                return false;
+                                return new KeyValuePair<bool, string>(false, "机器码不匹配!");
                             }
                             //如果过期时间大于当前时间则不通过
                             if (data.ExpirationDate.CompareTo(DateTime.Now) <= 0) {
-                                return false;
+                                return new KeyValuePair<bool, string>(false, "授权已过期!");
                             }
 
-                            return true;
+                            if (data.CreationTime.CompareTo(DateTime.Now) >= 0) {
+                                return new KeyValuePair<bool, string>(false, "授权时间异常!");
+                            }
+                            return new KeyValuePair<bool, string>(true, "授权正常");
                         }
                     }
                 }
@@ -176,7 +179,7 @@ namespace JayTom.Dws.License {
             catch (Exception e) {
                 data = null;
             }
-            return false;
+            return new KeyValuePair<bool, string>(false, "授权文件异常!");
         }
 
         public static void GenerateKeyPair(out string publicKeyXml, out string privateKeyXml) {
@@ -219,6 +222,196 @@ namespace JayTom.Dws.License {
                 Console.WriteLine(e);
             }
             return machineCode;
+        }
+
+        public static void GenerateAuthorizationFile1(LicenseData data, string publicKeyXml, string privateKeyXml, string filePath) {
+            try {
+                byte[] encryptedData;
+                using (var rsa = RSA.Create()) {
+                    rsa.FromXmlString(publicKeyXml);
+                    var dataBytes = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data));
+                    encryptedData = rsa.Encrypt(dataBytes, RSAEncryptionPadding.Pkcs1);
+                }
+
+                byte[] key, iv;
+                using (var aes = Aes.Create()) {
+                    aes.GenerateKey();
+                    aes.GenerateIV();
+                    key = aes.Key;
+                    iv = aes.IV;
+
+                    using (var encryptor = aes.CreateEncryptor(key, iv)) {
+                        var encryptedBytes = encryptor.TransformFinalBlock(encryptedData, 0, encryptedData.Length);
+
+                        using (var outputStream = new MemoryStream())
+                        using (var binaryWriter = new BinaryWriter(outputStream)) {
+                            binaryWriter.Write(key.Length);
+                            binaryWriter.Write(key);
+                            binaryWriter.Write(iv.Length);
+                            binaryWriter.Write(iv);
+                            binaryWriter.Write(encryptedBytes.Length);
+                            binaryWriter.Write(encryptedBytes);
+
+                            binaryWriter.Write(privateKeyXml);
+
+                            File.WriteAllBytes(filePath, outputStream.ToArray());
+                        }
+                    }
+                }
+            }
+            catch (Exception e) {
+                Console.WriteLine(e);
+            }
+        }
+
+        public static bool DecryptAuthorizationFile1(string filePath, out LicenseData? data) {
+            byte[] encryptedData, key, iv;
+            string privateKeyXml;
+            try {
+                using (var inputStream = new MemoryStream(File.ReadAllBytes(filePath)))
+                using (var binaryReader = new BinaryReader(inputStream)) {
+                    var keyLength = binaryReader.ReadInt32();
+                    key = binaryReader.ReadBytes(keyLength);
+                    var ivLength = binaryReader.ReadInt32();
+                    iv = binaryReader.ReadBytes(ivLength);
+                    var encryptedLength = binaryReader.ReadInt32();
+                    encryptedData = binaryReader.ReadBytes(encryptedLength);
+
+                    privateKeyXml = binaryReader.ReadString();
+                }
+
+                using (var aes = Aes.Create()) {
+                    aes.Key = key;
+                    aes.IV = iv;
+
+                    using (var decryptor = aes.CreateDecryptor(key, iv)) {
+                        var decryptedData = decryptor.TransformFinalBlock(encryptedData, 0, encryptedData.Length);
+
+                        using (var rsa = RSA.Create()) {
+                            rsa.FromXmlString(privateKeyXml);
+                            var decryptedBytes = rsa.Decrypt(decryptedData, RSAEncryptionPadding.Pkcs1);
+                            var s = Encoding.UTF8.GetString(decryptedBytes);
+                            data = JsonConvert.DeserializeObject<LicenseData>(s);
+
+                            if (data is null) {
+                                return false;
+                            }
+                            //机器码不匹配则不通过
+                            if (!data.MachineCode.Equals(GenerateMachineCode())) {
+                                return false;
+                            }
+                            //如果过期时间大于当前时间则不通过
+                            if (data.ExpirationDate.CompareTo(DateTime.Now) <= 0) {
+                                return false;
+                            }
+
+                            return true;
+                        }
+                    }
+                }
+            }
+            catch (Exception e) {
+                Console.WriteLine(e);
+                data = null;
+            }
+            return false;
+        }
+
+        public static void GenerateAuthorizationFile(LicenseData data, string publicKeyXml, string privateKeyXml, string filePath) {
+            try {
+                byte[] encryptedData;
+                using (var rsa = RSA.Create()) {
+                    rsa.FromXmlString(publicKeyXml);
+                    var dataBytes = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data));
+                    encryptedData = rsa.Encrypt(dataBytes, RSAEncryptionPadding.Pkcs1);
+                }
+
+                byte[] key, iv, encryptedPrivateKey;
+                using (var aes = Aes.Create()) {
+                    aes.GenerateKey();
+                    aes.GenerateIV();
+                    key = aes.Key;
+                    iv = aes.IV;
+
+                    using (var encryptor = aes.CreateEncryptor(key, iv)) {
+                        var privateKeyBytes = Encoding.UTF8.GetBytes(privateKeyXml);
+                        encryptedPrivateKey = encryptor.TransformFinalBlock(privateKeyBytes, 0, privateKeyBytes.Length);
+                    }
+                }
+
+                using (var outputStream = new MemoryStream())
+                using (var binaryWriter = new BinaryWriter(outputStream)) {
+                    binaryWriter.Write(encryptedPrivateKey.Length);
+                    binaryWriter.Write(encryptedPrivateKey);
+                    binaryWriter.Write(key.Length);
+                    binaryWriter.Write(key);
+                    binaryWriter.Write(iv.Length);
+                    binaryWriter.Write(iv);
+                    binaryWriter.Write(encryptedData.Length);
+                    binaryWriter.Write(encryptedData);
+
+                    File.WriteAllBytes(filePath, outputStream.ToArray());
+                }
+            }
+            catch (Exception e) {
+                Console.WriteLine(e);
+            }
+        }
+
+        public static KeyValuePair<bool, string> DecryptAuthorizationFile(string filePath, out LicenseData? data) {
+            byte[] encryptedData, key, iv, encryptedPrivateKey;
+            try {
+                using (var inputStream = new MemoryStream(File.ReadAllBytes(filePath)))
+                using (var binaryReader = new BinaryReader(inputStream)) {
+                    var privateKeyLength = binaryReader.ReadInt32();
+                    encryptedPrivateKey = binaryReader.ReadBytes(privateKeyLength);
+                    var keyLength = binaryReader.ReadInt32();
+                    key = binaryReader.ReadBytes(keyLength);
+                    var ivLength = binaryReader.ReadInt32();
+                    iv = binaryReader.ReadBytes(ivLength);
+                    var encryptedLength = binaryReader.ReadInt32();
+                    encryptedData = binaryReader.ReadBytes(encryptedLength);
+                }
+
+                using (var aes = Aes.Create()) {
+                    aes.Key = key;
+                    aes.IV = iv;
+
+                    using (var decryptor = aes.CreateDecryptor(key, iv)) {
+                        var privateKeyBytes = decryptor.TransformFinalBlock(encryptedPrivateKey, 0, encryptedPrivateKey.Length);
+                        var privateKeyXml = Encoding.UTF8.GetString(privateKeyBytes);
+
+                        using (var rsa = RSA.Create()) {
+                            rsa.FromXmlString(privateKeyXml);
+                            var decryptedData = rsa.Decrypt(encryptedData, RSAEncryptionPadding.Pkcs1);
+                            var decryptedString = Encoding.UTF8.GetString(decryptedData);
+                            data = JsonConvert.DeserializeObject<LicenseData>(decryptedString);
+
+                            if (data is null) {
+                                return new KeyValuePair<bool, string>(false, "授权文件解析错误!");
+                            }
+                            //机器码不匹配则不通过
+                            if (!data.MachineCode.Equals(GenerateMachineCode())) {
+                                return new KeyValuePair<bool, string>(false, "机器码不匹配!");
+                            }
+                            //如果过期时间大于当前时间则不通过
+                            if (data.ExpirationDate.CompareTo(DateTime.Now) <= 0) {
+                                return new KeyValuePair<bool, string>(false, "授权已过期!");
+                            }
+
+                            if (data.CreationTime.CompareTo(DateTime.Now) >= 0) {
+                                return new KeyValuePair<bool, string>(false, "授权时间异常!");
+                            }
+                            return new KeyValuePair<bool, string>(true, "授权正常");
+                        }
+                    }
+                }
+            }
+            catch (Exception e) {
+                Console.WriteLine(e);
+                data = null;
+            }
+            return new KeyValuePair<bool, string>(false, "授权文件异常!");
         }
     }
 }

@@ -119,6 +119,12 @@ namespace JayTom.Dws.LicenseApi.Controllers {
             return key ? JsonResultVo.Success(value.ToString() ?? string.Empty) : JsonResultVo.Fail(value.ToString() ?? string.Empty);
         }
 
+        /// <summary>
+        /// 批量延期授权
+        /// </summary>
+        /// <param name="param"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         [Produces("application/json")]
         [HttpPost("BulkExtendLicenseCodeValidity"),
          UserStatus(Status = UserStatus.Active),
@@ -163,7 +169,7 @@ namespace JayTom.Dws.LicenseApi.Controllers {
             if (key && value is LicenseCodeInfo { UserInfo: not null } info) {
                 var (b, o) = await _licenseCodeAppService.GetLicenseFileUrl(info.UserInfo.UserCode, param.LicenseCode, param.MachineCode, cancellationToken);
                 if (!b) return JsonResultVo.Fail(value.ToString() ?? string.Empty);
-                var filePath = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}/Scr/LicenseFile/{value.ToString()}";
+                var filePath = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}/Scr/LicenseFile/{o.ToString()}";
                 return JsonResultVo.Success("生成成功", filePath);
             }
             else {
@@ -177,11 +183,8 @@ namespace JayTom.Dws.LicenseApi.Controllers {
         /// <returns></returns>
         [HttpPost("ActivateAuthorization")]
         public async Task<IActionResult> ActivateAuthorization([FromBody] DownloadLicenseFileDo param, CancellationToken cancellationToken) {
-            //判断机器码是否已经被激活
-            //判断剩余激活量
-            //修改剩余激活量
-
-            return JsonResultVo.Fail("111");
+            var (key, value) = await _licenseCodeAppService.ActivateAuthorization(param.LicenseCode, param.MachineCode, cancellationToken);
+            return key ? JsonResultVo.Success(value.ToString() ?? string.Empty) : JsonResultVo.Fail(value.ToString() ?? string.Empty);
         }
     }
 }

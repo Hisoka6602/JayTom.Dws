@@ -32,6 +32,7 @@ using JayTom.Dws.Interface.Cloud;
 using JayTom.Dws.Plugin.SaveImage;
 using JayTom.Dws.Client.ViewModels;
 using Microsoft.Extensions.Hosting;
+using JayTom.Dws.Interface.License;
 using JayTom.Dws.Client.Views.Pages;
 using Microsoft.EntityFrameworkCore;
 using JayTom.Dws.Client.Views.Dialog;
@@ -172,6 +173,8 @@ namespace JayTom.Dws.Client {
                 //程序设置
                 containerRegistry.RegisterForNavigation<GridSettingsPage>();
                 containerRegistry.RegisterForNavigation<OtherSettingsPage>();
+                containerRegistry.RegisterForNavigation<LicensePage>();
+
                 //云端服务
                 containerRegistry.RegisterForNavigation<CloudDataPage>();
                 containerRegistry.RegisterForNavigation<CloudVideoPage>();
@@ -330,6 +333,8 @@ namespace JayTom.Dws.Client {
                 services.AddScoped<ICloud, CloudVideoUploadApi>();
                 //Nvr
                 services.AddScoped<INvrManager, DaHuaNvr>();
+                //授权接口
+                services.AddScoped<IClientLicenseApi, DefaultClientLicenseApi>();
             });
         }
 
@@ -498,7 +503,8 @@ namespace JayTom.Dws.Client {
                         services.AddSingleton(container1.Resolve<ISortingConnectionService>());
                         //云端
                         services.AddSingleton(container1.Resolve<ICloud>());
-
+                        //授权接口
+                        services.AddSingleton(container1.Resolve<IClientLicenseApi>());
                         services.AddHostedService<PackageBackgroundService>(); // 注册后组包服务
                         services.AddHostedService<SaveImageBackgroundService>();//注册存图服务
                         services.AddHostedService<SubmitApiBackgroundService>();//提交Api
@@ -637,6 +643,8 @@ namespace JayTom.Dws.Client {
             //程序设置
             ViewModelLocationProvider.Register<GridSettingsPage, GridSettingsViewModel>();
             ViewModelLocationProvider.Register<OtherSettingsPage, OtherSettingsViewModel>();
+            ViewModelLocationProvider.Register<LicensePage, LicensePageViewModel>();
+
             //日志
             ViewModelLocationProvider.Register<AppLogPage, AppLogPageViewModel>();
             ViewModelLocationProvider.Register<CameraLogPage, CameraLogPageViewModel>();

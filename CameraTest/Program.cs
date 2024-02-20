@@ -53,7 +53,7 @@ internal class Program {
         JayTom.Dws.License.LicenseManager.GenerateAuthorizationFile(new LicenseData() {
             ExpirationDate = DateTime.Now.AddDays(-1),
             MachineCode = LicenseManager.GenerateMachineCode(),
-            Signature = "ABCDEFGHIJKLM",
+            LicenseCode = "ABCDEFGHIJKLM",
             UserName = "AAAAAAAAA"
         }, publicKeyXml,
             "..\\License.key");

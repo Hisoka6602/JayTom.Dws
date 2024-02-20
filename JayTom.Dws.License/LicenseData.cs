@@ -16,11 +16,6 @@ namespace JayTom.Dws.License {
         public string UserName { get; set; } = string.Empty;
 
         /// <summary>
-        /// 序列号
-        /// </summary>
-        public string Signature { get; set; } = string.Empty;
-
-        /// <summary>
         /// 到期时间
         /// </summary>
         public DateTime ExpirationDate { get; set; }
@@ -29,5 +24,17 @@ namespace JayTom.Dws.License {
         /// 机器码
         /// </summary>
         public string MachineCode { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 创建时间
+        /// </summary>
+        public DateTime CreationTime { get; set; }
+
+        /// <summary>
+        /// 授权码
+        /// </summary>
+        public string LicenseCode { get; set; } = string.Empty;
+
+        //模块列表
     }
 }
