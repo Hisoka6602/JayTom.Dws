@@ -16,11 +16,13 @@ namespace JayTom.Dws.LicenseApi.Controllers {
     public class LicenseController : ControllerBase {
         private readonly ILicenseApplicationAppService _licenseApplicationAppService;
         private readonly ILicenseCodeAppService _licenseCodeAppService;
+        private readonly ILogger<LicenseController> _logger;
 
         public LicenseController(ILicenseApplicationAppService licenseApplicationAppService,
-            ILicenseCodeAppService licenseCodeAppService) {
+            ILicenseCodeAppService licenseCodeAppService, ILogger<LicenseController> logger) {
             _licenseApplicationAppService = licenseApplicationAppService;
             _licenseCodeAppService = licenseCodeAppService;
+            _logger = logger;
         }
 
         /// <summary>
@@ -168,8 +170,10 @@ namespace JayTom.Dws.LicenseApi.Controllers {
             var (key, value) = await _licenseCodeAppService.GetUserCode(param.LicenseCode, cancellationToken);
             if (key && value is LicenseCodeInfo { UserInfo: not null } info) {
                 var (b, o) = await _licenseCodeAppService.GetLicenseFileUrl(info.UserInfo.UserCode, param.LicenseCode, param.MachineCode, cancellationToken);
-                if (!b) return JsonResultVo.Fail(value.ToString() ?? string.Empty);
+                if (!b) return JsonResultVo.Fail(o.ToString() ?? string.Empty);
                 var filePath = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}/Scr/LicenseFile/{o.ToString()}";
+                //激活
+                await _licenseCodeAppService.ActivateAuthorization(param.LicenseCode, param.MachineCode, cancellationToken);
                 return JsonResultVo.Success("生成成功", filePath);
             }
             else {

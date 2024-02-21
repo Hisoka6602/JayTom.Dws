@@ -20,7 +20,6 @@ using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Models.AppSettingModel;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings {
-
     public class LicensePageViewModel : BindableBase {
         private readonly IClientLicenseApi _clientLicenseApi;
         private SnackbarMessageQueue _licenseMessageQueue = new(TimeSpan.FromSeconds(2));
@@ -111,6 +110,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings {
                             LicenseCode = data.LicenseCode;
                             CustomerName = data.UserName;
                             FailureReason = value;
+
+                            if (string.IsNullOrEmpty(data.MachineCode)) {
+                                //显示激活授权
+                            }
+
                         }
                         LicenseStatus = key;
                     }

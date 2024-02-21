@@ -49,7 +49,12 @@ namespace JayTom.Dws.Application.Service.LicenseApi {
             if (key && value is List<LicenseCodeInfo> infos) {
                 var licenseCodeInfo = infos?.FirstOrDefault(f => f.LicenseCode.Equals(licenseCode));
                 if (licenseCodeInfo != null) {
-                    if (!licenseCodeInfo.IsAvailable) {
+                    if (licenseCodeInfo.MaxClientCount <= licenseCodeInfo.ActivatedClientCount &&
+                        licenseCodeInfo.LicenseClientBindingInfo?.Any(a => a.MachineCode.Equals(machineCode)) != true) {
+                        return new KeyValuePair<bool, object>(false, "无可激活数量");
+                    }
+
+                    /*if (!licenseCodeInfo.IsAvailable) {
                         return new KeyValuePair<bool, object>(false, "授权码不可用");
                     }
 
@@ -59,7 +64,7 @@ namespace JayTom.Dws.Application.Service.LicenseApi {
 
                     if (DateTime.Now.CompareTo(licenseCodeInfo.ExpirationDate) >= 0) {
                         return new KeyValuePair<bool, object>(false, "授权码已到期");
-                    }
+                    }*/
                     var path = $"{Path.Combine(Directory.GetCurrentDirectory(), "wwwroot")}\\LicenseFile";
                     if (!Directory.Exists(path)) {
                         Directory.CreateDirectory(path);
@@ -71,8 +76,9 @@ namespace JayTom.Dws.Application.Service.LicenseApi {
                         ExpirationDate = licenseCodeInfo.ExpirationDate,
                         MachineCode = machineCode,
                         LicenseCode = licenseCode,
-                        UserName = userCode,
-                        CreationTime = DateTime.Now
+                        UserName = licenseCodeInfo.ClientName,
+                        CreationTime = DateTime.Now,
+                        IsAvailable = licenseCodeInfo.IsAvailable
                     }, publicKeyXml, privateKeyXml, $"{path}\\{unixTimeMilliseconds}.key");
                     return new KeyValuePair<bool, object>(true, $"{unixTimeMilliseconds}.key");
                 }

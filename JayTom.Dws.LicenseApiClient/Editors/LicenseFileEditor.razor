@@ -1,0 +1,43 @@
+﻿
+<MudCard Style="width:600px;height:150px; border-radius:20px;">
+    <MudCardContent Class="center">
+
+        <div style="display: flex;margin-top:10px;display: flex; align-items: center;">
+            <span style="margin-top:20px; font-weight:bold; margin-left:8px; color:#A9A9A9; font-size: 13px;">机器码:</span>
+            <MudTextField Style="margin-left:10px;margin-bottom:5px;width:500px" @bind-Value="MachineCode" Variant="Variant.Text"></MudTextField>
+        </div>
+    </MudCardContent>
+    <MudCardActions Class="card-actions-right">
+        <MudButton Style="margin-right:10px" Variant="Variant.Filled" OnClick="Confirm" Color="Color.Primary">生成</MudButton>
+        <MudButton Variant="Variant.Filled" OnClick="Cancel" Color="Color.Error">取消</MudButton>
+    </MudCardActions>
+</MudCard>
+<style>
+    .card-actions-right {
+        margin-right: 10px;
+        display: flex;
+        justify-content: flex-end;
+        align-items: flex-end;
+    @*height: 95%; width: 99%;*@
+    }
+</style>
+@code {
+
+    public string MachineCode { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> OnConfirm { get; set; }
+
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+
+
+    private async void Confirm() {
+
+        await OnConfirm.InvokeAsync(MachineCode);
+    }
+
+    public async void Cancel() {
+        await OnCancel.InvokeAsync(null);
+    }
+}

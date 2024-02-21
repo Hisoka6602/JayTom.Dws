@@ -25,7 +25,11 @@
         <MachineCodeEditors LicenseCodeItemInfo="@SelectInfoModel" OnConfirm="() => { MachineCodeEditorsIsVisible = false; }" />
 
     </MudOverlay>
+    <MudOverlay Visible="LicenseFileEditorIsVisible" DarkBackground="true">
 
+        <LicenseFileEditor OnConfirm="LicenseFileConfirm" OnCancel="() => { LicenseFileEditorIsVisible = false; }" />
+
+    </MudOverlay>
     <PageTitleTemplate Title="授权管理" Description="授权管理" IconClass="iconfont icon-lingpaiguanli"></PageTitleTemplate>
     <MudDataGrid Elevation="1" Class="custom-datagrid" Filterable="false" SortMode="@SortMode.None" Groupable="false" Items="@_items">
         <Columns>
@@ -52,7 +56,7 @@
                          <MudButton Style="border-radius: 15px;" Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Tertiary" OnClick="() => {SelectInfoModel= context.Item;  MachineCodeEditorsIsVisible = true; }">详细信息</MudButton>
                          <MudButton Style="border-radius: 15px;" Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Success" OnClick="() => {SelectInfoModel= context.Item; LicenseRenewalEditorIsVisible = true; }">续期</MudButton>
                          <MudButton OnClick="()=>{FreezeLicenseCode(context.Item);}" Style="border-radius: 15px;" Size="@Size.Small" Variant="@Variant.Filled" Color="@ConvertStatusButtonColor(context.Item.IsAvailable)">@ConvertStatusButtonText(context.Item.IsAvailable)</MudButton>
-                            <MudButton Style="border-radius: 15px;" Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Dark" OnClick="()=>{DownloadLicenseFile(context.Item);}">生成授权文件</MudButton>
+                            <MudButton Style="border-radius: 15px;" Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Dark" OnClick="()=>{LicenseFileEditorIsVisible=true;SelectInfoModel=context.Item;}">生成授权文件</MudButton>
                         </MudStack>
                     </CellTemplate>
                 </TemplateColumn>
@@ -80,6 +84,7 @@
     public bool AuthCodeEditorIsVisible { get; set; }
     public bool LicenseRenewalEditorIsVisible { get; set; }
     public bool MachineCodeEditorsIsVisible { get; set; }
+    public bool LicenseFileEditorIsVisible { get; set; }
     private List<LicenseCodeItemInfoModel> _items = new();
 
     public LicenseCodeItemInfoModel SelectInfoModel { get; set; } = new();
@@ -173,6 +178,33 @@
         }
         //提交到Api
         //AuthCodeInfoModel
+    }
+
+    private async void LicenseFileConfirm(string machineCode) {
+        if (!string.IsNullOrEmpty(machineCode)) {
+
+            var (key, value) = await LicenseApiRequest.DownloadLicenseFile(SelectInfoModel.LicenseCode, machineCode);
+            if (value is ApiResult result) {
+
+                Snackbar.Clear();
+                Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+                Snackbar.Add(result.Msg, result.Result ? Severity.Success : Severity.Error);
+                if (key) {
+                    await JSRuntime.InvokeVoidAsync("window.open", result.Data.ToString(), "_blank");
+                }
+            }
+            else {
+                Snackbar.Clear();
+                Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+                Snackbar.Add(value.ToString(), Severity.Error);
+            }
+        }
+        else {
+            Snackbar.Clear();
+            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+            Snackbar.Add("机器码不能为空", Severity.Error);
+        }
+        LicenseFileEditorIsVisible = false;
     }
     protected override async Task OnAfterRenderAsync(bool firstRender) {
 

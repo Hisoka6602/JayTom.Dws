@@ -35,6 +35,11 @@ namespace JayTom.Dws.License {
         /// </summary>
         public string LicenseCode { get; set; } = string.Empty;
 
+        /// <summary>
+        /// 授权码是否可用
+        /// </summary>
+        public bool IsAvailable { get; set; }
+
         //模块列表
     }
 }

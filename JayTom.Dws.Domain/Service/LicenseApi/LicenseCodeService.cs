@@ -186,22 +186,23 @@ namespace JayTom.Dws.Domain.Service.LicenseApi {
                 }
                 //插入绑定机器码
                 //增加已激活数量
-
-                var insert = await _licenseClientBindingRepository.Insert(new LicenseClientBindingInfo() {
+                var clientBindingInfo = new LicenseClientBindingInfo() {
                     CreateTime = DateTime.Now,
                     FirstActivatedDate = DateTime.Now,
                     LastVerifiedDate = DateTime.Now,
                     LicenseCodeId = info.Id,
                     MachineCode = machineCode,
-                    UserId = info.UserInfo.Id
-                }, token);
+                };
+                var insert = await _licenseClientBindingRepository.Insert(clientBindingInfo, token);
+
                 if (insert) {
                     info.ActivatedClientCount += 1;
                     var update = await _licenseCodeRepository.Update(info, token);
                     return update ? new KeyValuePair<bool, object>(true, "激活成功") : new KeyValuePair<bool, object>(false, "激活失败");
                 }
                 else {
-                    return new KeyValuePair<bool, object>(false, "设置机器码失败");
+                    //return new KeyValuePair<bool, object>(false, "设置机器码失败");
+                    return new KeyValuePair<bool, object>(false, $"设置机器码失败:UserId:{info.UserInfo.Id},LicenseCodeId:{info.Id}");
                 }
             }
             else {

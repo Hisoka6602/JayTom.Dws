@@ -11,12 +11,12 @@ namespace JayTom.Dws.Data.License {
 
     [Table("Code_LicenseClientBindingInfo", Schema = "dbo")]
     public class LicenseClientBindingInfo : BaseLicenseModel {
-
+        /*
         [Column("UserId")]
-        public long UserId { get; set; }
+        public long UserId { get; set; }*/
 
-        [ForeignKey("Id")]
-        public virtual LicenseUserInfo? UserInfo { get; set; }
+        /*[ForeignKey("Id")]
+        public virtual LicenseUserInfo? UserInfo { get; set; }*/
 
         [Column("LicenseCodeId")]
         public long LicenseCodeId { get; set; }

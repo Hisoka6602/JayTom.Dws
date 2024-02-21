@@ -8,6 +8,7 @@ using System.Windows;
 using JayTom.Dws.Ocr;
 using Newtonsoft.Json;
 using System.Threading;
+using TouchSocket.Core;
 using JayTom.Dws.Camera;
 using JayTom.Dws.License;
 using System.Windows.Input;
@@ -38,6 +39,7 @@ using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Repository.LocalData;
 using JayTom.Dws.Client.Models.LogsItemModels;
 using JayTom.Dws.Client.Models.OcrSettingsModel;
+using LogType = JayTom.Dws.Data.LocalLog.LogType;
 using JayTom.Dws.Client.Service.BackgroundService;
 using JayTom.Dws.Client.Service.ExternalDataService;
 using CameraType = JayTom.Dws.Client.Models.CameraType;
@@ -804,9 +806,21 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                                 }
                                 else if (b && data is not null) {
                                     //提交激活
-
-                                    await Task.Run(async () => {
+                                    Task.Run(async () => {
                                         await _clientLicenseApi.ActivateAuthorization(data.LicenseCode, data.MachineCode);
+                                    });
+                                    //重新下载
+                                    Task.Run(async () => {
+                                        var (key1, o) = await _clientLicenseApi.CreateAuthorization(data.LicenseCode, data.MachineCode);
+                                        if (o is ApiResult result &&
+                                            !string.IsNullOrEmpty(result.Data?.ToString() ?? string.Empty)) {
+                                            var licenseDirectory = Path.Combine(Directory.GetCurrentDirectory(), "License");
+                                            var files = Directory.GetFiles(licenseDirectory, "*.key");
+                                            Parallel.ForEach(files, File.Delete);
+
+                                            await _clientLicenseApi.DownloadFileAsync(result.Data.ToString(),
+                                               $"{licenseDirectory}\\License.key");
+                                        }
                                     });
                                 }
                             }

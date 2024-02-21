@@ -402,6 +402,9 @@ namespace JayTom.Dws.License {
                             if (data.CreationTime.CompareTo(DateTime.Now) >= 0) {
                                 return new KeyValuePair<bool, string>(false, "授权时间异常!");
                             }
+                            if (!data.IsAvailable) {
+                                return new KeyValuePair<bool, string>(false, "授权码已冻结!");
+                            }
                             return new KeyValuePair<bool, string>(true, "授权正常");
                         }
                     }
