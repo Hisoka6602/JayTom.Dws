@@ -15,7 +15,7 @@ internal class Program {
             MachineCode = LicenseManager.GenerateMachineCode(),
             LicenseCode = "YVFA4NNUID2D2S62S51NTLFPJXVTVWCH",
             UserName = "AAAAAAAAA",
-            Remarks = "机器1"
+            Remarks = "机器1YVFA4NNUID2D2S62S51NTLFPJXVTVWCH"
         }, publicKeyXml, privateKeyXml,
             "..\\License.key");
         //写出解密密钥

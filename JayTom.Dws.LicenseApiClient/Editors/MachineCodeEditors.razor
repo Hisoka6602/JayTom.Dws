@@ -16,7 +16,13 @@
         @*列表*@
         <div>
             <MudTable Height="540px" Breakpoint="Breakpoint.Sm" FixedHeader="true" Style="width:970px;min-height:360px;max-height:540px;" Items="@LicenseCodeItemInfo.MachineCodeItem"
-                      Dense="false" Hover="true" CanCancelEdit="true">
+                      Dense="false" Hover="true" CanCancelEdit="true" Filter="_quickFilter">
+
+                <ToolBarContent>
+                    <MudSpacer />
+                    <MudTextField @bind-Value="_searchString" Placeholder="模糊搜索" Adornment="Adornment.Start" Immediate="true"
+                                  AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+                </ToolBarContent>
                 <HeaderContent>
                     <MudTh>机器码</MudTh>
                     <MudTh>首次激活时间</MudTh>
@@ -31,7 +37,7 @@
                         <MudTd DataLabel="备注">@context.Remarks</MudTd>
                         <MudTd>
                             @*解绑*@
-                            <MudButton OnClick="()=>{UnbindMachineCode(LicenseCodeItemInfo.LicenseCode,context.MachineCode);}" Style="border-radius: 15px; margin-left:3px; background-color:red;color:white" Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Surface">解绑</MudButton>
+                            <MudButton OnClick="() => { UnbindMachineCode(LicenseCodeItemInfo.LicenseCode, context.MachineCode); }" Style="border-radius: 15px; margin-left:3px; background-color:red;color:white" Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Surface">解绑</MudButton>
                         </MudTd>
                     </RowTemplate>
                 </MudTable>
@@ -62,6 +68,18 @@
         await OnConfirm.InvokeAsync();
     }
 
+    private string _searchString = string.Empty;
+    private Func<MachineCodeItemInfoModel, bool> _quickFilter => x => {
+        if (string.IsNullOrWhiteSpace(_searchString))
+            return true;
+
+        if (x.MachineCode.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (x.Remarks.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        return false;
+    };
     private async void UnbindMachineCode(string licenseCode, string machineCode) {
         var (key, value) = await LicenseApiRequest.UnbindMachineCode(licenseCode, machineCode, CancellationToken.None);
         if (value is ApiResult result) {
