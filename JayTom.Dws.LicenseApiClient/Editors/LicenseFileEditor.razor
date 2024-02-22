@@ -1,10 +1,15 @@
-﻿
-<MudCard Style="width:600px;height:150px; border-radius:20px;">
+﻿@using JayTom.Dws.LicenseApiClient.Data.Models
+
+<MudCard Style="width:600px;height:220px; border-radius:20px;">
     <MudCardContent Class="center">
 
         <div style="display: flex;margin-top:10px;display: flex; align-items: center;">
             <span style="margin-top:20px; font-weight:bold; margin-left:8px; color:#A9A9A9; font-size: 13px;">机器码:</span>
-            <MudTextField Style="margin-left:10px;margin-bottom:5px;width:500px" @bind-Value="MachineCode" Variant="Variant.Text"></MudTextField>
+            <MudTextField Style="margin-left:10px;margin-bottom:5px;width:500px" @bind-Value="MachineCodeInfo.MachineCode" Variant="Variant.Text"></MudTextField>
+        </div>
+        <div style="display: flex;margin-top:10px;display: flex; align-items: center;">
+            <span style="margin-top:20px; font-weight:bold; margin-left:8px; color:#A9A9A9; font-size: 13px;">备  注:</span>
+            <MudTextField Style="margin-left:10px;margin-bottom:5px;width:500px" @bind-Value="MachineCodeInfo.Remarks" Variant="Variant.Text"></MudTextField>
         </div>
     </MudCardContent>
     <MudCardActions Class="card-actions-right">
@@ -22,11 +27,10 @@
     }
 </style>
 @code {
-
-    public string MachineCode { get; set; } = string.Empty;
+    public MachineCodeItemInfo MachineCodeInfo { get; set; } = new();
 
     [Parameter]
-    public EventCallback<string> OnConfirm { get; set; }
+    public EventCallback<MachineCodeItemInfo> OnConfirm { get; set; }
 
     [Parameter]
     public EventCallback OnCancel { get; set; }
@@ -34,7 +38,7 @@
 
     private async void Confirm() {
 
-        await OnConfirm.InvokeAsync(MachineCode);
+        await OnConfirm.InvokeAsync(MachineCodeInfo);
     }
 
     public async void Cancel() {

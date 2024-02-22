@@ -203,10 +203,10 @@
         //AuthCodeInfoModel
     }
 
-    private async void LicenseFileConfirm(string machineCode) {
-        if (!string.IsNullOrEmpty(machineCode)) {
+    private async void LicenseFileConfirm(MachineCodeItemInfo machineCodeInfo) {
+        if (!string.IsNullOrEmpty(machineCodeInfo.MachineCode)) {
 
-            var (key, value) = await LicenseApiRequest.DownloadLicenseFile(SelectInfoModel.LicenseCode, machineCode);
+            var (key, value) = await LicenseApiRequest.DownloadLicenseFile(SelectInfoModel.LicenseCode, machineCodeInfo.MachineCode, machineCodeInfo.Remarks);
             if (value is ApiResult result) {
 
                 Snackbar.Clear();
@@ -345,23 +345,6 @@
         }
     }
 
-    public async Task DownloadLicenseFile(LicenseCodeItemInfoModel info) {
-        var (key, value) = await LicenseApiRequest.DownloadLicenseFile(info.LicenseCode, string.Empty);
-        if (value is ApiResult result) {
-
-            Snackbar.Clear();
-            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
-            Snackbar.Add(result.Msg, result.Result ? Severity.Success : Severity.Error);
-            if (key) {
-                await JSRuntime.InvokeVoidAsync("window.open", result.Data.ToString(), "_blank");
-            }
-        }
-        else {
-            Snackbar.Clear();
-            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
-            Snackbar.Add(value.ToString(), Severity.Error);
-        }
-    }
 
 
     public JayTom.Dws.LicenseApiClient.Data.Models.UserInfo Info = new();

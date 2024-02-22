@@ -44,7 +44,7 @@ namespace JayTom.Dws.Application.Service.LicenseApi {
             return _licenseCodeService.BulkExtendLicenseCodeValidity(userCode, licenseCodes, expirationDate, token);
         }
 
-        public async Task<KeyValuePair<bool, object>> GetLicenseFileUrl(string userCode, string licenseCode, string machineCode, CancellationToken token) {
+        public async Task<KeyValuePair<bool, object>> GetLicenseFileUrl(string userCode, string licenseCode, string machineCode, string remarks, CancellationToken token) {
             var (key, value) = await _licenseCodeService.LicenseCodeData(userCode, token);
             if (key && value is List<LicenseCodeInfo> infos) {
                 var licenseCodeInfo = infos?.FirstOrDefault(f => f.LicenseCode.Equals(licenseCode));
@@ -72,15 +72,17 @@ namespace JayTom.Dws.Application.Service.LicenseApi {
 
                     var unixTimeMilliseconds = DateTimeOffset.Now.ToUnixTimeMilliseconds();
                     JayTom.Dws.License.LicenseManager.GenerateKeyPair(out var publicKeyXml, out var privateKeyXml);
-                    LicenseManager.GenerateAuthorizationFile(new LicenseData() {
+                    var authorizationFile = LicenseManager.GenerateAuthorizationFile(new LicenseData() {
                         ExpirationDate = licenseCodeInfo.ExpirationDate,
                         MachineCode = machineCode,
                         LicenseCode = licenseCode,
                         UserName = licenseCodeInfo.ClientName,
                         CreationTime = DateTime.Now,
-                        IsAvailable = licenseCodeInfo.IsAvailable
+                        IsAvailable = licenseCodeInfo.IsAvailable,
+                        Remarks = remarks
                     }, publicKeyXml, privateKeyXml, $"{path}\\{unixTimeMilliseconds}.key");
-                    return new KeyValuePair<bool, object>(true, $"{unixTimeMilliseconds}.key");
+
+                    return new KeyValuePair<bool, object>(authorizationFile.Key, authorizationFile.Key ? $"{unixTimeMilliseconds}.key" : authorizationFile.Value);
                 }
                 else {
                     return new KeyValuePair<bool, object>(false, "未获取到授权码");
@@ -92,12 +94,16 @@ namespace JayTom.Dws.Application.Service.LicenseApi {
             //
         }
 
+        public Task<KeyValuePair<bool, object>> UnbindMachineCode(string userCode, string licenseCode, string machineCode, CancellationToken token) {
+            return _licenseCodeService.UnbindMachineCode(userCode, licenseCode, machineCode, token);
+        }
+
         public Task<KeyValuePair<bool, object>> GetUserCode(string licenseCode, CancellationToken token) {
             return _licenseCodeService.GetUserCode(licenseCode, token);
         }
 
-        public Task<KeyValuePair<bool, object>> ActivateAuthorization(string licenseCode, string machineCode, CancellationToken token) {
-            return _licenseCodeService.ActivateAuthorization(licenseCode, machineCode, token);
+        public Task<KeyValuePair<bool, object>> ActivateAuthorization(string licenseCode, string machineCode, string remarks, CancellationToken token) {
+            return _licenseCodeService.ActivateAuthorization(licenseCode, machineCode, remarks, token);
         }
     }
 }

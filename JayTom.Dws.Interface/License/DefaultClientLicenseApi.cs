@@ -19,12 +19,13 @@ namespace JayTom.Dws.Interface.License {
             _httpClientFactory = httpClientFactory;
         }
 
-        public async Task<KeyValuePair<bool, object>> CreateAuthorization(string licenseCode, string machineCode, CancellationToken token = default) {
+        public async Task<KeyValuePair<bool, object>> CreateAuthorization(string licenseCode, string machineCode, string remarks, CancellationToken token = default) {
             try {
                 //组包
                 var requestJson = JsonConvert.SerializeObject(new {
                     licenseCode = licenseCode,
                     machineCode = machineCode,
+                    remarks = remarks,
                 });
 
                 using (var httpClient = _httpClientFactory.CreateClient("INSURANCE")) {
@@ -71,12 +72,13 @@ namespace JayTom.Dws.Interface.License {
             }
         }
 
-        public async Task<KeyValuePair<bool, object>> ActivateAuthorization(string licenseCode, string machineCode, CancellationToken token = default) {
+        public async Task<KeyValuePair<bool, object>> ActivateAuthorization(string licenseCode, string machineCode, string remarks, CancellationToken token = default) {
             try {
                 //组包
                 var requestJson = JsonConvert.SerializeObject(new {
                     licenseCode = licenseCode,
                     machineCode = machineCode,
+                    remarks = remarks
                 });
 
                 using var httpClient = _httpClientFactory.CreateClient("INSURANCE");

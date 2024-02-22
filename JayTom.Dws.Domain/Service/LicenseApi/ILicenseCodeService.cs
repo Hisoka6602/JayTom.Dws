@@ -77,12 +77,23 @@ namespace JayTom.Dws.Domain.Service.LicenseApi {
         public Task<KeyValuePair<bool, object>> GetUserCode(string licenseCode, CancellationToken token);
 
         /// <summary>
-        /// 激活授权码
+        /// 解绑机器码
         /// </summary>
+        /// <param name="userCode"></param>
         /// <param name="licenseCode"></param>
         /// <param name="machineCode"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        public Task<KeyValuePair<bool, object>> ActivateAuthorization(string licenseCode, string machineCode, CancellationToken token);
+        public Task<KeyValuePair<bool, object>> UnbindMachineCode(string userCode, string licenseCode, string machineCode, CancellationToken token);
+
+        /// <summary>
+        /// 激活授权码
+        /// </summary>
+        /// <param name="licenseCode"></param>
+        /// <param name="machineCode"></param>
+        /// <param name="remarks"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        public Task<KeyValuePair<bool, object>> ActivateAuthorization(string licenseCode, string machineCode, string remarks, CancellationToken token);
     }
 }

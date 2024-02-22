@@ -16,5 +16,9 @@
         /// 最后效验时间
         /// </summary>
         public DateTime LastVerifiedDate { get; set; }
+        /// <summary>
+        /// 备注
+        /// </summary>
+        public string Remarks { get; set; } = string.Empty;
     }
 }

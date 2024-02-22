@@ -807,11 +807,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                                 else if (b && data is not null) {
                                     //提交激活
                                     Task.Run(async () => {
-                                        await _clientLicenseApi.ActivateAuthorization(data.LicenseCode, data.MachineCode);
+                                        await _clientLicenseApi.ActivateAuthorization(data.LicenseCode, data.MachineCode, data.Remarks);
                                     });
                                     //重新下载
                                     Task.Run(async () => {
-                                        var (key1, o) = await _clientLicenseApi.CreateAuthorization(data.LicenseCode, data.MachineCode);
+                                        var (key1, o) = await _clientLicenseApi.CreateAuthorization(data.LicenseCode, data.MachineCode, data.Remarks);
                                         if (o is ApiResult result &&
                                             !string.IsNullOrEmpty(result.Data?.ToString() ?? string.Empty)) {
                                             var licenseDirectory = Path.Combine(Directory.GetCurrentDirectory(), "License");

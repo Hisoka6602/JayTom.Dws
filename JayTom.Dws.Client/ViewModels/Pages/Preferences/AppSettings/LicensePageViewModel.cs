@@ -142,12 +142,15 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings {
                     await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
                         try {
                             LicenseStatus = false;
-                            var (key, value) = await _clientLicenseApi.CreateAuthorization(LicenseCode, MachineCode);
+                            var (key, value) = await _clientLicenseApi.CreateAuthorization(LicenseCode, MachineCode, Remarks);
                             if (value is ApiResult result &&
                                 !string.IsNullOrEmpty(result.Data?.ToString() ?? string.Empty)) {
                                 //获取授权文件地址
                                 if (result.Result) {
                                     var licenseDirectory = Path.Combine(Directory.GetCurrentDirectory(), "License");
+                                    if (!Directory.Exists(licenseDirectory)) {
+                                        Directory.CreateDirectory(licenseDirectory);
+                                    }
                                     var files = Directory.GetFiles(licenseDirectory, "*.key");
                                     Parallel.ForEach(files, File.Delete);
 

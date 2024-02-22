@@ -73,7 +73,8 @@ namespace JayTom.Dws.LicenseApi.Controllers {
                     MachineCodeItem = s.LicenseClientBindingInfo?.Select(s1 => new LicenseClientBindingDto {
                         FirstActivatedDate = s1.FirstActivatedDate,
                         LastVerifiedDate = s1.LastVerifiedDate,
-                        MachineCode = s1.MachineCode
+                        MachineCode = s1.MachineCode,
+                        Remarks = s1.Remarks
                     })?.ToList() ?? new List<LicenseClientBindingDto>(),
                 })?.ToList() ?? new List<LicenseInfoDto>();
                 return JsonResultVo.Success("查询成功", data: licenseInfoDtos);
@@ -154,13 +155,30 @@ namespace JayTom.Dws.LicenseApi.Controllers {
             //下载授权文件/如果没激活则需要激活(绑定)
 
             var code = HttpContext.Response.HttpContext.User.Identity?.Name;
-            var (key, value) = await _licenseCodeAppService.GetLicenseFileUrl(code, param.LicenseCode, param.MachineCode, cancellationToken);
+            var (key, value) = await _licenseCodeAppService.GetLicenseFileUrl(code, param.LicenseCode, param.MachineCode, param.Remarks, cancellationToken);
             if (!key) return JsonResultVo.Fail(value.ToString() ?? string.Empty);
             var filePath = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}/Scr/LicenseFile/{value.ToString()}";
 
             //激活
-            await _licenseCodeAppService.ActivateAuthorization(param.LicenseCode, param.MachineCode, cancellationToken);
+            await _licenseCodeAppService.ActivateAuthorization(param.LicenseCode, param.MachineCode, param.Remarks, cancellationToken);
             return JsonResultVo.Success("生成成功", filePath);
+        }
+
+        /// <summary>
+        /// 解绑机器码
+        /// </summary>
+        /// <param name="param"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        [HttpPost("UnbindMachineCode"), UserStatus(Status = UserStatus.Active),
+         UserRole(Role = (int)(UserRole.SuperAdmin | UserRole.Tenant)),
+         Authorize]
+        public async Task<IActionResult> UnbindMachineCode([FromBody] DownloadLicenseFileDo param,
+            CancellationToken cancellationToken) {
+            var code = HttpContext.Response.HttpContext.User.Identity?.Name;
+            var (key, value) = await _licenseCodeAppService.UnbindMachineCode(code, param.LicenseCode,
+                param.MachineCode, cancellationToken);
+            return key ? JsonResultVo.Success(value.ToString() ?? string.Empty) : JsonResultVo.Fail(value.ToString() ?? string.Empty);
         }
 
         /// <summary>
@@ -171,11 +189,11 @@ namespace JayTom.Dws.LicenseApi.Controllers {
         public async Task<IActionResult> CreateAuthorization([FromBody] DownloadLicenseFileDo param, CancellationToken cancellationToken) {
             var (key, value) = await _licenseCodeAppService.GetUserCode(param.LicenseCode, cancellationToken);
             if (key && value is LicenseCodeInfo { UserInfo: not null } info) {
-                var (b, o) = await _licenseCodeAppService.GetLicenseFileUrl(info.UserInfo.UserCode, param.LicenseCode, param.MachineCode, cancellationToken);
+                var (b, o) = await _licenseCodeAppService.GetLicenseFileUrl(info.UserInfo.UserCode, param.LicenseCode, param.MachineCode, param.Remarks, cancellationToken);
                 if (!b) return JsonResultVo.Fail(o.ToString() ?? string.Empty);
                 var filePath = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}/Scr/LicenseFile/{o.ToString()}";
                 //激活
-                await _licenseCodeAppService.ActivateAuthorization(param.LicenseCode, param.MachineCode, cancellationToken);
+                await _licenseCodeAppService.ActivateAuthorization(param.LicenseCode, param.MachineCode, param.Remarks, cancellationToken);
                 return JsonResultVo.Success("生成成功", filePath);
             }
             else {
@@ -189,7 +207,7 @@ namespace JayTom.Dws.LicenseApi.Controllers {
         /// <returns></returns>
         [HttpPost("ActivateAuthorization")]
         public async Task<IActionResult> ActivateAuthorization([FromBody] DownloadLicenseFileDo param, CancellationToken cancellationToken) {
-            var (key, value) = await _licenseCodeAppService.ActivateAuthorization(param.LicenseCode, param.MachineCode, cancellationToken);
+            var (key, value) = await _licenseCodeAppService.ActivateAuthorization(param.LicenseCode, param.MachineCode, param.Remarks, cancellationToken);
             return key ? JsonResultVo.Success(value.ToString() ?? string.Empty) : JsonResultVo.Fail(value.ToString() ?? string.Empty);
         }
     }

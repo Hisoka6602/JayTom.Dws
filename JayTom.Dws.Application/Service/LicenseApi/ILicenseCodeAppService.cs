@@ -72,10 +72,21 @@ namespace JayTom.Dws.Application.Service.LicenseApi {
         /// <param name="userCode"></param>
         /// <param name="licenseCode"></param>
         /// <param name="machineCode"></param>
+        /// <param name="remarks"></param>
         /// <param name="token"></param>
         /// <returns></returns>
         public Task<KeyValuePair<bool, object>> GetLicenseFileUrl(string userCode, string licenseCode,
-            string machineCode, CancellationToken token);
+            string machineCode, string remarks, CancellationToken token);
+
+        /// <summary>
+        /// 解绑机器码
+        /// </summary>
+        /// <param name="userCode"></param>
+        /// <param name="licenseCode"></param>
+        /// <param name="machineCode"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        public Task<KeyValuePair<bool, object>> UnbindMachineCode(string userCode, string licenseCode, string machineCode, CancellationToken token);
 
         /// <summary>
         /// 获取UserCode
@@ -90,8 +101,9 @@ namespace JayTom.Dws.Application.Service.LicenseApi {
         /// </summary>
         /// <param name="licenseCode"></param>
         /// <param name="machineCode"></param>
+        /// <param name="remarks"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        public Task<KeyValuePair<bool, object>> ActivateAuthorization(string licenseCode, string machineCode, CancellationToken token);
+        public Task<KeyValuePair<bool, object>> ActivateAuthorization(string licenseCode, string machineCode, string remarks, CancellationToken token);
     }
 }

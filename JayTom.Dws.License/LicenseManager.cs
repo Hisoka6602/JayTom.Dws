@@ -317,13 +317,22 @@ namespace JayTom.Dws.License {
             return false;
         }
 
-        public static void GenerateAuthorizationFile(LicenseData data, string publicKeyXml, string privateKeyXml, string filePath) {
+        public static KeyValuePair<bool, string> GenerateAuthorizationFile(LicenseData data, string publicKeyXml, string privateKeyXml, string filePath) {
             try {
-                byte[] encryptedData;
+                //byte[] encryptedData;
+                var encryptedData = new List<byte>();
                 using (var rsa = RSA.Create()) {
                     rsa.FromXmlString(publicKeyXml);
                     var dataBytes = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data));
-                    encryptedData = rsa.Encrypt(dataBytes, RSAEncryptionPadding.Pkcs1);
+                    //encryptedData = rsa.Encrypt(dataBytes, RSAEncryptionPadding.Pkcs1);
+                    // 分块加密
+                    var blockSize = rsa.KeySize / 8 - 11;
+
+                    for (var i = 0; i < dataBytes.Length; i += blockSize) {
+                        var block = new ReadOnlySpan<byte>(dataBytes, i, Math.Min(blockSize, dataBytes.Length - i));
+                        var encryptedBlock = rsa.Encrypt(block.ToArray(), RSAEncryptionPadding.Pkcs1);
+                        encryptedData.AddRange(encryptedBlock);
+                    }
                 }
 
                 byte[] key, iv, encryptedPrivateKey;
@@ -347,14 +356,16 @@ namespace JayTom.Dws.License {
                     binaryWriter.Write(key);
                     binaryWriter.Write(iv.Length);
                     binaryWriter.Write(iv);
-                    binaryWriter.Write(encryptedData.Length);
-                    binaryWriter.Write(encryptedData);
+                    binaryWriter.Write(encryptedData.Count);
+                    binaryWriter.Write(encryptedData.ToArray());
 
                     File.WriteAllBytes(filePath, outputStream.ToArray());
+                    return new KeyValuePair<bool, string>(true, string.Empty);
                 }
             }
             catch (Exception e) {
                 Console.WriteLine(e);
+                return new KeyValuePair<bool, string>(false, e.Message);
             }
         }
 
@@ -383,8 +394,22 @@ namespace JayTom.Dws.License {
 
                         using (var rsa = RSA.Create()) {
                             rsa.FromXmlString(privateKeyXml);
-                            var decryptedData = rsa.Decrypt(encryptedData, RSAEncryptionPadding.Pkcs1);
-                            var decryptedString = Encoding.UTF8.GetString(decryptedData);
+                            //var decryptedData = rsa.Decrypt(encryptedData, RSAEncryptionPadding.Pkcs1);
+
+                            var blockSize = rsa.KeySize / 8;
+                            var decryptedData = new List<byte>();
+
+                            for (var i = 0; i < encryptedData.Length; i += blockSize) {
+                                var remainingBytes = Math.Min(blockSize, encryptedData.Length - i);
+                                var block = new byte[remainingBytes];
+                                Buffer.BlockCopy(encryptedData, i, block, 0, remainingBytes);
+                                var decryptedBlock = rsa.Decrypt(block, RSAEncryptionPadding.Pkcs1);
+                                decryptedData.AddRange(decryptedBlock);
+                            }
+
+                            var decryptedString = Encoding.UTF8.GetString(decryptedData.ToArray());
+                            //var decryptedString = Encoding.UTF8.GetString(decryptedData);
+
                             data = JsonConvert.DeserializeObject<LicenseData>(decryptedString);
 
                             if (data is null) {

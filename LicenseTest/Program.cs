@@ -10,11 +10,12 @@ internal class Program {
         Console.WriteLine(data);*/
         JayTom.Dws.License.LicenseManager.GenerateKeyPair(out var publicKeyXml, out var privateKeyXml);
         //加密
-        JayTom.Dws.License.LicenseManager.GenerateAuthorizationFile(new LicenseData() {
-            ExpirationDate = DateTime.Now.AddDays(-1),
+        var (key, value) = JayTom.Dws.License.LicenseManager.GenerateAuthorizationFile(new LicenseData() {
+            ExpirationDate = DateTime.Now.AddDays(1),
             MachineCode = LicenseManager.GenerateMachineCode(),
-            LicenseCode = "ABCDEFGHIJKLM",
-            UserName = "AAAAAAAAA"
+            LicenseCode = "YVFA4NNUID2D2S62S51NTLFPJXVTVWCH",
+            UserName = "AAAAAAAAA",
+            Remarks = "机器1"
         }, publicKeyXml, privateKeyXml,
             "..\\License.key");
         //写出解密密钥

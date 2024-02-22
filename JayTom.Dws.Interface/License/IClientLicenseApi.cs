@@ -12,19 +12,21 @@ namespace JayTom.Dws.Interface.License {
         /// 远程授权
         /// </summary>
         /// <param name="machineCode"></param>
+        /// <param name="remarks"></param>
         /// <param name="token"></param>
         /// <param name="licenseCode"></param>
         /// <returns></returns>
-        Task<KeyValuePair<bool, object>> CreateAuthorization(string licenseCode, string machineCode, CancellationToken token = default);
+        Task<KeyValuePair<bool, object>> CreateAuthorization(string licenseCode, string machineCode, string remarks, CancellationToken token = default);
 
         /// <summary>
         /// 激活授权
         /// </summary>
         /// <param name="machineCode"></param>
+        /// <param name="remarks"></param>
         /// <param name="token"></param>
         /// <param name="licenseCode"></param>
         /// <returns></returns>
-        Task<KeyValuePair<bool, object>> ActivateAuthorization(string licenseCode, string machineCode, CancellationToken token = default);
+        Task<KeyValuePair<bool, object>> ActivateAuthorization(string licenseCode, string machineCode, string remarks, CancellationToken token = default);
 
         /// <summary>
         /// 下载文件

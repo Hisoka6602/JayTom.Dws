@@ -93,5 +93,58 @@ namespace JayTom.Dws.Infrastructure.Repository.License {
             }
             return false;
         }
+
+        public async Task<bool> UnbindMachineCode(string machineCode, CancellationToken token) {
+            //事务
+            //删除机器码
+            //修改激活数量
+
+            IDbContextTransaction? contextTransaction = null;
+            try {
+                await using var concardContext = _contextFactory.CreateDbContext();
+                var strategy = concardContext.Database.CreateExecutionStrategy();
+                return await strategy.ExecuteAsync(async () => {
+                    await using (contextTransaction = await concardContext.Database.BeginTransactionAsync(token)) {
+                        if (contextTransaction is not null) {
+                            var licenseCodeInfos = concardContext?.Set<LicenseCodeInfo>();
+
+                            var licenseClientBindingInfos = concardContext?.Set<LicenseClientBindingInfo>();
+                            if (licenseCodeInfos is not null && licenseClientBindingInfos is not null) {
+                                var licenseClientBindingInfo = licenseClientBindingInfos.FirstOrDefault(f => f.MachineCode.Equals(machineCode));
+
+                                if (licenseClientBindingInfo is not null) {
+                                    licenseClientBindingInfos.Remove(licenseClientBindingInfo);
+                                    var licenseCodeInfo = licenseCodeInfos.FirstOrDefault(f =>
+                                        f.Id.Equals(licenseClientBindingInfo.LicenseCodeId));
+                                    if (licenseCodeInfo is not null) {
+                                        licenseCodeInfo.ActivatedClientCount -= 1;
+                                        licenseCodeInfo.ActivatedClientCount = licenseCodeInfo.ActivatedClientCount < 0
+                                            ? 0
+                                            : licenseCodeInfo.ActivatedClientCount;
+                                        licenseCodeInfos.Update(licenseCodeInfo);
+                                        await concardContext?.SaveChangesAsync(token);
+                                        await contextTransaction.CommitAsync(token);
+                                        return true;
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    return false;
+                });
+            }
+            catch (Win32Exception) {
+                await contextTransaction?.RollbackAsync(token)!;
+            }
+            catch (TaskCanceledException) {
+                await contextTransaction?.RollbackAsync(token)!;
+            }
+            catch (Exception e) {
+                await contextTransaction?.RollbackAsync(token)!;
+                LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
+            }
+            return false;
+        }
     }
 }

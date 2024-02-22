@@ -162,7 +162,31 @@ namespace JayTom.Dws.Domain.Service.LicenseApi {
             }
         }
 
-        public async Task<KeyValuePair<bool, object>> ActivateAuthorization(string licenseCode, string machineCode, CancellationToken token) {
+        public async Task<KeyValuePair<bool, object>> UnbindMachineCode(string userCode, string licenseCode, string machineCode, CancellationToken token) {
+            //获取授权码
+
+            var (key, value) = await _licenseCodeRepository.FirstDetails(f => f.UserInfo != null &&
+                f.LicenseClientBindingInfo != null &&
+                (f.UserInfo.Role == UserRole.SuperAdmin ||
+                 f.UserInfo.UserCode.Equals(userCode)) &&
+                f.LicenseCode.Equals(licenseCode) &&
+                f.LicenseClientBindingInfo.Any(a =>
+                    a.MachineCode.Equals(machineCode)), token);
+
+            if (key && value is LicenseCodeInfo info) {
+                if (!info.IsAvailable) {
+                    return new KeyValuePair<bool, object>(false, "授权码不可用");
+                }
+
+                var unbindMachineCode = await _licenseCodeRepository.UnbindMachineCode(machineCode, token);
+                return new KeyValuePair<bool, object>(unbindMachineCode, $"解绑{(unbindMachineCode ? "成功" : "失败")}");
+            }
+            else {
+                return new KeyValuePair<bool, object>(false, "解绑失败");
+            }
+        }
+
+        public async Task<KeyValuePair<bool, object>> ActivateAuthorization(string licenseCode, string machineCode, string remarks, CancellationToken token) {
             var (key, value) = await GetUserCode(licenseCode, token);
             if (key && value is LicenseCodeInfo { UserInfo: not null } info) {
                 if (!info.IsAvailable) {
@@ -192,6 +216,7 @@ namespace JayTom.Dws.Domain.Service.LicenseApi {
                     LastVerifiedDate = DateTime.Now,
                     LicenseCodeId = info.Id,
                     MachineCode = machineCode,
+                    Remarks = remarks
                 };
                 var insert = await _licenseClientBindingRepository.Insert(clientBindingInfo, token);
 

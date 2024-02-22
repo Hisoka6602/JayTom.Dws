@@ -1,6 +1,8 @@
 ﻿@using JayTom.Dws.LicenseApiClient.Data.Models
-
-<MudCard Style="width:600px;height:730px; border-radius:20px;">
+@using JayTom.Dws.LicenseApiClient.Api
+@inject ILicenseApiRequest LicenseApiRequest
+@inject ISnackbar Snackbar
+<MudCard Style="width:1000px;height:730px; border-radius:5px;">
     <MudCardContent Class="center">
 
         <div style="display: flex;margin-top:10px;margin-bottom:20px;display: flex; align-items: center;">
@@ -13,17 +15,24 @@
         </div>
         @*列表*@
         <div>
-            <MudTable Height="540px" Breakpoint="Breakpoint.Sm" FixedHeader="true" Style="width:570px;min-height:360px;max-height:540px;" Items="@LicenseCodeItemInfo.MachineCodeItem"
+            <MudTable Height="540px" Breakpoint="Breakpoint.Sm" FixedHeader="true" Style="width:970px;min-height:360px;max-height:540px;" Items="@LicenseCodeItemInfo.MachineCodeItem"
                       Dense="false" Hover="true" CanCancelEdit="true">
                 <HeaderContent>
                     <MudTh>机器码</MudTh>
                     <MudTh>首次激活时间</MudTh>
                     <MudTh>最后效验时间</MudTh>
+                    <MudTh>备注</MudTh>
+                    <MudTh>管理</MudTh>
                 </HeaderContent>
                 <RowTemplate>
                     <MudTd DataLabel="机器码">@context.MachineCode</MudTd>
                         <MudTd DataLabel="首次激活时间">@context.FirstActivatedDate</MudTd>
                         <MudTd DataLabel="最后效验时间">@context.LastVerifiedDate</MudTd>
+                        <MudTd DataLabel="备注">@context.Remarks</MudTd>
+                        <MudTd>
+                            @*解绑*@
+                            <MudButton OnClick="()=>{UnbindMachineCode(LicenseCodeItemInfo.LicenseCode,context.MachineCode);}" Style="border-radius: 15px; margin-left:3px; background-color:red;color:white" Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Surface">解绑</MudButton>
+                        </MudTd>
                     </RowTemplate>
                 </MudTable>
             </div>
@@ -51,5 +60,25 @@
     private async void Confirm() {
 
         await OnConfirm.InvokeAsync();
+    }
+
+    private async void UnbindMachineCode(string licenseCode, string machineCode) {
+        var (key, value) = await LicenseApiRequest.UnbindMachineCode(licenseCode, machineCode, CancellationToken.None);
+        if (value is ApiResult result) {
+
+            Snackbar.Clear();
+            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+            Snackbar.Add(result.Msg, result.Result ? Severity.Success : Severity.Error);
+            if (key) {
+
+                LicenseCodeItemInfo.MachineCodeItem.RemoveAll(r => r.MachineCode.Equals(machineCode));
+                StateHasChanged();
+            }
+        }
+        else {
+            Snackbar.Clear();
+            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+            Snackbar.Add(value.ToString(), Severity.Error);
+        }
     }
 }

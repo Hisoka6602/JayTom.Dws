@@ -213,12 +213,23 @@ namespace JayTom.Dws.LicenseApiClient.Api {
         /// 下载授权文件
         /// </summary>
         /// <param name="machineCode"></param>
+        /// <param name="remarks"></param>
         /// <param name="token"></param>
         /// <param name="licenseCode"></param>
         /// <returns></returns>
         Task<KeyValuePair<bool, object>> DownloadLicenseFile(string licenseCode,
             string machineCode,
+            string remarks,
             CancellationToken token = default);
+
+        /// <summary>
+        /// 解绑机器码
+        /// </summary>
+        /// <param name="licenseCode"></param>
+        /// <param name="machineCode"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        public Task<KeyValuePair<bool, object>> UnbindMachineCode(string licenseCode, string machineCode, CancellationToken token);
     }
 
     public class ApiResult {

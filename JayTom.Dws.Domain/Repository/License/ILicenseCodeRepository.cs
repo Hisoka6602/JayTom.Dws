@@ -17,5 +17,7 @@ namespace JayTom.Dws.Domain.Repository.License {
         public Task<KeyValuePair<bool, object>> FirstDetails([NotNull] Expression<Func<LicenseCodeInfo, bool>> @where, CancellationToken token = default);
 
         public new Task<bool> UpdateRange(List<LicenseCodeInfo> entities, CancellationToken token);
+
+        public Task<bool> UnbindMachineCode(string machineCode, CancellationToken token);
     }
 }
