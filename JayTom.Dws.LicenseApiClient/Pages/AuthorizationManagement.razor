@@ -31,12 +31,19 @@
 
     </MudOverlay>
     <PageTitleTemplate Title="授权管理" Description="授权管理" IconClass="iconfont icon-lingpaiguanli"></PageTitleTemplate>
-    <MudDataGrid Elevation="1" Class="custom-datagrid" Filterable="false" SortMode="@SortMode.None" Groupable="false" Items="@_items">
+    <MudDataGrid Elevation="1" Class="custom-datagrid" Filterable="false" SortMode="@SortMode.None" QuickFilter="@_quickFilter"
+                 Hover="true" Groupable="false" Items="@_items" ColumnResizeMode="ResizeMode.Column" Dense="true">
+
+        <ToolBarContent>
+            <MudSpacer />
+            <MudTextField @bind-Value="_searchString" Placeholder="模糊搜索" Adornment="Adornment.Start" Immediate="true"
+                          AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+        </ToolBarContent>
         <Columns>
             <PropertyColumn Property="x => x.Num" Title="" />
             <PropertyColumn Property="x => x.LicenseCode" Title="授权码" />
-            <PropertyColumn Property="x => x.MaxClientCount" Title="客户端上限数量" />
-            <PropertyColumn Property="x => x.ActivatedClientCount" Title="已激活数量" />
+            <PropertyColumn Style="width:50px" Property="x => x.MaxClientCount" Title="上限数量" />
+            <PropertyColumn Style="width:50px" Property="x => x.ActivatedClientCount" Title="已激活数量" />
             @if (Info is { Role: 1 }) {
                 <PropertyColumn Property="x => x.UserName" Title="租户" />
             }
@@ -44,7 +51,7 @@
             <PropertyColumn Property="x => x.ClientName" Title="客户" />
             <TemplateColumn Title="是否可用">
                 <CellTemplate>
-                    <MudStack Row Style="text-align:center">
+                    <MudStack Row Style="text-align:center;width:40px">
                          <MudCheckBox Checked="context.Item.IsAvailable" Disabled="true" />
 
                      </MudStack>
@@ -52,11 +59,12 @@
              </TemplateColumn>
              <TemplateColumn>
                  <CellTemplate>
-                     <MudStack Row Style="text-align:center">
-                         <MudButton Style="border-radius: 15px;" Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Tertiary" OnClick="() => {SelectInfoModel= context.Item;  MachineCodeEditorsIsVisible = true; }">详细信息</MudButton>
-                         <MudButton Style="border-radius: 15px;" Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Success" OnClick="() => {SelectInfoModel= context.Item; LicenseRenewalEditorIsVisible = true; }">续期</MudButton>
-                         <MudButton OnClick="()=>{FreezeLicenseCode(context.Item);}" Style="border-radius: 15px;" Size="@Size.Small" Variant="@Variant.Filled" Color="@ConvertStatusButtonColor(context.Item.IsAvailable)">@ConvertStatusButtonText(context.Item.IsAvailable)</MudButton>
-                            <MudButton Style="border-radius: 15px;" Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Dark" OnClick="()=>{LicenseFileEditorIsVisible=true;SelectInfoModel=context.Item;}">生成授权文件</MudButton>
+                     <MudStack Row Style="text-align:center;width:450px">
+                         <MudButton Style="border-radius: 15px; margin-left:3px; background-color:dodgerblue;color:white" Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Surface" OnClick="() => {SelectInfoModel= context.Item; LicenseRenewalEditorIsVisible = true; }">编辑</MudButton>
+                         <MudButton Style="border-radius: 15px; margin-left:3px;" Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Tertiary" OnClick="() => {SelectInfoModel = context.Item; MachineCodeEditorsIsVisible = true; }">详细信息</MudButton>
+                         <MudButton Style="border-radius: 15px; margin-left:3px;" Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Success" OnClick="() => {SelectInfoModel = context.Item; LicenseRenewalEditorIsVisible = true; }">续期</MudButton>
+                         <MudButton OnClick="() => { FreezeLicenseCode(context.Item); }" Style="border-radius: 15px; margin-left:3px;" Size="@Size.Small" Variant="@Variant.Filled" Color="@ConvertStatusButtonColor(context.Item.IsAvailable)">@ConvertStatusButtonText(context.Item.IsAvailable)</MudButton>
+                            <MudButton Style="border-radius: 15px; margin-left:3px;" Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Dark" OnClick="() =>{LicenseFileEditorIsVisible = true;SelectInfoModel = context.Item;}">生成授权文件</MudButton>
                         </MudStack>
                     </CellTemplate>
                 </TemplateColumn>
@@ -85,10 +93,25 @@
     public bool LicenseRenewalEditorIsVisible { get; set; }
     public bool MachineCodeEditorsIsVisible { get; set; }
     public bool LicenseFileEditorIsVisible { get; set; }
+    private string _searchString = string.Empty;
     private List<LicenseCodeItemInfoModel> _items = new();
 
     public LicenseCodeItemInfoModel SelectInfoModel { get; set; } = new();
     public List<AppTemplateItemInfoModel> AppTemplateItemItems { get; set; } = new();
+    private Func<LicenseCodeItemInfoModel, bool> _quickFilter => x => {
+        if (string.IsNullOrWhiteSpace(_searchString))
+            return true;
+
+        if (x.ClientName.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (x.LicenseCode.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (x.UserName.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        return x.MachineCodeItem?.Any(f => f.MachineCode.Contains(_searchString, StringComparison.OrdinalIgnoreCase)) == true;
+    };
 
     private string GetUserStatusChipStyle(UserStatus status) {
         return status switch {
@@ -238,7 +261,7 @@
         var (key, value) = await LicenseApiRequest.LicenseCodeData();
         if (key && value is List<LicenseCodeItemInfoModel> items) {
             _items.Clear();
-            var licenseCodeItemInfoModels = items.Select(s => new LicenseCodeItemInfoModel {
+            var licenseCodeItemInfoModels = items.Select((s, i) => new LicenseCodeItemInfoModel {
                     ActivatedClientCount = s.ActivatedClientCount,
                     TemplateName = s.TemplateName,
                     LicenseCode = s.LicenseCode,
@@ -248,7 +271,8 @@
                     ExpirationDate = s.ExpirationDate,
                     ClientName = s.ClientName,
                     UserName = s.UserName,
-                    UserCode = s.UserCode
+                    UserCode = s.UserCode,
+                    Num = i + 1
                 })?.ToList() ?? new List<LicenseCodeItemInfoModel>();
             _items.AddRange(licenseCodeItemInfoModels);
         }
@@ -305,10 +329,10 @@
     private string ConvertStatusButtonText(bool status) {
         if (status) {
 
-            return "冻结授权码";
+            return "冻结";
         }
         else {
-            return "激活授权码";
+            return "激活";
         }
     }
     private Color ConvertStatusButtonColor(bool status) {
