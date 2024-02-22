@@ -25,6 +25,14 @@ namespace JayTom.Dws.Application.Service.LicenseApi {
             string clientName,
             CancellationToken token);
 
+        public Task<KeyValuePair<bool, object>> UpdateLicenseCode(long templateInfoId,
+            string userCode,
+            string licenseCode,
+            int maxClientCount,
+            DateTime expirationDate,
+            string clientName,
+            CancellationToken token);
+
         /// <summary>
         /// 授权码数据
         /// </summary>

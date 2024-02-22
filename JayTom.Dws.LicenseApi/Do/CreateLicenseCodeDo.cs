@@ -21,5 +21,11 @@ namespace JayTom.Dws.LicenseApi.Do {
         /// 客户
         /// </summary>
         public string ClientName { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 授权码
+        /// </summary>
+
+        public string LicenseCode { get; set; } = string.Empty;
     }
 }

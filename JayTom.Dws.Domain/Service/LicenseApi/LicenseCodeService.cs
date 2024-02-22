@@ -46,6 +46,27 @@ namespace JayTom.Dws.Domain.Service.LicenseApi {
             }
         }
 
+        public async Task<KeyValuePair<bool, object>> UpdateLicenseCode(long templateInfoId, string userCode, string licenseCode, int maxClientCount,
+            DateTime expirationDate, string clientName, CancellationToken token) {
+            var licenseUserInfo = await _licenseUserRepository.FirstOrDefault(f =>
+                f.UserCode.Equals(userCode), token);
+
+            var (key, value) = await _licenseCodeRepository.FirstDetails(f => f.UserInfo != null &&
+                f.LicenseCode.Equals(licenseCode) &&
+                (f.UserInfo.UserCode.Equals(userCode) ||
+                 f.UserInfo.Role == UserRole.SuperAdmin), token);
+            if (key && value is LicenseCodeInfo info) {
+                info.ExpirationDate = expirationDate;
+                info.ClientName = clientName;
+                info.MaxClientCount = maxClientCount;
+                var update = await _licenseCodeRepository.Update(info, token);
+                return new KeyValuePair<bool, object>(update, update ? "更新成功" : "更新失败");
+            }
+            else {
+                return new KeyValuePair<bool, object>(false, "没有符合的数据");
+            }
+        }
+
         public async Task<KeyValuePair<bool, object>> LicenseCodeData(string userCode, CancellationToken token) {
             var licenseUserInfo = await _licenseUserRepository.
                 FirstOrDefault(f => f.UserCode.Equals(userCode), token);

@@ -46,6 +46,26 @@ namespace JayTom.Dws.LicenseApi.Controllers {
         }
 
         /// <summary>
+        /// 修改授权码
+        /// </summary>
+        /// <param name="param"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        [Produces("application/json")]
+        [HttpPost("UpdateLicenseCode"),
+         UserStatus(Status = UserStatus.Active),
+         UserRole(Role = (int)(UserRole.SuperAdmin | UserRole.Tenant)),
+         Authorize]
+        public async Task<JsonResult> UpdateLicenseCode([FromBody] CreateLicenseCodeDo param,
+            CancellationToken cancellationToken) {
+            var code = HttpContext.Response.HttpContext.User.Identity?.Name;
+            var (key, value) = await _licenseCodeAppService.UpdateLicenseCode(param.TemplateInfoId,
+                code ?? string.Empty, param.LicenseCode, param.MaxClientCount, param.ExpirationDate,
+                param.ClientName, cancellationToken);
+            return key ? JsonResultVo.Success(value.ToString() ?? string.Empty) : JsonResultVo.Fail(value.ToString() ?? string.Empty);
+        }
+
+        /// <summary>
         /// 授权码数据列表
         /// </summary>
         /// <param name="cancellationToken"></param>

@@ -181,6 +181,24 @@ namespace JayTom.Dws.LicenseApiClient.Api {
             CancellationToken token = default);
 
         /// <summary>
+        /// 更新授权码信息
+        /// </summary>
+        /// <param name="templateInfoId"></param>
+        /// <param name="userCode"></param>
+        /// <param name="licenseCode"></param>
+        /// <param name="maxClientCount"></param>
+        /// <param name="expirationDate"></param>
+        /// <param name="clientName"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        Task<KeyValuePair<bool, object>> UpdateLicenseCode(long templateInfoId,
+           string licenseCode,
+           int maxClientCount,
+           DateTime expirationDate,
+           string clientName,
+           CancellationToken token = default);
+
+        /// <summary>
         /// 授权码数据列表
         /// </summary>
         /// <param name="token"></param>
