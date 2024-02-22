@@ -158,6 +158,8 @@ namespace JayTom.Dws.LicenseApi.Controllers {
             if (!key) return JsonResultVo.Fail(value.ToString() ?? string.Empty);
             var filePath = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}/Scr/LicenseFile/{value.ToString()}";
 
+            //激活
+            await _licenseCodeAppService.ActivateAuthorization(param.LicenseCode, param.MachineCode, cancellationToken);
             return JsonResultVo.Success("生成成功", filePath);
         }
 

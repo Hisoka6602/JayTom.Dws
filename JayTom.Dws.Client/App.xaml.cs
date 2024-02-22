@@ -116,6 +116,9 @@ namespace JayTom.Dws.Client {
         private const string PipeName = "DwsPipe";
 
         protected override void RegisterTypes(IContainerRegistry containerRegistry) {
+            var rules = containerRegistry.GetContainer().Rules;
+            rules.WithoutThrowOnRegisteringDisposableTransient();
+
             //注册窗口
             containerRegistry.RegisterDialog<ApiAccessDialog>();
             containerRegistry.RegisterDialog<ApiTestDialog>();
@@ -351,6 +354,7 @@ namespace JayTom.Dws.Client {
                 Environment.Exit(0);
             }
             ThreadPool.SetMinThreads(300, 200);
+
             this.DispatcherUnhandledException += delegate (object sender, DispatcherUnhandledExceptionEventArgs args) {
                 //异常触发
                 NLog.LogManager.GetCurrentClassLogger().Error($"{JsonConvert.SerializeObject(args.Exception)}");

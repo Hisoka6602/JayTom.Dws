@@ -43,15 +43,6 @@
                 Grid.Row="0"
                 Margin="20,0"
                 Orientation="Vertical">
-
-                <!--
-                    机器码
-                    授权码
-                    [远程授权]
-                    
-                    授权状态
-                    客户名
-                -->
                 <!--  机器码  -->
                 <StackPanel
                     Margin="5,0"
@@ -131,6 +122,46 @@
                             FontWeight="Bold"
                             Foreground="White"
                             Text="{Binding LicenseCode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    </Border>
+                </StackPanel>
+                <!--  授权码  -->
+                <StackPanel
+                    Margin="5,0"
+                    VerticalAlignment="Center"
+                    Orientation="Horizontal">
+                    <!--  图标  -->
+                    <TextBlock
+                        Margin="0,0,0,1"
+                        VerticalAlignment="Center"
+                        FontFamily="{StaticResource IconFontFamily}"
+                        FontSize="20"
+                        Foreground="DarkGray"
+                        Text="&#xe744;" />
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="16"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="备  注:" />
+                    <Border
+                        Margin="5"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Background="#1A696969"
+                        CornerRadius="5">
+                        <TextBox
+                            Width="600"
+                            Height="30"
+                            MaxWidth="500"
+                            Margin="5,0"
+                            materialDesign:TextFieldAssist.HasClearButton="False"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            FontSize="15"
+                            FontWeight="Bold"
+                            Foreground="White"
+                            Text="{Binding Remarks, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                     </Border>
                 </StackPanel>
                 <!--  远程授权  -->
@@ -227,7 +258,7 @@
                                 FontWeight="Bold"
                                 Foreground="DarkGray"
                                 Visibility="{Binding LicenseStatus, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                <Run Text="用户:" /> <Run Text="{Binding CustomerName, UpdateSourceTrigger=PropertyChanged}" />
+                                <Run Text="授权给:" /> <Run Text="{Binding CustomerName, UpdateSourceTrigger=PropertyChanged}" />
                             </TextBlock>
                             <TextBlock
                                 Margin="10"

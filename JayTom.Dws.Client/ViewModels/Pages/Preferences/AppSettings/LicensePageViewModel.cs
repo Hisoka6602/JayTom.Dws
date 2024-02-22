@@ -20,6 +20,7 @@ using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Models.AppSettingModel;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings {
+
     public class LicensePageViewModel : BindableBase {
         private readonly IClientLicenseApi _clientLicenseApi;
         private SnackbarMessageQueue _licenseMessageQueue = new(TimeSpan.FromSeconds(2));
@@ -30,6 +31,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings {
         private string _machineCode = string.Empty;
         private string _failureReason = "未检测到授权文件";
         private bool _isLoaded;
+        private string _remarks = string.Empty;
 
         public LicensePageViewModel(IClientLicenseApi clientLicenseApi) {
             _clientLicenseApi = clientLicenseApi;
@@ -89,6 +91,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings {
         }
 
         /// <summary>
+        /// 备注
+        /// </summary>
+        public string Remarks {
+            get => _remarks;
+            set => SetProperty(ref _remarks, value);
+        }
+
+        /// <summary>
         /// 页面加载完成
         /// </summary>
         public ICommand LoadedCommand {
@@ -110,11 +120,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings {
                             LicenseCode = data.LicenseCode;
                             CustomerName = data.UserName;
                             FailureReason = value;
-
-                            if (string.IsNullOrEmpty(data.MachineCode)) {
-                                //显示激活授权
-                            }
-
+                            Remarks = data.Remarks;
                         }
                         LicenseStatus = key;
                     }
@@ -156,6 +162,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings {
                                                 LicenseCode = data.LicenseCode;
                                                 CustomerName = data.UserName;
                                                 FailureReason = s;
+                                                Remarks = data.Remarks;
                                             }
                                             LicenseStatus = b;
                                         }
