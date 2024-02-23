@@ -20,12 +20,13 @@ namespace JayTom.Dws.LicenseApiClient.Api {
         /// 注册
         /// </summary>
         /// <param name="phone"></param>
+        /// <param name="companyName"></param>
         /// <param name="token"></param>
         /// <param name="userCode"></param>
         /// <param name="userName"></param>
         /// <param name="passWord"></param>
         /// <returns></returns>
-        Task<KeyValuePair<bool, object>> Register(string userCode, string userName, string passWord, string phone, CancellationToken token = default);
+        Task<KeyValuePair<bool, object>> Register(string userCode, string userName, string passWord, string phone, string companyName = "", CancellationToken token = default);
 
         /// <summary>
         /// 登录

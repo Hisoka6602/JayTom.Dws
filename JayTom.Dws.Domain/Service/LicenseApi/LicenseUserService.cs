@@ -19,7 +19,7 @@ namespace JayTom.Dws.Domain.Service.LicenseApi {
         }
 
         public async Task<KeyValuePair<bool, object>> Register(string userCode,
-            string userName, string password, string phone, string ipAddress, CancellationToken token) {
+            string userName, string password, string phone, string ipAddress, string companyName, CancellationToken token) {
             var insert = await _licenseUserRepository.Insert(new LicenseUserInfo() {
                 CreateTime = DateTime.Now,
                 UserCode = userCode,
@@ -28,8 +28,12 @@ namespace JayTom.Dws.Domain.Service.LicenseApi {
                 PassWord = password,
                 Role = UserRole.Tenant,
                 Status = UserStatus.Active,
-                ModifyIp = ipAddress
+                ModifyIp = ipAddress,
+                UserDetailsInfo = new LicenseUserDetailsInfo {
+                    CompanyName = companyName
+                }
             }, token);
+
             return new KeyValuePair<bool, object>(insert, insert ? "注册成功" : "注册失败");
         }
 

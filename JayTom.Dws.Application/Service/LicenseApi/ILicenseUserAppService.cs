@@ -17,6 +17,7 @@ namespace JayTom.Dws.Application.Service.LicenseApi {
         /// <param name="password"></param>
         /// <param name="phone"></param>
         /// <param name="ipAddress"></param>
+        /// <param name="companyName"></param>
         /// <param name="token"></param>
         /// <returns></returns>
         public Task<KeyValuePair<bool, object>> Register(
@@ -25,6 +26,7 @@ namespace JayTom.Dws.Application.Service.LicenseApi {
             string password,
             string phone,
             string ipAddress,
+            string companyName,
             CancellationToken token);
 
         /// <summary>

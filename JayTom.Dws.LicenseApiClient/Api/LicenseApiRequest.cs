@@ -32,7 +32,7 @@ namespace JayTom.Dws.LicenseApiClient.Api {
             Domain = url;
         }
 
-        public async Task<KeyValuePair<bool, object>> Register(string userCode, string userName, string passWord, string phone, CancellationToken token) {
+        public async Task<KeyValuePair<bool, object>> Register(string userCode, string userName, string passWord, string phone, string companyName, CancellationToken token) {
             try {
                 //组包
 
@@ -41,6 +41,7 @@ namespace JayTom.Dws.LicenseApiClient.Api {
                     userName = userName,
                     passWord = passWord,
                     phone = phone,
+                    companyName = companyName
                 });
 
                 using (var httpClient = _httpClientFactory.CreateClient("INSURANCE")) {

@@ -21,6 +21,7 @@ using JayTom.Dws.Domain.Service.VideoApi;
 using JayTom.Dws.Domain.Repository.License;
 using JayTom.Dws.Domain.Service.LicenseApi;
 using JayTom.Dws.Application.Service.VideoApi;
+using JayTom.Dws.LicenseApi.BackgroundService;
 using JayTom.Dws.Domain.Repository.VideoApiData;
 using JayTom.Dws.Application.Service.LicenseApi;
 using JayTom.Dws.Infrastructure.Repository.License;
@@ -159,7 +160,8 @@ internal class Program {
             builder.Services.AddSingleton<ISign, DwsSign>();
         }
         //后台服务
-
+        //后台服务
+        builder.Services.AddHostedService<FileCleanupService>();
         // Add services to the container.
 
         builder.Services.AddControllers();

@@ -22,8 +22,8 @@ namespace JayTom.Dws.Application.Service.LicenseApi {
         }
 
         public Task<KeyValuePair<bool, object>> Register(string userCode, string userName,
-            string password, string phone, string ipAddress, CancellationToken token) {
-            return _licenseUserService.Register(userCode, userName, password, phone, ipAddress, token);
+            string password, string phone, string ipAddress, string companyName, CancellationToken token) {
+            return _licenseUserService.Register(userCode, userName, password, phone, ipAddress, companyName, token);
         }
 
         public async Task<KeyValuePair<bool, object>> Login(string loginCode, string password, CancellationToken token) {

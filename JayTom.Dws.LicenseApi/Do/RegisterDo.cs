@@ -37,5 +37,10 @@ namespace JayTom.Dws.LicenseApi.Do {
         [Required(ErrorMessage = "手机号不能为空!"),
          RegularExpression("^1[3-9]\\d{9}$", ErrorMessage = "手机号格式错误")]
         public string Phone { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 公司名称
+        /// </summary>
+        public string? CompanyName { get; set; }
     }
 }

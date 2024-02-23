@@ -38,7 +38,7 @@ namespace JayTom.Dws.LicenseApi.Controllers {
             var ipAddress = HttpContext?.Connection?.RemoteIpAddress?.ToString();
             var keyValuePair = await _licenseUserAppService.Register(param.UserCode,
                 param.UserName, param.PassWord,
-                param.Phone, ipAddress ?? string.Empty, cancellationToken);
+                param.Phone, ipAddress ?? string.Empty, param.CompanyName ?? string.Empty, cancellationToken);
 
             return keyValuePair is { Key: true, Value: string msg } ? JsonResultVo.Success(msg) : JsonResultVo.Fail("注册失败!");
         }
@@ -107,6 +107,7 @@ namespace JayTom.Dws.LicenseApi.Controllers {
         [Produces("application/json")]
         [HttpGet("Info"), Authorize, UserStatus(Status = UserStatus.Active)]
         public async Task<JsonResult> Info(CancellationToken cancellationToken) {
+            var iconPath = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}/Scr/Image/DefaultIcon.png";
             var code = HttpContext.Response.HttpContext.User.Identity?.Name;
             var (key, value) = await _licenseUserAppService.Info(code, cancellationToken);
 
@@ -118,7 +119,7 @@ namespace JayTom.Dws.LicenseApi.Controllers {
                     Phone = DataUtils.MaskPhoneNumber(info.Phone),
                     Role = info.Role,
                     Status = info.Status,
-                    UserIcon = info.UserIcon,
+                    UserIcon = !string.IsNullOrEmpty(info.UserIcon) ? info.UserIcon : iconPath,
                     RegisterTime = info.CreateTime,
                     LicenseCodeInfos = info.LicenseCodeInfos?.Select(s => new LicenseCodeInfo {
                         LicenseCode = s.LicenseCode,
@@ -198,6 +199,7 @@ namespace JayTom.Dws.LicenseApi.Controllers {
         [Produces("application/json")]
         [HttpGet("TenantInfos"), Authorize, UserRole(Role = (int)UserRole.SuperAdmin), UserStatus(Status = UserStatus.Active)]
         public async Task<JsonResult> TenantInfos(CancellationToken cancellationToken) {
+            var iconPath = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}/Scr/Image/DefaultIcon.png";
             var (key, value) = await _licenseUserAppService.TenantInfos(cancellationToken);
             if (key && value is List<LicenseUserInfo> infos) {
                 var userInfoDtos = infos?.Select(info => new UserInfoDto() {
@@ -207,7 +209,7 @@ namespace JayTom.Dws.LicenseApi.Controllers {
                     Phone = DataUtils.MaskPhoneNumber(info.Phone),
                     Role = info.Role,
                     Status = info.Status,
-                    UserIcon = info.UserIcon,
+                    UserIcon = !string.IsNullOrEmpty(info.UserIcon) ? info.UserIcon : iconPath,
                     RegisterTime = info.CreateTime,
                     LicenseCodeInfos = info.LicenseCodeInfos?.Select(s => new LicenseCodeInfo {
                         LicenseCode = s.LicenseCode,

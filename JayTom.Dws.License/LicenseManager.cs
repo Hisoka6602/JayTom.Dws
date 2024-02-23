@@ -387,7 +387,6 @@ namespace JayTom.Dws.License {
                 using (var aes = Aes.Create()) {
                     aes.Key = key;
                     aes.IV = iv;
-
                     using (var decryptor = aes.CreateDecryptor(key, iv)) {
                         var privateKeyBytes = decryptor.TransformFinalBlock(encryptedPrivateKey, 0, encryptedPrivateKey.Length);
                         var privateKeyXml = Encoding.UTF8.GetString(privateKeyBytes);

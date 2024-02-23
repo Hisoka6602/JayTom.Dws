@@ -2,58 +2,83 @@
 @using JayTom.Dws.LicenseApiClient.Data.Models
 @using JayTom.Dws.LicenseApiClient.Notification
 @using JayTom.Dws.LicenseApiClient.Api
+@using JayTom.Dws.LicenseApiClient.Editors
 @inject ILicenseApiRequest LicenseApiRequest
 @inject ISnackbar Snackbar
 @inject NavigationManager Navigation
 @inject NotificationService NotificationService
-<PageTitleTemplate Title="租户管理" Description="租户管理" IconClass="iconfont icon-yonghu"></PageTitleTemplate>
-<MudDataGrid Elevation="1" Class="custom-datagrid" Filterable="false" SortMode="@SortMode.None" Groupable="false" Items="@_elements">
-    <Columns>
-        <PropertyColumn Property="x => x.Num" Title="" />
-        <TemplateColumn>
-            <CellTemplate>
-                <img src="@context.Item?.UserIcon" alt="用户头像" style="width: 30px; height: 30px; border-radius: 50%;" />
-            </CellTemplate>
-        </TemplateColumn>
-        <PropertyColumn Property="x => x.UserCode" Title="租户代码" />
-        <PropertyColumn Property="x => x.UserName" Title="租户名称" />
-        <PropertyColumn Property="x => x.Phone" Title="租户手机号" />
-        <TemplateColumn Title="租户状态">
-            <CellTemplate>
-                <MudStack Row Style="text-align:center">
-                     <MudChip Size="@Size.Small" Variant="Variant.Filled" Style="@(GetUserStatusChipStyle(context.Item.Status))">
-                         @GetUserStatusDisplay(context.Item.Status)
-                    </MudChip>
-                </MudStack>
-            </CellTemplate>
-        </TemplateColumn>
-        <PropertyColumn Property="x => x.LicenseCodeCount" Title="租户授权码数量" />
-        <PropertyColumn Style="text-align:center" Property="x => x.RegisterTime" Title="注册时间" />
-        <TemplateColumn>
-            <CellTemplate>
-                <MudStack Row Style="text-align:center">
-                     @*<MudButton Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Primary">取消授权</MudButton>*@
-                     <MudButton OnClick="()=>{FreezeUser(context.Item);}" Style="border-radius: 15px;" Size="@Size.Small" Variant="@Variant.Filled" Color="@ConvertStatusButtonColor(context.Item.Status)">@ConvertStatusButtonText(context.Item.Status)</MudButton>
+<MudPaper Elevation="0" Style="height:95.2vh">
+    <MudOverlay Visible="_tenantEditorIsVisible" DarkBackground="true">
+
+        <TenantEditor OnCancel="() => { _tenantEditorIsVisible=false;}" OnConfirm="HandleConfirm" />
+
+    </MudOverlay>
+    <PageTitleTemplate Title="租户管理" Description="租户管理" IconClass="iconfont icon-yonghu"></PageTitleTemplate>
+    <MudDataGrid Elevation="1" Class="custom-datagrid" Filterable="false" SortMode="@SortMode.None" Groupable="false" Items="@_elements" QuickFilter="@_quickFilter"
+                 Hover="true">
+        <ToolBarContent>
+            <MudSpacer />
+            <MudTextField @bind-Value="_searchString" Placeholder="模糊搜索" Adornment="Adornment.Start" Immediate="true"
+                          AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+        </ToolBarContent>
+        <Columns>
+            <PropertyColumn Property="x => x.Num" Title="" />
+            <TemplateColumn>
+                <CellTemplate>
+                    <img src="@context.Item?.UserIcon" alt="用户头像" style="width: 30px; height: 30px; border-radius: 50%;" />
+                </CellTemplate>
+            </TemplateColumn>
+            <PropertyColumn Property="x => x.UserCode" Title="租户代码" />
+            <PropertyColumn Property="x => x.UserName" Title="租户名称" />
+            <PropertyColumn Property="x => x.Phone" Title="租户手机号" />
+            <TemplateColumn Title="租户状态">
+                <CellTemplate>
+                    <MudStack Row Style="text-align:center">
+                         <MudChip Size="@Size.Small" Variant="Variant.Filled" Style="@(GetUserStatusChipStyle(context.Item.Status))">
+                             @GetUserStatusDisplay(context.Item.Status)
+                        </MudChip>
                     </MudStack>
                 </CellTemplate>
             </TemplateColumn>
-        </Columns>
-        <PagerContent>
-            <MudDataGridPager T="TenantItemInfoModel" DisableRowsPerPage="true" />
-        </PagerContent>
-    </MudDataGrid>
-    <style>
-        .custom-datagrid .mud-table-row {
-            height: 10px;
-        }
+            <PropertyColumn Property="x => x.LicenseCodeCount" Title="租户授权码数量" />
+            <PropertyColumn Style="text-align:center" Property="x => x.RegisterTime" Title="注册时间" />
+            <TemplateColumn>
+                <CellTemplate>
+                    <MudStack Row Style="text-align:center">
+                         @*<MudButton Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Primary">取消授权</MudButton>*@
+                         <MudButton OnClick="() => { FreezeUser(context.Item); }" Style="border-radius: 15px;" Size="@Size.Small" Variant="@Variant.Filled" Color="@ConvertStatusButtonColor(context.Item.Status)">@ConvertStatusButtonText(context.Item.Status)</MudButton>
+                        </MudStack>
+                    </CellTemplate>
+                </TemplateColumn>
+            </Columns>
+            <PagerContent>
+                <MudStack Row Justify="Justify.Center" Style="text-align:center">
+                 <div style="flex-grow: 2; flex-basis: 0; text-align: right;">
+                     <MudFab OnClick="()=>{_tenantEditorIsVisible=true;}" Icon="@Icons.Material.Filled.Add" Color="Color.Primary" />
+                 </div>
+                 <div style="flex-grow: 1; text-align: right;">
+                     <MudDataGridPager T="TenantItemInfoModel" DisableRowsPerPage="true" />
+                 </div>
+             </MudStack>
 
-    </style>
+         </PagerContent>
+     </MudDataGrid>
+ </MudPaper>
 
-    @code {
+ <style>
+     .custom-datagrid .mud-table-row {
+         height: 10px;
+     }
+
+ </style>
+
+ @code {
     private List<TenantItemInfoModel> _elements = new() {
 
     };
 
+    private bool _tenantEditorIsVisible = false;
+    private string _searchString = string.Empty;
     protected override async Task OnAfterRenderAsync(bool firstRender) {
 
 
@@ -72,6 +97,19 @@
         }
 
     }
+
+    private Func<TenantItemInfoModel, bool> _quickFilter => x => {
+        if (string.IsNullOrWhiteSpace(_searchString))
+            return true;
+
+        if (x.UserName.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (x.UserCode.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        return false;
+    };
     private string GetUserStatusChipStyle(UserStatus status) {
         return status switch {
             UserStatus.Active => "background-color: rgba(0, 255, 0, 0.2)",
@@ -160,5 +198,12 @@
             Snackbar.Add(value.ToString(), Severity.Error);
         }
     }
-}
+
+    private async void HandleConfirm(TenantItemInfoModel obj) {
+        await GetTenantInfos();
+        _tenantEditorIsVisible = false;
+        StateHasChanged();
+    }
+
+ }
 
