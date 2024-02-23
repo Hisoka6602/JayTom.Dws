@@ -7,6 +7,7 @@ using System.Text;
 using Prism.Commands;
 using System.Drawing;
 using Newtonsoft.Json;
+using Microsoft.Win32;
 using TouchSocket.Core;
 using JayTom.Dws.License;
 using System.Windows.Input;
@@ -157,6 +158,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings {
                                     var fileAsync = await _clientLicenseApi.DownloadFileAsync(result.Data.ToString(),
                                         $"{licenseDirectory}\\License.key");
                                     if (fileAsync) {
+                                        await Task.Delay(500);
                                         var firstOrDefault = Directory.GetFiles(licenseDirectory, "*.key").FirstOrDefault();
                                         if (firstOrDefault is not null) {
                                             //解密授权
@@ -197,6 +199,48 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings {
                     });
                 }
             });
+        }
+
+        public ICommand ImportLicenseFileCommand {
+            get => new DelegateCommand<object>(ImportLicenseFileDelegate);
+        }
+
+        private async void ImportLicenseFileDelegate(object obj) {
+            var openFileDialog = new OpenFileDialog() {
+                Title = "请选择需要打开的授权文件",
+                InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory),
+                Filter =
+                    $"授权文件 (*.key)|*.key",
+                DefaultExt = ".key",
+                RestoreDirectory = true,
+            };
+            if (openFileDialog.ShowDialog() == true) {
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                    var licenseDirectory = Path.Combine(Directory.GetCurrentDirectory(), "License");
+                    if (!Directory.Exists(licenseDirectory)) {
+                        Directory.CreateDirectory(licenseDirectory);
+                    }
+                    var files = Directory.GetFiles(licenseDirectory, "*.key");
+                    Parallel.ForEach(files, File.Delete);
+                    File.Copy(openFileDialog.FileName, $"{licenseDirectory}\\{new FileInfo(openFileDialog.FileName).Name}");
+                    var firstOrDefault = Directory.GetFiles(licenseDirectory, "*.key").FirstOrDefault();
+                    if (firstOrDefault is not null) {
+                        //解密授权
+                        var (b, s) = LicenseManager.DecryptAuthorizationFile(firstOrDefault, out var data);
+                        if (data is not null) {
+                            LicenseCode = data.LicenseCode;
+                            CustomerName = data.UserName;
+
+                            Remarks = data.Remarks;
+                        }
+                        FailureReason = s;
+                        LicenseStatus = b;
+                    }
+                    else {
+                        FailureReason = "未检测到授权文件";
+                    }
+                });
+            }
         }
     }
 }

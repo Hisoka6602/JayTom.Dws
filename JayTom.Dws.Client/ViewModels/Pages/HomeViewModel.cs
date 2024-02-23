@@ -795,20 +795,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                             if (firstOrDefault is not null) {
                                 //解密授权
                                 var (b, s) = LicenseManager.DecryptAuthorizationFile(firstOrDefault, out var data);
-                                if (!b) {
-                                    EventAggregator.Instance.Publish(new AppLogInfoModel {
-                                        CreateTime = DateTime.Now,
-                                        Message = s,
-                                        Type = LogType.Exception
-                                    });
-                                    HomeMessageQueue.Enqueue(s);
-                                    return;
-                                }
-                                else if (b && data is not null) {
-                                    //提交激活
-                                    Task.Run(async () => {
-                                        await _clientLicenseApi.ActivateAuthorization(data.LicenseCode, data.MachineCode, data.Remarks);
-                                    });
+
+                                if (data is not null) {
                                     //重新下载
                                     Task.Run(async () => {
                                         var (key1, o) = await _clientLicenseApi.CreateAuthorization(data.LicenseCode, data.MachineCode, data.Remarks);
@@ -819,8 +807,23 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                                             Parallel.ForEach(files, File.Delete);
 
                                             await _clientLicenseApi.DownloadFileAsync(result.Data.ToString(),
-                                               $"{licenseDirectory}\\License.key");
+                                                $"{licenseDirectory}\\License.key");
                                         }
+                                    });
+                                }
+                                if (!b) {
+                                    EventAggregator.Instance.Publish(new AppLogInfoModel {
+                                        CreateTime = DateTime.Now,
+                                        Message = s,
+                                        Type = LogType.Exception
+                                    });
+                                    HomeMessageQueue.Enqueue(s);
+                                    return;
+                                }
+                                else {
+                                    //提交激活
+                                    Task.Run(async () => {
+                                        await _clientLicenseApi.ActivateAuthorization(data.LicenseCode, data.MachineCode, data.Remarks);
                                     });
                                 }
                             }

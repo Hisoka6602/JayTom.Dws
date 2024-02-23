@@ -164,19 +164,85 @@
                             Text="{Binding Remarks, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                     </Border>
                 </StackPanel>
-                <!--  远程授权  -->
-                <Button
-                    MinHeight="30"
-                    Margin="30,5"
-                    HorizontalAlignment="Left"
-                    materialDesign:ButtonAssist.CornerRadius="5"
-                    Background="#2E2E2E"
-                    BorderThickness="0"
-                    Command="{Binding RemoteAuthorizeCommand}"
-                    FocusVisualStyle="{x:Null}"
-                    Style="{StaticResource MaterialDesignFlatAccentBgButton}">
+                <StackPanel Orientation="Horizontal">
+                    <!--  远程授权  -->
+                    <Button
+                        MinHeight="30"
+                        Margin="30,5"
+                        HorizontalAlignment="Left"
+                        materialDesign:ButtonAssist.CornerRadius="5"
+                        Background="#2E2E2E"
+                        BorderThickness="0"
+                        Command="{Binding RemoteAuthorizeCommand}"
+                        FocusVisualStyle="{x:Null}"
+                        Style="{StaticResource MaterialDesignFlatAccentBgButton}">
 
-                    <Grid>
+                        <Grid>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock
+                                    Margin="0,0,0,0"
+                                    VerticalAlignment="Center"
+                                    FontFamily="{StaticResource IconFontFamily}"
+                                    FontSize="20"
+                                    Foreground="DarkGray"
+                                    Text="&#xe90e;" />
+                                <TextBlock
+                                    Margin="2,1,0,0"
+                                    VerticalAlignment="Center"
+                                    FontFamily="{StaticResource CustomFontFamily}"
+                                    FontSize="14"
+                                    FontWeight="Bold"
+                                    Foreground="DarkGray"
+                                    Text="远程授权" />
+                                <StackPanel.Style>
+                                    <Style TargetType="StackPanel">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsRequestingAuthorization, UpdateSourceTrigger=PropertyChanged}" Value="True">
+                                                <Setter Property="Visibility" Value="Hidden" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding IsRequestingAuthorization, UpdateSourceTrigger=PropertyChanged}" Value="False">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </StackPanel.Style>
+                            </StackPanel>
+                            <ProgressBar
+                                Name="StatusProgressBar"
+                                Width="25"
+                                Height="25"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                IsIndeterminate="True"
+                                Value="0">
+                                <ProgressBar.Style>
+                                    <Style BasedOn="{StaticResource MaterialDesignCircularProgressBar}" TargetType="ProgressBar">
+                                        <Setter Property="Visibility" Value="Hidden" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsRequestingAuthorization, UpdateSourceTrigger=PropertyChanged}" Value="True">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding IsRequestingAuthorization, UpdateSourceTrigger=PropertyChanged}" Value="False">
+                                                <Setter Property="Visibility" Value="Hidden" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ProgressBar.Style>
+                            </ProgressBar>
+                        </Grid>
+                    </Button>
+                    <!--  导入文件  -->
+                    <Button
+                        MinHeight="30"
+                        Margin="5,0"
+                        HorizontalAlignment="Left"
+                        materialDesign:ButtonAssist.CornerRadius="5"
+                        Background="#2E2E2E"
+                        BorderThickness="0"
+                        Command="{Binding ImportLicenseFileCommand}"
+                        FocusVisualStyle="{x:Null}"
+                        Style="{StaticResource MaterialDesignFlatAccentBgButton}">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock
                                 Margin="0,0,0,0"
@@ -184,53 +250,20 @@
                                 FontFamily="{StaticResource IconFontFamily}"
                                 FontSize="20"
                                 Foreground="DarkGray"
-                                Text="&#xe90e;" />
+                                Text="&#xe916;" />
                             <TextBlock
                                 Margin="2,1,0,0"
                                 VerticalAlignment="Center"
+                                Cursor=""
                                 FontFamily="{StaticResource CustomFontFamily}"
                                 FontSize="14"
                                 FontWeight="Bold"
                                 Foreground="DarkGray"
-                                Text="远程授权" />
-                            <StackPanel.Style>
-                                <Style TargetType="StackPanel">
-                                    <Setter Property="Visibility" Value="Visible" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsRequestingAuthorization, UpdateSourceTrigger=PropertyChanged}" Value="True">
-                                            <Setter Property="Visibility" Value="Hidden" />
-                                        </DataTrigger>
-                                        <DataTrigger Binding="{Binding IsRequestingAuthorization, UpdateSourceTrigger=PropertyChanged}" Value="False">
-                                            <Setter Property="Visibility" Value="Visible" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </StackPanel.Style>
+                                Text="导入授权文件" />
                         </StackPanel>
-                        <ProgressBar
-                            Name="StatusProgressBar"
-                            Width="25"
-                            Height="25"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            IsIndeterminate="True"
-                            Value="0">
-                            <ProgressBar.Style>
-                                <Style BasedOn="{StaticResource MaterialDesignCircularProgressBar}" TargetType="ProgressBar">
-                                    <Setter Property="Visibility" Value="Hidden" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsRequestingAuthorization, UpdateSourceTrigger=PropertyChanged}" Value="True">
-                                            <Setter Property="Visibility" Value="Visible" />
-                                        </DataTrigger>
-                                        <DataTrigger Binding="{Binding IsRequestingAuthorization, UpdateSourceTrigger=PropertyChanged}" Value="False">
-                                            <Setter Property="Visibility" Value="Hidden" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </ProgressBar.Style>
-                        </ProgressBar>
-                    </Grid>
-                </Button>
+                    </Button>
+                </StackPanel>
+
                 <!--  授权状态  -->
                 <Border
                     MinWidth="160"
