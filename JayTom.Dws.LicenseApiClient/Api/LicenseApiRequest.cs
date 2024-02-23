@@ -5,12 +5,14 @@ using System.Net.Http;
 using Newtonsoft.Json;
 using Microsoft.JSInterop;
 using Newtonsoft.Json.Linq;
+using System.Drawing.Imaging;
+using System.Net.Http.Headers;
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using JayTom.Dws.LicenseApiClient.Data.Models;
 using Microsoft.AspNetCore.DataProtection.KeyManagement;
 
 namespace JayTom.Dws.LicenseApiClient.Api {
-
     public class LicenseApiRequest : ILicenseApiRequest {
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IJSRuntime _jsRuntime;
@@ -408,8 +410,60 @@ namespace JayTom.Dws.LicenseApiClient.Api {
             }
         }
 
-        public Task<KeyValuePair<bool, object>> ChangeUserIcon(Image iconImage, CancellationToken token) {
-            throw new NotImplementedException();
+        public async Task<KeyValuePair<bool, object>> ChangeUserIcon(Image iconImage, CancellationToken token) {
+            var invokeAsync = await _jsRuntime.InvokeAsync<string>("sessionStorage.getItem", token, "token");
+            if (!string.IsNullOrEmpty(invokeAsync)) {
+                try {
+                    var formData = new MultipartFormDataContent();
+                    var imageToStreamContent = ImageToStreamContent(iconImage, "imageFile",
+                        $"{DateTimeOffset.Now.ToUnixTimeMilliseconds()}.png");
+                    if (imageToStreamContent is not null) {
+                        formData.Add(imageToStreamContent);
+                    }
+                    using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+                    httpClient.Timeout = TimeSpan.FromSeconds(20);
+                    httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {invokeAsync}");
+                    var message = await httpClient.PostAsync($"{Domain}{"/api/User/ChangeUserIcon"}", formData, token);
+                    string httpResult;
+                    switch (message.StatusCode) {
+                        case HttpStatusCode.OK: {
+                                using (message) {
+                                    httpResult = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                                }
+                                break;
+                            }
+                        case HttpStatusCode.NotFound:
+                            return new KeyValuePair<bool, object>(false, $"该地址不存在!");
+
+                        case HttpStatusCode.Unauthorized:
+                            await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", token, "token");
+                            return new KeyValuePair<bool, object>(false, $"用户未登录!");
+
+                        default:
+                            httpResult = $"{message}";
+                            break;
+                    }
+
+                    //解码
+                    var result = JsonConvert.DeserializeObject<ApiResult>(httpResult);
+                    return new KeyValuePair<bool, object>(result?.Result ?? false, result ?? new ApiResult());
+                }
+                catch (HttpRequestException) {
+                    return new KeyValuePair<bool, object>(false, "Http访问异常!");
+                }
+                catch (AggregateException) {
+                    return new KeyValuePair<bool, object>(false, "接口访问异常!");
+                }
+                catch (TaskCanceledException) {
+                    return new KeyValuePair<bool, object>(false, "接口访问返回超时!");
+                }
+                catch (Exception) {
+                    return new KeyValuePair<bool, object>(false, "接口访问异常!");
+                }
+            }
+            else {
+                return new KeyValuePair<bool, object>(false, "用户未登录");
+            }
         }
 
         public async Task<KeyValuePair<bool, object>> TenantInfos(CancellationToken token) {
@@ -1380,6 +1434,32 @@ namespace JayTom.Dws.LicenseApiClient.Api {
             }
             else {
                 return new KeyValuePair<bool, object>(false, "用户未登录");
+            }
+        }
+
+        public StreamContent? ImageToStreamContent(Image image, string paramName, string fileName) {
+            try {
+                using var memoryStream = new MemoryStream();
+                image.Save(memoryStream, ImageFormat.Png);
+                memoryStream.Seek(0, SeekOrigin.Begin);
+
+                var clonedStream = new MemoryStream();
+                memoryStream.CopyTo(clonedStream);
+                clonedStream.Seek(0, SeekOrigin.Begin);
+
+                var streamContent = new StreamContent(clonedStream);
+                streamContent.Headers.ContentDisposition = new ContentDispositionHeaderValue("form-data") {
+                    Name = paramName,
+                    FileName = fileName
+                };
+
+                return streamContent;
+            }
+            catch (Exception e) {
+                return null;
+            }
+            finally {
+                image.Dispose();
             }
         }
     }

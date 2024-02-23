@@ -8,8 +8,23 @@
 @inject NotificationService NotificationService
 <div style="display: flex;">
     <MudCard Style="margin-right: 30px;width:500px;height:800px; display: flex;flex-direction: column; justify-content: flex-start; align-items: center;">
-        <MudImage Elevation="2" Style="margin-top:10px; border-radius:100px" Width="200" Height="200" Src="@_info.UserIcon">
-        </MudImage>
+
+        <MudFileUpload Style="width:200px;height200px; margin-top:10px; border-radius:100px;padding:0px;border-color:transparent; background-color:transparent;"
+                       T="IBrowserFile" Accept=".png, .jpg"
+                       Hidden="@false"
+                       InputStyle="opacity:0"
+                       OnFilesChanged="ChangeUserIcon">
+            <ButtonTemplate>
+                <MudButton Color="Color.Transparent" Style=" border-radius:100px;border-color:transparent; background-color:transparent;" HtmlTag="label"
+                           Variant="Variant.Text"
+                           for="@context.Id">
+                    <MudImage Elevation="2" Style="border-radius:100px;background-color:transparent;" Width="200" Height="200" Src="@_info.UserIcon">
+                    </MudImage>
+                </MudButton>
+            </ButtonTemplate>
+        </MudFileUpload>
+
+
         @*名字*@
         <div style="display: flex;margin-top:10px;">
             <MudText Style="font-weight:bold; margin-left:8px; color:dimgray" Typo="Typo.h5">@_info.UserName</MudText>
@@ -120,6 +135,9 @@
     }
 
     public async void ChangePassword() {
+
+
+
         var (key, value) = await LicenseApiRequest.ChangePassword(OldPassWord, NewPassWord);
         if (value is ApiResult result) {
 
@@ -142,6 +160,7 @@
     }
 
     public async void UpdateProfile() {
+
         var (key, value) = await LicenseApiRequest.UpdateProfile(_info.UserName, null, _info.UserDetailsInfo.CompanyName,
             _info.UserDetailsInfo.CompanyAddress, _info.UserDetailsInfo.ContactEmail,
             _info.UserDetailsInfo.Description,
@@ -159,6 +178,54 @@
             Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
             Snackbar.Add(value.ToString(), Severity.Error);
         }
+    }
+
+    private async Task ChangeUserIcon(InputFileChangeEventArgs e) {
+        //打开一个图片选择器，获取图片，并转成Image对象
+        //LicenseApiRequest.ChangeUserIcon()
+        var openReadStream = e?.File?.OpenReadStream();
+        if (openReadStream is not null) {
+            using (var memoryStream = new MemoryStream()) {
+                await openReadStream.CopyToAsync(memoryStream);
+                var imageData = memoryStream.ToArray();
+
+                using (var imageMemoryStream = new MemoryStream(imageData)) {
+                    var image = System.Drawing.Image.FromStream(imageMemoryStream);
+
+                    if (image is not null) {
+                        var (key, value) = await LicenseApiRequest.ChangeUserIcon(image);
+                        if (value is ApiResult result) {
+
+                            Snackbar.Clear();
+                            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+                            Snackbar.Add(result.Msg, result.Result ? Severity.Success : Severity.Error);
+
+
+                            var (b, o) = await LicenseApiRequest.Info();
+                            if (b && o is JayTom.Dws.LicenseApiClient.Data.Models.UserInfo info) {
+                                _info = info;
+                                NotificationService.Notify(info);
+                            }
+                            else {
+                                Navigation.NavigateTo("/login");
+                            }
+                            StateHasChanged();
+
+
+                        }
+                        else {
+                            Snackbar.Clear();
+                            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+                            Snackbar.Add(value.ToString(), Severity.Error);
+                        }
+                    }
+                }
+            }
+
+
+
+        }
+
     }
     public string ConvertUserRole(int role) {
         return role switch {

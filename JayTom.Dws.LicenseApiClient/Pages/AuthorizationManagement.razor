@@ -22,7 +22,7 @@
     </MudOverlay>
     <MudOverlay Visible="MachineCodeEditorsIsVisible" DarkBackground="true">
 
-        <MachineCodeEditors LicenseCodeItemInfo="@SelectInfoModel" OnConfirm="() => { MachineCodeEditorsIsVisible = false; }" />
+        <MachineCodeEditors LicenseCodeItemInfo="@SelectInfoModel" OnConfirm="MachineCodeConfirm" />
 
     </MudOverlay>
     <MudOverlay Visible="LicenseFileEditorIsVisible" DarkBackground="true">
@@ -241,6 +241,12 @@
             Snackbar.Add("机器码不能为空", Severity.Error);
         }
         LicenseFileEditorIsVisible = false;
+    }
+
+    private async void MachineCodeConfirm() {
+        MachineCodeEditorsIsVisible = false;
+        await GetLicenseInfos();
+        StateHasChanged();
     }
     protected override async Task OnAfterRenderAsync(bool firstRender) {
 

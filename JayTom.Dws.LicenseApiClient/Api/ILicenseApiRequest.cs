@@ -94,7 +94,7 @@ namespace JayTom.Dws.LicenseApiClient.Api {
         /// <param name="iconImage"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<KeyValuePair<bool, object>> ChangeUserIcon(System.Drawing.Image iconImage, CancellationToken token);
+        Task<KeyValuePair<bool, object>> ChangeUserIcon(System.Drawing.Image iconImage, CancellationToken token = default);
 
         /// <summary>
         /// 租户信息

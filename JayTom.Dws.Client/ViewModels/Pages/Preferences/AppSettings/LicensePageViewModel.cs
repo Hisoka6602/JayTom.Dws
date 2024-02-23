@@ -158,7 +158,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings {
                                     var fileAsync = await _clientLicenseApi.DownloadFileAsync(result.Data.ToString(),
                                         $"{licenseDirectory}\\License.key");
                                     if (fileAsync) {
-                                        await Task.Delay(500);
+                                        await Task.Delay(1000);
                                         var firstOrDefault = Directory.GetFiles(licenseDirectory, "*.key").FirstOrDefault();
                                         if (firstOrDefault is not null) {
                                             //解密授权
