@@ -249,6 +249,17 @@ namespace JayTom.Dws.LicenseApiClient.Api {
         /// <param name="token"></param>
         /// <returns></returns>
         public Task<KeyValuePair<bool, object>> UnbindMachineCode(string licenseCode, string machineCode, CancellationToken token);
+
+        /// <summary>
+        /// 修改租户授权上限
+        /// </summary>
+        /// <param name="userCode"></param>
+        /// <param name="licensePermissionTemplateInfoId"></param>
+        /// <param name="maxLicenseCodeCount"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public Task<KeyValuePair<bool, object>> UpdateTenantLicenseMaxCount(string userCode, long licensePermissionTemplateInfoId, int maxLicenseCodeCount,
+            CancellationToken cancellationToken = default);
     }
 
     public class ApiResult {

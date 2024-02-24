@@ -116,5 +116,16 @@ namespace JayTom.Dws.Application.Service.LicenseApi {
         /// <param name="token"></param>
         /// <returns></returns>
         public Task<KeyValuePair<bool, object>> TenantInfos(CancellationToken token);
+
+        /// <summary>
+        /// 修改租户授权码上限
+        /// </summary>
+        /// <param name="userCode"></param>
+        /// <param name="licensePermissionTemplateInfoId"></param>
+        /// <param name="maxLicenseCodeCount"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public Task<KeyValuePair<bool, object>> UpdateTenantLicenseMaxCount(string userCode, long licensePermissionTemplateInfoId, int maxLicenseCodeCount,
+            CancellationToken cancellationToken);
     }
 }

@@ -217,8 +217,8 @@ namespace JayTom.Dws.LicenseApi.Controllers {
                         ActivatedClientCount = s.ActivatedClientCount,
                         ExpirationDate = s.ExpirationDate,
                         ClientName = s.ClientName,
-                        IsAvailable = s.IsAvailable
-                    })?.ToList(),
+                        IsAvailable = s.IsAvailable,
+                    })?.ToList() ?? new List<LicenseCodeInfo>(),
                     UserDetailsInfo = new LicenseUserDetailsInfo() {
                         CompanyAddress = info.UserDetailsInfo?.CompanyAddress ?? string.Empty,
                         CompanyName = info.UserDetailsInfo?.CompanyName ?? string.Empty,
@@ -226,12 +226,30 @@ namespace JayTom.Dws.LicenseApi.Controllers {
                         Description = info.UserDetailsInfo?.Description ?? string.Empty,
                         ContractFilePath = info.UserDetailsInfo?.ContractFilePath ?? string.Empty,
                         BusinessLicenseFilePath = info.UserDetailsInfo?.BusinessLicenseFilePath ?? string.Empty,
-                    }
+                    },
+                    AppLicenseInfos = info.AppLicenseInfos?.Select(s => new LicenseAppLicenseInfo {
+                        MaxLicenseCodeCount = s.MaxLicenseCodeCount,
+                        CreateTime = s.CreateTime,
+                        ModifyTime = s.ModifyTime,
+                        Remarks = s.Remarks,
+                        LicensePermissionTemplateInfoId = s.LicensePermissionTemplateInfoId,
+                        UserId = s.UserId
+                    })?.ToList() ?? new List<LicenseAppLicenseInfo>(),
                 })?.ToList() ?? new List<UserInfoDto>();
                 return JsonResultVo.Success("查询成功", data: userInfoDtos);
             }
 
             return key ? JsonResultVo.Success("查询成功", data: value) : JsonResultVo.Fail(value.ToString() ?? string.Empty);
+        }
+
+        [Produces("application/json")]
+        [HttpPost("UpdateTenantLicenseMaxCount"), Authorize, UserRole(Role = (int)UserRole.SuperAdmin), UserStatus(Status = UserStatus.Active)]
+        public async Task<JsonResult> UpdateTenantLicenseMaxCount(UpdateTenantLicenseMaxCountDo param, CancellationToken cancellationToken) {
+            var (key, value) = await _licenseUserAppService.UpdateTenantLicenseMaxCount(param.UserCode,
+                param.LicensePermissionTemplateInfoId,
+                param.MaxLicenseCodeCount, cancellationToken);
+
+            return key ? JsonResultVo.Success(value.ToString() ?? string.Empty) : JsonResultVo.Fail(value.ToString() ?? string.Empty);
         }
     }
 }

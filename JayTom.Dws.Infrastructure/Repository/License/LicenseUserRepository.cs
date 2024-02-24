@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Text;
+using RTools_NTS.Util;
 using System.Threading.Tasks;
 using JayTom.Dws.Data.License;
 using System.Linq.Expressions;
@@ -27,6 +28,8 @@ namespace JayTom.Dws.Infrastructure.Repository.License {
                 dbSet.AsNoTracking();
                 var licenseUserInfo = await dbSet.Where(w => w.UserCode.Equals(userCode))
                     .Include(b => b.UserDetailsInfo)
+                    .Include(b => b.AppLicenseInfos)
+                    .Include(b => b.LicenseCodeInfos)
                     .FirstOrDefaultAsync(cancellationToken: token);
                 return new KeyValuePair<bool, object>(true, licenseUserInfo);
             }
@@ -45,12 +48,56 @@ namespace JayTom.Dws.Infrastructure.Repository.License {
                 dbSet.AsNoTracking();
                 var licenseUserInfos = await dbSet.Where(where)
                     .Include(b => b.UserDetailsInfo)
+                    .Include(b => b.AppLicenseInfos)
+                    .Include(b => b.LicenseCodeInfos)
                     .ToListAsync(cancellationToken: token);
                 return new KeyValuePair<bool, object>(true, licenseUserInfos);
             }
             catch (Exception e) {
                 NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
                 return new KeyValuePair<bool, object>(false, "查询失败");
+            }
+        }
+
+        public async Task<KeyValuePair<bool, object>> UpdateTenantLicenseMaxCount(string userCode, long licensePermissionTemplateInfoId, int maxLicenseCodeCount,
+            CancellationToken cancellationToken) {
+            try {
+                //联表
+                await using var concardContext = _contextFactory.CreateDbContext();
+                var dbSet = concardContext?.Set<LicenseAppLicenseInfo>();
+                var licenseUserInfos = concardContext?.Set<LicenseUserInfo>();
+                if (dbSet is null || licenseUserInfos is null) return new KeyValuePair<bool, object>(false, "操作失败");
+                dbSet.AsNoTracking();
+                var licenseUserInfo = await licenseUserInfos.FirstOrDefaultAsync(f => f.UserCode.Equals(userCode), cancellationToken: cancellationToken);
+                if (licenseUserInfo is not null) {
+                    var info = await dbSet.Where(w => w.UserId.Equals(licenseUserInfo.Id) &&
+                                                      w.LicensePermissionTemplateInfoId.Equals(licensePermissionTemplateInfoId))
+                        .FirstOrDefaultAsync(cancellationToken: cancellationToken);
+
+                    if (info is null) {
+                        dbSet.Add(new LicenseAppLicenseInfo() {
+                            CreateTime = DateTime.Now,
+                            UserId = licenseUserInfo.Id,
+                            LicensePermissionTemplateInfoId = licensePermissionTemplateInfoId,
+                            MaxLicenseCodeCount = maxLicenseCodeCount,
+                            ModifyTime = DateTime.Now
+                        });
+                    }
+                    else {
+                        info.MaxLicenseCodeCount = maxLicenseCodeCount;
+                        dbSet.Update(info);
+                    }
+
+                    var changesAsync = await concardContext?.SaveChangesAsync(cancellationToken);
+                    return changesAsync > 0 ? new KeyValuePair<bool, object>(true, "修改成功") : new KeyValuePair<bool, object>(false, "修改失败");
+                }
+                else {
+                    return new KeyValuePair<bool, object>(false, "用户不存在");
+                }
+            }
+            catch (Exception e) {
+                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
+                return new KeyValuePair<bool, object>(false, "修改失败");
             }
         }
     }

@@ -42,5 +42,10 @@ namespace JayTom.Dws.LicenseApi.Do {
         /// 公司名称
         /// </summary>
         public string? CompanyName { get; set; }
+
+        /// <summary>
+        /// 授权码上限
+        /// </summary>
+        public int MaxLicenseCodeCount { get; set; }
     }
 }

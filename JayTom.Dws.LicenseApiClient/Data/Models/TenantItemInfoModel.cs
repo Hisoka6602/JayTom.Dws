@@ -18,6 +18,11 @@
         public string Phone { get; set; } = string.Empty;
 
         /// <summary>
+        /// 公司名称
+        /// </summary>
+        public string CompanyName { get; set; } = string.Empty;
+
+        /// <summary>
         /// 状态
         /// </summary>
         public UserStatus Status { get; set; } = UserStatus.Active;
@@ -33,9 +38,24 @@
         public int LicenseCodeCount { get; set; }
 
         /// <summary>
+        /// 最大授权码数量
+        /// </summary>
+        public int MaxLicenseCodeCount { get; set; }
+
+        /// <summary>
         /// 注册时间
         /// </summary>
         public DateTime RegisterTime { get; set; }
+
+        /// <summary>
+        /// 授权码
+        /// </summary>
+        public List<LicenseCodeItemInfoModel> LicenseCodeInfos { get; set; } = new();
+
+        /// <summary>
+        /// 授权码拓展信息
+        /// </summary>
+        public List<LicenseAppLicenseInfoModel> AppLicenseInfos { get; set; } = new();
     }
 
     public enum UserStatus {

@@ -31,7 +31,7 @@ namespace JayTom.Dws.Domain.Service.LicenseApi {
                 ModifyIp = ipAddress,
                 UserDetailsInfo = new LicenseUserDetailsInfo {
                     CompanyName = companyName
-                }
+                },
             }, token);
 
             return new KeyValuePair<bool, object>(insert, insert ? "注册成功" : "注册失败");
@@ -91,10 +91,6 @@ namespace JayTom.Dws.Domain.Service.LicenseApi {
             return new KeyValuePair<bool, object>(false, "账号不存在!");
         }
 
-        public Task<KeyValuePair<bool, object>> UpdateProfile(string userCode, string password, CancellationToken token) {
-            throw new NotImplementedException();
-        }
-
         public async Task<KeyValuePair<bool, object>> ChangePassword(string userCode, string oldPassWord, string newPassWord, CancellationToken token) {
             var licenseUserInfo = await _licenseUserRepository.FirstOrDefault(f =>
                 f.UserCode.Equals(userCode) &&
@@ -138,6 +134,12 @@ namespace JayTom.Dws.Domain.Service.LicenseApi {
 
         public Task<KeyValuePair<bool, object>> TenantInfos(CancellationToken token) {
             return _licenseUserRepository.SelectOrderByDescending(s => s.Role == UserRole.Tenant, o => o.Id, token);
+        }
+
+        public Task<KeyValuePair<bool, object>> UpdateTenantLicenseMaxCount(string userCode, long licensePermissionTemplateInfoId, int maxLicenseCodeCount,
+            CancellationToken cancellationToken) {
+            return _licenseUserRepository.UpdateTenantLicenseMaxCount(userCode, licensePermissionTemplateInfoId,
+                maxLicenseCodeCount, cancellationToken);
         }
     }
 }

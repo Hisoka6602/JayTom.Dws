@@ -37,5 +37,7 @@ namespace JayTom.Dws.Data.License {
         /// 授权码
         /// </summary>
         public ICollection<LicenseCodeInfo>? LicenseCodeInfos { get; set; }
+
+        public ICollection<LicenseAppLicenseInfo>? AppLicenseInfos { get; set; }
     }
 }

@@ -1,0 +1,38 @@
+﻿<div>
+    <MudCard Style="width:300px;height:200px; border-radius:20px;">
+        <MudCardContent Class="center">
+            @*客户端上限数量*@
+            <div style="display: flex;margin-top:10px;display: flex; align-items: center;">
+                <span style="font-weight:bold; margin-left:8px; color:#A9A9A9; font-size: 13px;">调整上限:</span>
+                <MudNumericField Style="margin-left:10px; margin-bottom:30px;width:140px" @bind-Value="MaxCount" Variant="Variant.Text" Min="1" Max="100" />
+            </div>
+
+
+        </MudCardContent>
+        <MudCardActions Class="card-actions-right">
+            <MudButton Style="margin-right:10px" Variant="Variant.Filled" OnClick="Confirm" Color="Color.Primary">保存</MudButton>
+            <MudButton Variant="Variant.Filled" OnClick="OnCancel" Color="Color.Error">取消</MudButton>
+        </MudCardActions>
+
+    </MudCard>
+
+</div>
+
+@code {
+    [Parameter]
+    public EventCallback<int> OnConfirm { get; set; }
+
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+    [Parameter]
+    public long TemplateInfoId { get; set; }
+    [Parameter]
+    public string UserCode { get; set; } = string.Empty;
+    [Parameter]
+    public int MaxCount { get; set; }
+
+    private async void Confirm() {
+
+        await OnConfirm.InvokeAsync(MaxCount);
+    }
+}

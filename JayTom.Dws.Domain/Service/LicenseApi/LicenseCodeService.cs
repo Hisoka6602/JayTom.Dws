@@ -23,9 +23,23 @@ namespace JayTom.Dws.Domain.Service.LicenseApi {
 
         public async Task<KeyValuePair<bool, object>> CreateLicenseCode(long templateInfoId, string userCode, string licenseCode, int maxClientCount,
             DateTime expirationDate, string clientName, CancellationToken token) {
-            var licenseUserInfo = await _licenseUserRepository.FirstOrDefault(f =>
-                f.UserCode.Equals(userCode), token);
-            if (licenseUserInfo is not null) {
+            var (key, value) = await _licenseUserRepository.DetailsInfo(userCode, token);
+            if (key && value is LicenseUserInfo licenseUserInfo) {
+                var licenseAppLicenseInfo = licenseUserInfo.AppLicenseInfos
+                    ?.FirstOrDefault(f => f.LicensePermissionTemplateInfoId.Equals(templateInfoId));
+                if (licenseAppLicenseInfo is null) {
+                    await _licenseUserRepository.UpdateTenantLicenseMaxCount(userCode,
+                         templateInfoId, 1, token);
+                }
+                var maxLicenseCodeCount = licenseAppLicenseInfo
+                    ?.MaxLicenseCodeCount ?? 1;
+                var sum = licenseUserInfo.LicenseCodeInfos?.Where(w => w.LicensePermissionTemplateInfoId.Equals(templateInfoId))
+                    ?.Sum(s => s.MaxClientCount) ?? 0;
+
+                if (sum + maxClientCount > maxLicenseCodeCount) {
+                    return new KeyValuePair<bool, object>(false, "授权数量超过可配置上限");
+                }
+
                 var insert = await _licenseCodeRepository.Insert(new LicenseCodeInfo() {
                     LicensePermissionTemplateInfoId = templateInfoId,
                     MaxClientCount = maxClientCount,
@@ -48,9 +62,6 @@ namespace JayTom.Dws.Domain.Service.LicenseApi {
 
         public async Task<KeyValuePair<bool, object>> UpdateLicenseCode(long templateInfoId, string userCode, string licenseCode, int maxClientCount,
             DateTime expirationDate, string clientName, CancellationToken token) {
-            var licenseUserInfo = await _licenseUserRepository.FirstOrDefault(f =>
-                f.UserCode.Equals(userCode), token);
-
             var (key, value) = await _licenseCodeRepository.FirstDetails(f => f.UserInfo != null &&
                 f.LicenseCode.Equals(licenseCode) &&
                 (f.UserInfo.UserCode.Equals(userCode) ||

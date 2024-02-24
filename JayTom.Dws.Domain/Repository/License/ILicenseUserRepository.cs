@@ -27,5 +27,16 @@ namespace JayTom.Dws.Domain.Repository.License {
         /// <returns></returns>
         new Task<KeyValuePair<bool, object>> SelectOrderByDescending<TOrder>([NotNull] Expression<Func<LicenseUserInfo, bool>> @where,
             [NotNull] Expression<Func<LicenseUserInfo, TOrder>> order, CancellationToken token);
+
+        /// <summary>
+        /// 修改用户授权上限数量
+        /// </summary>
+        /// <param name="userCode"></param>
+        /// <param name="licensePermissionTemplateInfoId"></param>
+        /// <param name="maxLicenseCodeCount"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        Task<KeyValuePair<bool, object>> UpdateTenantLicenseMaxCount(string userCode, long licensePermissionTemplateInfoId, int maxLicenseCodeCount,
+            CancellationToken cancellationToken);
     }
 }

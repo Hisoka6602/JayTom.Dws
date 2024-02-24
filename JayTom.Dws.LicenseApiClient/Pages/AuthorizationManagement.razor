@@ -35,6 +35,21 @@
                  Hover="true" Groupable="false" Items="@_items" ColumnResizeMode="ResizeMode.Column">
 
         <ToolBarContent>
+            <MudBadge Bordered="true" Content="100" Color="Color.Primary" Overlap="true" Class="mx-6 my-4">
+                <MudChip Label="true" Color="Color.Dark">已过期</MudChip>
+            </MudBadge>
+            <MudBadge Bordered="true" Content="20" Color="Color.Primary" Overlap="true" Class="mx-6 my-4">
+                <MudChip Label="true" Style="background-color: orangered;color:white" Color="Color.Surface">近3天到期</MudChip>
+            </MudBadge>
+            <MudBadge Bordered="true" Content="30" Color="Color.Primary" Overlap="true" Class="mx-6 my-4">
+                <MudChip Label="true" Style="background-color: orange;color:white" Color="Color.Surface">近10天到期</MudChip>
+            </MudBadge>
+            <MudBadge Bordered="true" Content="6" Color="Color.Primary" Overlap="true" Class="mx-6 my-4">
+                <MudChip Label="true" Style="background-color: mediumorchid;color:white" Color="Color.Surface">近一个月到期</MudChip>
+            </MudBadge>
+
+
+
             <MudSpacer />
             <MudTextField @bind-Value="_searchString" Placeholder="模糊搜索" Adornment="Adornment.Start" Immediate="true"
                           AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
@@ -52,7 +67,7 @@
             <TemplateColumn Title="是否可用">
                 <CellTemplate>
                     <MudStack Row Style="text-align:center;width:40px">
-                         <MudCheckBox Checked="context.Item.IsAvailable" Disabled="true" />
+                         <MudCheckBox Checked="@(context.Item.IsAvailable&&DateTime.Now.CompareTo(context.Item.ExpirationDate)<0)" Disabled="true" />
 
                      </MudStack>
                  </CellTemplate>
@@ -280,7 +295,7 @@
         var (key, value) = await LicenseApiRequest.LicenseCodeData();
         if (key && value is List<LicenseCodeItemInfoModel> items) {
             _items.Clear();
-            var licenseCodeItemInfoModels = items.Select((s, i) => new LicenseCodeItemInfoModel {
+            var licenseCodeItemInfoModels = items?.OrderBy(o => o.ExpirationDate).Select((s, i) => new LicenseCodeItemInfoModel {
                     ActivatedClientCount = s.ActivatedClientCount,
                     TemplateName = s.TemplateName,
                     LicenseCode = s.LicenseCode,

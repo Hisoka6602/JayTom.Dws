@@ -72,6 +72,8 @@ namespace JayTom.Dws.Data.License {
         public virtual LicenseUserDetailsInfo? UserDetailsInfo { get; set; }
 
         public ICollection<LicenseCodeInfo>? LicenseCodeInfos { get; set; }
+
+        public ICollection<LicenseAppLicenseInfo>? AppLicenseInfos { get; set; }
     }
 
     [Flags]

@@ -51,5 +51,10 @@
         /// 授权码
         /// </summary>
         public List<LicenseCodeItemInfoModel> LicenseCodeInfos { get; set; } = new();
+
+        /// <summary>
+        /// 授权码拓展信息
+        /// </summary>
+        public List<LicenseAppLicenseInfoModel> AppLicenseInfos { get; set; } = new();
     }
 }

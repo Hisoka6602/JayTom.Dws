@@ -114,6 +114,17 @@ internal class Program {
                 .WithMany(b => b.LicenseCodeInfos)
                 .HasForeignKey(n => n.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+            //---------------------
+            modelBuilder.Entity<LicenseAppLicenseInfo>()
+                .HasOne(n => n.LicensePermissionTemplateInfo)
+                .WithMany(b => b.AppLicenseInfos)
+                .HasForeignKey(n => n.LicensePermissionTemplateInfoId)
+                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<LicenseAppLicenseInfo>()
+                .HasOne(n => n.UserInfo)
+                .WithMany(b => b.AppLicenseInfos)
+                .HasForeignKey(n => n.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

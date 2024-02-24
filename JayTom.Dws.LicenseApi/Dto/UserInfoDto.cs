@@ -51,5 +51,7 @@ namespace JayTom.Dws.LicenseApi.Dto {
         public LicenseUserDetailsInfo? UserDetailsInfo { get; set; }
 
         public List<LicenseCodeInfo>? LicenseCodeInfos { get; set; }
+
+        public List<LicenseAppLicenseInfo>? AppLicenseInfos { get; set; }
     }
 }

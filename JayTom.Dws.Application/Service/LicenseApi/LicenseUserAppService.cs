@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Text;
 using System.Reflection;
+using Newtonsoft.Json.Linq;
 using JayTom.Dws.Domain.Jwt;
 using System.Threading.Tasks;
 using JayTom.Dws.Data.License;
@@ -70,6 +71,11 @@ namespace JayTom.Dws.Application.Service.LicenseApi {
 
         public Task<KeyValuePair<bool, object>> TenantInfos(CancellationToken token) {
             return _licenseUserService.TenantInfos(token);
+        }
+
+        public Task<KeyValuePair<bool, object>> UpdateTenantLicenseMaxCount(string userCode, long licensePermissionTemplateInfoId, int maxLicenseCodeCount,
+            CancellationToken cancellationToken) {
+            return _licenseUserService.UpdateTenantLicenseMaxCount(userCode, licensePermissionTemplateInfoId, maxLicenseCodeCount, cancellationToken);
         }
     }
 }
