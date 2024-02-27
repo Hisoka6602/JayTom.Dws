@@ -199,15 +199,24 @@ namespace JayTom.Dws.Client.ViewModels {
         }
 
         private void CloseWinDelegate(object obj) {
+            EventAggregator.Instance.Publish(new WindowsAction {
+                Type = WindowsActionType.Close
+            });
             System.Windows.Application.Current.Shutdown();//关闭
         }
 
         private void MaxWinDelegate(object obj) {
             if (obj is Window window) {
                 if (window.WindowState == WindowState.Maximized) {
+                    EventAggregator.Instance.Publish(new WindowsAction {
+                        Type = WindowsActionType.Restore
+                    });
                     window.WindowState = WindowState.Normal;
                     return;
                 }
+                EventAggregator.Instance.Publish(new WindowsAction {
+                    Type = WindowsActionType.Maximize
+                });
                 window.WindowState = WindowState.Maximized;
             }
         }
@@ -225,6 +234,9 @@ namespace JayTom.Dws.Client.ViewModels {
                             (window.ActualHeight - _menuButtonSizeize.Height) / 2);
                     visualChild.Visibility = Visibility.Visible;
                 }
+                EventAggregator.Instance.Publish(new WindowsAction {
+                    Type = WindowsActionType.Activate
+                });
             }
             //加载语言选择
 
@@ -345,6 +357,9 @@ namespace JayTom.Dws.Client.ViewModels {
 
         private void MinWinDelegate(object obj) {
             if (obj is Window window) {
+                EventAggregator.Instance.Publish(new WindowsAction {
+                    Type = WindowsActionType.Minimize
+                });
                 window.WindowState = WindowState.Minimized;
             }
         }

@@ -27,6 +27,7 @@ using JayTom.Dws.Interface.Cloud;
 using JayTom.Dws.Domain.Converters;
 using JayTom.Dws.Domain.Dto.AppDto;
 using JayTom.Dws.Interface.License;
+using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Service.Device;
@@ -88,6 +89,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         private static SemaphoreSlim _updateSlim = new(1, 1);
         private OcrSettingsInfoModel _ocrSettingsInfo = new();
         private OcrInfoItemModel _ocrItemInfo = new();
+        private bool _isLoaded = false;
+        private CancellationTokenSource _cancellationTokenSource = new();
+        private ConcurrentQueue<ApiResponseReceived> _updateResponseItems = new();
+        private ConcurrentQueue<InstructionReceived> _instructionItems = new();
+        private ConcurrentQueue<CloudVideoUploadMessage> _cloudVideoUploadItems = new();
 
         public SnackbarMessageQueue HomeMessageQueue {
             get => _homeMessageQueue;
@@ -441,93 +447,133 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             //更新上传状态
             EventAggregator.Instance.Subscribe<ApiResponseReceived>(async item => {
                 if (item is ApiResponseReceived model) {
-                    try {
-                        await Task.Delay(500);
-                        await _updateSlim.WaitAsync();
-                        var barCodeItemModel = BarCodeItems.FirstOrDefault(f => f.Barcode.Equals(model.Barcode) &&
-                            f.ScanTime.Equals(model.ScanTime));
-                        if (barCodeItemModel is not null) {
-                            await Application.Current.Dispatcher.BeginInvoke(() => {
-                                //更新数据
-                                barCodeItemModel.RequestStatus = model.UploadResponse?.IsSuccess == true ? UploadStatus.Succeeded : UploadStatus.Failed;
-                                barCodeItemModel.UploadInfo = new UploadItemModel() {
-                                    DurationInSeconds = model.UploadResponse?.Duration ?? 0,
-                                    ExceptionMessage = model.UploadResponse?.ExceptionMsg ?? string.Empty,
-                                    InterfaceParameters = model.UploadResponse?.ApiParameters ?? string.Empty,
-                                    IsSuccess = model.UploadResponse?.IsSuccess ?? false,
-                                    RequestContent = model.UploadResponse?.RequestContent ?? string.Empty,
-                                    RequestTime = model.UploadResponse?.RequestTime,
-                                    RequestUrl = model.UploadResponse?.RequestUrl ?? string.Empty,
-                                    ResponseContent = model.UploadResponse?.ResponseContent ?? string.Empty,
-                                    ResponseTime = model.UploadResponse?.ResponseTime
-                                };
-                                if (barCodeItemModel.RequestStatus == UploadStatus.Succeeded) {
-                                    UploadedDataCount += 1;
-                                }
-                                if (barCodeItemModel.RequestStatus == UploadStatus.Failed) {
-                                    AbnormalDataCount += 1;
-                                }
-                            }, DispatcherPriority.Background);
-                        }
-                    }
-                    finally {
-                        _updateSlim.Release();
-                    }
+                    _updateResponseItems.Enqueue(model);
                 }
             });
             //更新分拣状态
             EventAggregator.Instance.Subscribe<InstructionReceived>(async item => {
                 if (item is InstructionReceived model) {
-                    try {
-                        //设置分拣状态参数
-                        await Task.Delay(500);
-                        await _updateSlim.WaitAsync();
-                        var barCodeItemModel = BarCodeItems.FirstOrDefault(f => f.Barcode.Equals(model.BarCode) &&
-                            f.ScanTime.Equals(model.ScanTime));
-                        if (barCodeItemModel is not null) {
-                            await Application.Current.Dispatcher.BeginInvoke(() => {
-                                //更新数据
-                                barCodeItemModel.ExitName = model.ExitName;
-                                barCodeItemModel.SortingInfo = new SortingItemModel() {
-                                    IsSortingUsed = true,
-                                    ExitId = model.ExitId,
-                                    LogisticsId = model.LogisticsId,
-                                    SortingMode = model.SortingMode,
-                                    SentInstruction = model.SentInstruction,
-                                    PackageCreationTime = model.PackageCreationTime,
-                                    PackageCreationInstruction = model.PackageCreationInstruction,
-                                    IsCreatedByLowerMachine = model.IsCreatedByLowerMachine,
-                                    CommandTarget = model.CommandTarget,
-                                    CommunicationMethod = model.CommunicationMethod,
-                                    ChecksumProtocolName = model.ChecksumProtocolName,
-                                };
-                            }, DispatcherPriority.Background);
-                        }
-                    }
-                    finally {
-                        _updateSlim.Release();
-                    }
+                    _instructionItems.Enqueue(model);
                 }
             });
             //更新云视频上传状态
             EventAggregator.Instance.Subscribe<CloudVideoUploadMessage>(async item => {
                 if (item is CloudVideoUploadMessage model) {
-                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
-                        try {
-                            await Task.Delay(100);
-                            await _updateSlim.WaitAsync();
-                            var barCodeItemModel = BarCodeItems.FirstOrDefault(f => f.Barcode.Equals(model.Barcode) &&
-                                f.ScanTime.Equals(model.ScanTime));
-                            if (barCodeItemModel is not null) {
-                                barCodeItemModel.IsUploadedToCloudVideo = model.IsSuccessful;
-                            }
-                        }
-                        finally {
-                            _updateSlim.Release();
-                        }
-                    });
+                    _cloudVideoUploadItems.Enqueue(model);
                 }
             });
+            EventAggregator.Instance.Subscribe<WindowsAction>(async item => {
+                if (item is WindowsAction { Type: WindowsActionType.Close }) {
+                    _cancellationTokenSource.Cancel();
+                }
+            });
+
+            if (!_isLoaded) {
+                _isLoaded = true;
+                new TaskFactory().StartNew(async () => {
+                    while (!_cancellationTokenSource.IsCancellationRequested) {
+                        var tryDequeue = _updateResponseItems.TryDequeue(out var updateResponse);
+                        if (tryDequeue && updateResponse is not null) {
+                            try {
+                                await _updateSlim.WaitAsync();
+                                var barCodeItemModel = BarCodeItems.FirstOrDefault(f => f.Barcode.Equals(updateResponse.Barcode) &&
+                                    f.ScanTime.Equals(updateResponse.ScanTime));
+                                if (barCodeItemModel is not null) {
+                                    await Application.Current.Dispatcher.BeginInvoke(() => {
+                                        //更新数据
+                                        barCodeItemModel.RequestStatus = updateResponse.UploadResponse?.IsSuccess == true ? UploadStatus.Succeeded : UploadStatus.Failed;
+                                        barCodeItemModel.UploadInfo = new UploadItemModel() {
+                                            DurationInSeconds = updateResponse.UploadResponse?.Duration ?? 0,
+                                            ExceptionMessage = updateResponse.UploadResponse?.ExceptionMsg ?? string.Empty,
+                                            InterfaceParameters = updateResponse.UploadResponse?.ApiParameters ?? string.Empty,
+                                            IsSuccess = updateResponse.UploadResponse?.IsSuccess ?? false,
+                                            RequestContent = updateResponse.UploadResponse?.RequestContent ?? string.Empty,
+                                            RequestTime = updateResponse.UploadResponse?.RequestTime,
+                                            RequestUrl = updateResponse.UploadResponse?.RequestUrl ?? string.Empty,
+                                            ResponseContent = updateResponse.UploadResponse?.ResponseContent ?? string.Empty,
+                                            ResponseTime = updateResponse.UploadResponse?.ResponseTime
+                                        };
+                                        if (barCodeItemModel.RequestStatus == UploadStatus.Succeeded) {
+                                            UploadedDataCount += 1;
+                                        }
+                                        if (barCodeItemModel.RequestStatus == UploadStatus.Failed) {
+                                            AbnormalDataCount += 1;
+                                        }
+                                    }, DispatcherPriority.Render);
+                                }
+                                else {
+                                    if (DateTime.Now.Subtract(updateResponse.ScanTime).TotalSeconds < 10) {
+                                        _updateResponseItems.Enqueue(updateResponse);
+                                    }
+                                }
+                            }
+                            finally {
+                                _updateSlim.Release();
+                            }
+                        }
+
+                        var dequeue = _instructionItems.TryDequeue(out var instruction);
+                        if (dequeue && instruction is not null) {
+                            try {
+                                await _updateSlim.WaitAsync();
+                                var barCodeItemModel = BarCodeItems.FirstOrDefault(f => f.Barcode.Equals(instruction.BarCode) &&
+                                    f.ScanTime.Equals(instruction.ScanTime));
+                                if (barCodeItemModel is not null) {
+                                    await Application.Current.Dispatcher.BeginInvoke(() => {
+                                        //更新数据
+                                        barCodeItemModel.ExitName = instruction.ExitName;
+                                        barCodeItemModel.SortingInfo = new SortingItemModel() {
+                                            IsSortingUsed = true,
+                                            ExitId = instruction.ExitId,
+                                            LogisticsId = instruction.LogisticsId,
+                                            SortingMode = instruction.SortingMode,
+                                            SentInstruction = instruction.SentInstruction,
+                                            PackageCreationTime = instruction.PackageCreationTime,
+                                            PackageCreationInstruction = instruction.PackageCreationInstruction,
+                                            IsCreatedByLowerMachine = instruction.IsCreatedByLowerMachine,
+                                            CommandTarget = instruction.CommandTarget,
+                                            CommunicationMethod = instruction.CommunicationMethod,
+                                            ChecksumProtocolName = instruction.ChecksumProtocolName,
+                                        };
+                                    }, DispatcherPriority.Render);
+                                }
+                                else {
+                                    if (instruction.ScanTime is not null && DateTime.Now.Subtract(instruction.ScanTime.Value).TotalSeconds < 10) {
+                                        _instructionItems.Enqueue(instruction);
+                                    }
+                                }
+                            }
+                            finally {
+                                _updateSlim.Release();
+                            }
+                        }
+
+                        var b = _cloudVideoUploadItems.TryDequeue(out var cloudVideoUpload);
+                        if (b && cloudVideoUpload is not null) {
+                            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+                                try {
+                                    await _updateSlim.WaitAsync();
+                                    var barCodeItemModel = BarCodeItems.FirstOrDefault(f => f.Barcode.Equals(cloudVideoUpload.Barcode) &&
+                                        f.ScanTime.Equals(cloudVideoUpload.ScanTime));
+                                    if (barCodeItemModel is not null) {
+                                        barCodeItemModel.IsUploadedToCloudVideo = cloudVideoUpload.IsSuccessful;
+                                    }
+                                    else {
+                                        if (DateTime.Now.Subtract(cloudVideoUpload.ScanTime).TotalSeconds < 10) {
+                                            _cloudVideoUploadItems.Enqueue(cloudVideoUpload);
+                                        }
+                                    }
+                                }
+                                finally {
+                                    _updateSlim.Release();
+                                }
+                            }, DispatcherPriority.Render);
+                        }
+
+                        await Task.Delay(50);
+                    }
+                }, TaskCreationOptions.LongRunning);
+            }
         }
 
         /// <summary>
@@ -883,7 +929,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             await Application.Current.Dispatcher.InvokeAsync(async () => {
                 item.Num = TotalDataCount += 1;
                 try {
-                    await Task.Delay(5);
                     await _updateSlim.WaitAsync();
                     BarCodeItems.Insert(0, item);
                     if (BarCodeItems.Count > 200) {

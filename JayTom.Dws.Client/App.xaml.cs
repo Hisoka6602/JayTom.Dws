@@ -159,6 +159,7 @@ namespace JayTom.Dws.Client {
                 containerRegistry.RegisterForNavigation<WorkflowSettingsPage>();
                 containerRegistry.RegisterForNavigation<AppSettingsPage>();
                 containerRegistry.RegisterForNavigation<CloudServicePage>();
+                containerRegistry.RegisterForNavigation<CreatePackageSettingsPage>();
                 //LogManagerPage
                 //相机
                 containerRegistry.RegisterForNavigation<BarcodeScannerCameraConfigPage>();
@@ -648,7 +649,8 @@ namespace JayTom.Dws.Client {
             ViewModelLocationProvider.Register<GridSettingsPage, GridSettingsViewModel>();
             ViewModelLocationProvider.Register<OtherSettingsPage, OtherSettingsViewModel>();
             ViewModelLocationProvider.Register<LicensePage, LicensePageViewModel>();
-
+            //组包设置
+            ViewModelLocationProvider.Register<CreatePackageSettingsPage, CreatePackageSettingsViewModel>();
             //日志
             ViewModelLocationProvider.Register<AppLogPage, AppLogPageViewModel>();
             ViewModelLocationProvider.Register<CameraLogPage, CameraLogPageViewModel>();

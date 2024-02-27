@@ -13,7 +13,6 @@ using System.Collections.ObjectModel;
 using JayTom.Dws.Client.ViewModels.Dialog;
 
 namespace JayTom.Dws.Client.ViewModels.Pages {
-
     public class SettingsViewModel : BindableBase {
         private readonly IRegionManager _regionManager;
 
@@ -166,6 +165,19 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     Description = "分拣相关设置" ?? string.Empty,
                     ClickCommand = ClickCommand,
                     PageClassName = "PackageSortingSettingsPage"
+                },
+                new MenuItemInfoModel()
+                {
+                    IconFont = new IconInfoModel()
+                    {
+                        IconFont = "pack://application:,,,/Fonts/#iconfont",
+                        IconCode = "\xe91e",
+                        IconSize = 25
+                    },
+                    Title = "组包设置"??string.Empty,
+                    Description = "组包相关设置" ?? string.Empty,
+                    ClickCommand = ClickCommand,
+                    PageClassName = "CreatePackageSettingsPage"
                 },
                 new MenuItemInfoModel()
                 {

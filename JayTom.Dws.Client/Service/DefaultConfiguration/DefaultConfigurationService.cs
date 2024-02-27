@@ -10,6 +10,7 @@ using System.Threading;
 using System.Diagnostics;
 using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
+using JayTom.Dws.Data.Package;
 using JayTom.Dws.Data.LocalLog;
 using JayTom.Dws.Data.LocalConf;
 using JayTom.Dws.Data.LocalData;
@@ -21,7 +22,6 @@ using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Repository.LocalData;
 using JayTom.Dws.Domain.Dto.CommunicationsSettings;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.StartPanel;
-using JayTom.Dws.Data.Package;
 
 namespace JayTom.Dws.Client.Service.DefaultConfiguration {
 
@@ -249,6 +249,11 @@ namespace JayTom.Dws.Client.Service.DefaultConfiguration {
                         Type = ApiType.None
                     })
                 });
+                var task11 = _configRepository.InsertOrUpdate(new ConfigInfoModel() {
+                    ConfigName = "CreatePackageSettings",
+                    Value = JsonConvert.SerializeObject(new CreatePackageSettingsDto() {
+                    })
+                });
                 await Task.WhenAll(task1,
                     task2,
                     task3,
@@ -258,7 +263,8 @@ namespace JayTom.Dws.Client.Service.DefaultConfiguration {
                     task7,
                     task8,
                     task9,
-                    task10);
+                    task10,
+                    task11);
             }
             catch (Exception e) {
                 NLog.LogManager.GetCurrentClassLogger().Error($"写默认配置失败!");

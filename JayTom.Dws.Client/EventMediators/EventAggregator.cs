@@ -96,4 +96,47 @@ namespace JayTom.Dws.Client.EventMediators {
         public string PluginName { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
     }
+
+    public class WindowsAction {
+        public object? Windows { get; set; }
+        public WindowsActionType Type { get; set; }
+    }
+
+    public enum WindowsActionType {
+
+        /// <summary>
+        /// 最小化
+        /// </summary>
+        Minimize,
+
+        /// <summary>
+        /// 最大化
+        /// </summary>
+        Maximize,
+
+        /// <summary>
+        /// 还原
+        /// </summary>
+        Restore,
+
+        /// <summary>
+        /// 显示
+        /// </summary>
+        Show,
+
+        /// <summary>
+        /// 隐藏
+        /// </summary>
+        Hide,
+
+        /// <summary>
+        /// 关闭
+        /// </summary>
+        Close,
+
+        /// <summary>
+        /// 激活
+        /// </summary>
+        Activate
+    }
 }
