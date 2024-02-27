@@ -2,6 +2,7 @@
 using System.Net;
 using System.Linq;
 using System.Text;
+using System.Data;
 using TouchSocket.Core;
 using TouchSocket.Http;
 using TouchSocket.Sockets;
@@ -28,34 +29,38 @@ namespace JayTom.Dws.Plugin.Tcp.TcpServer {
 
         public event EventHandler<Exception>? SendError;
 
-        public async Task<bool> Connect(string ipAddress, int port, int timeOut = 1000, FormatType dataType = FormatType.Ascii, CancellationToken token = default) {
+        public async Task<bool> Connect(string ipAddress, int port, int timeOut = 1000, FormatType dataType = FormatType.Ascii, int dataLen = 0, CancellationToken token = default) {
+            DataLen = dataLen;
             FormatType = dataType;
             var parameter = SetParameter(new TcpConnectParam() {
                 Address = ipAddress,
                 Port = port,
-                DataFormatType = dataType
+                DataFormatType = dataType,
+                DataLength = dataLen
             });
             if (parameter) {
-                return await Connect(dataType, token);
+                return await Connect(dataType, dataLen, token);
             }
 
             return false;
         }
 
-        public async Task<bool> Connect(FormatType dataType = FormatType.Ascii, CancellationToken token = default) {
+        public async Task<bool> Connect(FormatType dataType = FormatType.Ascii, int dataLen = 0, CancellationToken token = default) {
             await Task.Yield();
             try {
+                DataLen = dataLen;
                 FormatType = dataType;
                 if (_tcpService is null) {
                     _tcpService = new TcpService();
                     _tcpService.Received += delegate (SocketClient client, ByteBlock block, IRequestInfo info) {
                         try {
-                            var msg = Encoding.Default.GetString(block.Buffer, 0, block.Len);
+                            var msg = Encoding.Default.GetString(block.Buffer, 0, DataLen > 0 ? DataLen : block.Len);
                             OnCommunication(new CommunicationInfo() {
-                                Content = dataType == FormatType.Ascii ? msg : BitConverter.ToString(RemoveTrailingZeros(block.Buffer)).Replace("-", " "),
+                                Content = dataType == FormatType.Ascii ? msg : BitConverter.ToString(block.Buffer.Take(DataLen > 0 ? DataLen : block.Len).ToArray()).Replace("-", " "),
                                 Time = DateTime.Now,
                                 Type = CommunicationType.Receive
                             });
+                            block.Clear();
                         }
                         catch (Exception e) {
                             NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
@@ -95,6 +100,7 @@ namespace JayTom.Dws.Plugin.Tcp.TcpServer {
         public bool SetParameter(object par) {
             if (par is TcpConnectParam tcpConnect) {
                 FormatType = tcpConnect.DataFormatType;
+                DataLen = tcpConnect.DataLength;
                 try {
                     IpAddress = tcpConnect.Address ?? string.Empty;
                     Port = tcpConnect.Port;
@@ -102,12 +108,13 @@ namespace JayTom.Dws.Plugin.Tcp.TcpServer {
                         _tcpService = new TcpService();
                         _tcpService.Received += delegate (SocketClient client, ByteBlock block, IRequestInfo info) {
                             try {
-                                var msg = Encoding.Default.GetString(block.Buffer, 0, block.Len);
+                                var msg = Encoding.Default.GetString(block.Buffer, 0, DataLen > 0 ? DataLen : block.Len);
                                 OnCommunication(new CommunicationInfo() {
-                                    Content = tcpConnect.DataFormatType == FormatType.Ascii ? msg : BitConverter.ToString(RemoveTrailingZeros(block.Buffer)).Replace("-", " "),
+                                    Content = tcpConnect.DataFormatType == FormatType.Ascii ? msg : BitConverter.ToString(block.Buffer.Take(DataLen > 0 ? DataLen : block.Len).ToArray()).Replace("-", " "),
                                     Time = DateTime.Now,
                                     Type = CommunicationType.Receive
                                 });
+                                block.Clear();
                             }
                             catch (Exception e) {
                                 NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
@@ -121,7 +128,8 @@ namespace JayTom.Dws.Plugin.Tcp.TcpServer {
                         };
                     }
 
-                    var listenIpHosts = new TouchSocketConfig().SetListenIPHosts(new IPHost[] { new($"{IPAddress.Any.ToString()}:{tcpConnect?.Port}") });
+                    var listenIpHosts = new TouchSocketConfig().SetListenIPHosts(new IPHost[] { new($"{IPAddress.Any.ToString()}:{tcpConnect.Port}") })
+                        .SetBufferLength(tcpConnect.DataLength);
 
                     //var listenIpHosts = new TouchSocketConfig().SetListenIPHosts(new IPHost[] { new($"{tcpConnect?.Address}:{tcpConnect?.Port}") });
                     _tcpService?.Setup(listenIpHosts);
@@ -202,6 +210,13 @@ namespace JayTom.Dws.Plugin.Tcp.TcpServer {
 
         public string IpAddress { get; private set; } = string.Empty;
         public int Port { get; private set; } = 0;
+
+        private int _dataLen = 0;
+
+        public int DataLen {
+            get => _dataLen;
+            set => _dataLen = value;
+        }
 
         public event EventHandler<string>? ClientConnected;
 

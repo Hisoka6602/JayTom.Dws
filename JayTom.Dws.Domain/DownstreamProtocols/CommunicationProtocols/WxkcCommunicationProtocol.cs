@@ -108,6 +108,8 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
             return null;
         }
 
+        public int DataLen => 8;
+
         private static byte[] HexStringToByteArray(string hexString) {
             try {
                 hexString = hexString.Replace(" ", ""); // 移除空格

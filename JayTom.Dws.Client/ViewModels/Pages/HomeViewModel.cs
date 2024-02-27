@@ -802,12 +802,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                                         var (key1, o) = await _clientLicenseApi.CreateAuthorization(data.LicenseCode, data.MachineCode, data.Remarks);
                                         if (o is ApiResult result &&
                                             !string.IsNullOrEmpty(result.Data?.ToString() ?? string.Empty)) {
-                                            var licenseDirectory = Path.Combine(Directory.GetCurrentDirectory(), "License");
-                                            var files = Directory.GetFiles(licenseDirectory, "*.key");
-                                            Parallel.ForEach(files, File.Delete);
+                                            if (key1) {
+                                                var licenseDirectory = Path.Combine(Directory.GetCurrentDirectory(), "License");
+                                                var files = Directory.GetFiles(licenseDirectory, "*.key");
+                                                Parallel.ForEach(files, File.Delete);
 
-                                            await _clientLicenseApi.DownloadFileAsync(result.Data.ToString(),
-                                                $"{licenseDirectory}\\License.key");
+                                                await _clientLicenseApi.DownloadFileAsync(result.Data.ToString(),
+                                                    $"{licenseDirectory}\\License.key");
+                                            }
                                         }
                                     });
                                 }

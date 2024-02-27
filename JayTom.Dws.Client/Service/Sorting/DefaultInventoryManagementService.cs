@@ -7,6 +7,7 @@ using System.Threading;
 using JayTom.Dws.Domain.Dto;
 using JayTom.Dws.Plugin.Tcp;
 using System.Threading.Tasks;
+using JayTom.Dws.Data.Package;
 using JayTom.Dws.Data.LocalLog;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
@@ -22,7 +23,6 @@ using CommunicationType = JayTom.Dws.Plugin.Tcp.CommunicationType;
 using JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig.ConnectionParams;
 using JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig.ConnectionParams;
-using JayTom.Dws.Data.Package;
 
 namespace JayTom.Dws.Client.Service.Sorting {
 
@@ -522,13 +522,13 @@ namespace JayTom.Dws.Client.Service.Sorting {
                         await _sortingTcp.Connect(
                             _communicationsSettingsDto.TcpSettingsInfo.ServerConfig.IpAddress,
                             _communicationsSettingsDto.TcpSettingsInfo.ServerConfig.Port,
-                            ConnectionType.Server, 2000, FormatType.Hex, token);
+                            ConnectionType.Server, 2000, FormatType.Hex, 0, token);
                     }
                     else {
                         await _sortingTcp.Connect(
                             _communicationsSettingsDto.TcpSettingsInfo.ClientConfig.IpAddress,
                             _communicationsSettingsDto.TcpSettingsInfo.ClientConfig.Port,
-                            ConnectionType.Client, 2000, FormatType.Hex, token);
+                            ConnectionType.Client, 2000, FormatType.Hex, 0, token);
                     }
                     //心跳包
                     if (_communicationsSettingsDto.HeartbeatInfo is { IsHeartbeatEnabled: true, IsHeartbeatActive: true }) {

@@ -6,6 +6,7 @@ using JayTom.Dws.Data.Package;
 using JayTom.Dws.Data.LocalLog;
 using System.Collections.Generic;
 using System.Diagnostics.Tracing;
+using JayTom.Dws.Interface.Cloud;
 using JayTom.Dws.Client.Service.BackgroundService;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 
@@ -380,5 +381,28 @@ namespace JayTom.Dws.Client.Service.Sorting {
         /// 效验协议名称
         /// </summary>
         public string ChecksumProtocolName { get; set; } = string.Empty;
+    }
+
+    public class ExceptionSortingReceived {
+
+        /// <summary>
+        /// 条码关联时间戳
+        /// </summary>
+        public long Timestamp { get; set; }
+
+        /// <summary>
+        /// 条码
+        /// </summary>
+        public string BarCode { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 扫码时间
+        /// </summary>
+        public DateTime? ScanTime { get; set; }
+
+        /// <summary>
+        /// 异常口回调指令
+        /// </summary>
+        public PackageCloudAbnormalSortingType PackageCloudAbnormalSortingType { get; set; }
     }
 }

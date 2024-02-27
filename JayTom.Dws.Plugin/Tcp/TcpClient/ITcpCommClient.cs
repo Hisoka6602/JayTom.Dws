@@ -20,12 +20,18 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
         int Port { get; }
 
         /// <summary>
+        /// 数据长度
+        /// </summary>
+        int DataLen { get; set; }
+
+        /// <summary>
         /// 连接
         /// </summary>
         /// <param name="dataType"></param>
+        /// <param name="dataLen"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<bool> Connect(FormatType dataType = FormatType.Ascii, CancellationToken token = default);
+        Task<bool> Connect(FormatType dataType = FormatType.Ascii, int dataLen = 0, CancellationToken token = default);
 
         /// <summary>
         /// 设置参数

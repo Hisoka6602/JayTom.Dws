@@ -15,6 +15,7 @@ using System.Linq.Dynamic.Core;
 using JayTom.Dws.Data.LocalLog;
 using System.Collections.Generic;
 using JayTom.Dws.PluginInterface;
+using JayTom.Dws.Interface.Cloud;
 using System.Text.RegularExpressions;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.DownstreamProtocols;
@@ -529,6 +530,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                     ExceptionMessage = $"分拣异常:{e}"
                 });
             }
+            PublishExceptionSortingInfo(param);
         }
 
         public void WeightSorting(SortingParam param, CancellationToken token = default) {
@@ -558,6 +560,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                     ExceptionMessage = $"分拣异常:{e}"
                 });
             }
+            PublishExceptionSortingInfo(param);
         }
 
         public void VolumeSorting(SortingParam param, CancellationToken token = default) {
@@ -584,6 +587,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                     ExceptionMessage = $"分拣异常:{e}"
                 });
             }
+            PublishExceptionSortingInfo(param);
         }
 
         public void LogisticsSorting(SortingParam param, CancellationToken token = default) {
@@ -618,6 +622,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                     ExceptionMessage = $"分拣异常:{e}"
                 });
             }
+            PublishExceptionSortingInfo(param);
         }
 
         public void OcrSorting(SortingParam param, CancellationToken token = default) {
@@ -650,6 +655,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                     ExceptionMessage = $"分拣异常:{e}"
                 });
             }
+            PublishExceptionSortingInfo(param);
         }
 
         public void ApiResponseSorting(SortingParam param, CancellationToken token = default) {
@@ -671,6 +677,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                     ValidateApiRule(param.ApiResponse, f.JsonContent));
             /*var apiRuleInfoModel = _apiRuleInfoModels.FirstOrDefault(f =>
                 ValidateApiRule(param.ApiResponse, f.JsonContent));*/
+
             if (apiRuleInfoModel != null) {
                 var apiSortingInfoModel = _apiSortingInfoModels.FirstOrDefault(f => f.Id.Equals(apiRuleInfoModel.ApiSortingId));
                 if (apiSortingInfoModel is not null) {
@@ -680,12 +687,21 @@ namespace JayTom.Dws.Client.Service.Sorting {
                 else {
                     //走异常口
                     ExceptionSorting(param, token);
+                    //无分拣规则
+                    EventAggregator.Instance.Publish(new ExceptionSortingReceived {
+                        ScanTime = param.ScanTime,
+                        BarCode = param.BarCode,
+                        Timestamp = param.Timestamp,
+                        PackageCloudAbnormalSortingType = PackageCloudAbnormalSortingType.NoPhysicalMailbox
+                    });
                 }
             }
             else {
                 //走异常口
                 ExceptionSorting(param, token);
             }
+
+            PublishExceptionSortingInfo(param);
         }
 
         public void CombinedWorkflowSorting(SortingParam param, CancellationToken token = default) {
@@ -754,11 +770,25 @@ namespace JayTom.Dws.Client.Service.Sorting {
                 else {
                     //走异常口
                     ExceptionSorting(param, token);
+                    //无分拣指令
+                    EventAggregator.Instance.Publish(new ExceptionSortingReceived {
+                        ScanTime = param.ScanTime,
+                        BarCode = param.BarCode,
+                        Timestamp = param.Timestamp,
+                        PackageCloudAbnormalSortingType = PackageCloudAbnormalSortingType.NoSortingInstruction
+                    });
                 }
             }
             else {
                 //走异常口
                 ExceptionSorting(param, token);
+                //无分拣指令
+                EventAggregator.Instance.Publish(new ExceptionSortingReceived {
+                    ScanTime = param.ScanTime,
+                    BarCode = param.BarCode,
+                    Timestamp = param.Timestamp,
+                    PackageCloudAbnormalSortingType = PackageCloudAbnormalSortingType.NoSortingInstruction
+                });
             }
         }
 
@@ -856,6 +886,33 @@ namespace JayTom.Dws.Client.Service.Sorting {
             }
             catch (Exception e) {
                 return false;
+            }
+        }
+
+        public void PublishExceptionSortingInfo(SortingParam param) {
+            if (param.ApiResponse.ExceptionMsg.Contains("接口访问返回超时")) {
+                EventAggregator.Instance.Publish(new ExceptionSortingReceived {
+                    ScanTime = param.ScanTime,
+                    BarCode = param.BarCode,
+                    Timestamp = param.Timestamp,
+                    PackageCloudAbnormalSortingType = PackageCloudAbnormalSortingType.NetworkTimeout
+                });
+            }
+            else if (param.ApiResponse.ExceptionMsg.Contains("接口访问异常")) {
+                EventAggregator.Instance.Publish(new ExceptionSortingReceived {
+                    ScanTime = param.ScanTime,
+                    BarCode = param.BarCode,
+                    Timestamp = param.Timestamp,
+                    PackageCloudAbnormalSortingType = PackageCloudAbnormalSortingType.ApiAccessError
+                });
+            }
+            else if (param.BarCode.ToLower().Equals("noread")) {
+                EventAggregator.Instance.Publish(new ExceptionSortingReceived {
+                    ScanTime = param.ScanTime,
+                    BarCode = param.BarCode,
+                    Timestamp = param.Timestamp,
+                    PackageCloudAbnormalSortingType = PackageCloudAbnormalSortingType.NoRead
+                });
             }
         }
 

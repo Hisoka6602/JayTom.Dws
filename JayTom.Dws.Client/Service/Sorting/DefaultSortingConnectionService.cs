@@ -29,6 +29,7 @@ using JayTom.Dws.Data.LocalConf.PackageSortingConfig.ConnectionParams;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig.ConnectionParams;
 
 namespace JayTom.Dws.Client.Service.Sorting {
+
     public class DefaultSortingConnectionService : ISortingConnectionService {
         private readonly ICommunicationConnectionConfigRepository _communicationConnectionConfigRepository;
         private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
@@ -199,15 +200,15 @@ namespace JayTom.Dws.Client.Service.Sorting {
                         };
                         var tcpConfigInfoModel = info.TcpConfigItems?.FirstOrDefault(f => f.Type == 0);
                         if (tcpConfigInfoModel is not null) {
+                            //协议
+                            IDeviceCommunicationProtocol? protocol = communicationProtocol switch {
+                                CommunicationProtocol.Wxkc => new WxkcCommunicationProtocol(),
+                                CommunicationProtocol.JT_ST => new JtstCommunicationProtocol(),
+                                _ => null
+                            };
                             var connect = await sortingTcp.Connect(tcpConfigInfoModel.IpAddress, tcpConfigInfoModel.Port,
-                                ConnectionType.Client, 5000, FormatType.Hex);
+                                ConnectionType.Client, 5000, FormatType.Hex, protocol?.DataLen ?? 0);
                             if (connect) {
-                                //协议
-                                IDeviceCommunicationProtocol? protocol = communicationProtocol switch {
-                                    CommunicationProtocol.Wxkc => new WxkcCommunicationProtocol(),
-                                    CommunicationProtocol.JT_ST => new JtstCommunicationProtocol(),
-                                    _ => null
-                                };
                                 //心跳包
                                 var connectionConfigInfoModel = _connectionConfigInfoModels.FirstOrDefault(f => f.ConnectionName.Equals(connectionName));
 
@@ -274,15 +275,15 @@ namespace JayTom.Dws.Client.Service.Sorting {
                         };
                         var tcpConfigInfoModel = info.TcpConfigItems?.FirstOrDefault(f => f.Type != 0);
                         if (tcpConfigInfoModel is not null) {
+                            //协议
+                            IDeviceCommunicationProtocol? protocol = communicationProtocol switch {
+                                CommunicationProtocol.Wxkc => new WxkcCommunicationProtocol(),
+                                CommunicationProtocol.JT_ST => new JtstCommunicationProtocol(),
+                                _ => null
+                            };
                             var connect = await sortingTcp.Connect(tcpConfigInfoModel.IpAddress, tcpConfigInfoModel.Port,
-                                ConnectionType.Server, 5000, FormatType.Hex);
+                                ConnectionType.Server, 5000, FormatType.Hex, protocol?.DataLen ?? 0);
                             if (connect) {
-                                //协议
-                                IDeviceCommunicationProtocol? protocol = communicationProtocol switch {
-                                    CommunicationProtocol.Wxkc => new WxkcCommunicationProtocol(),
-                                    CommunicationProtocol.JT_ST => new JtstCommunicationProtocol(),
-                                    _ => null
-                                };
                                 //心跳包
                                 var connectionConfigInfoModel = _connectionConfigInfoModels.FirstOrDefault(f => f.ConnectionName.Equals(connectionName));
 
@@ -416,7 +417,6 @@ namespace JayTom.Dws.Client.Service.Sorting {
                                     else {
                                         OnCommunicationExceptionEvent(new Exception("无发送内容!"));
                                     }
-
                                 }
                                 else {
                                     OnCommunicationExceptionEvent(new Exception("下位机未连接!"));
@@ -458,7 +458,6 @@ namespace JayTom.Dws.Client.Service.Sorting {
                                     else {
                                         OnCommunicationExceptionEvent(new Exception("无发送内容!"));
                                     }
-
                                 }
                                 else {
                                     OnCommunicationExceptionEvent(new Exception("下位机未连接!"));
@@ -570,7 +569,6 @@ namespace JayTom.Dws.Client.Service.Sorting {
                                     else {
                                         OnCommunicationExceptionEvent(new Exception("无发送内容!"));
                                     }
-
                                 }
                                 else {
                                     OnCommunicationExceptionEvent(new Exception("下位机未连接!"));
@@ -580,7 +578,6 @@ namespace JayTom.Dws.Client.Service.Sorting {
                                 //tcp
                                 if (connection.SortingTcp.ConnectionStatus == ConnectionStatus.Connected) {
                                     if (instructions?.Any() == true) {
-
                                         foreach (var instruction in instructions) {
                                             //使用应答
                                             if (connectionConfigInfoModel?.DeviceExtensionConfigInfo?.ValidateDeviceResponse == true) {
@@ -651,7 +648,6 @@ namespace JayTom.Dws.Client.Service.Sorting {
                                     else {
                                         OnCommunicationExceptionEvent(new Exception("无发送内容!"));
                                     }
-
                                 }
                                 else {
                                     OnCommunicationExceptionEvent(new Exception("下位机未连接!"));

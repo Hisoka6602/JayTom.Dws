@@ -5,11 +5,14 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 
 namespace JayTom.Dws.Plugin.Tcp {
+
     public interface ITcpBase {
+
         /// <summary>
         /// 发送格式
         /// </summary>
         public FormatType FormatType { get; set; }
+
         /// <summary>
         /// 连接状态
         /// </summary>
@@ -46,7 +49,7 @@ namespace JayTom.Dws.Plugin.Tcp {
         /// 连接
         /// </summary>
         /// <returns></returns>
-        Task<bool> Connect(string ipAddress, int port, int timeOut = 1000, FormatType dataType = FormatType.Ascii, CancellationToken token = default);
+        Task<bool> Connect(string ipAddress, int port, int timeOut = 1000, FormatType dataType = FormatType.Ascii, int dataLen = 0, CancellationToken token = default);
 
         /// <summary>
         /// 重新连接
@@ -97,6 +100,11 @@ namespace JayTom.Dws.Plugin.Tcp {
         public int Port { get; set; }
 
         public FormatType DataFormatType { get; set; } = FormatType.Ascii;
+
+        /// <summary>
+        /// 字节长度
+        /// </summary>
+        public int DataLength { get; set; } = 1024;
     }
 
     public enum CommunicationType {

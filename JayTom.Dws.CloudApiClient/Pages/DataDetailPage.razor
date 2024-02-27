@@ -144,8 +144,8 @@
                 <PropertyColumn Property="x => x.DeviceInfos.DeviceName" Title="设备" />
                 <TemplateColumn Title="扫码图">
                     <CellTemplate>
-                        @if (!string.IsNullOrEmpty(context.Item.ScanImageInfo.ImageUrl)) {
-                            <MudIconButton OnClick="@(() => OpenImageLink(context.Item.ScanImageInfo.ImageUrl))" Style="width:30px;height:30px;">
+                        @if (!string.IsNullOrEmpty(context.Item.ImageInfos.FirstOrDefault(f => f.Type == 0)?.ImageUrl)) {
+                            <MudIconButton OnClick="@(() => OpenImageLink(context.Item.ImageInfos.FirstOrDefault(f=>f.Type==0)?.ImageUrl))" Style="width:30px;height:30px;">
                                 <span class="iconfont icon-8tupian-2" style="font-size: 20px;color:#008DFF"></span>
                             </MudIconButton>
                         }
@@ -155,7 +155,7 @@
                 </TemplateColumn>
                 <TemplateColumn Title="全景图">
                     <CellTemplate>
-                        @foreach (var image in context.Item.PanoramaImageInfos) {
+                        @foreach (var image in context.Item.ImageInfos.Where(w => w.Type == 1)) {
                             <MudIconButton OnClick="@(() => OpenImageLink(image.ImageUrl))" Style="width:30px;height:30px;">
                                 <span class="iconfont icon-8tupian-2" style="font-size: 20px;color:#4A4453"></span>
                             </MudIconButton>
@@ -265,7 +265,7 @@
     protected override void OnInitialized() {
         base.OnInitialized();
 
-        for (var i = 0; i < 100; i++) {
+        /*for (var i = 0; i < 100; i++) {
             var model = new DetailInfoItemModel() {
                     Num = i + 1,
                     BarCodeInfo = new BarCodeInfoModel() {
@@ -291,7 +291,7 @@
                         ImageUrl = "https://img2.baidu.com/it/u=621048240,333776885&fm=253&fmt=auto&app=138&f=GIF?w=1024&h=435"
                     },
                     PanoramaImageInfos = new List<ImageInfoModel>()
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            {
                     new ImageInfoModel()
                     {
                         ImageUrl = "https://n.sinaimg.cn/translate/366/w700h466/20191130/54fa-ikcaceq7124230.jpg",
@@ -309,7 +309,7 @@
 
                 };
             DetailInfoItems.Add(model);
-        }
+        }*/
         BaseUrl ??= Configuration.GetValue<string>("BaseUrl");
 
         OnSearchClicked();
@@ -318,9 +318,9 @@
     public string ConvertStatus(int? status) {
         if (status.HasValue) {
             return status.Value switch {
-                0 => "未上传",
-                1 => "成功",
-                2 => "失败",
+                0 => "成功",
+                1 => "失败",
+                2 => "未上传",
                 _ => "未知"
             };
         }
@@ -390,6 +390,7 @@
             if (key && value is ApiResult result) {
                 PageCount = result.Total / PageSize + (result.Total % PageSize > 0 ? 1 : 0);
                 try {
+
                     var detailInfoItemModels = JsonConvert.DeserializeObject<List<DetailInfoItemModel>>(result.Data?.ToString() ?? string.Empty);
                     if (detailInfoItemModels is not null) {
 
@@ -437,9 +438,10 @@
                 Height = s.VolumeInfo.FormattedHeight,
                 Volume = s.VolumeInfo.FormattedVolume,
                 RequestStatus = s.UploadInfo.RequestStatus switch {
-                    0 => "未上传",
-                    1 => "成功",
-                    _ => "失败"
+                    0 => "成功",
+                    1 => "失败",
+                    2 => "未上传",
+                    _ => "未知"
                 },
                 TheoreticalExit = s.ExitInfo.TheoreticalExit,
                 PhysicalExit = s.ExitInfo.PhysicalExit,

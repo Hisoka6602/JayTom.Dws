@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Text;
+using System.Data;
 using System.Threading;
 using System.Threading.Tasks;
 using NPOI.SS.Formula.Functions;
@@ -74,14 +75,14 @@ namespace JayTom.Dws.Plugin.Tcp {
             TcpClient = _tcpCommClient;
         }
 
-        public async Task<bool> Connect(string ipAddress, int port, int timeOut = 1000, FormatType dataType = FormatType.Ascii, CancellationToken token = default) {
+        public async Task<bool> Connect(string ipAddress, int port, int timeOut = 1000, FormatType dataType = FormatType.Ascii, int dataLen = 0, CancellationToken token = default) {
             FormatType = dataType;
             if (ConnectionType == ConnectionType.Client) {
                 //客户端
-                return await _tcpCommClient.Connect(ipAddress, port, timeOut, dataType, token);
+                return await _tcpCommClient.Connect(ipAddress, port, timeOut, dataType, dataLen, token);
             }
             else {
-                return await _tcpCommServer.Connect(ipAddress, port, timeOut, dataType, token);
+                return await _tcpCommServer.Connect(ipAddress, port, timeOut, dataType, dataLen, token);
             }
         }
 
@@ -129,15 +130,15 @@ namespace JayTom.Dws.Plugin.Tcp {
         public ITcpCommServer? TcpServer { get; private set; }
         public ITcpCommClient? TcpClient { get; private set; }
 
-        public async Task<bool> Connect(string ipAddress, int port, ConnectionType type, int timeOut = 1000, FormatType dataType = FormatType.Ascii, CancellationToken token = default) {
+        public async Task<bool> Connect(string ipAddress, int port, ConnectionType type, int timeOut = 1000, FormatType dataType = FormatType.Ascii, int dataLen = 0, CancellationToken token = default) {
             FormatType = dataType;
             ConnectionType = type;
             if (ConnectionType == ConnectionType.Client) {
                 //客户端
-                return await _tcpCommClient.Connect(ipAddress, port, timeOut, dataType, token);
+                return await _tcpCommClient.Connect(ipAddress, port, timeOut, dataType, dataLen, token);
             }
             else {
-                return await _tcpCommServer.Connect(ipAddress, port, timeOut, dataType, token);
+                return await _tcpCommServer.Connect(ipAddress, port, timeOut, dataType, dataLen, token);
             }
         }
 

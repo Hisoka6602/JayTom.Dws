@@ -38,6 +38,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private ConcurrentQueue<ApiResponseReceived> _updateResponseItems = new();
         private ConcurrentQueue<SavedImageInfo> _savedImageItems = new();
         private ConcurrentQueue<InstructionReceived> _instructionItems = new();
+        private ConcurrentQueue<ExceptionSortingReceived> _exceptionSortingItems = new();
 
         public DataProcessingBackgroundService(IPackageRepository packageRepository,
             IImageStorageService imageStorageService, ISortingRepository sortingRepository,
@@ -82,6 +83,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             EventAggregator.Instance.Subscribe<InstructionReceived>(item => {
                 if (item is InstructionReceived model) {
                     _instructionItems.Enqueue(model);
+                }
+            });
+            EventAggregator.Instance.Subscribe<ExceptionSortingReceived>(item => {
+                if (item is ExceptionSortingReceived model) {
+                    _exceptionSortingItems.Enqueue(model);
                 }
             });
         }
@@ -227,6 +233,25 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     }
                     else {
                         _instructionItems.Enqueue(sortingModel);
+                    }
+                }
+
+                var isExceptionSorting = _exceptionSortingItems.TryDequeue(out var exceptionSortingModel);
+                if (isExceptionSorting && exceptionSortingModel is not null) {
+                    var (key, value) = await _packageRepository.FirstOrDefaultInfo(f => f.BarCodeInfo != null &&
+                            f.BarCodeInfo.Barcode.Equals(exceptionSortingModel.BarCode) &&
+                            f.BarCodeInfo.ScanTime.Equals(exceptionSortingModel.ScanTime),
+                        stoppingToken);
+                    var sortingInfoModel = await _sortingRepository.FirstOrDefault(f => f.PackageId.Equals(value.Id), stoppingToken);
+                    if (sortingInfoModel is not null) {
+                        sortingInfoModel.AbnormalSortingType = (AbnormalSortingType)exceptionSortingModel.PackageCloudAbnormalSortingType;
+                        var update = await _sortingRepository.Update(sortingInfoModel, stoppingToken);
+                        if (!update) {
+                            _exceptionSortingItems.Enqueue(exceptionSortingModel);
+                        }
+                    }
+                    else {
+                        _exceptionSortingItems.Enqueue(exceptionSortingModel);
                     }
                 }
                 await Task.Delay(50, stoppingToken);

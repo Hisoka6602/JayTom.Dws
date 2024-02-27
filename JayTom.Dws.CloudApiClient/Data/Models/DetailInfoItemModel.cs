@@ -67,14 +67,14 @@ namespace JayTom.Dws.CloudApiClient.Data.Models {
         public DeviceInfoModel DeviceInfos { get; set; } = new();
 
         /// <summary>
-        /// 扫码图片信息
-        /// </summary>
-        public ImageInfoModel ScanImageInfo { get; set; } = new();
-
-        /// <summary>
         /// 图片信息
         /// </summary>
-        public List<ImageInfoModel> PanoramaImageInfos { get; set; } = new();
+        public List<ImageInfoModel> ImageInfos { get; set; } = new();
+
+        /*/// <summary>
+        /// 图片信息
+        /// </summary>
+        public List<ImageInfoModel> PanoramaImageInfos { get; set; } = new();*/
     }
 
     /// <summary>

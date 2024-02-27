@@ -119,6 +119,8 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
             return null;
         }
 
+        public int DataLen => 43;
+
         private static byte[] BarcodeToByteArray(string barcode, int length, byte paddingCharacter) {
             // 使用UTF-8编码将字符串转换为字节数组
             var byteArray = Encoding.UTF8.GetBytes(barcode);

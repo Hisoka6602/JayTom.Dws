@@ -2,11 +2,11 @@
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.Collections.Generic;
 using JayTom.Dws.Data.Package;
+using System.Collections.Generic;
 
-namespace JayTom.Dws.Domain.DownstreamProtocols
-{
+namespace JayTom.Dws.Domain.DownstreamProtocols {
+
     public interface IDeviceCommunicationProtocol {
 
         /// <summary>
@@ -25,6 +25,12 @@ namespace JayTom.Dws.Domain.DownstreamProtocols
         /// <param name="data"></param>
         /// <returns></returns>
         DeviceDecodeResult? DecodeData(string data);
+
+        /// <summary>
+        /// 协议字节长度
+        /// </summary>
+
+        public int DataLen { get; }
     }
 
     public class DeviceDecodeResult {
@@ -174,26 +180,32 @@ namespace JayTom.Dws.Domain.DownstreamProtocols
         /// 格口名称
         /// </summary>
         public string ExitName { get; set; } = string.Empty;
+
         /// <summary>
         /// 扫码时间
         /// </summary>
         public DateTime? ScanTime { get; set; }
+
         /// <summary>
         /// 格口Id
         /// </summary>
         public long ExitId { get; set; }
+
         /// <summary>
         /// 物流Id
         /// </summary>
         public long LogisticsId { get; set; }
+
         /// <summary>
         /// 物流名称
         /// </summary>
         public string LogisticsName { get; set; } = string.Empty;
+
         /// <summary>
         /// 分拣模式
         /// </summary>
         public SortMode SortingMode { get; set; }
+
         /// <summary>
         /// 发送的指令
         /// </summary>
@@ -208,22 +220,27 @@ namespace JayTom.Dws.Domain.DownstreamProtocols
         /// 创建包裹指令
         /// </summary>
         public string PackageCreationInstruction { get; set; } = string.Empty;
+
         /// <summary>
         /// 是否由下位机创建
         /// </summary>
         public bool IsCreatedByLowerMachine { get; set; }
+
         /// <summary>
         /// 指令目标
         /// </summary>
         public string CommandTarget { get; set; } = string.Empty;
+
         /// <summary>
         /// 通讯方式
         /// </summary>
         public CommunicationsType CommunicationMethod { get; set; }
+
         /// <summary>
         /// 效验协议名称
         /// </summary>
         public string ChecksumProtocolName { get; set; } = string.Empty;
+
         /// <summary>
         /// 获取或设置其他信息（通用对象类型）。
         /// </summary>
