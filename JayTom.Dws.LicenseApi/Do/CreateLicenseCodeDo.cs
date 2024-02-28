@@ -27,5 +27,11 @@ namespace JayTom.Dws.LicenseApi.Do {
         /// </summary>
 
         public string LicenseCode { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 租户
+        /// </summary>
+        [UserCodeExists(IsExists = true, ErrorMessage = "租户代码不存在")]
+        public string? UserCode { get; set; }
     }
 }

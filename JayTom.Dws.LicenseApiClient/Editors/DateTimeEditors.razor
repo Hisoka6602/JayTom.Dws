@@ -3,7 +3,7 @@
 <div class="d-flex">
     <div style="height:30px; display: flex; justify-content: flex-end;align-items: center;">
 
-        <MudInput ReadOnly="true" DisableUnderLine="false" Style="border-block-width:0px; border-color:#3D7AEF; max-width:160px;  height: 30px;display: flex; " @bind-Value="DisplayDateTime" Variant="Variant.Text" />
+        <MudInput ReadOnly="true" DisableUnderLine="false" Style="border-block-width:0px; border-color:#3D7AEF; width:470px; max-width:860px;  height: 30px;display: flex; " @bind-Value="DisplayDateTime" Variant="Variant.Text" />
         <MudIconButton OnClick="@ToggleOpen" Size="@Size.Small"
                        Icon="@Icons.Material.Filled.DateRange" Style="color:gray;width:30px;height:30px;">
         </MudIconButton>
@@ -33,6 +33,9 @@
 
     [Parameter]
     public EventCallback<DateTime?> DateTimeChanged { get; set; }
+
+    [Parameter]
+    public int Width { get; set; } = 160;
     private string DisplayDateTime { get; set; } = string.Empty;
     private DateTime? _maxDate = System.DateTime.MaxValue;
     private DateTime? _date;

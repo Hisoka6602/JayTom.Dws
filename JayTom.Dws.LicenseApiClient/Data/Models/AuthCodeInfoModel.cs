@@ -1,12 +1,21 @@
 ﻿namespace JayTom.Dws.LicenseApiClient.Data.Models {
 
     public class AuthCodeInfoModel {
+
+        /// <summary>
+        /// 用户
+        /// </summary>
+        public string UserCode { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 模板Id
+        /// </summary>
         public long TemplateInfoId { get; set; }
 
         /// <summary>
         /// 客户端上限数量
         /// </summary>
-        public int MaxClientCount { get; set; }
+        public int MaxClientCount { get; set; } = 1;
 
         /// <summary>
         /// 到期时间

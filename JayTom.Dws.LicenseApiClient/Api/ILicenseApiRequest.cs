@@ -170,6 +170,7 @@ namespace JayTom.Dws.LicenseApiClient.Api {
         /// 创建授权码
         /// </summary>
         /// <param name="clientName"></param>
+        /// <param name="userCode"></param>
         /// <param name="token"></param>
         /// <param name="templateInfoId"></param>
         /// <param name="maxClientCount"></param>
@@ -179,6 +180,7 @@ namespace JayTom.Dws.LicenseApiClient.Api {
             int maxClientCount,
             DateTime expirationDate,
             string clientName,
+            string userCode = "",
             CancellationToken token = default);
 
         /// <summary>

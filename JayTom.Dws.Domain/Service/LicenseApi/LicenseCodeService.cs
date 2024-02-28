@@ -22,17 +22,24 @@ namespace JayTom.Dws.Domain.Service.LicenseApi {
         }
 
         public async Task<KeyValuePair<bool, object>> CreateLicenseCode(long templateInfoId, string userCode, string licenseCode, int maxClientCount,
-            DateTime expirationDate, string clientName, CancellationToken token) {
+            DateTime expirationDate, string clientName, bool isSuperAdminCreated, CancellationToken token) {
             var (key, value) = await _licenseUserRepository.DetailsInfo(userCode, token);
             if (key && value is LicenseUserInfo licenseUserInfo) {
+                var codeCount = 1;
                 var licenseAppLicenseInfo = licenseUserInfo.AppLicenseInfos
                     ?.FirstOrDefault(f => f.LicensePermissionTemplateInfoId.Equals(templateInfoId));
                 if (licenseAppLicenseInfo is null) {
+                    if (isSuperAdminCreated) {
+                        codeCount = maxClientCount;
+                    }
                     await _licenseUserRepository.UpdateTenantLicenseMaxCount(userCode,
-                         templateInfoId, 1, token);
+                         templateInfoId, codeCount, token);
                 }
                 var maxLicenseCodeCount = licenseAppLicenseInfo
                     ?.MaxLicenseCodeCount ?? 1;
+                if (isSuperAdminCreated && licenseAppLicenseInfo is null) {
+                    maxLicenseCodeCount = codeCount;
+                }
                 var sum = licenseUserInfo.LicenseCodeInfos?.Where(w => w.LicensePermissionTemplateInfoId.Equals(templateInfoId))
                     ?.Sum(s => s.MaxClientCount) ?? 0;
 
@@ -62,10 +69,15 @@ namespace JayTom.Dws.Domain.Service.LicenseApi {
 
         public async Task<KeyValuePair<bool, object>> UpdateLicenseCode(long templateInfoId, string userCode, string licenseCode, int maxClientCount,
             DateTime expirationDate, string clientName, CancellationToken token) {
+            var isSuperAdmin = false;
+            var (b, o) = await _licenseUserRepository.DetailsInfo(userCode, token);
+            if (b && o is LicenseUserInfo userInfo) {
+                isSuperAdmin = userInfo.Role == UserRole.SuperAdmin;
+            }
             var (key, value) = await _licenseCodeRepository.FirstDetails(f => f.UserInfo != null &&
                 f.LicenseCode.Equals(licenseCode) &&
                 (f.UserInfo.UserCode.Equals(userCode) ||
-                 f.UserInfo.Role == UserRole.SuperAdmin), token);
+                 isSuperAdmin), token);
             if (key && value is LicenseCodeInfo info) {
                 info.ExpirationDate = expirationDate;
                 info.ClientName = clientName;

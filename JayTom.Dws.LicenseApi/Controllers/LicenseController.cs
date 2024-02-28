@@ -16,12 +16,14 @@ namespace JayTom.Dws.LicenseApi.Controllers {
     public class LicenseController : ControllerBase {
         private readonly ILicenseApplicationAppService _licenseApplicationAppService;
         private readonly ILicenseCodeAppService _licenseCodeAppService;
+        private readonly ILicenseUserAppService _licenseUserAppService;
         private readonly ILogger<LicenseController> _logger;
 
         public LicenseController(ILicenseApplicationAppService licenseApplicationAppService,
-            ILicenseCodeAppService licenseCodeAppService, ILogger<LicenseController> logger) {
+            ILicenseCodeAppService licenseCodeAppService, ILicenseUserAppService licenseUserAppService, ILogger<LicenseController> logger) {
             _licenseApplicationAppService = licenseApplicationAppService;
             _licenseCodeAppService = licenseCodeAppService;
+            _licenseUserAppService = licenseUserAppService;
             _logger = logger;
         }
 
@@ -38,10 +40,16 @@ namespace JayTom.Dws.LicenseApi.Controllers {
          Authorize]
         public async Task<JsonResult> CreateLicenseCode([FromBody] CreateLicenseCodeDo param,
             CancellationToken cancellationToken) {
-            var code = HttpContext.Response.HttpContext.User.Identity?.Name;
+            var isSuperAdminCreated = false;
+            var code = HttpContext.Response.HttpContext.User.Identity?.Name ?? string.Empty;
+            var (b, o) = await _licenseUserAppService.Info(code, cancellationToken);
+            if (b && o is LicenseUserInfo { Role: UserRole.SuperAdmin } && !string.IsNullOrEmpty(param.UserCode)) {
+                code = param.UserCode;
+                isSuperAdminCreated = true;
+            }
             var (key, value) = await _licenseCodeAppService.CreateLicenseCode(param.TemplateInfoId,
-                code ?? string.Empty, param.MaxClientCount, param.ExpirationDate,
-                param.ClientName, cancellationToken);
+                code, param.MaxClientCount, param.ExpirationDate,
+                param.ClientName, isSuperAdminCreated, cancellationToken);
             return key ? JsonResultVo.Success("创建成功", data: value) : JsonResultVo.Fail(value.ToString() ?? string.Empty);
         }
 

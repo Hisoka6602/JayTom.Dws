@@ -17,6 +17,7 @@ namespace JayTom.Dws.Domain.Service.LicenseApi {
         /// <param name="maxClientCount"></param>
         /// <param name="expirationDate"></param>
         /// <param name="clientName"></param>
+        /// <param name="isSuperAdminCreated"></param>
         /// <param name="token"></param>
         /// <returns></returns>
         public Task<KeyValuePair<bool, object>> CreateLicenseCode(long templateInfoId,
@@ -25,6 +26,7 @@ namespace JayTom.Dws.Domain.Service.LicenseApi {
             int maxClientCount,
             DateTime expirationDate,
             string clientName,
+            bool isSuperAdminCreated,
             CancellationToken token);
 
         /// <summary>

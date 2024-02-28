@@ -17,6 +17,7 @@ namespace JayTom.Dws.Application.Service.LicenseApi {
         }
 
         public Task<KeyValuePair<bool, object>> CreateLicenseCode(long templateInfoId, string userCode, int maxClientCount, DateTime expirationDate, string clientName,
+            bool isSuperAdminCreated,
             CancellationToken token) {
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
             var random = new Random();
@@ -24,7 +25,7 @@ namespace JayTom.Dws.Application.Service.LicenseApi {
                 .Select(s => s[random.Next(s.Length)]).ToArray());
 
             return _licenseCodeService.CreateLicenseCode(templateInfoId, userCode, licenseCode, maxClientCount, expirationDate,
-                 clientName, token);
+                 clientName, isSuperAdminCreated, token);
         }
 
         public Task<KeyValuePair<bool, object>> UpdateLicenseCode(long templateInfoId, string userCode, string licenseCode, int maxClientCount,

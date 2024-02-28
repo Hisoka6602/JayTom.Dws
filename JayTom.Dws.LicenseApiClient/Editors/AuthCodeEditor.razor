@@ -1,21 +1,31 @@
 ﻿@using JayTom.Dws.LicenseApiClient.Data.Models
-
+@using JayTom.Dws.LicenseApiClient.Api
+@inject ILicenseApiRequest LicenseApiRequest
 <div>
-    <MudCard Style="width:300px;height:380px; border-radius:20px;">
+    <MudCard Style="margin-left:10px;margin-right:10px; width:600px;height:auto; border-radius:5px;">
         <MudCardContent Class="center">
 
             @*应用模板*@
-            <MudSelect ReadOnly="IsEdit" Style="margin-top:10px;margin-bottom:10px;" SelectedValuesChanged="models => { AppTemplateItemInfoSelectedValuesChanged( models.FirstOrDefault());}" ToStringFunc="@ConvertAppTemplateInfo" Margin="Margin.Dense" T="AppTemplateItemInfoModel" Label="应用模板" Variant="Variant.Outlined">
+            <MudSelect FullWidth="false" @bind-SelectedValues="SelectAppTemplateItems" ReadOnly="IsEdit" Style="margin-top:10px;margin-bottom:10px;" ToStringFunc="@ConvertAppTemplateInfo" Margin="Margin.Dense" T="AppTemplateItemInfoModel" Label="应用模板" Variant="Variant.Outlined">
                 @foreach (var info in AppTemplateItemItems) {
                     <MudSelectItem Value="@info" />
                 }
 
             </MudSelect>
+            @*租户*@
+            @if (IsSuperAdministrator && !IsEdit) {
+                <MudSelect FullWidth="false" @bind-SelectedValues="SelectTenantItems" ReadOnly="IsEdit" Style="margin-top:20px;margin-bottom:10px;" ToStringFunc="@ConvertTenantInfo" Margin="Margin.Dense" T="UserInfo" Label="租户" Variant="Variant.Outlined">
+                    @foreach (var info in TenantItems) {
+                        <MudSelectItem Value="@info" />
+                    }
+
+                </MudSelect>
+            }
 
             @*客户端上限数量*@
-            <div style="display: flex;margin-top:10px;display: flex; align-items: center;">
+            <div style=" display: flex;margin-top:10px;display: flex; align-items: center;">
                 <span style="font-weight:bold; margin-left:8px; color:#A9A9A9; font-size: 13px;">客户端上限数量:</span>
-                <MudNumericField Style="margin-left:10px; margin-bottom:30px;width:140px" @bind-Value="AuthCodeInfo.MaxClientCount" Variant="Variant.Text" Min="1" Max="100" />
+                <MudNumericField Style="margin-left:10px; margin-bottom:30px;" @bind-Value="AuthCodeInfo.MaxClientCount" Variant="Variant.Text" Min="1" Max="100" />
             </div>
 
             @*到期时间*@
@@ -27,7 +37,7 @@
             @*客户*@
             <div style="display: flex;margin-top:10px;display: flex; align-items: center;">
                 <span style="font-weight:bold; margin-left:8px; color:#A9A9A9; font-size: 13px;">客户:</span>
-                <MudTextField Style="margin-left:10px;margin-bottom:30px;width:180px" @bind-Value="AuthCodeInfo.ClientName" Variant="Variant.Text"></MudTextField>
+                <MudTextField Style="margin-left:10px;margin-bottom:30px;" @bind-Value="AuthCodeInfo.ClientName" Variant="Variant.Text"></MudTextField>
             </div>
         </MudCardContent>
         <MudCardActions Class="card-actions-right">
@@ -59,10 +69,41 @@
     public EventCallback OnCancel { get; set; }
     [Parameter]
     public bool IsEdit { get; set; }
+    [Parameter]
+    public bool IsSuperAdministrator { get; set; }
+    [Parameter]
+    public List<UserInfo> TenantItems { get; set; } = new();
 
-    public AppTemplateItemInfoModel SelectAppTemplateItemInfo = new();
+    public IEnumerable<AppTemplateItemInfoModel>? SelectAppTemplateItems { get; set; }
+
+    public IEnumerable<UserInfo>? SelectTenantItems { get; set; }
+    protected override void OnInitialized() {
+
+        if (IsEdit) {
+            SelectAppTemplateItems = new[]
+            {
+                AppTemplateItemItems?.FirstOrDefault(f=>f.Id.Equals(AuthCodeInfo.TemplateInfoId)) ?? new AppTemplateItemInfoModel()
+            };
+        }
+        else {
+            SelectAppTemplateItems ??= new[]
+            {
+                AppTemplateItemItems?.FirstOrDefault() ?? new AppTemplateItemInfoModel()
+            };
+
+            SelectTenantItems ??= new[]
+            {
+                TenantItems?.FirstOrDefault() ?? new UserInfo()
+            };
+        }
+
+        base.OnInitialized();
+    }
+
     private async void Confirm() {
-
+        var itemInfoModel = SelectAppTemplateItems?.FirstOrDefault() ?? new AppTemplateItemInfoModel();
+        AuthCodeInfo.TemplateInfoId = itemInfoModel.Id;
+        AuthCodeInfo.UserCode = SelectTenantItems?.FirstOrDefault()?.UserCode ?? string.Empty;
         await OnConfirm.InvokeAsync(AuthCodeInfo);
     }
 
@@ -73,8 +114,14 @@
         return info is not null ? info.TemplateName : string.Empty;
     }
 
+    public string ConvertTenantInfo(UserInfo? info) {
+        return info is not null ? info.UserName : string.Empty;
+    }
     public void AppTemplateItemInfoSelectedValuesChanged(AppTemplateItemInfoModel info) {
-        SelectAppTemplateItemInfo = info;
+        SelectAppTemplateItems = new[]
+        {
+           info
+        };
         AuthCodeInfo.TemplateInfoId = info.Id;
     }
 }
