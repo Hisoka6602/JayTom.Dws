@@ -5,7 +5,7 @@
         /// <summary>
         /// 用户
         /// </summary>
-        public string UserCode { get; set; } = string.Empty;
+        public string? UserCode { get; set; }
 
         /// <summary>
         /// 模板Id

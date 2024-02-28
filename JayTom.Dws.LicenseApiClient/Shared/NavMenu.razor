@@ -4,7 +4,7 @@
 @inject NotificationService NotificationService
 <MudNavMenu Rounded="true" Margin="Margin.Dense" Color="Color.Inherit" Style=" color:white;background-color:transparent">
     @foreach (var item in links) {
-        if (!item.Title.Equals("租户管理") || Info is { Role: 1 }) {
+        if ((!item.Title.Equals("租户管理") && !item.Title.Equals("应用管理")) || Info is { Role: 1 }) {
             <MudNavLink Href="@item.Href" Class="MudNavLink-active" Match="NavLinkMatch.Prefix">
                 <div style="display: flex;align-items: center;color: white">
                     <span class="@item.Icon" style="font-size: 20px; margin-bottom:5px; margin-right:10px;"></span>
@@ -34,7 +34,7 @@
             new() { Title = "应用管理", Icon ="iconfont icon-app", Href = "/application-management"},
             new() { Title = "租户管理", Icon = "iconfont icon-yonghu",Href = "/tenant-management"},
             new() { Title = "授权管理", Icon = "iconfont icon-lingpaiguanli",Href = "/authorization-management" },
-            new() { Title = "系统设置", Icon = "iconfont icon-shezhi" ,Href = "/systemSettings-management"}
+            //new() { Title = "系统设置", Icon = "iconfont icon-shezhi" ,Href = "/systemSettings-management"}
         };
 
     }

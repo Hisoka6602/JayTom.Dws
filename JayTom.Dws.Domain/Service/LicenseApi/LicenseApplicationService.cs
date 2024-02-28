@@ -134,11 +134,12 @@ namespace JayTom.Dws.Domain.Service.LicenseApi {
             var licenseUserInfo = await _licenseUserRepository.
                 FirstOrDefault(f => f.UserCode.Equals(userCode), token);
             if (licenseUserInfo is not null) {
-                var code = userCode;
+                /*var code = userCode;
                 if (licenseUserInfo.Role == UserRole.SuperAdmin) {
                     code = null;
-                }
-
+                }*/
+                //暂时先所有人可以见
+                string? code = null;
                 var (key, value) = await _licensePermissionTemplateRepository.Details(w =>
                     code == null || w.CreateBy.Equals(code), token);
 

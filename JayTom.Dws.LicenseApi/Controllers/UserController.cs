@@ -206,7 +206,7 @@ namespace JayTom.Dws.LicenseApi.Controllers {
                     Pid = info.Pid,
                     UserName = info.UserName,
                     UserCode = info.UserCode,
-                    Phone = DataUtils.MaskPhoneNumber(info.Phone),
+                    Phone = info.Phone,
                     Role = info.Role,
                     Status = info.Status,
                     UserIcon = !string.IsNullOrEmpty(info.UserIcon) ? info.UserIcon : iconPath,

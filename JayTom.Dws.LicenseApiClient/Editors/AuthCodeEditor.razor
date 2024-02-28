@@ -90,11 +90,14 @@
             {
                 AppTemplateItemItems?.FirstOrDefault() ?? new AppTemplateItemInfoModel()
             };
+            if (IsSuperAdministrator && TenantItems?.Any() == true) {
 
-            SelectTenantItems ??= new[]
-            {
-                TenantItems?.FirstOrDefault() ?? new UserInfo()
-            };
+                SelectTenantItems ??= new[]
+                {
+                    TenantItems?.FirstOrDefault() ?? new UserInfo()
+                };
+            }
+
         }
 
         base.OnInitialized();
@@ -103,7 +106,7 @@
     private async void Confirm() {
         var itemInfoModel = SelectAppTemplateItems?.FirstOrDefault() ?? new AppTemplateItemInfoModel();
         AuthCodeInfo.TemplateInfoId = itemInfoModel.Id;
-        AuthCodeInfo.UserCode = SelectTenantItems?.FirstOrDefault()?.UserCode ?? string.Empty;
+        AuthCodeInfo.UserCode = SelectTenantItems?.FirstOrDefault()?.UserCode;
         await OnConfirm.InvokeAsync(AuthCodeInfo);
     }
 

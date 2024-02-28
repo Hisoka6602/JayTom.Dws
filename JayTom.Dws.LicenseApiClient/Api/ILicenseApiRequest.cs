@@ -180,7 +180,7 @@ namespace JayTom.Dws.LicenseApiClient.Api {
             int maxClientCount,
             DateTime expirationDate,
             string clientName,
-            string userCode = "",
+            string? userCode,
             CancellationToken token = default);
 
         /// <summary>
@@ -262,6 +262,12 @@ namespace JayTom.Dws.LicenseApiClient.Api {
         /// <returns></returns>
         public Task<KeyValuePair<bool, object>> UpdateTenantLicenseMaxCount(string userCode, long licensePermissionTemplateInfoId, int maxLicenseCodeCount,
             CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// 退出
+        /// </summary>
+        /// <returns></returns>
+        public Task LogOut(CancellationToken cancellationToken = default);
     }
 
     public class ApiResult {

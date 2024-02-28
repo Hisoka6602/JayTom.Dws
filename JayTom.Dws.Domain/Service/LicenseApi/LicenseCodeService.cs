@@ -7,7 +7,6 @@ using System.Collections.Generic;
 using JayTom.Dws.Domain.Repository.License;
 
 namespace JayTom.Dws.Domain.Service.LicenseApi {
-
     public class LicenseCodeService : ILicenseCodeService {
         private readonly ILicenseCodeRepository _licenseCodeRepository;
         private readonly ILicenseClientBindingRepository _licenseClientBindingRepository;
@@ -73,7 +72,24 @@ namespace JayTom.Dws.Domain.Service.LicenseApi {
             var (b, o) = await _licenseUserRepository.DetailsInfo(userCode, token);
             if (b && o is LicenseUserInfo userInfo) {
                 isSuperAdmin = userInfo.Role == UserRole.SuperAdmin;
+                var licenseAppLicenseInfo = userInfo.AppLicenseInfos
+                    ?.FirstOrDefault(f => f.LicensePermissionTemplateInfoId.Equals(templateInfoId));
+                var maxLicenseCodeCount = licenseAppLicenseInfo
+                    ?.MaxLicenseCodeCount ?? 1;
+
+
+                if (maxClientCount > maxLicenseCodeCount) {
+                    return new KeyValuePair<bool, object>(false, "授权数量超过可配置上限");
+                }
+
+                var activatedClientCount = userInfo.LicenseCodeInfos?.Where(w => w.LicensePermissionTemplateInfoId.Equals(templateInfoId))
+                    ?.Sum(s => s.ActivatedClientCount);
+                if (activatedClientCount > maxClientCount) {
+                    return new KeyValuePair<bool, object>(false, "修改数量不能小于已激活数量");
+                }
+
             }
+
             var (key, value) = await _licenseCodeRepository.FirstDetails(f => f.UserInfo != null &&
                 f.LicenseCode.Equals(licenseCode) &&
                 (f.UserInfo.UserCode.Equals(userCode) ||

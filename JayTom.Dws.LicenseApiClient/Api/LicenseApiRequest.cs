@@ -979,7 +979,7 @@ namespace JayTom.Dws.LicenseApiClient.Api {
 
         public async Task<KeyValuePair<bool, object>> CreateLicenseCode(long templateInfoId, int maxClientCount,
             DateTime expirationDate, string clientName,
-            string userCode,
+            string? userCode,
             CancellationToken token) {
             var invokeAsync = await _jsRuntime.InvokeAsync<string>("sessionStorage.getItem", token, "token");
             if (!string.IsNullOrEmpty(invokeAsync)) {
@@ -1505,6 +1505,10 @@ namespace JayTom.Dws.LicenseApiClient.Api {
             else {
                 return new KeyValuePair<bool, object>(false, "用户未登录");
             }
+        }
+
+        public async Task LogOut(CancellationToken cancellationToken) {
+            await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", cancellationToken, "token");
         }
 
         public StreamContent? ImageToStreamContent(Image image, string paramName, string fileName) {
