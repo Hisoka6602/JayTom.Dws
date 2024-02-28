@@ -584,7 +584,8 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                                       new MvCodeReader.
                                           MV_CODEREADER_RESULT_BCR_EX2());
                                     //返回条码
-                                    var localTime = DateTimeOffset.Now.ToLocalTime();
+                                    var scanTime = DateTime.Now;
+                                    var localTime = new DateTimeOffset(scanTime).ToLocalTime();
                                     var timestamp = localTime.ToUnixTimeMilliseconds();
                                     if (stBcrResultEx2.nCodeNum > 0) {
                                         //画区域
@@ -614,7 +615,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                                                 ?.TrimEnd(nullChars);
                                             var validateData = _barCodeFilterContainer.ValidateData(new BarCodeFilterInfo() {
                                                 BarCode = string.IsNullOrWhiteSpace(barcode) ? "NoRead" : barcode,
-                                                ScanTime = DateTime.Now
+                                                ScanTime = scanTime
                                             });
                                             if (validateData) {
                                                 if (stBcrResultEx2.stBcrInfoEx2 is not null &&
@@ -638,7 +639,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                                                         CodeId = stBcrResultEx2.stBcrInfoEx2[i].nSubPackageId.ToString(),
                                                         Len = (int)stBcrResultEx2.stBcrInfoEx2[i].nLen,
                                                         CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
-                                                        ScanTime = DateTime.Now,
+                                                        ScanTime = scanTime,
                                                         AreaCoords = Enumerable.Range(0, 4).Select(s => {
                                                             if (bmp is { Size: { Width: > 0, Height: > 0 } } &&
                                                                 stFrameInfoEx2 is { nWidth: > 0, nHeight: > 0 } &&

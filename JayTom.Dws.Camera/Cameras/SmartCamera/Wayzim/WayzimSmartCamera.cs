@@ -156,7 +156,8 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
         private async void ReaultCallBack(ResultInfoStruct infostruct, object tag) {
             Bitmap? bitmap = null;
             Image? thumbnailImage = null;
-            var localTime = DateTimeOffset.Now.ToLocalTime();
+            var scanTime = DateTime.Now;
+            var localTime = new DateTimeOffset(scanTime).ToLocalTime();
             var timestamp = localTime.ToUnixTimeMilliseconds();
             //解析图片
             if (infostruct.ImageInfo is { Size: > 0, ImageType: ImageTypes.JPEG }) {
@@ -188,7 +189,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
                     //过滤
                     var validateData = _barCodeFilterContainer.ValidateData(new BarCodeFilterInfo() {
                         BarCode = string.IsNullOrWhiteSpace(codeInfo.Code) ? "NoRead" : codeInfo.Code,
-                        ScanTime = DateTime.Now
+                        ScanTime = scanTime
                     });
                     if (validateData) {
                         //返回条码
@@ -198,7 +199,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
                             Image = bitmap,
                             ThumbImage = (Bitmap?)thumbnailImage,
                             CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
-                            ScanTime = DateTime.Now,
+                            ScanTime = scanTime,
                             AreaCoords = ConvertPoint(codeInfo)
                         });
                     }
@@ -212,7 +213,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
                     Image = bitmap,
                     ThumbImage = (Bitmap?)thumbnailImage,
                     CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
-                    ScanTime = DateTime.Now
+                    ScanTime = scanTime
                 });
             }
             if (IsRealtimeImageEnabled) {

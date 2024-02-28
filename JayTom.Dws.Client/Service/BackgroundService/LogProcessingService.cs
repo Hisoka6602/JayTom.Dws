@@ -51,6 +51,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private ConcurrentQueue<OcrLogInfoModel> _ocrLogItems = new();
         private ConcurrentQueue<FtpLogInfoModel> _ftpLogItems = new();
         private ConcurrentQueue<LogCleaningLogInfoModel> _logCleaningLogItems = new();
+        private static bool _isWindowsClose;
 
         //LogCleaningLogInfoModel
         public LogProcessingService(IAppLogRepository appLogRepository,
@@ -182,6 +183,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     //添加
 
                     _logCleaningLogItems.Enqueue(model);
+                }
+            });
+            EventAggregator.Instance.Subscribe<WindowsAction>(async item => {
+                if (item is WindowsAction { Type: WindowsActionType.Close }) {
+                    _isWindowsClose = true;
                 }
             });
             _deviceService.BarcodeScanned += delegate (object? sender, BarcodeReadEventArgs args) {
@@ -331,7 +337,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
-            while (!stoppingToken.IsCancellationRequested) {
+            while (!stoppingToken.IsCancellationRequested && !_isWindowsClose) {
                 //异常日志
                 var isException = _exceptionItems.TryDequeue(out var exception);
                 if (isException && exception is not null) {

@@ -301,8 +301,9 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
         private async void GrabResultDecode(IGrabbedRawData grabbedRawData) {
             await Task.Yield();
             try {
-                var localTime = DateTimeOffset.Now.ToLocalTime();
-                long timestamp = localTime.ToUnixTimeMilliseconds();
+                var scanTime = DateTime.Now;
+                var localTime = new DateTimeOffset(scanTime).ToLocalTime();
+                var timestamp = localTime.ToUnixTimeMilliseconds();
                 var barcodeInfo = new ConcurrentQueue<DaHuaBarcodeInfo>();
                 ConcurrentDictionary<uint, List<string>> chunkDataInfos = new();
                 var chunkData = grabbedRawData.ChunkData;
@@ -358,7 +359,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
                             //过滤
                             var validateData = _barCodeFilterContainer.ValidateData(new BarCodeFilterInfo() {
                                 BarCode = string.IsNullOrWhiteSpace(daHuaBarcodeInfo.BarCode) ? "NoRead" : daHuaBarcodeInfo.BarCode,
-                                ScanTime = DateTime.Now
+                                ScanTime = scanTime
                             });
                             if (validateData) {
                                 barcodeInfo.Enqueue(daHuaBarcodeInfo);
@@ -392,7 +393,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
                             Image = bitmap,
                             ThumbImage = (Bitmap?)thumbnailImage,
                             CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
-                            ScanTime = DateTime.Now
+                            ScanTime = scanTime
                         });
                     }
                 }
@@ -406,7 +407,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
                                 Image = bitmap,
                                 ThumbImage = (Bitmap?)thumbnailImage,
                                 CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
-                                ScanTime = DateTime.Now,
+                                ScanTime = scanTime,
                                 AreaCoords = barcode.BarcodeRegionCoordinates
                             });
                         }

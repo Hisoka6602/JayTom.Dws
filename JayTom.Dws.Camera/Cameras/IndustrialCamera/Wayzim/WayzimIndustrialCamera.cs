@@ -176,7 +176,8 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim {
                             await Task.Delay(100);
 
                             if (this.Info is not null) {
-                                var localTime = DateTimeOffset.Now.ToLocalTime();
+                                var scanTime = DateTime.Now;
+                                var localTime = new DateTimeOffset(scanTime).ToLocalTime();
                                 var timestamp = localTime.ToUnixTimeMilliseconds();
                                 int status = ICAMAPI.ICAM_FetchFrame(this.Info.Id, ref img, 300);
                                 if (status == 0) {
@@ -209,7 +210,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim {
                                                     if (!string.IsNullOrWhiteSpace(barCode)) {
                                                         var validateData = _barCodeFilterContainer.ValidateData(new BarCodeFilterInfo() {
                                                             BarCode = string.IsNullOrWhiteSpace(barCode) ? "NoRead" : barCode,
-                                                            ScanTime = DateTime.Now
+                                                            ScanTime = scanTime
                                                         });
                                                         if (validateData) {
                                                             //返回条码
@@ -219,7 +220,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim {
                                                                 Image = bitmap,
                                                                 ThumbImage = (Bitmap?)thumbnailImage,
                                                                 CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
-                                                                ScanTime = DateTime.Now,
+                                                                ScanTime = scanTime,
                                                                 AreaCoords = ConvertPoint(codeInfo)
                                                             });
                                                         }

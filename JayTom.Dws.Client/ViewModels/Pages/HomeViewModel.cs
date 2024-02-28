@@ -467,7 +467,16 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     _cancellationTokenSource.Cancel();
                 }
             });
-
+            //程序启停
+            EventAggregator.Instance.Subscribe<ApplicationStatusChanged>(item => {
+                if (item is ApplicationStatusChanged info) {
+                    EventAggregator.Instance.Publish(new AppLogInfoModel {
+                        CreateTime = DateTime.Now,
+                        Message = $"程序{(info.Status == ApplicationStatus.Start ? "启动" : "停止")}",
+                        Type = LogType.Information
+                    });
+                }
+            });
             if (!_isLoaded) {
                 _isLoaded = true;
                 new TaskFactory().StartNew(async () => {
@@ -890,10 +899,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                             var (key, value) = await _deviceService.Start();
                             await _sortingService.Start();
                             //提示
-                            EventAggregator.Instance.Publish(new AppLogInfoModel {
-                                CreateTime = DateTime.Now,
-                                Message = "程序启动",
-                                Type = LogType.Information
+                            //ApplicationStatusChanged
+                            EventAggregator.Instance.Publish(new ApplicationStatusChanged {
+                                Status = ApplicationStatus.Start
                             });
                         }
                         else {
@@ -903,10 +911,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                             var (key, value) = await _deviceService.Stop();
                             await _sortingService.Stop();
                             //提示
-                            EventAggregator.Instance.Publish(new AppLogInfoModel {
-                                CreateTime = DateTime.Now,
-                                Message = "程序停止",
-                                Type = LogType.Information
+                            EventAggregator.Instance.Publish(new ApplicationStatusChanged {
+                                Status = ApplicationStatus.Stop
                             });
                         }
 

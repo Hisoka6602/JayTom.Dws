@@ -16,6 +16,9 @@ namespace JayTom.Dws.Client.Converters.CreatePackageSettingConverters {
                 if (parameter?.ToString()?.Equals("UseOneBarcode") == true && method == BarcodeHandlingMethodEnum.UseOneBarcode) {
                     return true;
                 }
+                else if (parameter?.ToString()?.Equals("UseMultipleBarcodes") == true && method == BarcodeHandlingMethodEnum.UseMultipleBarcodes) {
+                    return true;
+                }
                 else if (parameter?.ToString()?.Equals("MergeBarcodes") == true && method == BarcodeHandlingMethodEnum.MergeBarcodes) {
                     return true;
                 }
@@ -28,6 +31,9 @@ namespace JayTom.Dws.Client.Converters.CreatePackageSettingConverters {
             if (value is bool boolValue) {
                 if (parameter?.ToString()?.Equals("UseOneBarcode") == true && boolValue) {
                     return BarcodeHandlingMethodEnum.UseOneBarcode;
+                }
+                else if (parameter?.ToString()?.Equals("UseMultipleBarcodes") == true && boolValue) {
+                    return BarcodeHandlingMethodEnum.UseMultipleBarcodes;
                 }
                 else if (parameter?.ToString()?.Equals("MergeBarcodes") == true && boolValue) {
                     return BarcodeHandlingMethodEnum.MergeBarcodes;

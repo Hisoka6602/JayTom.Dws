@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 
 namespace JayTom.Dws.Domain.Dto {
-
     public class CreatePackageSettingsDto {
 
         /// <summary>
@@ -66,11 +65,15 @@ namespace JayTom.Dws.Domain.Dto {
         /// 使用一个
         /// </summary>
         UseOneBarcode,
-
+        /// <summary>
+        /// 使用多个条码
+        /// </summary>
+        UseMultipleBarcodes,
         /// <summary>
         /// 合并条码
         /// </summary>
-        MergeBarcodes
+        MergeBarcodes,
+        //使用多个条码
     }
 
     [Flags]

@@ -24,6 +24,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private ImageSettingsDto? _imageSettingsDto;
         private OcrSettingsDto? _ocrSettingsDto;
         private ConcurrentQueue<Bitmap> _cropImageQueue = new();
+        private static bool _isWindowsClose;
 
         public SaveImageBackgroundService(IImageStorageService imageStorageService,
             IConfigRepository configRepository, IDeviceService deviceService) {
@@ -75,6 +76,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     }
                 }
             };
+            EventAggregator.Instance.Subscribe<WindowsAction>(async item => {
+                if (item is WindowsAction { Type: WindowsActionType.Close }) {
+                    _isWindowsClose = true;
+                }
+            });
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
@@ -101,7 +107,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 }
                 _semaphore.Release();
             }
-            while (!stoppingToken.IsCancellationRequested) {
+            while (!stoppingToken.IsCancellationRequested && !_isWindowsClose) {
                 var tryDequeue = _imageItems.TryDequeue(out var messageInfo);
                 if (tryDequeue && messageInfo is not null) {
                     if (messageInfo.Image is not null) {

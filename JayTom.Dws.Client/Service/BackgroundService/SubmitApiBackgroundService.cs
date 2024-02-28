@@ -44,6 +44,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         #region 非通用版本变量(临时)
 
         private static string _sunnenApiPackage = string.Empty;
+        private static bool _isWindowsClose;
 
         #endregion 非通用版本变量(临时)
 
@@ -258,12 +259,17 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     ScanTime = args.ScanTime,
                 });
             };
+            EventAggregator.Instance.Subscribe<WindowsAction>(async item => {
+                if (item is WindowsAction { Type: WindowsActionType.Close }) {
+                    _isWindowsClose = true;
+                }
+            });
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
             //读参数
             await ReadDefaultConfig();
-            while (!stoppingToken.IsCancellationRequested) {
+            while (!stoppingToken.IsCancellationRequested && !_isWindowsClose) {
                 //取出
                 //需要判断用户选择的接口和参数设置
                 var tryDequeue = _submitItems.TryDequeue(out var info);

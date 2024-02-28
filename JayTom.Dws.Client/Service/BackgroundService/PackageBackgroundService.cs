@@ -1,4 +1,5 @@
 ﻿using System;
+using DryIoc;
 using System.IO;
 using System.Linq;
 using System.Drawing;
@@ -40,6 +41,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private CommunicationsSettingsDto _communicationsSettingsDto = new();
         private VolumeSettingsDto _volumeSettingsDto = new();
         private WeightSettingsDto _weightSettingsDto = new();
+        private CreatePackageSettingsDto _createPackageSettingsDto = new();
         private List<ICamera> _cameras = new();
         private List<PanoramaCameraConfigInfoModel> _panoramaCameras = new();
         private ConcurrentQueue<CameraImageInfo> _panoramaImageItems = new();
@@ -47,6 +49,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private ConcurrentQueue<PackageInfo> _packageInfos = new();
         private ConcurrentQueue<WeightInfoModel> _weightQueueInfos = new();
         private ConcurrentQueue<VolumeInfoModel> _volumeQueueInfos = new();
+        private static bool _isWindowsClose;
 
         public PackageBackgroundService(IDeviceService deviceService,
             IResultOutputService resultOutputService,
@@ -82,10 +85,28 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 });
             };
             //扫码
-            _deviceService.BarcodeScanned += async delegate (object? sender, BarcodeReadEventArgs args) {
-                if (_communicationsSettingsDto.Type == CommunicationsType.None ||
-                    !_communicationsSettingsDto.DeviceControlSettingsInfo.IsUseCreatePackageByDevice) {
-                    var packageInfo = new PackageInfo() {
+            _deviceService.BarcodeScanned += delegate (object? sender, BarcodeReadEventArgs args) {
+                //验证多条码
+
+                var info = _packageInfos.OrderBy(o => o.CreateTime).FirstOrDefault(f => f.BarCodeInfo != null &&
+                    f.BarCodeInfo.ScanTime.Equals(
+                        args.ScanTime) &&
+                    f.BarCodeInfo.CameraSerialNumber.Equals(
+                        args.CameraSerialNumber));
+                if (info?.BarCodeInfo != null && _createPackageSettingsDto.BarcodeHandlingMethod != BarcodeHandlingMethodEnum.UseMultipleBarcodes) {
+                    if (_createPackageSettingsDto.BarcodeHandlingMethod == BarcodeHandlingMethodEnum.MergeBarcodes) {
+                        info.BarCodeInfo.Barcode += $"_{args.Barcode}";
+                    }
+                    return;
+                }
+                var packageInfo =
+                    _createPackageSettingsDto.BarcodeQueueOrder == BarcodeQueueOrderEnum.TimeAscending ?
+                        _packageInfos.OrderBy(o => o.CreateTime).FirstOrDefault(f => f.BarCodeInfo == null) :
+                        _packageInfos.OrderBy(o => o.CreateTime).LastOrDefault(f => f.BarCodeInfo == null);
+                if ((_createPackageSettingsDto.PackageCreationMethods & PackageCreationMethodsEnum.ScanBarcodeCamera)
+                    == PackageCreationMethodsEnum.ScanBarcodeCamera && packageInfo is null) {
+                    //支持扫码创建
+                    packageInfo = new PackageInfo() {
                         Guid = args.Timestamp,
                         BarCodeInfo = new BarCodeInfoModel() {
                             Barcode = args.Barcode,
@@ -95,160 +116,68 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         },
                         Image = args.Image,
                     };
-                    //触发全景拍照
-                    var list = _panoramaCameras?.Where(w => w.SelectedCameraSerialNumber.Equals(args.CameraSerialNumber))?
-                        .Select(s => s.SerialNumber)?.ToList();
-                    if (list?.Any() != true) {
-                        list = _panoramaCameras?.Where(w => w.SelectedCameraSerialNumber.Equals(string.Empty))?
-                            .Select(s => s.SerialNumber)?.ToList();
-                    }
-                    var cameras = _cameras.Where(w =>
-                        list.Contains(w.Info.SerialNumber) && w.BindingType == CameraBindingType.PanoramaCamera)?.ToList();
-                    foreach (var c in (cameras ?? new List<ICamera>()).Where(c => _deviceService.RunningStatus)) {
-                        await c.TakePhotoAsync(args.Barcode, args.Timestamp);
-                    }
-                    //填充全景相机数量
-                    packageInfo.PanoramaCameraImageInfo = cameras?.Select(s => new PanoramaCameraImageInfo {
-                        CameraSerialNumber = s.Info?.SerialNumber ?? string.Empty,
-                    })?.ToList()
-                                                          ?? new List<PanoramaCameraImageInfo>();
-
-                    //判断重量和体积队列
-                    var tryDequeue = false;
-                    do {
-                        tryDequeue = _volumeQueueInfos.TryDequeue(out var volume);
-                        if (tryDequeue && volume is not null &&
-                            DateTime.Now.Subtract(volume.CreateTime).TotalMilliseconds < 500) {
-                            packageInfo.VolumeInfo = volume;
-                            break;
-                        }
-                    } while (tryDequeue && _volumeQueueInfos.Count > 0);
-
-                    do {
-                        tryDequeue = _weightQueueInfos.TryDequeue(out var weightInfo);
-                        if (tryDequeue && weightInfo is not null &&
-                            DateTime.Now.Subtract(weightInfo.CreateTime).TotalMilliseconds < 500) {
-                            packageInfo.WeightInfo = weightInfo;
-                            break;
-                        }
-                    } while (tryDequeue && _weightQueueInfos.Count > 0);
-
-                    _packageInfos.Enqueue(packageInfo);
                     EventAggregator.Instance.Publish(new TriggerPositionEvent() {
                         IsSuccess = true,
-                        TriggerPosition = TriggerPositionEnum.PackageTrigger
+                        TriggerPosition = TriggerPositionEnum.PackageTrigger,
+                        PackageInfo = packageInfo
                     });
-
-                    //获取外部数据
-                    //体积
-                    if (_externalDataSource.IsVolumeInput) {
-                        await _externalDataService.GetVolume(args.Barcode);
-                    }
-                    else {
-                        //触发体积测量
-                        var volumeCameras = _cameras?.Where(w => w.BindingType == CameraBindingType.VolumeCamera)?.ToList();
-                        if (volumeCameras?.Any() == true) {
-                            foreach (var volumeCamera in volumeCameras) {
-                                if (volumeCamera is IVolumeCamera vCamera) {
-                                    await vCamera.TriggerMeasurementPhotoAsync(args.Barcode, args.Timestamp, 100);
-                                }
-                            }
-                        }
-                    }
                 }
                 else {
-                    //var info = _packageInfos.OrderBy(o => o.CreateTime).LastOrDefault(f => f.BarCodeInfo == null && DateTime.Now.Subtract(f.CreateTime).TotalMicroseconds > 100);
-                    var info = _packageInfos.OrderBy(o => o.CreateTime).FirstOrDefault(f => f.BarCodeInfo == null);
-                    if (info != null) {
-                        info.BarCodeInfo = new BarCodeInfoModel() {
+                    //不支持扫码创建
+                    //_packageInfos.OrderBy(o => o.CreateTime).LastOrDefault(f => f.BarCodeInfo == null && DateTime.Now.Subtract(f.CreateTime).TotalMicroseconds > 100);
+
+                    if (packageInfo is not null) {
+                        packageInfo.BarCodeInfo = new BarCodeInfoModel() {
                             Barcode = args.Barcode,
                             CameraSerialNumber = args.CameraSerialNumber,
                             ScanTime = args.ScanTime,
                             Source = SourceType.Camera
                         };
-                        info.Image = args.Image;
+                        packageInfo.Image = args.Image;
                     }
                 }
             };
             //空包裹
-            _deviceService.NotBarcodeHitEvent += async delegate (object? sender, BarcodeReadEventArgs args) {
-                //return;
-                await Task.Delay(100);
-                //等200ms,如果仍没有创建包裹则由空条码创建创建(有危险，看实际应用调整)
-                var orDefault = _packageInfos.OrderBy(o => o.CreateTime)
-                    .FirstOrDefault(f => DateTime.Now.Subtract(f.CreateTime).TotalMilliseconds < 500);
-                if (orDefault is null) {
-                    if (_communicationsSettingsDto.Type == CommunicationsType.None ||
-                        !_communicationsSettingsDto.DeviceControlSettingsInfo.IsUseCreatePackageByDevice) {
-                        var packageInfo = new PackageInfo() {
-                            Guid = args.Timestamp,
-                            BarCodeInfo = new BarCodeInfoModel() {
-                                Barcode = args.Barcode,
-                                CameraSerialNumber = args.CameraSerialNumber,
-                                ScanTime = args.ScanTime,
-                                Source = SourceType.Camera
-                            },
-                            Image = args.Image,
+            _deviceService.NotBarcodeHitEvent += delegate (object? sender, BarcodeReadEventArgs args) {
+                if (!_createPackageSettingsDto.IsUseNoRead) {
+                    return;
+                }
+                var packageInfo =
+                    _createPackageSettingsDto.BarcodeQueueOrder == BarcodeQueueOrderEnum.TimeAscending ?
+                        _packageInfos.OrderBy(o => o.CreateTime).FirstOrDefault(f => f.BarCodeInfo == null) :
+                        _packageInfos.OrderBy(o => o.CreateTime).LastOrDefault(f => f.BarCodeInfo == null);
+                if ((_createPackageSettingsDto.PackageCreationMethods & PackageCreationMethodsEnum.ScanBarcodeCamera) ==
+                    PackageCreationMethodsEnum.ScanBarcodeCamera && packageInfo is null) {
+                    //扫码相机创建
+
+                    packageInfo = new PackageInfo() {
+                        Guid = args.Timestamp,
+                        BarCodeInfo = new BarCodeInfoModel() {
+                            Barcode = args.Barcode,
+                            CameraSerialNumber = args.CameraSerialNumber,
+                            ScanTime = args.ScanTime,
+                            Source = SourceType.Camera
+                        },
+                        Image = args.Image,
+                    };
+                    EventAggregator.Instance.Publish(new TriggerPositionEvent() {
+                        IsSuccess = true,
+                        TriggerPosition = TriggerPositionEnum.PackageTrigger,
+                        PackageInfo = packageInfo
+                    });
+                }
+                else {
+                    //不支持扫码创建
+                    //_packageInfos.OrderBy(o => o.CreateTime).LastOrDefault(f => f.BarCodeInfo == null && DateTime.Now.Subtract(f.CreateTime).TotalMicroseconds > 100);
+
+                    if (packageInfo is not null) {
+                        packageInfo.BarCodeInfo = new BarCodeInfoModel() {
+                            Barcode = args.Barcode,
+                            CameraSerialNumber = args.CameraSerialNumber,
+                            ScanTime = args.ScanTime,
+                            Source = SourceType.Camera
                         };
-                        //触发全景拍照
-                        var list = _panoramaCameras?.Where(w => w.SelectedCameraSerialNumber.Equals(args.CameraSerialNumber))?
-                            .Select(s => s.SerialNumber)?.ToList();
-                        if (list?.Any() != true) {
-                            list = _panoramaCameras?.Where(w => w.SelectedCameraSerialNumber.Equals(string.Empty))?
-                                .Select(s => s.SerialNumber)?.ToList();
-                        }
-                        var cameras = _cameras.Where(w =>
-                            list.Contains(w.Info.SerialNumber) && w.BindingType == CameraBindingType.PanoramaCamera)?.ToList();
-                        foreach (var c in (cameras ?? new List<ICamera>()).Where(c => _deviceService.RunningStatus)) {
-                            await c.TakePhotoAsync(args.Barcode, args.Timestamp);
-                        }
-                        //填充全景相机数量
-                        packageInfo.PanoramaCameraImageInfo = cameras?.Select(s => new PanoramaCameraImageInfo {
-                            CameraSerialNumber = s.Info?.SerialNumber ?? string.Empty,
-                        })?.ToList()
-                                                              ?? new List<PanoramaCameraImageInfo>();
-
-                        //判断重量和体积队列
-                        var tryDequeue = false;
-                        do {
-                            tryDequeue = _volumeQueueInfos.TryDequeue(out var volumeInfo);
-                            if (tryDequeue && volumeInfo is not null &&
-                                DateTime.Now.Subtract(volumeInfo.CreateTime).TotalMilliseconds < 500) {
-                                packageInfo.VolumeInfo = volumeInfo;
-                                break;
-                            }
-                        } while (tryDequeue && _volumeQueueInfos.Count > 0);
-
-                        do {
-                            tryDequeue = _weightQueueInfos.TryDequeue(out var weightInfo);
-                            if (tryDequeue && weightInfo is not null &&
-                                DateTime.Now.Subtract(weightInfo.CreateTime).TotalMilliseconds < 500) {
-                                packageInfo.WeightInfo = weightInfo;
-                                break;
-                            }
-                        } while (tryDequeue && _weightQueueInfos.Count > 0);
-
-                        _packageInfos.Enqueue(packageInfo);
-                        EventAggregator.Instance.Publish(new TriggerPositionEvent() {
-                            IsSuccess = true,
-                            TriggerPosition = TriggerPositionEnum.PackageTrigger
-                        });
-                    }
-                    else {
-                        var info = _packageInfos.OrderBy(o => o.CreateTime).FirstOrDefault(f => f.BarCodeInfo == null);
-                        if (info != null) {
-                            info.BarCodeInfo = new BarCodeInfoModel() {
-                                Barcode = args.Barcode,
-                                CameraSerialNumber = args.CameraSerialNumber,
-                                ScanTime = args.ScanTime,
-                            };
-                            info.Image = args.Image;
-                        }
-                    }
-                    //获取外部数据
-                    //体积
-                    if (_externalDataSource.IsVolumeInput) {
-                        await _externalDataService.GetVolume(args.Barcode);
+                        packageInfo.Image = args.Image;
                     }
                 }
             };
@@ -263,50 +192,101 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 });
             };
             //体积相机
-            _deviceService.VolumeCaptured += async delegate (object? sender, VolumeCapturedEventArgs args) {
+            _deviceService.VolumeCaptured += delegate (object? sender, VolumeCapturedEventArgs args) {
                 //填充长宽高
-                var info = _packageInfos.FirstOrDefault(f => f.VolumeInfo == null);
-                //增加体积单位转换
-                if (info is not null) {
-                    info.VolumeInfo = new VolumeInfoModel() {
-                        CreateTime = args.Timestamp,
-                        FormattedHeight = args.Height - info.LengthToDeduct,
-                        FormattedWidth = args.Width - info.WidthToDeduct,
-                        FormattedLength = args.Length - info.LengthToDeduct,
-                        FormattedVolume = args.Volume - info.VolumeToDeduct,
-                        SourceType = SourceType.Camera,
+                var packageInfo =
+                    _createPackageSettingsDto.BarcodeQueueOrder == BarcodeQueueOrderEnum.TimeAscending ?
+                        _packageInfos.OrderBy(o => o.CreateTime).FirstOrDefault(f => f.VolumeInfo == null) :
+                        _packageInfos.OrderBy(o => o.CreateTime).LastOrDefault(f => f.VolumeInfo == null);
+                if ((_createPackageSettingsDto.PackageCreationMethods & PackageCreationMethodsEnum.VolumeInput) ==
+                    PackageCreationMethodsEnum.VolumeInput && packageInfo is null) {
+                    packageInfo = new PackageInfo() {
+                        Guid = new DateTimeOffset(args.Timestamp).ToUnixTimeMilliseconds(),
+                        VolumeInfo = new VolumeInfoModel() {
+                            CreateTime = args.Timestamp,
+                            FormattedHeight = args.Height,
+                            FormattedWidth = args.Width,
+                            FormattedLength = args.Length,
+                            FormattedVolume = args.Volume,
+                            SourceType = SourceType.Camera,
+                        },
                     };
+
+                    EventAggregator.Instance.Publish(new TriggerPositionEvent() {
+                        IsSuccess = true,
+                        TriggerPosition = TriggerPositionEnum.PackageTrigger,
+                        PackageInfo = packageInfo
+                    });
                 }
                 else {
-                    _volumeQueueInfos.Enqueue(new VolumeInfoModel {
-                        CreateTime = args.Timestamp,
-                        FormattedHeight = args.Height,
-                        FormattedWidth = args.Width,
-                        FormattedLength = args.Length,
-                        FormattedVolume = args.Volume,
-                        SourceType = SourceType.Camera,
-                    });
+                    //判断体积创建包裹
+
+                    //增加体积单位转换
+                    if (packageInfo is not null) {
+                        packageInfo.VolumeInfo = new VolumeInfoModel() {
+                            CreateTime = args.Timestamp,
+                            FormattedHeight = args.Height - packageInfo.LengthToDeduct,
+                            FormattedWidth = args.Width - packageInfo.WidthToDeduct,
+                            FormattedLength = args.Length - packageInfo.LengthToDeduct,
+                            FormattedVolume = args.Volume - packageInfo.VolumeToDeduct,
+                            SourceType = SourceType.Camera,
+                        };
+                    }
+                    else {
+                        _volumeQueueInfos.Enqueue(new VolumeInfoModel {
+                            CreateTime = args.Timestamp,
+                            FormattedHeight = args.Height,
+                            FormattedWidth = args.Width,
+                            FormattedLength = args.Length,
+                            FormattedVolume = args.Volume,
+                            SourceType = SourceType.Camera,
+                        });
+                    }
                 }
             };
             //称重
             _deviceService.StableWeight += async delegate (object? sender, StableWeightEventArgs args) {
-                var info = _packageInfos.OrderBy(o => o.CreateTime).FirstOrDefault(f => !f.IsCompleted && f.WeightInfo is null);
-                if (info is not null) {
-                    info.WeightInfo = new WeightInfoModel {
-                        CreateTime = DateTime.Now,
-                        FormattedWeight = args.Weight,
-                        SourceType = SourceType.SerialPort,
-                        WeighingMode = WeighingMode.Static
-                    };
-                }
-                else {
-                    if (_weightSettingsDto.Mode == WeightMode.Dynamic) {
-                        _weightQueueInfos.Enqueue(new WeightInfoModel {
+                var packageInfo =
+                    _createPackageSettingsDto.BarcodeQueueOrder == BarcodeQueueOrderEnum.TimeAscending ?
+                        _packageInfos.OrderBy(o => o.CreateTime).FirstOrDefault(f => f is { IsCompleted: false, WeightInfo: null }) :
+                        _packageInfos.OrderBy(o => o.CreateTime).LastOrDefault(f => f is { IsCompleted: false, WeightInfo: null });
+                if ((_createPackageSettingsDto.PackageCreationMethods & PackageCreationMethodsEnum.StableWeight) ==
+                    PackageCreationMethodsEnum.StableWeight && packageInfo is null) {
+                    //稳定重量创建
+                    packageInfo = new PackageInfo() {
+                        Guid = new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds(),
+                        WeightInfo = new WeightInfoModel {
                             CreateTime = DateTime.Now,
                             FormattedWeight = args.Weight,
                             SourceType = SourceType.SerialPort,
                             WeighingMode = WeighingMode.Static
-                        });
+                        }
+                    };
+
+                    EventAggregator.Instance.Publish(new TriggerPositionEvent() {
+                        IsSuccess = true,
+                        TriggerPosition = TriggerPositionEnum.PackageTrigger,
+                        PackageInfo = packageInfo
+                    });
+                }
+                else {
+                    if (packageInfo is not null) {
+                        packageInfo.WeightInfo = new WeightInfoModel {
+                            CreateTime = DateTime.Now,
+                            FormattedWeight = args.Weight,
+                            SourceType = SourceType.SerialPort,
+                            WeighingMode = WeighingMode.Static
+                        };
+                    }
+                    else {
+                        if (_weightSettingsDto.Mode == WeightMode.Dynamic) {
+                            _weightQueueInfos.Enqueue(new WeightInfoModel {
+                                CreateTime = DateTime.Now,
+                                FormattedWeight = args.Weight,
+                                SourceType = SourceType.SerialPort,
+                                WeighingMode = WeighingMode.Static
+                            });
+                        }
                     }
                 }
             };
@@ -317,9 +297,13 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             //外部全量数据
             _externalDataService.ContentInputReceived += async (sender, args) => {
                 var timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-                if (_communicationsSettingsDto.Type == CommunicationsType.None ||
-                    !_communicationsSettingsDto.DeviceControlSettingsInfo.IsUseCreatePackageByDevice) {
-                    var packageInfo = new PackageInfo() {
+                var packageInfo =
+                    _createPackageSettingsDto.BarcodeQueueOrder == BarcodeQueueOrderEnum.TimeAscending ?
+                        _packageInfos.OrderBy(o => o.CreateTime).FirstOrDefault(f => f.BarCodeInfo == null) :
+                        _packageInfos.OrderBy(o => o.CreateTime).LastOrDefault(f => f.BarCodeInfo == null);
+                if ((_createPackageSettingsDto.PackageCreationMethods & PackageCreationMethodsEnum.TcpInput) ==
+                    PackageCreationMethodsEnum.TcpInput && packageInfo is null) {
+                    packageInfo = new PackageInfo() {
                         Guid = timestamp,
                         BarCodeInfo = new BarCodeInfoModel() {
                             Barcode = args.Barcode,
@@ -345,70 +329,26 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         IsCreatedByLowerMachine = false,
                     };
 
-                    //触发全景拍照
-                    var enumerable = _cameras.Where(w => w.BindingType == CameraBindingType.PanoramaCamera);
-                    foreach (var c in enumerable) {
-                        if (c is IIndustrialCamera camera && _deviceService.RunningStatus) {
-                            await camera.TakePhotoAsync(args.Barcode, timestamp);
-                        }
-                    }
-                    packageInfo.PanoramaCameraImageInfo = enumerable?.Select(s => new PanoramaCameraImageInfo {
-                        CameraSerialNumber = s.Info?.SerialNumber ?? string.Empty,
-                    })?.ToList()
-                                                          ?? new List<PanoramaCameraImageInfo>();
-
-                    //判断重量和体积队列
-                    var tryDequeue = false;
-                    do {
-                        tryDequeue = _volumeQueueInfos.TryDequeue(out var volumeInfo);
-                        if (tryDequeue && volumeInfo is not null &&
-                            DateTime.Now.Subtract(volumeInfo.CreateTime).TotalMilliseconds < 500) {
-                            packageInfo.VolumeInfo = volumeInfo;
-                            break;
-                        }
-                    } while (tryDequeue && _volumeQueueInfos.Count > 0);
-
-                    do {
-                        tryDequeue = _weightQueueInfos.TryDequeue(out var weightInfo);
-                        if (tryDequeue && weightInfo is not null &&
-                            DateTime.Now.Subtract(weightInfo.CreateTime).TotalMilliseconds < 500) {
-                            packageInfo.WeightInfo = weightInfo;
-                            break;
-                        }
-                    } while (tryDequeue && _weightQueueInfos.Count > 0);
-                    _packageInfos.Enqueue(packageInfo);
-                    //获取外部数据
-                    //体积
-                    if (_externalDataSource.IsVolumeInput) {
-                        await _externalDataService.GetVolume(args.Barcode);
-                    }
-                    else {
-                        //触发体积测量
-                        var volumeCameras = _cameras?.Where(w => w.BindingType == CameraBindingType.VolumeCamera)?.ToList();
-                        if (volumeCameras?.Any() == true) {
-                            foreach (var volumeCamera in volumeCameras) {
-                                if (volumeCamera is IVolumeCamera vCamera) {
-                                    await vCamera.TriggerMeasurementPhotoAsync(args.Barcode, timestamp, 100);
-                                }
-                            }
-                        }
-                    }
+                    EventAggregator.Instance.Publish(new TriggerPositionEvent() {
+                        IsSuccess = true,
+                        TriggerPosition = TriggerPositionEnum.PackageTrigger,
+                        PackageInfo = packageInfo
+                    });
                 }
                 else {
-                    var info = _packageInfos.OrderBy(o => o.CreateTime).FirstOrDefault(f => f.BarCodeInfo == null);
-                    if (info != null) {
-                        info.BarCodeInfo = new BarCodeInfoModel() {
+                    if (packageInfo != null) {
+                        packageInfo.BarCodeInfo = new BarCodeInfoModel() {
                             Barcode = args.Barcode,
                             ScanTime = DateTime.Now,
                             Source = SourceType.Input,
                         };
-                        info.WeightInfo = new WeightInfoModel() {
+                        packageInfo.WeightInfo = new WeightInfoModel() {
                             CreateTime = DateTime.Now,
                             FormattedWeight = args.Weight,
                             SourceType = SourceType.Input,
                             OriginalText = args.SourceContent
                         };
-                        info.VolumeInfo = new VolumeInfoModel() {
+                        packageInfo.VolumeInfo = new VolumeInfoModel() {
                             CreateTime = DateTime.Now,
                             FormattedHeight = args.Height,
                             FormattedLength = args.Length,
@@ -418,36 +358,58 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             OriginalText = args.SourceContent
                         };
                     }
-                    //添加到队列
                 }
-                EventAggregator.Instance.Publish(new TriggerPositionEvent() {
-                    IsSuccess = true,
-                    TriggerPosition = TriggerPositionEnum.PackageTrigger
-                });
             };
             //输入体积
             _externalDataService.VolumeReceived += delegate (object? sender, ExternalVolumeInputEventArgs args) {
-                var info = _packageInfos.OrderBy(o => o.CreateTime).FirstOrDefault(f => f.VolumeInfo == null);
-                if (info is not null) {
-                    info.VolumeInfo = new VolumeInfoModel() {
-                        CreateTime = DateTime.Now,
-                        FormattedHeight = args.Height - info.LengthToDeduct,
-                        FormattedWidth = args.Width - info.WidthToDeduct,
-                        FormattedLength = args.Length - info.LengthToDeduct,
-                        FormattedVolume = args.Volume - info.VolumeToDeduct,
-                        SourceType = SourceType.Tcp,
+                var packageInfo =
+                    _createPackageSettingsDto.BarcodeQueueOrder == BarcodeQueueOrderEnum.TimeAscending ?
+                        _packageInfos.OrderBy(o => o.CreateTime).FirstOrDefault(f => f.VolumeInfo == null) :
+                        _packageInfos.OrderBy(o => o.CreateTime).LastOrDefault(f => f.VolumeInfo == null);
+
+                if ((_createPackageSettingsDto.PackageCreationMethods & PackageCreationMethodsEnum.VolumeInput) ==
+                    PackageCreationMethodsEnum.VolumeInput && packageInfo is null) {
+                    packageInfo = new PackageInfo() {
+                        Guid = new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds(),
+                        VolumeInfo = new VolumeInfoModel() {
+                            CreateTime = DateTime.Now,
+                            FormattedHeight = args.Height,
+                            FormattedWidth = args.Width,
+                            FormattedLength = args.Length,
+                            FormattedVolume = args.Volume,
+                            SourceType = SourceType.Tcp,
+                        },
                     };
-                }
-                else {
-                    _volumeQueueInfos.Enqueue(new VolumeInfoModel {
-                        CreateTime = DateTime.Now,
-                        FormattedHeight = args.Height,
-                        FormattedWidth = args.Width,
-                        FormattedLength = args.Length,
-                        FormattedVolume = args.Volume,
-                        SourceType = SourceType.Tcp,
+
+                    EventAggregator.Instance.Publish(new TriggerPositionEvent() {
+                        IsSuccess = true,
+                        TriggerPosition = TriggerPositionEnum.PackageTrigger,
+                        PackageInfo = packageInfo
                     });
                 }
+                else {
+                    if (packageInfo is not null) {
+                        packageInfo.VolumeInfo = new VolumeInfoModel() {
+                            CreateTime = DateTime.Now,
+                            FormattedHeight = args.Height - packageInfo.LengthToDeduct,
+                            FormattedWidth = args.Width - packageInfo.WidthToDeduct,
+                            FormattedLength = args.Length - packageInfo.LengthToDeduct,
+                            FormattedVolume = args.Volume - packageInfo.VolumeToDeduct,
+                            SourceType = SourceType.Tcp,
+                        };
+                    }
+                    else {
+                        _volumeQueueInfos.Enqueue(new VolumeInfoModel {
+                            CreateTime = DateTime.Now,
+                            FormattedHeight = args.Height,
+                            FormattedWidth = args.Width,
+                            FormattedLength = args.Length,
+                            FormattedVolume = args.Volume,
+                            SourceType = SourceType.Tcp,
+                        });
+                    }
+                }
+
                 EventAggregator.Instance.Publish(new VolumeLogInfoModel() {
                     Type = LogType.Information,
                     Message = $"获取体积信息:{args.Length},{args.Width},{args.Height}",
@@ -456,7 +418,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             };
             //下位机(创建包裹)
             _sortingService.CreatePackageEvent += delegate (object? sender, PackageInstructionEventArgs args) {
-                if (_communicationsSettingsDto.Protocol == CommunicationProtocol.Wxkc) {
+                if ((_createPackageSettingsDto.PackageCreationMethods & PackageCreationMethodsEnum.LowerMachineCreation) ==
+                    PackageCreationMethodsEnum.LowerMachineCreation) {
                     var tryParse = int.TryParse(args.Keyword, out var num);
                     if (tryParse) {
                         //创建包裹
@@ -465,13 +428,18 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             IsCreatedByLowerMachine = true,
                             PackageCreationInstruction = args.Instruction,
                         };
-                        _packageInfos.Enqueue(packageInfo);
+
+                        EventAggregator.Instance.Publish(new TriggerPositionEvent() {
+                            IsSuccess = true,
+                            TriggerPosition = TriggerPositionEnum.PackageTrigger,
+                            PackageInfo = packageInfo
+                        });
                     }
                 }
-                //其他协议
             };
+            //下位机(移除包裹)
             _sortingService.RemovePackageEvent += delegate (object? sender, PackageInstructionEventArgs args) {
-                if (_communicationsSettingsDto.Protocol == CommunicationProtocol.Wxkc) {
+                if (_createPackageSettingsDto.PackageRemoveMethods == PackageRemoveMethodsEnum.LowerMachineRemoval) {
                     var tryParse = int.TryParse(args.Keyword, out var num);
                     if (tryParse) {
                         var count = _packageInfos.Count;
@@ -484,9 +452,9 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         }
                     }
                 }
+
                 //其他协议
             };
-            //下位机(移除包裹)
 
             //下位机(清空异常)
             _sortingService.ClearExceptionEvent += delegate (object? sender, string o) {
@@ -495,9 +463,14 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             //Ocr算法
             _deviceService.OcrContentRecognized += async delegate (object? sender, OcrResult args) {
                 //创建条码
-                if (_communicationsSettingsDto.Type == CommunicationsType.None ||
-                    !_communicationsSettingsDto.DeviceControlSettingsInfo.IsUseCreatePackageByDevice) {
-                    var packageInfo = new PackageInfo() {
+                var packageInfo =
+                    _createPackageSettingsDto.BarcodeQueueOrder == BarcodeQueueOrderEnum.TimeAscending ?
+                        _packageInfos.OrderBy(o => o.CreateTime).FirstOrDefault(f => f.BarCodeInfo == null) :
+                        _packageInfos.OrderBy(o => o.CreateTime).LastOrDefault(f => f.BarCodeInfo == null);
+                if ((_createPackageSettingsDto.PackageCreationMethods &
+                     PackageCreationMethodsEnum.OcrInfo) ==
+                    PackageCreationMethodsEnum.OcrInfo && packageInfo is null) {
+                    packageInfo = new PackageInfo() {
                         Guid = args.RecognitionTimestamp,
                         BarCodeInfo = new BarCodeInfoModel() {
                             Barcode = args.BarCode,
@@ -507,10 +480,10 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         },
                         Image = args.Image,
                     };
-                    _packageInfos.Enqueue(packageInfo);
                     EventAggregator.Instance.Publish(new TriggerPositionEvent() {
                         IsSuccess = true,
-                        TriggerPosition = TriggerPositionEnum.PackageTrigger
+                        TriggerPosition = TriggerPositionEnum.PackageTrigger,
+                        PackageInfo = packageInfo
                     });
                     EventAggregator.Instance.Publish(new PackageOcrInfo() {
                         BarCode = args.BarCode,
@@ -531,31 +504,29 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     });
                 }
                 else {
-                    var info = _packageInfos.OrderBy(o => o.CreateTime).FirstOrDefault(f => f.BarCodeInfo == null);
-                    if (info != null) {
-                        info.BarCodeInfo = new BarCodeInfoModel() {
+                    if (packageInfo != null) {
+                        packageInfo.BarCodeInfo = new BarCodeInfoModel() {
                             Barcode = args.BarCode,
                             ScanTime = DateTime.Now,
                             CameraSerialNumber = args.CameraSerialNumber,
                             Source = SourceType.Ocr
                         };
-                        info.Image = args.Image;
+                        packageInfo.Image = args.Image;
                     }
-                }
-                //获取外部数据
-                //体积
-                if (_externalDataSource.IsVolumeInput) {
-                    await _externalDataService.GetVolume(args.BarCode);
                 }
             };
             //手动输入条码
             EventAggregator.Instance.Subscribe<BarcodeTypeProviderEvent>(async barcodeInfo => {
                 if (barcodeInfo is BarcodeTypeProviderEvent args) {
                     var timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-
-                    if (_communicationsSettingsDto.Type == CommunicationsType.None ||
-                        !_communicationsSettingsDto.DeviceControlSettingsInfo.IsUseCreatePackageByDevice) {
-                        var packageInfo = new PackageInfo() {
+                    var packageInfo =
+                        _createPackageSettingsDto.BarcodeQueueOrder == BarcodeQueueOrderEnum.TimeAscending ?
+                            _packageInfos.OrderBy(o => o.CreateTime).FirstOrDefault(f => f.BarCodeInfo == null) :
+                            _packageInfos.OrderBy(o => o.CreateTime).LastOrDefault(f => f.BarCodeInfo == null);
+                    if ((_createPackageSettingsDto.PackageCreationMethods &
+                         PackageCreationMethodsEnum.ControlInput) ==
+                        PackageCreationMethodsEnum.ControlInput && packageInfo is null) {
+                        packageInfo = new PackageInfo() {
                             Guid = timestamp,
                             BarCodeInfo = new BarCodeInfoModel() {
                                 Barcode = args.Barcode,
@@ -569,30 +540,104 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             CreateTime = DateTime.Now,
                             IsCreatedByLowerMachine = false,
                         };
-
-                        //触发全景拍照
-                        var enumerable = _cameras.Where(w => w.BindingType == CameraBindingType.PanoramaCamera);
-                        foreach (var c in enumerable) {
-                            if (c is IIndustrialCamera camera && _deviceService.RunningStatus) {
-                                await camera.TakePhotoAsync(args.Barcode, timestamp);
-                            }
+                        EventAggregator.Instance.Publish(new TriggerPositionEvent() {
+                            IsSuccess = true,
+                            TriggerPosition = TriggerPositionEnum.PackageTrigger,
+                            PackageInfo = packageInfo
+                        });
+                    }
+                    else {
+                        if (packageInfo != null) {
+                            packageInfo.BarCodeInfo = new BarCodeInfoModel() {
+                                Barcode = args.Barcode,
+                                ScanTime = DateTime.Now,
+                                Source = SourceType.Input
+                            };
                         }
-                        packageInfo.PanoramaCameraImageInfo = enumerable?.Select(s => new PanoramaCameraImageInfo {
-                            CameraSerialNumber = s.Info?.SerialNumber ?? string.Empty,
-                        })?.ToList()
-                                                              ?? new List<PanoramaCameraImageInfo>();
-
-                        //判断重量和体积队列
-                        var tryDequeue = false;
-                        do {
-                            tryDequeue = _volumeQueueInfos.TryDequeue(out var volumeInfo);
-                            if (tryDequeue && volumeInfo is not null &&
-                                DateTime.Now.Subtract(volumeInfo.CreateTime).TotalMilliseconds < 500) {
-                                packageInfo.VolumeInfo = volumeInfo;
-                                break;
+                    }
+                }
+            });
+            //配置更改触发事件
+            EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async item => {
+                if (item is SettingsChangedEvent model) {
+                    switch (model.SettingsName) {
+                        case "CommunicationsSettings":
+                            try {
+                                var configInfoModel = await _configRepository.FirstOrDefault(f => f.ConfigName.Equals("CommunicationsSettings"));
+                                if (configInfoModel != null) {
+                                    _communicationsSettingsDto = JsonConvert.DeserializeObject<CommunicationsSettingsDto>(configInfoModel.Value) ?? new CommunicationsSettingsDto();
+                                }
                             }
-                        } while (tryDequeue && _volumeQueueInfos.Count > 0);
+                            catch (Exception e) {
+                                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
+                            }
 
+                            break;
+
+                        case "VolumeSettings":
+                            try {
+                                var configInfoModel = await _configRepository.FirstOrDefault(f => f.ConfigName.Equals("VolumeSettings"));
+                                if (configInfoModel != null) {
+                                    _volumeSettingsDto = JsonConvert.DeserializeObject<VolumeSettingsDto>(configInfoModel.Value) ?? new VolumeSettingsDto();
+                                }
+                            }
+                            catch (Exception e) {
+                                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
+                            }
+
+                            break;
+
+                        case "WeightSettings":
+                            try {
+                                var configInfoModel = await _configRepository.FirstOrDefault(f => f.ConfigName.Equals("WeightSettings"));
+                                if (configInfoModel != null) {
+                                    _weightSettingsDto = JsonConvert.DeserializeObject<WeightSettingsDto>(configInfoModel.Value) ?? new WeightSettingsDto();
+                                }
+                            }
+                            catch (Exception e) {
+                                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
+                            }
+
+                            break;
+
+                        case "CreatePackageSettings":
+                            try {
+                                var configInfoModel = await _configRepository.FirstOrDefault(f => f.ConfigName.Equals("CreatePackageSettings"));
+                                if (configInfoModel != null) {
+                                    _createPackageSettingsDto = JsonConvert.DeserializeObject<CreatePackageSettingsDto>(configInfoModel.Value) ?? new CreatePackageSettingsDto();
+                                }
+                            }
+                            catch (Exception e) {
+                                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
+                            }
+                            break;
+                    }
+                    //其他设置
+                }
+            });
+            //创建包裹后触发
+            EventAggregator.Instance.Subscribe<TriggerPositionEvent>(async item => {
+                if (item is TriggerPositionEvent { TriggerPosition: TriggerPositionEnum.PackageTrigger, PackageInfo: { BarCodeInfo: not null } packageInfo }) {
+                    //触发全景拍照
+                    var list = _panoramaCameras?.Where(w => w.SelectedCameraSerialNumber.Equals(packageInfo.BarCodeInfo.CameraSerialNumber))?
+                        .Select(s => s.SerialNumber)?.ToList();
+                    if (list?.Any() != true) {
+                        list = _panoramaCameras?.Where(w => w.SelectedCameraSerialNumber.Equals(string.Empty))?
+                            .Select(s => s.SerialNumber)?.ToList();
+                    }
+                    var cameras = _cameras.Where(w =>
+                        list?.Contains(w.Info?.SerialNumber ?? string.Empty) == true && w.BindingType == CameraBindingType.PanoramaCamera)?.ToList();
+                    foreach (var c in (cameras ?? new List<ICamera>()).Where(c => _deviceService.RunningStatus)) {
+                        await c.TakePhotoAsync(packageInfo.BarCodeInfo.Barcode, packageInfo.Guid);
+                    }
+                    //填充全景相机数量
+                    packageInfo.PanoramaCameraImageInfo = cameras?.Select(s => new PanoramaCameraImageInfo {
+                        CameraSerialNumber = s.Info?.SerialNumber ?? string.Empty,
+                    })?.ToList()
+                                                          ?? new List<PanoramaCameraImageInfo>();
+                    var tryDequeue = false;
+                    if (packageInfo.WeightInfo is null) {
+                        //判断重量队列
                         do {
                             tryDequeue = _weightQueueInfos.TryDequeue(out var weightInfo);
                             if (tryDequeue && weightInfo is not null &&
@@ -601,11 +646,26 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 break;
                             }
                         } while (tryDequeue && _weightQueueInfos.Count > 0);
-                        _packageInfos.Enqueue(packageInfo);
+                    }
+
+                    if (packageInfo.VolumeInfo is null) {
+                        //判断体积队列
+
+                        do {
+                            tryDequeue = _volumeQueueInfos.TryDequeue(out var volume);
+                            if (tryDequeue && volume is not null &&
+                                DateTime.Now.Subtract(volume.CreateTime).TotalMilliseconds < 500) {
+                                packageInfo.VolumeInfo = volume;
+                                break;
+                            }
+                        } while (tryDequeue && _volumeQueueInfos.Count > 0);
+                    }
+                    _packageInfos.Enqueue(packageInfo);
+                    if (packageInfo.VolumeInfo is null) {
                         //获取外部数据
                         //体积
                         if (_externalDataSource.IsVolumeInput) {
-                            await _externalDataService.GetVolume(args.Barcode);
+                            await _externalDataService.GetVolume(packageInfo.BarCodeInfo.Barcode);
                         }
                         else {
                             //触发体积测量
@@ -613,65 +673,25 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             if (volumeCameras?.Any() == true) {
                                 foreach (var volumeCamera in volumeCameras) {
                                     if (volumeCamera is IVolumeCamera vCamera) {
-                                        await vCamera.TriggerMeasurementPhotoAsync(args.Barcode, timestamp, 100);
+                                        await vCamera.TriggerMeasurementPhotoAsync(packageInfo.BarCodeInfo.Barcode, packageInfo.Guid, 100);
                                     }
                                 }
                             }
                         }
                     }
-                    else {
-                        var info = _packageInfos.OrderBy(o => o.CreateTime).FirstOrDefault(f => f.BarCodeInfo == null);
-                        if (info != null) {
-                            info.BarCodeInfo = new BarCodeInfoModel() {
-                                Barcode = args.Barcode,
-                                ScanTime = DateTime.Now,
-                                Source = SourceType.Input
-                            };
-                        }
-                    }
-                    EventAggregator.Instance.Publish(new TriggerPositionEvent() {
-                        IsSuccess = true,
-                        TriggerPosition = TriggerPositionEnum.PackageTrigger
-                    });
                 }
             });
-            //配置更改触发事件
-            EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async item => {
-                if (item is SettingsChangedEvent model) {
-                    if (model.SettingsName.Equals("CommunicationsSettings")) {
-                        try {
-                            var configInfoModel = await _configRepository.FirstOrDefault(f => f.ConfigName.Equals("CommunicationsSettings"));
-                            if (configInfoModel != null) {
-                                _communicationsSettingsDto = JsonConvert.DeserializeObject<CommunicationsSettingsDto>(configInfoModel.Value) ?? new CommunicationsSettingsDto();
-                            }
-                        }
-                        catch (Exception e) {
-                            NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
-                        }
+            EventAggregator.Instance.Subscribe<WindowsAction>(async item => {
+                if (item is WindowsAction { Type: WindowsActionType.Close }) {
+                    _isWindowsClose = true;
+                }
+            });
+            EventAggregator.Instance.Subscribe<ApplicationStatusChanged>(item => {
+                if (item is ApplicationStatusChanged info) {
+                    if (info.Status == ApplicationStatus.Stop &&
+                        _createPackageSettingsDto.ClearPackageQueueOnStop) {
+                        _packageInfos.Clear();
                     }
-                    else if (model.SettingsName.Equals("VolumeSettings")) {
-                        try {
-                            var configInfoModel = await _configRepository.FirstOrDefault(f => f.ConfigName.Equals("VolumeSettings"));
-                            if (configInfoModel != null) {
-                                _volumeSettingsDto = JsonConvert.DeserializeObject<VolumeSettingsDto>(configInfoModel.Value) ?? new VolumeSettingsDto();
-                            }
-                        }
-                        catch (Exception e) {
-                            NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
-                        }
-                    }
-                    else if (model.SettingsName.Equals("WeightSettings")) {
-                        try {
-                            var configInfoModel = await _configRepository.FirstOrDefault(f => f.ConfigName.Equals("WeightSettings"));
-                            if (configInfoModel != null) {
-                                _weightSettingsDto = JsonConvert.DeserializeObject<WeightSettingsDto>(configInfoModel.Value) ?? new WeightSettingsDto();
-                            }
-                        }
-                        catch (Exception e) {
-                            NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
-                        }
-                    }
-                    //其他设置
                 }
             });
         }
@@ -694,22 +714,37 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 if (configInfoModel is not null) {
                     _weightSettingsDto = JsonConvert.DeserializeObject<WeightSettingsDto>(configInfoModel.Value) ?? new WeightSettingsDto();
                 }
+                configInfoModel = _configInfoModels?.FirstOrDefault(f => f.ConfigName.Equals("CreatePackageSettings"));
+                if (configInfoModel is not null) {
+                    _createPackageSettingsDto = JsonConvert.DeserializeObject<CreatePackageSettingsDto>(configInfoModel.Value) ?? new CreatePackageSettingsDto();
+                }
             }
             catch (Exception e) {
                 Console.WriteLine(e);
             }
 
-            while (!stoppingToken.IsCancellationRequested) {
+            while (!stoppingToken.IsCancellationRequested && !_isWindowsClose) {
                 try {
                     if (_packageInfos.Count > 0 && _deviceService.RunningStatus) {
-                        //判断包裹过期
-
-                        if (_communicationsSettingsDto.IsUsePackageExpiry) {
+                        //判断空包裹过期
+                        if (_createPackageSettingsDto.IsUseEmptyPackageExpiry) {
                             var count = _packageInfos.Count;
                             while (count-- > 0) {
                                 _packageInfos.TryDequeue(out var info);
                                 if (info is null) continue;
-                                if (DateTime.Now.Subtract(info.CreateTime).TotalMilliseconds < _communicationsSettingsDto.PackageExpiryTime) {
+                                if (DateTime.Now.Subtract(info.CreateTime).TotalMilliseconds < _createPackageSettingsDto.EmptyPackageExpiryTime ||
+                                    info.BarCodeInfo is not null) {
+                                    _packageInfos.Enqueue(info);
+                                }
+                            }
+                        }
+                        //判断包裹过期
+                        if (_createPackageSettingsDto.IsUsePackageExpiry) {
+                            var count = _packageInfos.Count;
+                            while (count-- > 0) {
+                                _packageInfos.TryDequeue(out var info);
+                                if (info is null) continue;
+                                if (DateTime.Now.Subtract(info.CreateTime).TotalMilliseconds < _createPackageSettingsDto.PackageExpiryTime) {
                                     _packageInfos.Enqueue(info);
                                 }
                             }
@@ -842,19 +877,22 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 codeInfo.IsSavedImage = true;
                             }
                         }
-                        //告诉界面这些scanBarCodeInfos已经填充完全部信息，即将移除
-                        var packageInfos = _packageInfos.Where(w => w is { IsCompleted: true, IsSavedImage: true } &&
-                                                                    (w.PanoramaCameraImageInfo.All(a => a.IsExists)
-                                                                     || DateTime.Now.Subtract(w.CreateTime).TotalMinutes > 5)
-                            )
-                            .ToList();
-                        var infosCount = _packageInfos.Count;
-                        while (infosCount-- > 0) {
-                            _packageInfos.TryDequeue(out var info);
-                            if (info is null) continue;
 
-                            if (!packageInfos.Any(a => a.BarCodeInfo != null && a.BarCodeInfo.Barcode.Equals(info.BarCodeInfo?.Barcode))) {
-                                _packageInfos.Enqueue(info);
+                        if (_createPackageSettingsDto.PackageRemoveMethods == PackageRemoveMethodsEnum.FillInformation) {
+                            //告诉界面这些scanBarCodeInfos已经填充完全部信息，即将移除
+                            var packageInfos = _packageInfos.Where(w => w is { IsCompleted: true, IsSavedImage: true } &&
+                                                                        (w.PanoramaCameraImageInfo.All(a => a.IsExists)
+                                                                         || DateTime.Now.Subtract(w.CreateTime).TotalMinutes > 5)
+                                )
+                                .ToList();
+                            var infosCount = _packageInfos.Count;
+                            while (infosCount-- > 0) {
+                                _packageInfos.TryDequeue(out var info);
+                                if (info is null) continue;
+
+                                if (!packageInfos.Any(a => a.BarCodeInfo != null && a.BarCodeInfo.Barcode.Equals(info.BarCodeInfo?.Barcode))) {
+                                    _packageInfos.Enqueue(info);
+                                }
                             }
                         }
                     }

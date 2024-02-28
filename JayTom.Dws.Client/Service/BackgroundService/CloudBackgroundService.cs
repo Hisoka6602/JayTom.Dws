@@ -39,6 +39,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private List<NvrCameraBindingInfoModel> _nvrCameraBindingInfoModels = new();
         private SemaphoreSlim _setNvrCameraBindingSlim = new(1);
         private ConcurrentQueue<SavedImageInfo> _savedImageItems = new();
+        private static bool _isWindowsClose;
 
         public CloudBackgroundService(IConfigRepository configRepository,
             ICloud cloud, IPackageRepository packageRepository,
@@ -82,6 +83,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     }
                 }
             });
+            EventAggregator.Instance.Subscribe<WindowsAction>(async item => {
+                if (item is WindowsAction { Type: WindowsActionType.Close }) {
+                    _isWindowsClose = true;
+                }
+            });
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
@@ -97,7 +103,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             _nvrCameraBindingInfoModels = await _nvrCameraBindingRepository.Select(s => s.Id > 0,
                 o => o.Id, stoppingToken);
 
-            while (!stoppingToken.IsCancellationRequested) {
+            while (!stoppingToken.IsCancellationRequested && !_isWindowsClose) {
                 //设置参数
                 //提交到云端
                 if (_cloudVideoSettingsDto.IsUseCloudVideoUpload) {

@@ -21,6 +21,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private SemaphoreSlim _semaphore = new(1);
         private string _imagePathRoot = string.Empty;
         private DateTime _lastCleanupTime = DateTime.Today;
+        private static bool _isWindowsClose = false;
 
         //获取设置
         public CleanupService(ICacheCleanupService cacheCleanupService,
@@ -59,6 +60,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     //CacheClearSettings
                 }
             });
+            EventAggregator.Instance.Subscribe<WindowsAction>(async item => {
+                if (item is WindowsAction { Type: WindowsActionType.Close }) {
+                    _isWindowsClose = true;
+                }
+            });
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
@@ -88,7 +94,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     _cacheClearSettingsDto = new CacheClearSettingsDto();
                 }
             }
-            while (!stoppingToken.IsCancellationRequested) {
+            while (!stoppingToken.IsCancellationRequested && !_isWindowsClose) {
                 //数据盘
                 if (_cacheClearSettingsDto?.MinimumSpaceRetention > 0) {
                     var diskInfo = (await _computer.GetDiskInfoAsync())

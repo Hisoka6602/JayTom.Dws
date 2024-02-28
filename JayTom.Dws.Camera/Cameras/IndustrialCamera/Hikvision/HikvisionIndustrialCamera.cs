@@ -728,7 +728,8 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
 
         private async Task ProcessImageAsync(MVIDCodeReader.MVID_CAM_OUTPUT_INFO stOutput, IntPtr ptr) {
             //帧时间戳
-            var timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+            var scanTime = DateTime.Now;
+            var timestamp = new DateTimeOffset(scanTime).ToUnixTimeMilliseconds();
             if (MVIDCodeReader.MVID_IMAGE_TYPE.MVID_IMAGE_BMP != stOutput.stImage.enImageType) {
                 var bitmap = await GetBitmapAsync(stOutput, ptr);
                 //1024*768
@@ -763,7 +764,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                             var mvidCodeInfo = stOutput.stCodeList.stCodeInfo[i];
                             var validateData = _barCodeFilterContainer.ValidateData(new BarCodeFilterInfo() {
                                 BarCode = mvidCodeInfo.strCode,
-                                ScanTime = DateTime.Now
+                                ScanTime = scanTime
                             });
                             if (validateData) {
                                 //发处理条形码，提高处理速度
@@ -772,7 +773,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                                         Barcode = mvidCodeInfo.strCode,
                                         Timestamp = timestamp,
                                         CameraSerialNumber = this.Structure.chSerialNumber,
-                                        ScanTime = DateTime.Now,
+                                        ScanTime = scanTime,
                                         ThumbImage = (Bitmap?)thumbnailImage,
                                         Image = bitmap,
                                         AreaCoords = Enumerable.Range(0, 4).Select(s => {

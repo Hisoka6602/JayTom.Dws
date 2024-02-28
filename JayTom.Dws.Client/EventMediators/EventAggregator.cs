@@ -3,6 +3,7 @@ using JayTom.Dws.Domain.Dto;
 using JayTom.Dws.Data.LocalLog;
 using JayTom.Dws.PluginInterface;
 using System.Collections.Generic;
+using JayTom.Dws.Client.Service.BackgroundService;
 
 namespace JayTom.Dws.Client.EventMediators {
 
@@ -56,6 +57,11 @@ namespace JayTom.Dws.Client.EventMediators {
         /// 是否成功
         /// </summary>
         public bool IsSuccess { get; set; }
+
+        /// <summary>
+        /// 包裹信息
+        /// </summary>
+        public PackageInfo? PackageInfo { get; set; }
     }
 
     public class BarcodeTypeProviderEvent {
@@ -138,5 +144,14 @@ namespace JayTom.Dws.Client.EventMediators {
         /// 激活
         /// </summary>
         Activate
+    }
+
+    public class ApplicationStatusChanged {
+        public ApplicationStatus Status { get; set; }
+    }
+
+    public enum ApplicationStatus {
+        Start,
+        Stop
     }
 }

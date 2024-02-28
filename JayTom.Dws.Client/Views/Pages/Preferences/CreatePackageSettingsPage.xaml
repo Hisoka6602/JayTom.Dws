@@ -243,6 +243,14 @@
                                 Template="{StaticResource CustomRadioButtonTemplate}" />
                             <RadioButton
                                 Margin="10,0"
+                                Content="使用多个"
+                                Focusable="False"
+                                FontWeight="Bold"
+                                Foreground="White"
+                                IsChecked="{Binding CreatePackageSettingsInfo.BarcodeHandlingMethod, Converter={StaticResource BarcodeHandlingMethodConverter}, ConverterParameter=UseMultipleBarcodes, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                Template="{StaticResource CustomRadioButtonTemplate}" />
+                            <RadioButton
+                                Margin="10,0"
                                 Content="合并条码"
                                 Focusable="False"
                                 FontWeight="Bold"
@@ -693,9 +701,10 @@
                 Height="Auto"
                 VerticalAlignment="Bottom"
                 Background="BlueViolet"
+                Cursor=""
                 FontFamily="LoadFiraCode"
                 FontWeight="Bold"
-                MessageQueue="{Binding CreatePackageSettingsMessageQueue}" Cursor="" />
+                MessageQueue="{Binding CreatePackageSettingsMessageQueue}" />
         </Grid>
     </materialDesign:DialogHost>
 </Page>

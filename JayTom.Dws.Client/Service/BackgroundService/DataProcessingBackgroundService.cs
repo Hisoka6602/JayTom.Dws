@@ -39,6 +39,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private ConcurrentQueue<SavedImageInfo> _savedImageItems = new();
         private ConcurrentQueue<InstructionReceived> _instructionItems = new();
         private ConcurrentQueue<ExceptionSortingReceived> _exceptionSortingItems = new();
+        private static bool _isWindowsClose;
 
         public DataProcessingBackgroundService(IPackageRepository packageRepository,
             IImageStorageService imageStorageService, ISortingRepository sortingRepository,
@@ -90,10 +91,15 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     _exceptionSortingItems.Enqueue(model);
                 }
             });
+            EventAggregator.Instance.Subscribe<WindowsAction>(async item => {
+                if (item is WindowsAction { Type: WindowsActionType.Close }) {
+                    _isWindowsClose = true;
+                }
+            });
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
-            while (!stoppingToken.IsCancellationRequested) {
+            while (!stoppingToken.IsCancellationRequested && !_isWindowsClose) {
                 var tryDequeue = _insertItems.TryDequeue(out var insertModel);
                 if (tryDequeue && insertModel is not null) {
                     var insert = await _packageRepository.Insert(insertModel, stoppingToken);

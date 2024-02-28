@@ -17,19 +17,25 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private readonly IComputerInfoReporter _computerInfoReporter;
         private readonly IConfiguration _configuration;
         private readonly IComputer _computer;
+        private static bool _isWindowsClose;
 
         public ComputerInfoBackgroundService(IComputerInfoReporter computerInfoReporter,
             IConfiguration configuration, IComputer computer) {
             _computerInfoReporter = computerInfoReporter;
             _configuration = configuration;
             _computer = computer;
+            EventAggregator.Instance.Subscribe<WindowsAction>(async item => {
+                if (item is WindowsAction { Type: WindowsActionType.Close }) {
+                    _isWindowsClose = true;
+                }
+            });
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
             var counter = new PerformanceCounter("System", "System Up Time");
             var systemInfo = _computer.GetSystemInfo();
             var systemInfoString = $"{systemInfo.OsVersion}-{systemInfo.SystemType}";
-            while (!stoppingToken.IsCancellationRequested) {
+            while (!stoppingToken.IsCancellationRequested && !_isWindowsClose) {
                 await Task.Run(async () => {
                     // 并行获取各项信息
                     var cpuInfoTask = _computer.GetCpuInfoAsync();
@@ -135,7 +141,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         GC.Collect();
                     }
                 }, stoppingToken);
-
                 await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken);
             }
         }

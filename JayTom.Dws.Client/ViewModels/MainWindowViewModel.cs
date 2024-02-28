@@ -198,10 +198,11 @@ namespace JayTom.Dws.Client.ViewModels {
             });
         }
 
-        private void CloseWinDelegate(object obj) {
+        private async void CloseWinDelegate(object obj) {
             EventAggregator.Instance.Publish(new WindowsAction {
                 Type = WindowsActionType.Close
             });
+            await Task.Delay(60);
             System.Windows.Application.Current.Shutdown();//关闭
         }
 

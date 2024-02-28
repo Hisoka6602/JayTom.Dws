@@ -143,7 +143,8 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.UsbCamera {
                         _usbBarCodeReader.BarcodeScanned += async delegate (object? sender, BarcodeScannedEventArgs args) {
                             try {
                                 if (args?.Image is not null) {
-                                    var timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+                                    var scanTime = DateTime.Now;
+                                    var timestamp = new DateTimeOffset(scanTime).ToUnixTimeMilliseconds();
                                     Bitmap? generateThumbnail;
                                     generateThumbnail = GenerateThumbnail(args.Image);
                                     List<Point>? points = null;
@@ -179,7 +180,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.UsbCamera {
                                             Barcode = barcodeInfo.Barcode ?? "NoRead",
                                             CameraSerialNumber = args?.CameraSerialNumber ?? this.Info.SerialNumber,
                                             Image = args?.Image,
-                                            ScanTime = args?.ScanTime ?? DateTime.Now,
+                                            ScanTime = scanTime,
                                             Timestamp = timestamp,
                                             ThumbImage = generateThumbnail,
                                             AreaCoords = points

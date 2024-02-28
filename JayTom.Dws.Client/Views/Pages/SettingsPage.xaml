@@ -39,33 +39,10 @@
                 <ListBox
                     Grid.Row="0"
                     MinHeight="100"
+                    MaxHeight="900"
                     ItemTemplate="{StaticResource MenuTemplate}"
-                    ItemsSource="{Binding MenuItems, UpdateSourceTrigger=PropertyChanged}">
-                    <ListBox.ItemContainerStyle>
-                        <Style TargetType="ListBoxItem">
-                            <Setter Property="Height" Value="Auto" />
-                            <Setter Property="Margin" Value="0" />
-                            <Setter Property="Padding" Value="0" />
-                            <Setter Property="Focusable" Value="False" />
-                            <Setter Property="IsSelected" Value="False" />
-                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                            <Setter Property="Background" Value="Transparent" />
-                            <Setter Property="Foreground" Value="Transparent" />
-                            <Setter Property="SnapsToDevicePixels" Value="True" />
-                            <!--  去掉焦点框  -->
-                            <Setter Property="Template">
-                                <Setter.Value>
-                                    <ControlTemplate TargetType="{x:Type ListBoxItem}">
-                                        <ContentPresenter
-                                            Content="{TemplateBinding Content}"
-                                            ContentStringFormat="{TemplateBinding ContentStringFormat}"
-                                            ContentTemplate="{TemplateBinding ContentTemplate}" />
-                                    </ControlTemplate>
-                                </Setter.Value>
-                            </Setter>
-                        </Style>
-                    </ListBox.ItemContainerStyle>
-                </ListBox>
+                    ItemsSource="{Binding MenuItems, UpdateSourceTrigger=PropertyChanged}"
+                    Style="{StaticResource CustomListBoxStyle}" />
                 <Grid
                     Grid.Row="1"
                     MinWidth="1000"
