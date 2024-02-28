@@ -39,7 +39,7 @@
                 <ListBox
                     Grid.Row="0"
                     MinHeight="100"
-                    MaxHeight="900"
+                    MaxHeight="{Binding ListBoxMaxHeight, UpdateSourceTrigger=PropertyChanged}"
                     ItemTemplate="{StaticResource MenuTemplate}"
                     ItemsSource="{Binding MenuItems, UpdateSourceTrigger=PropertyChanged}"
                     Style="{StaticResource CustomListBoxStyle}" />

@@ -10,13 +10,16 @@ using JayTom.Dws.Client.Models;
 using MaterialDesignThemes.Wpf;
 using JayTom.Dws.Client.Views.Dialog;
 using System.Collections.ObjectModel;
+using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.ViewModels.Dialog;
 
 namespace JayTom.Dws.Client.ViewModels.Pages {
+
     public class SettingsViewModel : BindableBase {
         private readonly IRegionManager _regionManager;
-
+        private Frame? _frame;
         private ObservableCollection<MenuItemInfoModel> _menuItems;
+        private double _listBoxMaxHeight = 900;
 
         public SettingsViewModel(IRegionManager regionManager) {
             _regionManager = regionManager;
@@ -258,12 +261,28 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     PageClassName = "CacheClearSettingsPage"
                 },
             };
+            EventAggregator.Instance.Subscribe<WindowsAction>(async item => {
+                await Task.Delay(100);
+                if (item is WindowsAction info && _frame is not null) {
+                    if (info.Type == WindowsActionType.Maximize) {
+                        ListBoxMaxHeight = _frame.ActualHeight;
+                    }
+                    else {
+                        ListBoxMaxHeight = 900;
+                    }
+                }
+            });
         }
 
         //MenuItems
         public ObservableCollection<MenuItemInfoModel> MenuItems {
             get => _menuItems;
             set => SetProperty(ref _menuItems, value);
+        }
+
+        public double ListBoxMaxHeight {
+            get => _listBoxMaxHeight;
+            set => SetProperty(ref _listBoxMaxHeight, value);
         }
 
         /// <summary>
@@ -283,6 +302,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         private async void LoadedDelegate(Frame obj) {
             await Application.Current.Dispatcher.InvokeAsync(() => {
                 //加载loading
+                _frame = obj;
                 var loadingDialog = new LoadingDialog();
                 if (loadingDialog.DataContext is LoadingDialogViewModel model) {
                     model.Identifier = "SettingDialog";
