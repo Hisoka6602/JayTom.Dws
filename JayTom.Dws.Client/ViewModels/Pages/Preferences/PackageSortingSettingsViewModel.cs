@@ -1,15 +1,16 @@
-﻿using JayTom.Dws.Client.Models;
-using Prism.Commands;
+﻿using System;
 using Prism.Mvvm;
 using Prism.Regions;
-using System;
-using System.Collections.ObjectModel;
+using Prism.Commands;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Controls;
+using JayTom.Dws.Client.Models;
 using System.Windows.Threading;
+using System.Collections.ObjectModel;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
+
     public class PackageSortingSettingsViewModel : BindableBase {
         private readonly IRegionManager _regionManager;
         private ObservableCollection<MenuItemInfoModel> _packageSortingMenuItems;
@@ -84,6 +85,19 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     },
                     Description = "分拣依据选择",
                     PageClassName = "SortingMethodPage",
+                    ClickCommand = ClickCommand
+                },
+                new()
+                {
+                    Title = "锁格设置",
+                    IconFont = new IconInfoModel()
+                    {
+                        IconFont = "pack://application:,,,/Fonts/#iconfont",
+                        IconCode = "\xe92e",
+                        IconSize = 25
+                    },
+                    Description = "锁格/解锁设置",
+                    PageClassName = "PackageExitLockSettingsPage",
                     ClickCommand = ClickCommand
                 },
             };

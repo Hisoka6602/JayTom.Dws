@@ -174,6 +174,7 @@ namespace JayTom.Dws.Client {
                 containerRegistry.RegisterForNavigation<SortingSchemeSettingsPage>();
                 containerRegistry.RegisterForNavigation<CommunicationsSettingsPage>();
                 containerRegistry.RegisterForNavigation<SortingMethodPage>();
+                containerRegistry.RegisterForNavigation<PackageExitLockSettingsPage>();
                 //程序设置
                 containerRegistry.RegisterForNavigation<GridSettingsPage>();
                 containerRegistry.RegisterForNavigation<OtherSettingsPage>();
@@ -636,6 +637,7 @@ namespace JayTom.Dws.Client {
             ViewModelLocationProvider.Register<SortingSchemeSettingsPage, SortingSchemeSettingsViewModel>();
             ViewModelLocationProvider.Register<CommunicationsSettingsPage, CommunicationsSettingsViewModel>();
             ViewModelLocationProvider.Register<SortingMethodPage, SortingMethodViewModel>();
+            ViewModelLocationProvider.Register<PackageExitLockSettingsPage, PackageExitLockSettingsViewModel>();
             //分拣模式
             ViewModelLocationProvider.Register<BarcodeSortingPage, BarcodeSortingViewModel>();
             ViewModelLocationProvider.Register<WeightSortingPage, WeightSortingViewModel>();
