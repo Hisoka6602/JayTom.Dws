@@ -94,6 +94,9 @@ namespace JayTom.Dws.Infrastructure {
                 modelBuilder.Entity<SortingInstructionBindingInfoModel>().HasKey(c => new {
                     c.Id
                 });
+                modelBuilder.Entity<PackageExitLockBindingInfoModel>().HasKey(c => new {
+                    c.Id
+                });
                 /*modelBuilder.Entity<SortingInstructionBindingInfoModel>()
                     .HasIndex(b => new { b.ExitId, b.IsActive })
                     .IsUnique();*/
@@ -232,9 +235,16 @@ namespace JayTom.Dws.Infrastructure {
                     .WithOne(n => n.TcpConnectionConfigInfoInfo)
                     .HasForeignKey(n => new { n.TcpConnectionConfigId })
                     .OnDelete(DeleteBehavior.Cascade);
+
                 modelBuilder.Entity<TcpConfigInfoModel>().HasKey(c => new {
                     c.Id
                 });
+                //锁格配置
+                modelBuilder.Entity<PackageExitDefinitionInfoModel>()
+                    .HasOne(b => b.PackageExitLockBindingInfo)
+                    .WithOne(n => n.PackageExitDefinitionInfo)
+                    .HasForeignKey<PackageExitLockBindingInfoModel>(n => n.ExitId)
+                    .OnDelete(DeleteBehavior.Cascade);
                 //------------------云端-----------
                 modelBuilder.Entity<NvrCameraBindingInfoModel>().HasKey(c => new {
                     c.Id

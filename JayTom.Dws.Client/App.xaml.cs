@@ -255,6 +255,7 @@ namespace JayTom.Dws.Client {
                 services.AddScoped<ISortingInstructionBindingRepository, SortingInstructionBindingRepository>();
                 services.AddScoped<ILogisticsRegexRepository, LogisticsRegexRepository>();
                 services.AddScoped<ISortingInstructionRepository, SortingInstructionRepository>();
+                services.AddScoped<IPackageExitLockBindingRepository, PackageExitLockBindingRepository>();
 
                 services.AddScoped<IBarCodeSortingRepository, BarCodeSortingRepository>();
                 services.AddScoped<IBarCodeRegexRepository, BarCodeRegexRepository>();
@@ -431,6 +432,7 @@ namespace JayTom.Dws.Client {
 
                         services.AddSingleton(container1.Resolve<ILogisticsRegexRepository>());
                         services.AddSingleton(container1.Resolve<ISortingInstructionRepository>());
+                        services.AddSingleton(container1.Resolve<IPackageExitLockBindingRepository>());
 
                         services.AddSingleton(container1.Resolve<IBarCodeSortingRepository>());
                         services.AddSingleton(container1.Resolve<IBarCodeRegexRepository>());
@@ -581,6 +583,7 @@ namespace JayTom.Dws.Client {
             ViewModelLocationProvider.Register<ExportDialog, ExportDialogViewModel>();
             ViewModelLocationProvider.Register<LoadingDialog, LoadingDialogViewModel>();
             ViewModelLocationProvider.Register<DataTimeEditor, DataTimeEditorViewModel>();
+            ViewModelLocationProvider.Register<PackageExitLockEditor, PackageExitLockEditorViewModel>();
             ViewModelLocationProvider.Register<PackageExitDefinitionEditor, PackageExitDefinitionEditorViewModel>();
             ViewModelLocationProvider.Register<LogisticsCodeRecognitionEditor, LogisticsCodeRecognitionEditorViewModel>();
             ViewModelLocationProvider.Register<SortingInstructionBindingEditor, SortingInstructionBindingEditorViewModel>();

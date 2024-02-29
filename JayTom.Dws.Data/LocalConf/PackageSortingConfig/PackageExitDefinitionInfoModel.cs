@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using JayTom.Dws.Data.Attributes;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using JayTom.Dws.Data.LocalConf.PackageSortingConfig.ConnectionParams;
 
 namespace JayTom.Dws.Data.LocalConf.PackageSortingConfig {
 
@@ -47,6 +48,8 @@ namespace JayTom.Dws.Data.LocalConf.PackageSortingConfig {
         /// </summary>
         [Column("IsLockExit"), NotMapped]
         public bool IsLockExit { get; set; }
+
+        public virtual PackageExitLockBindingInfoModel? PackageExitLockBindingInfo { get; set; }
     }
 
     public enum ExitType {
