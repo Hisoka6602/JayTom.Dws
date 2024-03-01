@@ -8,6 +8,7 @@ using Newtonsoft.Json;
 using System.Windows.Input;
 using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
+using JayTom.Dws.Data.Package;
 using JayTom.Dws.Client.Models;
 using JayTom.Dws.Data.LocalLog;
 using MaterialDesignThemes.Wpf;
@@ -18,11 +19,8 @@ using Microsoft.AspNetCore.Mvc.Filters;
 using JayTom.Dws.Client.Models.PackageSorting;
 using JayTom.Dws.Client.Models.SettingsCommomModels;
 using JayTom.Dws.Client.Models.CommunicationsSettingsModel;
-using JayTom.Dws.Data.Package;
 
-namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration
-{
-
+namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
     public class CommunicationConnectionConfigEditorViewModel : BindableBase {
         private string _identifier = string.Empty;
         private ObservableCollection<string> _portItems = new();

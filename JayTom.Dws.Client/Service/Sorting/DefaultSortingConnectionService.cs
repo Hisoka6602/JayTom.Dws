@@ -207,7 +207,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                                 _ => null
                             };
                             var connect = await sortingTcp.Connect(tcpConfigInfoModel.IpAddress, tcpConfigInfoModel.Port,
-                                ConnectionType.Client, 5000, FormatType.Hex, protocol?.DataLen ?? 0);
+                                ConnectionType.Client, 5000, (FormatType)(tcpConfigInfoModel.TcpConnectionConfigInfoInfo?.DataFormat ?? 0), protocol?.DataLen ?? 0);
                             if (connect) {
                                 //心跳包
                                 var connectionConfigInfoModel = _connectionConfigInfoModels.FirstOrDefault(f => f.ConnectionName.Equals(connectionName));
@@ -282,7 +282,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                                 _ => null
                             };
                             var connect = await sortingTcp.Connect(tcpConfigInfoModel.IpAddress, tcpConfigInfoModel.Port,
-                                ConnectionType.Server, 5000, FormatType.Hex, protocol?.DataLen ?? 0);
+                                ConnectionType.Server, 5000, (FormatType)(tcpConfigInfoModel.TcpConnectionConfigInfoInfo?.DataFormat ?? 0), protocol?.DataLen ?? 0);
                             if (connect) {
                                 //心跳包
                                 var connectionConfigInfoModel = _connectionConfigInfoModels.FirstOrDefault(f => f.ConnectionName.Equals(connectionName));

@@ -37,7 +37,6 @@ using JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration.SortingMethodE
 using JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.SortingMethodEditors;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration {
-
     public class CommunicationsSettingsViewModel : BindableBase {
         private readonly IConfigRepository _configRepository;
         private readonly ISortingService _sortingService;
@@ -439,7 +438,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                                                 ?.ClientParameter?.Port ?? 0,
                                             Type = 0
                                         }
-                                    }
+                                    },
+                                    DataFormat = (int)(model.CommunicationConnectionItem.TcpConnectionConfigInfo
+                                        ?.DataFormat?.Value ?? 0)
                                 },
                             });
                         if (insertDetailAsync) {
@@ -545,7 +546,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                                                 ?.ClientParameter?.Port ?? 0,
                                             Type = 0
                                         }
-                                    }
+                                    },
+                                    DataFormat = (int)(model.CommunicationConnectionItem.TcpConnectionConfigInfo
+                                    ?.DataFormat?.Value ?? 0)
                                 },
                             });
                         CommunicationsSettingsMessageQueue.Enqueue(insertDetailAsync ? "保存成功" : "保存失败");
@@ -648,6 +651,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                             IpAddress = s.TcpConnectionConfigInfo?.TcpConfigItems?.FirstOrDefault(f => f.Type == 0)?.IpAddress ?? string.Empty,
                             Port = s.TcpConnectionConfigInfo?.TcpConfigItems?.FirstOrDefault(f => f.Type == 0)?.Port ?? 0,
                         },
+                        DataFormat = DataFormatTypeItems.FirstOrDefault(f => (int)f.Value == s.TcpConnectionConfigInfo
+                            .DataFormat) ?? new DataFormatTypeInfoModel(),
                     },
                     ConnectionCount = packageExitDefinitionInfoModels?.Where(w => w.CommunicationConnectionId.Equals(s.Id))?.Count() ?? 0
                 })?.ToList();
