@@ -36,6 +36,7 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalData {
                     .ThenInclude(c => c.OcrDetailedInfos)
                     .Include(b => b.ImageInfos)
                     .Include(b => b.CloudVideoUploadInfo)
+                    .Include(b => b.AggregatePackagesInfo)
                     .Where(where)
                     .OrderByDescending(order)
                     .Skip(pageIndex * pageSize)
@@ -68,6 +69,7 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalData {
                     .ThenInclude(c => c.OcrDetailedInfos)
                     .Include(b => b.ImageInfos)
                     .Include(b => b.CloudVideoUploadInfo)
+                    .Include(b => b.AggregatePackagesInfo)
                     .Where(where)
                     .Skip(pageIndex * pageSize)
                     .Take(pageSize)
@@ -99,6 +101,7 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalData {
                     .ThenInclude(c => c.OcrDetailedInfos)
                     .Include(b => b.ImageInfos)
                     .Include(b => b.CloudVideoUploadInfo)
+                    .Include(b => b.AggregatePackagesInfo)
                     .FirstOrDefaultAsync(cancellationToken: token);
                 return new KeyValuePair<bool, PackageInfoModel>(true, barCodeInfoModels);
             }
@@ -127,6 +130,7 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalData {
                      .ThenInclude(c => c.OcrDetailedInfos)
                      .Include(b => b.ImageInfos)
                      .Include(b => b.CloudVideoUploadInfo)
+                     .Include(b => b.AggregatePackagesInfo)
                      .Where(where)
                      .CountAsync(cancellationToken: token);
             }

@@ -254,6 +254,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                                 IsUseDaHuaVolumeCameraSdk = cameraSdkSelectorDto.IsUseDaHuaVolumeCameraSdk,
                                 IsUseHikvisionVolumeCameraSdk = cameraSdkSelectorDto.IsUseHikvisionVolumeCameraSdk,
                                 IsUseDimensionVolumeCameraSdk = cameraSdkSelectorDto.IsUseDimensionVolumeCameraSdk,
+                                IsUsbCameraSdk = cameraSdkSelectorDto.IsUsbCameraSdk,
                             };
                         }
                     }
@@ -665,6 +666,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                 //量方体积
                 files = Directory.GetFiles($"{destinationDir}Cameras\\VolumeCamera\\Dimension\\Dll")?.ToList();
             }
+            if (obj.ToString()?.Equals("IsUsbCameraSdk") == true) {
+                //Usb相机
+            }
             if (files?.Any() == true) {
                 foreach (var s in files) {
                     if (!File.Exists($"{destinationDir}\\{new FileInfo(s).Name}")) {
@@ -689,7 +693,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                 IsUseWayzimSmartCameraSdk = CameraSdkSelectorInfo.IsUseWayzimSmartCameraSdk,
                 IsUseDaHuaVolumeCameraSdk = CameraSdkSelectorInfo.IsUseDaHuaVolumeCameraSdk,
                 IsUseHikvisionVolumeCameraSdk = CameraSdkSelectorInfo.IsUseHikvisionVolumeCameraSdk,
-                IsUseDimensionVolumeCameraSdk = CameraSdkSelectorInfo.IsUseDimensionVolumeCameraSdk
+                IsUseDimensionVolumeCameraSdk = CameraSdkSelectorInfo.IsUseDimensionVolumeCameraSdk,
+                IsUsbCameraSdk = CameraSdkSelectorInfo.IsUsbCameraSdk
             };
             var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
                 ConfigName = "CameraSdkSelector",

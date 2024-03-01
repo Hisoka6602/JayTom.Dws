@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 
 namespace JayTom.Dws.Interface.License {
-
     public class DefaultClientLicenseApi : IClientLicenseApi {
         private readonly IHttpClientFactory _httpClientFactory;
 
@@ -126,6 +125,9 @@ namespace JayTom.Dws.Interface.License {
 
         public async Task<bool> DownloadFileAsync(string fileUrl, string savePath) {
             try {
+                if (string.IsNullOrEmpty(fileUrl) || string.IsNullOrEmpty(savePath)) {
+                    return false;
+                }
                 using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
                 using var response = await httpClient.GetAsync(fileUrl, HttpCompletionOption.ResponseHeadersRead);
                 response.EnsureSuccessStatusCode();

@@ -152,13 +152,22 @@ namespace JayTom.Dws.Infrastructure {
                 modelBuilder.Entity<CloudVideoUploadInfoModel>().HasKey(c => new {
                     c.Id
                 });
-
+                //声音
                 modelBuilder.Entity<SoundInfoModel>().HasKey(c => new {
                     c.Id
                 });
                 modelBuilder.Entity<SoundInfoModel>()
                     .HasIndex(b => b.SoundName)
                     .IsUnique();
+                //聚合包裹信息
+                modelBuilder.Entity<PackageInfoModel>()
+                    .HasOne(b => b.AggregatePackagesInfo)
+                    .WithOne(n => n.PackageInfo)
+                    .HasForeignKey<AggregatePackagesInfoModel>(n => n.PackageId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                modelBuilder.Entity<AggregatePackagesInfoModel>().HasKey(c => new {
+                    c.Id
+                });
             }
 
             base.OnModelCreating(modelBuilder);

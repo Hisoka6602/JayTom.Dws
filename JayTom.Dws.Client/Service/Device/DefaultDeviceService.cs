@@ -144,8 +144,12 @@ namespace JayTom.Dws.Client.Service.Device {
                 if (_cameraSdkSelectorDto?.IsUseDimensionVolumeCameraSdk == true) {
                     dimensionVolumeCamera = await new DimensionVolumeCamera().EnumerateCameras();
                 }
-                //Usb相机
-                normalUsbCamera = await new NormalUsbCamera().EnumerateCameras();
+
+                if (_cameraSdkSelectorDto?.IsUsbCameraSdk == true) {
+                    //Usb相机
+                    normalUsbCamera = await new NormalUsbCamera().EnumerateCameras();
+                }
+
                 var cameraList = daHuaVolumeCameras?.Union(daHuaSmartCameras
                                                            ?? new List<CameraInfo>())?.ToList()?
                                      .Union(wayzimIndustrialCameras ?? new List<CameraInfo>())?.ToList()?
@@ -388,19 +392,21 @@ namespace JayTom.Dws.Client.Service.Device {
 
                 await Task.Delay(100, token);
                 await camera.Start(string.Empty);
-                //判断是否Usb相机
-                if (camera is NormalUsbCamera usbCamera) {
-                    var usbCameraParameter = await GetUsbCameraParameter(usbCamera.Info?.SerialNumber ?? string.Empty);
-                    var barcodeReaderParameter = await GetBarcodeReaderParameter();
-                    var dictionary = new Dictionary<string, object>();
-                    if (usbCameraParameter is not null) {
-                        dictionary.Add("UsbCameraParameter", usbCameraParameter);
-                    }
+                if (_cameraSdkSelectorDto?.IsUsbCameraSdk == true) {
+                    //判断是否Usb相机
+                    if (camera is NormalUsbCamera usbCamera) {
+                        var usbCameraParameter = await GetUsbCameraParameter(usbCamera.Info?.SerialNumber ?? string.Empty);
+                        var barcodeReaderParameter = await GetBarcodeReaderParameter();
+                        var dictionary = new Dictionary<string, object>();
+                        if (usbCameraParameter is not null) {
+                            dictionary.Add("UsbCameraParameter", usbCameraParameter);
+                        }
 
-                    if (barcodeReaderParameter is not null) {
-                        dictionary.Add("BarcodeReaderParameter", barcodeReaderParameter);
+                        if (barcodeReaderParameter is not null) {
+                            dictionary.Add("BarcodeReaderParameter", barcodeReaderParameter);
+                        }
+                        usbCamera.SetParameters(dictionary);
                     }
-                    usbCamera.SetParameters(dictionary);
                 }
             }
             //连接磅秤

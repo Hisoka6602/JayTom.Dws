@@ -49,5 +49,10 @@ namespace JayTom.Dws.Domain.Dto {
         /// </summary>
 
         public bool IsUseDimensionVolumeCameraSdk { get; set; }
+        /// <summary>
+        /// 是否使用Usb相机
+        /// </summary>
+
+        public bool IsUsbCameraSdk { get; set; }
     }
 }

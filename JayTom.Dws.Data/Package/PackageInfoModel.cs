@@ -83,5 +83,10 @@ namespace JayTom.Dws.Data.Package {
         /// 设备信息
         /// </summary>
         public virtual DeviceInfoModel? DeviceInfo { get; set; }
+
+        /// <summary>
+        /// 聚合包裹信息
+        /// </summary>
+        public virtual AggregatePackagesInfoModel? AggregatePackagesInfo { get; set; }
     }
 }

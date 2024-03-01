@@ -284,7 +284,21 @@
                         Foreground="WhiteSmoke"
                         Text="量方体积相机" />
                 </ListBoxItem>
+                <ListBoxItem IsSelected="{Binding CameraSdkSelectorInfo.IsUsbCameraSdk, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                    <b:Interaction.Triggers>
+                        <b:EventTrigger EventName="PreviewMouseLeftButtonDown">
+                            <mvvm:InvokeCommandAction Command="{Binding SdkSelectedCommand}" CommandParameter="IsUsbCameraSdk" />
+                        </b:EventTrigger>
+                    </b:Interaction.Triggers>
 
+                    <TextBlock
+                        VerticalAlignment="Center"
+                        FontFamily="{StaticResource CustomFontFamily}"
+                        FontSize="12"
+                        FontWeight="Bold"
+                        Foreground="WhiteSmoke"
+                        Text="USB相机" />
+                </ListBoxItem>
             </ListBox>
         </StackPanel>
         <!--  列表  -->

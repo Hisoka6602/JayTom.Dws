@@ -862,7 +862,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                                                 var files = Directory.GetFiles(licenseDirectory, "*.key");
                                                 Parallel.ForEach(files, File.Delete);
 
-                                                await _clientLicenseApi.DownloadFileAsync(result.Data.ToString(),
+                                                await _clientLicenseApi.DownloadFileAsync(result.Data?.ToString() ?? string.Empty,
                                                     $"{licenseDirectory}\\License.key");
                                             }
                                         }
@@ -879,9 +879,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                                 }
                                 else {
                                     //提交激活
-                                    Task.Run(async () => {
-                                        await _clientLicenseApi.ActivateAuthorization(data.LicenseCode, data.MachineCode, data.Remarks);
-                                    });
+                                    if (data is not null) {
+                                        Task.Run(async () => {
+                                            await _clientLicenseApi.ActivateAuthorization(data.LicenseCode, data.MachineCode, data.Remarks);
+                                        });
+                                    }
                                 }
                             }
                             else {
