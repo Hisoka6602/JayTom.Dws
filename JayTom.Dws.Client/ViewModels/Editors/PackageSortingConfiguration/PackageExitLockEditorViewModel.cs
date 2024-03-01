@@ -14,7 +14,6 @@ using JayTom.Dws.Client.Models.PackageSorting;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
 
 namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
-
     public class PackageExitLockEditorViewModel : BindableBase {
         private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
         private string _identifier = string.Empty;
@@ -127,6 +126,10 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
                         f.Id.Equals(PackageExitLockBindingItemInfo.ExitId));
                     SelectExitDefinitionInfo = packageExitDefinitionItemInfoModel ?? new PackageExitDefinitionItemInfoModel();
                 }
+                Address = PackageExitLockBindingItemInfo.Address;
+                Length = PackageExitLockBindingItemInfo.Length;
+                LockingFlag = PackageExitLockBindingItemInfo.LockingFlag;
+                UnlockingFlag = PackageExitLockBindingItemInfo.UnlockingFlag;
             });
         }
 
@@ -135,6 +138,21 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
         }
 
         private void SaveDelegate() {
+            //检查参数
+            try {
+                Pitcher.Throw.ArgumentNull.WhenNullOrEmpty(Address, "地址不能为空");
+                Pitcher.Throw.ArgumentOutOfRange.WhenLessThan(Length, 1, "长度不能小于1");
+                Pitcher.Throw.ArgumentNull.WhenNullOrEmpty(LockingFlag, "锁格标识不能为空");
+                Pitcher.Throw.ArgumentNull.WhenNullOrEmpty(UnlockingFlag, "解锁标识不能为空");
+                IsOk = true;
+            }
+            catch (Exception e) {
+                IsOk = false;
+                ExceptionContent = e.Message;
+            }
+            if (DialogHost.IsDialogOpen(Identifier)) {
+                DialogHost.Close(Identifier);
+            }
         }
 
         public ICommand CancelCommand {

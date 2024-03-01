@@ -2,14 +2,25 @@
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
+using Prism.Regions;
 using Prism.Commands;
 using System.Windows;
+using JayTom.Dws.Ocr;
+using Newtonsoft.Json;
+using JayTom.Dws.Plugin;
 using System.Windows.Input;
+using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
 using MaterialDesignThemes.Wpf;
+using JayTom.Dws.Data.LocalConf;
 using System.Collections.Generic;
 using Newtonsoft.Json.Serialization;
 using System.Collections.ObjectModel;
+using JayTom.Dws.Client.Views.Dialog;
+using JayTom.Dws.Client.EventMediators;
+using JayTom.Dws.Client.Service.Device;
+using JayTom.Dws.Client.ViewModels.Dialog;
+using JayTom.Dws.Domain.Dto.BaseInfoModels;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Client.Models.PackageSorting;
 using JayTom.Dws.Domain.Dto.PackageExitLockDto;
@@ -25,6 +36,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         private readonly IPackageExitLockBindingRepository _packageExitLockBindingRepository;
         private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
         private readonly IConfigRepository _configRepository;
+        private readonly IExcel _excel;
+        private readonly IDeviceService _deviceService;
         private ObservableCollection<PackageExitLockBindingItemInfoModel> _packageExitLockBindingItems = new();
         private PackageExitLockSettingsModel _packageExitLockSettings = new();
         private ObservableCollection<LockProtocolType> _lockProtocolTypeItems = new(Enum.GetValues(typeof(LockProtocolType)).Cast<LockProtocolType>());
@@ -34,25 +47,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
         public PackageExitLockSettingsViewModel(IPackageExitLockBindingRepository packageExitLockBindingRepository,
             IPackageExitDefinitionRepository packageExitDefinitionRepository,
-            IConfigRepository configRepository) {
+            IConfigRepository configRepository, IExcel excel,
+            IDeviceService deviceService) {
             _packageExitLockBindingRepository = packageExitLockBindingRepository;
             _packageExitDefinitionRepository = packageExitDefinitionRepository;
             _configRepository = configRepository;
-            for (var i = 0; i < 20; i++) {
-                PackageExitLockBindingItems.Add(new PackageExitLockBindingItemInfoModel() {
-                    Address = "10.23.01.01",
-                    CreateTime = DateTime.Now,
-                    CurrentStatus = (ExitLockStatus)(Enum.GetValues(typeof(ExitLockStatus)).GetValue(new Random().Next(Enum.GetValues(typeof(ExitLockStatus)).Length)) ?? ExitLockStatus.Lock),
-                    ExitId = 1,
-                    Length = 1,
-                    LockingFlag = "0",
-                    UnlockingFlag = "1",
-                    ExitName = $"格口{i + 1}",
-                    Remarks = $"这是备注{i + 1}",
-                    Num = i + 1
-                });
-                //PackageExitLockSettings.ProtocolType
-            }
+            _excel = excel;
+            _deviceService = deviceService;
         }
 
         public SnackbarMessageQueue PackageExitLockSettingsMessageQueue {
@@ -84,7 +85,37 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             get => new DelegateCommand<object>(LoadedDelegate);
         }
 
-        private void LoadedDelegate(object obj) {
+        private async void LoadedDelegate(object obj) {
+            if (!_isLoaded) {
+                _isLoaded = true;
+                await Application.Current.Dispatcher.InvokeAsync(async () => {
+                    //PackageExitLockSettings
+                    var configInfoModel = await _configRepository.FirstOrDefault(f =>
+                        f.ConfigName.Equals("PackageExitLockSettings"));
+                    if (configInfoModel is not null) {
+                        try {
+                            var packageExitLockSettingsDto = JsonConvert.DeserializeObject<PackageExitLockSettingsDto>(configInfoModel.Value?.ToString() ?? string.Empty);
+                            if (packageExitLockSettingsDto is not null) {
+                                PackageExitLockSettings = new PackageExitLockSettingsModel() {
+                                    IsUsePackageExitLock = packageExitLockSettingsDto.IsUsePackageExitLock,
+                                    ProtocolType = packageExitLockSettingsDto.ProtocolType,
+                                    S7Config = new S7ConfigModel() {
+                                        Db = packageExitLockSettingsDto.S7Config.Db,
+                                        Ip = packageExitLockSettingsDto.S7Config.Ip,
+                                        Slot = packageExitLockSettingsDto.S7Config.Slot,
+                                        Rack = packageExitLockSettingsDto.S7Config.Rack,
+                                        Timeout = packageExitLockSettingsDto.S7Config.Timeout
+                                    }
+                                };
+                            }
+                        }
+                        catch (Exception e) {
+                            PackageExitLockSettingsMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("加载设置失败") ?? string.Empty}:{e.Message}");
+                        }
+                    }
+                });
+            }
+            RefreshData();
         }
 
         public ICommand AddCommand {
@@ -101,6 +132,37 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         PackageExitLockSettingsMessageQueue.Enqueue(model.ExceptionContent);
                         return;
                     }
+
+                    if (model.IsOk) {
+                        //保存到数据库
+                        var packageExitLockBindingInfoModel = new PackageExitLockBindingInfoModel() {
+                            Address = model.Address,
+                            CreateTime = DateTime.Now,
+                            ExitId = model.SelectExitDefinitionInfo.Id,
+                            Length = model.Length,
+                            LockingFlag = model.LockingFlag,
+                            UnlockingFlag = model.UnlockingFlag,
+                            ModifyTime = DateTime.Now,
+                        };
+                        //检查是否已存在相同格口
+                        var bindingInfoModel = await _packageExitLockBindingRepository.FirstOrDefault(
+                            s => s.ExitId.Equals(model.SelectExitDefinitionInfo.Id));
+                        if (bindingInfoModel is not null) {
+                            PackageExitLockSettingsMessageQueue.Enqueue($"格口:{model.SelectExitDefinitionInfo.ExitName} 重复绑定");
+                            return;
+                        }
+
+                        var insert = await _packageExitLockBindingRepository.Insert(packageExitLockBindingInfoModel);
+                        if (insert) {
+                            EventAggregator.Instance.Publish(packageExitLockBindingInfoModel);
+                            PackageExitLockSettingsMessageQueue.Enqueue("保存成功");
+                            //刷新列表
+                            RefreshData();
+                        }
+                        else {
+                            PackageExitLockSettingsMessageQueue.Enqueue("保存失败");
+                        }
+                    }
                 }
             });
         }
@@ -109,28 +171,194 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             get => new DelegateCommand<object>(ImportDelegate);
         }
 
-        private void ImportDelegate(object obj) {
+        private async void ImportDelegate(object obj) {
+            //导入
+            var openFileDialog = new Microsoft.Win32.OpenFileDialog() {
+                Title = "Please select the file to import.",
+                Filter = $"{Languages.Language.ResourceManager.GetString("Excel文件") ?? string.Empty}(xlsx)|*.xlsx",
+                DefaultExt = "xlsx",
+                InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+            };
+            if (openFileDialog.ShowDialog() == true) {
+                var exportDialog = new ExportDialog();
+                if (exportDialog.DataContext is ExportDialogViewModel model) {
+                    model.FilePath = openFileDialog.FileName;
+                    model.Identifier = "MainDialog";
+                    model.Message = "Retrieving data...";
+                    DialogHost.Show(exportDialog, model.Identifier);
+
+                    var models = await _excel.ReadExcel<PackageExitLockBindingItemInfoModel>(openFileDialog.FileName, async p => {
+                        model.Progress = p;
+                        model.ProgressText = $"{p}%";
+                        if (p == 100) {
+                            await Application.Current.Dispatcher.InvokeAsync(() => {
+                                if (DialogHost.IsDialogOpen(model.Identifier)) {
+                                    DialogHost.Close(model.Identifier);
+                                }
+                            });
+                        }
+                    }, async e => {
+                        await Application.Current.Dispatcher.InvokeAsync(() => {
+                            if (DialogHost.IsDialogOpen(model.Identifier)) {
+                                DialogHost.Close(model.Identifier);
+                            }
+                        });
+                        PackageExitLockSettingsMessageQueue?.Enqueue(e.Message);
+                    });
+                    await Task.Delay(500);
+                    if (models?.Any() == true) {
+                        var duplicateExitNames = models.GroupBy(g => g.ExitName)
+                            .Where(g => g.Count() > 1)  // 选择具有重复键的组
+                            .Select(g => g.Key)
+                            .ToList();
+                        if (duplicateExitNames.Any()) {
+                            var join = string.Join(",", duplicateExitNames);
+                            PackageExitLockSettingsMessageQueue.Enqueue($"{join},重复了");
+                            return;
+                        }
+                        //批量添加到数据库
+                        var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0, o => o.CreateTime);
+
+                        var infoModels = models.Select(s => new PackageExitLockBindingInfoModel {
+                            Address = s.Address,
+                            CreateTime = s.CreateTime,
+                            ModifyTime = s.ModifyTime,
+                            CurrentStatus = s.CurrentStatus,
+                            ExitId = packageExitDefinitionInfoModels.FirstOrDefault(f => f.ExitName.Equals(s.ExitName))?.Id ?? 0,
+                            Length = s.Length,
+                            LockingFlag = s.LockingFlag,
+                            Remarks = s.Remarks,
+                            UnlockingFlag = s.UnlockingFlag,
+                        }).Where(w => !w.ExitId.Equals(0)).ToList();
+
+                        var insertOrUpdate = await _packageExitLockBindingRepository.InsertOrUpdateRange(infoModels);
+                        if (insertOrUpdate) {
+                            EventAggregator.Instance.Publish(infoModels.FirstOrDefault());
+                            PackageExitLockSettingsMessageQueue.Enqueue("保存成功");
+                            //刷新列表
+                            RefreshData();
+                        }
+                        else {
+                            PackageExitLockSettingsMessageQueue.Enqueue("保存失败");
+                        }
+                    }
+                }
+            }
         }
 
         public ICommand ExportCommand {
             get => new DelegateCommand<object>(ExportDelegate);
         }
 
-        private void ExportDelegate(object obj) {
+        private async void ExportDelegate(object obj) {
+            //导出
+            if (PackageExitLockBindingItems?.Any() != true) {
+                PackageExitLockSettingsMessageQueue?.Enqueue(Languages.Language.ResourceManager.GetString("列表中没有数据") ?? string.Empty);
+                return;
+            }
+
+            //导出
+
+            var saveFileDialog = new Microsoft.Win32.SaveFileDialog() {
+                Title = "Please select the location to save the file.",
+                Filter = $"{Languages.Language.ResourceManager.GetString("Excel文件") ?? string.Empty}(xlsx)|*.xlsx",
+                DefaultExt = "xlsx",
+                InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+            };
+            if (saveFileDialog.ShowDialog() == true) {
+                var exportDialog = new ExportDialog();
+                if (exportDialog.DataContext is ExportDialogViewModel model) {
+                    model.FilePath = saveFileDialog.FileName;
+                    model.Identifier = "MainDialog";
+                    model.Message = "Retrieving data...";
+                    DialogHost.Show(exportDialog, model.Identifier);
+                    var export = await _excel.Export(saveFileDialog.FileName,
+                        $"锁格配置列表",
+                        "锁格配置列表", PackageExitLockBindingItems?.ToList() ?? new List<PackageExitLockBindingItemInfoModel>(),
+                        new List<string>(), async p => {
+                            model.Progress = p;
+                            model.ProgressText = $"{p}%";
+                            if (p == 100) {
+                                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                                    if (DialogHost.IsDialogOpen(model.Identifier)) {
+                                        DialogHost.Close(model.Identifier);
+                                    }
+                                });
+                            }
+                        }, e => {
+                            PackageExitLockSettingsMessageQueue?.Enqueue(e.Message);
+                        });
+                    if (!export) {
+                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                            if (DialogHost.IsDialogOpen(model.Identifier)) {
+                                DialogHost.Close(model.Identifier);
+                            }
+                        });
+                    }
+                }
+            }
         }
 
         public ICommand ModifyCommand {
             get => new DelegateCommand<PackageExitLockBindingItemInfoModel>(ModifyDelegate);
         }
 
-        private void ModifyDelegate(PackageExitLockBindingItemInfoModel obj) {
+        private async void ModifyDelegate(PackageExitLockBindingItemInfoModel obj) {
+            await Application.Current.Dispatcher.InvokeAsync(async () => {
+                var packageExitLockEditor = new PackageExitLockEditor();
+                if (packageExitLockEditor.DataContext is PackageExitLockEditorViewModel model) {
+                    model.Identifier = "PackageExitLockDialog";
+                    model.PackageExitLockBindingItemInfo = obj;
+                    await DialogHost.Show(packageExitLockEditor, model.Identifier);
+                    if (!string.IsNullOrEmpty(model.ExceptionContent)) {
+                        PackageExitLockSettingsMessageQueue.Enqueue(model.ExceptionContent);
+                        return;
+                    }
+
+                    if (model.IsOk) {
+                        //更新到数据库
+                        var packageExitLockBindingInfoModel = new PackageExitLockBindingInfoModel() {
+                            Address = model.Address,
+                            CreateTime = DateTime.Now,
+                            ExitId = model.SelectExitDefinitionInfo.Id,
+                            Length = model.Length,
+                            LockingFlag = model.LockingFlag,
+                            UnlockingFlag = model.UnlockingFlag,
+                            ModifyTime = DateTime.Now,
+                            Id = model.PackageExitLockBindingItemInfo.Id
+                        };
+
+                        var update = await _packageExitLockBindingRepository.Update(packageExitLockBindingInfoModel);
+                        if (update) {
+                            EventAggregator.Instance.Publish(packageExitLockBindingInfoModel);
+                            PackageExitLockSettingsMessageQueue.Enqueue("保存成功");
+                            //刷新列表
+                            RefreshData();
+                        }
+                        else {
+                            PackageExitLockSettingsMessageQueue.Enqueue("保存失败");
+                        }
+                    }
+                }
+            });
         }
 
         public ICommand DeleteCommand {
             get => new DelegateCommand<PackageExitLockBindingItemInfoModel>(DeleteDelegate);
         }
 
-        private void DeleteDelegate(PackageExitLockBindingItemInfoModel obj) {
+        private async void DeleteDelegate(PackageExitLockBindingItemInfoModel obj) {
+            await Application.Current.Dispatcher.InvokeAsync(async () => {
+                var model = await _packageExitLockBindingRepository.
+                    FirstOrDefault(f =>
+                        f.ExitId.Equals(obj.ExitId));
+                if (model is not null) {
+                    var delete = await _packageExitLockBindingRepository.Delete(model);
+                    if (delete) {
+                        RefreshData();
+                    }
+                }
+            });
         }
 
         /// <summary>
@@ -140,7 +368,81 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             get => new DelegateCommand<object>(SaveSettingDelegate);
         }
 
-        private void SaveSettingDelegate(object obj) {
+        private async void SaveSettingDelegate(object obj) {
+            if (!IsSavingInProgress) {
+                IsSavingInProgress = true;
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+                    if (_deviceService.RunningStatus) {
+                        IsSavingInProgress = false;
+                        PackageExitLockSettingsMessageQueue.Enqueue($"设备工作中,无法设置");
+                        return;
+                    }
+
+                    var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
+                        ConfigName = "PackageExitLockSettings",
+                        Value = JsonConvert.SerializeObject(new PackageExitLockSettingsDto() {
+                            IsUsePackageExitLock = PackageExitLockSettings.IsUsePackageExitLock,
+                            ProtocolType = PackageExitLockSettings.ProtocolType,
+                            S7Config = new S7ConfigDto {
+                                Db = PackageExitLockSettings.S7Config.Db,
+                                Ip = PackageExitLockSettings.S7Config.Ip,
+                                Slot = PackageExitLockSettings.S7Config.Slot,
+                                Rack = PackageExitLockSettings.S7Config.Rack,
+                                Timeout = PackageExitLockSettings.S7Config.Timeout
+                            }
+                        })
+                    });
+                    if (insertOrUpdate) {
+                        EventAggregator.Instance.Publish(new SettingsChangedEvent {
+                            SettingsName = "PackageExitLockSettings"
+                        });
+                    }
+
+                    IsSavingInProgress = false;
+                    PackageExitLockSettingsMessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
+                        Languages.Language.ResourceManager.GetString("SaveFailed"))}");
+                });
+            }
+        }
+
+        private async void RefreshData() {
+            var loadingDialog = new LoadingDialog();
+            if (loadingDialog.DataContext is not LoadingDialogViewModel model) return;
+            await Application.Current.Dispatcher.InvokeAsync(() => {
+                model.Identifier = "PackageExitLockDialog";
+                DialogHost.Show(loadingDialog, model.Identifier).ConfigureAwait(false);
+            });
+            var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0, o => o.CreateTime);
+
+            var infoModels = await _packageExitLockBindingRepository.Select(s => s.Id > 0,
+                o => o.Id);
+
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+                PackageExitLockBindingItems.Clear();
+
+                if (infoModels?.Any() == true) {
+                    var packageExitLockBindingItemInfoModels = infoModels.Select((s, i) => new PackageExitLockBindingItemInfoModel {
+                        Address = s.Address,
+                        CreateTime = s.CreateTime,
+                        ModifyTime = s.ModifyTime,
+                        CurrentStatus = s.CurrentStatus,
+                        ExitId = s.ExitId,
+                        ExitName =
+                            packageExitDefinitionInfoModels.FirstOrDefault(f => f.Id.Equals(s.ExitId))?.ExitName ??
+                            string.Empty,
+                        Id = s.Id,
+                        Length = s.Length,
+                        LockingFlag = s.LockingFlag,
+                        Num = i + 1,
+                        Remarks = s.Remarks,
+                        UnlockingFlag = s.UnlockingFlag,
+                    })?.ToList() ?? new List<PackageExitLockBindingItemInfoModel>();
+                    PackageExitLockBindingItems.AddRange(packageExitLockBindingItemInfoModels);
+                }
+                if (DialogHost.IsDialogOpen(model.Identifier)) {
+                    DialogHost.Close(model.Identifier);
+                }
+            });
         }
     }
 }

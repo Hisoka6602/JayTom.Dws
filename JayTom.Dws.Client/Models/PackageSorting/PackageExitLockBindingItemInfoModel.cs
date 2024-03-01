@@ -2,8 +2,11 @@
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
+using System.ComponentModel;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using JayTom.Dws.Plugin.Excel.Attributes;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 
 namespace JayTom.Dws.Client.Models.PackageSorting {
@@ -28,6 +31,7 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 格口名称
         /// </summary>
+        [DisplayName("格口名称"), MemberNotNull, ExcelInfo(Width = 4000)]
         public string ExitName {
             get => _exitName;
             set => SetProperty(ref _exitName, value);
@@ -36,6 +40,7 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 地址
         /// </summary>
+        [DisplayName("地址"), MemberNotNull, ExcelInfo(Width = 4000)]
         public string Address {
             get => _address;
             set => SetProperty(ref _address, value);
@@ -44,6 +49,7 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 长度
         /// </summary>
+        [DisplayName("长度"), MemberNotNull, ExcelInfo(Width = 4000)]
         public int Length {
             get => _length;
             set => SetProperty(ref _length, value);
@@ -52,6 +58,7 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 锁定标识
         /// </summary>
+        [DisplayName("锁定标识"), MemberNotNull, ExcelInfo(Width = 4000)]
         public string LockingFlag {
             get => _lockingFlag;
             set => SetProperty(ref _lockingFlag, value);
@@ -60,6 +67,7 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 解锁标识
         /// </summary>
+        [DisplayName("解锁标识"), MemberNotNull, ExcelInfo(Width = 4000)]
         public string UnlockingFlag {
             get => _unlockingFlag;
             set => SetProperty(ref _unlockingFlag, value);
