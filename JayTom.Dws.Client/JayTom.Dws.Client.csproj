@@ -10,6 +10,7 @@
     <SignAssembly>False</SignAssembly>
     <DelaySign>False</DelaySign>
     <IncludeSymbols>False</IncludeSymbols>
+    <ApplicationIcon>ico.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
@@ -137,7 +138,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="ConfigurationFiles\SortingConfigFiles\WxckExitMonitorSorting.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </None>
     <None Update="License\License.key">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -169,6 +170,10 @@
     <EmbeddedResource Remove="Service\新文件夹\**" />
     <None Remove="Service\新文件夹\**" />
     <Page Remove="Service\新文件夹\**" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="favicon.ico" />
+    <Content Include="ico.ico" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="DynamsoftCommon">

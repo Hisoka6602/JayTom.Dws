@@ -846,6 +846,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                             */
 
                             var licenseDirectory = Path.Combine(Directory.GetCurrentDirectory(), "License");
+                            if (!Directory.Exists(licenseDirectory)) {
+                                Directory.CreateDirectory(licenseDirectory);
+                            }
                             var firstOrDefault = Directory.GetFiles(licenseDirectory, "*.key").FirstOrDefault();
                             if (firstOrDefault is not null) {
                                 //解密授权

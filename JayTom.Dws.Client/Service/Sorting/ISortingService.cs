@@ -61,11 +61,6 @@ namespace JayTom.Dws.Client.Service.Sorting {
         bool IsConnected { get; }
 
         /// <summary>
-        /// 是否需要分拣
-        /// </summary>
-        bool IsSortingEnabled { get; }
-
-        /// <summary>
         /// 获取物流信息
         /// </summary>
         /// <param name="barCode"></param>

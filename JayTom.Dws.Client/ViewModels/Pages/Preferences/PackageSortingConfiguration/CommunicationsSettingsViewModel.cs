@@ -7,6 +7,7 @@ using Newtonsoft.Json;
 using System.IO.Ports;
 using System.Windows.Input;
 using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Data.Package;
 using JayTom.Dws.Client.Models;
 using JayTom.Dws.Data.LocalLog;
 using MaterialDesignThemes.Wpf;
@@ -21,7 +22,6 @@ using JayTom.Dws.Client.ViewModels.Dialog;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Client.Models.PackageSorting;
-using JayTom.Dws.Domain.Dto.CommunicationsSettings;
 using JayTom.Dws.Client.Models.PackageSorting.Rule;
 using JayTom.Dws.Client.Models.SettingsCommomModels;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
@@ -35,10 +35,8 @@ using JayTom.Dws.Client.Models.PackageSorting.CommunicationConnectionSub;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig.ConnectionParams;
 using JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration.SortingMethodEditors;
 using JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.SortingMethodEditors;
-using JayTom.Dws.Data.Package;
 
-namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration
-{
+namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration {
 
     public class CommunicationsSettingsViewModel : BindableBase {
         private readonly IConfigRepository _configRepository;
@@ -356,155 +354,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
         private void LoadedDelegate(object obj) {
             RefreshData();
-            /*if (!_isLoaded) {
-                _isLoaded = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
-                    /*PortItems.Clear();
-                    PortItems.AddRange(SerialPort.GetPortNames());
-                    //加载内容
-                    var configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("CommunicationsSettings"));
-                    if (configInfoModel is not null) {
-                        try {
-                            var settingsDto = JsonConvert.DeserializeObject<CommunicationsSettingsDto>(configInfoModel.Value);
-                            if (settingsDto is not null) {
-                                SelectDataFormat =
-                                    DataFormatTypeItems.FirstOrDefault(
-                                        f => f.Value == settingsDto.SerialPortSettingsInfo.DataFormat) ??
-                                    new DataFormatTypeInfoModel();
-                                SelectParity =
-                                    ParityItems.FirstOrDefault(f => f.Value == settingsDto.SerialPortSettingsInfo.Parity) ??
-                                    new ParityInfoModel();
-                                SelectStopBits =
-                                    StopBitsItems.FirstOrDefault(f => f.Value == settingsDto.SerialPortSettingsInfo.StopBits) ??
-                                    new StopBitsInfoModel();
-                                SelectCommunicationsType =
-                                    CommunicationsTypeItems.FirstOrDefault(f => f.Value.Equals(settingsDto.Type)) ??
-                                    new CommunicationsTypeInfoModel();
-                                SelectCommunicationProtocol =
-                                    CommunicationProtocolItems.FirstOrDefault(f =>
-                                        f.Value.Equals(settingsDto.Protocol)) ??
-                                    new CommunicationProtocolInfoModel();
-                                CommunicationsSettingsInfo = new CommunicationsSettingsInfoModel() {
-                                    HeartbeatInfo = new HeartbeatInfoModel() {
-                                        HeartbeatData = settingsDto.HeartbeatInfo.HeartbeatData,
-                                        HeartbeatInterval = settingsDto.HeartbeatInfo.HeartbeatInterval,
-                                        IsHeartbeatEnabled = settingsDto.HeartbeatInfo.IsHeartbeatEnabled,
-                                        IsHeartbeatActive = settingsDto.HeartbeatInfo.IsHeartbeatActive,
-                                    },
-                                    MachineReplyInfo = new MachineReplyInfoModel() {
-                                        IsVerificationEnabled = settingsDto.MachineReplyInfo.IsVerificationEnabled,
-                                        MaxRetryCount = settingsDto.MachineReplyInfo.MaxRetryCount,
-                                        Timeout = settingsDto.MachineReplyInfo.Timeout,
-                                    },
-                                    Protocol = settingsDto.Protocol,
-                                    SerialPortSettingsInfo = new SerialPortSettingsInfoModel() {
-                                        BaudRate = settingsDto.SerialPortSettingsInfo.BaudRate,
-                                        DataBits = settingsDto.SerialPortSettingsInfo.DataBits,
-                                        DataFormat = settingsDto.SerialPortSettingsInfo.DataFormat,
-                                        Parity = settingsDto.SerialPortSettingsInfo.Parity,
-                                        PortName = settingsDto.SerialPortSettingsInfo.PortName,
-                                        StopBits = settingsDto.SerialPortSettingsInfo.StopBits
-                                    },
-                                    TcpSettingsInfo = new TcpSettingsInfoModel() {
-                                        ConnectionMode = settingsDto.TcpSettingsInfo.ConnectionMode,
-                                        ServerConfig = new TcpInfoModel() {
-                                            IpAddress = settingsDto.TcpSettingsInfo.ServerConfig.IpAddress,
-                                            Port = settingsDto.TcpSettingsInfo.ServerConfig.Port,
-                                        },
-                                        ClientConfig = new TcpInfoModel() {
-                                            IpAddress = settingsDto.TcpSettingsInfo.ClientConfig.IpAddress,
-                                            Port = settingsDto.TcpSettingsInfo.ClientConfig.Port,
-                                        }
-                                    },
-                                    DeviceControlSettingsInfo = new DeviceControlSettingsInfoModel() {
-                                        IsUseRemovePackageByDevice = settingsDto.DeviceControlSettingsInfo.IsUseRemovePackageByDevice,
-                                        IsUseStartDeviceByDevice = settingsDto.DeviceControlSettingsInfo.IsUseStartDeviceByDevice,
-                                        IsUseStopDeviceByDevice = settingsDto.DeviceControlSettingsInfo.IsUseStopDeviceByDevice,
-                                        IsUseCreatePackageByDevice = settingsDto.DeviceControlSettingsInfo.IsUseCreatePackageByDevice
-                                    },
-                                    Type = settingsDto.Type,
-                                    IsUsePackageExpiry = settingsDto.IsUsePackageExpiry,
-                                    PackageExpiryTime = settingsDto.PackageExpiryTime,
-                                };
-                            }
-                        }
-                        catch (Exception e) {
-                            CommunicationsSettingsMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("加载设置失败")}:{e.Message}");
-                        }
-                    }#1#
-                });
-            }*/
-        }
-
-        /// <summary>
-        /// 保存设置
-        /// </summary>
-        public ICommand SaveSettingsCommand {
-            get => new DelegateCommand<object>(SaveSettingDelegate);
-        }
-
-        private async void SaveSettingDelegate(object obj) {
-            //保存内容
-            if (!IsSavingInProgress) {
-                IsSavingInProgress = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
-                    //保存到数据库
-                    var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
-                        ConfigName = "CommunicationsSettings",
-                        Value = JsonConvert.SerializeObject(new CommunicationsSettingsDto() {
-                            HeartbeatInfo = new HeartbeatInfo() {
-                                HeartbeatData = CommunicationsSettingsInfo.HeartbeatInfo.HeartbeatData,
-                                HeartbeatInterval = CommunicationsSettingsInfo.HeartbeatInfo.HeartbeatInterval,
-                                IsHeartbeatEnabled = CommunicationsSettingsInfo.HeartbeatInfo.IsHeartbeatEnabled,
-                                IsHeartbeatActive = CommunicationsSettingsInfo.HeartbeatInfo.IsHeartbeatActive,
-                            },
-                            MachineReplyInfo = new MachineReplyInfo() {
-                                IsVerificationEnabled = CommunicationsSettingsInfo.MachineReplyInfo.IsVerificationEnabled,
-                                MaxRetryCount = CommunicationsSettingsInfo.MachineReplyInfo.MaxRetryCount,
-                                Timeout = CommunicationsSettingsInfo.MachineReplyInfo.Timeout,
-                            },
-                            Protocol = SelectCommunicationProtocol.Value,
-                            SerialPortSettingsInfo = new SerialPortSettingsInfo() {
-                                BaudRate = CommunicationsSettingsInfo.SerialPortSettingsInfo.BaudRate,
-                                DataBits = CommunicationsSettingsInfo.SerialPortSettingsInfo.DataBits,
-                                DataFormat = SelectDataFormat.Value,
-                                Parity = SelectParity.Value,
-                                PortName = CommunicationsSettingsInfo.SerialPortSettingsInfo.PortName,
-                                StopBits = SelectStopBits.Value,
-                            },
-                            TcpSettingsInfo = new TcpSettingsInfo() {
-                                ConnectionMode = CommunicationsSettingsInfo.TcpSettingsInfo.ConnectionMode,
-                                ClientConfig = new TcpInfo() {
-                                    IpAddress = CommunicationsSettingsInfo.TcpSettingsInfo.ClientConfig.IpAddress,
-                                    Port = CommunicationsSettingsInfo.TcpSettingsInfo.ClientConfig.Port,
-                                },
-                                ServerConfig = new TcpInfo() {
-                                    IpAddress = CommunicationsSettingsInfo.TcpSettingsInfo.ServerConfig.IpAddress,
-                                    Port = CommunicationsSettingsInfo.TcpSettingsInfo.ServerConfig.Port,
-                                }
-                            },
-                            DeviceControlSettingsInfo = new DeviceControlSettingsInfo() {
-                                IsUseCreatePackageByDevice = CommunicationsSettingsInfo.DeviceControlSettingsInfo.IsUseCreatePackageByDevice,
-                                IsUseRemovePackageByDevice = CommunicationsSettingsInfo.DeviceControlSettingsInfo.IsUseRemovePackageByDevice,
-                                IsUseStartDeviceByDevice = CommunicationsSettingsInfo.DeviceControlSettingsInfo.IsUseStartDeviceByDevice,
-                                IsUseStopDeviceByDevice = CommunicationsSettingsInfo.DeviceControlSettingsInfo.IsUseStopDeviceByDevice
-                            },
-                            Type = SelectCommunicationsType.Value,
-                            IsUsePackageExpiry = CommunicationsSettingsInfo.IsUsePackageExpiry,
-                            PackageExpiryTime = CommunicationsSettingsInfo.PackageExpiryTime
-                        })
-                    });
-                    if (insertOrUpdate) {
-                        EventAggregator.Instance.Publish(new SettingsChangedEvent {
-                            SettingsName = "CommunicationsSettings"
-                        });
-                    }
-
-                    IsSavingInProgress = false;
-                    CommunicationsSettingsMessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
-                        Languages.Language.ResourceManager.GetString("SaveFailed"))}");
-                });
-            }
         }
 
         public ICommand AddCommand {
@@ -533,19 +382,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                                 CreateTime = DateTime.Now,
                                 DeviceExtensionConfigInfo = new DeviceExtensionConfigInfoModel() {
                                     CreateTime = DateTime.Now,
-                                    CreatePackageByDevice = model.CommunicationConnectionItem.DeviceExtensionConfigInfo
-                                        ?.CreatePackageByDevice ?? false,
                                     ModifyTime = DateTime.Now,
                                     MaxRetryCount = model.CommunicationConnectionItem.DeviceExtensionConfigInfo
                                         ?.MaxRetryCount ?? 0,
-                                    RemovePackageByDevice = model.CommunicationConnectionItem.DeviceExtensionConfigInfo
-                                        ?.RemovePackageByDevice ?? false,
                                     ValidateDeviceResponse = model.CommunicationConnectionItem.DeviceExtensionConfigInfo
                                         ?.ValidateDeviceResponse ?? false,
-                                    StartRunningByDevice = model.CommunicationConnectionItem.DeviceExtensionConfigInfo
-                                        ?.StartRunningByDevice ?? false,
-                                    StopRunningByDevice = model.CommunicationConnectionItem.DeviceExtensionConfigInfo
-                                        ?.StopRunningByDevice ?? false,
                                 },
                                 HeartbeatConfigInfo = new HeartbeatConfigInfoModel() {
                                     CreateTime = DateTime.Now,
@@ -562,10 +403,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                                 },
                                 IsActive = true,
                                 IsAutoReconnect = model.CommunicationConnectionItem.IsAutoReconnect,
-                                IsUsePackageValidityPeriod =
-                                    model.CommunicationConnectionItem.IsUsePackageValidityPeriod,
-                                ValidityPeriodInMilliseconds =
-                                    model.CommunicationConnectionItem.ValidityPeriodInMilliseconds,
                                 SerialPortConfigInfo = new SerialPortConfigInfoModel() {
                                     BaudRate = model.CommunicationConnectionItem.SerialPortConfigInfo?.BaudRate ?? 0,
                                     CreateTime = DateTime.Now,
@@ -606,44 +443,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                                 },
                             });
                         if (insertDetailAsync) {
-                            //EventAggregator.Instance.Publish(infoModel);
-
-                            //临时额外保存下位机设置
-
-                            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
-                                ConfigName = "CommunicationsSettings",
-                                Value = JsonConvert.SerializeObject(new CommunicationsSettingsDto() {
-                                    HeartbeatInfo = new HeartbeatInfo() {
-                                        HeartbeatData = model?.CommunicationConnectionItem?.HeartbeatConfigInfo?.HeartbeatContent ?? string.Empty,
-                                        HeartbeatInterval = model?.CommunicationConnectionItem?.HeartbeatConfigInfo?.HeartbeatInterval ?? 0,
-                                        IsHeartbeatEnabled = model?.CommunicationConnectionItem?.HeartbeatConfigInfo?.IsHeartbeatEnabled ?? false,
-                                        IsHeartbeatActive = model?.CommunicationConnectionItem?.HeartbeatConfigInfo?.IsHeartbeatActive ?? false,
-                                    },
-                                    MachineReplyInfo = new MachineReplyInfo() {
-                                        IsVerificationEnabled = model?.CommunicationConnectionItem?.DeviceExtensionConfigInfo?.ValidateDeviceResponse ?? false,
-                                        MaxRetryCount = model?.CommunicationConnectionItem?.DeviceExtensionConfigInfo?.MaxRetryCount ?? 0,
-                                        Timeout = model?.CommunicationConnectionItem?.DeviceExtensionConfigInfo?.ValidationTimeout ?? 0,
-                                    },
-                                    Protocol = model?.CommunicationConnectionItem?.CommunicationProtocol?.Value ?? CommunicationProtocol.None,
-                                    DeviceControlSettingsInfo = new DeviceControlSettingsInfo() {
-                                        IsUseCreatePackageByDevice = model?.CommunicationConnectionItem?.DeviceExtensionConfigInfo?.CreatePackageByDevice ?? false,
-                                        IsUseRemovePackageByDevice = model?.CommunicationConnectionItem?.DeviceExtensionConfigInfo?.RemovePackageByDevice ?? false,
-                                        IsUseStartDeviceByDevice = model?.CommunicationConnectionItem?.DeviceExtensionConfigInfo?.StartRunningByDevice ?? false,
-                                        IsUseStopDeviceByDevice = model?.CommunicationConnectionItem?.DeviceExtensionConfigInfo?.StopRunningByDevice ?? false,
-                                    },
-                                    Type = model?.CommunicationConnectionItem?.CommunicationType.Value ?? CommunicationsType.None,
-                                    IsUsePackageExpiry = model?.CommunicationConnectionItem?.IsUsePackageValidityPeriod ?? false,
-                                    PackageExpiryTime = model?.CommunicationConnectionItem?.ValidityPeriodInMilliseconds ?? 0
-                                })
-                            });
-                            if (insertOrUpdate) {
-                                EventAggregator.Instance.Publish(new SettingsChangedEvent {
-                                    SettingsName = "CommunicationsSettings"
-                                });
-                            }
-
-                            //-----
-
                             CommunicationsSettingsMessageQueue.Enqueue("保存成功");
                             RefreshData();
                         }
@@ -692,19 +491,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                                 CommunicationType = (int)model.CommunicationConnectionItem.CommunicationType.Value,
                                 ConnectionName = model.CommunicationConnectionItem.ConnectionName,
                                 DeviceExtensionConfigInfo = new DeviceExtensionConfigInfoModel() {
-                                    CreatePackageByDevice = model.CommunicationConnectionItem.DeviceExtensionConfigInfo
-                                        ?.CreatePackageByDevice ?? false,
                                     ModifyTime = DateTime.Now,
                                     MaxRetryCount = model.CommunicationConnectionItem.DeviceExtensionConfigInfo
                                         ?.MaxRetryCount ?? 0,
-                                    RemovePackageByDevice = model.CommunicationConnectionItem.DeviceExtensionConfigInfo
-                                        ?.RemovePackageByDevice ?? false,
                                     ValidateDeviceResponse = model.CommunicationConnectionItem.DeviceExtensionConfigInfo
                                         ?.ValidateDeviceResponse ?? false,
-                                    StartRunningByDevice = model.CommunicationConnectionItem.DeviceExtensionConfigInfo
-                                        ?.StartRunningByDevice ?? false,
-                                    StopRunningByDevice = model.CommunicationConnectionItem.DeviceExtensionConfigInfo
-                                        ?.StopRunningByDevice ?? false,
                                 },
                                 HeartbeatConfigInfo = new HeartbeatConfigInfoModel() {
                                     ModifyTime = DateTime.Now,
@@ -720,10 +511,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                                 },
                                 IsActive = true,
                                 IsAutoReconnect = model.CommunicationConnectionItem.IsAutoReconnect,
-                                IsUsePackageValidityPeriod =
-                                    model.CommunicationConnectionItem.IsUsePackageValidityPeriod,
-                                ValidityPeriodInMilliseconds =
-                                    model.CommunicationConnectionItem.ValidityPeriodInMilliseconds,
                                 SerialPortConfigInfo = new SerialPortConfigInfoModel() {
                                     BaudRate = model.CommunicationConnectionItem.SerialPortConfigInfo?.BaudRate ?? 0,
                                     DataBits = model.CommunicationConnectionItem.SerialPortConfigInfo?.DataBits ?? 0,
@@ -761,47 +548,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                                     }
                                 },
                             });
-                        if (insertDetailAsync) {
-                            //EventAggregator.Instance.Publish(infoModel);
-                            //临时额外保存下位机设置
-
-                            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
-                                ConfigName = "CommunicationsSettings",
-                                Value = JsonConvert.SerializeObject(new CommunicationsSettingsDto() {
-                                    HeartbeatInfo = new HeartbeatInfo() {
-                                        HeartbeatData = model?.CommunicationConnectionItem?.HeartbeatConfigInfo?.HeartbeatContent ?? string.Empty,
-                                        HeartbeatInterval = model?.CommunicationConnectionItem?.HeartbeatConfigInfo?.HeartbeatInterval ?? 0,
-                                        IsHeartbeatEnabled = model?.CommunicationConnectionItem?.HeartbeatConfigInfo?.IsHeartbeatEnabled ?? false,
-                                        IsHeartbeatActive = model?.CommunicationConnectionItem?.HeartbeatConfigInfo?.IsHeartbeatActive ?? false,
-                                    },
-                                    MachineReplyInfo = new MachineReplyInfo() {
-                                        IsVerificationEnabled = model?.CommunicationConnectionItem?.DeviceExtensionConfigInfo?.ValidateDeviceResponse ?? false,
-                                        MaxRetryCount = model?.CommunicationConnectionItem?.DeviceExtensionConfigInfo?.MaxRetryCount ?? 0,
-                                        Timeout = model?.CommunicationConnectionItem?.DeviceExtensionConfigInfo?.ValidationTimeout ?? 0,
-                                    },
-                                    Protocol = model?.CommunicationConnectionItem?.CommunicationProtocol?.Value ?? CommunicationProtocol.None,
-                                    DeviceControlSettingsInfo = new DeviceControlSettingsInfo() {
-                                        IsUseCreatePackageByDevice = model?.CommunicationConnectionItem?.DeviceExtensionConfigInfo?.CreatePackageByDevice ?? false,
-                                        IsUseRemovePackageByDevice = model?.CommunicationConnectionItem?.DeviceExtensionConfigInfo?.RemovePackageByDevice ?? false,
-                                        IsUseStartDeviceByDevice = model?.CommunicationConnectionItem?.DeviceExtensionConfigInfo?.StartRunningByDevice ?? false,
-                                        IsUseStopDeviceByDevice = model?.CommunicationConnectionItem?.DeviceExtensionConfigInfo?.StopRunningByDevice ?? false,
-                                    },
-                                    Type = model?.CommunicationConnectionItem?.CommunicationType.Value ?? CommunicationsType.None,
-                                    IsUsePackageExpiry = model?.CommunicationConnectionItem?.IsUsePackageValidityPeriod ?? false,
-                                    PackageExpiryTime = model?.CommunicationConnectionItem?.ValidityPeriodInMilliseconds ?? 0
-                                })
-                            });
-                            if (insertOrUpdate) {
-                                EventAggregator.Instance.Publish(new SettingsChangedEvent {
-                                    SettingsName = "CommunicationsSettings"
-                                });
-                            }
-
-                            CommunicationsSettingsMessageQueue.Enqueue("保存成功");
-                        }
-                        else {
-                            CommunicationsSettingsMessageQueue.Enqueue("保存失败");
-                        }
+                        CommunicationsSettingsMessageQueue.Enqueue(insertDetailAsync ? "保存成功" : "保存失败");
                         RefreshData();
                     }
                 }
@@ -856,19 +603,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                     ConnectionName = s.ConnectionName,
                     DeviceExtensionConfigInfo = new DeviceExtensionConfigItemInfoModel() {
                         CreateTime = s.CreateTime,
-                        CreatePackageByDevice = s.DeviceExtensionConfigInfo
-                            ?.CreatePackageByDevice ?? false,
                         ModifyTime = s.ModifyTime,
                         MaxRetryCount = s.DeviceExtensionConfigInfo
                             ?.MaxRetryCount ?? 0,
-                        RemovePackageByDevice = s.DeviceExtensionConfigInfo
-                            ?.RemovePackageByDevice ?? false,
                         ValidateDeviceResponse = s.DeviceExtensionConfigInfo
                             ?.ValidateDeviceResponse ?? false,
-                        StartRunningByDevice = s.DeviceExtensionConfigInfo
-                            ?.StartRunningByDevice ?? false,
-                        StopRunningByDevice = s.DeviceExtensionConfigInfo
-                            ?.StopRunningByDevice ?? false,
                     },
                     HeartbeatConfigInfo = new HeartbeatConfigItemInfoModel() {
                         CreateTime = s.CreateTime,
@@ -885,10 +624,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                     },
                     IsActive = s.IsActive,
                     IsAutoReconnect = s.IsAutoReconnect,
-                    IsUsePackageValidityPeriod =
-                                    s.IsUsePackageValidityPeriod,
-                    ValidityPeriodInMilliseconds =
-                                    s.ValidityPeriodInMilliseconds,
                     SerialPortConfigInfo = new SerialPortConfigItemInfoModel() {
                         BaudRate = s.SerialPortConfigInfo?.BaudRate ?? 0,
                         CreateTime = s.CreateTime,

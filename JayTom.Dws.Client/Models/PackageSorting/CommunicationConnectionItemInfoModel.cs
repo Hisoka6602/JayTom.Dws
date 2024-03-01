@@ -4,26 +4,26 @@ using System.Linq;
 using System.Text;
 using System.Windows.Input;
 using System.Threading.Tasks;
+using JayTom.Dws.Data.Package;
 using System.Collections.Generic;
 using JayTom.Dws.Client.Models.CommunicationsSettingsModel;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig.ConnectionParams;
 using JayTom.Dws.Client.Models.PackageSorting.CommunicationConnectionSub;
-using JayTom.Dws.Data.Package;
 
-namespace JayTom.Dws.Client.Models.PackageSorting
-{
+namespace JayTom.Dws.Client.Models.PackageSorting {
+
     public class CommunicationConnectionItemInfoModel : BasePackageSortingItemInfoModel {
         private string _connectionName = string.Empty;
         private bool _isActive;
+
         private CommunicationsTypeInfoModel _communicationType = new() {
             Name = "None",
             Value = CommunicationsType.None
         };
+
         private SerialPortConfigItemInfoModel? _serialPortConfigInfo = new();
         private TcpConnectionConfigItemInfoModel? _tcpConnectionConfigInfo = new();
         private CommunicationProtocolInfoModel _communicationProtocol = new();
-        private bool _isUsePackageValidityPeriod;
-        private int _validityPeriodInMilliseconds;
         private bool _isAutoReconnect;
         private int _maxReconnectAttempts;
         private DeviceExtensionConfigItemInfoModel? _deviceExtensionConfigInfo = new();
@@ -88,7 +88,7 @@ namespace JayTom.Dws.Client.Models.PackageSorting
             set => SetProperty(ref _communicationProtocol, value);
         }
 
-        /// <summary>
+        /*/// <summary>
         /// 是否使用包裹有效周期
         /// </summary>
         public bool IsUsePackageValidityPeriod {
@@ -102,7 +102,7 @@ namespace JayTom.Dws.Client.Models.PackageSorting
         public int ValidityPeriodInMilliseconds {
             get => _validityPeriodInMilliseconds;
             set => SetProperty(ref _validityPeriodInMilliseconds, value);
-        }
+        }*/
 
         /// <summary>
         /// 是否自动重连

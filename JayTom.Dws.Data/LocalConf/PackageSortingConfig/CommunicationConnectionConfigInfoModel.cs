@@ -58,18 +58,6 @@ namespace JayTom.Dws.Data.LocalConf.PackageSortingConfig {
         public string CommunicationProtocol { get; set; } = string.Empty;
 
         /// <summary>
-        /// 是否使用包裹有效周期
-        /// </summary>
-        [Column("IsUsePackageValidityPeriod"), InsertOrUpdata]
-        public bool IsUsePackageValidityPeriod { get; set; }
-
-        /// <summary>
-        /// 有效时间
-        /// </summary>
-        [Column("ValidityPeriodInMilliseconds"), InsertOrUpdata]
-        public int ValidityPeriodInMilliseconds { get; set; }
-
-        /// <summary>
         /// 是否自动重连
         /// </summary>
         [Column("IsAutoReconnect"), InsertOrUpdata]

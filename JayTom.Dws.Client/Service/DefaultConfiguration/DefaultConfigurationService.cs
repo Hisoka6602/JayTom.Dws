@@ -20,7 +20,6 @@ using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Repository.LocalData;
-using JayTom.Dws.Domain.Dto.CommunicationsSettings;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.StartPanel;
 
 namespace JayTom.Dws.Client.Service.DefaultConfiguration {
@@ -203,33 +202,6 @@ namespace JayTom.Dws.Client.Service.DefaultConfiguration {
                         IsUseLocationOutput = false,
                     })
                 });
-                //分拣通讯
-                var task7 = _configRepository.InsertOrUpdate(new ConfigInfoModel() {
-                    ConfigName = "CommunicationsSettings",
-                    Value = JsonConvert.SerializeObject(new CommunicationsSettingsDto() {
-                        Protocol = CommunicationProtocol.None,
-                        SerialPortSettingsInfo = new SerialPortSettingsInfo() {
-                            BaudRate = 9600,
-                            DataBits = 8,
-                            DataFormat = DataFormatType.Ascii,
-                            Parity = Parity.None,
-                            StopBits = StopBits.One
-                        },
-                        TcpSettingsInfo = new TcpSettingsInfo() {
-                            ClientConfig = new TcpInfo() {
-                                IpAddress = "127.0.0.1",
-                                Port = 2000
-                            },
-                            ServerConfig = new TcpInfo() {
-                                IpAddress = "127.0.0.1",
-                                Port = 2000
-                            },
-                            ConnectionMode = TcpConnectionMode.Client
-                        },
-                        Type = CommunicationsType.None,
-                        IsUsePackageExpiry = false,
-                    })
-                });
                 //空间清理
                 var task8 = _configRepository.InsertOrUpdate(new ConfigInfoModel() {
                     ConfigName = "CacheClearSettings",
@@ -260,7 +232,6 @@ namespace JayTom.Dws.Client.Service.DefaultConfiguration {
                     task4,
                     task5,
                     task6,
-                    task7,
                     task8,
                     task9,
                     task10,

@@ -7,14 +7,15 @@ using System.Collections.Generic;
 namespace JayTom.Dws.Client.Models.PackageSorting.CommunicationConnectionSub {
 
     public class DeviceExtensionConfigItemInfoModel : BasePackageSortingItemInfoModel {
-        private bool _createPackageByDevice;
+        /*private bool _createPackageByDevice;
         private bool _removePackageByDevice;
         private bool _startRunningByDevice;
-        private bool _stopRunningByDevice;
+        private bool _stopRunningByDevice;*/
         private bool _validateDeviceResponse;
         private int _validationTimeout;
         private int _maxRetryCount;
 
+        /*
         /// <summary>
         /// 是否由下位机创建包裹
         /// </summary>
@@ -46,6 +47,7 @@ namespace JayTom.Dws.Client.Models.PackageSorting.CommunicationConnectionSub {
             get => _stopRunningByDevice;
             set => SetProperty(ref _stopRunningByDevice, value);
         }
+        */
 
         /// <summary>
         /// 是否验证下位机应答

@@ -28,5 +28,11 @@ namespace JayTom.Dws.Data.LocalConf.PackageSortingConfig.ConnectionParams {
         /// Tcp信息
         /// </summary>
         public virtual ICollection<TcpConfigInfoModel>? TcpConfigItems { get; set; }
+
+        /// <summary>
+        /// 数据格式
+        /// </summary>
+        [Column("DataFormat"), InsertOrUpdata]
+        public int DataFormat { get; set; }
     }
 }

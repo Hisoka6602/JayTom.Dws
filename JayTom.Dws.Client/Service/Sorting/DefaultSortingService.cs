@@ -58,7 +58,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
         //private readonly IInventoryManagementService _inventoryManagementService;
         private SemaphoreSlim _semaphore = new(1);
 
-        private CommunicationsSettingsDto _communicationsSettingsDto = new();
+        //private CommunicationsSettingsDto _communicationsSettingsDto = new();
         private SortingMethodDto _sortingMethodDto = new();
 
         public event EventHandler<ExceptionEventArgs>? ExceptionOccurred;
@@ -329,8 +329,6 @@ namespace JayTom.Dws.Client.Service.Sorting {
 
         public bool IsConnected => true;
 
-        public bool IsSortingEnabled { get; private set; }
-
         public async Task<LogisticsCodeRecognitionInfoModel?> GetLogisticsInfo(string barCode) {
             if (_logisticsCodeRecognitionInfos?.Any() != true) {
                 _logisticsCodeRecognitionInfos = await _logisticsCodeRecognitionRepository.
@@ -380,14 +378,6 @@ namespace JayTom.Dws.Client.Service.Sorting {
                         f.ConfigName.Equals("SortingMethodSettings"), token);
                     if (configInfoModel is not null) {
                         _sortingMethodDto = JsonConvert.DeserializeObject<SortingMethodDto>(configInfoModel.Value) ?? new SortingMethodDto();
-                    }
-
-                    configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("CommunicationsSettings"), token);
-                    _communicationsSettingsDto =
-                        JsonConvert.DeserializeObject<CommunicationsSettingsDto>(configInfoModel?.Value ?? string.Empty) ?? new CommunicationsSettingsDto();
-                    if (_communicationsSettingsDto is not null) {
-                        IsSortingEnabled = _communicationsSettingsDto.Type != CommunicationsType.None;
-                        //await Disconnect();
                     }
                     _packageExitDefinitionInfos = await _packageExitDefinitionRepository.Select(s => s.Id > 0,
                         o => o.Id);

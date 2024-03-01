@@ -38,8 +38,10 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private readonly ISortingService _sortingService;
         private ExternalDataSourceEventArgs _externalDataSource = new();
         private List<ConfigInfoModel> _configInfoModels = new();
-        private CommunicationsSettingsDto _communicationsSettingsDto = new();
+
+        //private CommunicationsSettingsDto _communicationsSettingsDto = new();
         private VolumeSettingsDto _volumeSettingsDto = new();
+
         private WeightSettingsDto _weightSettingsDto = new();
         private CreatePackageSettingsDto _createPackageSettingsDto = new();
         private List<ICamera> _cameras = new();
@@ -561,19 +563,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async item => {
                 if (item is SettingsChangedEvent model) {
                     switch (model.SettingsName) {
-                        case "CommunicationsSettings":
-                            try {
-                                var configInfoModel = await _configRepository.FirstOrDefault(f => f.ConfigName.Equals("CommunicationsSettings"));
-                                if (configInfoModel != null) {
-                                    _communicationsSettingsDto = JsonConvert.DeserializeObject<CommunicationsSettingsDto>(configInfoModel.Value) ?? new CommunicationsSettingsDto();
-                                }
-                            }
-                            catch (Exception e) {
-                                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
-                            }
-
-                            break;
-
                         case "VolumeSettings":
                             try {
                                 var configInfoModel = await _configRepository.FirstOrDefault(f => f.ConfigName.Equals("VolumeSettings"));
@@ -702,9 +691,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 _configInfoModels = await _configRepository.Select(s => s.Id > 0,
                     o => o.Id, stoppingToken);
                 var configInfoModel = _configInfoModels?.FirstOrDefault(f => f.ConfigName.Equals("CommunicationsSettings"));
-                if (configInfoModel is not null) {
-                    _communicationsSettingsDto = JsonConvert.DeserializeObject<CommunicationsSettingsDto>(configInfoModel.Value) ?? new CommunicationsSettingsDto();
-                }
                 configInfoModel = _configInfoModels?.FirstOrDefault(f => f.ConfigName.Equals("VolumeSettings"));
                 if (configInfoModel is not null) {
                     _volumeSettingsDto = JsonConvert.DeserializeObject<VolumeSettingsDto>(configInfoModel.Value) ?? new VolumeSettingsDto();
