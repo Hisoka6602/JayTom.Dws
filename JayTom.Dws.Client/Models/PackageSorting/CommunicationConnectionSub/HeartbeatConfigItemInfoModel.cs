@@ -11,6 +11,7 @@ namespace JayTom.Dws.Client.Models.PackageSorting.CommunicationConnectionSub {
         private string _heartbeatContent = string.Empty;
         private int _heartbeatInterval;
         private bool _isHeartbeatEnabled;
+        private bool _isFixedHeartbeatContent;
 
         /// <summary>
         /// 是否使用心跳包
@@ -42,6 +43,14 @@ namespace JayTom.Dws.Client.Models.PackageSorting.CommunicationConnectionSub {
         public int HeartbeatInterval {
             get => _heartbeatInterval;
             set => SetProperty(ref _heartbeatInterval, value);
+        }
+
+        /// <summary>
+        /// 是否使用固定心跳包内容
+        /// </summary>
+        public bool IsFixedHeartbeatContent {
+            get => _isFixedHeartbeatContent;
+            set => SetProperty(ref _isFixedHeartbeatContent, value);
         }
     }
 }

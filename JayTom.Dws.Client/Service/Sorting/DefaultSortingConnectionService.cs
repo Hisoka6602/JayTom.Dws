@@ -129,6 +129,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                         IDeviceCommunicationProtocol? protocol = communicationProtocol switch {
                             CommunicationProtocol.Wxkc => new WxkcCommunicationProtocol(),
                             CommunicationProtocol.JT_ST => new JtstCommunicationProtocol(),
+                            CommunicationProtocol.CaiNiao => new CaiNiaoCommunicationProtocol(),
                             _ => null
                         };
                         //心跳包
@@ -204,6 +205,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                             IDeviceCommunicationProtocol? protocol = communicationProtocol switch {
                                 CommunicationProtocol.Wxkc => new WxkcCommunicationProtocol(),
                                 CommunicationProtocol.JT_ST => new JtstCommunicationProtocol(),
+                                CommunicationProtocol.CaiNiao => new CaiNiaoCommunicationProtocol(),
                                 _ => null
                             };
                             var connect = await sortingTcp.Connect(tcpConfigInfoModel.IpAddress, tcpConfigInfoModel.Port,
@@ -279,6 +281,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                             IDeviceCommunicationProtocol? protocol = communicationProtocol switch {
                                 CommunicationProtocol.Wxkc => new WxkcCommunicationProtocol(),
                                 CommunicationProtocol.JT_ST => new JtstCommunicationProtocol(),
+                                CommunicationProtocol.CaiNiao => new CaiNiaoCommunicationProtocol(),
                                 _ => null
                             };
                             var connect = await sortingTcp.Connect(tcpConfigInfoModel.IpAddress, tcpConfigInfoModel.Port,

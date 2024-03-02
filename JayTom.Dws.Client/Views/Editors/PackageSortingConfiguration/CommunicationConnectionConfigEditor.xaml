@@ -889,8 +889,33 @@
                                 IsChecked="{Binding CommunicationConnectionItem.HeartbeatConfigInfo.IsHeartbeatActive, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                 Style="{StaticResource MaterialDesignSwitchToggleButton}" />
                         </StackPanel>
+                        <!--  是否自定义固定心跳包内容  -->
+                        <StackPanel
+                            VerticalAlignment="Center"
+                            Orientation="Horizontal"
+                            Visibility="{Binding ElementName=IsHeartbeatActiveToggleButton, Path=IsChecked, Converter={StaticResource BooleanToVisibilityConverter}}">
+
+                            <TextBlock
+                                Margin="5,0"
+                                VerticalAlignment="Center"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                Text="是否自定义固定心跳包内容:" />
+                            <ToggleButton
+                                Name="IsFixedHeartbeatContentToggleButton"
+                                materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
+                                materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
+                                Focusable="False"
+                                IsChecked="{Binding CommunicationConnectionItem.HeartbeatConfigInfo.IsFixedHeartbeatContent, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+                        </StackPanel>
+
                         <!--  心跳包内容  -->
-                        <StackPanel Orientation="Horizontal" Visibility="{Binding ElementName=IsHeartbeatActiveToggleButton, Path=IsChecked, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <StackPanel
+                            Margin="50,5,0,0"
+                            Orientation="Horizontal"
+                            Visibility="{Binding ElementName=IsFixedHeartbeatContentToggleButton, Path=IsChecked, Converter={StaticResource BooleanToVisibilityConverter}}">
                             <!--  图标  -->
                             <TextBlock
                                 Margin="5,0"

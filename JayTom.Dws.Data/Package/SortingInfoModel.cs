@@ -237,6 +237,11 @@ namespace JayTom.Dws.Data.Package {
         /// 江腾窄带
         /// </summary>
         JT_ST,
+
+        /// <summary>
+        /// 菜鸟分拣协议
+        /// </summary>
+        CaiNiao,
     }
 
     public enum AbnormalSortingType {

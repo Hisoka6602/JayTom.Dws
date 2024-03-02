@@ -21,6 +21,7 @@ using JayTom.Dws.Client.Models.SettingsCommomModels;
 using JayTom.Dws.Client.Models.CommunicationsSettingsModel;
 
 namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
+
     public class CommunicationConnectionConfigEditorViewModel : BindableBase {
         private string _identifier = string.Empty;
         private ObservableCollection<string> _portItems = new();
@@ -66,6 +67,11 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
             {
                 Name = "江腾-窄带协议",
                 Value = CommunicationProtocol.JT_ST,
+            },
+            new CommunicationProtocolInfoModel()
+            {
+                Name = "菜鸟分拣协议",
+                Value = CommunicationProtocol.CaiNiao,
             },
         };
 

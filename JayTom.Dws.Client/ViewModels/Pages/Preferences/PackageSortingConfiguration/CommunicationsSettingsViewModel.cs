@@ -37,12 +37,13 @@ using JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration.SortingMethodE
 using JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.SortingMethodEditors;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration {
+
     public class CommunicationsSettingsViewModel : BindableBase {
         private readonly IConfigRepository _configRepository;
         private readonly ISortingService _sortingService;
         private readonly ICommunicationConnectionConfigRepository _communicationConnectionConfigRepository;
         private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
-        private CommunicationsSettingsInfoModel _communicationsSettingsInfo = new();
+        //private CommunicationsSettingsInfoModel _communicationsSettingsInfo = new();
 
         private ObservableCollection<CommunicationsTypeInfoModel> _communicationsTypeItems = new()
         {
@@ -115,6 +116,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             {
                 Name = "江腾-窄带协议",
                 Value = CommunicationProtocol.JT_ST,
+            },
+            new CommunicationProtocolInfoModel()
+            {
+                Name = "菜鸟分拣协议",
+                Value = CommunicationProtocol.CaiNiao,
             },
         };
 
@@ -225,10 +231,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             set => SetProperty(ref _communicationsSettingsMessageQueue, value);
         }
 
-        public CommunicationsSettingsInfoModel CommunicationsSettingsInfo {
+        /*public CommunicationsSettingsInfoModel CommunicationsSettingsInfo {
             get => _communicationsSettingsInfo;
             set => SetProperty(ref _communicationsSettingsInfo, value);
-        }
+        }*/
 
         public ObservableCollection<CommunicationsTypeInfoModel> CommunicationsTypeItems {
             get => _communicationsTypeItems;
@@ -398,7 +404,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                                     IsHeartbeatActive = model.CommunicationConnectionItem.HeartbeatConfigInfo
                                         ?.IsHeartbeatActive ?? false,
                                     IsHeartbeatEnabled = model.CommunicationConnectionItem.HeartbeatConfigInfo
-                                        ?.IsHeartbeatEnabled ?? false
+                                        ?.IsHeartbeatEnabled ?? false,
+                                    IsFixedHeartbeatContent = model.CommunicationConnectionItem.HeartbeatConfigInfo
+                                        ?.IsFixedHeartbeatContent ?? false,
                                 },
                                 IsActive = true,
                                 IsAutoReconnect = model.CommunicationConnectionItem.IsAutoReconnect,
@@ -508,7 +516,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                                     IsHeartbeatActive = model.CommunicationConnectionItem.HeartbeatConfigInfo
                                         ?.IsHeartbeatActive ?? false,
                                     IsHeartbeatEnabled = model.CommunicationConnectionItem.HeartbeatConfigInfo
-                                        ?.IsHeartbeatEnabled ?? false
+                                        ?.IsHeartbeatEnabled ?? false,
+                                    IsFixedHeartbeatContent = model.CommunicationConnectionItem.HeartbeatConfigInfo
+                                        ?.IsFixedHeartbeatContent ?? false,
                                 },
                                 IsActive = true,
                                 IsAutoReconnect = model.CommunicationConnectionItem.IsAutoReconnect,
@@ -623,7 +633,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         IsHeartbeatActive = s.HeartbeatConfigInfo
                             ?.IsHeartbeatActive ?? false,
                         IsHeartbeatEnabled = s.HeartbeatConfigInfo
-                            ?.IsHeartbeatEnabled ?? false
+                            ?.IsHeartbeatEnabled ?? false,
+                        IsFixedHeartbeatContent = s.HeartbeatConfigInfo?.IsFixedHeartbeatContent ?? false
                     },
                     IsActive = s.IsActive,
                     IsAutoReconnect = s.IsAutoReconnect,

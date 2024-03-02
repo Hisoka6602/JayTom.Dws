@@ -49,8 +49,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private ConcurrentQueue<CameraImageInfo> _panoramaImageItems = new();
         private ConcurrentQueue<CameraImageInfo> _volumeCameraImageItems = new();
         private ConcurrentQueue<PackageInfo> _packageInfos = new();
-        private ConcurrentQueue<WeightInfoModel> _weightQueueInfos = new();
-        private ConcurrentQueue<VolumeInfoModel> _volumeQueueInfos = new();
+        /*private ConcurrentQueue<WeightInfoModel> _weightQueueInfos = new();
+        private ConcurrentQueue<VolumeInfoModel> _volumeQueueInfos = new();*/
         private static bool _isWindowsClose;
 
         public PackageBackgroundService(IDeviceService deviceService,
@@ -234,7 +234,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             SourceType = SourceType.Camera,
                         };
                     }
-                    else {
+                    /*else {
                         _volumeQueueInfos.Enqueue(new VolumeInfoModel {
                             CreateTime = args.Timestamp,
                             FormattedHeight = args.Height,
@@ -243,7 +243,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             FormattedVolume = args.Volume,
                             SourceType = SourceType.Camera,
                         });
-                    }
+                    }*/
                 }
             };
             //称重
@@ -280,7 +280,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             WeighingMode = WeighingMode.Static
                         };
                     }
-                    else {
+                    /*else {
                         if (_weightSettingsDto.Mode == WeightMode.Dynamic) {
                             _weightQueueInfos.Enqueue(new WeightInfoModel {
                                 CreateTime = DateTime.Now,
@@ -289,7 +289,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 WeighingMode = WeighingMode.Static
                             });
                         }
-                    }
+                    }*/
                 }
             };
             //外部数据源
@@ -400,7 +400,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             SourceType = SourceType.Tcp,
                         };
                     }
-                    else {
+                    /*else {
                         _volumeQueueInfos.Enqueue(new VolumeInfoModel {
                             CreateTime = DateTime.Now,
                             FormattedHeight = args.Height,
@@ -409,7 +409,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             FormattedVolume = args.Volume,
                             SourceType = SourceType.Tcp,
                         });
-                    }
+                    }*/
                 }
 
                 EventAggregator.Instance.Publish(new VolumeLogInfoModel() {
@@ -429,6 +429,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             Guid = num,
                             IsCreatedByLowerMachine = true,
                             PackageCreationInstruction = args.Instruction,
+                            CreateTime = DateTime.Now
                         };
 
                         EventAggregator.Instance.Publish(new TriggerPositionEvent() {
@@ -624,8 +625,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         CameraSerialNumber = s.Info?.SerialNumber ?? string.Empty,
                     })?.ToList()
                                                           ?? new List<PanoramaCameraImageInfo>();
-                    var tryDequeue = false;
-                    if (packageInfo.WeightInfo is null) {
+                    //var tryDequeue = false;
+                    /*if (packageInfo.WeightInfo is null) {
                         //判断重量队列
                         do {
                             tryDequeue = _weightQueueInfos.TryDequeue(out var weightInfo);
@@ -635,9 +636,9 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 break;
                             }
                         } while (tryDequeue && _weightQueueInfos.Count > 0);
-                    }
+                    }*/
 
-                    if (packageInfo.VolumeInfo is null) {
+                    /*if (packageInfo.VolumeInfo is null) {
                         //判断体积队列
 
                         do {
@@ -648,7 +649,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 break;
                             }
                         } while (tryDequeue && _volumeQueueInfos.Count > 0);
-                    }
+                    }*/
                     _packageInfos.Enqueue(packageInfo);
                     if (packageInfo.VolumeInfo is null) {
                         //获取外部数据
