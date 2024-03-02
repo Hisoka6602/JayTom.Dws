@@ -226,6 +226,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             SentInstruction = sortingModel.SentInstruction,
                             SortingMode = sortingModel.SortingMode,
                             PackageCreationInstruction = sortingModel.PackageCreationInstruction,
+                            SendTime = sortingModel.SendTime,
+                            ReceivedTime = sortingModel.PackageCreationTime
                         }, stoppingToken);
                         var b = await _exitInfoRepository.Insert(new ExitInfoModel() {
                             PackageId = packageInfoModel.Id,

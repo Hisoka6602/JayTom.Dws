@@ -674,7 +674,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                                     IsCreatedByLowerMachine = attach.IsCreatedByLowerMachine,
                                     CommunicationMethod = connection?.Type ?? CommunicationsType.None,
                                     ChecksumProtocolName = connectionConfigInfoModel?.CommunicationProtocol ?? string.Empty,
-                                    SendTime = sendTime
+                                    SendTime = sendTime,
                                 });
                             }
                         }

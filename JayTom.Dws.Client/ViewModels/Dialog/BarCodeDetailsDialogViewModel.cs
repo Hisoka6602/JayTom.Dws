@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using JayTom.Dws.Client.Models.DataModels;
 
 namespace JayTom.Dws.Client.ViewModels.Dialog {
+
     public class BarCodeDetailsDialogViewModel : BindableBase, IDialogAware {
         private BarCodeItemModel _barCodeItem = new();
 
@@ -47,6 +48,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog {
         private void CloseWinDelegate(object obj) {
             RequestClose?.Invoke(new DialogResult(ButtonResult.OK));
         }
+
         public ICommand LoadedCommand {
             get => new DelegateCommand<UserControl>(LoadedDelegate);
         }

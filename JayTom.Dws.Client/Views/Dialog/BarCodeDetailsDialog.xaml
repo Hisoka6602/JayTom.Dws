@@ -95,7 +95,6 @@
                 HorizontalScrollBarVisibility="Disabled"
                 VerticalScrollBarVisibility="Auto">
                 <StackPanel Orientation="Vertical">
-
                     <!--  条码  -->
                     <StackPanel
                         HorizontalAlignment="Center"
@@ -582,7 +581,6 @@
                             StrokeDashArray="8"
                             StrokeThickness="1" />
                     </StackPanel>
-
                     <!--  称重信息  -->
                     <StackPanel Margin="5,10" Orientation="Vertical">
                         <StackPanel Orientation="Horizontal">

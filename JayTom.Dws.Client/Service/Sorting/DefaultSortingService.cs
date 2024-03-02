@@ -659,8 +659,10 @@ namespace JayTom.Dws.Client.Service.Sorting {
                         return new { ApiRuleInfo = o, ApiRuleJsonDto = (ApiRuleJsonDto)null };
                     }
                 })
-                ?.OrderBy(x => x.ApiRuleJsonDto?.ResponseStatus ?? UploadStatus.NotUploaded)
+                ?.OrderByDescending(x => x.ApiRuleJsonDto?.IsUseStringComparison ?? false)
                 ?.ThenByDescending(x => x.ApiRuleJsonDto?.IsUseJsonField ?? false)
+                ?.ThenByDescending(x => x.ApiRuleJsonDto?.IsUseStringSearch ?? false)
+                ?.ThenBy(x => x.ApiRuleJsonDto?.ResponseStatus ?? UploadStatus.NotUploaded)
                 ?.Select(x => x.ApiRuleInfo)
                 ?.ToList()
                 ?.FirstOrDefault(f =>

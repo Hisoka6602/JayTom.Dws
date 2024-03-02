@@ -2,8 +2,7 @@
 using Prism.Mvvm;
 using JayTom.Dws.Data.Package;
 
-namespace JayTom.Dws.Client.Models.DataModels
-{
+namespace JayTom.Dws.Client.Models.DataModels {
 
     public class SortingItemModel : BindableBase {
         private bool _isSortingUsed;
@@ -18,6 +17,8 @@ namespace JayTom.Dws.Client.Models.DataModels
         private string _commandTarget = string.Empty;
         private CommunicationsType _communicationMethod = CommunicationsType.None;
         private string _checksumProtocolName = string.Empty;
+        private DateTime _sendTime;
+        private DateTime _receivedTime;
 
         /// <summary>
         /// 是否使用分拣
@@ -59,12 +60,25 @@ namespace JayTom.Dws.Client.Models.DataModels
             set => SetProperty(ref _sentInstruction, value);
         }
 
+        public DateTime SendTime {
+            get => _sendTime;
+            set => SetProperty(ref _sendTime, value);
+        }
+
         /// <summary>
         /// 接收的指令
         /// </summary>
         public string ReceivedInstruction {
             get => _receivedInstruction;
             set => SetProperty(ref _receivedInstruction, value);
+        }
+
+        /// <summary>
+        /// 接收的时间
+        /// </summary>
+        public DateTime ReceivedTime {
+            get => _receivedTime;
+            set => SetProperty(ref _receivedTime, value);
         }
 
         /// <summary>

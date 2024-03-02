@@ -640,6 +640,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                                     SentInstruction = s.SortingInfo?.SentInstruction ?? string.Empty,
                                     IsSortingUsed = s.SortingInfo?.IsSortingUsed ?? false,
                                     SortingMode = s.SortingInfo?.SortingMode ?? SortMode.None,
+                                    SendTime = s.SortingInfo?.SendTime ?? DateTime.MinValue,
+                                    ReceivedTime = s.SortingInfo?.ReceivedTime ?? DateTime.MinValue
                                 },
                                 VolumeInfo = new VolumeItemModel() {
                                     CreateTime = s.VolumeInfo?.CreateTime,
