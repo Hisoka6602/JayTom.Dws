@@ -39,8 +39,8 @@
             <Grid.RowDefinitions>
 
                 <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
             <StackPanel
@@ -72,9 +72,18 @@
 
             <Border Grid.Row="1" Visibility="{Binding ElementName=IsUsePackageExitLockToggleButton, Path=IsChecked, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <!--  锁格内容  -->
-                <StackPanel Orientation="Vertical">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+
+                    </Grid.RowDefinitions>
                     <!--  锁格协议  -->
-                    <StackPanel Margin="20,5,0,0" Orientation="Horizontal">
+                    <StackPanel
+                        Grid.Row="0"
+                        Margin="20,5,0,0"
+                        Orientation="Horizontal">
                         <!--  图标  -->
                         <TextBlock
                             Margin="0,0,0,1"
@@ -118,12 +127,13 @@
                     </StackPanel>
                     <!--  协议设置Tab  -->
                     <TabControl
-                        MinHeight="220"
+                        Grid.Row="1"
+                        Height="Auto"
                         Margin="20,5,0,5"
                         HorizontalAlignment="Left"
                         SelectedIndex="{Binding ElementName=LockProtocolTypeComboBox, Path=SelectedIndex}">
                         <TabItem Header="S7协议" Visibility="Collapsed">
-                            <StackPanel Margin="50,0,0,0" Orientation="Vertical">
+                            <StackPanel Margin="50,0,0,0" Orientation="Horizontal">
                                 <!--  Ip地址  -->
                                 <StackPanel Orientation="Horizontal">
                                     <!--  图标  -->
@@ -298,9 +308,13 @@
                         </TabItem>
                     </TabControl>
                     <!--  格口配置表  -->
-                    <StackPanel Height="550" Orientation="Vertical">
+                    <Grid Grid.Row="2">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
                         <DataGrid
-                            Height="400"
+                            Grid.Row="0"
                             MinWidth="500"
                             MinHeight="300"
                             Margin="20,20,20,0"
@@ -521,7 +535,10 @@
                             </DataGrid.Columns>
                         </DataGrid>
                         <!--  操作按钮  -->
-                        <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
+                        <StackPanel
+                            Grid.Row="1"
+                            HorizontalAlignment="Center"
+                            Orientation="Horizontal">
                             <!--  添加按钮  -->
                             <Button
                                 Margin="8,20"
@@ -673,8 +690,11 @@
                                     Text="&#xe81a;" />
                             </Button>
                         </StackPanel>
-                    </StackPanel>
-                </StackPanel>
+                    </Grid>
+
+
+                </Grid>
+
             </Border>
             <!--  保存设置  -->
             <Button

@@ -15,6 +15,7 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
         public string IpAddress { get; private set; } = string.Empty;
         public int Port { get; private set; } = 0;
         private int _dataLen = 0;
+        private SemaphoreSlim _sendSlim = new(1);
 
         public int DataLen {
             get => _dataLen;
@@ -154,21 +155,27 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
         public async Task<bool> SendMessage(string message, CancellationToken token = default) {
             try {
                 if (ConnectionStatus == ConnectionStatus.Connected) {
+                    await _sendSlim.WaitAsync(token);
                     await _tcpClient.SendAsync(message);
                     OnCommunication(new CommunicationInfo() {
                         Content = message,
                         Time = DateTime.Now,
                         Type = CommunicationType.Send
                     });
+                    await Task.Delay(5, token);
                     return true;
                 }
                 else {
-                    OnException(new Exception($"IpAddress:{IpAddress},Port:{Port},ConnectionStatus:{ConnectionStatus}"));
+                    OnException(
+                        new Exception($"IpAddress:{IpAddress},Port:{Port},ConnectionStatus:{ConnectionStatus}"));
                 }
             }
             catch (Exception e) {
                 OnSendError(e);
                 return false;
+            }
+            finally {
+                _sendSlim.Release();
             }
             return false;
         }
@@ -176,21 +183,27 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
         public async Task<bool> SendMessage(byte[] message, CancellationToken token = default) {
             try {
                 if (ConnectionStatus == ConnectionStatus.Connected) {
+                    await _sendSlim.WaitAsync(token);
                     await _tcpClient.SendAsync(message);
                     OnCommunication(new CommunicationInfo() {
                         Content = BitConverter.ToString(message).Replace("-", ", "),
                         Time = DateTime.Now,
                         Type = CommunicationType.Send
                     });
+                    await Task.Delay(5, token);
                     return true;
                 }
                 else {
-                    OnException(new Exception($"IpAddress:{IpAddress},Port:{Port},ConnectionStatus:{ConnectionStatus}"));
+                    OnException(
+                        new Exception($"IpAddress:{IpAddress},Port:{Port},ConnectionStatus:{ConnectionStatus}"));
                 }
             }
             catch (Exception e) {
                 OnSendError(e);
                 return false;
+            }
+            finally {
+                _sendSlim.Release();
             }
             return false;
         }
@@ -234,8 +247,8 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
         }
 
         public byte[] RemoveTrailingZeros(byte[] input) {
-            int lastIndex = Array.FindLastIndex(input, b => b != 0x00);
-            byte[] result = new byte[lastIndex + 1];
+            var lastIndex = Array.FindLastIndex(input, b => b != 0x00);
+            var result = new byte[lastIndex + 1];
             Array.Copy(input, result, lastIndex + 1);
             return result;
         }

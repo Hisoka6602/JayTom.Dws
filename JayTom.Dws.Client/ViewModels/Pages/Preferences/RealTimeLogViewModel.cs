@@ -8,6 +8,7 @@ using System.Threading;
 using System.Windows.Input;
 using System.Threading.Tasks;
 using JayTom.Dws.Data.LocalLog;
+using System.Windows.Threading;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.EventMediators;
@@ -111,7 +112,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     if (LogItems.Count > 100) {
                         LogItems.RemoveAt(LogItems.Count - 1);
                     }
-                });
+                }, DispatcherPriority.Background);
             }
             finally {
                 _addSlim.Release();

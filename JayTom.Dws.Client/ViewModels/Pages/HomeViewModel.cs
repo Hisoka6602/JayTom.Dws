@@ -366,6 +366,17 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     HomeMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("外部输入异常") ?? string.Empty}:{exception.Message}");
                 });
             };
+            //外部全量数据
+            _externalDataService.ContentInputReceived += async (sender, args) => {
+                await Application.Current.Dispatcher.InvokeAsync(async () => {
+                    BarCode = args?.Barcode ?? "未解析到条码";
+                    Weight = args?.Weight ?? 0;
+                    Length = args?.Length ?? 0;
+                    Width = args?.Width ?? 0;
+                    Height = args?.Height ?? 0;
+                    Volume = args?.Volume ?? 0;
+                });
+            };
             _externalDataService.VolumeReceived += async delegate (object? sender, ExternalVolumeInputEventArgs args) {
                 await Application.Current.Dispatcher.InvokeAsync(() => {
                     Length = (float)args.Length;
@@ -629,10 +640,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                 }
             }
             await Application.Current.Dispatcher.BeginInvoke(() => {
-                Length = (float)args.Length;
-                Width = (float)args.Width;
-                Height = (float)args.Height;
-                Volume = (float)args.Volume;
+                if (args is not null) {
+                    Length = (float)args.Length;
+                    Width = (float)args.Width;
+                    Height = (float)args.Height;
+                    Volume = (float)args.Volume;
+                }
             });
         }
 

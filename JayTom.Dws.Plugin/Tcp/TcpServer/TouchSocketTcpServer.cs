@@ -29,6 +29,8 @@ namespace JayTom.Dws.Plugin.Tcp.TcpServer {
 
         public event EventHandler<Exception>? SendError;
 
+        private SemaphoreSlim _sendSlim = new(1);
+
         public async Task<bool> Connect(string ipAddress, int port, int timeOut = 1000, FormatType dataType = FormatType.Ascii, int dataLen = 0, CancellationToken token = default) {
             DataLen = dataLen;
             FormatType = dataType;
@@ -146,6 +148,7 @@ namespace JayTom.Dws.Plugin.Tcp.TcpServer {
 
         public async Task<bool> SendMessage(string message, CancellationToken token = default) {
             try {
+                await _sendSlim.WaitAsync(token);
                 if (ConnectionStatus == ConnectionStatus.Connected) {
                     //var bytes = Encoding.UTF8.GetBytes(message);
                     var clients = _tcpService?.SocketClients?.GetClients()?.ToList();
@@ -159,7 +162,7 @@ namespace JayTom.Dws.Plugin.Tcp.TcpServer {
                             });
                         }
                     }
-
+                    await Task.Delay(5, token);
                     return true;
                 }
             }
@@ -167,11 +170,15 @@ namespace JayTom.Dws.Plugin.Tcp.TcpServer {
                 OnSendError(e);
                 return false;
             }
+            finally {
+                _sendSlim.Release();
+            }
             return false;
         }
 
         public async Task<bool> SendMessage(byte[] message, CancellationToken token = default) {
             try {
+                await _sendSlim.WaitAsync(token);
                 if (ConnectionStatus == ConnectionStatus.Connected) {
                     //var bytes = Encoding.UTF8.GetBytes(message);
                     var clients = _tcpService?.SocketClients?.GetClients()?.ToList();
@@ -186,12 +193,16 @@ namespace JayTom.Dws.Plugin.Tcp.TcpServer {
                         }
                     }
 
+                    await Task.Delay(5, token);
                     return true;
                 }
             }
             catch (Exception e) {
                 OnSendError(e);
                 return false;
+            }
+            finally {
+                _sendSlim.Release();
             }
             return false;
         }
