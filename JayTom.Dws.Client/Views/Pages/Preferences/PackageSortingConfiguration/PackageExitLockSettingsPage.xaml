@@ -69,633 +69,639 @@
                     IsChecked="{Binding PackageExitLockSettings.IsUsePackageExitLock, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                     Style="{StaticResource MaterialDesignSwitchToggleButton}" />
             </StackPanel>
-
-            <Border Grid.Row="1" Visibility="{Binding ElementName=IsUsePackageExitLockToggleButton, Path=IsChecked, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}">
-                <!--  锁格内容  -->
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
-
-                    </Grid.RowDefinitions>
-                    <!--  锁格协议  -->
-                    <StackPanel
-                        Grid.Row="0"
-                        Margin="20,5,0,0"
-                        Orientation="Horizontal">
-                        <!--  图标  -->
-                        <TextBlock
-                            Margin="0,0,0,1"
-                            VerticalAlignment="Center"
-                            FontFamily="{StaticResource IconFontFamily}"
-                            FontSize="20"
-                            Foreground="DarkGray"
-                            Text="&#xe933;" />
-                        <TextBlock
-                            Margin="5,0"
-                            VerticalAlignment="Center"
-                            FontSize="13"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            Text="锁格协议:" />
-                        <Border
-                            Margin="5"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Background="#1A696969"
-                            CornerRadius="5">
-                            <ComboBox
-                                Name="LockProtocolTypeComboBox"
-                                Height="30"
-                                MinWidth="160"
-                                Padding="5,0"
+            <materialDesign:DialogHost
+                Grid.Row="1"
+                Background="Transparent"
+                DialogBackground="Transparent"
+                DialogMargin="5"
+                FocusVisualStyle="{x:Null}"
+                Focusable="False"
+                Identifier="PackageExitLockListViewDialog"
+                Style="{StaticResource MaterialDesignEmbeddedDialogHost}">
+                <Border Visibility="{Binding ElementName=IsUsePackageExitLockToggleButton, Path=IsChecked, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <!--  锁格内容  -->
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <!--  锁格协议  -->
+                        <StackPanel
+                            Grid.Row="0"
+                            Margin="20,5,0,0"
+                            Orientation="Horizontal">
+                            <!--  图标  -->
+                            <TextBlock
+                                Margin="0,0,0,1"
+                                VerticalAlignment="Center"
+                                FontFamily="{StaticResource IconFontFamily}"
+                                FontSize="20"
+                                Foreground="DarkGray"
+                                Text="&#xe933;" />
+                            <TextBlock
+                                Margin="5,0"
+                                VerticalAlignment="Center"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                Text="锁格协议:" />
+                            <Border
+                                Margin="5"
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
-                                HorizontalContentAlignment="Center"
-                                VerticalContentAlignment="Center"
-                                materialDesign:ButtonAssist.CornerRadius="15"
-                                materialDesign:ColorZoneAssist.Mode="Dark"
-                                BorderThickness="0"
-                                FontSize="12"
-                                FontWeight="Bold"
-                                Foreground="White"
-                                ItemsSource="{Binding LockProtocolTypeItems, UpdateSourceTrigger=PropertyChanged}"
-                                SelectedItem="{Binding PackageExitLockSettings.ProtocolType, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                Style="{StaticResource MaterialDesignComboBox}" />
-                        </Border>
-                    </StackPanel>
-                    <!--  协议设置Tab  -->
-                    <TabControl
-                        Grid.Row="1"
-                        Height="Auto"
-                        Margin="20,5,0,5"
-                        HorizontalAlignment="Left"
-                        SelectedIndex="{Binding ElementName=LockProtocolTypeComboBox, Path=SelectedIndex}">
-                        <TabItem Header="S7协议" Visibility="Collapsed">
-                            <StackPanel Margin="50,0,0,0" Orientation="Horizontal">
-                                <!--  Ip地址  -->
-                                <StackPanel Orientation="Horizontal">
-                                    <!--  图标  -->
-                                    <TextBlock
-                                        Margin="5,0"
-                                        VerticalAlignment="Center"
-                                        FontSize="13"
-                                        FontWeight="Bold"
-                                        Foreground="DarkGray"
-                                        Text="{x:Static languages:Language.IPAddress}" />
-                                    <Border
-                                        Margin="5"
-                                        HorizontalAlignment="Center"
-                                        VerticalAlignment="Center"
-                                        Background="#1A696969"
-                                        CornerRadius="5">
-                                        <TextBox
-                                            Width="130"
-                                            Height="30"
-                                            MaxWidth="500"
-                                            Margin="5,0"
-                                            materialDesign:TextFieldAssist.HasClearButton="False"
-                                            materialDesign:TextFieldAssist.HasFilledTextField="True"
-                                            Background="Transparent"
-                                            BorderThickness="0"
-                                            FontSize="13"
-                                            FontWeight="Bold"
-                                            Foreground="White"
-                                            InputMethod.IsInputMethodEnabled="False">
-                                            <TextBox.Text>
-                                                <Binding
-                                                    Mode="TwoWay"
-                                                    Path="PackageExitLockSettings.S7Config.Ip"
-                                                    UpdateSourceTrigger="PropertyChanged">
-                                                    <Binding.ValidationRules>
-                                                        <validationRules:RegexValidationRule ErrorMessage="请输入有效的 IP 地址" Pattern="^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$" />
-                                                    </Binding.ValidationRules>
-                                                </Binding>
-                                            </TextBox.Text>
-                                        </TextBox>
-                                    </Border>
-                                </StackPanel>
-                                <!--  数据库(DB)  -->
-                                <StackPanel Orientation="Horizontal">
-                                    <!--  图标  -->
-                                    <TextBlock
-                                        Margin="5,0"
-                                        VerticalAlignment="Center"
-                                        FontSize="13"
-                                        FontWeight="Bold"
-                                        Foreground="DarkGray"
-                                        Text="数据库(DB):" />
-                                    <Border
-                                        Margin="5"
-                                        HorizontalAlignment="Center"
-                                        VerticalAlignment="Center"
-                                        Background="#1A696969"
-                                        CornerRadius="5">
-                                        <TextBox
-                                            Width="100"
-                                            Height="30"
-                                            MaxWidth="500"
-                                            Margin="5,0"
-                                            materialDesign:TextFieldAssist.HasClearButton="False"
-                                            materialDesign:TextFieldAssist.HasFilledTextField="True"
-                                            Background="Transparent"
-                                            BorderThickness="0"
-                                            FontSize="13"
-                                            FontWeight="Bold"
-                                            Foreground="White"
-                                            InputMethod.IsInputMethodEnabled="False"
-                                            Text="{Binding PackageExitLockSettings.S7Config.Db, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-                                    </Border>
-                                </StackPanel>
-                                <!--  机架号(Rack)  -->
-                                <StackPanel Orientation="Horizontal">
-                                    <!--  图标  -->
-                                    <TextBlock
-                                        Margin="5,0"
-                                        VerticalAlignment="Center"
-                                        FontSize="13"
-                                        FontWeight="Bold"
-                                        Foreground="DarkGray"
-                                        Text="机架号(Rack):" />
-                                    <Border
-                                        Margin="5"
-                                        HorizontalAlignment="Center"
-                                        VerticalAlignment="Center"
-                                        Background="#1A696969"
-                                        CornerRadius="5">
-                                        <TextBox
-                                            Width="90"
-                                            Height="30"
-                                            MaxWidth="500"
-                                            Margin="5,0"
-                                            materialDesign:TextFieldAssist.HasClearButton="False"
-                                            materialDesign:TextFieldAssist.HasFilledTextField="True"
-                                            Background="Transparent"
-                                            BorderThickness="0"
-                                            FontSize="13"
-                                            FontWeight="Bold"
-                                            Foreground="White"
-                                            InputMethod.IsInputMethodEnabled="False"
-                                            Text="{Binding PackageExitLockSettings.S7Config.Rack, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-                                    </Border>
-                                </StackPanel>
-                                <!--  插槽号(Slot)  -->
-                                <StackPanel Orientation="Horizontal">
-                                    <!--  图标  -->
-                                    <TextBlock
-                                        Margin="5,0"
-                                        VerticalAlignment="Center"
-                                        FontSize="13"
-                                        FontWeight="Bold"
-                                        Foreground="DarkGray"
-                                        Text="插槽号(Slot):" />
-                                    <Border
-                                        Margin="5"
-                                        HorizontalAlignment="Center"
-                                        VerticalAlignment="Center"
-                                        Background="#1A696969"
-                                        CornerRadius="5">
-                                        <TextBox
-                                            Width="90"
-                                            Height="30"
-                                            MaxWidth="500"
-                                            Margin="5,0"
-                                            materialDesign:TextFieldAssist.HasClearButton="False"
-                                            materialDesign:TextFieldAssist.HasFilledTextField="True"
-                                            Background="Transparent"
-                                            BorderThickness="0"
-                                            FontSize="13"
-                                            FontWeight="Bold"
-                                            Foreground="White"
-                                            InputMethod.IsInputMethodEnabled="False"
-                                            Text="{Binding PackageExitLockSettings.S7Config.Slot, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-                                    </Border>
-                                </StackPanel>
-                                <!--  超时时间(TimeOut)  -->
-                                <StackPanel Orientation="Horizontal">
-                                    <!--  图标  -->
-                                    <TextBlock
-                                        Margin="5,0"
-                                        VerticalAlignment="Center"
-                                        FontSize="13"
-                                        FontWeight="Bold"
-                                        Foreground="DarkGray"
-                                        Text="超时时间(TimeOut):" />
-                                    <Border
-                                        Margin="5"
-                                        HorizontalAlignment="Center"
-                                        VerticalAlignment="Center"
-                                        Background="#1A696969"
-                                        CornerRadius="5">
-                                        <TextBox
-                                            Width="60"
-                                            Height="30"
-                                            MaxWidth="500"
-                                            Margin="5,0"
-                                            materialDesign:TextFieldAssist.HasClearButton="False"
-                                            materialDesign:TextFieldAssist.HasFilledTextField="True"
-                                            Background="Transparent"
-                                            BorderThickness="0"
-                                            FontSize="13"
-                                            FontWeight="Bold"
-                                            Foreground="White"
-                                            InputMethod.IsInputMethodEnabled="False"
-                                            Text="{Binding PackageExitLockSettings.S7Config.Timeout, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-                                    </Border>
-                                </StackPanel>
-                            </StackPanel>
-                        </TabItem>
-                    </TabControl>
-                    <!--  格口配置表  -->
-                    <Grid Grid.Row="2">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="*" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-                        <DataGrid
-                            Grid.Row="0"
-                            MinWidth="500"
-                            MinHeight="300"
-                            Margin="20,20,20,0"
-                            Padding="10,0"
-                            materialDesign:DataGridAssist.CellPadding="4 2 2 2"
-                            materialDesign:DataGridAssist.ColumnHeaderPadding="4 2 2 2"
-                            AlternatingRowBackground="#101E90FF"
-                            AutoGenerateColumns="False"
-                            Background="Transparent"
-                            CanUserAddRows="False"
-                            CanUserResizeColumns="True"
-                            CanUserSortColumns="False"
-                            CellStyle="{StaticResource CustomDataGridTextCellStyle}"
-                            ColumnHeaderStyle="{StaticResource CustomDataGridTextColumnStyle}"
-                            Focusable="False"
-                            Foreground="White"
-                            FrozenColumnCount="2"
-                            GridLinesVisibility="None"
-                            HorizontalScrollBarVisibility="Auto"
-                            ItemsSource="{Binding PackageExitLockBindingItems, UpdateSourceTrigger=PropertyChanged}"
-                            RowBackground="#061E90FF"
-                            Style="{StaticResource VirtualizingDataGridStyle}">
-                            <DataGrid.RowStyle>
-                                <Style BasedOn="{StaticResource MaterialDesignDataGridRow}" TargetType="DataGridRow">
-                                    <Setter Property="Height" Value="35" />
-                                </Style>
-                            </DataGrid.RowStyle>
-                            <DataGrid.Columns>
-                                <DataGridTextColumn
-                                    Width="45"
-                                    MinWidth="45"
-                                    Binding="{Binding Num, UpdateSourceTrigger=PropertyChanged}"
-                                    CellStyle="{StaticResource CustomDataGridTextCellStyle}"
-                                    IsReadOnly="True">
-                                    <DataGridTextColumn.Header>
-                                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="No." />
-                                    </DataGridTextColumn.Header>
-                                </DataGridTextColumn>
-                                <!--  绑定格口  -->
-                                <DataGridTextColumn
-                                    Width="100"
-                                    MinWidth="100"
-                                    Binding="{Binding ExitName, UpdateSourceTrigger=PropertyChanged}"
-                                    CellStyle="{StaticResource CustomDataGridTextCellStyle}"
-                                    EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
-                                    <DataGridTextColumn.Header>
-                                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="绑定格口" />
-                                    </DataGridTextColumn.Header>
-                                </DataGridTextColumn>
-                                <!--  地址  -->
-                                <DataGridTextColumn
-                                    Width="100"
-                                    MinWidth="100"
-                                    Binding="{Binding Address, UpdateSourceTrigger=PropertyChanged}"
-                                    CellStyle="{StaticResource CustomDataGridTextCellStyle}"
-                                    EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
-                                    <DataGridTextColumn.Header>
-                                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="地址" />
-                                    </DataGridTextColumn.Header>
-                                </DataGridTextColumn>
-                                <!--  长度  -->
-                                <DataGridTextColumn
-                                    Width="100"
-                                    MinWidth="100"
-                                    Binding="{Binding Length, UpdateSourceTrigger=PropertyChanged}"
-                                    CellStyle="{StaticResource CustomDataGridTextCellStyle}"
-                                    EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
-                                    <DataGridTextColumn.Header>
-                                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="长度" />
-                                    </DataGridTextColumn.Header>
-                                </DataGridTextColumn>
-                                <!--  锁格标识  -->
-                                <DataGridTextColumn
-                                    Width="100"
-                                    MinWidth="100"
-                                    Binding="{Binding LockingFlag, UpdateSourceTrigger=PropertyChanged}"
-                                    CellStyle="{StaticResource CustomDataGridTextCellStyle}"
-                                    EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
-                                    <DataGridTextColumn.Header>
-                                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="锁格标识" />
-                                    </DataGridTextColumn.Header>
-                                </DataGridTextColumn>
-                                <!--  解锁标识  -->
-                                <DataGridTextColumn
-                                    Width="100"
-                                    MinWidth="100"
-                                    Binding="{Binding UnlockingFlag, UpdateSourceTrigger=PropertyChanged}"
-                                    CellStyle="{StaticResource CustomDataGridTextCellStyle}"
-                                    EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
-                                    <DataGridTextColumn.Header>
-                                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="解锁标识" />
-                                    </DataGridTextColumn.Header>
-                                </DataGridTextColumn>
-                                <!--  当前状态  -->
-                                <DataGridTemplateColumn
-                                    Width="100"
-                                    MinWidth="100"
-                                    CellStyle="{StaticResource CustomDataGridTextCellStyle}">
-                                    <DataGridTemplateColumn.Header>
-                                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="当前状态" />
-                                    </DataGridTemplateColumn.Header>
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <TextBlock
-                                                Margin="5,0"
-                                                HorizontalAlignment="Center"
-                                                VerticalAlignment="Center"
-                                                FontFamily="{StaticResource IconFontFamily}"
-                                                FontSize="20"
-                                                Foreground="{Binding CurrentStatus, Converter={StaticResource PackageExitLockStatusConverter}, ConverterParameter=Color}"
-                                                Text="{Binding CurrentStatus, Converter={StaticResource PackageExitLockStatusConverter}, ConverterParameter=Font}" />
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
-                                <!--  备注  -->
-                                <DataGridTextColumn
-                                    Width="180"
-                                    MinWidth="180"
-                                    Binding="{Binding Remarks, UpdateSourceTrigger=PropertyChanged}"
-                                    CellStyle="{StaticResource CustomDataGridTextCellStyle}"
-                                    EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
-                                    <DataGridTextColumn.Header>
-                                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="备注" />
-                                    </DataGridTextColumn.Header>
-                                </DataGridTextColumn>
-                                <!--  操作  -->
-                                <DataGridTemplateColumn
-                                    Width="320"
-                                    MinWidth="320"
-                                    MaxWidth="600"
-                                    CellStyle="{StaticResource CustomDataGridTextCellStyle}">
-                                    <DataGridTemplateColumn.Header>
-                                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="{x:Static languages:Language.TableHeaderOperation}" />
-                                    </DataGridTemplateColumn.Header>
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <StackPanel Orientation="Horizontal">
-                                                <StackPanel Orientation="Horizontal">
-                                                    <!--  开关  -->
-                                                    <ToggleButton
-                                                        Margin="10,0"
-                                                        materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
-                                                        materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
-                                                        Focusable="False"
-                                                        Style="{StaticResource MaterialDesignSwitchToggleButton}" />
-                                                    <Button
-                                                        Width="80"
-                                                        Height="30"
-                                                        MinWidth="60"
-                                                        materialDesign:ButtonAssist.CornerRadius="5"
-                                                        Background="RoyalBlue"
-                                                        Command="{Binding ElementName=PackageExitLockSettingsView, Path=DataContext.ModifyCommand}"
-                                                        CommandParameter="{Binding}"
-                                                        Focusable="False"
-                                                        Foreground="RoyalBlue"
-                                                        Style="{StaticResource MaterialDesignFlatLightButton}">
-                                                        <StackPanel Orientation="Horizontal">
-                                                            <TextBlock
-                                                                HorizontalAlignment="Center"
-                                                                VerticalAlignment="Center"
-                                                                FontFamily="{StaticResource IconFontFamily}"
-                                                                FontSize="13"
-                                                                Foreground="White"
-                                                                Text="&#xe7ca;" />
-                                                            <TextBlock
-                                                                Margin="5,0"
-                                                                HorizontalAlignment="Center"
-                                                                VerticalAlignment="Center"
-                                                                Background="Transparent"
-                                                                FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
-                                                                FontSize="13"
-                                                                FontWeight="Light"
-                                                                Foreground="White"
-                                                                IsEnabled="True"
-                                                                Text="修改"
-                                                                TextAlignment="Justify" />
-                                                        </StackPanel>
-                                                    </Button>
-                                                    <Button
-                                                        Width="80"
-                                                        Height="30"
-                                                        MinWidth="60"
-                                                        Margin="5,0"
-                                                        materialDesign:ButtonAssist.CornerRadius="5"
-                                                        Background="DarkRed"
-                                                        Command="{Binding ElementName=PackageExitLockSettingsView, Path=DataContext.DeleteCommand}"
-                                                        CommandParameter="{Binding}"
-                                                        Focusable="False"
-                                                        Foreground="Red"
-                                                        Style="{StaticResource MaterialDesignFlatLightButton}">
-                                                        <StackPanel Orientation="Horizontal">
-                                                            <TextBlock
-                                                                HorizontalAlignment="Center"
-                                                                VerticalAlignment="Center"
-                                                                FontFamily="{StaticResource IconFontFamily}"
-                                                                FontSize="10"
-                                                                Foreground="White"
-                                                                Text="&#xe601;" />
-                                                            <TextBlock
-                                                                Margin="5,0"
-                                                                HorizontalAlignment="Center"
-                                                                VerticalAlignment="Center"
-                                                                Background="Transparent"
-                                                                FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
-                                                                FontSize="13"
-                                                                FontWeight="Light"
-                                                                Foreground="White"
-                                                                IsEnabled="True"
-                                                                Text="{x:Static languages:Language.Delete}"
-                                                                TextAlignment="Justify" />
-                                                        </StackPanel>
-                                                    </Button>
-                                                </StackPanel>
-                                            </StackPanel>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
-                            </DataGrid.Columns>
-                        </DataGrid>
-                        <!--  操作按钮  -->
-                        <StackPanel
-                            Grid.Row="1"
-                            HorizontalAlignment="Center"
-                            Orientation="Horizontal">
-                            <!--  添加按钮  -->
-                            <Button
-                                Margin="8,20"
-                                Background="#2E2E2E"
-                                BorderBrush="#AE2E2E2E"
-                                Command="{Binding AddCommand}"
-                                Cursor="Hand"
-                                RenderTransformOrigin="0.5,0.5"
-                                ToolTip="添加数据">
-                                <Button.RenderTransform>
-                                    <ScaleTransform CenterX="0.5" CenterY="0.5" ScaleX="1" ScaleY="1" />
-                                </Button.RenderTransform>
-                                <Button.Style>
-                                    <Style BasedOn="{StaticResource MaterialDesignFloatingActionAccentButton}" TargetType="Button">
-                                        <Style.Triggers>
-                                            <!--  放大  -->
-                                            <EventTrigger RoutedEvent="MouseEnter">
-                                                <BeginStoryboard>
-                                                    <Storyboard>
-                                                        <DoubleAnimation
-                                                            Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
-                                                            To="1.5"
-                                                            Duration="0:0:0.2" />
-                                                        <DoubleAnimation
-                                                            Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
-                                                            To="1.5"
-                                                            Duration="0:0:0.2" />
-                                                    </Storyboard>
-                                                </BeginStoryboard>
-                                            </EventTrigger>
-                                            <EventTrigger RoutedEvent="MouseLeave">
-                                                <BeginStoryboard>
-                                                    <Storyboard>
-                                                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" Duration="0:0:0.2" />
-                                                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" Duration="0:0:0.2" />
-                                                    </Storyboard>
-                                                </BeginStoryboard>
-                                            </EventTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Button.Style>
-                                <TextBlock
+                                Background="#1A696969"
+                                CornerRadius="5">
+                                <ComboBox
+                                    Name="LockProtocolTypeComboBox"
+                                    Height="30"
+                                    MinWidth="160"
+                                    Padding="5,0"
                                     HorizontalAlignment="Center"
                                     VerticalAlignment="Center"
-                                    Cursor=""
-                                    FontFamily="{StaticResource IconFontFamily}"
-                                    FontSize="26"
+                                    HorizontalContentAlignment="Center"
+                                    VerticalContentAlignment="Center"
+                                    materialDesign:ButtonAssist.CornerRadius="15"
+                                    materialDesign:ColorZoneAssist.Mode="Dark"
+                                    BorderThickness="0"
+                                    FontSize="12"
+                                    FontWeight="Bold"
                                     Foreground="White"
-                                    Text="&#xe820;" />
-                            </Button>
-                            <!--  批量导入  -->
-                            <Button
-                                Margin="8,20"
-                                Background="#2E2E2E"
-                                BorderBrush="#AE2E2E2E"
-                                Command="{Binding ImportCommand}"
-                                Cursor="Hand"
-                                RenderTransformOrigin="0.5,0.5"
-                                ToolTip="批量导入">
-                                <Button.RenderTransform>
-                                    <ScaleTransform CenterX="0.5" CenterY="0.5" ScaleX="1" ScaleY="1" />
-                                </Button.RenderTransform>
-                                <Button.Style>
-                                    <Style BasedOn="{StaticResource MaterialDesignFloatingActionAccentButton}" TargetType="Button">
-                                        <Style.Triggers>
-                                            <!--  放大  -->
-                                            <EventTrigger RoutedEvent="MouseEnter">
-                                                <BeginStoryboard>
-                                                    <Storyboard>
-                                                        <DoubleAnimation
-                                                            Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
-                                                            To="1.5"
-                                                            Duration="0:0:0.2" />
-                                                        <DoubleAnimation
-                                                            Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
-                                                            To="1.5"
-                                                            Duration="0:0:0.2" />
-                                                    </Storyboard>
-                                                </BeginStoryboard>
-                                            </EventTrigger>
-                                            <EventTrigger RoutedEvent="MouseLeave">
-                                                <BeginStoryboard>
-                                                    <Storyboard>
-                                                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" Duration="0:0:0.2" />
-                                                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" Duration="0:0:0.2" />
-                                                    </Storyboard>
-                                                </BeginStoryboard>
-                                            </EventTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Button.Style>
-                                <TextBlock
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    Cursor=""
-                                    FontFamily="{StaticResource IconFontFamily}"
-                                    FontSize="26"
-                                    Foreground="White"
-                                    Text="&#xe81b;" />
-                            </Button>
-                            <!--  批量导出  -->
-                            <Button
-                                Margin="8,20"
-                                Background="#2E2E2E"
-                                BorderBrush="#AE2E2E2E"
-                                Command="{Binding ExportCommand}"
-                                Cursor="Hand"
-                                RenderTransformOrigin="0.5,0.5"
-                                ToolTip="批量导出">
-                                <Button.RenderTransform>
-                                    <ScaleTransform CenterX="0.5" CenterY="0.5" ScaleX="1" ScaleY="1" />
-                                </Button.RenderTransform>
-                                <Button.Style>
-                                    <Style BasedOn="{StaticResource MaterialDesignFloatingActionAccentButton}" TargetType="Button">
-                                        <Style.Triggers>
-                                            <!--  放大  -->
-                                            <EventTrigger RoutedEvent="MouseEnter">
-                                                <BeginStoryboard>
-                                                    <Storyboard>
-                                                        <DoubleAnimation
-                                                            Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
-                                                            To="1.5"
-                                                            Duration="0:0:0.2" />
-                                                        <DoubleAnimation
-                                                            Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
-                                                            To="1.5"
-                                                            Duration="0:0:0.2" />
-                                                    </Storyboard>
-                                                </BeginStoryboard>
-                                            </EventTrigger>
-                                            <EventTrigger RoutedEvent="MouseLeave">
-                                                <BeginStoryboard>
-                                                    <Storyboard>
-                                                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" Duration="0:0:0.2" />
-                                                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" Duration="0:0:0.2" />
-                                                    </Storyboard>
-                                                </BeginStoryboard>
-                                            </EventTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Button.Style>
-                                <TextBlock
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    Cursor=""
-                                    FontFamily="{StaticResource IconFontFamily}"
-                                    FontSize="26"
-                                    Foreground="White"
-                                    Text="&#xe81a;" />
-                            </Button>
+                                    ItemsSource="{Binding LockProtocolTypeItems, UpdateSourceTrigger=PropertyChanged}"
+                                    SelectedItem="{Binding PackageExitLockSettings.ProtocolType, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                    Style="{StaticResource MaterialDesignComboBox}" />
+                            </Border>
                         </StackPanel>
+                        <!--  协议设置Tab  -->
+                        <TabControl
+                            Grid.Row="1"
+                            Height="Auto"
+                            Margin="20,5,0,5"
+                            HorizontalAlignment="Left"
+                            SelectedIndex="{Binding ElementName=LockProtocolTypeComboBox, Path=SelectedIndex}">
+                            <TabItem Header="S7协议" Visibility="Collapsed">
+                                <StackPanel Margin="50,0,0,0" Orientation="Horizontal">
+                                    <!--  Ip地址  -->
+                                    <StackPanel Orientation="Horizontal">
+                                        <!--  图标  -->
+                                        <TextBlock
+                                            Margin="5,0"
+                                            VerticalAlignment="Center"
+                                            FontSize="13"
+                                            FontWeight="Bold"
+                                            Foreground="DarkGray"
+                                            Text="{x:Static languages:Language.IPAddress}" />
+                                        <Border
+                                            Margin="5"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            Background="#1A696969"
+                                            CornerRadius="5">
+                                            <TextBox
+                                                Width="130"
+                                                Height="30"
+                                                MaxWidth="500"
+                                                Margin="5,0"
+                                                materialDesign:TextFieldAssist.HasClearButton="False"
+                                                materialDesign:TextFieldAssist.HasFilledTextField="True"
+                                                Background="Transparent"
+                                                BorderThickness="0"
+                                                FontSize="13"
+                                                FontWeight="Bold"
+                                                Foreground="White"
+                                                InputMethod.IsInputMethodEnabled="False">
+                                                <TextBox.Text>
+                                                    <Binding
+                                                        Mode="TwoWay"
+                                                        Path="PackageExitLockSettings.S7Config.Ip"
+                                                        UpdateSourceTrigger="PropertyChanged">
+                                                        <Binding.ValidationRules>
+                                                            <validationRules:RegexValidationRule ErrorMessage="请输入有效的 IP 地址" Pattern="^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$" />
+                                                        </Binding.ValidationRules>
+                                                    </Binding>
+                                                </TextBox.Text>
+                                            </TextBox>
+                                        </Border>
+                                    </StackPanel>
+                                    <!--  数据库(DB)  -->
+                                    <StackPanel Orientation="Horizontal">
+                                        <!--  图标  -->
+                                        <TextBlock
+                                            Margin="5,0"
+                                            VerticalAlignment="Center"
+                                            FontSize="13"
+                                            FontWeight="Bold"
+                                            Foreground="DarkGray"
+                                            Text="数据库(DB):" />
+                                        <Border
+                                            Margin="5"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            Background="#1A696969"
+                                            CornerRadius="5">
+                                            <TextBox
+                                                Width="100"
+                                                Height="30"
+                                                MaxWidth="500"
+                                                Margin="5,0"
+                                                materialDesign:TextFieldAssist.HasClearButton="False"
+                                                materialDesign:TextFieldAssist.HasFilledTextField="True"
+                                                Background="Transparent"
+                                                BorderThickness="0"
+                                                FontSize="13"
+                                                FontWeight="Bold"
+                                                Foreground="White"
+                                                InputMethod.IsInputMethodEnabled="False"
+                                                Text="{Binding PackageExitLockSettings.S7Config.Db, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                                        </Border>
+                                    </StackPanel>
+                                    <!--  机架号(Rack)  -->
+                                    <StackPanel Orientation="Horizontal">
+                                        <!--  图标  -->
+                                        <TextBlock
+                                            Margin="5,0"
+                                            VerticalAlignment="Center"
+                                            FontSize="13"
+                                            FontWeight="Bold"
+                                            Foreground="DarkGray"
+                                            Text="机架号(Rack):" />
+                                        <Border
+                                            Margin="5"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            Background="#1A696969"
+                                            CornerRadius="5">
+                                            <TextBox
+                                                Width="90"
+                                                Height="30"
+                                                MaxWidth="500"
+                                                Margin="5,0"
+                                                materialDesign:TextFieldAssist.HasClearButton="False"
+                                                materialDesign:TextFieldAssist.HasFilledTextField="True"
+                                                Background="Transparent"
+                                                BorderThickness="0"
+                                                FontSize="13"
+                                                FontWeight="Bold"
+                                                Foreground="White"
+                                                InputMethod.IsInputMethodEnabled="False"
+                                                Text="{Binding PackageExitLockSettings.S7Config.Rack, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                                        </Border>
+                                    </StackPanel>
+                                    <!--  插槽号(Slot)  -->
+                                    <StackPanel Orientation="Horizontal">
+                                        <!--  图标  -->
+                                        <TextBlock
+                                            Margin="5,0"
+                                            VerticalAlignment="Center"
+                                            FontSize="13"
+                                            FontWeight="Bold"
+                                            Foreground="DarkGray"
+                                            Text="插槽号(Slot):" />
+                                        <Border
+                                            Margin="5"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            Background="#1A696969"
+                                            CornerRadius="5">
+                                            <TextBox
+                                                Width="90"
+                                                Height="30"
+                                                MaxWidth="500"
+                                                Margin="5,0"
+                                                materialDesign:TextFieldAssist.HasClearButton="False"
+                                                materialDesign:TextFieldAssist.HasFilledTextField="True"
+                                                Background="Transparent"
+                                                BorderThickness="0"
+                                                FontSize="13"
+                                                FontWeight="Bold"
+                                                Foreground="White"
+                                                InputMethod.IsInputMethodEnabled="False"
+                                                Text="{Binding PackageExitLockSettings.S7Config.Slot, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                                        </Border>
+                                    </StackPanel>
+                                    <!--  超时时间(TimeOut)  -->
+                                    <StackPanel Orientation="Horizontal">
+                                        <!--  图标  -->
+                                        <TextBlock
+                                            Margin="5,0"
+                                            VerticalAlignment="Center"
+                                            FontSize="13"
+                                            FontWeight="Bold"
+                                            Foreground="DarkGray"
+                                            Text="超时时间(TimeOut):" />
+                                        <Border
+                                            Margin="5"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            Background="#1A696969"
+                                            CornerRadius="5">
+                                            <TextBox
+                                                Width="60"
+                                                Height="30"
+                                                MaxWidth="500"
+                                                Margin="5,0"
+                                                materialDesign:TextFieldAssist.HasClearButton="False"
+                                                materialDesign:TextFieldAssist.HasFilledTextField="True"
+                                                Background="Transparent"
+                                                BorderThickness="0"
+                                                FontSize="13"
+                                                FontWeight="Bold"
+                                                Foreground="White"
+                                                InputMethod.IsInputMethodEnabled="False"
+                                                Text="{Binding PackageExitLockSettings.S7Config.Timeout, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                                        </Border>
+                                    </StackPanel>
+                                </StackPanel>
+                            </TabItem>
+                        </TabControl>
+                        <!--  格口配置表  -->
+                        <Grid Grid.Row="2">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <DataGrid
+                                Grid.Row="0"
+                                MinWidth="500"
+                                MinHeight="300"
+                                Margin="20,20,20,0"
+                                Padding="10,0"
+                                materialDesign:DataGridAssist.CellPadding="4 2 2 2"
+                                materialDesign:DataGridAssist.ColumnHeaderPadding="4 2 2 2"
+                                AlternatingRowBackground="#101E90FF"
+                                AutoGenerateColumns="False"
+                                Background="Transparent"
+                                CanUserAddRows="False"
+                                CanUserResizeColumns="True"
+                                CanUserSortColumns="False"
+                                CellStyle="{StaticResource CustomDataGridTextCellStyle}"
+                                ColumnHeaderStyle="{StaticResource CustomDataGridTextColumnStyle}"
+                                Focusable="False"
+                                Foreground="White"
+                                FrozenColumnCount="2"
+                                GridLinesVisibility="None"
+                                HorizontalScrollBarVisibility="Auto"
+                                ItemsSource="{Binding PackageExitLockBindingItems, UpdateSourceTrigger=PropertyChanged}"
+                                RowBackground="#061E90FF"
+                                Style="{StaticResource VirtualizingDataGridStyle}">
+                                <DataGrid.RowStyle>
+                                    <Style BasedOn="{StaticResource MaterialDesignDataGridRow}" TargetType="DataGridRow">
+                                        <Setter Property="Height" Value="35" />
+                                    </Style>
+                                </DataGrid.RowStyle>
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn
+                                        Width="45"
+                                        MinWidth="45"
+                                        Binding="{Binding Num, UpdateSourceTrigger=PropertyChanged}"
+                                        CellStyle="{StaticResource CustomDataGridTextCellStyle}"
+                                        IsReadOnly="True">
+                                        <DataGridTextColumn.Header>
+                                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="No." />
+                                        </DataGridTextColumn.Header>
+                                    </DataGridTextColumn>
+                                    <!--  绑定格口  -->
+                                    <DataGridTextColumn
+                                        Width="100"
+                                        MinWidth="100"
+                                        Binding="{Binding ExitName, UpdateSourceTrigger=PropertyChanged}"
+                                        CellStyle="{StaticResource CustomDataGridTextCellStyle}"
+                                        EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
+                                        <DataGridTextColumn.Header>
+                                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="绑定格口" />
+                                        </DataGridTextColumn.Header>
+                                    </DataGridTextColumn>
+                                    <!--  地址  -->
+                                    <DataGridTextColumn
+                                        Width="100"
+                                        MinWidth="100"
+                                        Binding="{Binding Address, UpdateSourceTrigger=PropertyChanged}"
+                                        CellStyle="{StaticResource CustomDataGridTextCellStyle}"
+                                        EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
+                                        <DataGridTextColumn.Header>
+                                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="地址" />
+                                        </DataGridTextColumn.Header>
+                                    </DataGridTextColumn>
+                                    <!--  长度  -->
+                                    <DataGridTextColumn
+                                        Width="100"
+                                        MinWidth="100"
+                                        Binding="{Binding Length, UpdateSourceTrigger=PropertyChanged}"
+                                        CellStyle="{StaticResource CustomDataGridTextCellStyle}"
+                                        EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
+                                        <DataGridTextColumn.Header>
+                                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="长度" />
+                                        </DataGridTextColumn.Header>
+                                    </DataGridTextColumn>
+                                    <!--  锁格标识  -->
+                                    <DataGridTextColumn
+                                        Width="100"
+                                        MinWidth="100"
+                                        Binding="{Binding LockingFlag, UpdateSourceTrigger=PropertyChanged}"
+                                        CellStyle="{StaticResource CustomDataGridTextCellStyle}"
+                                        EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
+                                        <DataGridTextColumn.Header>
+                                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="锁格标识" />
+                                        </DataGridTextColumn.Header>
+                                    </DataGridTextColumn>
+                                    <!--  解锁标识  -->
+                                    <DataGridTextColumn
+                                        Width="100"
+                                        MinWidth="100"
+                                        Binding="{Binding UnlockingFlag, UpdateSourceTrigger=PropertyChanged}"
+                                        CellStyle="{StaticResource CustomDataGridTextCellStyle}"
+                                        EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
+                                        <DataGridTextColumn.Header>
+                                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="解锁标识" />
+                                        </DataGridTextColumn.Header>
+                                    </DataGridTextColumn>
+                                    <!--  当前状态  -->
+                                    <DataGridTemplateColumn
+                                        Width="100"
+                                        MinWidth="100"
+                                        CellStyle="{StaticResource CustomDataGridTextCellStyle}">
+                                        <DataGridTemplateColumn.Header>
+                                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="当前状态" />
+                                        </DataGridTemplateColumn.Header>
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock
+                                                    Margin="5,0"
+                                                    HorizontalAlignment="Center"
+                                                    VerticalAlignment="Center"
+                                                    FontFamily="{StaticResource IconFontFamily}"
+                                                    FontSize="20"
+                                                    Foreground="{Binding CurrentStatus, Converter={StaticResource PackageExitLockStatusConverter}, ConverterParameter=Color}"
+                                                    Text="{Binding CurrentStatus, Converter={StaticResource PackageExitLockStatusConverter}, ConverterParameter=Font}" />
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                    <!--  备注  -->
+                                    <DataGridTextColumn
+                                        Width="180"
+                                        MinWidth="180"
+                                        Binding="{Binding Remarks, UpdateSourceTrigger=PropertyChanged}"
+                                        CellStyle="{StaticResource CustomDataGridTextCellStyle}"
+                                        EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
+                                        <DataGridTextColumn.Header>
+                                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="备注" />
+                                        </DataGridTextColumn.Header>
+                                    </DataGridTextColumn>
+                                    <!--  操作  -->
+                                    <DataGridTemplateColumn
+                                        Width="320"
+                                        MinWidth="320"
+                                        MaxWidth="600"
+                                        CellStyle="{StaticResource CustomDataGridTextCellStyle}">
+                                        <DataGridTemplateColumn.Header>
+                                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="{x:Static languages:Language.TableHeaderOperation}" />
+                                        </DataGridTemplateColumn.Header>
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <!--  开关  -->
+                                                        <ToggleButton
+                                                            Margin="10,0"
+                                                            materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
+                                                            materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
+                                                            Focusable="False"
+                                                            Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+                                                        <Button
+                                                            Width="80"
+                                                            Height="30"
+                                                            MinWidth="60"
+                                                            materialDesign:ButtonAssist.CornerRadius="5"
+                                                            Background="RoyalBlue"
+                                                            Command="{Binding ElementName=PackageExitLockSettingsView, Path=DataContext.ModifyCommand}"
+                                                            CommandParameter="{Binding}"
+                                                            Focusable="False"
+                                                            Foreground="RoyalBlue"
+                                                            Style="{StaticResource MaterialDesignFlatLightButton}">
+                                                            <StackPanel Orientation="Horizontal">
+                                                                <TextBlock
+                                                                    HorizontalAlignment="Center"
+                                                                    VerticalAlignment="Center"
+                                                                    FontFamily="{StaticResource IconFontFamily}"
+                                                                    FontSize="13"
+                                                                    Foreground="White"
+                                                                    Text="&#xe7ca;" />
+                                                                <TextBlock
+                                                                    Margin="5,0"
+                                                                    HorizontalAlignment="Center"
+                                                                    VerticalAlignment="Center"
+                                                                    Background="Transparent"
+                                                                    FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                                                                    FontSize="13"
+                                                                    FontWeight="Light"
+                                                                    Foreground="White"
+                                                                    IsEnabled="True"
+                                                                    Text="修改"
+                                                                    TextAlignment="Justify" />
+                                                            </StackPanel>
+                                                        </Button>
+                                                        <Button
+                                                            Width="80"
+                                                            Height="30"
+                                                            MinWidth="60"
+                                                            Margin="5,0"
+                                                            materialDesign:ButtonAssist.CornerRadius="5"
+                                                            Background="DarkRed"
+                                                            Command="{Binding ElementName=PackageExitLockSettingsView, Path=DataContext.DeleteCommand}"
+                                                            CommandParameter="{Binding}"
+                                                            Focusable="False"
+                                                            Foreground="Red"
+                                                            Style="{StaticResource MaterialDesignFlatLightButton}">
+                                                            <StackPanel Orientation="Horizontal">
+                                                                <TextBlock
+                                                                    HorizontalAlignment="Center"
+                                                                    VerticalAlignment="Center"
+                                                                    FontFamily="{StaticResource IconFontFamily}"
+                                                                    FontSize="10"
+                                                                    Foreground="White"
+                                                                    Text="&#xe601;" />
+                                                                <TextBlock
+                                                                    Margin="5,0"
+                                                                    HorizontalAlignment="Center"
+                                                                    VerticalAlignment="Center"
+                                                                    Background="Transparent"
+                                                                    FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                                                                    FontSize="13"
+                                                                    FontWeight="Light"
+                                                                    Foreground="White"
+                                                                    IsEnabled="True"
+                                                                    Text="{x:Static languages:Language.Delete}"
+                                                                    TextAlignment="Justify" />
+                                                            </StackPanel>
+                                                        </Button>
+                                                    </StackPanel>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                            <!--  操作按钮  -->
+                            <StackPanel
+                                Grid.Row="1"
+                                HorizontalAlignment="Center"
+                                Orientation="Horizontal">
+                                <!--  添加按钮  -->
+                                <Button
+                                    Margin="8,20"
+                                    Background="#2E2E2E"
+                                    BorderBrush="#AE2E2E2E"
+                                    Command="{Binding AddCommand}"
+                                    Cursor="Hand"
+                                    RenderTransformOrigin="0.5,0.5"
+                                    ToolTip="添加数据">
+                                    <Button.RenderTransform>
+                                        <ScaleTransform CenterX="0.5" CenterY="0.5" ScaleX="1" ScaleY="1" />
+                                    </Button.RenderTransform>
+                                    <Button.Style>
+                                        <Style BasedOn="{StaticResource MaterialDesignFloatingActionAccentButton}" TargetType="Button">
+                                            <Style.Triggers>
+                                                <!--  放大  -->
+                                                <EventTrigger RoutedEvent="MouseEnter">
+                                                    <BeginStoryboard>
+                                                        <Storyboard>
+                                                            <DoubleAnimation
+                                                                Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                                                                To="1.5"
+                                                                Duration="0:0:0.2" />
+                                                            <DoubleAnimation
+                                                                Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                                                To="1.5"
+                                                                Duration="0:0:0.2" />
+                                                        </Storyboard>
+                                                    </BeginStoryboard>
+                                                </EventTrigger>
+                                                <EventTrigger RoutedEvent="MouseLeave">
+                                                    <BeginStoryboard>
+                                                        <Storyboard>
+                                                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" Duration="0:0:0.2" />
+                                                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" Duration="0:0:0.2" />
+                                                        </Storyboard>
+                                                    </BeginStoryboard>
+                                                </EventTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                    <TextBlock
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        Cursor=""
+                                        FontFamily="{StaticResource IconFontFamily}"
+                                        FontSize="26"
+                                        Foreground="White"
+                                        Text="&#xe820;" />
+                                </Button>
+                                <!--  批量导入  -->
+                                <Button
+                                    Margin="8,20"
+                                    Background="#2E2E2E"
+                                    BorderBrush="#AE2E2E2E"
+                                    Command="{Binding ImportCommand}"
+                                    Cursor="Hand"
+                                    RenderTransformOrigin="0.5,0.5"
+                                    ToolTip="批量导入">
+                                    <Button.RenderTransform>
+                                        <ScaleTransform CenterX="0.5" CenterY="0.5" ScaleX="1" ScaleY="1" />
+                                    </Button.RenderTransform>
+                                    <Button.Style>
+                                        <Style BasedOn="{StaticResource MaterialDesignFloatingActionAccentButton}" TargetType="Button">
+                                            <Style.Triggers>
+                                                <!--  放大  -->
+                                                <EventTrigger RoutedEvent="MouseEnter">
+                                                    <BeginStoryboard>
+                                                        <Storyboard>
+                                                            <DoubleAnimation
+                                                                Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                                                                To="1.5"
+                                                                Duration="0:0:0.2" />
+                                                            <DoubleAnimation
+                                                                Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                                                To="1.5"
+                                                                Duration="0:0:0.2" />
+                                                        </Storyboard>
+                                                    </BeginStoryboard>
+                                                </EventTrigger>
+                                                <EventTrigger RoutedEvent="MouseLeave">
+                                                    <BeginStoryboard>
+                                                        <Storyboard>
+                                                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" Duration="0:0:0.2" />
+                                                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" Duration="0:0:0.2" />
+                                                        </Storyboard>
+                                                    </BeginStoryboard>
+                                                </EventTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                    <TextBlock
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        Cursor=""
+                                        FontFamily="{StaticResource IconFontFamily}"
+                                        FontSize="26"
+                                        Foreground="White"
+                                        Text="&#xe81b;" />
+                                </Button>
+                                <!--  批量导出  -->
+                                <Button
+                                    Margin="8,20"
+                                    Background="#2E2E2E"
+                                    BorderBrush="#AE2E2E2E"
+                                    Command="{Binding ExportCommand}"
+                                    Cursor="Hand"
+                                    RenderTransformOrigin="0.5,0.5"
+                                    ToolTip="批量导出">
+                                    <Button.RenderTransform>
+                                        <ScaleTransform CenterX="0.5" CenterY="0.5" ScaleX="1" ScaleY="1" />
+                                    </Button.RenderTransform>
+                                    <Button.Style>
+                                        <Style BasedOn="{StaticResource MaterialDesignFloatingActionAccentButton}" TargetType="Button">
+                                            <Style.Triggers>
+                                                <!--  放大  -->
+                                                <EventTrigger RoutedEvent="MouseEnter">
+                                                    <BeginStoryboard>
+                                                        <Storyboard>
+                                                            <DoubleAnimation
+                                                                Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                                                                To="1.5"
+                                                                Duration="0:0:0.2" />
+                                                            <DoubleAnimation
+                                                                Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                                                To="1.5"
+                                                                Duration="0:0:0.2" />
+                                                        </Storyboard>
+                                                    </BeginStoryboard>
+                                                </EventTrigger>
+                                                <EventTrigger RoutedEvent="MouseLeave">
+                                                    <BeginStoryboard>
+                                                        <Storyboard>
+                                                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" Duration="0:0:0.2" />
+                                                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" Duration="0:0:0.2" />
+                                                        </Storyboard>
+                                                    </BeginStoryboard>
+                                                </EventTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                    <TextBlock
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        Cursor=""
+                                        FontFamily="{StaticResource IconFontFamily}"
+                                        FontSize="26"
+                                        Foreground="White"
+                                        Text="&#xe81a;" />
+                                </Button>
+                            </StackPanel>
+                        </Grid>
                     </Grid>
+                </Border>
+            </materialDesign:DialogHost>
 
-
-                </Grid>
-
-            </Border>
             <!--  保存设置  -->
             <Button
                 Grid.Row="2"
