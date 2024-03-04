@@ -11,7 +11,7 @@
     xmlns:mvvm="http://prismlibrary.com/"
     Name="PackageExitDefinitionView"
     MaxWidth="700"
-    MaxHeight="648"
+    MaxHeight="748"
     d:DesignHeight="450"
     d:DesignWidth="800"
     mvvm:ViewModelLocator.AutoWireViewModel="True"
@@ -25,9 +25,10 @@
     <Border Background="#2E2E2E" CornerRadius="20">
         <Grid
             Width="400"
-            Height="400"
+            Height="Auto"
             Margin="10">
             <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
@@ -144,12 +145,58 @@
                         ItemsSource="{Binding ExitTypeItems, UpdateSourceTrigger=PropertyChanged}"
                         SelectedItem="{Binding SelectExitType, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                         SelectedValuePath="Value"
+                        Style="{StaticResource MaterialDesignComboBox}">
+                        <b:Interaction.Triggers>
+                            <b:EventTrigger EventName="SelectionChanged">
+                                <b:InvokeCommandAction Command="{Binding ExitTypeSelectionChangedCommand}" />
+                            </b:EventTrigger>
+                        </b:Interaction.Triggers>
+                    </ComboBox>
+                </Border>
+            </StackPanel>
+            <!--  关联主格口  -->
+            <StackPanel
+                Grid.Row="3"
+                Margin="5"
+                Orientation="Horizontal"
+                Visibility="{Binding MainExitVisibility, UpdateSourceTrigger=PropertyChanged}">
+                <TextBlock
+                    Margin="5,0"
+                    VerticalAlignment="Center"
+                    FontSize="13"
+                    FontWeight="Bold"
+                    Foreground="DarkGray"
+                    Text="关联主格口:" />
+                <Border
+                    Margin="5"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Background="#202020"
+                    CornerRadius="5">
+                    <ComboBox
+                        Height="30"
+                        MinWidth="190"
+                        Padding="5,0"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        HorizontalContentAlignment="Center"
+                        VerticalContentAlignment="Center"
+                        materialDesign:ButtonAssist.CornerRadius="15"
+                        materialDesign:ColorZoneAssist.Mode="Dark"
+                        BorderThickness="0"
+                        DisplayMemberPath="ExitName"
+                        FontSize="12"
+                        FontWeight="Bold"
+                        Foreground="White"
+                        ItemsSource="{Binding PackageExitDefinitionItems, UpdateSourceTrigger=PropertyChanged}"
+                        SelectedItem="{Binding SelectExitDefinitionInfo, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                        SelectedValuePath="Id"
                         Style="{StaticResource MaterialDesignComboBox}" />
                 </Border>
             </StackPanel>
             <!--  是否生效  -->
             <StackPanel
-                Grid.Row="3"
+                Grid.Row="4"
                 Margin="5"
                 Orientation="Horizontal">
                 <TextBlock
@@ -168,7 +215,7 @@
             </StackPanel>
             <!--  备注  -->
             <StackPanel
-                Grid.Row="4"
+                Grid.Row="5"
                 Margin="5"
                 Orientation="Vertical">
                 <TextBlock
@@ -207,7 +254,7 @@
             </StackPanel>
             <!--  确定、取消按钮  -->
             <StackPanel
-                Grid.Row="5"
+                Grid.Row="6"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
                 Orientation="Horizontal">

@@ -26,6 +26,12 @@ namespace JayTom.Dws.Data.LocalConf.PackageSortingConfig {
         public virtual CommunicationConnectionConfigInfoModel? CommunicationConnectionConfigInfo { get; set; }
 
         /// <summary>
+        /// Pid
+        /// </summary>
+        [Column("Pid"), Required, InsertOrUpdata]
+        public long Pid { get; set; }
+
+        /// <summary>
         /// 出口名称
         /// </summary>
         [Column("ExitName"), Required, InsertOrUpdata]
@@ -62,6 +68,11 @@ namespace JayTom.Dws.Data.LocalConf.PackageSortingConfig {
         /// <summary>
         /// 异常出口
         /// </summary>
-        AbnormalExit = 1
+        AbnormalExit = 1,
+
+        /// <summary>
+        /// 备用格口
+        /// </summary>
+        ReservedExit = 2
     }
 }

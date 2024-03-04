@@ -268,39 +268,9 @@ namespace JayTom.Dws.Domain.Dto.CloudApiDto {
         public SortMode SortingMode { get; set; }
 
         /// <summary>
-        /// 发送的指令
-        /// </summary>
-        public string SentInstruction { get; set; } = string.Empty;
-
-        /// <summary>
-        /// 发送时间
-        /// </summary>
-        public DateTime SendTime { get; set; }
-
-        /// <summary>
-        /// 接收的指令
-        /// </summary>
-        public string ReceivedInstruction { get; set; } = string.Empty;
-
-        /// <summary>
-        /// 接收时间
-        /// </summary>
-        public DateTime ReceivedTime { get; set; }
-
-        /// <summary>
-        /// 创建包裹指令
-        /// </summary>
-        public string PackageCreationInstruction { get; set; } = string.Empty;
-
-        /// <summary>
         /// 是否有下位机创建
         /// </summary>
         public bool IsCreatedByLowerMachine { get; set; }
-
-        /// <summary>
-        /// 指令目标
-        /// </summary>
-        public string CommandTarget { get; set; } = string.Empty;
 
         /// <summary>
         /// 通讯方式
@@ -327,6 +297,11 @@ namespace JayTom.Dws.Domain.Dto.CloudApiDto {
         /// 分拣异常类型
         /// </summary>
         public AbnormalSortingType AbnormalSortingType { get; set; } = AbnormalSortingType.None;
+
+        /// <summary>
+        /// 指令数据
+        /// </summary>
+        public List<InstructionInfoDto>? InstructionInfos { get; set; }
     }
 
     /// <summary>
@@ -490,5 +465,23 @@ namespace JayTom.Dws.Domain.Dto.CloudApiDto {
         /// 节点名称
         /// </summary>
         public string NodeName { get; set; } = string.Empty;
+    }
+
+    public class InstructionInfoDto {
+
+        /// <summary>
+        /// 指令内容
+        /// </summary>
+        public string InstructionContent { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 指令产生时间
+        /// </summary>
+        public DateTime InstructionGeneratedTime { get; set; }
+
+        /// <summary>
+        /// 指令类型
+        /// </summary>
+        public InstructionTypeType InstructionType { get; set; } = InstructionTypeType.None;
     }
 }

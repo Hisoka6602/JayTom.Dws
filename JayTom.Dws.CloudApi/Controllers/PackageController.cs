@@ -168,15 +168,14 @@ namespace JayTom.Dws.CloudApi.Controllers {
                     SortingInfo = new SortingInfoDto() {
                         ConnectionName = s.SortingInfo?.ConnectionName ?? string.Empty,
                         ChecksumProtocolName = s.SortingInfo?.ChecksumProtocolName ?? string.Empty,
-                        CommandTarget = s.SortingInfo?.CommandTarget ?? string.Empty,
                         CommunicationMethod = s.SortingInfo?.CommunicationMethod ?? CommunicationsType.None,
                         IsCreatedByLowerMachine = s.SortingInfo?.IsCreatedByLowerMachine ?? false,
                         IsSortingUsed = s.SortingInfo?.IsSortingUsed ?? false,
-                        PackageCreationInstruction = s.SortingInfo?.PackageCreationInstruction ?? string.Empty,
-                        ReceivedInstruction = s.SortingInfo?.ReceivedInstruction ?? string.Empty,
-                        ReceivedTime = s.SortingInfo?.ReceivedTime ?? DateTime.MinValue,
-                        SentInstruction = s.SortingInfo?.SentInstruction ?? string.Empty,
-                        SendTime = s.SortingInfo?.SendTime ?? DateTime.MinValue,
+                        InstructionInfos = s.SortingInfo?.InstructionInfos?.Select(s1 => new InstructionInfoDto {
+                            InstructionType = s1.InstructionType,
+                            InstructionContent = s1.InstructionContent,
+                            InstructionGeneratedTime = s1.InstructionGeneratedTime
+                        })?.ToList(),
                         SortingMode = s.SortingInfo?.SortingMode ?? SortMode.None,
                     },
                     LogisticsInfo = new LogisticsInfoDto() {

@@ -134,6 +134,14 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
             return byteArray;
         }
 
+        public string ConvertSortingCode(object tag) {
+            if (tag is long and > 0) {
+                return $"{tag:X4}";
+            }
+
+            return string.Empty;
+        }
+
         private static byte[] HexStringToByteArray(string hexString) {
             try {
                 hexString = hexString.Replace(" ", ""); // 移除空格

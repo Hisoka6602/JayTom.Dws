@@ -17,11 +17,18 @@ namespace JayTom.Dws.Data.Package {
         public bool IsSortingUsed { get; set; }
 
         /// <summary>
+        /// 分拣编码/分拣流水号
+        /// </summary>
+        [Column("SortingCode")]
+        public string SortingCode { get; set; } = string.Empty;
+
+        /// <summary>
         /// 分拣模式
         /// </summary>
         [Column("SortingMode")]
         public SortMode SortingMode { get; set; }
 
+        /*
         /// <summary>
         /// 发送的指令
         /// </summary>
@@ -50,7 +57,7 @@ namespace JayTom.Dws.Data.Package {
         /// 创建包裹指令
         /// </summary>
         [Column("PackageCreationInstruction")]
-        public string PackageCreationInstruction { get; set; } = string.Empty;
+        public string PackageCreationInstruction { get; set; } = string.Empty;*/
 
         /// <summary>
         /// 是否有下位机创建
@@ -58,11 +65,11 @@ namespace JayTom.Dws.Data.Package {
         [Column("IsCreatedByLowerMachine")]
         public bool IsCreatedByLowerMachine { get; set; }
 
-        /// <summary>
+        /*/// <summary>
         /// 指令目标
         /// </summary>
         [Column("CommandTarget")]
-        public string CommandTarget { get; set; } = string.Empty;
+        public string CommandTarget { get; set; } = string.Empty;*/
 
         /// <summary>
         /// 通讯方式
@@ -93,6 +100,8 @@ namespace JayTom.Dws.Data.Package {
         /// </summary>
         [Column("AbnormalSortingType")]
         public AbnormalSortingType AbnormalSortingType { get; set; } = AbnormalSortingType.None;
+
+        public virtual ICollection<InstructionInfoModel>? InstructionInfos { get; set; }
     }
 
     public enum SortMode {

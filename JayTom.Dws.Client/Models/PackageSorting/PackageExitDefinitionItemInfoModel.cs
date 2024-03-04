@@ -5,12 +5,15 @@ using System.ComponentModel.DataAnnotations;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 
 namespace JayTom.Dws.Client.Models.PackageSorting {
+
     public class PackageExitDefinitionItemInfoModel : BasePackageSortingItemInfoModel {
         private string _exitName = string.Empty;
         private ExitType _type = ExitType.PackageExit;
         private bool _isActive = true;
         private long _communicationConnectionId;
         private string? _communicationConnectionName;
+        private string _mainExitName = string.Empty;
+        private long _pid;
 
         /// <summary>
         /// 连接Id
@@ -18,6 +21,11 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         public long CommunicationConnectionId {
             get => _communicationConnectionId;
             set => SetProperty(ref _communicationConnectionId, value);
+        }
+
+        public long Pid {
+            get => _pid;
+            set => SetProperty(ref _pid, value);
         }
 
         /// <summary>
@@ -45,6 +53,15 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         public ExitType Type {
             get => _type;
             set => SetProperty(ref _type, value);
+        }
+
+        /// <summary>
+        /// 格口名称
+        /// </summary>
+        [DisplayName("主格口"), MemberNotNull, ExcelInfo(Width = 5000)]
+        public string MainExitName {
+            get => _mainExitName;
+            set => SetProperty(ref _mainExitName, value);
         }
 
         /// <summary>

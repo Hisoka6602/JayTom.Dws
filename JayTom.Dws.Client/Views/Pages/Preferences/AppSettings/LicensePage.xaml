@@ -31,7 +31,7 @@
         DialogMargin="5"
         FocusVisualStyle="{x:Null}"
         Focusable="False"
-        Identifier="OtherSettingsDialog"
+        Identifier="LicenseDialog"
         Style="{StaticResource MaterialDesignEmbeddedDialogHost}">
         <Grid Margin="10">
             <Grid.RowDefinitions>

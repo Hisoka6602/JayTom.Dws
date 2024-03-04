@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
+
     public class AppSettingsViewModel : BindableBase {
         private readonly IRegionManager _regionManager;
         private ObservableCollection<MenuItemInfoModel> _appSettingsMenuItems;

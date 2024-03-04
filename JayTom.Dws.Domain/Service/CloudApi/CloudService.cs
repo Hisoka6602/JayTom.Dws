@@ -63,14 +63,14 @@ namespace JayTom.Dws.Domain.Service.CloudApi {
                 SortingInfo = new SortingInfoModel() {
                     ConnectionName = packageInfo.SortingInfo?.ConnectionName ?? string.Empty,
                     ChecksumProtocolName = packageInfo.SortingInfo?.ChecksumProtocolName ?? string.Empty,
-                    CommandTarget = packageInfo.SortingInfo?.CommandTarget ?? string.Empty,
                     CommunicationMethod = packageInfo.SortingInfo?.CommunicationMethod ?? CommunicationsType.None,
                     IsCreatedByLowerMachine = packageInfo.SortingInfo?.IsCreatedByLowerMachine ?? false,
-                    PackageCreationInstruction = packageInfo.SortingInfo?.PackageCreationInstruction ?? string.Empty,
-                    ReceivedInstruction = packageInfo.SortingInfo?.ReceivedInstruction ?? string.Empty,
-                    ReceivedTime = packageInfo.SortingInfo?.ReceivedTime ?? DateTime.MinValue,
-                    SendTime = packageInfo.SortingInfo?.SendTime ?? DateTime.MinValue,
-                    SentInstruction = packageInfo.SortingInfo?.SentInstruction ?? string.Empty,
+                    InstructionInfos = (ICollection<InstructionInfoModel>?)packageInfo.SortingInfo?.InstructionInfos?
+                        .Select(s => new InstructionInfoModel {
+                            InstructionGeneratedTime = s.InstructionGeneratedTime,
+                            InstructionType = s.InstructionType,
+                            InstructionContent = s.InstructionContent
+                        }),
                     SortingMode = packageInfo.SortingInfo?.SortingMode ?? SortMode.None,
                     IsSortingUsed = packageInfo.SortingInfo?.IsSortingUsed ?? false,
                     IsAbnormalSorting = packageInfo.SortingInfo?.IsAbnormalSorting ?? false,
@@ -133,7 +133,8 @@ namespace JayTom.Dws.Domain.Service.CloudApi {
                     (string.IsNullOrEmpty(physicalExit) ||
                      (w.ExitInfo != null && w.ExitInfo.PhysicalExit.Contains(physicalExit))) &&
                     (string.IsNullOrEmpty(sentInstruction) ||
-                     (w.SortingInfo != null && w.SortingInfo.SentInstruction.Contains(sentInstruction))) &&
+                     (w.SortingInfo != null && w.SortingInfo.InstructionInfos != null &&
+                      w.SortingInfo.InstructionInfos.Any(a => a.InstructionContent.Contains(sentInstruction)))) &&
                     (string.IsNullOrEmpty(logisticsName) ||
                      (w.LogisticsInfo != null && w.LogisticsInfo.LogisticsName.Contains(logisticsName))) &&
                     (string.IsNullOrEmpty(threeSegmentCode) ||
@@ -159,7 +160,8 @@ namespace JayTom.Dws.Domain.Service.CloudApi {
                         (string.IsNullOrEmpty(physicalExit) ||
                          (w.ExitInfo != null && w.ExitInfo.PhysicalExit.Contains(physicalExit))) &&
                         (string.IsNullOrEmpty(sentInstruction) ||
-                         (w.SortingInfo != null && w.SortingInfo.SentInstruction.Contains(sentInstruction))) &&
+                         (w.SortingInfo != null && w.SortingInfo.InstructionInfos != null &&
+                          w.SortingInfo.InstructionInfos.Any(a => a.InstructionContent.Contains(sentInstruction)))) &&
                         (string.IsNullOrEmpty(logisticsName) ||
                          (w.LogisticsInfo != null && w.LogisticsInfo.LogisticsName.Contains(logisticsName))) &&
                         (string.IsNullOrEmpty(threeSegmentCode) ||

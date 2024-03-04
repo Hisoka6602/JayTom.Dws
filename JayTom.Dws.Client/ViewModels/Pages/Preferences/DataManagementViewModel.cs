@@ -631,17 +631,17 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                                 },
                                 SortingInfo = new SortingItemModel {
                                     ChecksumProtocolName = s.SortingInfo?.ChecksumProtocolName ?? string.Empty,
-                                    CommandTarget = s.SortingInfo?.CommandTarget ?? string.Empty,
+
                                     CommunicationMethod = s.SortingInfo?.CommunicationMethod ?? CommunicationsType.None,
                                     IsCreatedByLowerMachine = s.SortingInfo?.IsCreatedByLowerMachine ?? false,
-                                    PackageCreationInstruction = s.SortingInfo?.PackageCreationInstruction ?? string.Empty,
-                                    PackageCreationTime = s.PackageCreateTime,
-                                    ReceivedInstruction = s.SortingInfo?.ReceivedInstruction ?? string.Empty,
-                                    SentInstruction = s.SortingInfo?.SentInstruction ?? string.Empty,
                                     IsSortingUsed = s.SortingInfo?.IsSortingUsed ?? false,
                                     SortingMode = s.SortingInfo?.SortingMode ?? SortMode.None,
-                                    SendTime = s.SortingInfo?.SendTime ?? DateTime.MinValue,
-                                    ReceivedTime = s.SortingInfo?.ReceivedTime ?? DateTime.MinValue
+                                    InstructionInfoItems = new ObservableCollection<InstructionInfoItemModel>(s.SortingInfo?.InstructionInfos?
+                                        .Select(s1 => new InstructionInfoItemModel() {
+                                            InstructionGeneratedTime = s1.InstructionGeneratedTime,
+                                            InstructionType = s1.InstructionType,
+                                            InstructionContent = s1.InstructionContent
+                                        })?.ToList() ?? new List<InstructionInfoItemModel>())
                                 },
                                 VolumeInfo = new VolumeItemModel() {
                                     CreateTime = s.VolumeInfo?.CreateTime,

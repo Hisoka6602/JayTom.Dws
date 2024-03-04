@@ -20,6 +20,7 @@ using System.Collections.Concurrent;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Client.Service.Sorting;
+using JayTom.Dws.Domain.DownstreamProtocols;
 using JayTom.Dws.Client.Service.ImageStorage;
 using JayTom.Dws.Client.Service.ResultOutput;
 using JayTom.Dws.Domain.Repository.LocalConf;
@@ -483,6 +484,21 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 TriggerPosition = TriggerPositionEnum.PackageTrigger,
                                 PackageInfo = packageInfo
                             });
+
+                            EventAggregator.Instance.Publish(new InstructionReceived() {
+                                Timestamp = new DateTimeOffset(packageInfo.CreateTime).ToUnixTimeMilliseconds(),
+                                IsCreatedByLowerMachine = true,
+                                SortingCode = packageInfo.Guid.ToString(),
+                                InstructionInfos = new List<InstructionInfoModel>()
+                                {
+                                    new()
+                                    {
+                                        InstructionContent = args.Instruction,
+                                        InstructionGeneratedTime = DateTime.Now,
+                                        InstructionType = InstructionTypeType.CreatePackage
+                                    }
+                                }
+                            });
                         }
                     }
                 }
@@ -500,6 +516,20 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             var keyValuePair = _packageInfos.FirstOrDefault(f => f.Value.Guid.Equals(num));
                             if (keyValuePair.Value is not null) {
                                 _packageInfos.TryRemove(keyValuePair);
+
+                                EventAggregator.Instance.Publish(new InstructionReceived() {
+                                    Timestamp = new DateTimeOffset(keyValuePair.Value.CreateTime).ToUnixTimeMilliseconds(),
+                                    IsCreatedByLowerMachine = true,
+                                    InstructionInfos = new List<InstructionInfoModel>()
+                                    {
+                                        new()
+                                        {
+                                            InstructionContent = args.Instruction,
+                                            InstructionGeneratedTime = DateTime.Now,
+                                            InstructionType = InstructionTypeType.SignalCallback
+                                        }
+                                    }
+                                });
                             }
                         }
                     }

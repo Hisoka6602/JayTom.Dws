@@ -27,6 +27,13 @@ namespace JayTom.Dws.Domain.DownstreamProtocols {
         DeviceDecodeResult? DecodeData(string data);
 
         /// <summary>
+        /// 转换包裹流水号
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
+        string ConvertSortingCode(object obj);
+
+        /// <summary>
         /// 协议字节长度
         /// </summary>
 

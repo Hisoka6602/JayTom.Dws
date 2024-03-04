@@ -235,6 +235,14 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
             };
         }
 
+        public string ConvertSortingCode(object tag) {
+            if (tag is long and > 0) {
+                return $"{tag:X4}";
+            }
+
+            return string.Empty;
+        }
+
         private byte[] ConvertAsciiToHex(string asciiText) {
             // 将ASCII文本转换为字节数组
             var asciiBytes = Encoding.ASCII.GetBytes(asciiText);

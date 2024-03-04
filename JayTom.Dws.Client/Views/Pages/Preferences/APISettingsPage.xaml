@@ -28,7 +28,7 @@
         DialogMargin="5"
         FocusVisualStyle="{x:Null}"
         Focusable="False"
-        Identifier="BarcodeFilterSettingsDialog"
+        Identifier="APISettingsDialog"
         Style="{StaticResource MaterialDesignEmbeddedDialogHost}">
         <Grid Margin="20,0">
             <Grid.RowDefinitions>

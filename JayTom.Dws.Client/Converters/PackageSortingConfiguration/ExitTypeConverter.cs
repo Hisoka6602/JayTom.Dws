@@ -1,7 +1,7 @@
-﻿using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
-using System;
-using System.Globalization;
+﻿using System;
 using System.Windows.Data;
+using System.Globalization;
+using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 
 namespace JayTom.Dws.Client.Converters.PackageSortingConfiguration {
 
@@ -15,6 +15,9 @@ namespace JayTom.Dws.Client.Converters.PackageSortingConfiguration {
 
                     case ExitType.PackageExit:
                         return "包裹格口";
+
+                    case ExitType.ReservedExit:
+                        return "备用格口";
                 }
             }
             return Binding.DoNothing;

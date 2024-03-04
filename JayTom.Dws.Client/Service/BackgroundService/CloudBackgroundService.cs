@@ -23,6 +23,7 @@ using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Repository.LocalData;
 using JayTom.Dws.Domain.Repository.LocalConf.CloudConfig;
 using ApiExceptionType = JayTom.Dws.Interface.ApiExceptionType;
+using InstructionTypeType = JayTom.Dws.Interface.Cloud.InstructionTypeType;
 
 namespace JayTom.Dws.Client.Service.BackgroundService {
 
@@ -235,16 +236,15 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 ConnectionName = packageInfoModel.SortingInfo?.ConnectionName ?? string.Empty,
                                 ChecksumProtocolName =
                                     packageInfoModel.SortingInfo?.ChecksumProtocolName ?? string.Empty,
-                                CommandTarget = packageInfoModel.SortingInfo?.CommandTarget ?? string.Empty,
                                 CommunicationMethod = (int)(packageInfoModel.SortingInfo?.CommunicationMethod ?? 0),
                                 IsCreatedByLowerMachine =
                                     packageInfoModel.SortingInfo?.IsCreatedByLowerMachine ?? false,
-                                PackageCreationInstruction = packageInfoModel.SortingInfo?.PackageCreationInstruction ??
-                                                             string.Empty,
-                                ReceivedInstruction = packageInfoModel.SortingInfo?.ReceivedInstruction ?? string.Empty,
-                                ReceivedTime = packageInfoModel.SortingInfo?.ReceivedTime ?? DateTime.MinValue,
-                                SendTime = packageInfoModel.SortingInfo?.SendTime ?? DateTime.MinValue,
-                                SentInstruction = packageInfoModel.SortingInfo?.SentInstruction ?? string.Empty,
+                                InstructionInfos = packageInfoModel.SortingInfo?.InstructionInfos?
+                                        .Select(s => new PackageCloudInstructionInfo {
+                                            InstructionContent = s.InstructionContent,
+                                            InstructionGeneratedTime = s.InstructionGeneratedTime,
+                                            InstructionType = (InstructionTypeType)s.InstructionType,
+                                        })?.ToList(),
                                 SortingMode = (int)(packageInfoModel.SortingInfo?.SortingMode ?? 0),
                                 IsSortingUsed = packageInfoModel.SortingInfo?.IsSortingUsed ?? false,
                                 IsAbnormalSorting = packageInfoModel.SortingInfo?.IsAbnormalSorting ?? false,

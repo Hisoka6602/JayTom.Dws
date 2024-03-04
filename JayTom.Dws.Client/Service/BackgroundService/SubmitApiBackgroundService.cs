@@ -490,6 +490,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     });
                 }
 
+                //格口分拣后回调提交
+
                 await Task.Delay(10, stoppingToken);
             }
         }

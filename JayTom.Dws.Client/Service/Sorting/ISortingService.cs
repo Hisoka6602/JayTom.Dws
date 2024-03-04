@@ -335,27 +335,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
         /// <summary>
         /// 分拣模式
         /// </summary>
-        public SortMode SortingMode { get; set; }
-
-        /// <summary>
-        /// 发送的指令
-        /// </summary>
-        public string SentInstruction { get; set; } = string.Empty;
-
-        /// <summary>
-        /// 指令发送时间
-        /// </summary>
-        public DateTime SendTime { get; set; }
-
-        /// <summary>
-        /// 创建包裹时间
-        /// </summary>
-        public DateTime PackageCreationTime { get; set; }
-
-        /// <summary>
-        /// 创建包裹指令
-        /// </summary>
-        public string PackageCreationInstruction { get; set; } = string.Empty;
+        public SortMode SortingMode { get; set; } = SortMode.None;
 
         /// <summary>
         /// 是否由下位机创建
@@ -363,19 +343,24 @@ namespace JayTom.Dws.Client.Service.Sorting {
         public bool IsCreatedByLowerMachine { get; set; }
 
         /// <summary>
-        /// 指令目标
-        /// </summary>
-        public string CommandTarget { get; set; } = string.Empty;
-
-        /// <summary>
         /// 通讯方式
         /// </summary>
-        public CommunicationsType CommunicationMethod { get; set; }
+        public CommunicationsType CommunicationMethod { get; set; } = CommunicationsType.None;
 
         /// <summary>
         /// 效验协议名称
         /// </summary>
         public string ChecksumProtocolName { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 包裹流水号
+        /// </summary>
+        public string SortingCode { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 指令信息
+        /// </summary>
+        public List<InstructionInfoModel>? InstructionInfos { get; set; }
     }
 
     public class ExceptionSortingReceived {
@@ -399,5 +384,10 @@ namespace JayTom.Dws.Client.Service.Sorting {
         /// 异常口回调指令
         /// </summary>
         public PackageCloudAbnormalSortingType PackageCloudAbnormalSortingType { get; set; }
+
+        /// <summary>
+        /// 包裹流水号
+        /// </summary>
+        public string SortingCode { get; set; } = string.Empty;
     }
 }

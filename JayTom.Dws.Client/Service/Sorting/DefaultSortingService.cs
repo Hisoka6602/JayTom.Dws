@@ -489,6 +489,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                             PackageCreationInstruction = param.PackageCreationInstruction ?? string.Empty,
                             IsCreatedByLowerMachine = param.IsCreatedByLowerMachine,
                         });
+
                     //回调分拣消息
                 }
             }

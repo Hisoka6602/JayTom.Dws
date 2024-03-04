@@ -1,6 +1,8 @@
 ﻿using System;
 using Prism.Mvvm;
 using JayTom.Dws.Data.Package;
+using Newtonsoft.Json.Serialization;
+using System.Collections.ObjectModel;
 
 namespace JayTom.Dws.Client.Models.DataModels {
 
@@ -9,16 +11,10 @@ namespace JayTom.Dws.Client.Models.DataModels {
         private long _exitId;
         private long _logisticsId;
         private SortMode _sortingMode;
-        private string _sentInstruction = string.Empty;
-        private string _receivedInstruction = string.Empty;
-        private DateTime _packageCreationTime;
-        private string _packageCreationInstruction = string.Empty;
         private bool _isCreatedByLowerMachine;
-        private string _commandTarget = string.Empty;
         private CommunicationsType _communicationMethod = CommunicationsType.None;
         private string _checksumProtocolName = string.Empty;
-        private DateTime _sendTime;
-        private DateTime _receivedTime;
+        private ObservableCollection<InstructionInfoItemModel> _instructionInfoItems = new();
 
         /// <summary>
         /// 是否使用分拣
@@ -53,64 +49,11 @@ namespace JayTom.Dws.Client.Models.DataModels {
         }
 
         /// <summary>
-        /// 发送的指令
-        /// </summary>
-        public string SentInstruction {
-            get => _sentInstruction;
-            set => SetProperty(ref _sentInstruction, value);
-        }
-
-        public DateTime SendTime {
-            get => _sendTime;
-            set => SetProperty(ref _sendTime, value);
-        }
-
-        /// <summary>
-        /// 接收的指令
-        /// </summary>
-        public string ReceivedInstruction {
-            get => _receivedInstruction;
-            set => SetProperty(ref _receivedInstruction, value);
-        }
-
-        /// <summary>
-        /// 接收的时间
-        /// </summary>
-        public DateTime ReceivedTime {
-            get => _receivedTime;
-            set => SetProperty(ref _receivedTime, value);
-        }
-
-        /// <summary>
-        /// 创建包裹时间
-        /// </summary>
-        public DateTime PackageCreationTime {
-            get => _packageCreationTime;
-            set => SetProperty(ref _packageCreationTime, value);
-        }
-
-        /// <summary>
-        /// 创建包裹指令
-        /// </summary>
-        public string PackageCreationInstruction {
-            get => _packageCreationInstruction;
-            set => SetProperty(ref _packageCreationInstruction, value);
-        }
-
-        /// <summary>
         /// 是否有下位机创建
         /// </summary>
         public bool IsCreatedByLowerMachine {
             get => _isCreatedByLowerMachine;
             set => SetProperty(ref _isCreatedByLowerMachine, value);
-        }
-
-        /// <summary>
-        /// 指令目标
-        /// </summary>
-        public string CommandTarget {
-            get => _commandTarget;
-            set => SetProperty(ref _commandTarget, value);
         }
 
         /// <summary>
@@ -127,6 +70,14 @@ namespace JayTom.Dws.Client.Models.DataModels {
         public string ChecksumProtocolName {
             get => _checksumProtocolName;
             set => SetProperty(ref _checksumProtocolName, value);
+        }
+
+        /// <summary>
+        /// 指令信息
+        /// </summary>
+        public ObservableCollection<InstructionInfoItemModel> InstructionInfoItems {
+            get => _instructionInfoItems;
+            set => SetProperty(ref _instructionInfoItems, value);
         }
     }
 }

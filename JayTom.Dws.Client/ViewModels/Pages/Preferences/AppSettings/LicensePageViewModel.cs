@@ -13,11 +13,14 @@ using JayTom.Dws.License;
 using System.Windows.Input;
 using System.Threading.Tasks;
 using MaterialDesignThemes.Wpf;
+using System.Windows.Threading;
 using JayTom.Dws.Data.LocalConf;
 using System.Collections.Generic;
 using JayTom.Dws.Domain.Dto.AppDto;
 using JayTom.Dws.Interface.License;
+using JayTom.Dws.Client.Views.Dialog;
 using JayTom.Dws.Client.EventMediators;
+using JayTom.Dws.Client.ViewModels.Dialog;
 using JayTom.Dws.Client.Models.AppSettingModel;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings {
@@ -110,23 +113,38 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings {
             if (!_isLoaded) {
                 _isLoaded = true;
                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
-                    MachineCode = LicenseManager.GenerateMachineCode();
+                    var loadingDialog = new LoadingDialog();
+                    if (loadingDialog.DataContext is LoadingDialogViewModel model) {
+                        model.Identifier = "LicenseDialog";
+                        DialogHost.Show(loadingDialog, model.Identifier).ConfigureAwait(false);
+                        await Task.Delay(500);
+                        Task.Run(async () => {
+                            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+                                MachineCode = LicenseManager.GenerateMachineCode();
+                                var licenseDirectory = Path.Combine(Directory.GetCurrentDirectory(), "License");
+                                var firstOrDefault = Directory.GetFiles(licenseDirectory, "*.key").FirstOrDefault();
+                                if (firstOrDefault is not null) {
+                                    //解密授权
+                                    var (key, value) =
+                                        LicenseManager.DecryptAuthorizationFile(firstOrDefault, out var data);
+                                    if (data is not null) {
+                                        LicenseCode = data.LicenseCode;
+                                        CustomerName = data.UserName;
+                                        FailureReason = value;
+                                        Remarks = data.Remarks;
+                                    }
 
-                    var licenseDirectory = Path.Combine(Directory.GetCurrentDirectory(), "License");
-                    var firstOrDefault = Directory.GetFiles(licenseDirectory, "*.key").FirstOrDefault();
-                    if (firstOrDefault is not null) {
-                        //解密授权
-                        var (key, value) = LicenseManager.DecryptAuthorizationFile(firstOrDefault, out var data);
-                        if (data is not null) {
-                            LicenseCode = data.LicenseCode;
-                            CustomerName = data.UserName;
-                            FailureReason = value;
-                            Remarks = data.Remarks;
-                        }
-                        LicenseStatus = key;
-                    }
-                    else {
-                        FailureReason = "未检测到授权文件";
+                                    LicenseStatus = key;
+                                }
+                                else {
+                                    FailureReason = "未检测到授权文件";
+                                }
+
+                                if (DialogHost.IsDialogOpen(model.Identifier)) {
+                                    DialogHost.Close(model.Identifier);
+                                }
+                            }, DispatcherPriority.Background);
+                        });
                     }
                 });
             }

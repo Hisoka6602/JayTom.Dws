@@ -168,6 +168,16 @@ namespace JayTom.Dws.Infrastructure {
                 modelBuilder.Entity<AggregatePackagesInfoModel>().HasKey(c => new {
                     c.Id
                 });
+                //指令信息
+
+                modelBuilder.Entity<SortingInfoModel>()
+                    .HasMany(b => b.InstructionInfos)
+                    .WithOne(n => n.SortingInfo)
+                    .HasForeignKey(n => new { n.SortingInfoId })
+                    .OnDelete(DeleteBehavior.Cascade);
+                modelBuilder.Entity<InstructionInfoModel>().HasKey(c => new {
+                    c.Id
+                });
             }
 
             base.OnModelCreating(modelBuilder);

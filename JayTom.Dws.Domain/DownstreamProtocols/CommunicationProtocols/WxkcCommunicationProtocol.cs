@@ -108,6 +108,14 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
             return null;
         }
 
+        public string ConvertSortingCode(object tag) {
+            if (tag is long and > 0) {
+                return $"{tag:X4}";
+            }
+
+            return string.Empty;
+        }
+
         public int DataLen => 8;
 
         private static byte[] HexStringToByteArray(string hexString) {

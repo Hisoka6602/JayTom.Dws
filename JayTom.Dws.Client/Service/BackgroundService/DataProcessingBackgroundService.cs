@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using Newtonsoft.Json;
 using System.Threading;
 using System.Diagnostics;
@@ -13,6 +14,7 @@ using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Service.Sorting;
 using JayTom.Dws.Client.Service.ImageStorage;
 using JayTom.Dws.Domain.Repository.LocalData;
+using JayTom.Dws.Infrastructure.Repository.LocalData;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 using JayTom.Dws.Infrastructure.Repository.LocalConf.CameraConfig;
 using static JayTom.Dws.Client.Service.BackgroundService.SubmitApiBackgroundService;
@@ -211,31 +213,74 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             f.BarCodeInfo.ScanTime.Equals(sortingModel.ScanTime),
                         stoppingToken);
 
-                    /*
-                    var barCodeInfoModel = await _barCodeRepository.FirstOrDefault(f => f.Barcode.Equals(sortingModel.BarCode) &&
-                        f.ScanTime.Equals(sortingModel.ScanTime), stoppingToken);*/
                     if (key && value is { } packageInfoModel) {
-                        //存到表
-                        var insert = await _sortingRepository.Insert(new SortingInfoModel() {
-                            PackageId = packageInfoModel.Id,
-                            ChecksumProtocolName = sortingModel.ChecksumProtocolName,
-                            CommandTarget = sortingModel.CommandTarget,
-                            CommunicationMethod = sortingModel.CommunicationMethod,
-                            IsCreatedByLowerMachine = sortingModel.IsCreatedByLowerMachine,
-                            IsSortingUsed = true,
-                            SentInstruction = sortingModel.SentInstruction,
-                            SortingMode = sortingModel.SortingMode,
-                            PackageCreationInstruction = sortingModel.PackageCreationInstruction,
-                            SendTime = sortingModel.SendTime,
-                            ReceivedTime = sortingModel.PackageCreationTime
-                        }, stoppingToken);
-                        var b = await _exitInfoRepository.Insert(new ExitInfoModel() {
-                            PackageId = packageInfoModel.Id,
-                            PhysicalExit = sortingModel.ExitName,
-                            PhysicalExitId = sortingModel.ExitId,
-                        }, stoppingToken);
+                        //判断是否已存在记录
+                        var sortingInfoModel = await _sortingRepository.
+                            FirstOrDefault(f =>
+                                f.PackageId.Equals(packageInfoModel.Id), stoppingToken);
+                        bool isSortingUpdateInfo, isExitInfoUpdate;
+                        if (sortingInfoModel is null) {
+                            //存到表
+                            isSortingUpdateInfo = await _sortingRepository.Insert(new SortingInfoModel() {
+                                PackageId = packageInfoModel.Id,
+                                ChecksumProtocolName = sortingModel.ChecksumProtocolName,
+                                CommunicationMethod = sortingModel.CommunicationMethod,
+                                IsCreatedByLowerMachine = sortingModel.IsCreatedByLowerMachine,
+                                IsSortingUsed = true,
+                                SortingCode = sortingModel.SortingCode,
+                                SortingMode = sortingModel.SortingMode,
+                                InstructionInfos = sortingModel.InstructionInfos?.Select(s => new InstructionInfoModel {
+                                    InstructionType = s.InstructionType,
+                                    InstructionContent = s.InstructionContent,
+                                    InstructionGeneratedTime = s.InstructionGeneratedTime,
+                                })?.ToList() ?? new List<InstructionInfoModel>()
+                            }, stoppingToken);
+                            isExitInfoUpdate = await _exitInfoRepository.Insert(new ExitInfoModel() {
+                                PackageId = packageInfoModel.Id,
+                                PhysicalExit = sortingModel.ExitName,
+                                PhysicalExitId = sortingModel.ExitId,
+                            }, stoppingToken);
+                        }
+                        else {
+                            //更新
+                            sortingInfoModel.InstructionInfos ??= new List<InstructionInfoModel>();
+                            sortingInfoModel.IsCreatedByLowerMachine = sortingModel.IsCreatedByLowerMachine;
+                            sortingInfoModel.IsSortingUsed = true;
+                            if (!string.IsNullOrEmpty(sortingModel.ChecksumProtocolName)) {
+                                sortingInfoModel.ChecksumProtocolName = sortingModel.ChecksumProtocolName;
+                            }
+                            if (sortingModel.CommunicationMethod != CommunicationsType.None) {
+                                sortingInfoModel.CommunicationMethod = sortingModel.CommunicationMethod;
+                            }
+                            if (sortingModel.SortingMode != SortMode.None) {
+                                sortingInfoModel.SortingMode = sortingModel.SortingMode;
+                            }
+                            var instructionInfoModels = sortingModel.InstructionInfos?.Select(s => new InstructionInfoModel {
+                                InstructionType = s.InstructionType,
+                                InstructionContent = s.InstructionContent,
+                                InstructionGeneratedTime = s.InstructionGeneratedTime,
+                            })?.ToList() ?? new List<InstructionInfoModel>();
+                            foreach (var instructionInfoModel in instructionInfoModels) {
+                                sortingInfoModel.InstructionInfos.Add(instructionInfoModel);
+                            }
 
-                        if (!insert || !b) {
+                            isSortingUpdateInfo = await _sortingRepository.Update(sortingInfoModel, stoppingToken);
+
+                            var infoModel = await _exitInfoRepository.FirstOrDefault(f => f.PackageId.Equals(packageInfoModel.Id), stoppingToken);
+                            if (infoModel is null) {
+                                isExitInfoUpdate = await _exitInfoRepository.Insert(new ExitInfoModel() {
+                                    PackageId = packageInfoModel.Id,
+                                    PhysicalExit = sortingModel.ExitName,
+                                    PhysicalExitId = sortingModel.ExitId,
+                                }, stoppingToken);
+                            }
+                            else {
+                                infoModel.PhysicalExit = sortingModel.ExitName;
+                                infoModel.PhysicalExitId = sortingModel.ExitId;
+                                isExitInfoUpdate = await _exitInfoRepository.Update(infoModel, stoppingToken);
+                            }
+                        }
+                        if (!isSortingUpdateInfo || !isExitInfoUpdate) {
                             _instructionItems.Enqueue(sortingModel);
                         }
                     }

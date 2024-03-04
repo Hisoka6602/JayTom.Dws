@@ -2,14 +2,17 @@
 using Prism.Mvvm;
 using System.Linq;
 using Prism.Commands;
+using System.Windows;
 using System.Windows.Input;
 using MaterialDesignThemes.Wpf;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Models.PackageSorting;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
+using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig.ConnectionParams;
 
 namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
+
     public class PackageExitDefinitionEditorViewModel : BindableBase {
         private readonly ICommunicationConnectionConfigRepository _communicationConnectionConfigRepository;
         private string _identifier = string.Empty;
@@ -33,12 +36,20 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
                 Name = "包裹格口",
                 Value = ExitType.PackageExit
             },
+            new ExitTypeInfoModel()
+            {
+                Name = "备用格口",
+                Value = ExitType.ReservedExit
+            },
         };
 
         private ExitTypeInfoModel _selectExitType = new();
         private ObservableCollection<CommunicationConnectionItemInfoModel> _communicationConnectionItems = new();
         private CommunicationConnectionItemInfoModel _selectConnectionItem = new();
         private long _communicationConnectionId;
+        private Visibility _reservedExitVisibility = Visibility.Collapsed;
+        private ObservableCollection<PackageExitDefinitionItemInfoModel> _packageExitDefinitionItems = new();
+        private PackageExitDefinitionItemInfoModel _selectExitDefinitionInfo = new();
 
         public PackageExitDefinitionEditorViewModel(ICommunicationConnectionConfigRepository communicationConnectionConfigRepository) {
             _communicationConnectionConfigRepository = communicationConnectionConfigRepository;
@@ -52,6 +63,16 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
         public CommunicationConnectionItemInfoModel SelectConnectionItem {
             get => _selectConnectionItem;
             set => SetProperty(ref _selectConnectionItem, value);
+        }
+
+        public ObservableCollection<PackageExitDefinitionItemInfoModel> PackageExitDefinitionItems {
+            get => _packageExitDefinitionItems;
+            set => SetProperty(ref _packageExitDefinitionItems, value);
+        }
+
+        public PackageExitDefinitionItemInfoModel SelectExitDefinitionInfo {
+            get => _selectExitDefinitionInfo;
+            set => SetProperty(ref _selectExitDefinitionInfo, value);
         }
 
         /// <summary>
@@ -118,6 +139,11 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
             set => SetProperty(ref _remarks, value);
         }
 
+        public Visibility MainExitVisibility {
+            get => _reservedExitVisibility;
+            set => SetProperty(ref _reservedExitVisibility, value);
+        }
+
         public ObservableCollection<ExitTypeInfoModel> ExitTypeItems {
             get => _exitTypeItems;
             set => SetProperty(ref _exitTypeItems, value);
@@ -147,11 +173,14 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
                 Pitcher.Throw.ArgumentNull.WhenNull(Type, nameof(Type));
                 Pitcher.Throw.ArgumentNull.WhenNull(SelectConnectionItem, nameof(SelectConnectionItem));
                 IsOk = true;
+                if (Type == ExitType.ReservedExit &&
+                    SelectExitDefinitionInfo?.Id < 1) {
+                    throw new Exception("备用格口需要关联主格口");
+                }
             }
             catch (Exception e) {
                 IsOk = false;
                 ExceptionContent = e.Message;
-
             }
 
             if (DialogHost.IsDialogOpen(Identifier)) {
@@ -190,6 +219,16 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
                 CommunicationConnectionItems.AddRange(itemInfoModels);
 
                 SelectConnectionItem = CommunicationConnectionItems.FirstOrDefault(f => f.Id.Equals(CommunicationConnectionId)) ?? new CommunicationConnectionItemInfoModel();
+            });
+        }
+
+        public ICommand ExitTypeSelectionChangedCommand {
+            get => new DelegateCommand<object>(ExitTypeSelectionChangedDelegate);
+        }
+
+        private async void ExitTypeSelectionChangedDelegate(object obj) {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                MainExitVisibility = SelectExitType.Value == ExitType.ReservedExit ? Visibility.Visible : Visibility.Collapsed;
             });
         }
     }

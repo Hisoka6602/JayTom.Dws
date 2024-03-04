@@ -4,6 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using JayTom.Dws.Plugin.Excel.Attributes;
 
 namespace JayTom.Dws.Client.Models.PackageSorting {
+
     public class SortingInstructionBindingItemInfoModel : BasePackageSortingItemInfoModel {
         private ObservableCollection<SortingInstructionItemInfoModel> _sortingInstructionItems = new();
         private string _sortingInstructionGroup = string.Empty;

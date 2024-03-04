@@ -114,6 +114,17 @@
                             <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="格口类型" />
                         </DataGridTextColumn.Header>
                     </DataGridTextColumn>
+                    <!--  关联主格口  -->
+                    <DataGridTextColumn
+                        Width="100"
+                        MinWidth="80"
+                        Binding="{Binding MainExitName, UpdateSourceTrigger=PropertyChanged}"
+                        CellStyle="{StaticResource CustomDataGridTextCellStyle}"
+                        EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="关联主格口" />
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
                     <!--  是否生效  -->
                     <DataGridTemplateColumn Width="80" MinWidth="80">
                         <DataGridTemplateColumn.CellTemplate>
@@ -133,8 +144,8 @@
                     </DataGridTemplateColumn>
                     <!--  备注  -->
                     <DataGridTextColumn
-                        Width="180"
-                        MinWidth="180"
+                        Width="160"
+                        MinWidth="160"
                         Binding="{Binding Remarks, UpdateSourceTrigger=PropertyChanged}"
                         CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                         EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">

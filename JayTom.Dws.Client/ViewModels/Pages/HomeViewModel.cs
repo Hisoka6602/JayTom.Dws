@@ -547,11 +547,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                                             ExitId = instruction.ExitId,
                                             LogisticsId = instruction.LogisticsId,
                                             SortingMode = instruction.SortingMode,
-                                            SentInstruction = instruction.SentInstruction,
-                                            PackageCreationTime = instruction.PackageCreationTime,
-                                            PackageCreationInstruction = instruction.PackageCreationInstruction,
                                             IsCreatedByLowerMachine = instruction.IsCreatedByLowerMachine,
-                                            CommandTarget = instruction.CommandTarget,
                                             CommunicationMethod = instruction.CommunicationMethod,
                                             ChecksumProtocolName = instruction.ChecksumProtocolName,
                                         };
