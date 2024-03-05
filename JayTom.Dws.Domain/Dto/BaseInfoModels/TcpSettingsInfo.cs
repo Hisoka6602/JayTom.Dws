@@ -2,13 +2,12 @@
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using JayTom.Dws.Data.LocalLog;
 using System.Collections.Generic;
 
-namespace JayTom.Dws.Domain.Dto.BaseInfoModels
-{
+namespace JayTom.Dws.Domain.Dto.BaseInfoModels {
 
-    public class TcpSettingsInfo
-    {
+    public class TcpSettingsInfo {
 
         /// <summary>
         /// 连接模式(客户端、服务端)
@@ -24,10 +23,14 @@ namespace JayTom.Dws.Domain.Dto.BaseInfoModels
         /// 服务端配置
         /// </summary>
         public TcpInfo ServerConfig { get; set; } = new();
+
+        /// <summary>
+        /// 数据格式
+        /// </summary>
+        public DataFormatType DataFormat { get; set; } = DataFormatType.Ascii;
     }
 
-    public enum TcpConnectionMode
-    {
+    public enum TcpConnectionMode {
 
         /// <summary>
         /// 客户端

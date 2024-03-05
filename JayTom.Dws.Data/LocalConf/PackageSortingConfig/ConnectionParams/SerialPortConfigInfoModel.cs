@@ -4,6 +4,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using JayTom.Dws.Data.Attributes;
+using System.Text.Json.Serialization;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace JayTom.Dws.Data.LocalConf.PackageSortingConfig.ConnectionParams {

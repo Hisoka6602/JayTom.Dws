@@ -67,7 +67,7 @@
                     materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
                     materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
                     Focusable="False"
-                    IsChecked="{Binding PackageExitLockSettings.IsUsePackageExitLock, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                    IsChecked="{Binding StackedPackageDetectionItemInfo.IsStackedPackageDetection, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                     Style="{StaticResource MaterialDesignSwitchToggleButton}" />
             </StackPanel>
             <Border
@@ -116,7 +116,7 @@
                                 FontWeight="Bold"
                                 Foreground="White"
                                 ItemsSource="{Binding CommunicationsTypeItems, UpdateSourceTrigger=PropertyChanged}"
-                                SelectedItem="{Binding SelectCommunicationsType, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                SelectedItem="{Binding StackedPackageDetectionItemInfo.CommunicationsType, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                 SelectedValuePath="Value"
                                 Style="{StaticResource MaterialDesignComboBox}" />
                         </Border>
@@ -162,7 +162,7 @@
                                             FontWeight="Bold"
                                             Foreground="White"
                                             ItemsSource="{Binding PortItems, UpdateSourceTrigger=PropertyChanged}"
-                                            SelectedItem="{Binding CommunicationConnectionItem.SerialPortConfigInfo.PortName, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                            SelectedItem="{Binding StackedPackageDetectionItemInfo.SerialPortConfigInfo.PortName, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                             Style="{StaticResource MaterialDesignComboBox}" />
                                     </Border>
                                     <Button
@@ -220,7 +220,7 @@
                                             FontWeight="Bold"
                                             Foreground="White"
                                             ItemsSource="{Binding BaudRateItems, UpdateSourceTrigger=PropertyChanged}"
-                                            SelectedItem="{Binding CommunicationConnectionItem.SerialPortConfigInfo.BaudRate, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                            SelectedItem="{Binding StackedPackageDetectionItemInfo.SerialPortConfigInfo.BaudRate, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                             Style="{StaticResource MaterialDesignComboBox}" />
                                     </Border>
                                 </StackPanel>
@@ -255,7 +255,7 @@
                                             FontWeight="Bold"
                                             Foreground="White"
                                             ItemsSource="{Binding DataBitsItems, UpdateSourceTrigger=PropertyChanged}"
-                                            SelectedItem="{Binding CommunicationConnectionItem.SerialPortConfigInfo.DataBits, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                            SelectedItem="{Binding StackedPackageDetectionItemInfo.SerialPortConfigInfo.DataBits, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                             Style="{StaticResource MaterialDesignComboBox}" />
                                     </Border>
                                 </StackPanel>
@@ -291,7 +291,7 @@
                                             FontWeight="Bold"
                                             Foreground="White"
                                             ItemsSource="{Binding ParityItems, UpdateSourceTrigger=PropertyChanged}"
-                                            SelectedItem="{Binding CommunicationConnectionItem.SerialPortConfigInfo.Parity, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                            SelectedItem="{Binding StackedPackageDetectionItemInfo.SerialPortConfigInfo.Parity, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                             SelectedValuePath="Value"
                                             Style="{StaticResource MaterialDesignComboBox}" />
                                     </Border>
@@ -328,7 +328,7 @@
                                             FontWeight="Bold"
                                             Foreground="White"
                                             ItemsSource="{Binding StopBitsItems, UpdateSourceTrigger=PropertyChanged}"
-                                            SelectedItem="{Binding CommunicationConnectionItem.SerialPortConfigInfo.StopBits, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                            SelectedItem="{Binding StackedPackageDetectionItemInfo.SerialPortConfigInfo.StopBits, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                             SelectedValuePath="Value"
                                             Style="{StaticResource MaterialDesignComboBox}" />
                                     </Border>
@@ -365,7 +365,7 @@
                                             FontWeight="Bold"
                                             Foreground="White"
                                             ItemsSource="{Binding DataFormatTypeItems, UpdateSourceTrigger=PropertyChanged}"
-                                            SelectedItem="{Binding CommunicationConnectionItem.SerialPortConfigInfo.DataFormat, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                            SelectedItem="{Binding StackedPackageDetectionItemInfo.SerialPortConfigInfo.DataFormat, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                             SelectedValuePath="Value"
                                             Style="{StaticResource MaterialDesignComboBox}" />
                                     </Border>
@@ -382,7 +382,7 @@
                                     FontSize="13"
                                     FontWeight="Bold"
                                     Foreground="DarkGray"
-                                    IsChecked="{Binding CommunicationConnectionItem.TcpConnectionConfigInfo.ConnectionMode, Converter={StaticResource TcpConnectionModeToBooleanConverter}, ConverterParameter=Server}"
+                                    IsChecked="{Binding StackedPackageDetectionItemInfo.TcpConnectionConfigInfo.ConnectionMode, Converter={StaticResource TcpConnectionModeToBooleanConverter}, ConverterParameter=Server}"
                                     Template="{StaticResource CustomRadioButtonTemplate}" />
                                 <StackPanel
                                     Margin="50,0,0,0"
@@ -417,7 +417,7 @@
                                                 Foreground="White"
                                                 InputMethod.IsInputMethodEnabled="False"
                                                 IsReadOnly="True"
-                                                Text="{Binding CommunicationConnectionItem.TcpConnectionConfigInfo.ServerParameter.IpAddress, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                                                Text="{Binding StackedPackageDetectionItemInfo.TcpConnectionConfigInfo.ServerParameter.IpAddress, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                                         </Border>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal">
@@ -448,7 +448,7 @@
                                                 FontWeight="Bold"
                                                 Foreground="White"
                                                 InputMethod.IsInputMethodEnabled="False"
-                                                Text="{Binding CommunicationConnectionItem.TcpConnectionConfigInfo.ServerParameter.Port, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                                                Text="{Binding StackedPackageDetectionItemInfo.TcpConnectionConfigInfo.ServerParameter.Port, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                                         </Border>
                                     </StackPanel>
                                 </StackPanel>
@@ -460,7 +460,7 @@
                                     FontSize="13"
                                     FontWeight="Bold"
                                     Foreground="DarkGray"
-                                    IsChecked="{Binding CommunicationConnectionItem.TcpConnectionConfigInfo.ConnectionMode, Converter={StaticResource TcpConnectionModeToBooleanConverter}, ConverterParameter=Client}"
+                                    IsChecked="{Binding StackedPackageDetectionItemInfo.TcpConnectionConfigInfo.ConnectionMode, Converter={StaticResource TcpConnectionModeToBooleanConverter}, ConverterParameter=Client}"
                                     Template="{StaticResource CustomRadioButtonTemplate}" />
                                 <StackPanel
                                     Margin="50,0,0,0"
@@ -497,7 +497,7 @@
                                                 <TextBox.Text>
                                                     <Binding
                                                         Mode="TwoWay"
-                                                        Path="CommunicationConnectionItem.TcpConnectionConfigInfo.ClientParameter.IpAddress"
+                                                        Path="StackedPackageDetectionItemInfo.TcpConnectionConfigInfo.ClientParameter.IpAddress"
                                                         UpdateSourceTrigger="PropertyChanged">
                                                         <Binding.ValidationRules>
                                                             <validationRules:RegexValidationRule ErrorMessage="请输入有效的 IP 地址" Pattern="^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$" />
@@ -535,7 +535,7 @@
                                                 FontWeight="Bold"
                                                 Foreground="White"
                                                 InputMethod.IsInputMethodEnabled="False"
-                                                Text="{Binding CommunicationConnectionItem.TcpConnectionConfigInfo.ClientParameter.Port, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                                                Text="{Binding StackedPackageDetectionItemInfo.TcpConnectionConfigInfo.ClientParameter.Port, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                                         </Border>
                                     </StackPanel>
                                 </StackPanel>
@@ -571,7 +571,7 @@
                                             FontWeight="Bold"
                                             Foreground="White"
                                             ItemsSource="{Binding DataFormatTypeItems, UpdateSourceTrigger=PropertyChanged}"
-                                            SelectedItem="{Binding CommunicationConnectionItem.TcpConnectionConfigInfo.DataFormat, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                            SelectedItem="{Binding StackedPackageDetectionItemInfo.TcpConnectionConfigInfo.DataFormat, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                             SelectedValuePath="Value"
                                             Style="{StaticResource MaterialDesignComboBox}" />
                                     </Border>
@@ -610,10 +610,9 @@
                                 FontWeight="Bold"
                                 Foreground="White"
                                 InputMethod.IsInputMethodEnabled="False"
-                                Text="{Binding DisallowedCharacters, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                                Text="{Binding StackedPackageDetectionItemInfo.CheckerContent, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                         </Border>
                     </StackPanel>
-
                 </StackPanel>
             </Border>
             <!--  保存设置  -->
