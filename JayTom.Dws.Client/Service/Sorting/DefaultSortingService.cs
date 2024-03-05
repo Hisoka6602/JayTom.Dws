@@ -724,8 +724,29 @@ namespace JayTom.Dws.Client.Service.Sorting {
             //取出格口指令
             //判断格口是否生效
             var packageExitDefinitionInfoModel = _packageExitDefinitionInfos.FirstOrDefault(f => f.Id.Equals(param.ExitId) &&
-                f is { IsActive: true, IsLockExit: false });
+                f is { IsActive: true });
             if (packageExitDefinitionInfoModel is not null) {
+                if (packageExitDefinitionInfoModel.IsLockExit) {
+                    //判断备用格口
+
+                    var exitDefinitionInfoModel = _packageExitDefinitionInfos.FirstOrDefault(f => f is { IsLockExit: false, IsActive: true } &&
+                        f.Pid == packageExitDefinitionInfoModel.Id);
+                    if (exitDefinitionInfoModel is null) {
+                        //走异常口
+                        ExceptionSorting(param, token);
+                        //无分拣指令
+                        EventAggregator.Instance.Publish(new ExceptionSortingReceived {
+                            ScanTime = param.ScanTime,
+                            BarCode = param.BarCode,
+                            Timestamp = param.Timestamp,
+                            PackageCloudAbnormalSortingType = PackageCloudAbnormalSortingType.NoSortingInstruction
+                        });
+                    }
+                    else {
+                        param.ExitId = exitDefinitionInfoModel.Id;
+                    }
+                }
+
                 var sortingInstructionBindingInfoModel = _sortingInstructionBindingInfoModels.FirstOrDefault(f =>
                     f.ExitId.Equals(param.ExitId));
                 if (sortingInstructionBindingInfoModel is not null) {
@@ -780,7 +801,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                     ScanTime = param.ScanTime,
                     BarCode = param.BarCode,
                     Timestamp = param.Timestamp,
-                    PackageCloudAbnormalSortingType = PackageCloudAbnormalSortingType.NoSortingInstruction
+                    PackageCloudAbnormalSortingType = PackageCloudAbnormalSortingType.LockExit
                 });
             }
         }

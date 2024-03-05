@@ -100,6 +100,19 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     PageClassName = "PackageExitLockSettingsPage",
                     ClickCommand = ClickCommand
                 },
+                new()
+                {
+                    Title = "叠包检测",
+                    IconFont = new IconInfoModel()
+                    {
+                        IconFont = "pack://application:,,,/Fonts/#iconfont",
+                        IconCode = "\xe942",
+                        IconSize = 25
+                    },
+                    Description = "叠包检测/供包台多包裹检测",
+                    PageClassName = "StackedPackageDetectionSettingsPage",
+                    ClickCommand = ClickCommand
+                },
             };
         }
 

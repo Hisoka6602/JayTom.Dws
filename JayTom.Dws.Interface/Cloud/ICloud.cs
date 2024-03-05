@@ -7,7 +7,6 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
 namespace JayTom.Dws.Interface.Cloud {
-
     public interface ICloud {
 
         /// <summary>
@@ -655,6 +654,10 @@ namespace JayTom.Dws.Interface.Cloud {
         /// 无物理格口(无适应规则)
         /// </summary>
         NoPhysicalMailbox,
+        /// <summary>
+        /// 锁格
+        /// </summary>
+        LockExit,
     }
 
     public enum InstructionTypeType {

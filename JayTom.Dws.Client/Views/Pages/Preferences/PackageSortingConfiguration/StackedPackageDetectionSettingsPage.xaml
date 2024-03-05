@@ -1,0 +1,701 @@
+﻿<Page
+    x:Class="JayTom.Dws.Client.Views.Pages.Preferences.PackageSortingConfiguration.StackedPackageDetectionSettingsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:languages="clr-namespace:JayTom.Dws.Client.Languages"
+    xmlns:local="clr-namespace:JayTom.Dws.Client.Views.Pages.Preferences.PackageSortingConfiguration"
+    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:mvvm="http://prismlibrary.com/"
+    xmlns:packageSortingConfiguration="clr-namespace:JayTom.Dws.Client.Converters.PackageSortingConfiguration"
+    xmlns:settingsConverter="clr-namespace:JayTom.Dws.Client.Converters.SettingsConverter"
+    xmlns:validationRules="clr-namespace:JayTom.Dws.Client.ValidationRules"
+    Name="StackedPackageDetectionSettingsView"
+    Title="StackedPackageDetectionSettingsPage"
+    d:DesignHeight="450"
+    d:DesignWidth="800"
+    mvvm:ViewModelLocator.AutoWireViewModel="True"
+    Focusable="False"
+    FontFamily="{StaticResource CustomFontFamily}"
+    mc:Ignorable="d">
+    <b:Interaction.Triggers>
+        <b:EventTrigger EventName="Loaded" SourceName="StackedPackageDetectionSettingsView">
+            <b:InvokeCommandAction Command="{Binding LoadedCommand, IsAsync=False}" CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Page}}}" />
+        </b:EventTrigger>
+    </b:Interaction.Triggers>
+    <Page.Resources>
+        <settingsConverter:TcpConnectionModeToBooleanConverter x:Key="TcpConnectionModeToBooleanConverter" />
+        <packageSortingConfiguration:CommunicationsTypeToVisibilityConverter x:Key="CommunicationsTypeToVisibilityConverter" />
+    </Page.Resources>
+    <materialDesign:DialogHost
+        Background="Transparent"
+        DialogBackground="Transparent"
+        DialogMargin="5"
+        FocusVisualStyle="{x:Null}"
+        Focusable="False"
+        Identifier="PackageExitLockDialog"
+        Style="{StaticResource MaterialDesignEmbeddedDialogHost}">
+        <Grid Margin="20,0">
+            <Grid.RowDefinitions>
+
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <StackPanel
+                Grid.Row="0"
+                VerticalAlignment="Center"
+                Orientation="Horizontal">
+                <TextBlock
+                    Margin="0,0,0,1"
+                    VerticalAlignment="Center"
+                    FontFamily="{StaticResource IconFontFamily}"
+                    FontSize="20"
+                    Foreground="DarkGray"
+                    Text="&#xe942;" />
+                <TextBlock
+                    Margin="5,0"
+                    VerticalAlignment="Center"
+                    FontSize="16"
+                    FontWeight="Bold"
+                    Foreground="DarkGray"
+                    Text="是否监测叠包:" />
+                <ToggleButton
+                    Name="IsUseStackedPackageDetectionToggleButton"
+                    materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
+                    materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
+                    Focusable="False"
+                    IsChecked="{Binding PackageExitLockSettings.IsUsePackageExitLock, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                    Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+            </StackPanel>
+            <Border
+                Grid.Row="1"
+                Margin="20,5,0,0"
+                Visibility="{Binding ElementName=IsUseStackedPackageDetectionToggleButton, Path=IsChecked, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}">
+
+                <StackPanel Orientation="Vertical">
+                    <!--  通讯类型  -->
+                    <StackPanel Margin="20,5,0,0" Orientation="Horizontal">
+                        <!--  图标  -->
+                        <TextBlock
+                            Margin="0,0,0,1"
+                            VerticalAlignment="Center"
+                            FontFamily="{StaticResource IconFontFamily}"
+                            FontSize="20"
+                            Foreground="DarkGray"
+                            Text="&#xe7e5;" />
+                        <TextBlock
+                            Margin="5,0"
+                            VerticalAlignment="Center"
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="DarkGray"
+                            Text="通讯类型:" />
+                        <Border
+                            Margin="5"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Background="#1A696969"
+                            CornerRadius="5">
+                            <ComboBox
+                                Name="CommunicationsTypeComboBox"
+                                Height="30"
+                                MinWidth="160"
+                                Padding="5,0"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                HorizontalContentAlignment="Center"
+                                VerticalContentAlignment="Center"
+                                materialDesign:ButtonAssist.CornerRadius="15"
+                                materialDesign:ColorZoneAssist.Mode="Dark"
+                                BorderThickness="0"
+                                DisplayMemberPath="Name"
+                                FontSize="12"
+                                FontWeight="Bold"
+                                Foreground="White"
+                                ItemsSource="{Binding CommunicationsTypeItems, UpdateSourceTrigger=PropertyChanged}"
+                                SelectedItem="{Binding SelectCommunicationsType, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                SelectedValuePath="Value"
+                                Style="{StaticResource MaterialDesignComboBox}" />
+                        </Border>
+                    </StackPanel>
+                    <!--  协议设置Tab  -->
+                    <TabControl
+                        Height="Auto"
+                        Margin="20,5,0,5"
+                        HorizontalAlignment="Left"
+                        SelectedIndex="{Binding ElementName=CommunicationsTypeComboBox, Path=SelectedIndex}">
+                        <TabItem Header="串口通讯" Visibility="Collapsed">
+                            <!--  串口  -->
+                            <StackPanel Margin="50,5,0,0" Orientation="Vertical">
+
+                                <!--  串口名、刷新按钮  -->
+                                <StackPanel Orientation="Horizontal">
+                                    <!--  图标  -->
+                                    <TextBlock
+                                        Margin="5,0"
+                                        VerticalAlignment="Center"
+                                        FontSize="13"
+                                        FontWeight="Bold"
+                                        Foreground="DarkGray"
+                                        Text="{x:Static languages:Language.SerialPortName}" />
+                                    <Border
+                                        Margin="5"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        Background="#1A696969"
+                                        CornerRadius="5">
+                                        <ComboBox
+                                            Height="30"
+                                            MinWidth="130"
+                                            Padding="5,0"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            HorizontalContentAlignment="Center"
+                                            VerticalContentAlignment="Center"
+                                            materialDesign:ButtonAssist.CornerRadius="15"
+                                            materialDesign:ColorZoneAssist.Mode="Dark"
+                                            BorderThickness="0"
+                                            FontSize="12"
+                                            FontWeight="Bold"
+                                            Foreground="White"
+                                            ItemsSource="{Binding PortItems, UpdateSourceTrigger=PropertyChanged}"
+                                            SelectedItem="{Binding CommunicationConnectionItem.SerialPortConfigInfo.PortName, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                            Style="{StaticResource MaterialDesignComboBox}" />
+                                    </Border>
+                                    <Button
+                                        Width="50"
+                                        MinHeight="30"
+                                        Margin="5,0"
+                                        Padding="0"
+                                        HorizontalAlignment="Left"
+                                        materialDesign:ButtonAssist.CornerRadius="5"
+                                        Background="#1A696969"
+                                        BorderThickness="0"
+                                        Command="{Binding PortUpdateCommand}"
+                                        FocusVisualStyle="{x:Null}"
+                                        Style="{StaticResource MaterialDesignFlatAccentBgButton}">
+
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock
+                                                Margin="0,0,0,0"
+                                                VerticalAlignment="Center"
+                                                FontFamily="{StaticResource IconFontFamily}"
+                                                FontSize="18"
+                                                Foreground="DarkGray"
+                                                Text="&#xe69a;" />
+                                        </StackPanel>
+                                    </Button>
+                                </StackPanel>
+                                <!--  波特率  -->
+                                <StackPanel Orientation="Horizontal">
+                                    <!--  图标  -->
+                                    <TextBlock
+                                        Margin="5,0"
+                                        VerticalAlignment="Center"
+                                        FontSize="13"
+                                        FontWeight="Bold"
+                                        Foreground="DarkGray"
+                                        Text="{x:Static languages:Language.BaudRate}" />
+                                    <Border
+                                        Margin="5"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        Background="#1A696969"
+                                        CornerRadius="5">
+                                        <ComboBox
+                                            Height="30"
+                                            MinWidth="190"
+                                            Padding="5,0"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            HorizontalContentAlignment="Center"
+                                            VerticalContentAlignment="Center"
+                                            materialDesign:ButtonAssist.CornerRadius="15"
+                                            materialDesign:ColorZoneAssist.Mode="Dark"
+                                            BorderThickness="0"
+                                            FontSize="12"
+                                            FontWeight="Bold"
+                                            Foreground="White"
+                                            ItemsSource="{Binding BaudRateItems, UpdateSourceTrigger=PropertyChanged}"
+                                            SelectedItem="{Binding CommunicationConnectionItem.SerialPortConfigInfo.BaudRate, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                            Style="{StaticResource MaterialDesignComboBox}" />
+                                    </Border>
+                                </StackPanel>
+                                <!--  数据位  -->
+                                <StackPanel Orientation="Horizontal">
+                                    <!--  图标  -->
+                                    <TextBlock
+                                        Margin="5,0"
+                                        VerticalAlignment="Center"
+                                        FontSize="13"
+                                        FontWeight="Bold"
+                                        Foreground="DarkGray"
+                                        Text="{x:Static languages:Language.DataBits}" />
+                                    <Border
+                                        Margin="5"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        Background="#1A696969"
+                                        CornerRadius="5">
+                                        <ComboBox
+                                            Height="30"
+                                            MinWidth="190"
+                                            Padding="5,0"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            HorizontalContentAlignment="Center"
+                                            VerticalContentAlignment="Center"
+                                            materialDesign:ButtonAssist.CornerRadius="15"
+                                            materialDesign:ColorZoneAssist.Mode="Dark"
+                                            BorderThickness="0"
+                                            FontSize="12"
+                                            FontWeight="Bold"
+                                            Foreground="White"
+                                            ItemsSource="{Binding DataBitsItems, UpdateSourceTrigger=PropertyChanged}"
+                                            SelectedItem="{Binding CommunicationConnectionItem.SerialPortConfigInfo.DataBits, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                            Style="{StaticResource MaterialDesignComboBox}" />
+                                    </Border>
+                                </StackPanel>
+                                <!--  效验位  -->
+                                <StackPanel Orientation="Horizontal">
+                                    <!--  图标  -->
+                                    <TextBlock
+                                        Margin="5,0"
+                                        VerticalAlignment="Center"
+                                        FontSize="13"
+                                        FontWeight="Bold"
+                                        Foreground="DarkGray"
+                                        Text="{x:Static languages:Language.ParityBit}" />
+                                    <Border
+                                        Margin="5"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        Background="#1A696969"
+                                        CornerRadius="5">
+                                        <ComboBox
+                                            Height="30"
+                                            MinWidth="190"
+                                            Padding="5,0"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            HorizontalContentAlignment="Center"
+                                            VerticalContentAlignment="Center"
+                                            materialDesign:ButtonAssist.CornerRadius="15"
+                                            materialDesign:ColorZoneAssist.Mode="Dark"
+                                            BorderThickness="0"
+                                            DisplayMemberPath="Name"
+                                            FontSize="12"
+                                            FontWeight="Bold"
+                                            Foreground="White"
+                                            ItemsSource="{Binding ParityItems, UpdateSourceTrigger=PropertyChanged}"
+                                            SelectedItem="{Binding CommunicationConnectionItem.SerialPortConfigInfo.Parity, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                            SelectedValuePath="Value"
+                                            Style="{StaticResource MaterialDesignComboBox}" />
+                                    </Border>
+                                </StackPanel>
+                                <!--  停止位  -->
+                                <StackPanel Orientation="Horizontal">
+                                    <!--  图标  -->
+                                    <TextBlock
+                                        Margin="5,0"
+                                        VerticalAlignment="Center"
+                                        FontSize="13"
+                                        FontWeight="Bold"
+                                        Foreground="DarkGray"
+                                        Text="{x:Static languages:Language.StopBits}" />
+                                    <Border
+                                        Margin="5"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        Background="#1A696969"
+                                        CornerRadius="5">
+                                        <ComboBox
+                                            Height="30"
+                                            MinWidth="190"
+                                            Padding="5,0"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            HorizontalContentAlignment="Center"
+                                            VerticalContentAlignment="Center"
+                                            materialDesign:ButtonAssist.CornerRadius="15"
+                                            materialDesign:ColorZoneAssist.Mode="Dark"
+                                            BorderThickness="0"
+                                            DisplayMemberPath="Name"
+                                            FontSize="12"
+                                            FontWeight="Bold"
+                                            Foreground="White"
+                                            ItemsSource="{Binding StopBitsItems, UpdateSourceTrigger=PropertyChanged}"
+                                            SelectedItem="{Binding CommunicationConnectionItem.SerialPortConfigInfo.StopBits, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                            SelectedValuePath="Value"
+                                            Style="{StaticResource MaterialDesignComboBox}" />
+                                    </Border>
+                                </StackPanel>
+                                <!--  数据格式  -->
+                                <StackPanel Orientation="Horizontal">
+                                    <!--  图标  -->
+                                    <TextBlock
+                                        Margin="5,0"
+                                        VerticalAlignment="Center"
+                                        FontSize="13"
+                                        FontWeight="Bold"
+                                        Foreground="DarkGray"
+                                        Text="{x:Static languages:Language.DataFormat}" />
+                                    <Border
+                                        Margin="5"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        Background="#1A696969"
+                                        CornerRadius="5">
+                                        <ComboBox
+                                            Height="30"
+                                            MinWidth="190"
+                                            Padding="5,0"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            HorizontalContentAlignment="Center"
+                                            VerticalContentAlignment="Center"
+                                            materialDesign:ButtonAssist.CornerRadius="15"
+                                            materialDesign:ColorZoneAssist.Mode="Dark"
+                                            BorderThickness="0"
+                                            DisplayMemberPath="Name"
+                                            FontSize="12"
+                                            FontWeight="Bold"
+                                            Foreground="White"
+                                            ItemsSource="{Binding DataFormatTypeItems, UpdateSourceTrigger=PropertyChanged}"
+                                            SelectedItem="{Binding CommunicationConnectionItem.SerialPortConfigInfo.DataFormat, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                            SelectedValuePath="Value"
+                                            Style="{StaticResource MaterialDesignComboBox}" />
+                                    </Border>
+                                </StackPanel>
+                            </StackPanel>
+                        </TabItem>
+                        <TabItem Header="TCP通讯" Visibility="Collapsed">
+                            <StackPanel Margin="50,5,0,0" Orientation="Vertical">
+                                <!--  使用Tcp服务端  -->
+                                <RadioButton
+                                    Name="IsUseServerRadioButton"
+                                    Content="{x:Static languages:Language.IsUseTCPServer}"
+                                    Focusable="False"
+                                    FontSize="13"
+                                    FontWeight="Bold"
+                                    Foreground="DarkGray"
+                                    IsChecked="{Binding CommunicationConnectionItem.TcpConnectionConfigInfo.ConnectionMode, Converter={StaticResource TcpConnectionModeToBooleanConverter}, ConverterParameter=Server}"
+                                    Template="{StaticResource CustomRadioButtonTemplate}" />
+                                <StackPanel
+                                    Margin="50,0,0,0"
+                                    IsEnabled="{Binding ElementName=IsUseServerRadioButton, Path=IsChecked}"
+                                    Orientation="Horizontal">
+                                    <StackPanel Orientation="Horizontal">
+                                        <!--  图标  -->
+                                        <TextBlock
+                                            Margin="5,0"
+                                            VerticalAlignment="Center"
+                                            FontSize="13"
+                                            FontWeight="Bold"
+                                            Foreground="DarkGray"
+                                            Text="{x:Static languages:Language.IPAddress}" />
+                                        <Border
+                                            Margin="5"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            Background="#1A696969"
+                                            CornerRadius="5">
+                                            <TextBox
+                                                Width="100"
+                                                Height="30"
+                                                MaxWidth="500"
+                                                Margin="5,0"
+                                                materialDesign:TextFieldAssist.HasClearButton="False"
+                                                materialDesign:TextFieldAssist.HasFilledTextField="True"
+                                                Background="Transparent"
+                                                BorderThickness="0"
+                                                FontSize="13"
+                                                FontWeight="Bold"
+                                                Foreground="White"
+                                                InputMethod.IsInputMethodEnabled="False"
+                                                IsReadOnly="True"
+                                                Text="{Binding CommunicationConnectionItem.TcpConnectionConfigInfo.ServerParameter.IpAddress, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                                        </Border>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal">
+                                        <!--  图标  -->
+                                        <TextBlock
+                                            Margin="5,0"
+                                            VerticalAlignment="Center"
+                                            FontSize="13"
+                                            FontWeight="Bold"
+                                            Foreground="DarkGray"
+                                            Text="{x:Static languages:Language.Port}" />
+                                        <Border
+                                            Margin="5"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            Background="#1A696969"
+                                            CornerRadius="5">
+                                            <TextBox
+                                                Width="80"
+                                                Height="30"
+                                                MaxWidth="500"
+                                                Margin="5,0"
+                                                materialDesign:TextFieldAssist.HasClearButton="False"
+                                                materialDesign:TextFieldAssist.HasFilledTextField="True"
+                                                Background="Transparent"
+                                                BorderThickness="0"
+                                                FontSize="13"
+                                                FontWeight="Bold"
+                                                Foreground="White"
+                                                InputMethod.IsInputMethodEnabled="False"
+                                                Text="{Binding CommunicationConnectionItem.TcpConnectionConfigInfo.ServerParameter.Port, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                                        </Border>
+                                    </StackPanel>
+                                </StackPanel>
+                                <!--  使用Tcp客户端  -->
+                                <RadioButton
+                                    Name="IsUseClientRadioButton"
+                                    Content="{x:Static languages:Language.IsUseTCPClient}"
+                                    Focusable="False"
+                                    FontSize="13"
+                                    FontWeight="Bold"
+                                    Foreground="DarkGray"
+                                    IsChecked="{Binding CommunicationConnectionItem.TcpConnectionConfigInfo.ConnectionMode, Converter={StaticResource TcpConnectionModeToBooleanConverter}, ConverterParameter=Client}"
+                                    Template="{StaticResource CustomRadioButtonTemplate}" />
+                                <StackPanel
+                                    Margin="50,0,0,0"
+                                    IsEnabled="{Binding ElementName=IsUseClientRadioButton, Path=IsChecked}"
+                                    Orientation="Horizontal">
+                                    <StackPanel Orientation="Horizontal">
+                                        <!--  图标  -->
+                                        <TextBlock
+                                            Margin="5,0"
+                                            VerticalAlignment="Center"
+                                            FontSize="13"
+                                            FontWeight="Bold"
+                                            Foreground="DarkGray"
+                                            Text="{x:Static languages:Language.IPAddress}" />
+                                        <Border
+                                            Margin="5"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            Background="#1A696969"
+                                            CornerRadius="5">
+                                            <TextBox
+                                                Width="100"
+                                                Height="30"
+                                                MaxWidth="500"
+                                                Margin="5,0"
+                                                materialDesign:TextFieldAssist.HasClearButton="False"
+                                                materialDesign:TextFieldAssist.HasFilledTextField="True"
+                                                Background="Transparent"
+                                                BorderThickness="0"
+                                                FontSize="13"
+                                                FontWeight="Bold"
+                                                Foreground="White"
+                                                InputMethod.IsInputMethodEnabled="False">
+                                                <TextBox.Text>
+                                                    <Binding
+                                                        Mode="TwoWay"
+                                                        Path="CommunicationConnectionItem.TcpConnectionConfigInfo.ClientParameter.IpAddress"
+                                                        UpdateSourceTrigger="PropertyChanged">
+                                                        <Binding.ValidationRules>
+                                                            <validationRules:RegexValidationRule ErrorMessage="请输入有效的 IP 地址" Pattern="^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$" />
+                                                        </Binding.ValidationRules>
+                                                    </Binding>
+                                                </TextBox.Text>
+                                            </TextBox>
+                                        </Border>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal">
+                                        <!--  图标  -->
+                                        <TextBlock
+                                            Margin="5,0"
+                                            VerticalAlignment="Center"
+                                            FontSize="13"
+                                            FontWeight="Bold"
+                                            Foreground="DarkGray"
+                                            Text="{x:Static languages:Language.Port}" />
+                                        <Border
+                                            Margin="5"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            Background="#1A696969"
+                                            CornerRadius="5">
+                                            <TextBox
+                                                Width="80"
+                                                Height="30"
+                                                MaxWidth="500"
+                                                Margin="5,0"
+                                                materialDesign:TextFieldAssist.HasClearButton="False"
+                                                materialDesign:TextFieldAssist.HasFilledTextField="True"
+                                                Background="Transparent"
+                                                BorderThickness="0"
+                                                FontSize="13"
+                                                FontWeight="Bold"
+                                                Foreground="White"
+                                                InputMethod.IsInputMethodEnabled="False"
+                                                Text="{Binding CommunicationConnectionItem.TcpConnectionConfigInfo.ClientParameter.Port, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                                        </Border>
+                                    </StackPanel>
+                                </StackPanel>
+                                <!--  数据格式  -->
+                                <StackPanel Orientation="Horizontal">
+                                    <!--  图标  -->
+                                    <TextBlock
+                                        Margin="5,0"
+                                        VerticalAlignment="Center"
+                                        FontSize="13"
+                                        FontWeight="Bold"
+                                        Foreground="DarkGray"
+                                        Text="{x:Static languages:Language.DataFormat}" />
+                                    <Border
+                                        Margin="5"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        Background="#1A696969"
+                                        CornerRadius="5">
+                                        <ComboBox
+                                            Height="30"
+                                            MinWidth="190"
+                                            Padding="5,0"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            HorizontalContentAlignment="Center"
+                                            VerticalContentAlignment="Center"
+                                            materialDesign:ButtonAssist.CornerRadius="15"
+                                            materialDesign:ColorZoneAssist.Mode="Dark"
+                                            BorderThickness="0"
+                                            DisplayMemberPath="Name"
+                                            FontSize="12"
+                                            FontWeight="Bold"
+                                            Foreground="White"
+                                            ItemsSource="{Binding DataFormatTypeItems, UpdateSourceTrigger=PropertyChanged}"
+                                            SelectedItem="{Binding CommunicationConnectionItem.TcpConnectionConfigInfo.DataFormat, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                            SelectedValuePath="Value"
+                                            Style="{StaticResource MaterialDesignComboBox}" />
+                                    </Border>
+                                </StackPanel>
+                            </StackPanel>
+                        </TabItem>
+                    </TabControl>
+                    <!--  内容配置  -->
+                    <StackPanel Orientation="Horizontal">
+                        <!--  图标  -->
+                        <TextBlock
+                            Margin="5,0"
+                            VerticalAlignment="Center"
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="DarkGray"
+                            Text="叠包内容(模糊匹配):" />
+                        <Border
+                            Width="310"
+                            Margin="5"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Background="#1A696969"
+                            CornerRadius="5">
+                            <TextBox
+                                Width="310"
+                                Height="30"
+                                MaxWidth="500"
+                                Margin="5,0"
+                                materialDesign:HintAssist.Hint="{x:Static languages:Language.ConditionSeparationInstruction}"
+                                materialDesign:TextFieldAssist.HasClearButton="False"
+                                materialDesign:TextFieldAssist.HasFilledTextField="True"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="White"
+                                InputMethod.IsInputMethodEnabled="False"
+                                Text="{Binding DisallowedCharacters, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                        </Border>
+                    </StackPanel>
+
+                </StackPanel>
+            </Border>
+            <!--  保存设置  -->
+            <Button
+                Grid.Row="2"
+                MinHeight="30"
+                Margin="30,10"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Bottom"
+                materialDesign:ButtonAssist.CornerRadius="5"
+                Background="#2E2E2E"
+                BorderThickness="0"
+                Command="{Binding SaveSettingsCommand}"
+                FocusVisualStyle="{x:Null}"
+                Style="{StaticResource MaterialDesignFlatAccentBgButton}">
+
+                <Grid>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Margin="0,0,0,0"
+                            VerticalAlignment="Center"
+                            FontFamily="{StaticResource IconFontFamily}"
+                            FontSize="18"
+                            Foreground="DarkGray"
+                            Text="&#xe66e;" />
+                        <TextBlock
+                            Margin="2,1,0,0"
+                            VerticalAlignment="Center"
+                            FontFamily="{StaticResource CustomFontFamily}"
+                            FontSize="14"
+                            FontWeight="Bold"
+                            Foreground="DarkGray"
+                            Text="{x:Static languages:Language.SaveSettings}" />
+                        <StackPanel.Style>
+                            <Style TargetType="StackPanel">
+                                <Setter Property="Visibility" Value="Visible" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsSavingInProgress}" Value="True">
+                                        <Setter Property="Visibility" Value="Hidden" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding IsSavingInProgress}" Value="False">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </StackPanel.Style>
+                    </StackPanel>
+                    <ProgressBar
+                        Name="StatusProgressBar"
+                        Width="25"
+                        Height="25"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        IsIndeterminate="True"
+                        Value="0">
+                        <ProgressBar.Style>
+                            <Style BasedOn="{StaticResource MaterialDesignCircularProgressBar}" TargetType="ProgressBar">
+                                <Setter Property="Visibility" Value="Hidden" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsSavingInProgress}" Value="True">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding IsSavingInProgress}" Value="False">
+                                        <Setter Property="Visibility" Value="Hidden" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ProgressBar.Style>
+                    </ProgressBar>
+                </Grid>
+            </Button>
+            <!--  提示框  -->
+            <materialDesign:Snackbar
+                Grid.Row="2"
+                Width="Auto"
+                Height="Auto"
+                VerticalAlignment="Bottom"
+                Background="BlueViolet"
+                Cursor=""
+                FontFamily="LoadFiraCode"
+                FontWeight="Bold"
+                MessageQueue="{Binding StackedPackageDetectionSettingsMessageQueue}" />
+        </Grid>
+    </materialDesign:DialogHost>
+</Page>
