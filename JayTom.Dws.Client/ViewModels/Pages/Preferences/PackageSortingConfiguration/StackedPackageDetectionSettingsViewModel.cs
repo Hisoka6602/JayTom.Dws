@@ -26,7 +26,6 @@ using JayTom.Dws.Client.Models.CommunicationsSettingsModel;
 using JayTom.Dws.Client.Models.PackageSorting.CommunicationConnectionSub;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration {
-
     public class StackedPackageDetectionSettingsViewModel : BindableBase {
         private readonly IConfigRepository _configRepository;
         private readonly IDeviceService _deviceService;
@@ -279,7 +278,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                                 Port = StackedPackageDetectionItemInfo.TcpConnectionConfigInfo?.ServerParameter?.Port ??
                                        0,
                             }
-                        }
+                        },
+                        Timeout = StackedPackageDetectionItemInfo.Timeout,
+                        IsAutoExceptionSorting = StackedPackageDetectionItemInfo.IsAutoExceptionSorting,
                     };
                     var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
                         ConfigName = "StackedPackageDetectionSettings",
@@ -357,7 +358,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                                                         string.Empty,
                                             Port = settingsDto.TcpConnectionConfigInfo?.ServerConfig?.Port ?? 0,
                                         }
-                                    }
+                                    },
+                                    Timeout = settingsDto.Timeout,
+                                    IsAutoExceptionSorting = settingsDto.IsAutoExceptionSorting
                                 };
                             }
                         }

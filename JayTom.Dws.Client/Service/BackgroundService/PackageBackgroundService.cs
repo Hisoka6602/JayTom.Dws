@@ -38,6 +38,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private readonly IExternalDataService _externalDataService;
         private readonly IConfigRepository _configRepository;
         private readonly ISortingService _sortingService;
+        private readonly IStackedPackageService _stackedPackageService;
         private ExternalDataSourceEventArgs _externalDataSource = new();
         private List<ConfigInfoModel> _configInfoModels = new();
 
@@ -50,12 +51,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private List<PanoramaCameraConfigInfoModel> _panoramaCameras = new();
         private ConcurrentQueue<CameraImageInfo> _panoramaImageItems = new();
         private ConcurrentQueue<CameraImageInfo> _volumeCameraImageItems = new();
-        // private ConcurrentQueue<PackageInfo> _packageInfos = new();
-
         private ConcurrentDictionary<DateTime, PackageInfo> _packageInfos = new();
-
-        /*private ConcurrentQueue<WeightInfoModel> _weightQueueInfos = new();
-        private ConcurrentQueue<VolumeInfoModel> _volumeQueueInfos = new();*/
         private static bool _isWindowsClose;
         private SemaphoreSlim _createPackageSlim = new(1);
 
@@ -64,13 +60,15 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             IImageStorageService imageStorageService,
             IExternalDataService externalDataService, IConfigRepository configRepository,
             ISortingService sortingService, IPanoramaCameraConfigRepository panoramaCameraConfigRepository,
-            IBarcodeScannerCameraConfigRepository barcodeScannerCameraConfigRepository) {
+            IBarcodeScannerCameraConfigRepository barcodeScannerCameraConfigRepository,
+            IStackedPackageService stackedPackageService) {
             _deviceService = deviceService;
             _resultOutputService = resultOutputService;
             _imageStorageService = imageStorageService;
             _externalDataService = externalDataService;
             _configRepository = configRepository;
             _sortingService = sortingService;
+            _stackedPackageService = stackedPackageService;
 
             //相机
             _deviceService.CameraInitialized += delegate (object? sender, List<ICamera> list) {
@@ -764,6 +762,13 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     }
                 }
             });
+            //叠包事件
+            _stackedPackageService.StackedPackageReturned += (sender, args) => {
+                var packageInfo = _packageInfos.FirstOrDefault(f => f.Key.Equals(args.PackageTime)).Value;
+                if (packageInfo is not null) {
+                    packageInfo.IsStackedPackage = true;
+                }
+            };
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
@@ -795,7 +800,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     if (_packageInfos.Count > 0 && _deviceService.RunningStatus) {
                         //判断空包裹过期
                         if (_createPackageSettingsDto.IsUseEmptyPackageExpiry) {
-                            var count = _packageInfos.Count;
                             try {
                                 await _createPackageSlim.WaitAsync(stoppingToken);
 
@@ -1118,6 +1122,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         /// 全景图信息
         /// </summary>
         public List<PanoramaCameraImageInfo> PanoramaCameraImageInfo { get; set; } = new();
+
+        /// <summary>
+        /// 是否叠包
+        /// </summary>
+        public bool IsStackedPackage { get; set; }
     }
 
     public class CameraImageInfo {
@@ -1279,6 +1288,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         /// 提交图时间
         /// </summary>
         public long SubmitTimestamp { get; set; }
+
+        /// <summary>
+        /// 是否叠包
+        /// </summary>
+        public bool IsStackedPackage { get; set; }
     }
 
     public class PanoramaCameraImageInfo {

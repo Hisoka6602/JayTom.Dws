@@ -13,6 +13,7 @@ using JayTom.Dws.Data.Package;
 using JayTom.Dws.Data.LocalLog;
 using NPOI.SS.Formula.Functions;
 using System.Collections.Generic;
+using JayTom.Dws.Plugin.SerialPort;
 using System.Collections.Concurrent;
 using JayTom.Dws.Plugin.Tcp.TcpClient;
 using JayTom.Dws.Plugin.Tcp.TcpServer;
@@ -83,8 +84,8 @@ namespace JayTom.Dws.Client.Service.Sorting {
             if (type == CommunicationsType.SerialPort) {
                 if (connectionParam is SerialPortConfigInfoModel info) {
                     //初始化串口
-                    var sortingSerialPort = new SortingSerialPort();
-                    sortingSerialPort.Disconnected += delegate (object? sender, ISortingSerialPort port) {
+                    var sortingSerialPort = new SortingSerialPort(new SerialPort());
+                    sortingSerialPort.Disconnected += delegate (object? sender, ISerialPort port) {
                         OnDisconnected(new ConnectionInfo() {
                             SortingSerialPort = sortingSerialPort,
                             Type = type,
@@ -103,15 +104,16 @@ namespace JayTom.Dws.Client.Service.Sorting {
                     sortingSerialPort.HeartbeatError += delegate (object? sender, Exception exception) {
                         OnHeartbeatError(exception);
                     };
-                    sortingSerialPort.SendError += delegate (object? sender, Communication.SerialComm.ExceptionEventArgs args) {
+
+                    sortingSerialPort.SendError += (sender, args) => {
                         OnSendError(new ExceptionEventArgs() {
                             ExceptionMessage = args.Exception.Message
                         });
                     };
-                    sortingSerialPort.ErrorOccurred +=
-                        delegate (object? sender, Communication.SerialComm.ExceptionEventArgs args) {
-                            OnCommunicationExceptionEvent(args.Exception);
-                        };
+                    sortingSerialPort.ErrorOccurred += (sender, args) => {
+                        OnCommunicationExceptionEvent(args.Exception);
+                    };
+
                     sortingSerialPort.DataReceived += delegate (object? sender, MessageEventArgs args) {
                         /*var deviceDecodeResult = _deviceCommunicationProtocol?.DecodeData(args.AsciiMessage);
                         if (deviceDecodeResult != null) {
@@ -121,7 +123,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                     };
                     var parity = (Parity)Enum.Parse(typeof(Parity), info.Parity.ToString());
                     var stopBits = (StopBits)Enum.Parse(typeof(StopBits), info.StopBits.ToString());
-                    var sortingSerialPortFormat = (SortingSerialPortFormat)Enum.Parse(typeof(SortingSerialPortFormat), info.DataFormat.ToString());
+                    var sortingSerialPortFormat = (SerialPortFormat)Enum.Parse(typeof(SerialPortFormat), info.DataFormat.ToString());
                     var connect = sortingSerialPort.Connect(info.PortName, info.BaudRate, info.DataBits, parity, stopBits,
                         sortingSerialPortFormat);
                     if (connect) {
@@ -390,7 +392,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                                     var isSend = false;
                                     if (connection is { Type: CommunicationsType.SerialPort, SortingSerialPort: not null }) {
                                         //串口
-                                        if (connection.SortingSerialPort.Status == SortingSerialPortStatus.Running
+                                        if (connection.SortingSerialPort.Status == SerialPortStatus.Running
                                             ) {
                                             //效验协议
                                             var message = instruction;
@@ -506,7 +508,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                                     var isSend = false;
                                     if (connection is { Type: CommunicationsType.SerialPort, SortingSerialPort: not null }) {
                                         //串口
-                                        if (connection.SortingSerialPort.Status == SortingSerialPortStatus.Running
+                                        if (connection.SortingSerialPort.Status == SerialPortStatus.Running
                                             ) {
                                             if (connectionConfigInfoModel?.DeviceExtensionConfigInfo?.ValidateDeviceResponse == true) {
                                                 var retryPolicy = Policy.HandleResult<bool>(result => !result)

@@ -290,6 +290,11 @@ namespace JayTom.Dws.Client.Service.Sorting {
         /// 格口Id
         /// </summary>
         public long ExitId { get; set; }
+
+        /// <summary>
+        /// 是否叠包
+        /// </summary>
+        public bool IsStackedPackage { get; set; }
     }
 
     /// <summary>

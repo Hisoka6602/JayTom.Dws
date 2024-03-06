@@ -40,5 +40,15 @@ namespace JayTom.Dws.Domain.Dto {
         /// 判断的字符
         /// </summary>
         public string CheckerContent { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 判断超时时间
+        /// </summary>
+        public int Timeout { get; set; }
+
+        /// <summary>
+        /// 是否自动异常口
+        /// </summary>
+        public bool IsAutoExceptionSorting { get; set; }
     }
 }

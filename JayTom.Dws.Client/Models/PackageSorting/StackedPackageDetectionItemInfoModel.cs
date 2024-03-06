@@ -17,6 +17,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         private TcpConnectionConfigItemInfoModel? _tcpConnectionConfigInfo;
         private string _regularExpression = string.Empty;
         private string _checkerContent = string.Empty;
+        private int _timeout;
+        private bool _isAutoExceptionSorting;
 
         /// <summary>
         /// 是否监测叠包
@@ -61,6 +63,22 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         public string CheckerContent {
             get => _checkerContent;
             set => SetProperty(ref _checkerContent, value);
+        }
+
+        /// <summary>
+        /// 判断超时时间
+        /// </summary>
+        public int Timeout {
+            get => _timeout;
+            set => SetProperty(ref _timeout, value);
+        }
+
+        /// <summary>
+        /// 是否自动异常口
+        /// </summary>
+        public bool IsAutoExceptionSorting {
+            get => _isAutoExceptionSorting;
+            set => SetProperty(ref _isAutoExceptionSorting, value);
         }
     }
 }

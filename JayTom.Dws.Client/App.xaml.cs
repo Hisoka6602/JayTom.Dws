@@ -10,6 +10,7 @@ using JayTom.Dws.Nvr;
 using Newtonsoft.Json;
 using System.IO.Pipes;
 using System.Net.Http;
+using System.IO.Ports;
 using System.Threading;
 using JayTom.Dws.Camera;
 using JayTom.Dws.Plugin;
@@ -307,8 +308,11 @@ namespace JayTom.Dws.Client {
                 services.AddSingleton<ITcpContentOutput>(provider => new TcpContentOutput(new TouchSocketTcpClient(), new TouchSocketTcpServer()));
                 services.AddSingleton<ITcpVolumeInput>(provider => new TcpVolumeInput(new TouchSocketTcpClient(), new TouchSocketTcpServer()));
                 services.AddSingleton<ITcpContentInput>(provider => new TcpContentInput(new TouchSocketTcpClient(), new TouchSocketTcpServer()));
-                services.AddScoped<ISortingSerialPort, SortingSerialPort>();
+                services.AddScoped<ISortingSerialPort>(serialPort => new SortingSerialPort(new SerialPort()));
                 services.AddSingleton<ISortingTcp>(provider => new SortingTcp(new TouchSocketTcpClient(), new TouchSocketTcpServer()));
+                //叠包监控通讯注册
+                services.AddScoped<IPackageDetectionSerialPort>(serialPort => new PackageDetectionSerialPort(new SerialPort()));
+                services.AddSingleton<IPackageDetectionTcp>(provider => new PackageDetectionTcp(new TouchSocketTcpClient(), new TouchSocketTcpServer()));
                 //效验注册
                 services.AddScoped<INetworkTime, NetworkTime>();
                 services.AddScoped<ICertificateValidationService, CertificateValidationService>();
@@ -335,6 +339,8 @@ namespace JayTom.Dws.Client {
                 services.AddScoped<ISortingService, DefaultSortingService>();
                 //锁格监控注册
                 services.AddScoped<IExitMonitor, DefaultExitMonitor>();
+                //叠包监控注册
+                services.AddScoped<IStackedPackageService, DefaultStackedPackageService>();
                 services.AddScoped<ISortingConnectionService, DefaultSortingConnectionService>();
                 //云视频云端
                 services.AddScoped<ICloud, CloudVideoUploadApi>();
@@ -509,6 +515,9 @@ namespace JayTom.Dws.Client {
                         services.AddSingleton(container1.Resolve<ISortingService>());
                         //注册锁格监控服务
                         services.AddSingleton(container1.Resolve<IExitMonitor>());
+                        //注册叠包监控服务
+                        services.AddSingleton(container1.Resolve<IStackedPackageService>());
+
                         services.AddSingleton(container1.Resolve<ISortingConnectionService>());
                         //云端
                         services.AddSingleton(container1.Resolve<ICloud>());

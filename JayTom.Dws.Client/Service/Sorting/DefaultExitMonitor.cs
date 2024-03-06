@@ -70,7 +70,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                     }
                 }
                 else {
-                    return new KeyValuePair<bool, string>(false, "锁格配置不存在或读取错误");
+                    return new KeyValuePair<bool, string>(true, "锁格配置不存在或读取错误");
                 }
 
                 if (_packageExitLockSettingsDto.IsUsePackageExitLock) {

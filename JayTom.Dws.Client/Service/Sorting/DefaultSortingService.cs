@@ -16,6 +16,7 @@ using JayTom.Dws.Data.LocalLog;
 using System.Collections.Generic;
 using JayTom.Dws.PluginInterface;
 using JayTom.Dws.Interface.Cloud;
+using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.DownstreamProtocols;
@@ -54,12 +55,14 @@ namespace JayTom.Dws.Client.Service.Sorting {
 
         private readonly IApiRuleRepository _apiRuleRepository;
         private readonly IExitMonitor _exitMonitor;
+        private readonly IStackedPackageService _stackedPackageService;
 
-        //private readonly IInventoryManagementService _inventoryManagementService;
         private SemaphoreSlim _semaphore = new(1);
 
-        //private CommunicationsSettingsDto _communicationsSettingsDto = new();
+        //private ConcurrentDictionary<DateTime, long> _stackedPackageGuidItems = new();
         private SortingMethodDto _sortingMethodDto = new();
+
+        private StackedPackageDetectionSettingsDto? _stackedPackageDetectionSettingsDto = new();
 
         public event EventHandler<ExceptionEventArgs>? ExceptionOccurred;
 
@@ -120,7 +123,8 @@ namespace JayTom.Dws.Client.Service.Sorting {
            ISortingConnectionService sortingConnectionService,
            ICommunicationConnectionConfigRepository communicationConnectionConfigRepository,
             IApiRuleRepository apiRuleRepository,
-            IExitMonitor exitMonitor) {
+            IExitMonitor exitMonitor,
+            IStackedPackageService stackedPackageService) {
             _configRepository = configRepository;
             _logisticsRegexRepository = logisticsRegexRepository;
             _logisticsCodeRecognitionRepository = logisticsCodeRecognitionRepository;
@@ -142,6 +146,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
             _communicationConnectionConfigRepository = communicationConnectionConfigRepository;
             _apiRuleRepository = apiRuleRepository;
             _exitMonitor = exitMonitor;
+            _stackedPackageService = stackedPackageService;
 
             //事件
             _sortingConnectionService.HeartbeatError += delegate (object? sender, Exception exception) {
@@ -181,31 +186,6 @@ namespace JayTom.Dws.Client.Service.Sorting {
                     //清空异常
                 }
             };
-
-            //判断通讯方式
-            /*EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async settings => {
-                if (settings is SettingsChangedEvent { SettingsName: "CommunicationsSettings" }) {
-                    try {
-                        await _semaphore.WaitAsync();
-
-                        var configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("CommunicationsSettings"));
-                        _communicationsSettingsDto =
-                            JsonConvert.DeserializeObject<CommunicationsSettingsDto>(configInfoModel?.Value ?? string.Empty) ?? new CommunicationsSettingsDto();
-                        if (_communicationsSettingsDto is not null) {
-                            IsSortingEnabled = _communicationsSettingsDto.Type != CommunicationsType.None;
-                            await _inventoryManagementService.Disconnect();
-                        }
-                    }
-                    catch (Exception e) {
-                        OnExceptionOccurred(new ExceptionEventArgs() {
-                            ExceptionMessage = e.Message
-                        });
-                    }
-                    finally {
-                        _semaphore.Release();
-                    }
-                }
-            });*/
             //格口更改
             EventAggregator.Instance.Subscribe<LogisticsCodeRecognitionInfoModel>(async models => {
                 _logisticsCodeRecognitionInfos = await _logisticsCodeRecognitionRepository.Select(s => s.Id > 0,
@@ -223,6 +203,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
             EventAggregator.Instance.Subscribe<PackageInfo>(async item => {
                 if (item is PackageInfo model) {
                     await Task.Yield();
+
                     //不包含Api
                     if (_sortingMethodDto.SortMode != SortMode.None &&
                         _sortingMethodDto.SortMode != SortMode.ApiResponseSorting &&
@@ -230,8 +211,8 @@ namespace JayTom.Dws.Client.Service.Sorting {
                         _sortingMethodDto.SortMode != SortMode.OcrSorting) {
                         ExecuteSorting(new SortingParam() {
                             Guid = model.Guid,
-                            BarCode = model?.BarCodeInfo?.Barcode ?? string.Empty,
-                            Height = (float)(model?.VolumeInfo?.FormattedHeight ?? 0),
+                            BarCode = model.BarCodeInfo?.Barcode ?? string.Empty,
+                            Height = (float)(model.VolumeInfo?.FormattedHeight ?? 0),
                             ScanTime = model.BarCodeInfo?.ScanTime ?? DateTime.Now,
                             Weight = (float)(model.WeightInfo?.FormattedWeight ?? 0),
                             Length = (float)(model.VolumeInfo?.FormattedLength ?? 0),
@@ -239,7 +220,8 @@ namespace JayTom.Dws.Client.Service.Sorting {
                             Volume = (float)(model.VolumeInfo?.FormattedVolume ?? 0),
                             PackageCreationTime = model.CreateTime,
                             PackageCreationInstruction = model.PackageCreationInstruction,
-                            IsCreatedByLowerMachine = model.IsCreatedByLowerMachine
+                            IsCreatedByLowerMachine = model.IsCreatedByLowerMachine,
+                            IsStackedPackage = model.IsStackedPackage,
                         });
                     }
                 }
@@ -255,7 +237,8 @@ namespace JayTom.Dws.Client.Service.Sorting {
                             PackageCreationTime = model.PackageCreationTime,
                             PackageCreationInstruction = model.PackageCreationInstruction,
                             IsCreatedByLowerMachine = model.IsCreatedByLowerMachine,
-                            ApiResponse = model.UploadResponse ?? new UploadResponse()
+                            ApiResponse = model.UploadResponse ?? new UploadResponse(),
+                            IsStackedPackage = model.IsStackedPackage
                         });
                     }
                 }
@@ -272,7 +255,8 @@ namespace JayTom.Dws.Client.Service.Sorting {
                             PackageCreationTime = model.RecognitionTime,
                             PackageCreationInstruction = null,
                             IsCreatedByLowerMachine = false,
-                            OcrInfo = model
+                            OcrInfo = model,
+                            IsStackedPackage = model.IsStackedPackage
                         });
                     }
                 }
@@ -379,8 +363,19 @@ namespace JayTom.Dws.Client.Service.Sorting {
                     if (configInfoModel is not null) {
                         _sortingMethodDto = JsonConvert.DeserializeObject<SortingMethodDto>(configInfoModel.Value) ?? new SortingMethodDto();
                     }
+                    configInfoModel = await _configRepository.FirstOrDefault(f =>
+                       f.ConfigName.Equals("StackedPackageDetectionSettings"), token);
+                    if (configInfoModel is not null) {
+                        _stackedPackageDetectionSettingsDto = JsonConvert.DeserializeObject<StackedPackageDetectionSettingsDto>(configInfoModel.Value);
+                        if (_stackedPackageDetectionSettingsDto is null) {
+                            return new KeyValuePair<bool, string>(false, "分拣层叠包配置不存在");
+                        }
+                    }
+                    else {
+                        return new KeyValuePair<bool, string>(false, "分拣层叠包配置不存在或读取错误");
+                    }
                     _packageExitDefinitionInfos = await _packageExitDefinitionRepository.Select(s => s.Id > 0,
-                        o => o.Id);
+                        o => o.Id, token);
 
                     _logisticsCodeRecognitionInfos = await _logisticsCodeRecognitionRepository.Select(s => s.Id > 0,
                     o => o.Id, token);
@@ -413,8 +408,20 @@ namespace JayTom.Dws.Client.Service.Sorting {
 
                     _connectionConfigInfoModels = await _communicationConnectionConfigRepository.CommunicationConnectionConfigItems(
                         s => s.Id > 0, token);
+
                     await _sortingConnectionService.ConfigurationInitializer();
-                    await _exitMonitor.Start(token);
+                    var (key, value) = await _exitMonitor.Start(token);
+                    if (!key) {
+                        OnExceptionOccurred(new ExceptionEventArgs() {
+                            ExceptionMessage = $"{value}"
+                        });
+                    }
+                    var (b, value1) = await _stackedPackageService.Start(token);
+                    if (!b) {
+                        OnExceptionOccurred(new ExceptionEventArgs() {
+                            ExceptionMessage = $"{value1}"
+                        });
+                    }
                 }
                 catch (Exception e) {
                     OnExceptionOccurred(new ExceptionEventArgs() {
@@ -449,6 +456,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
             //关闭心跳包
             await _sortingConnectionService.DisconnectAll();
             await _exitMonitor.Stop(token);
+            await _stackedPackageService.Stop(token);
             RunningStatus = false;
             return new KeyValuePair<bool, string>(true, "已停止");
         }
@@ -723,6 +731,18 @@ namespace JayTom.Dws.Client.Service.Sorting {
         private async void SubSorting(SortingParam param, CancellationToken token = default) {
             //取出格口指令
             //判断格口是否生效
+            if (param.IsStackedPackage && _stackedPackageDetectionSettingsDto?.IsAutoExceptionSorting == true) {
+                //走异常口
+                ExceptionSorting(param, token);
+                //无分拣指令
+                EventAggregator.Instance.Publish(new ExceptionSortingReceived {
+                    ScanTime = param.ScanTime,
+                    BarCode = param.BarCode,
+                    Timestamp = param.Timestamp,
+                    PackageCloudAbnormalSortingType = PackageCloudAbnormalSortingType.StackedPackage
+                });
+                return;
+            }
             var packageExitDefinitionInfoModel = _packageExitDefinitionInfos.FirstOrDefault(f => f.Id.Equals(param.ExitId) &&
                 f is { IsActive: true });
             if (packageExitDefinitionInfoModel is not null) {

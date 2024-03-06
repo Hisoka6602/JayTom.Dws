@@ -751,6 +751,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             /// 响应内容
             /// </summary>
             public UploadResponse? UploadResponse { get; set; }
+
+            /// <summary>
+            /// 是否叠包
+            /// </summary>
+            public bool IsStackedPackage { get; set; }
         }
     }
 }
