@@ -27,6 +27,11 @@ namespace JayTom.Dws.Client.Service.Sorting {
         event EventHandler<ExceptionEventArgs> ExceptionOccurred;
 
         /// <summary>
+        /// 初始化
+        /// </summary>
+        event EventHandler<List<PackageExitDefinitionInfoModel>> Initialized;
+
+        /// <summary>
         /// 是否已连接
         /// </summary>
         bool IsConnected { get; }
@@ -48,5 +53,11 @@ namespace JayTom.Dws.Client.Service.Sorting {
         /// <param name="parameters"></param>
         /// <returns></returns>
         Task<KeyValuePair<bool, string>> SetParameters<T>(T parameters);
+
+        /// <summary>
+        /// 获取所有状态
+        /// </summary>
+        /// <returns></returns>
+        Task<KeyValuePair<bool, List<PackageExitDefinitionInfoModel>>> GetAllPackageExitStatus();
     }
 }

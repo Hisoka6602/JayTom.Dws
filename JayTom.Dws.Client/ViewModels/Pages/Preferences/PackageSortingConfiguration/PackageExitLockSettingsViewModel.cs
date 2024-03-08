@@ -19,6 +19,7 @@ using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Views.Dialog;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Service.Device;
+using JayTom.Dws.Client.Service.Sorting;
 using JayTom.Dws.Client.ViewModels.Dialog;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
 using JayTom.Dws.Domain.Repository.LocalConf;
@@ -38,6 +39,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         private readonly IConfigRepository _configRepository;
         private readonly IExcel _excel;
         private readonly IDeviceService _deviceService;
+        private readonly IExitMonitor _exitMonitor;
         private ObservableCollection<PackageExitLockBindingItemInfoModel> _packageExitLockBindingItems = new();
         private PackageExitLockSettingsModel _packageExitLockSettings = new();
         private ObservableCollection<LockProtocolType> _lockProtocolTypeItems = new(Enum.GetValues(typeof(LockProtocolType)).Cast<LockProtocolType>());
@@ -48,12 +50,30 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         public PackageExitLockSettingsViewModel(IPackageExitLockBindingRepository packageExitLockBindingRepository,
             IPackageExitDefinitionRepository packageExitDefinitionRepository,
             IConfigRepository configRepository, IExcel excel,
-            IDeviceService deviceService) {
+            IDeviceService deviceService, IExitMonitor exitMonitor) {
             _packageExitLockBindingRepository = packageExitLockBindingRepository;
             _packageExitDefinitionRepository = packageExitDefinitionRepository;
             _configRepository = configRepository;
             _excel = excel;
             _deviceService = deviceService;
+            _exitMonitor = exitMonitor;
+            //锁格事件回调
+            _exitMonitor.LockExitEvent += async (sender, model) => {
+                await Application.Current.Dispatcher.InvokeAsync(() => {
+                    var packageExitLockBindingItemInfoModel = PackageExitLockBindingItems.FirstOrDefault(f => f.ExitName.Equals(model.ExitName));
+                    if (packageExitLockBindingItemInfoModel is not null) {
+                        packageExitLockBindingItemInfoModel.CurrentStatus = ExitLockStatus.Lock;
+                    }
+                });
+            };
+            _exitMonitor.UnLockExitEvent += async (sender, model) => {
+                await Application.Current.Dispatcher.InvokeAsync(() => {
+                    var packageExitLockBindingItemInfoModel = PackageExitLockBindingItems.FirstOrDefault(f => f.ExitName.Equals(model.ExitName));
+                    if (packageExitLockBindingItemInfoModel is not null) {
+                        packageExitLockBindingItemInfoModel.CurrentStatus = ExitLockStatus.Unlock;
+                    }
+                });
+            };
         }
 
         public SnackbarMessageQueue PackageExitLockSettingsMessageQueue {
@@ -416,6 +436,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
             var infoModels = await _packageExitLockBindingRepository.Select(s => s.Id > 0,
                 o => o.Id);
+            var (key, value) = await _exitMonitor.GetAllPackageExitStatus();
 
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
                 PackageExitLockBindingItems.Clear();
@@ -425,7 +446,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         Address = s.Address,
                         CreateTime = s.CreateTime,
                         ModifyTime = s.ModifyTime,
-                        CurrentStatus = s.CurrentStatus,
+                        CurrentStatus = value.FirstOrDefault(f => f.Id.Equals(s.ExitId))?.IsLockExit == true ? ExitLockStatus.Lock : ExitLockStatus.Unlock,
                         ExitId = s.ExitId,
                         ExitName =
                             packageExitDefinitionInfoModels.FirstOrDefault(f => f.Id.Equals(s.ExitId))?.ExitName ??

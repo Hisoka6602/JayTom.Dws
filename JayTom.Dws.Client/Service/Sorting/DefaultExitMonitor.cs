@@ -32,6 +32,8 @@ namespace JayTom.Dws.Client.Service.Sorting {
 
         public event EventHandler<ExceptionEventArgs>? ExceptionOccurred;
 
+        public event EventHandler<List<PackageExitDefinitionInfoModel>>? Initialized;
+
         public bool IsConnected { get; private set; } = false;
         private static Task? _monitorThread;
         private static CancellationTokenSource? _cancellationTokenSource;
@@ -86,10 +88,10 @@ namespace JayTom.Dws.Client.Service.Sorting {
                         if (_monitorThread is null) {
                             _cancellationTokenSource = new CancellationTokenSource();
                             _monitorThread = Task.Run(async () => {
+                                var isInitialized = false;
                                 while (!_cancellationTokenSource.IsCancellationRequested) {
                                     foreach (var model in _lockBindingInfoModels) {
                                         await Task.Delay(50, token);
-
                                         try {
                                             if (plc is not null) {
                                                 int.TryParse(model.Address, out var address);
@@ -122,6 +124,10 @@ namespace JayTom.Dws.Client.Service.Sorting {
                                     }
 
                                     await Task.Delay(20, token);
+                                    if (!isInitialized) {
+                                        isInitialized = true;
+                                        OnInitialized(_definitionInfoModels);
+                                    }
                                 }
                             }, token);
                         }
@@ -170,6 +176,10 @@ namespace JayTom.Dws.Client.Service.Sorting {
             throw new NotImplementedException();
         }
 
+        public Task<KeyValuePair<bool, List<PackageExitDefinitionInfoModel>>> GetAllPackageExitStatus() {
+            return Task.FromResult(new KeyValuePair<bool, List<PackageExitDefinitionInfoModel>>(true, _definitionInfoModels));
+        }
+
         protected virtual async void OnExceptionOccurred(ExceptionEventArgs e) {
             await Task.Yield();
             EventAggregator.Instance.Publish(new SortingLogInfoModel {
@@ -198,6 +208,11 @@ namespace JayTom.Dws.Client.Service.Sorting {
                 Type = LogType.Information
             });
             UnLockExitEvent?.Invoke(this, e);
+        }
+
+        protected virtual async void OnInitialized(List<PackageExitDefinitionInfoModel> e) {
+            await Task.Yield();
+            Initialized?.Invoke(this, e);
         }
     }
 }

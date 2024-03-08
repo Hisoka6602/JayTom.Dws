@@ -49,7 +49,7 @@ namespace JayTom.Dws.Data.LocalConf.PackageSortingConfig {
         /// 当前状态
         /// </summary>
         [Column("UnlockingFlag"), NotMapped]
-        public ExitLockStatus CurrentStatus { get; set; }
+        public ExitLockStatus CurrentStatus { get; set; } = ExitLockStatus.Unlock;
     }
 
     public enum ExitLockStatus {

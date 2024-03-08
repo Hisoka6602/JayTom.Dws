@@ -406,43 +406,6 @@
                                         <Run Text="通讯协议:" /> <Run Foreground="#BFFFFFFF" Text="{Binding BarCodeItem.SortingInfo.ChecksumProtocolName}" />
                                     </TextBlock>
                                 </Grid>
-                                <!--  指令目标  -->
-                                <Grid
-                                    Grid.Row="3"
-                                    Grid.Column="0"
-                                    Grid.ColumnSpan="2"
-                                    Margin="14,0,0,0">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="45" />
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="20" />
-                                    </Grid.ColumnDefinitions>
-                                    <!--  图标  -->
-                                    <TextBlock
-                                        Grid.Column="0"
-                                        Margin="10,2"
-                                        HorizontalAlignment="Center"
-                                        VerticalAlignment="Center"
-                                        FontFamily="{StaticResource IconFontFamily}"
-                                        FontSize="23"
-                                        FontWeight="Bold"
-                                        Foreground="DimGray"
-                                        Text="&#xe7d2;" />
-                                    <!--  信息  -->
-                                    <TextBlock
-                                        Grid.Column="1"
-                                        HorizontalAlignment="Left"
-                                        VerticalAlignment="Center"
-                                        FontFamily="{StaticResource CustomFontFamily}"
-                                        FontSize="12"
-                                        FontWeight="Bold"
-                                        Foreground="DimGray"
-                                        IsEnabled="False"
-                                        TextAlignment="Center"
-                                        TextTrimming="WordEllipsis">
-                                        <Run Text="指令目标:" /> <Run Foreground="#BFFFFFFF" Text="{Binding BarCodeItem.SortingInfo.CommandTarget}" />
-                                    </TextBlock>
-                                </Grid>
                                 <!--  创建包裹指令  -->
                                 <StackPanel
                                     Grid.Row="4"
@@ -481,7 +444,7 @@
                                             InputMethod.IsInputMethodEnabled="False"
                                             IsReadOnly="True"
                                             Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                                            Text="{Binding BarCodeItem.SortingInfo.PackageCreationInstruction, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                            Text="{Binding PackageCreationInstruction, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                             TextWrapping="Wrap"
                                             VerticalScrollBarVisibility="Auto" />
                                     </Border>
@@ -524,7 +487,7 @@
                                             InputMethod.IsInputMethodEnabled="False"
                                             IsReadOnly="True"
                                             Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                                            Text="{Binding BarCodeItem.SortingInfo.SentInstruction, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                            Text="{Binding SentInstruction, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                             TextWrapping="Wrap"
                                             VerticalScrollBarVisibility="Auto" />
                                     </Border>
@@ -567,7 +530,7 @@
                                             InputMethod.IsInputMethodEnabled="False"
                                             IsReadOnly="True"
                                             Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                                            Text="{Binding BarCodeItem.SortingInfo.ReceivedInstruction, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                            Text="{Binding ReceivedInstruction, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                             TextWrapping="Wrap"
                                             VerticalScrollBarVisibility="Auto" />
                                     </Border>
