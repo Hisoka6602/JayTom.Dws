@@ -17,5 +17,11 @@ namespace JayTom.Dws.Data.Package {
         /// </summary>
         [Column("AggregatePackageCode")]
         public string AggregatePackageCode { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 打包时间
+        /// </summary>
+        [Column("PackagingTime")]
+        public DateTime PackagingTime { get; set; }
     }
 }

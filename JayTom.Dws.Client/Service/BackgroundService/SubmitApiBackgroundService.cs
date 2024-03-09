@@ -1,4 +1,6 @@
 ﻿using System;
+using ImTools;
+using System.Linq;
 using System.Drawing;
 using Newtonsoft.Json;
 using System.Net.Http;
@@ -6,6 +8,7 @@ using System.Threading;
 using JayTom.Dws.Interface;
 using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
+using JayTom.Dws.Data.Package;
 using JayTom.Dws.Interface.Wdt;
 using JayTom.Dws.Data.LocalConf;
 using JayTom.Dws.PluginInterface;
@@ -14,12 +17,16 @@ using JayTom.Dws.Interface.Sunnen;
 using JayTom.Dws.Interface.JdyWms;
 using JayTom.Dws.Domain.Dto.ApiDto;
 using JayTom.Dws.Interface.Szjy188;
+using JayTom.Dws.Interface.CaiNiao;
 using System.Collections.Concurrent;
 using JayTom.Dws.Interface.Routdata;
 using JayTom.Dws.Interface.Jtexpress;
 using JayTom.Dws.Client.EventMediators;
+using JayTom.Dws.Client.Service.Sorting;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Client.Service.ImageStorage;
+using JayTom.Dws.Domain.Repository.LocalData;
+using static JayTom.Dws.Interface.CaiNiao.CaiNiaoApi;
 using UploadResponse = JayTom.Dws.Interface.UploadResponse;
 
 namespace JayTom.Dws.Client.Service.BackgroundService {
@@ -31,6 +38,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IConfigRepository _configRepository;
         private readonly IImageStorageService _imageStorageService;
+        private readonly IPackageRepository _packageRepository;
         private ConcurrentQueue<SubmitItemInfo> _submitItems = new();
         private ApiSettingsDto? _apiSettingsDto;
         private static DefaultApi.DefaultApiParameters _defaultApiParameters = new();
@@ -39,7 +47,10 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private static WdtFlagshipApi.ApiParameter _wdtFlagshipApiParameter = new();
         private static JtExpressApi.ApiParameter _jtExpressApiParam = new();
         private static RoutDataApi.ApiParameters _rstDataApiParam = new();
+        private static CaiNiaoApi.ApiParameters _caiNiaoApiParam = new();
         private ConcurrentQueue<SavedImageInfo> _savedImageItems = new();
+        private ConcurrentQueue<PackageInfoModel> _callBackItems = new();
+        private ConcurrentQueue<PackageAggregationInfo> _packageAggregationInfoItems = new();
 
         #region 非通用版本变量(临时)
 
@@ -49,10 +60,12 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         #endregion 非通用版本变量(临时)
 
         public SubmitApiBackgroundService(IHttpClientFactory httpClientFactory,
-            IConfigRepository configRepository, IImageStorageService imageStorageService) {
+            IConfigRepository configRepository, IImageStorageService imageStorageService,
+            IPackageRepository packageRepository) {
             _httpClientFactory = httpClientFactory;
             _configRepository = configRepository;
             _imageStorageService = imageStorageService;
+            _packageRepository = packageRepository;
             EventAggregator.Instance.Subscribe<PackageInfo>(item => {
                 if (item is PackageInfo model) {
                     if (model.BarCodeInfo != null) {
@@ -60,13 +73,14 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             Barcode = model?.BarCodeInfo?.Barcode ?? string.Empty,
                             Height = (float)(model?.VolumeInfo?.FormattedHeight ?? 0),
                             ScanTime = model?.BarCodeInfo?.ScanTime ?? DateTime.Now,
-                            Weight = (float)(model.WeightInfo?.FormattedWeight ?? 0),
-                            Length = (float)(model.VolumeInfo?.FormattedLength ?? 0),
-                            Width = (float)(model.VolumeInfo?.FormattedWidth ?? 0),
-                            Volume = (float)(model.VolumeInfo?.FormattedVolume ?? 0),
-                            Guid = model.Guid,
+                            Weight = (float)(model?.WeightInfo?.FormattedWeight ?? 0),
+                            Length = (float)(model?.VolumeInfo?.FormattedLength ?? 0),
+                            Width = (float)(model?.VolumeInfo?.FormattedWidth ?? 0),
+                            Volume = (float)(model?.VolumeInfo?.FormattedVolume ?? 0),
+                            Guid = model?.Guid ?? 0,
                             IsCreatedByLowerMachine = (bool)model?.IsCreatedByLowerMachine,
                             PackageCreationInstruction = model?.PackageCreationInstruction ?? string.Empty,
+                            IsStackedPackage = model?.IsStackedPackage
                             //图片暂时不写
                         });
                     }
@@ -239,6 +253,28 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             }
                         }
                     }
+                    else if (model.SettingsName.Equals("CaiNiaoApiParameters")) {
+                        var configInfoModel = await _configRepository.FirstOrDefault(f => f.ConfigName.Equals("CaiNiaoApiParameters"));
+                        if (configInfoModel is not null) {
+                            try {
+                                var caiNiaoApiDto = JsonConvert.DeserializeObject<CaiNiaoApiDto>(configInfoModel.Value);
+                                if (caiNiaoApiDto != null) {
+                                    _caiNiaoApiParam = new CaiNiaoApi.ApiParameters() {
+                                        BcrName = caiNiaoApiDto.BcrName,
+                                        BcrCode = caiNiaoApiDto.BcrCode,
+                                        Source = caiNiaoApiDto.Source,
+                                        TimeOut = caiNiaoApiDto.TimeOut,
+                                        Url = caiNiaoApiDto.Url,
+                                        Version = caiNiaoApiDto.Version
+                                    };
+                                }
+                            }
+                            catch (Exception e) {
+                                //抛出异常事件
+                                Console.WriteLine(e);
+                            }
+                        }
+                    }
                     //其他接口
                 }
             });
@@ -262,6 +298,23 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             EventAggregator.Instance.Subscribe<WindowsAction>(async item => {
                 if (item is WindowsAction { Type: WindowsActionType.Close }) {
                     _isWindowsClose = true;
+                }
+            });
+            //包裹完结
+            EventAggregator.Instance.Subscribe<CallBackPackageInfo>(async item => {
+                if (item is CallBackPackageInfo info) {
+                    var (key, value) = await _packageRepository.FirstOrDefaultInfo(f => f.PackageCreateTime.Equals(info.CreateTime));
+                    if (key && value is not null) {
+                        _callBackItems.Enqueue(value);
+                    }
+                }
+            });
+
+            //集包推送
+            EventAggregator.Instance.Subscribe<PackageAggregationInfo>(async item => {
+                //加入队列
+                if (item is PackageAggregationInfo info) {
+                    _packageAggregationInfoItems.Enqueue(info);
                 }
             });
         }
@@ -442,6 +495,25 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                     }
                                     break;
                                 }
+                            case ApiType.CaiNiaoApi: {
+                                    uploader = new CaiNiaoApi(_httpClientFactory);
+                                    var (key, value) = await uploader.SetParameters(_caiNiaoApiParam);
+                                    if (key) {
+                                        uploadResponse = await uploader.UploadData(info.Barcode ?? string.Empty,
+                                            info.Weight, info.ScanTime,
+                                            info.Length, info.Width,
+                                            info.Height, info.Volume,
+                                            null, null,
+                                            info.IsStackedPackage, stoppingToken);
+                                    }
+                                    else {
+                                        uploadResponse = new UploadResponse() {
+                                            ExceptionMsg = value
+                                        };
+                                        Console.WriteLine("设置参数失败!");
+                                    }
+                                    break;
+                                }
                         }
                         if (_apiSettingsDto?.Type is not null &&
                             _apiSettingsDto.Type != ApiType.None) {
@@ -491,7 +563,71 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 }
 
                 //格口分拣后回调提交
+                var callBackDequeue = _callBackItems.TryDequeue(out var callBackModel);
+                if (callBackDequeue && callBackModel is not null) {
+                    //提交Api回调(判断需要使用的Api-Task.Factory.StartNew)
+                    Task.Factory.StartNew(async () => {
+                        IDataUploader uploader;
+                        UploadResponse? uploadResponse = null;
+                        switch (_apiSettingsDto?.Type) {
+                            case ApiType.None:
+                                return;
 
+                            case ApiType.CaiNiaoApi:
+
+                                uploader = new CaiNiaoApi(_httpClientFactory);
+                                var (key, value) = await uploader.SetParameters(_caiNiaoApiParam);
+                                if (key) {
+                                    uploader.UploadInBackground(callBackModel.BarCodeInfo?.Barcode ?? string.Empty, callBackModel.WeightInfo?.FormattedWeight ?? 0,
+                                        callBackModel.BarCodeInfo?.ScanTime ?? DateTime.Now, imageInfo: new UploadImageInfo() {
+                                            CameraCustomName = callBackModel.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
+                                            CameraName = callBackModel.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
+                                            CameraSerialNumber = callBackModel.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
+                                        }, other: new ReportChuteInfo {
+                                            ChuteCode = callBackModel.ExitInfo?.PhysicalExit ?? string.Empty,
+                                            ChuteCodePhysical = callBackModel.ExitInfo?.PhysicalExit ?? string.Empty,
+                                            ErrorReson = (string.IsNullOrEmpty(callBackModel.BarCodeInfo?.Barcode) || callBackModel.BarCodeInfo?.Barcode.ToLower().Equals("noread") == true) ?
+                                               "无条码" : "分拣成功 ",
+                                            Status = (string.IsNullOrEmpty(callBackModel.BarCodeInfo?.Barcode) || callBackModel.BarCodeInfo?.Barcode.ToLower().Equals("noread") == true) ?
+                                               1 : 0,
+                                        }, token: stoppingToken);
+                                }
+                                else {
+                                    Console.WriteLine("设置参数失败!");
+                                }
+                                break;
+                        }
+                    });
+                }
+
+                var packageAggregationDequeue = _packageAggregationInfoItems.TryDequeue(out var packageAggregationInfo);
+                if (packageAggregationDequeue && packageAggregationInfo is not null) {
+                    //集包推送(判断需要使用的Api-Task.Factory.StartNew)
+
+                    Task.Factory.StartNew(async () => {
+                        IDataUploader uploader;
+                        UploadResponse? uploadResponse = null;
+                        switch (_apiSettingsDto?.Type) {
+                            case ApiType.None:
+                                return;
+
+                            case ApiType.CaiNiaoApi:
+
+                                uploader = new CaiNiaoApi(_httpClientFactory);
+                                var (key, value) = await uploader.SetParameters(_caiNiaoApiParam);
+                                if (key) {
+                                    uploader.PackageAggregation(packageAggregationInfo.PackageExitDefinitionInfo.ExitName,
+                                        packageAggregationInfo.AggregatePackageCode,
+                                        packageAggregationInfo.PackagingTime,
+                                        packageAggregationInfo.PackageItems.Select(s => s.BarCodeInfo?.Barcode ?? string.Empty).ToList(), token: stoppingToken);
+                                }
+                                else {
+                                    Console.WriteLine("设置参数失败!");
+                                }
+                                break;
+                        }
+                    });
+                }
                 await Task.Delay(10, stoppingToken);
             }
         }
@@ -650,6 +786,27 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     Console.WriteLine(e);
                 }
             }
+            //菜鸟Api
+            configInfoModel = await _configRepository.FirstOrDefault(f => f.ConfigName.Equals("CaiNiaoApiParameters"));
+            if (configInfoModel is not null) {
+                try {
+                    var caiNiaoApiDto = JsonConvert.DeserializeObject<CaiNiaoApiDto>(configInfoModel.Value);
+                    if (caiNiaoApiDto != null) {
+                        _caiNiaoApiParam = new CaiNiaoApi.ApiParameters() {
+                            BcrName = caiNiaoApiDto.BcrName,
+                            BcrCode = caiNiaoApiDto.BcrCode,
+                            Source = caiNiaoApiDto.Source,
+                            TimeOut = caiNiaoApiDto.TimeOut,
+                            Url = caiNiaoApiDto.Url,
+                            Version = caiNiaoApiDto.Version
+                        };
+                    }
+                }
+                catch (Exception e) {
+                    //抛出异常事件
+                    Console.WriteLine(e);
+                }
+            }
         }
 
         public class SubmitItemInfo {
@@ -714,6 +871,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             /// 是否由下位机创建
             /// </summary>
             public bool IsCreatedByLowerMachine { get; set; }
+
+            /// <summary>
+            /// 是否叠包
+            /// </summary>
+            public bool? IsStackedPackage { get; set; }
         }
 
         /// <summary>

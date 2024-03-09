@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 
 namespace JayTom.Dws.Domain.Dto {
+
     public class CreatePackageSettingsDto {
 
         /// <summary>
@@ -57,6 +58,16 @@ namespace JayTom.Dws.Domain.Dto {
         /// 停止时是否清空包裹
         /// </summary>
         public bool ClearPackageQueueOnStop { get; set; } = true;
+
+        /// <summary>
+        /// 是否使用NoRead过滤
+        /// </summary>
+        public bool IsUseNoReadFilter { get; set; }
+
+        /// <summary>
+        /// NoRead间隔时间
+        /// </summary>
+        public int FilterInterval { get; set; } = 100;
     }
 
     public enum BarcodeHandlingMethodEnum {
@@ -65,14 +76,17 @@ namespace JayTom.Dws.Domain.Dto {
         /// 使用一个
         /// </summary>
         UseOneBarcode,
+
         /// <summary>
         /// 使用多个条码
         /// </summary>
         UseMultipleBarcodes,
+
         /// <summary>
         /// 合并条码
         /// </summary>
         MergeBarcodes,
+
         //使用多个条码
     }
 

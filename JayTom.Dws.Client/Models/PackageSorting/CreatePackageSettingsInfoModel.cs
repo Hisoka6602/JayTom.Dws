@@ -32,6 +32,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
 
         private bool _isUseEmptyPackageExpiry;
         private int _emptyPackageExpiryTime;
+        private bool _isUseNoReadFilter;
+        private int _filterInterval = 100;
 
         /// <summary>
         /// 是否使用包裹过期
@@ -116,6 +118,22 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         public ObservableCollection<PackageCreationMethodItemInfoModel> PackageCreationMethodItems {
             get => _packageCreationMethodItems;
             set => SetProperty(ref _packageCreationMethodItems, value);
+        }
+
+        /// <summary>
+        /// 是否使用NoRead过滤
+        /// </summary>
+        public bool IsUseNoReadFilter {
+            get => _isUseNoReadFilter;
+            set => SetProperty(ref _isUseNoReadFilter, value);
+        }
+
+        /// <summary>
+        /// NoRead间隔时间
+        /// </summary>
+        public int FilterInterval {
+            get => _filterInterval;
+            set => SetProperty(ref _filterInterval, value);
         }
     }
 

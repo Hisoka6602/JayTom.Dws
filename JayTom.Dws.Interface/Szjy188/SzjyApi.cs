@@ -271,6 +271,10 @@ namespace JayTom.Dws.Interface.Szjy188 {
             List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
         }
 
+        public void PackageAggregation(string packageExit, string aggregatePackageCode, DateTime packagingTime, List<string> packageItems,
+            object? other = null, CancellationToken token = default) {
+        }
+
         /// <summary>
         /// 登录
         /// </summary>

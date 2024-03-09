@@ -162,6 +162,10 @@ namespace JayTom.Dws.Interface {
             List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
         }
 
+        public void PackageAggregation(string packageExit, string aggregatePackageCode, DateTime packagingTime, List<string> packageItems,
+            object? other = null, CancellationToken token = default) {
+        }
+
         public string ParseTemplate(string source, string barCode, float weight, DateTime scanTime, float length,
             float width, float height, float volume, string cameraSerialNumber, bool isWatermark = false) {
             return source switch {

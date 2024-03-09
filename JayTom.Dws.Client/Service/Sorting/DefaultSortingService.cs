@@ -221,7 +221,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                             PackageCreationTime = model.CreateTime,
                             PackageCreationInstruction = model.PackageCreationInstruction,
                             IsCreatedByLowerMachine = model.IsCreatedByLowerMachine,
-                            IsStackedPackage = model.IsStackedPackage,
+                            IsStackedPackage = model.IsStackedPackage ?? false,
                         });
                     }
                 }

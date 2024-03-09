@@ -533,6 +533,7 @@ namespace JayTom.Dws.Client {
                         services.AddHostedService<LogProcessingService>();//日志管理器
                         services.AddHostedService<TimerBackgroundService>();//计时
                         services.AddHostedService<CloudBackgroundService>();//上传云端
+                        services.AddHostedService<PackageAggregationService>();//集包服务
                     })
                     .Build();
 
@@ -689,6 +690,7 @@ namespace JayTom.Dws.Client {
             ViewModelLocationProvider.Register<WdtWmsApiPage, WdtWmsApiPageViewModel>();
             ViewModelLocationProvider.Register<JtExpressApiPage, JtExpressApiPageViewModel>();
             ViewModelLocationProvider.Register<RoutDataApiPage, RoutDataApiViewPageModel>();
+            ViewModelLocationProvider.Register<CaiNiaoApiPage, CaiNiaoApiPageViewModel>();
             //实时日志
             //实时日志
             ViewModelLocationProvider.Register<RealTimeLogPage, RealTimeLogViewModel>();

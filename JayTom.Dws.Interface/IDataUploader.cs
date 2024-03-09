@@ -62,6 +62,17 @@ namespace JayTom.Dws.Interface {
         /// </summary>
         void UploadInBackground([NotNull] string barcode, [NotNull] double weight, DateTime scanTime, double length = default, double width = default, double height = default,
             double volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default);
+
+        /// <summary>
+        /// 集包上传
+        /// </summary>
+        /// <param name="packageExit"></param>
+        /// <param name="aggregatePackageCode"></param>
+        /// <param name="packagingTime"></param>
+        /// <param name="packageItems"></param>
+        /// <param name="other"></param>
+        /// <param name="token"></param>
+        void PackageAggregation(string packageExit, string aggregatePackageCode, DateTime packagingTime, List<string> packageItems, object? other = null, CancellationToken token = default);
     }
 
     public class UploadResponse {

@@ -123,6 +123,10 @@ namespace JayTom.Dws.Interface.Routdata {
             List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
         }
 
+        public void PackageAggregation(string packageExit, string aggregatePackageCode, DateTime packagingTime, List<string> packageItems,
+            object? other = null, CancellationToken token = default) {
+        }
+
         /// <summary>
         /// 调用接口
         /// </summary>

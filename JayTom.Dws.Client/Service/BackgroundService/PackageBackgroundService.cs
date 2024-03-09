@@ -1,5 +1,6 @@
 ﻿using System;
 using DryIoc;
+using ImTools;
 using System.IO;
 using System.Linq;
 using System.Drawing;
@@ -47,6 +48,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
         private WeightSettingsDto _weightSettingsDto = new();
         private CreatePackageSettingsDto _createPackageSettingsDto = new();
+        private StackedPackageDetectionSettingsDto _stackedPackageDetectionSettingsDto = new();
         private List<ICamera> _cameras = new();
         private List<PanoramaCameraConfigInfoModel> _panoramaCameras = new();
         private ConcurrentQueue<CameraImageInfo> _panoramaImageItems = new();
@@ -54,6 +56,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private ConcurrentDictionary<DateTime, PackageInfo> _packageInfos = new();
         private static bool _isWindowsClose;
         private SemaphoreSlim _createPackageSlim = new(1);
+        private DateTime lastNoReadTime = DateTime.Now;
 
         public PackageBackgroundService(IDeviceService deviceService,
             IResultOutputService resultOutputService,
@@ -157,6 +160,14 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
                 try {
                     await _createPackageSlim.WaitAsync();
+                    if (_createPackageSettingsDto.IsUseNoReadFilter) {
+                        if (DateTime.Now.Subtract(lastNoReadTime).TotalMilliseconds < _createPackageSettingsDto.FilterInterval) {
+                            return;
+                        }
+                        else {
+                            lastNoReadTime = args.ScanTime;
+                        }
+                    }
                     var packageInfo =
                         _createPackageSettingsDto.BarcodeQueueOrder == BarcodeQueueOrderEnum.TimeAscending ?
                             _packageInfos.OrderBy(o => o.Key).FirstOrDefault(f => f.Value.BarCodeInfo == null).Value :
@@ -513,8 +524,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         if (tryParse) {
                             var keyValuePair = _packageInfos.FirstOrDefault(f => f.Value.Guid.Equals(num));
                             if (keyValuePair.Value is not null) {
-                                _packageInfos.TryRemove(keyValuePair);
-
                                 EventAggregator.Instance.Publish(new InstructionReceived() {
                                     Timestamp = new DateTimeOffset(keyValuePair.Value.CreateTime).ToUnixTimeMilliseconds(),
                                     IsCreatedByLowerMachine = true,
@@ -528,6 +537,12 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                         }
                                     }
                                 });
+                                EventAggregator.Instance.Publish(new CallBackPackageInfo {
+                                    CallBackTime = DateTime.Now,
+                                    CreateTime = keyValuePair.Value.CreateTime,
+                                    Guid = keyValuePair.Value.Guid,
+                                });
+                                _packageInfos.TryRemove(keyValuePair);
                             }
                         }
                     }
@@ -699,6 +714,18 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
                             }
                             break;
+
+                        case "StackedPackageDetectionSettings":
+                            try {
+                                var configInfoModel = await _configRepository.FirstOrDefault(f => f.ConfigName.Equals("StackedPackageDetectionSettings"));
+                                if (configInfoModel != null) {
+                                    _stackedPackageDetectionSettingsDto = JsonConvert.DeserializeObject<StackedPackageDetectionSettingsDto>(configInfoModel.Value) ?? new StackedPackageDetectionSettingsDto();
+                                }
+                            }
+                            catch (Exception e) {
+                                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
+                            }
+                            break;
                     }
                     //其他设置
                 }
@@ -790,6 +817,10 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 if (configInfoModel is not null) {
                     _createPackageSettingsDto = JsonConvert.DeserializeObject<CreatePackageSettingsDto>(configInfoModel.Value) ?? new CreatePackageSettingsDto();
                 }
+                configInfoModel = _configInfoModels?.FirstOrDefault(f => f.ConfigName.Equals("StackedPackageDetectionSettings"));
+                if (configInfoModel is not null) {
+                    _stackedPackageDetectionSettingsDto = JsonConvert.DeserializeObject<StackedPackageDetectionSettingsDto>(configInfoModel.Value) ?? new StackedPackageDetectionSettingsDto();
+                }
             }
             catch (Exception e) {
                 Console.WriteLine(e);
@@ -842,7 +873,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             //判断填充包裹信息
                             if (packageInfo.VolumeInfo is not null &&
                                 packageInfo.WeightInfo is not null &&
-                                packageInfo.BarCodeInfo is not null) {
+                                packageInfo.BarCodeInfo is not null &&
+                                packageInfo.IsStackedPackage is not null) {
                                 //执行输出
                                 _resultOutputService.ExecuteOutput(
                                     packageInfo.BarCodeInfo.Barcode, (float)(packageInfo.WeightInfo.FormattedWeight),
@@ -874,6 +906,15 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                         CreateTime = DateTime.Now,
                                         SourceType = SourceType.None
                                     };
+                                }
+                                //填充叠包
+                                if (!_stackedPackageDetectionSettingsDto.IsStackedPackageDetection) {
+                                    packageInfo.IsStackedPackage = false;
+                                }
+                                else if (packageInfo.IsStackedPackage is null &&
+                                         DateTime.Now.Subtract(packageInfo.CreateTime).TotalMilliseconds >
+                                         _stackedPackageDetectionSettingsDto.Timeout) {
+                                    packageInfo.IsStackedPackage = false;
                                 }
                             }
                         }
@@ -977,6 +1018,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                     .ToList();
                                 Parallel.ForEach(packageInfos, key => {
                                     _packageInfos.TryRemove(key);
+                                    EventAggregator.Instance.Publish(new CallBackPackageInfo {
+                                        CallBackTime = DateTime.Now,
+                                        CreateTime = key.Value.CreateTime,
+                                        Guid = key.Value.Guid,
+                                    });
                                 });
                             }
                             finally {
@@ -1006,43 +1052,10 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         /// </summary>
         public long Guid { get; set; }
 
-        /*
-
-        /// <summary>
-        /// 条码
-        /// </summary>
-        public string? BarCode { get; set; }
-        */
-
         /// <summary>
         /// 条码图片
         /// </summary>
         public Image? Image { get; set; }
-
-        /*/// <summary>
-        /// 重量
-        /// </summary>
-        public double? Weight { get; set; }
-
-        /// <summary>
-        /// 长度
-        /// </summary>
-        public double? Length { get; set; }
-
-        /// <summary>
-        /// 宽度
-        /// </summary>
-        public double? Width { get; set; }
-
-        /// <summary>
-        /// 高度
-        /// </summary>
-        public double? Height { get; set; }
-
-        /// <summary>
-        /// 体积
-        /// </summary>
-        public double? Volume { get; set; }*/
 
         /// <summary>
         /// 条码信息
@@ -1059,11 +1072,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         /// </summary>
         public WeightInfoModel? WeightInfo { get; set; }
 
-        /*/// <summary>
-        /// 相机序列号
-        /// </summary>
-        public string CameraSerialNumber { get; set; } = string.Empty;*/
-
         /// <summary>
         /// 是否已完成(完成输出、上传、但未从集合删除)
         /// </summary>
@@ -1073,20 +1081,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         /// 是否完成存图
         /// </summary>
         public bool IsSavedImage;
-
-        /*/// <summary>
-        /// 扫码时间
-        /// </summary>
-        public DateTime ScanTime;
-
-        /// <summary>
-        /// 条码时间戳
-        /// </summary>
-        public long Timestamp { get; set; }*/
-        /*/// <summary>
-        /// /需要扣除的重量
-        /// </summary>
-        public float WeightToDeduct { get; set; }*/
 
         /// <summary>
         /// 需要扣除的长度
@@ -1126,7 +1120,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         /// <summary>
         /// 是否叠包
         /// </summary>
-        public bool IsStackedPackage { get; set; }
+        public bool? IsStackedPackage { get; set; }
     }
 
     public class CameraImageInfo {
@@ -1306,5 +1300,23 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         /// 是否已存在
         /// </summary>
         public bool IsExists { get; set; }
+    }
+
+    public class CallBackPackageInfo {
+
+        /// <summary>
+        /// 包裹创建时间
+        /// </summary>
+        public DateTime CreateTime { get; set; } = DateTime.Now;
+
+        /// <summary>
+        /// Guid
+        /// </summary>
+        public long Guid { get; set; }
+
+        /// <summary>
+        /// 包裹完结时间
+        /// </summary>
+        public DateTime CallBackTime { get; set; } = DateTime.Now;
     }
 }

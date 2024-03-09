@@ -155,6 +155,10 @@ namespace JayTom.Dws.Interface.WeciMexicoDv {
             double width = default, double height = default, double volume = default, UploadImageInfo? imageInfo = default,
             List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
         }
+
+        public void PackageAggregation(string packageExit, string aggregatePackageCode, DateTime packagingTime, List<string> packageItems,
+            object? other = null, CancellationToken token = default) {
+        }
     }
 
     public class WeciMexicoDvApiParam {

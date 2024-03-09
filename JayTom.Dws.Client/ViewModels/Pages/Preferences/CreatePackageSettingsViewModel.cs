@@ -76,6 +76,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                                 BarcodeQueueOrder = deserializeObject.BarcodeQueueOrder,
                                 PackageRemoveMethods = deserializeObject.PackageRemoveMethods,
                                 ClearPackageQueueOnStop = deserializeObject.ClearPackageQueueOnStop,
+                                IsUseNoReadFilter = deserializeObject.IsUseNoReadFilter,
+                                FilterInterval = deserializeObject.FilterInterval,
                             };
                             var includedEnums = Enum.GetValues(typeof(PackageCreationMethodsEnum))
                                 .Cast<PackageCreationMethodsEnum>()
@@ -128,6 +130,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                             BarcodeQueueOrder = CreatePackageSettingsInfo.BarcodeQueueOrder,
                             PackageRemoveMethods = CreatePackageSettingsInfo.PackageRemoveMethods,
                             ClearPackageQueueOnStop = CreatePackageSettingsInfo.ClearPackageQueueOnStop,
+                            IsUseNoReadFilter = CreatePackageSettingsInfo.IsUseNoReadFilter,
+                            FilterInterval = CreatePackageSettingsInfo.FilterInterval,
                         })
                     });
                     if (insertOrUpdate) {

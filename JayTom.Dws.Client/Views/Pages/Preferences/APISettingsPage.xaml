@@ -158,6 +158,14 @@
                         NavigationUIVisibility="Hidden"
                         Source="ApiConfiguration/RoutDataApiPage.xaml" />
                 </TabItem>
+                <TabItem Header="菜鸟Api">
+                    <Frame
+                        Margin="0"
+                        Padding="0"
+                        Focusable="False"
+                        NavigationUIVisibility="Hidden"
+                        Source="ApiConfiguration/CaiNiaoApiPage.xaml" />
+                </TabItem>
             </TabControl>
             <!--  提示框  -->
             <materialDesign:Snackbar

@@ -66,5 +66,10 @@ namespace JayTom.Dws.Domain.Dto {
         /// Geek+
         /// </summary>
         GeekPlusApi = 10,
+
+        /// <summary>
+        /// 菜鸟Api
+        /// </summary>
+        CaiNiaoApi = 11,
     }
 }

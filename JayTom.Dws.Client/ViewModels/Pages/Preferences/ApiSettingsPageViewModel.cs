@@ -70,6 +70,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                 Name = "Geek+",
                 Value = ApiType.GeekPlusApi
             },
+            new ApiTypeInfoModel()
+            {
+                Name = "菜鸟Api",
+                Value = ApiType.CaiNiaoApi
+            },
         };
 
         private ApiTypeInfoModel? _selectApiType = new();

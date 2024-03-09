@@ -255,6 +255,10 @@ namespace JayTom.Dws.Interface.Wdt {
             List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
         }
 
+        public void PackageAggregation(string packageExit, string aggregatePackageCode, DateTime packagingTime, List<string> packageItems,
+            object? other = null, CancellationToken token = default) {
+        }
+
         public class ApiParameter {
             public string Url { get; set; } = string.Empty;
             public string Sid { get; set; } = string.Empty;

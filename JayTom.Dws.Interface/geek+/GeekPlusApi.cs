@@ -338,6 +338,10 @@ namespace JayTom.Dws.Interface.geek_ {
             }
         }
 
+        public void PackageAggregation(string packageExit, string aggregatePackageCode, DateTime packagingTime, List<string> packageItems,
+            object? other = null, CancellationToken token = default) {
+        }
+
         public StreamContent? ImageToStreamContent(Image image, string paramName, string fileName) {
             try {
                 using var memoryStream = new MemoryStream();

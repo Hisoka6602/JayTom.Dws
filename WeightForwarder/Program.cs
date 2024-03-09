@@ -6,6 +6,14 @@ internal class Program {
     private static SerialPort? toPort;
 
     private static void Main(string[] args) {
+        string inputString = "格口abc123def456";
+
+        // 使用LINQ和Char.IsDigit来获取字符串中的数字
+        string numbersOnly = new string(inputString.Where(char.IsDigit).ToArray());
+
+        Console.WriteLine("Original string: " + inputString);
+        Console.WriteLine("Numbers only: " + numbersOnly);
+
         Console.WriteLine("读配置");
         try {
             var configuration = new ConfigurationBuilder()
