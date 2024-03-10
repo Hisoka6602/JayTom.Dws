@@ -57,6 +57,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
         private double FrameRate { get; set; }
         private GCHandle? _imageBufferHandle;
         private int _ocrMissCount = 0;
+        private long _frameNo = 0;
 
         /// <summary>
         /// Ocr图像队列
@@ -787,6 +788,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                                                 };
                                             return default;
                                         })?.ToList(),
+                                        FrameNo = _frameNo,
                                     });
                                 });
                             }
@@ -794,6 +796,8 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
 
                         await Task.Delay(1);
                     }
+
+                    _frameNo += 1;
                 }
                 else {
                     bitmap?.Dispose();

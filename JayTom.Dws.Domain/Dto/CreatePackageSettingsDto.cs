@@ -68,6 +68,12 @@ namespace JayTom.Dws.Domain.Dto {
         /// NoRead间隔时间
         /// </summary>
         public int FilterInterval { get; set; } = 100;
+
+        /// <summary>
+        /// 是否多相机组码
+        /// </summary>
+
+        public bool IsGroupBarCode { get; set; }
     }
 
     public enum BarcodeHandlingMethodEnum {

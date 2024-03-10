@@ -19,6 +19,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim {
     public class WayzimIndustrialCamera : IIndustrialCamera {
         private SemaphoreSlim _semaphoreSlim = new(1, 1);
         private SemaphoreSlim _takeSlim = new(1, 1);
+        private long _frameNo = 0;
 
         //过滤器
         private readonly BarCodeFilterContainer _barCodeFilterContainer = new();
@@ -221,11 +222,14 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim {
                                                                 ThumbImage = (Bitmap?)thumbnailImage,
                                                                 CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
                                                                 ScanTime = scanTime,
-                                                                AreaCoords = ConvertPoint(codeInfo)
+                                                                AreaCoords = ConvertPoint(codeInfo),
+                                                                FrameNo = _frameNo
                                                             });
                                                         }
                                                     }
                                                 }
+
+                                                _frameNo += 1;
                                             }
                                         }
                                     }

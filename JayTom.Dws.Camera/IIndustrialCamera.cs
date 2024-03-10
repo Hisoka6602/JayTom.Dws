@@ -98,6 +98,11 @@ namespace JayTom.Dws.Camera {
         /// 相机序列号
         /// </summary>
         public string CameraSerialNumber { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 帧号
+        /// </summary>
+        public long FrameNo { get; set; }
     }
 
     /// <summary>

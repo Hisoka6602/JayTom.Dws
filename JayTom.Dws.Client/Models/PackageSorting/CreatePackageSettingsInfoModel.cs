@@ -34,6 +34,7 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         private int _emptyPackageExpiryTime;
         private bool _isUseNoReadFilter;
         private int _filterInterval = 100;
+        private bool _isGroupBarCode;
 
         /// <summary>
         /// 是否使用包裹过期
@@ -134,6 +135,15 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         public int FilterInterval {
             get => _filterInterval;
             set => SetProperty(ref _filterInterval, value);
+        }
+
+        /// <summary>
+        /// 是否多相机组码
+        /// </summary>
+
+        public bool IsGroupBarCode {
+            get => _isGroupBarCode;
+            set => SetProperty(ref _isGroupBarCode, value);
         }
     }
 

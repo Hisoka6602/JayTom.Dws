@@ -33,6 +33,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
         private SemaphoreSlim _barCodeSlim = new(1);
         private SemaphoreSlim _semaphoreSlim = new(1, 1);
         private GCHandle? _imageBufferHandle;
+        private long _frameNo = 0;
 
         /// <summary>
         /// Ocr图像队列
@@ -651,7 +652,8 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                                                             }
 
                                                             return default;
-                                                        }).ToList()
+                                                        }).ToList(),
+                                                        FrameNo = _frameNo
                                                     });
                                                 }
                                             }
@@ -673,7 +675,8 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                                                 Image = bmp,
                                                 ThumbImage = thumbnailImage,
                                                 CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
-                                                ScanTime = DateTime.Now
+                                                ScanTime = DateTime.Now,
+                                                FrameNo = _frameNo
                                             });
                                         }
                                         else {
@@ -689,6 +692,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                                     }
                                 }
                             }
+                            _frameNo += 1;
                         }
                     }
                     /*catch (Exception e) {

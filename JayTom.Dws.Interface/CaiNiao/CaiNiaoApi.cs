@@ -43,10 +43,10 @@ namespace JayTom.Dws.Interface.CaiNiao {
                         @params=new
                         {
                             barCode=barcode,
-                            weight=weight,
-                            length=length,
-                            width=width,
-                            height=height,
+                            weight=0,
+                            length=0,
+                            width=0,
+                            height=0,
                             bcrCode= Parameters.BcrCode,
                             bcrName=Parameters.BcrName,
                             foldFlag=(other is true)?0:1
@@ -142,10 +142,10 @@ namespace JayTom.Dws.Interface.CaiNiao {
                         @params=new
                         {
                             barCode=barcode,
-                            weight=weight,
-                            length=length,
-                            width=width,
-                            height=height,
+                            weight=0,
+                            length=0,
+                            width=0,
+                            height=0,
                             bcrCode= Parameters.BcrCode,
                             bcrName=Parameters.BcrName,
                             foldFlag=(other is true)?0:1

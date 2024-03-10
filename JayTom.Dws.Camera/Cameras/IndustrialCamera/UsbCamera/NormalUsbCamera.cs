@@ -24,6 +24,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.UsbCamera {
         private SemaphoreSlim _takePhotoSlim = new(1);
         private SemaphoreSlim _barCodeSlim = new(1);
         private SemaphoreSlim _readImageSlim = new(1);
+        private long _frameNo = 0;
 
         /// <summary>
         /// 设备列表
@@ -183,8 +184,13 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.UsbCamera {
                                             ScanTime = scanTime,
                                             Timestamp = timestamp,
                                             ThumbImage = generateThumbnail,
-                                            AreaCoords = points
+                                            AreaCoords = points,
+                                            FrameNo = _frameNo
                                         });
+                                    }
+
+                                    if (args?.BarCodes?.Any() == true) {
+                                        _frameNo += 1;
                                     }
 
                                     if (IsRealtimeImageEnabled) {

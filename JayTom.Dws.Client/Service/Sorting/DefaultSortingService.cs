@@ -366,13 +366,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                     configInfoModel = await _configRepository.FirstOrDefault(f =>
                        f.ConfigName.Equals("StackedPackageDetectionSettings"), token);
                     if (configInfoModel is not null) {
-                        _stackedPackageDetectionSettingsDto = JsonConvert.DeserializeObject<StackedPackageDetectionSettingsDto>(configInfoModel.Value);
-                        if (_stackedPackageDetectionSettingsDto is null) {
-                            return new KeyValuePair<bool, string>(false, "分拣层叠包配置不存在");
-                        }
-                    }
-                    else {
-                        return new KeyValuePair<bool, string>(false, "分拣层叠包配置不存在或读取错误");
+                        _stackedPackageDetectionSettingsDto = JsonConvert.DeserializeObject<StackedPackageDetectionSettingsDto>(configInfoModel.Value) ?? new StackedPackageDetectionSettingsDto();
                     }
                     _packageExitDefinitionInfos = await _packageExitDefinitionRepository.Select(s => s.Id > 0,
                         o => o.Id, token);
@@ -440,7 +434,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                              infoModel.ConnectionName, infoModel.SerialPortConfigInfo);
                     }
                     else if (communicationsType == CommunicationsType.TCP) {
-                        await _sortingConnectionService.AddConnection(communicationsType, communicationProtocol,
+                        var (key, value) = await _sortingConnectionService.AddConnection(communicationsType, communicationProtocol,
                             infoModel.ConnectionName, infoModel.TcpConnectionConfigInfo);
                     }
                 }

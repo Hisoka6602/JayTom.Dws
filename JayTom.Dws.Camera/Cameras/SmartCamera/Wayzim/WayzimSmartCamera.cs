@@ -31,6 +31,8 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
         //相机对象
         private CameraDataService? _cameraDataService;
 
+        private long _frameNo = 0;
+
         /// <summary>
         /// 固定端口
         /// </summary>
@@ -200,7 +202,8 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
                             ThumbImage = (Bitmap?)thumbnailImage,
                             CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
                             ScanTime = scanTime,
-                            AreaCoords = ConvertPoint(codeInfo)
+                            AreaCoords = ConvertPoint(codeInfo),
+                            FrameNo = _frameNo
                         });
                     }
                 }
@@ -213,7 +216,8 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
                     Image = bitmap,
                     ThumbImage = (Bitmap?)thumbnailImage,
                     CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
-                    ScanTime = scanTime
+                    ScanTime = scanTime,
+                    FrameNo = _frameNo
                 });
             }
             if (IsRealtimeImageEnabled) {
@@ -222,6 +226,8 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
                     ThumbImage = (Bitmap?)thumbnailImage,
                 });
             }
+
+            _frameNo += 1;
             await Task.Delay(5);
             infostruct.CodeInfo = default;
         }

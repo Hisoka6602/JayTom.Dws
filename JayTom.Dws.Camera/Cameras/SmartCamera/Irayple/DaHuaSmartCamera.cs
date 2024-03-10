@@ -28,6 +28,8 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
         //过滤器
         private readonly BarCodeFilterContainer _barCodeFilterContainer = new();
 
+        private long _frameNo = 0;
+
         /// <summary>
         /// 摄像头对象
         /// </summary>
@@ -314,6 +316,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
                     chunkData.GetChunkDataByIndex((uint)i, ref chunkId, ref vecChunkInfos);
                     chunkDataInfos.TryAdd(chunkId, vecChunkInfos);
                 }
+
                 //图片
                 var bitmap = grabbedRawData.ToBitmap(true);
                 var thumbnailImage = this.GenerateThumbnail(bitmap);
@@ -322,7 +325,8 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
                         // 一维码 0x80000000 == chunkId || 二维码  0x80000001 == chunkId
 
                         int.TryParse(Regex.Match(dataInfo.Value.FirstOrDefault(v => Regex.IsMatch(v,
-                            @"(?:BarCodeNum|QRNum)\s+Value:(\d+)")) ?? string.Empty, @"(?:BarCodeNum|QRNum)\s+Value:(\d+)")?.Groups[1]?.Value, out var codeCount);
+                                @"(?:BarCodeNum|QRNum)\s+Value:(\d+)")) ?? string.Empty,
+                            @"(?:BarCodeNum|QRNum)\s+Value:(\d+)")?.Groups[1]?.Value, out var codeCount);
 
                         var codeList = dataInfo.Value.Where(w =>
                                 Regex.IsMatch(w, @"(?:Code|QR)(\d+)_CodeData\s+Value:(.+)") &&
@@ -339,18 +343,21 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
                             var daHuaBarcodeInfo = new DaHuaBarcodeInfo {
                                 BarcodeType = dataInfo.Key == 0x80000000 ? CodeType.BarCode : CodeType.QrCode,
                                 BarCode = codeList?
-                                    .Select(input => Regex.Match(input ?? string.Empty, @$"(?:Code|QR){i}_CodeData\s+Value:(.+)"))
+                                    .Select(input => Regex.Match(input ?? string.Empty,
+                                        @$"(?:Code|QR){i}_CodeData\s+Value:(.+)"))
                                     .FirstOrDefault(match => match.Success)?.Groups[1].Value ?? string.Empty
                             };
                             daHuaBarcodeInfo.BarcodeRegionCoordinates.AddRange(
                                 Enumerable.Range(0, 4)
                                     .Select(j => {
                                         int.TryParse(pointList?
-                                            .Select(input => Regex.Match(input, $"(?:Code|QR){i}_Point{j}_X\\s+Value:(\\d+)"))
+                                            .Select(input =>
+                                                Regex.Match(input, $"(?:Code|QR){i}_Point{j}_X\\s+Value:(\\d+)"))
                                             .FirstOrDefault(match => match.Success)?.Groups[1].Value, out var x);
 
                                         int.TryParse(pointList?
-                                            .Select(input => Regex.Match(input, $"(?:Code|QR){i}_Point{j}_Y\\s+Value:(\\d+)"))
+                                            .Select(input =>
+                                                Regex.Match(input, $"(?:Code|QR){i}_Point{j}_Y\\s+Value:(\\d+)"))
                                             .FirstOrDefault(match => match.Success)?.Groups[1].Value, out var y);
 
                                         return new Point(x, y);
@@ -358,7 +365,9 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
                             );
                             //过滤
                             var validateData = _barCodeFilterContainer.ValidateData(new BarCodeFilterInfo() {
-                                BarCode = string.IsNullOrWhiteSpace(daHuaBarcodeInfo.BarCode) ? "NoRead" : daHuaBarcodeInfo.BarCode,
+                                BarCode = string.IsNullOrWhiteSpace(daHuaBarcodeInfo.BarCode)
+                                    ? "NoRead"
+                                    : daHuaBarcodeInfo.BarCode,
                                 ScanTime = scanTime
                             });
                             if (validateData) {
@@ -376,14 +385,18 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
                             var points = new Point[4];
                             for (var j = 0; j < 4; ++j) {
                                 points[j].X = (int)(huaBarcodeInfo.BarcodeRegionCoordinates[j].X *
-                                    ((float)(thumbnailImage.Size.Width) / (_originalWidth <= 0 ? 1 : _originalWidth)));
+                                                    ((float)(thumbnailImage.Size.Width) /
+                                                     (_originalWidth <= 0 ? 1 : _originalWidth)));
                                 points[j].Y = (int)(huaBarcodeInfo.BarcodeRegionCoordinates[j].Y *
-                                    ((float)(thumbnailImage.Size.Height) / (_originalHeight <= 0 ? 1 : _originalHeight)));
+                                                    ((float)(thumbnailImage.Size.Height) /
+                                                     (_originalHeight <= 0 ? 1 : _originalHeight)));
                             }
+
                             g.DrawPolygon(new Pen(BarcodeBorderColor, BarcodeBorderSize), points);
                         }
                     }
                 }
+
                 if (barcodeInfo?.Any() != true) {
                     //返回触发但没有条码
                     if (IsUseTriggerMode && TriggerMode == TriggerMode.Hardware) {
@@ -393,7 +406,8 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
                             Image = bitmap,
                             ThumbImage = (Bitmap?)thumbnailImage,
                             CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
-                            ScanTime = scanTime
+                            ScanTime = scanTime,
+                            FrameNo = _frameNo
                         });
                     }
                 }
@@ -408,9 +422,11 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
                                 ThumbImage = (Bitmap?)thumbnailImage,
                                 CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
                                 ScanTime = scanTime,
-                                AreaCoords = barcode.BarcodeRegionCoordinates
+                                AreaCoords = barcode.BarcodeRegionCoordinates,
+                                FrameNo = _frameNo
                             });
                         }
+
                         await Task.Delay(1);
                     }
                 }
@@ -426,6 +442,9 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
                 OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
                     Exception = e
                 });
+            }
+            finally {
+                _frameNo += 1;
             }
         }
 

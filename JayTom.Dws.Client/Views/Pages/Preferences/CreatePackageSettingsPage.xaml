@@ -275,6 +275,25 @@
                                 Text="{Binding CreatePackageSettingsInfo.FilterInterval, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                         </Border>
                     </StackPanel>
+
+                    <StackPanel
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        Orientation="Horizontal">
+                        <TextBlock
+                            Margin="5,0"
+                            VerticalAlignment="Center"
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="DarkGray"
+                            Text="是否多相机组码:" />
+                        <ToggleButton
+                            materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
+                            materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
+                            Focusable="False"
+                            IsChecked="{Binding CreatePackageSettingsInfo.IsGroupBarCode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                            Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+                    </StackPanel>
                 </StackPanel>
             </StackPanel>
             <!--  多条码返回处理方式  -->
