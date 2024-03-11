@@ -78,7 +78,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                                 ClearPackageQueueOnStop = deserializeObject.ClearPackageQueueOnStop,
                                 IsUseNoReadFilter = deserializeObject.IsUseNoReadFilter,
                                 FilterInterval = deserializeObject.FilterInterval,
-                                IsGroupBarCode = deserializeObject.IsGroupBarCode
                             };
                             var includedEnums = Enum.GetValues(typeof(PackageCreationMethodsEnum))
                                 .Cast<PackageCreationMethodsEnum>()
@@ -133,7 +132,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                             ClearPackageQueueOnStop = CreatePackageSettingsInfo.ClearPackageQueueOnStop,
                             IsUseNoReadFilter = CreatePackageSettingsInfo.IsUseNoReadFilter,
                             FilterInterval = CreatePackageSettingsInfo.FilterInterval,
-                            IsGroupBarCode = CreatePackageSettingsInfo.IsGroupBarCode
                         })
                     });
                     if (insertOrUpdate) {

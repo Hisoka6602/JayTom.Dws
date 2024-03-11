@@ -100,19 +100,21 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 try {
                     await _createPackageSlim.WaitAsync();
 
-                    if (_createPackageSettingsDto.IsGroupBarCode) {
-                        _barCodeFrameInfoItem.TryAdd(args.CameraSerialNumber,
-                            new BarCodeFrameInfo() {
-                                Timestamp = args.Timestamp,
-                                Frame = args.FrameNo,
-                                BarCodeInfo = new BarCodeInfoModel() {
-                                    Barcode = args.Barcode,
-                                    CameraSerialNumber = args.CameraSerialNumber,
-                                    ScanTime = args.ScanTime,
-                                    Source = SourceType.Camera
-                                },
-                                Image = args.Image
-                            });
+                    if (_cameras.Count(c => c.BindingType == CameraBindingType.ScannerCamera) > 1) {
+                        var barCodeFrameInfo = new BarCodeFrameInfo() {
+                            Timestamp = args.Timestamp,
+                            Frame = args.FrameNo,
+                            BarCodeInfo = new BarCodeInfoModel() {
+                                Barcode = args.Barcode,
+                                CameraSerialNumber = args.CameraSerialNumber,
+                                ScanTime = args.ScanTime,
+                                Source = SourceType.Camera
+                            },
+                            Image = args.Image
+                        };
+
+                        _barCodeFrameInfoItem.AddOrUpdate(args.CameraSerialNumber, key => barCodeFrameInfo,
+                            (key, oldValue) => barCodeFrameInfo);
                     }
                     else {
                         var info = _packageInfos.OrderBy(o => o.Key).
@@ -178,19 +180,20 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 }
                 try {
                     await _createPackageSlim.WaitAsync();
-                    if (_createPackageSettingsDto.IsGroupBarCode) {
-                        _barCodeFrameInfoItem.TryAdd(args.CameraSerialNumber,
-                            new BarCodeFrameInfo() {
-                                Timestamp = args.Timestamp,
-                                Frame = args.FrameNo,
-                                BarCodeInfo = new BarCodeInfoModel() {
-                                    Barcode = args.Barcode,
-                                    CameraSerialNumber = args.CameraSerialNumber,
-                                    ScanTime = args.ScanTime,
-                                    Source = SourceType.Camera
-                                },
-                                Image = args.Image
-                            });
+                    if (_cameras.Count(c => c.BindingType == CameraBindingType.ScannerCamera) > 1) {
+                        var barCodeFrameInfo = new BarCodeFrameInfo() {
+                            Timestamp = args.Timestamp,
+                            Frame = args.FrameNo,
+                            BarCodeInfo = new BarCodeInfoModel() {
+                                Barcode = args.Barcode,
+                                CameraSerialNumber = args.CameraSerialNumber,
+                                ScanTime = args.ScanTime,
+                                Source = SourceType.Camera
+                            },
+                            Image = args.Image
+                        };
+                        _barCodeFrameInfoItem.AddOrUpdate(args.CameraSerialNumber, key => barCodeFrameInfo,
+                            (key, oldValue) => oldValue.BarCodeInfo?.Barcode?.ToLower()?.Equals("noread") != true ? oldValue : barCodeFrameInfo);
                     }
                     else {
                         if (_createPackageSettingsDto.IsUseNoReadFilter) {
@@ -521,7 +524,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 Guid = num,
                                 IsCreatedByLowerMachine = true,
                                 PackageCreationInstruction = args.Instruction,
-                                CreateTime = DateTime.Now
+                                CreateTime = DateTime.Now,
                             };
                             EventAggregator.Instance.Publish(new TriggerPositionEvent() {
                                 IsSuccess = true,
@@ -538,7 +541,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                     new()
                                     {
                                         InstructionContent = args.Instruction,
-                                        InstructionGeneratedTime = DateTime.Now,
+                                        InstructionGeneratedTime = args.InstructionTime,
                                         InstructionType = InstructionTypeType.CreatePackage
                                     }
                                 }
@@ -768,6 +771,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             //创建包裹后触发
             EventAggregator.Instance.Subscribe<TriggerPositionEvent>(async item => {
                 if (item is TriggerPositionEvent { TriggerPosition: TriggerPositionEnum.PackageTrigger, PackageInfo: { } packageInfo }) {
+                    packageInfo.Timestamp = new DateTimeOffset(packageInfo.CreateTime).ToUnixTimeMilliseconds();
                     _packageInfos.TryAdd(packageInfo.CreateTime, packageInfo);
 
                     //触发全景拍照
@@ -864,13 +868,15 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             while (!stoppingToken.IsCancellationRequested && !_isWindowsClose) {
                 try {
                     //多相机组码
-                    if (_createPackageSettingsDto.IsGroupBarCode && _deviceService.RunningStatus &&
+                    if (_cameras.Count(c => c.BindingType == CameraBindingType.ScannerCamera) > 1 && _deviceService.RunningStatus &&
                         _barCodeFrameInfoItem.Count > 0) {
-                        //先删除5秒前的数据
                         if ((_barCodeFrameInfoItem.Count == _cameras.Count(c => c.BindingType == CameraBindingType.ScannerCamera)) ||
-                            DateTime.Now.Subtract(_barCodeFrameInfoItem.Where(w => w.Value.BarCodeInfo != null)
+                            (DateTime.Now.Subtract(_barCodeFrameInfoItem.Where(w => w.Value.BarCodeInfo != null)
                                 .OrderBy(o => o.Value.BarCodeInfo.ScanTime)
-                                .FirstOrDefault().Value.BarCodeInfo.ScanTime).TotalMilliseconds > 500
+                                .FirstOrDefault().Value.BarCodeInfo.ScanTime).TotalMilliseconds > 400) ||
+                            _barCodeFrameInfoItem.Where(w => w.Value.BarCodeInfo != null)
+                                .GroupBy(g => g.Value.BarCodeInfo.Barcode).Count() > 1
+
                             ) {
                             //组数据并清除队列
                             var groupBy = _barCodeFrameInfoItem.Where(w => w.Value.BarCodeInfo != null)
@@ -884,15 +890,12 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 barCodeFrameInfo = _barCodeFrameInfoItem.Where(w => w.Value.BarCodeInfo != null)
                                    .LastOrDefault(a =>
                                        a.Value.BarCodeInfo.Barcode.Equals(groupBy.FirstOrDefault()?.BarCode)).Value;
-                                NLog.LogManager.GetCurrentClassLogger().Error($"只有一个:{JsonConvert.SerializeObject(barCodeFrameInfo)}");
                             }
                             else {
                                 barCodeFrameInfo = _barCodeFrameInfoItem.Where(w => w.Value.BarCodeInfo != null)
                                     .LastOrDefault(a =>
                                         !a.Value.BarCodeInfo.Barcode.ToLower().Equals("noread")).Value;
-                                NLog.LogManager.GetCurrentClassLogger().Error($"包含多个:{JsonConvert.SerializeObject(barCodeFrameInfo)}");
                             }
-                            NLog.LogManager.GetCurrentClassLogger().Error($"多相机组包:{JsonConvert.SerializeObject(groupBy)}");
                             var packageInfo =
                                 _createPackageSettingsDto.BarcodeQueueOrder == BarcodeQueueOrderEnum.TimeAscending ?
                                     _packageInfos.OrderBy(o => o.Key).FirstOrDefault(f => f.Value.BarCodeInfo == null).Value :
@@ -1214,6 +1217,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         /// 是否叠包
         /// </summary>
         public bool? IsStackedPackage { get; set; }
+
+        /// <summary>
+        /// 包裹时间戳
+        /// </summary>
+        public long Timestamp { get; set; }
     }
 
     public class CameraImageInfo {

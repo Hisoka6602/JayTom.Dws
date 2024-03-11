@@ -91,7 +91,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                                 var isInitialized = false;
                                 while (!_cancellationTokenSource.IsCancellationRequested) {
                                     foreach (var model in _lockBindingInfoModels) {
-                                        await Task.Delay(50, token);
+                                        await Task.Delay(5, token);
                                         try {
                                             if (plc is not null) {
                                                 int.TryParse(model.Address, out var address);
@@ -102,12 +102,18 @@ namespace JayTom.Dws.Client.Service.Sorting {
 
                                                 if (readBytesAsync?.FirstOrDefault() == 0) {
                                                     //解锁
+                                                    if (!isInitialized && infoModel is not null) {
+                                                        infoModel.IsLockExit = false;
+                                                    }
                                                     if (infoModel?.IsLockExit == true) {
                                                         OnUnLockExitEvent(infoModel);
                                                         infoModel.IsLockExit = false;
                                                     }
                                                 }
                                                 else {
+                                                    if (!isInitialized && infoModel is not null) {
+                                                        infoModel.IsLockExit = true;
+                                                    }
                                                     // 锁
                                                     if (infoModel?.IsLockExit == false) {
                                                         OnLockExitEvent(infoModel);

@@ -80,7 +80,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             Guid = model?.Guid ?? 0,
                             IsCreatedByLowerMachine = (bool)model?.IsCreatedByLowerMachine,
                             PackageCreationInstruction = model?.PackageCreationInstruction ?? string.Empty,
-                            IsStackedPackage = model?.IsStackedPackage
+                            IsStackedPackage = model?.IsStackedPackage,
+                            Timestamp = model?.Timestamp ?? 0
                             //图片暂时不写
                         });
                     }
@@ -525,7 +526,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 UploadResponse = uploadResponse,
                                 PackageCreationInstruction = info.PackageCreationInstruction,
                                 PackageCreationTime = info.PackageCreationTime,
-                                IsCreatedByLowerMachine = info.IsCreatedByLowerMachine
+                                IsCreatedByLowerMachine = info.IsCreatedByLowerMachine,
+                                Timestamp = info.Timestamp,
                             });
                             EventAggregator.Instance.Publish(new TriggerPositionEvent() {
                                 IsSuccess = uploadResponse?.IsSuccess ?? false,
@@ -876,6 +878,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             /// 是否叠包
             /// </summary>
             public bool? IsStackedPackage { get; set; }
+
+            /// <summary>
+            /// 包裹时间戳
+            /// </summary>
+            public long Timestamp { get; set; }
         }
 
         /// <summary>
@@ -918,6 +925,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             /// 是否叠包
             /// </summary>
             public bool IsStackedPackage { get; set; }
+
+            /// <summary>
+            /// 包裹时间戳
+            /// </summary>
+            public long Timestamp { get; set; }
         }
     }
 }

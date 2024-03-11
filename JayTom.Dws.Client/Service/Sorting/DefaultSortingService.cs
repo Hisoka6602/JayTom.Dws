@@ -167,14 +167,16 @@ namespace JayTom.Dws.Client.Service.Sorting {
                     //创建包裹
                     OnCreatePackageEvent(new PackageInstructionEventArgs() {
                         Keyword = result.Keyword,
-                        Instruction = result.RawContent
+                        Instruction = result.RawContent,
+                        InstructionTime = result.Time,
                     });
                 }
                 else if (result.Type == FunctionType.RemovePackage) {
                     //移除包裹
                     OnRemovePackageEvent(new PackageInstructionEventArgs() {
                         Keyword = result.Keyword,
-                        Instruction = result.RawContent
+                        Instruction = result.RawContent,
+                        InstructionTime = result.Time,
                     });
                 }
                 else if (result.Type == FunctionType.Heartbeat) {
@@ -231,6 +233,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                 if (item is ApiResponseReceived model) {
                     if (_sortingMethodDto.SortMode == SortMode.ApiResponseSorting) {
                         ExecuteSorting(new SortingParam {
+                            Timestamp = model.Timestamp,
                             Guid = model.Guid,
                             BarCode = model.Barcode ?? string.Empty,
                             ScanTime = model.ScanTime,

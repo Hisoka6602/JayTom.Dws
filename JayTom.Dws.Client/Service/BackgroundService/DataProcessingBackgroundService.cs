@@ -208,11 +208,12 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 var isSorting = _instructionItems.TryDequeue(out var sortingModel);
                 if (isSorting && sortingModel is not null) {
                     //取出对应条码id(根据条码、扫码时间)
-                    var (key, value) = await _packageRepository.FirstOrDefaultInfo(f => f.BarCodeInfo != null &&
+                    /*var (key, value) = await _packageRepository.FirstOrDefaultInfo(f => f.BarCodeInfo != null &&
                             f.BarCodeInfo.Barcode.Equals(sortingModel.BarCode) &&
                             f.BarCodeInfo.ScanTime.Equals(sortingModel.ScanTime),
+                        stoppingToken);*/
+                    var (key, value) = await _packageRepository.FirstOrDefaultInfo(f => f.PackageTimestamped.Equals(sortingModel.Timestamp),
                         stoppingToken);
-
                     if (key && value is { } packageInfoModel) {
                         //判断是否已存在记录
                         var sortingInfoModel = await _sortingRepository.

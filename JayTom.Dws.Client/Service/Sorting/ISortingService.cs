@@ -177,6 +177,11 @@ namespace JayTom.Dws.Client.Service.Sorting {
         /// 指令
         /// </summary>
         public string Instruction { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 指令时间
+        /// </summary>
+        public DateTime InstructionTime { get; set; }
     }
 
     public class LogEventArgs : EventArgs {
@@ -232,7 +237,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
         public string? PackageCreationInstruction { get; set; }
 
         /// <summary>
-        /// 条码关联时间戳
+        /// 包裹关联时间戳
         /// </summary>
         public long Timestamp { get; set; }
 
@@ -303,7 +308,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
     public class InstructionReceived {
 
         /// <summary>
-        /// 条码关联时间戳
+        /// 包裹关联时间戳
         /// </summary>
         public long Timestamp { get; set; }
 

@@ -73,7 +73,7 @@ namespace JayTom.Dws.Domain.Dto {
         /// 是否多相机组码
         /// </summary>
 
-        public bool IsGroupBarCode { get; set; }
+        //public bool IsGroupBarCode { get; set; }
     }
 
     public enum BarcodeHandlingMethodEnum {

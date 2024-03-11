@@ -8,6 +8,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace JayTom.Dws.Data.Package {
 
+    [Table("Data_InstructionInfo", Schema = "dbo")]
     public class InstructionInfoModel : BaseModel {
 
         [Column("SortingInfoId"), JsonIgnore]

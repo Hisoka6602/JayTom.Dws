@@ -249,7 +249,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             _deviceService.NotBarcodeHitEvent += delegate (object? sender, BarcodeReadEventArgs args) {
                 EventAggregator.Instance.Publish(new CameraLogInfoModel() {
                     Type = LogType.Warning,
-                    Message = $"相机光电触发但未识别到条码",
+                    Message = $"相机:{args.CameraSerialNumber}光电触发但未识别到条码",
                     CameraSerialNumber = args.CameraSerialNumber
                 });
             };

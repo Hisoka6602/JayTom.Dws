@@ -81,6 +81,11 @@ namespace JayTom.Dws.Domain.DownstreamProtocols {
         /// 异常信息
         /// </summary>
         public string? ExceptionMessage { get; set; }
+
+        /// <summary>
+        /// 指令时间
+        /// </summary>
+        public DateTime Time { get; set; }
     }
 
     public enum FunctionType {

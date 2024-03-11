@@ -688,7 +688,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                 EventAggregator.Instance.Publish(new SortingLogInfoModel {
                     CreateTime = e.Time,
                     Message = $"连接:{e.ConnectionName},发送内容:{e.Content}",
-                    Type = LogType.Information
+                    Type = LogType.Information,
                 });
             }
             else if (e.Type == CommunicationType.Receive) {
@@ -705,7 +705,8 @@ namespace JayTom.Dws.Client.Service.Sorting {
                                 IsException = deviceDecodeResult.IsException,
                                 RawContent = deviceDecodeResult.RawContent,
                                 Keyword = deviceDecodeResult.Keyword,
-                                Type = deviceDecodeResult.Type
+                                Type = deviceDecodeResult.Type,
+                                Time = e.Time
                             });
                         }
                     }
@@ -713,7 +714,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                 EventAggregator.Instance.Publish(new SortingLogInfoModel {
                     CreateTime = e.Time,
                     Message = $"连接:{e.ConnectionName},接收内容:{e.Content}",
-                    Type = LogType.Information
+                    Type = LogType.Information,
                 });
             }
         }
