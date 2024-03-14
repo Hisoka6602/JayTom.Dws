@@ -561,7 +561,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                             }
 
                             //锁半秒
-                            if (DateTime.Now.Subtract(_lockDateTime).TotalMilliseconds >= 100) {
+                            if (DateTime.Now.Subtract(_lockDateTime).TotalMilliseconds >= 50) {
                                 _lockDateTime = DateTime.Now;
                                 var bmp = await GetBitmapAsync(pData, _bufForDriver, stFrameInfoEx2);
 

@@ -390,6 +390,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                             if (instructions?.Any() == true) {
                                 foreach (var instruction in instructions) {
                                     var isSend = false;
+                                    var sendTime = DateTime.Now;
                                     if (connection is { Type: CommunicationsType.SerialPort, SortingSerialPort: not null }) {
                                         //串口
                                         if (connection.SortingSerialPort.Status == SerialPortStatus.Running
@@ -409,7 +410,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                                                 ExitName = attach.ExitName,
                                                 FormatType = (FormatType)connection.SortingSerialPort.FormatType,
                                                 Guid = attach.Guid,
-                                                Time = DateTime.Now,
+                                                Time = sendTime = DateTime.Now,
                                                 Timestamp = attach.Timestamp,
                                                 Type = CommunicationType.Send
                                             });
@@ -437,7 +438,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                                                 ExitName = attach.ExitName,
                                                 FormatType = connection.SortingTcp.FormatType,
                                                 Guid = attach.Guid,
-                                                Time = DateTime.Now,
+                                                Time = sendTime = DateTime.Now,
                                                 Timestamp = attach.Timestamp,
                                                 Type = CommunicationType.Send
                                             });
@@ -474,7 +475,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                                                 {
                                                     InstructionContent = connection?.DeviceCommunicationProtocol?.EncodeData(FunctionType.SendExit, tag,
                                                         instruction, attach) ?? instruction,
-                                                    InstructionGeneratedTime = DateTime.Now,
+                                                    InstructionGeneratedTime =sendTime,
                                                     InstructionType = InstructionTypeType.SendSorting
                                                 }
                                             }
@@ -506,6 +507,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                             if (instructions?.Any() == true) {
                                 foreach (var instruction in instructions) {
                                     var isSend = false;
+                                    var sendTime = DateTime.Now;
                                     if (connection is { Type: CommunicationsType.SerialPort, SortingSerialPort: not null }) {
                                         //串口
                                         if (connection.SortingSerialPort.Status == SerialPortStatus.Running
@@ -530,7 +532,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                                                         ExitName = attach.ExitName,
                                                         FormatType = (FormatType)connection.SortingSerialPort.FormatType,
                                                         Guid = attach.Guid,
-                                                        Time = DateTime.Now,
+                                                        Time = sendTime = DateTime.Now,
                                                         Timestamp = attach.Timestamp,
                                                         Type = CommunicationType.Send
                                                     });
@@ -559,7 +561,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                                                     ExitName = attach.ExitName,
                                                     FormatType = (FormatType)connection.SortingSerialPort.FormatType,
                                                     Guid = attach.Guid,
-                                                    Time = DateTime.Now,
+                                                    Time = sendTime = DateTime.Now,
                                                     Timestamp = attach.Timestamp,
                                                     Type = CommunicationType.Send
                                                 });
@@ -593,7 +595,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                                                         ExitName = attach.ExitName,
                                                         FormatType = connection.SortingTcp.FormatType,
                                                         Guid = attach.Guid,
-                                                        Time = DateTime.Now,
+                                                        Time = sendTime = DateTime.Now,
                                                         Timestamp = attach.Timestamp,
                                                         Type = CommunicationType.Send
                                                     });
@@ -626,7 +628,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                                                     ExitName = attach.ExitName,
                                                     FormatType = connection.SortingTcp.FormatType,
                                                     Guid = attach.Guid,
-                                                    Time = DateTime.Now,
+                                                    Time = sendTime = DateTime.Now,
                                                     Timestamp = attach.Timestamp,
                                                     Type = CommunicationType.Send
                                                 });
@@ -663,7 +665,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                                                 {
                                                     InstructionContent = connection?.DeviceCommunicationProtocol?.EncodeData(FunctionType.SendExit, tag,
                                                         instruction.Instruction, attach) ?? instruction.Instruction,
-                                                    InstructionGeneratedTime = DateTime.Now,
+                                                    InstructionGeneratedTime = sendTime,
                                                     InstructionType = InstructionTypeType.SendSorting
                                                 }
                                             }

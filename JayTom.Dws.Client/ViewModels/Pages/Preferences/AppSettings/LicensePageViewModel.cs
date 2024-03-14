@@ -121,7 +121,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings {
                         Task.Run(async () => {
                             await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
                                 MachineCode = LicenseManager.GenerateMachineCode();
-                                var licenseDirectory = Path.Combine(Directory.GetCurrentDirectory(), "License");
+                                var licenseDirectory = Path.Combine(AppContext.BaseDirectory, "License");
                                 var firstOrDefault = Directory.GetFiles(licenseDirectory, "*.key").FirstOrDefault();
                                 if (firstOrDefault is not null) {
                                     //解密授权
@@ -166,7 +166,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings {
                                 !string.IsNullOrEmpty(result.Data?.ToString() ?? string.Empty)) {
                                 //获取授权文件地址
                                 if (result.Result) {
-                                    var licenseDirectory = Path.Combine(Directory.GetCurrentDirectory(), "License");
+                                    var licenseDirectory = Path.Combine(AppContext.BaseDirectory, "License");
                                     if (!Directory.Exists(licenseDirectory)) {
                                         Directory.CreateDirectory(licenseDirectory);
                                     }

@@ -20,6 +20,7 @@ using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Repository.LocalData;
+using JayTom.Dws.Domain.Dto.PackageExitLockDto;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.StartPanel;
 
 namespace JayTom.Dws.Client.Service.DefaultConfiguration {
@@ -226,6 +227,16 @@ namespace JayTom.Dws.Client.Service.DefaultConfiguration {
                     Value = JsonConvert.SerializeObject(new CreatePackageSettingsDto() {
                     })
                 });
+                var task12 = _configRepository.InsertOrUpdate(new ConfigInfoModel() {
+                    ConfigName = "PackageExitLockSettings",
+                    Value = JsonConvert.SerializeObject(new PackageExitLockSettingsDto() {
+                    })
+                });
+                var task13 = _configRepository.InsertOrUpdate(new ConfigInfoModel() {
+                    ConfigName = "StackedPackageDetectionSettings",
+                    Value = JsonConvert.SerializeObject(new StackedPackageDetectionSettingsDto() {
+                    })
+                });
                 await Task.WhenAll(task1,
                     task2,
                     task3,
@@ -235,7 +246,9 @@ namespace JayTom.Dws.Client.Service.DefaultConfiguration {
                     task8,
                     task9,
                     task10,
-                    task11);
+                    task11,
+                    task12,
+                    task13);
             }
             catch (Exception e) {
                 NLog.LogManager.GetCurrentClassLogger().Error($"写默认配置失败!");

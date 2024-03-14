@@ -854,7 +854,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                             }
                             */
 
-                            var licenseDirectory = Path.Combine(Directory.GetCurrentDirectory(), "License");
+                            var licenseDirectory = Path.Combine(AppContext.BaseDirectory, "License");
                             if (!Directory.Exists(licenseDirectory)) {
                                 Directory.CreateDirectory(licenseDirectory);
                             }
