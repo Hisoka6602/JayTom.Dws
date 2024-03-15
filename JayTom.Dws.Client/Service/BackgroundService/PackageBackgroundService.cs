@@ -376,6 +376,12 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             };
             //外部全量数据
             _externalDataService.ContentInputReceived += async (sender, args) => {
+                await Task.Yield();
+                if (!_createPackageSettingsDto.IsUseNoRead &&
+                    args.Barcode.ToLower().Equals("noread")) {
+                    return;
+                }
+
                 try {
                     await _createPackageSlim.WaitAsync();
                     var timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds();

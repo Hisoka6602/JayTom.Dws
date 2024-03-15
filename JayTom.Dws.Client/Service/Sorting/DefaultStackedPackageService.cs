@@ -68,15 +68,16 @@ namespace JayTom.Dws.Client.Service.Sorting {
                     ExceptionMessage = $"监测异常:{args.Exception.Message}"
                 });
             };
-            _packageDetectionTcp.Communication += (sender, info) => {
+            _packageDetectionTcp.Communication += async (sender, info) => {
                 //Tcp接收内容
+
                 if (_stackedPackageDetectionSettingsDto is not null) {
                     try {
                         var isMatch = Regex.IsMatch(info.Content, _stackedPackageDetectionSettingsDto.RegularExpression);
                         if (isMatch) {
-                            //发送
                             var tryDequeue = _stackedPackageItems.TryDequeue(out var result);
                             if (tryDequeue && result is not null) {
+                                await Task.Delay(200);
                                 OnStackedPackageReturned(new StackedPackageEventArgs() {
                                     PackageInfo = result,
                                     PackageTime = result.CreateTime
@@ -103,9 +104,16 @@ namespace JayTom.Dws.Client.Service.Sorting {
                     ExceptionMessage = $"监测Tcp连接异常:{s}"
                 });
             };
-            EventAggregator.Instance.Subscribe<PackageInfo>(async item => {
+            /*EventAggregator.Instance.Subscribe<PackageInfo>(async item => {
                 if (item is PackageInfo info) {
                     _stackedPackageItems.Enqueue(info);
+                    NLog.LogManager.GetCurrentClassLogger().Error($"队列数:{_stackedPackageItems.Count}");
+                }
+            });*/
+            EventAggregator.Instance.Subscribe<TriggerPositionEvent>(async item => {
+                if (item is TriggerPositionEvent { TriggerPosition: TriggerPositionEnum.PackageTrigger } info) {
+                    _stackedPackageItems.Enqueue(info.PackageInfo ?? new PackageInfo());
+                    NLog.LogManager.GetCurrentClassLogger().Error($"队列数:{_stackedPackageItems.Count}");
                 }
             });
         }

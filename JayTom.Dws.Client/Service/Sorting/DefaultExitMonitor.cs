@@ -3,12 +3,15 @@ using S7.Net;
 using System.IO;
 using System.Linq;
 using System.Text;
+using S7.Net.Types;
 using Newtonsoft.Json;
 using System.Threading;
+using System.Diagnostics;
 using JayTom.Dws.Plugin.Tcp;
 using System.Threading.Tasks;
 using JayTom.Dws.Data.LocalLog;
 using System.Collections.Generic;
+using DateTime = System.DateTime;
 using System.Text.RegularExpressions;
 using JayTom.Dws.Client.EventMediators;
 using Microsoft.Extensions.Configuration;
@@ -90,15 +93,121 @@ namespace JayTom.Dws.Client.Service.Sorting {
                             _monitorThread = Task.Run(async () => {
                                 var isInitialized = false;
                                 while (!_cancellationTokenSource.IsCancellationRequested) {
+                                    var initialized = isInitialized;
+                                    if (plc is null) return;
+
+                                    try {
+                                        var count = _lockBindingInfoModels.Count / 10 + (_lockBindingInfoModels.Count % 10 > 0 ? 1 : 0);
+
+                                        for (var i = 0; i < count; i++) {
+                                            var dataItems = _lockBindingInfoModels.Select(s => new DataItem {
+                                                DataType = DataType.DataBlock,
+                                                StartByteAdr = Convert.ToInt32(s.Address),
+                                                DB = _packageExitLockSettingsDto.S7Config.Db,
+                                                Count = s.Length,
+                                                VarType = VarType.Byte
+                                            }).Skip(i * 10).Take(10).ToList();
+
+                                            var readMultipleVarsAsync = await plc.ReadMultipleVarsAsync(dataItems, token);
+
+                                            foreach (var dataItem in readMultipleVarsAsync) {
+                                                var model = _lockBindingInfoModels.FirstOrDefault(f =>
+                                                    f.Address.Equals(dataItem.StartByteAdr.ToString()));
+                                                if (model != null) {
+                                                    var infoModel =
+                                                        _definitionInfoModels.FirstOrDefault(f =>
+                                                            f.Id.Equals(model.ExitId));
+
+                                                    if (Convert.ToByte(dataItem.Value) == 0) {
+                                                        //解锁
+                                                        if (!initialized && infoModel is not null) {
+                                                            infoModel.IsLockExit = false;
+                                                        }
+
+                                                        if (infoModel?.IsLockExit == true) {
+                                                            OnUnLockExitEvent(infoModel);
+                                                            infoModel.IsLockExit = false;
+                                                        }
+                                                    }
+                                                    else {
+                                                        if (!initialized && infoModel is not null) {
+                                                            infoModel.IsLockExit = true;
+                                                        }
+
+                                                        // 锁
+                                                        if (infoModel?.IsLockExit == false) {
+                                                            OnLockExitEvent(infoModel);
+                                                            infoModel.IsLockExit = true;
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    catch (Exception e) {
+                                        OnExceptionOccurred(new ExceptionEventArgs() {
+                                            ExceptionMessage = e.Message
+                                        });
+                                    }
+
+                                    /*var tasks = _lockBindingInfoModels.Select(f1 => Task.Run((
+                                    ) => {
+                                        try {
+                                            if (plc is null) return;
+                                            int.TryParse(f1.Address, out var address);
+
+                                            var readBytesAsync = plc.ReadBytes(DataType.DataBlock,
+                                                _packageExitLockSettingsDto.S7Config.Db, address, f1.Length);
+                                            /*var readBytesAsync =
+                                                    await plc.ReadBytesAsync(DataType.DataBlock,
+                                                        _packageExitLockSettingsDto.S7Config.Db, address, f1.Length,
+                                                        token);#1#
+                                            var infoModel =
+                                                _definitionInfoModels.FirstOrDefault(f =>
+                                                    f.Id.Equals(f1.ExitId));
+
+                                            if (readBytesAsync?.FirstOrDefault() == 0) {
+                                                //解锁
+                                                if (!initialized && infoModel is not null) {
+                                                    infoModel.IsLockExit = false;
+                                                }
+
+                                                if (infoModel?.IsLockExit == true) {
+                                                    OnUnLockExitEvent(infoModel);
+                                                    infoModel.IsLockExit = false;
+                                                }
+                                            }
+                                            else {
+                                                if (!initialized && infoModel is not null) {
+                                                    infoModel.IsLockExit = true;
+                                                }
+
+                                                // 锁
+                                                if (infoModel?.IsLockExit == false) {
+                                                    OnLockExitEvent(infoModel);
+                                                    infoModel.IsLockExit = true;
+                                                }
+                                            }
+                                        }
+                                        catch (Exception e) {
+                                            OnExceptionOccurred(new ExceptionEventArgs() {
+                                                ExceptionMessage = e.Message
+                                            });
+                                        }
+                                    })).ToList();
+
+                                    Task.WaitAll(tasks.ToArray());*/
+
+                                    /*
                                     foreach (var model in _lockBindingInfoModels) {
-                                        await Task.Delay(5, token);
+                                        await Task.Delay(50, token);
                                         try {
                                             if (plc is not null) {
                                                 int.TryParse(model.Address, out var address);
 
                                                 var readBytesAsync =
                                                     await plc.ReadBytesAsync(DataType.DataBlock, _packageExitLockSettingsDto.S7Config.Db, address, model.Length, token);
-                                                var infoModel = _definitionInfoModels.FirstOrDefault(f => f.Id.Equals(model.Id));
+                                                var infoModel = _definitionInfoModels.FirstOrDefault(f => f.Id.Equals(model.ExitId));
 
                                                 if (readBytesAsync?.FirstOrDefault() == 0) {
                                                     //解锁
@@ -128,8 +237,9 @@ namespace JayTom.Dws.Client.Service.Sorting {
                                             });
                                         }
                                     }
+                                    */
 
-                                    await Task.Delay(20, token);
+                                    await Task.Delay(150, token);
                                     if (!isInitialized) {
                                         isInitialized = true;
                                         OnInitialized(_definitionInfoModels);
@@ -146,9 +256,9 @@ namespace JayTom.Dws.Client.Service.Sorting {
                 }
             }
             catch (Exception e) {
-                OnExceptionOccurred(new ExceptionEventArgs() {
+                /*OnExceptionOccurred(new ExceptionEventArgs() {
                     ExceptionMessage = e.Message
-                });
+                });*/
                 return new KeyValuePair<bool, string>(false, e.Message);
             }
         }
@@ -197,7 +307,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
         }
 
         protected virtual async void OnLockExitEvent(PackageExitDefinitionInfoModel e) {
-            await Task.Yield();
+            await Task.Delay(1);
             EventAggregator.Instance.Publish(new SortingLogInfoModel {
                 CreateTime = DateTime.Now,
                 Message = $"格口:[{e.ExitName}],锁定",
