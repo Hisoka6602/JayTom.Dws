@@ -2,14 +2,16 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace JayTom.Dws.CloudApiDbTest.Migrations
 {
     [DbContext(typeof(Program.CloudApiContext1))]
-    partial class CloudApiContext1ModelSnapshot : ModelSnapshot
+    [Migration("20240316033610_NewVis")]
+    partial class NewVis
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

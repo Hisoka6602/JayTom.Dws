@@ -46,6 +46,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                         var isMatch = Regex.IsMatch(args.AsciiMessage, _stackedPackageDetectionSettingsDto.RegularExpression);
                         if (isMatch) {
                             //发送
+                            NLog.LogManager.GetCurrentClassLogger().Error($"接收到叠件信号");
                             var tryDequeue = _stackedPackageItems.TryDequeue(out var result);
                             if (tryDequeue && result is not null) {
                                 OnStackedPackageReturned(new StackedPackageEventArgs() {
@@ -113,7 +114,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
             EventAggregator.Instance.Subscribe<TriggerPositionEvent>(async item => {
                 if (item is TriggerPositionEvent { TriggerPosition: TriggerPositionEnum.PackageTrigger } info) {
                     _stackedPackageItems.Enqueue(info.PackageInfo ?? new PackageInfo());
-                    NLog.LogManager.GetCurrentClassLogger().Error($"队列数:{_stackedPackageItems.Count}");
+                    //NLog.LogManager.GetCurrentClassLogger().Error($"队列数:{_stackedPackageItems.Count}");
                 }
             });
         }

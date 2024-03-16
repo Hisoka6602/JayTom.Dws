@@ -276,9 +276,14 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 }, stoppingToken);
                             }
                             else {
-                                infoModel.PhysicalExit = sortingModel.ExitName;
-                                infoModel.PhysicalExitId = sortingModel.ExitId;
-                                isExitInfoUpdate = await _exitInfoRepository.Update(infoModel, stoppingToken);
+                                if (sortingModel.ExitId > 0 && !string.IsNullOrEmpty(sortingModel.ExitName)) {
+                                    infoModel.PhysicalExit = sortingModel.ExitName;
+                                    infoModel.PhysicalExitId = sortingModel.ExitId;
+                                    isExitInfoUpdate = await _exitInfoRepository.Update(infoModel, stoppingToken);
+                                }
+                                else {
+                                    isExitInfoUpdate = true;
+                                }
                             }
                         }
                         if (!isSortingUpdateInfo || !isExitInfoUpdate) {

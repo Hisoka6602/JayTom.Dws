@@ -41,7 +41,6 @@ internal class Program {
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder) {
-            base.OnModelCreating(modelBuilder);
             //data
             {
                 modelBuilder.Entity<PackageInfoModel>()
@@ -157,13 +156,23 @@ internal class Program {
                 modelBuilder.Entity<ImageInfoModel>().HasKey(c => new {
                     c.Id
                 });
-                //设备
+                //聚合包裹信息
                 modelBuilder.Entity<PackageInfoModel>()
-                    .HasOne(b => b.DeviceInfo)
+                    .HasOne(b => b.AggregatePackagesInfo)
                     .WithOne(n => n.PackageInfo)
-                    .HasForeignKey<DeviceInfoModel>(n => n.PackageId)
+                    .HasForeignKey<AggregatePackagesInfoModel>(n => n.PackageId)
                     .OnDelete(DeleteBehavior.Cascade);
-                modelBuilder.Entity<DeviceInfoModel>().HasKey(c => new {
+                modelBuilder.Entity<AggregatePackagesInfoModel>().HasKey(c => new {
+                    c.Id
+                });
+                //指令信息
+
+                modelBuilder.Entity<SortingInfoModel>()
+                    .HasMany(b => b.InstructionInfos)
+                    .WithOne(n => n.SortingInfo)
+                    .HasForeignKey(n => new { n.SortingInfoId })
+                    .OnDelete(DeleteBehavior.Cascade);
+                modelBuilder.Entity<InstructionInfoModel>().HasKey(c => new {
                     c.Id
                 });
             }
