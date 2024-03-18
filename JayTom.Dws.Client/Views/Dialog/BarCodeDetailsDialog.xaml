@@ -825,14 +825,14 @@
                             </Border>
                             <Grid Margin="12,5,0,0" Visibility="{Binding BarCodeItem.RequestStatus, Converter={StaticResource UploadStatusToVisibilityConverter}}">
                                 <Grid.RowDefinitions>
-                                    <RowDefinition Height="40" />
-                                    <RowDefinition Height="40" />
-                                    <RowDefinition Height="100" />
-                                    <RowDefinition Height="40" />
-                                    <RowDefinition Height="100" />
-                                    <RowDefinition Height="100" />
-                                    <RowDefinition Height="100" />
-                                    <RowDefinition Height="100" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="50*" />
@@ -968,7 +968,6 @@
                                         Text="上传内容:" />
                                     <Border
                                         MinHeight="70"
-                                        MaxHeight="100"
                                         Margin="0,5"
                                         HorizontalAlignment="Left"
                                         VerticalAlignment="Center"
@@ -978,7 +977,7 @@
                                             Width="580"
                                             MinHeight="70"
                                             MaxWidth="580"
-                                            MaxHeight="70"
+                                            MaxHeight="200"
                                             Margin="5,0"
                                             VerticalContentAlignment="Top"
                                             Background="Transparent"
@@ -1047,7 +1046,6 @@
                                         Text="响应内容:" />
                                     <Border
                                         MinHeight="70"
-                                        MaxHeight="100"
                                         Margin="0,5"
                                         HorizontalAlignment="Left"
                                         VerticalAlignment="Center"
@@ -1057,7 +1055,7 @@
                                             Width="580"
                                             MinHeight="70"
                                             MaxWidth="580"
-                                            MaxHeight="70"
+                                            MaxHeight="200"
                                             Margin="5,0"
                                             VerticalContentAlignment="Top"
                                             Background="Transparent"
@@ -1090,7 +1088,6 @@
                                         Text="接口参数:" />
                                     <Border
                                         MinHeight="70"
-                                        MaxHeight="100"
                                         Margin="0,5"
                                         HorizontalAlignment="Left"
                                         VerticalAlignment="Center"
@@ -1100,7 +1097,7 @@
                                             Width="580"
                                             MinHeight="70"
                                             MaxWidth="580"
-                                            MaxHeight="70"
+                                            MaxHeight="200"
                                             Margin="5,0"
                                             VerticalContentAlignment="Top"
                                             Background="Transparent"

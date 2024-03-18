@@ -571,6 +571,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 EventAggregator.Instance.Publish(new InstructionReceived() {
                                     Timestamp = new DateTimeOffset(keyValuePair.Value.CreateTime).ToUnixTimeMilliseconds(),
                                     IsCreatedByLowerMachine = true,
+                                    SortingCode = num.ToString(),
                                     InstructionInfos = new List<InstructionInfoModel>()
                                     {
                                         new()

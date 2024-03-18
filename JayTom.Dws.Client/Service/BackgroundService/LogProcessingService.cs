@@ -8,6 +8,7 @@ using JayTom.Dws.Camera;
 using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
 using JayTom.Dws.Plugin.Scale;
+using JayTom.Dws.Data.Package;
 using JayTom.Dws.Data.LocalLog;
 using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
@@ -15,6 +16,7 @@ using System.Collections.Concurrent;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Models.Cameras;
 using JayTom.Dws.Client.Service.Device;
+using JayTom.Dws.Client.Service.Sorting;
 using JayTom.Dws.Domain.Repository.LocalLog;
 using JayTom.Dws.Client.Service.ExternalDataService;
 using static JayTom.Dws.Client.Service.BackgroundService.SubmitApiBackgroundService;
@@ -39,6 +41,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private readonly IExceptionLogRepository _exceptionLogRepository;
         private readonly IDeviceService _deviceService;
         private readonly IExternalDataService _externalDataService;
+        private readonly ISortingService _sortingService;
+        private readonly IExitMonitor _exitMonitor;
         private ConcurrentQueue<ExceptionLogInfoModel> _exceptionItems = new();
         private ConcurrentQueue<AppLogInfoModel> _appLogItems = new();
         private ConcurrentQueue<CameraLogInfoModel> _cameraLogItems = new();
@@ -67,7 +71,9 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             ICleanupLogRepository cleanupLogRepository,
             IExceptionLogRepository exceptionLogRepository,
             IDeviceService deviceService,
-            IExternalDataService externalDataService) {
+            IExternalDataService externalDataService,
+            ISortingService sortingService,
+            IExitMonitor exitMonitor) {
             _appLogRepository = appLogRepository;
             _cameraLogRepository = cameraLogRepository;
             _sortingLogRepository = sortingLogRepository;
@@ -82,6 +88,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             _exceptionLogRepository = exceptionLogRepository;
             _deviceService = deviceService;
             _externalDataService = externalDataService;
+            _sortingService = sortingService;
+            _exitMonitor = exitMonitor;
             EventAggregator.Instance.Subscribe<SettingsChangedEvent>(item => {
                 if (item is SettingsChangedEvent model) {
                     _appLogItems.Enqueue(new AppLogInfoModel() {
@@ -109,7 +117,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             EventAggregator.Instance.Subscribe<CameraLogInfoModel>(item => {
                 if (item is CameraLogInfoModel model) {
                     //添加
-
                     _cameraLogItems.Enqueue(model);
                 }
             });
@@ -121,6 +128,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     _sortingLogItems.Enqueue(model);
                 }
             });
+
             //称重日志队列
             EventAggregator.Instance.Subscribe<WeighingLogInfoModel>(item => {
                 if (item is WeighingLogInfoModel model) {
@@ -143,6 +151,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     //添加
 
                     _apiLogInfoItems.Enqueue(model);
+                    NLog.LogManager.GetCurrentClassLogger().Info($"{model.RequestTime:yyyy-MM-dd HH:mm:ss.fff}--[Api请求]-{model.RequestContent}");
+                    NLog.LogManager.GetCurrentClassLogger().Info($"{model.ResponseTime:yyyy-MM-dd HH:mm:ss.fff}--[Api响应]-{model.ResponseContent}");
                 }
             });
             //输出日志队列
@@ -159,6 +169,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     //添加
 
                     _inputLogItems.Enqueue(model);
+
+                    NLog.LogManager.GetCurrentClassLogger().Info($"{model.CreateTime:yyyy-MM-dd HH:mm:ss.fff}--[输入]-{model.Message}");
                 }
             });
             //Ocr日志队列
@@ -190,6 +202,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     _isWindowsClose = true;
                 }
             });
+
             _deviceService.BarcodeScanned += delegate (object? sender, BarcodeReadEventArgs args) {
                 EventAggregator.Instance.Publish(new CameraLogInfoModel() {
                     Type = LogType.Information,
@@ -316,7 +329,32 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     Message = $"获取到外部TCP输入:{args.SourceContent}",
                 });
             };
+            _exitMonitor.LockExitEvent += (sender, model) => {
+                NLog.LogManager.GetCurrentClassLogger().Info($"{model.CreateTime:yyyy-MM-dd HH:mm:ss.fff}--[锁格]-[格口号:{model.ExitName}]锁定");
+            };
+            _exitMonitor.UnLockExitEvent += (sender, model) => {
+                NLog.LogManager.GetCurrentClassLogger().Info($"{model.CreateTime:yyyy-MM-dd HH:mm:ss.fff}--[锁格]-[格口号:{model.ExitName}]解锁");
+            };
+            EventAggregator.Instance.Subscribe<InstructionReceived>(async item => {
+                await Task.Delay(200);
+                if (item is InstructionReceived model && model.InstructionInfos?.Any() == true
+                    ) {
+                    var instructionInfoModel = model.InstructionInfos.FirstOrDefault();
+                    switch (instructionInfoModel?.InstructionType) {
+                        case InstructionTypeType.CreatePackage:
+                            NLog.LogManager.GetCurrentClassLogger().Info($"{instructionInfoModel?.InstructionGeneratedTime:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[格口号:{model.ExitName}]-[序号:{model.SortingCode}]-[创建]{instructionInfoModel?.InstructionContent}");
+                            break;
 
+                        case InstructionTypeType.SendSorting:
+                            NLog.LogManager.GetCurrentClassLogger().Info($"{instructionInfoModel?.InstructionGeneratedTime:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[格口号:{model.ExitName}]-[序号:{model.SortingCode}]-[发送]{instructionInfoModel?.InstructionContent}");
+                            break;
+
+                        case InstructionTypeType.SignalCallback:
+                            NLog.LogManager.GetCurrentClassLogger().Info($"{instructionInfoModel?.InstructionGeneratedTime:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[格口号:{model.ExitName}]-[序号:{model.SortingCode}]-[分拣完成]{instructionInfoModel?.InstructionContent}");
+                            break;
+                    }
+                }
+            });
             //http
             EventAggregator.Instance.Subscribe<ApiResponseReceived>(item => {
                 if (item is ApiResponseReceived model) {
@@ -334,6 +372,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     });
                 }
             });
+
+            //写出log字符串的信息
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken) {

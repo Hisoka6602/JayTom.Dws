@@ -79,7 +79,7 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
                         keywordPosition = 2;
                         break;
 
-                    case 0x22://原0x21,菜鸟项目改成0x22
+                    case 0x21://原0x21,菜鸟项目改成0x22
                         type = FunctionType.RemovePackage;
                         description = $"移除包裹";
                         hexString = BitConverter.ToString(new[] { bytes[2], bytes[3] })
@@ -90,9 +90,17 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
                         keywordPosition = 2;
                         break;
 
-                        /*case 0x22:
-                            type = FunctionType.None;
-                            break;*/
+                    case 0x22:
+                        /*type = FunctionType.None;*/
+                        type = FunctionType.RemovePackage;
+                        description = $"移除包裹";
+                        hexString = BitConverter.ToString(new[] { bytes[2], bytes[3] })
+                            .Replace("-", string.Empty).Replace(" ", string.Empty);
+                        if (int.TryParse(hexString, System.Globalization.NumberStyles.HexNumber, null, out number)) {
+                            key = number.ToString();
+                        }
+                        keywordPosition = 2;
+                        break;
                 }
 
                 return new DeviceDecodeResult() {

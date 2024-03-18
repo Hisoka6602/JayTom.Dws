@@ -3,6 +3,7 @@ using System.Linq;
 using Newtonsoft.Json;
 using System.Threading;
 using System.Diagnostics;
+using static ImTools.ImMap;
 using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
 using JayTom.Dws.Data.Package;
@@ -41,6 +42,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private ConcurrentQueue<SavedImageInfo> _savedImageItems = new();
         private ConcurrentQueue<InstructionReceived> _instructionItems = new();
         private ConcurrentQueue<ExceptionSortingReceived> _exceptionSortingItems = new();
+        private ConcurrentQueue<SortingExitReceived> _sortingExitItems = new();
         private static bool _isWindowsClose;
 
         public DataProcessingBackgroundService(IPackageRepository packageRepository,
@@ -98,6 +100,13 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     _isWindowsClose = true;
                 }
             });
+            EventAggregator.Instance.Subscribe<SortingExitReceived>(async item => {
+                if (item is SortingExitReceived info) {
+                    _sortingExitItems.Enqueue(info);
+                }
+            });
+
+            //SortingExitReceived
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
@@ -219,7 +228,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         var sortingInfoModel = await _sortingRepository.
                             FirstOrDefault(f =>
                                 f.PackageId.Equals(packageInfoModel.Id), stoppingToken);
-                        bool isSortingUpdateInfo, isExitInfoUpdate;
+                        bool isSortingUpdateInfo;
                         if (sortingInfoModel is null) {
                             //存到表
                             isSortingUpdateInfo = await _sortingRepository.Insert(new SortingInfoModel() {
@@ -235,11 +244,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                     InstructionContent = s.InstructionContent,
                                     InstructionGeneratedTime = s.InstructionGeneratedTime,
                                 })?.ToList() ?? new List<InstructionInfoModel>()
-                            }, stoppingToken);
-                            isExitInfoUpdate = await _exitInfoRepository.Insert(new ExitInfoModel() {
-                                PackageId = packageInfoModel.Id,
-                                PhysicalExit = sortingModel.ExitName,
-                                PhysicalExitId = sortingModel.ExitId,
                             }, stoppingToken);
                         }
                         else {
@@ -266,27 +270,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             }
 
                             isSortingUpdateInfo = await _sortingRepository.Update(sortingInfoModel, stoppingToken);
-
-                            var infoModel = await _exitInfoRepository.FirstOrDefault(f => f.PackageId.Equals(packageInfoModel.Id), stoppingToken);
-                            if (infoModel is null) {
-                                isExitInfoUpdate = await _exitInfoRepository.Insert(new ExitInfoModel() {
-                                    PackageId = packageInfoModel.Id,
-                                    PhysicalExit = sortingModel.ExitName,
-                                    PhysicalExitId = sortingModel.ExitId,
-                                }, stoppingToken);
-                            }
-                            else {
-                                if (sortingModel.ExitId > 0 && !string.IsNullOrEmpty(sortingModel.ExitName)) {
-                                    infoModel.PhysicalExit = sortingModel.ExitName;
-                                    infoModel.PhysicalExitId = sortingModel.ExitId;
-                                    isExitInfoUpdate = await _exitInfoRepository.Update(infoModel, stoppingToken);
-                                }
-                                else {
-                                    isExitInfoUpdate = true;
-                                }
-                            }
                         }
-                        if (!isSortingUpdateInfo || !isExitInfoUpdate) {
+                        if (!isSortingUpdateInfo) {
                             _instructionItems.Enqueue(sortingModel);
                         }
                     }
@@ -311,6 +296,26 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     }
                     else {
                         _exceptionSortingItems.Enqueue(exceptionSortingModel);
+                    }
+                }
+
+                var isSortingExit = _sortingExitItems.TryDequeue(out var sortingExitModel);
+                if (isSortingExit && sortingExitModel is not null) {
+                    var (key, value) = await _packageRepository.FirstOrDefaultInfo(f => f.PackageTimestamped.Equals(sortingExitModel.Timestamp),
+                        stoppingToken);
+                    if (key && value is not null) {
+                        var isExitInfoUpdate = await _exitInfoRepository.Insert(new ExitInfoModel() {
+                            PackageId = value.Id,
+                            PhysicalExit = sortingExitModel.ExitName,
+                            PhysicalExitId = sortingExitModel.ExitId,
+                            TheoreticalExit = sortingExitModel.ExitName
+                        }, stoppingToken);
+                        if (!isExitInfoUpdate) {
+                            _sortingExitItems.Enqueue(sortingExitModel);
+                        }
+                    }
+                    else {
+                        _sortingExitItems.Enqueue(sortingExitModel);
                     }
                 }
                 await Task.Delay(50, stoppingToken);

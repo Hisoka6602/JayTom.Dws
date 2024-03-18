@@ -125,14 +125,18 @@
                                     MaxWidth="170"
                                     Margin="5,0"
                                     VerticalAlignment="Center"
+                                    materialDesign:HintAssist.Hint="yyyy-MM-dd HH:mm:ss"
                                     materialDesign:TextFieldAssist.HasClearButton="False"
                                     BorderThickness="0"
-                                    Focusable="False"
+                                    Focusable="True"
                                     FontSize="12"
                                     FontWeight="Bold"
                                     Foreground="White"
-                                    IsReadOnly="True"
-                                    Text="{Binding StartTime, StringFormat={}{0:yyyy-MM-dd HH:mm:ss}}" />
+                                    Text="{Binding StartTime, StringFormat={}{0:yyyy-MM-dd HH:mm:ss}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                    <TextBox.InputBindings>
+                                        <KeyBinding Key="Enter" Command="{Binding SearchDataCommand}" />
+                                    </TextBox.InputBindings>
+                                </TextBox>
                                 <Button
                                     Width="30"
                                     Margin="0,0,0,0"
@@ -178,14 +182,17 @@
                                     MaxWidth="170"
                                     Margin="5,0"
                                     VerticalAlignment="Center"
+                                    materialDesign:HintAssist.Hint="yyyy-MM-dd HH:mm:ss"
                                     materialDesign:TextFieldAssist.HasClearButton="False"
                                     BorderThickness="0"
-                                    Focusable="False"
                                     FontSize="12"
                                     FontWeight="Bold"
                                     Foreground="White"
-                                    IsReadOnly="True"
-                                    Text="{Binding EndTime, StringFormat={}{0:yyyy-MM-dd HH:mm:ss}}" />
+                                    Text="{Binding EndTime, StringFormat={}{0:yyyy-MM-dd HH:mm:ss}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                    <TextBox.InputBindings>
+                                        <KeyBinding Key="Enter" Command="{Binding SearchDataCommand}" />
+                                    </TextBox.InputBindings>
+                                </TextBox>
                                 <Button
                                     Width="30"
                                     Margin="0,0,0,0"
@@ -210,7 +217,7 @@
                             </StackPanel>
                         </Border>
                     </StackPanel>
-                    <!--  时间戳Guid  -->
+                    <!--  格口  -->
                     <StackPanel
                         Margin="5,0"
                         VerticalAlignment="Center"
@@ -221,26 +228,32 @@
                             FontSize="16"
                             FontWeight="Bold"
                             Foreground="WhiteSmoke"
-                            Text="{x:Static languages:Language.TimestampGuid}" />
+                            Text="格口:" />
                         <Border
                             Margin="5"
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center"
                             Background="#1A696969"
                             CornerRadius="5">
-                            <TextBox
-                                Width="100"
+                            <ComboBox
                                 Height="30"
-                                MaxWidth="170"
-                                Margin="5,0"
-                                materialDesign:TextFieldAssist.HasClearButton="False"
-                                materialDesign:TextFieldAssist.HasFilledTextField="True"
-                                Background="Transparent"
+                                MinWidth="150"
+                                Padding="5,0"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                HorizontalContentAlignment="Center"
+                                VerticalContentAlignment="Center"
+                                materialDesign:ButtonAssist.CornerRadius="15"
+                                materialDesign:ColorZoneAssist.Mode="Dark"
                                 BorderThickness="0"
-                                FontSize="15"
+                                DisplayMemberPath="ExitName"
+                                FontSize="12"
                                 FontWeight="Bold"
                                 Foreground="White"
-                                Text="{Binding TimestampedGuid, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                                ItemsSource="{Binding PackageExitDefinitionItems, UpdateSourceTrigger=PropertyChanged}"
+                                SelectedItem="{Binding SelectExitDefinitionInfo, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                SelectedValuePath="Id"
+                                Style="{StaticResource MaterialDesignComboBox}" />
                         </Border>
                     </StackPanel>
                     <!--  条码  -->
@@ -262,7 +275,7 @@
                             Background="#1A696969"
                             CornerRadius="5">
                             <TextBox
-                                Width="150"
+                                Width="220"
                                 Height="30"
                                 MaxWidth="170"
                                 Margin="5,0"
@@ -273,7 +286,11 @@
                                 FontSize="15"
                                 FontWeight="Bold"
                                 Foreground="White"
-                                Text="{Binding BarCode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                                Text="{Binding BarCode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                                <TextBox.InputBindings>
+                                    <KeyBinding Key="Enter" Command="{Binding SearchDataCommand}" />
+                                </TextBox.InputBindings>
+                            </TextBox>
                         </Border>
                     </StackPanel>
                     <!--  重量范围  -->

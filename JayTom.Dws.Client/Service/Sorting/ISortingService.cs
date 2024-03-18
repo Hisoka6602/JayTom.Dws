@@ -400,4 +400,50 @@ namespace JayTom.Dws.Client.Service.Sorting {
         /// </summary>
         public string SortingCode { get; set; } = string.Empty;
     }
+
+    public class SortingExitReceived {
+
+        /// <summary>
+        /// 包裹关联时间戳
+        /// </summary>
+        public long Timestamp { get; set; }
+
+        /// <summary>
+        /// 条码
+        /// </summary>
+        public string BarCode { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 扫码时间
+        /// </summary>
+        public DateTime? ScanTime { get; set; }
+
+        /// <summary>
+        /// 格口Id
+        /// </summary>
+        public long ExitId { get; set; }
+
+        /// <summary>
+        /// 格口名称
+        /// </summary>
+        public string ExitName { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 格口类型
+        /// </summary>
+        public SortingExitType ExitType { get; set; }
+    }
+
+    public enum SortingExitType {
+
+        /// <summary>
+        /// 物理格口
+        /// </summary>
+        PhysicalExit,
+
+        /// <summary>
+        /// 理论格口
+        /// </summary>
+        TheoreticalExit
+    }
 }

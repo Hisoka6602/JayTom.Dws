@@ -101,6 +101,8 @@ namespace JayTom.Dws.Client.Service.Sorting {
 
         public event EventHandler<PackageInstructionEventArgs>? RemovePackageEvent;
 
+        public event EventHandler<PackageInstructionEventArgs>? SendInstruction;
+
         public event EventHandler<string>? ClearExceptionEvent;
 
         public DefaultSortingService(IConfigRepository configRepository,
@@ -468,6 +470,14 @@ namespace JayTom.Dws.Client.Service.Sorting {
                     f.ExitId.Equals(packageExitDefinitionInfoModel.Id));
 
                 if (sortingInstructionBindingInfoModel is not null) {
+                    EventAggregator.Instance.Publish(new SortingExitReceived {
+                        ScanTime = param.ScanTime,
+                        BarCode = param.BarCode,
+                        Timestamp = param.Timestamp,
+                        ExitName = packageExitDefinitionInfoModel.ExitName,
+                        ExitId = packageExitDefinitionInfoModel.Id,
+                        ExitType = SortingExitType.PhysicalExit
+                    });
                     var sortingInstructionInfoModels = _sortingInstructionInfoModels.Where(w =>
                             w.InstructionBindingId.Equals(sortingInstructionBindingInfoModel.Id))
                         ?.ToList();
@@ -728,16 +738,11 @@ namespace JayTom.Dws.Client.Service.Sorting {
         private async void SubSorting(SortingParam param, CancellationToken token = default) {
             //取出格口指令
             //判断格口是否生效
+            PackageExitDefinitionInfoModel? exitDefinitionInfoModel = null;
             if (param.IsStackedPackage && _stackedPackageDetectionSettingsDto?.IsAutoExceptionSorting == true) {
                 //走异常口
                 ExceptionSorting(param, token);
-                //无分拣指令
-                EventAggregator.Instance.Publish(new ExceptionSortingReceived {
-                    ScanTime = param.ScanTime,
-                    BarCode = param.BarCode,
-                    Timestamp = param.Timestamp,
-                    PackageCloudAbnormalSortingType = PackageCloudAbnormalSortingType.StackedPackage
-                });
+
                 return;
             }
             var packageExitDefinitionInfoModel = _packageExitDefinitionInfos.FirstOrDefault(f => f.Id.Equals(param.ExitId) &&
@@ -746,18 +751,12 @@ namespace JayTom.Dws.Client.Service.Sorting {
                 if (packageExitDefinitionInfoModel.IsLockExit) {
                     //判断备用格口
 
-                    var exitDefinitionInfoModel = _packageExitDefinitionInfos.FirstOrDefault(f => f is { IsLockExit: false, IsActive: true } &&
+                    exitDefinitionInfoModel = _packageExitDefinitionInfos.FirstOrDefault(f => f is { IsLockExit: false, IsActive: true } &&
                         f.Pid == packageExitDefinitionInfoModel.Id);
                     if (exitDefinitionInfoModel is null) {
                         //走异常口
                         ExceptionSorting(param, token);
-                        //无分拣指令
-                        EventAggregator.Instance.Publish(new ExceptionSortingReceived {
-                            ScanTime = param.ScanTime,
-                            BarCode = param.BarCode,
-                            Timestamp = param.Timestamp,
-                            PackageCloudAbnormalSortingType = PackageCloudAbnormalSortingType.NoSortingInstruction
-                        });
+                        return;
                     }
                     else {
                         param.ExitId = exitDefinitionInfoModel.Id;
@@ -766,7 +765,17 @@ namespace JayTom.Dws.Client.Service.Sorting {
 
                 var sortingInstructionBindingInfoModel = _sortingInstructionBindingInfoModels.FirstOrDefault(f =>
                     f.ExitId.Equals(param.ExitId));
-                if (sortingInstructionBindingInfoModel is not null) {
+                if (sortingInstructionBindingInfoModel is not null && exitDefinitionInfoModel is not null) {
+                    //回调格口信息
+                    EventAggregator.Instance.Publish(new SortingExitReceived {
+                        ScanTime = param.ScanTime,
+                        BarCode = param.BarCode,
+                        Timestamp = param.Timestamp,
+                        ExitName = exitDefinitionInfoModel.ExitName,
+                        ExitId = exitDefinitionInfoModel.Id,
+                        ExitType = SortingExitType.PhysicalExit
+                    });
+
                     //执行分拣
                     //判断指令提交方式
                     var sortingInstructionInfoModels = _sortingInstructionInfoModels.Where(w =>
@@ -838,7 +847,8 @@ namespace JayTom.Dws.Client.Service.Sorting {
                                 return apiResponse.ResponseContent.Contains(apiRuleJsonDto.SearchStringContent);
                             }
                             else if (apiRuleJsonDto.IsUseJsonField) {
-                                var reader = new Utf8JsonReader(Encoding.UTF8.GetBytes(apiResponse.ResponseContent));
+                                var replace = Regex.Replace(apiResponse.ResponseContent, @"[\u0000-\u001f\b]", "");
+                                var reader = new Utf8JsonReader(Encoding.UTF8.GetBytes(replace));
                                 var tryParseValue = JsonDocument.TryParseValue(ref reader, out var document);
                                 if (tryParseValue && document is not null) {
                                     var fieldValue = FindFieldValue(document.RootElement, apiRuleJsonDto.JsonField);
@@ -996,6 +1006,11 @@ namespace JayTom.Dws.Client.Service.Sorting {
         protected virtual async void OnClearExceptionEvent(string e) {
             await Task.Yield();
             ClearExceptionEvent?.Invoke(this, e);
+        }
+
+        protected virtual async void OnSendInstruction(PackageInstructionEventArgs e) {
+            await Task.Yield();
+            SendInstruction?.Invoke(this, e);
         }
     }
 }

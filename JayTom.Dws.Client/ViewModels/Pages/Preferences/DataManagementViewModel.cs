@@ -19,6 +19,7 @@ using MaterialDesignThemes.Wpf;
 using System.Windows.Threading;
 using System.Collections.Generic;
 using JayTom.Dws.Domain.Converters;
+using Microsoft.EntityFrameworkCore;
 using JayTom.Dws.Client.Views.Dialog;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Views.Editors;
@@ -29,6 +30,8 @@ using JayTom.Dws.Client.ViewModels.Dialog;
 using JayTom.Dws.Client.ViewModels.Editors;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Repository.LocalData;
+using JayTom.Dws.Client.Models.PackageSorting;
+using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
@@ -44,61 +47,20 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         private int _pageCount;
         private int _pageIndex;
         private SnackbarMessageQueue _dataManagementMessageQueue = new(TimeSpan.FromSeconds(2));
-        private long _timestampedGuid;
         private string _barCode = string.Empty;
         private float _minWeight;
         private float _maxWeight;
         private bool _isLoaded;
 
         private ObservableCollection<BarCodeItemModel> _barCodeItems = new() {
-            /*new BarCodeItemModel()
-            {
-                Num = 1,
-                TimestampedGuid=13800138000,
-                Barcode = "SF12345678",
-                Weight=(float)1.1,
-                Volume=(float)2.2,
-                Length=(float)3.3,
-                Width=(float)4.4,
-                Height=(float)5.5,
-                ScanTime=DateTime.Now,
-                RequestStatus= UploadStatus.Succeeded,
-                RequestTime=DateTime.Now,
-                RequestContent="上传内容",
-                ResponseTime=DateTime.Now,
-                ResponseContent="响应内容",
-                BarcodeImagePath=@"C:\Users\77051\Desktop\15.jpg",
-                PanoramaImagePath=@"C:\Users\77051\Desktop\16.jpg",
-                IsBarcodeImageExists = @"C:\Users\77051\Desktop\15.jpg".IsFileExists(),
-                IsPanoramaImageExists = @"C:\Users\77051\Desktop\16.jpg".IsFileExists()
-            },
-            new BarCodeItemModel()
-            {
-                Num = 1,
-                TimestampedGuid=13800138000,
-                Barcode = "43333856561",
-                Weight=(float)1.1,
-                Volume=(float)2.2,
-                Length=(float)3.3,
-                Width=(float)4.4,
-                Height=(float)5.5,
-                ScanTime=DateTime.Now,
-                RequestStatus= UploadStatus.Succeeded,
-                RequestTime=DateTime.Now,
-                RequestContent="上传内容",
-                ResponseTime=DateTime.Now,
-                ResponseContent="响应内容",
-                BarcodeImagePath=@"C:\Users\77051\Desktop\15.jpg",
-                PanoramaImagePath=@"C:\Users\77051\Desktop\16.jpg",
-                IsBarcodeImageExists = @"C:\Users\77051\Desktop\15.jpg".IsFileExists(),
-                IsPanoramaImageExists = @"C:\Users\77051\Desktop\166.jpg".IsFileExists()
-            },*/
         };
 
         private UploadStatus? _selectedUploadStatus;
         private ObservableCollection<UploadStatus> _uploadStatusList = new(Enum.GetValues(typeof(UploadStatus)).Cast<UploadStatus>());
         private double _pageMaxHeight;
         private VolumeUnit _volumeUnit;
+        private ObservableCollection<PackageExitDefinitionItemInfoModel> _packageExitDefinitionItems = new();
+        private PackageExitDefinitionItemInfoModel? _selectExitDefinitionInfo;
 
         public DataManagementViewModel(IDialogService dialogService,
             IExcel excel,
@@ -156,12 +118,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             set => SetProperty(ref _endTime, value);
         }
 
-        /// <summary>
-        /// 时间戳
-        /// </summary>
-        public long TimestampedGuid {
-            get => _timestampedGuid;
-            set => SetProperty(ref _timestampedGuid, value);
+        public ObservableCollection<PackageExitDefinitionItemInfoModel> PackageExitDefinitionItems {
+            get => _packageExitDefinitionItems;
+            set => SetProperty(ref _packageExitDefinitionItems, value);
+        }
+
+        public PackageExitDefinitionItemInfoModel? SelectExitDefinitionInfo {
+            get => _selectExitDefinitionInfo;
+            set => SetProperty(ref _selectExitDefinitionInfo, value);
         }
 
         /// <summary>
@@ -325,7 +289,27 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             get => new DelegateCommand<Page>(LoadedDelegate);
         }
 
-        private void LoadedDelegate(Page obj) {
+        private async void LoadedDelegate(Page obj) {
+            var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0,
+                o => o.CreateTime);
+            PackageExitDefinitionItems.Clear();
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+                PackageExitDefinitionItems.Clear();
+                var packageExitDefinitionItemInfoModels = packageExitDefinitionInfoModels?.Select((s, i) => new PackageExitDefinitionItemInfoModel {
+                    CreateTime = s.CreateTime,
+                    ExitName = s.ExitName,
+                    Id = s.Id,
+                    IsActive = s.IsActive,
+                    ModifyTime = s.ModifyTime,
+                    Num = i + 1,
+                    Remarks = s.Remarks,
+                    Type = s.Type
+                })?.ToList();
+
+                if (packageExitDefinitionItemInfoModels?.Any() == true) {
+                    PackageExitDefinitionItems.AddRange(packageExitDefinitionItemInfoModels);
+                }
+            });
             if (!_isLoaded) {
                 var parentContainer = PluginInterface.Utils.Utils.GetParentContainer<Grid>(obj, f => f.Visibility == Visibility.Visible);
                 if (parentContainer is not null) {
@@ -476,7 +460,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
                 StartTime = null;
                 EndTime = null;
-                TimestampedGuid = 0;
+                SelectExitDefinitionInfo = null;
                 MinWeight = MaxWeight = 0;
                 BarCode = string.Empty;
                 SelectedUploadStatus = null;
@@ -572,8 +556,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
 
                             (StartTime == null || s.BarCodeInfo.ScanTime >= StartTime) &&
                             (EndTime == null || s.BarCodeInfo.ScanTime <= EndTime) &&
-                            (string.IsNullOrWhiteSpace(BarCode) || s.BarCodeInfo.Barcode.Contains(BarCode)) &&
-                            (TimestampedGuid <= 0 || s.PackageTimestamped.Equals(TimestampedGuid)) &&
+                            (string.IsNullOrWhiteSpace(BarCode) || EF.Functions.Like(s.BarCodeInfo.Barcode, "%" + BarCode + "%")) &&
+                            (SelectExitDefinitionInfo == null || (s.ExitInfo != null && s.ExitInfo.PhysicalExit.Equals(SelectExitDefinitionInfo.ExitName))) &&
                             (MinWeight <= 0 || s.WeightInfo.FormattedWeight >= MinWeight) &&
                             (MaxWeight <= 0 || s.WeightInfo.FormattedWeight <= MaxWeight) &&
                             (SelectedUploadStatus == null || (s.UploadInfo != null && s.UploadInfo.RequestStatus.Equals(SelectedUploadStatus))),
@@ -584,8 +568,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                                 s.BarCodeInfo != null && s.WeightInfo != null &&
                                 (StartTime == null || s.BarCodeInfo.ScanTime >= StartTime) &&
                                 (EndTime == null || s.BarCodeInfo.ScanTime <= EndTime) &&
-                                (string.IsNullOrWhiteSpace(BarCode) || s.BarCodeInfo.Barcode.Contains(BarCode)) &&
-                                (TimestampedGuid <= 0 || s.PackageTimestamped.Equals(TimestampedGuid)) &&
+                                (string.IsNullOrWhiteSpace(BarCode) || EF.Functions.Like(s.BarCodeInfo.Barcode, "%" + BarCode + "%")) &&
+                                (SelectExitDefinitionInfo == null || (s.ExitInfo != null && s.ExitInfo.PhysicalExit.Equals(SelectExitDefinitionInfo.ExitName))) &&
                                 (MinWeight <= 0 || s.WeightInfo.FormattedWeight >= MinWeight) &&
                                 (MaxWeight <= 0 || s.WeightInfo.FormattedWeight <= MaxWeight) &&
                                 (SelectedUploadStatus == null || (s.UploadInfo != null && s.UploadInfo.RequestStatus.Equals(SelectedUploadStatus))),
