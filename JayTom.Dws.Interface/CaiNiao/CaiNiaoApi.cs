@@ -268,7 +268,7 @@ namespace JayTom.Dws.Interface.CaiNiao {
                 stopwatch.Start();
                 try {
                     using (var httpClient = _httpClientFactory.CreateClient("INSURANCE")) {
-                        httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut);
+                        httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut * 5);
                         HttpResponseMessage message;
                         using (Stream dataStream =
                                new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data)))) {
@@ -281,6 +281,7 @@ namespace JayTom.Dws.Interface.CaiNiao {
 
                         resultContent = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
                         resultContent = Regex.Unescape(resultContent);
+                        NLog.LogManager.GetCurrentClassLogger().Error($"分拣报告返回:{resultContent}");
                     }
                 }
                 finally {
@@ -317,7 +318,7 @@ namespace JayTom.Dws.Interface.CaiNiao {
             stopwatch.Start();
             try {
                 using (var httpClient = _httpClientFactory.CreateClient("INSURANCE")) {
-                    httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut);
+                    httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut * 5);
                     HttpResponseMessage message;
                     using (Stream dataStream =
                            new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data)))) {

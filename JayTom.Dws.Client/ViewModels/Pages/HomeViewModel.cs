@@ -853,6 +853,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                                 return;
                             }
                             */
+#if !DEBUG
 
                             var licenseDirectory = Path.Combine(AppContext.BaseDirectory, "License");
                             if (!Directory.Exists(licenseDirectory)) {
@@ -907,6 +908,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                                 HomeMessageQueue.Enqueue("未检测到授权文件");
                                 return;
                             }
+#endif
 
                             //启动
                             await _externalDataService.Start();

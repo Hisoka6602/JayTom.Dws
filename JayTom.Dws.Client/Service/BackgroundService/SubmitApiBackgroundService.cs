@@ -49,7 +49,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private static RoutDataApi.ApiParameters _rstDataApiParam = new();
         private static CaiNiaoApi.ApiParameters _caiNiaoApiParam = new();
         private ConcurrentQueue<SavedImageInfo> _savedImageItems = new();
-        private ConcurrentQueue<PackageInfoModel> _callBackItems = new();
+        private ConcurrentQueue<CallBackPackageInfo> _callBackItems = new();
         private ConcurrentQueue<PackageAggregationInfo> _packageAggregationInfoItems = new();
 
         #region 非通用版本变量(临时)
@@ -304,10 +304,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             //包裹完结
             EventAggregator.Instance.Subscribe<CallBackPackageInfo>(async item => {
                 if (item is CallBackPackageInfo info) {
-                    var (key, value) = await _packageRepository.FirstOrDefaultInfo(f => f.PackageCreateTime.Equals(info.CreateTime));
-                    if (key && value is not null) {
-                        _callBackItems.Enqueue(value);
-                    }
+                    _callBackItems.Enqueue(info);
                 }
             });
 
@@ -567,8 +564,13 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 //格口分拣后回调提交
                 var callBackDequeue = _callBackItems.TryDequeue(out var callBackModel);
                 if (callBackDequeue && callBackModel is not null) {
-                    //提交Api回调(判断需要使用的Api-Task.Factory.StartNew)
                     Task.Factory.StartNew(async () => {
+                        var (_, packageInfo) = await _packageRepository.FirstOrDefaultInfo(f => f.PackageCreateTime.Equals(callBackModel.CreateTime), stoppingToken);
+                        if (packageInfo is null) {
+                            _callBackItems.Enqueue(callBackModel);
+                            return;
+                        }
+
                         IDataUploader uploader;
                         UploadResponse? uploadResponse = null;
                         switch (_apiSettingsDto?.Type) {
@@ -580,18 +582,18 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 uploader = new CaiNiaoApi(_httpClientFactory);
                                 var (key, value) = await uploader.SetParameters(_caiNiaoApiParam);
                                 if (key) {
-                                    uploader.UploadInBackground(callBackModel.BarCodeInfo?.Barcode ?? string.Empty, callBackModel.WeightInfo?.FormattedWeight ?? 0,
-                                        callBackModel.BarCodeInfo?.ScanTime ?? DateTime.Now, imageInfo: new UploadImageInfo() {
-                                            CameraCustomName = callBackModel.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
-                                            CameraName = callBackModel.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
-                                            CameraSerialNumber = callBackModel.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
+                                    uploader.UploadInBackground(packageInfo.BarCodeInfo?.Barcode ?? string.Empty, packageInfo.WeightInfo?.FormattedWeight ?? 0,
+                                        packageInfo.BarCodeInfo?.ScanTime ?? DateTime.Now, imageInfo: new UploadImageInfo() {
+                                            CameraCustomName = packageInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
+                                            CameraName = packageInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
+                                            CameraSerialNumber = packageInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
                                         }, other: new ReportChuteInfo {
-                                            ChuteCode = callBackModel.ExitInfo?.PhysicalExit ?? string.Empty,
-                                            ChuteCodePhysical = callBackModel.ExitInfo?.PhysicalExit ?? string.Empty,
-                                            ErrorReson = (string.IsNullOrEmpty(callBackModel.BarCodeInfo?.Barcode) || callBackModel.BarCodeInfo?.Barcode.ToLower().Equals("noread") == true) ?
-                                               "无条码" : "分拣成功 ",
-                                            Status = (string.IsNullOrEmpty(callBackModel.BarCodeInfo?.Barcode) || callBackModel.BarCodeInfo?.Barcode.ToLower().Equals("noread") == true) ?
-                                               1 : 0,
+                                            ChuteCode = packageInfo.ExitInfo?.PhysicalExit ?? string.Empty,
+                                            ChuteCodePhysical = packageInfo.ExitInfo?.PhysicalExit ?? string.Empty,
+                                            ErrorReson = (string.IsNullOrEmpty(packageInfo.BarCodeInfo?.Barcode) || packageInfo.BarCodeInfo?.Barcode.ToLower().Equals("noread") == true) ?
+                                                "无条码" : "分拣成功 ",
+                                            Status = (string.IsNullOrEmpty(packageInfo.BarCodeInfo?.Barcode) || packageInfo.BarCodeInfo?.Barcode.ToLower().Equals("noread") == true) ?
+                                                1 : 0,
                                         }, token: stoppingToken);
                                 }
                                 else {
