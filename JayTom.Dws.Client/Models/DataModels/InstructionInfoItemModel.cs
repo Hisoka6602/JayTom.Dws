@@ -11,7 +11,7 @@ namespace JayTom.Dws.Client.Models.DataModels {
     public class InstructionInfoItemModel : BindableBase {
         private string _instructionContent = string.Empty;
         private DateTime _instructionGeneratedTime;
-        private InstructionTypeType _instructionType = InstructionTypeType.None;
+        private InstructionType _instructionType = InstructionType.None;
 
         /// <summary>
         /// 指令内容
@@ -32,7 +32,7 @@ namespace JayTom.Dws.Client.Models.DataModels {
         /// <summary>
         /// 指令类型
         /// </summary>
-        public InstructionTypeType InstructionType {
+        public InstructionType InstructionType {
             get => _instructionType;
             set => SetProperty(ref _instructionType, value);
         }

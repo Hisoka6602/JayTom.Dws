@@ -482,6 +482,6 @@ namespace JayTom.Dws.Domain.Dto.CloudApiDto {
         /// <summary>
         /// 指令类型
         /// </summary>
-        public InstructionTypeType InstructionType { get; set; } = InstructionTypeType.None;
+        public InstructionType InstructionType { get; set; } = InstructionType.None;
     }
 }

@@ -341,15 +341,15 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     ) {
                     var instructionInfoModel = model.InstructionInfos.FirstOrDefault();
                     switch (instructionInfoModel?.InstructionType) {
-                        case InstructionTypeType.CreatePackage:
+                        case InstructionType.CreatePackage:
                             NLog.LogManager.GetCurrentClassLogger().Info($"{instructionInfoModel?.InstructionGeneratedTime:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[格口号:{model.ExitName}]-[序号:{model.SortingCode}]-[创建]{instructionInfoModel?.InstructionContent}");
                             break;
 
-                        case InstructionTypeType.SendSorting:
+                        case InstructionType.SendSorting:
                             NLog.LogManager.GetCurrentClassLogger().Info($"{instructionInfoModel?.InstructionGeneratedTime:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[格口号:{model.ExitName}]-[序号:{model.SortingCode}]-[发送]{instructionInfoModel?.InstructionContent}");
                             break;
 
-                        case InstructionTypeType.SignalCallback:
+                        case InstructionType.SignalCallback:
                             NLog.LogManager.GetCurrentClassLogger().Info($"{instructionInfoModel?.InstructionGeneratedTime:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[格口号:{model.ExitName}]-[序号:{model.SortingCode}]-[分拣完成]{instructionInfoModel?.InstructionContent}");
                             break;
                     }

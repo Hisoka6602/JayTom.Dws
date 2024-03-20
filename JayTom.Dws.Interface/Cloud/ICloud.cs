@@ -430,7 +430,7 @@ namespace JayTom.Dws.Interface.Cloud {
         /// <summary>
         /// 指令类型
         /// </summary>
-        public InstructionTypeType InstructionType { get; set; } = InstructionTypeType.None;
+        public InstructionType InstructionType { get; set; } = InstructionType.None;
     }
 
     /// <summary>
@@ -664,10 +664,20 @@ namespace JayTom.Dws.Interface.Cloud {
         /// <summary>
         /// 叠包
         /// </summary>
-        StackedPackage
+        StackedPackage,
+
+        /// <summary>
+        /// 非本机构条码
+        /// </summary>
+        PostNonLocalBarcode,
+
+        /// <summary>
+        /// 查不到段道
+        /// </summary>
+        PostSegmentNotFound,
     }
 
-    public enum InstructionTypeType {
+    public enum InstructionType {
         None,
 
         /// <summary>

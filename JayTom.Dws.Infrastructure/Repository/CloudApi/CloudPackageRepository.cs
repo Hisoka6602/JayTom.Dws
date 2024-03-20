@@ -187,8 +187,42 @@ namespace JayTom.Dws.Infrastructure.Repository.CloudApi {
                              w.BarCodeInfo != null && !w.BarCodeInfo.Barcode.ToLower().Equals("noread"))
                          .CountAsync(cancellationToken: cancellationToken);
                     //小时数
-                    var hour = await queryable.Where(w => w.BarCodeInfo != null).GroupBy(g => g.BarCodeInfo.ScanTime.Hour)
-                         .CountAsync(cancellationToken: cancellationToken);
+                    /*var hour = await queryable.Where(w => w.BarCodeInfo != null).GroupBy(g => g.BarCodeInfo.ScanTime.Hour)
+                         .CountAsync(cancellationToken: cancellationToken);*/
+                    //获取间隔最短的两个数据
+                    /*var shortestTimeDifferenceData = queryable
+                        .Where(w => w.SortingInfo != null && w.BarCodeInfo != null)
+                        .Select(w => new {
+                            Data = w,
+                            NextData = queryable
+                                .Where(next => next.BarCodeInfo.ScanTime > w.BarCodeInfo.ScanTime)
+                                .OrderBy(next => next.PackageCreateTime)
+                                .FirstOrDefault()
+                        })
+                        .Where(pair => pair.NextData != null) // 确保有下一个数据
+                        .AsEnumerable() // 切换到客户端执行
+                        .OrderBy(pair => (pair.NextData.BarCodeInfo.ScanTime - pair.Data.BarCodeInfo.ScanTime).TotalMilliseconds)
+                        .FirstOrDefault();
+                    var shortestTimeDifference = shortestTimeDifferenceData.NextData.BarCodeInfo.ScanTime -
+                                                 shortestTimeDifferenceData.Data.BarCodeInfo.ScanTime;*/
+
+                    //取中位数时间差
+
+                    double packages = 0;
+                    var packageInfoModels = queryable
+                        .Where(w => w.SortingInfo != null && w.BarCodeInfo != null)
+                        .OrderBy(o => o.BarCodeInfo.ScanTime);
+
+                    var firstOrDefaultAsync = await packageInfoModels.FirstOrDefaultAsync();
+                    var lastOrDefaultAsync = await packageInfoModels.LastOrDefaultAsync();
+                    if (firstOrDefaultAsync?.BarCodeInfo is not null &&
+                        lastOrDefaultAsync?.BarCodeInfo is not null) {
+                        var totalSeconds = firstOrDefaultAsync.BarCodeInfo.ScanTime.Subtract(lastOrDefaultAsync.BarCodeInfo.ScanTime)
+                            .TotalSeconds;
+                        packages = totalPackages / totalSeconds;
+                    }
+
+                    // 现在，firstTimeDifference 包含了时间间隔最短的两个数据之间的时间差
 
                     //格口组
                     var statisticsDtos = await queryable.Where(w => w.ExitInfo != null)
@@ -292,7 +326,7 @@ namespace JayTom.Dws.Infrastructure.Repository.CloudApi {
                         AbnormalSortingRate = Math.Round((double)abnormalSortingCount / totalPackages, 3),
                         AverageWeight = Math.Round(averageWeight, 3),
                         RecognitionRate = Math.Round((double)recognitionCount / totalPackages, 3),
-                        SortingEfficiency = totalPackages / hour,
+                        SortingEfficiency = (int)(3600 * Math.Abs(packages)),
                         ExitStatisticsInfo = statisticsDtos,
                         ErrorStatistics = errorStatistics,
                         TrendDataItems = result

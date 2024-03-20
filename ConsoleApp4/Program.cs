@@ -9,7 +9,7 @@ internal class Program {
 
     private static void Main(string[] args) {
         try {
-            var s = "{\"result\":[{\"code\":0,\"command\":\"sorter.dest_request\",\"error\":\"\",\"params\":{\"bcrName\":\"sorter\",\"chuteCode\":\"4\",\"weight\":0,\"errorCode\":0,\"optionalChuteCodes\":\"\",\"barCode\":\"42060615\u001d9214490344491110553892\"}}],\"requestId\":1710749733}";
+            var s = "{\"result\":[{\"code\":0,\"command\":\"sorter.dest_request\",\"error\":\"\",\"params\":{\"bcrName\":\"sorter\",\"chuteCode\":\"5\",\"theoryWeight\":0,\"weight\":192,\"errorCode\":0,\"optionalChuteCodes\":\"\",\"barCode\":\"4PXTEST240227000006\"}}],\"requestId\":1710834606}";
             var resultContent = Regex.Unescape(s);
 
             var replace = Regex.Replace(s, @"[\u0000-\u001f\b]", "");
@@ -18,7 +18,7 @@ internal class Program {
             if (tryParseValue && document is not null) {
                 var fieldValue = FindFieldValue(document.RootElement, "chuteCode");
                 if (fieldValue.HasValue) {
-                    var equals = fieldValue.Value.ToString()?.Equals("4");
+                    var equals = fieldValue.Value.ToString()?.Equals("5");
                     Console.WriteLine(equals);
                 }
             }

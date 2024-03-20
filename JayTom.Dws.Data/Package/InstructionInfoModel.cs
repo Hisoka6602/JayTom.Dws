@@ -33,10 +33,10 @@ namespace JayTom.Dws.Data.Package {
         /// 指令类型
         /// </summary>
         [Column("InstructionType")]
-        public InstructionTypeType InstructionType { get; set; } = InstructionTypeType.None;
+        public InstructionType InstructionType { get; set; } = InstructionType.None;
     }
 
-    public enum InstructionTypeType {
+    public enum InstructionType {
         None,
 
         /// <summary>

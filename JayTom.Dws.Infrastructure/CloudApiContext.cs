@@ -140,6 +140,25 @@ namespace JayTom.Dws.Infrastructure {
                 modelBuilder.Entity<DeviceInfoModel>().HasKey(c => new {
                     c.Id
                 });
+                //聚合包裹信息
+                modelBuilder.Entity<PackageInfoModel>()
+                    .HasOne(b => b.AggregatePackagesInfo)
+                    .WithOne(n => n.PackageInfo)
+                    .HasForeignKey<AggregatePackagesInfoModel>(n => n.PackageId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                modelBuilder.Entity<AggregatePackagesInfoModel>().HasKey(c => new {
+                    c.Id
+                });
+                //指令信息
+
+                modelBuilder.Entity<SortingInfoModel>()
+                    .HasMany(b => b.InstructionInfos)
+                    .WithOne(n => n.SortingInfo)
+                    .HasForeignKey(n => new { n.SortingInfoId })
+                    .OnDelete(DeleteBehavior.Cascade);
+                modelBuilder.Entity<InstructionInfoModel>().HasKey(c => new {
+                    c.Id
+                });
             }
         }
     }

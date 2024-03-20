@@ -536,7 +536,6 @@ namespace JayTom.Dws.Client.Service.Sorting {
                     ExceptionMessage = $"分拣异常:{e}"
                 });
             }
-            PublishExceptionSortingInfo(param);
         }
 
         public void WeightSorting(SortingParam param, CancellationToken token = default) {
@@ -566,7 +565,6 @@ namespace JayTom.Dws.Client.Service.Sorting {
                     ExceptionMessage = $"分拣异常:{e}"
                 });
             }
-            PublishExceptionSortingInfo(param);
         }
 
         public void VolumeSorting(SortingParam param, CancellationToken token = default) {
@@ -593,7 +591,6 @@ namespace JayTom.Dws.Client.Service.Sorting {
                     ExceptionMessage = $"分拣异常:{e}"
                 });
             }
-            PublishExceptionSortingInfo(param);
         }
 
         public void LogisticsSorting(SortingParam param, CancellationToken token = default) {
@@ -628,7 +625,6 @@ namespace JayTom.Dws.Client.Service.Sorting {
                     ExceptionMessage = $"分拣异常:{e}"
                 });
             }
-            PublishExceptionSortingInfo(param);
         }
 
         public void OcrSorting(SortingParam param, CancellationToken token = default) {
@@ -661,7 +657,6 @@ namespace JayTom.Dws.Client.Service.Sorting {
                     ExceptionMessage = $"分拣异常:{e}"
                 });
             }
-            PublishExceptionSortingInfo(param);
         }
 
         public void ApiResponseSorting(SortingParam param, CancellationToken token = default) {
@@ -707,9 +702,36 @@ namespace JayTom.Dws.Client.Service.Sorting {
             else {
                 //走异常口
                 ExceptionSorting(param, token);
-            }
 
-            PublishExceptionSortingInfo(param);
+                #region 邮政额外定制
+
+                if (param.ApiResponse.ResponseContent.Contains("返回超时")) {
+                    EventAggregator.Instance.Publish(new ExceptionSortingReceived {
+                        ScanTime = param.ScanTime,
+                        BarCode = param.BarCode,
+                        Timestamp = param.Timestamp,
+                        PackageCloudAbnormalSortingType = PackageCloudAbnormalSortingType.NetworkTimeout
+                    });
+                }
+                else if (param.ApiResponse.ResponseContent.Contains("段道")) {
+                    EventAggregator.Instance.Publish(new ExceptionSortingReceived {
+                        ScanTime = param.ScanTime,
+                        BarCode = param.BarCode,
+                        Timestamp = param.Timestamp,
+                        PackageCloudAbnormalSortingType = PackageCloudAbnormalSortingType.PostSegmentNotFound
+                    });
+                }
+                else if (param.ApiResponse.ResponseContent.Contains("非本机构")) {
+                    EventAggregator.Instance.Publish(new ExceptionSortingReceived {
+                        ScanTime = param.ScanTime,
+                        BarCode = param.BarCode,
+                        Timestamp = param.Timestamp,
+                        PackageCloudAbnormalSortingType = PackageCloudAbnormalSortingType.PostNonLocalBarcode
+                    });
+                }
+
+                #endregion 邮政额外定制
+            }
         }
 
         public void CombinedWorkflowSorting(SortingParam param, CancellationToken token = default) {
@@ -742,7 +764,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
             if (param.IsStackedPackage && _stackedPackageDetectionSettingsDto?.IsAutoExceptionSorting == true) {
                 //走异常口
                 ExceptionSorting(param, token);
-
+                NLog.LogManager.GetCurrentClassLogger().Error("叠包走异常");
                 return;
             }
             var packageExitDefinitionInfoModel = _packageExitDefinitionInfos.FirstOrDefault(f => f.Id.Equals(param.ExitId) &&
@@ -755,24 +777,23 @@ namespace JayTom.Dws.Client.Service.Sorting {
                         f.Pid == packageExitDefinitionInfoModel.Id);
                     if (exitDefinitionInfoModel is null) {
                         //走异常口
+                        NLog.LogManager.GetCurrentClassLogger().Error("锁格走异常");
                         ExceptionSorting(param, token);
                         return;
                     }
-                    else {
-                        param.ExitId = exitDefinitionInfoModel.Id;
-                    }
+                    param.ExitId = exitDefinitionInfoModel.Id;
                 }
 
                 var sortingInstructionBindingInfoModel = _sortingInstructionBindingInfoModels.FirstOrDefault(f =>
                     f.ExitId.Equals(param.ExitId));
-                if (sortingInstructionBindingInfoModel is not null && exitDefinitionInfoModel is not null) {
+                if (sortingInstructionBindingInfoModel is not null) {
                     //回调格口信息
                     EventAggregator.Instance.Publish(new SortingExitReceived {
                         ScanTime = param.ScanTime,
                         BarCode = param.BarCode,
                         Timestamp = param.Timestamp,
-                        ExitName = exitDefinitionInfoModel.ExitName,
-                        ExitId = exitDefinitionInfoModel.Id,
+                        ExitName = exitDefinitionInfoModel != null ? exitDefinitionInfoModel.ExitName : packageExitDefinitionInfoModel.ExitName ?? string.Empty,
+                        ExitId = param.ExitId,
                         ExitType = SortingExitType.PhysicalExit
                     });
 
@@ -817,6 +838,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                         Timestamp = param.Timestamp,
                         PackageCloudAbnormalSortingType = PackageCloudAbnormalSortingType.NoSortingInstruction
                     });
+                    NLog.LogManager.GetCurrentClassLogger().Error($"无指令走异常：{JsonConvert.SerializeObject(param)}");
                 }
             }
             else {
@@ -829,6 +851,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                     Timestamp = param.Timestamp,
                     PackageCloudAbnormalSortingType = PackageCloudAbnormalSortingType.LockExit
                 });
+                NLog.LogManager.GetCurrentClassLogger().Error("无绑定走异常");
             }
         }
 
@@ -847,7 +870,8 @@ namespace JayTom.Dws.Client.Service.Sorting {
                                 return apiResponse.ResponseContent.Contains(apiRuleJsonDto.SearchStringContent);
                             }
                             else if (apiRuleJsonDto.IsUseJsonField) {
-                                var replace = Regex.Replace(apiResponse.ResponseContent, @"[\u0000-\u001f\b]", "");
+                                var resultContent = Regex.Unescape(apiResponse.ResponseContent);
+                                var replace = Regex.Replace(resultContent, @"[\u0000-\u001f\b]", "");
                                 var reader = new Utf8JsonReader(Encoding.UTF8.GetBytes(replace));
                                 var tryParseValue = JsonDocument.TryParseValue(ref reader, out var document);
                                 if (tryParseValue && document is not null) {
@@ -862,6 +886,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                 }
             }
             catch (Exception e) {
+                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
                 Console.WriteLine(e);
             }
             return false;
@@ -930,7 +955,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
             }
         }
 
-        public void PublishExceptionSortingInfo(SortingParam param) {
+        public void PublishExceptionSortingInfo1(SortingParam param) {
             if (param.ApiResponse.ExceptionMsg.Contains("接口访问返回超时")) {
                 EventAggregator.Instance.Publish(new ExceptionSortingReceived {
                     ScanTime = param.ScanTime,

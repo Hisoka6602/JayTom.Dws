@@ -55,18 +55,18 @@ namespace JayTom.Dws.Client.ViewModels.Dialog {
             }
             BarCodeItem = parameters.GetValue<BarCodeItemModel>("BarCodeItem");
             var instructionInfoItemModel = BarCodeItem.SortingInfo.InstructionInfoItems.FirstOrDefault(f =>
-                f.InstructionType == InstructionTypeType.CreatePackage);
+                f.InstructionType == InstructionType.CreatePackage);
             if (instructionInfoItemModel != null) {
                 PackageCreationInstruction =
                     $"{instructionInfoItemModel.InstructionGeneratedTime:yyyy-MM-dd HH:mm:ss.fff}:{instructionInfoItemModel.InstructionContent}";
             }
             instructionInfoItemModel = BarCodeItem.SortingInfo.InstructionInfoItems.FirstOrDefault(f =>
-               f.InstructionType == InstructionTypeType.SendSorting);
+               f.InstructionType == InstructionType.SendSorting);
             if (instructionInfoItemModel != null) {
                 SentInstruction = $"{instructionInfoItemModel.InstructionGeneratedTime:yyyy-MM-dd HH:mm:ss.fff}:{instructionInfoItemModel.InstructionContent}";
             }
             instructionInfoItemModel = BarCodeItem.SortingInfo.InstructionInfoItems.FirstOrDefault(f =>
-                f.InstructionType == InstructionTypeType.SignalCallback);
+                f.InstructionType == InstructionType.SignalCallback);
             if (instructionInfoItemModel != null) {
                 ReceivedInstruction = $"{instructionInfoItemModel.InstructionGeneratedTime:yyyy-MM-dd HH:mm:ss.fff}:{instructionInfoItemModel.InstructionContent}";
             }

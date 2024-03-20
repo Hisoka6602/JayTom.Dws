@@ -289,5 +289,25 @@ namespace JayTom.Dws.Data.Package {
         /// 无物理格口(无适应规则)
         /// </summary>
         NoPhysicalMailbox,
+
+        /// <summary>
+        /// 锁格
+        /// </summary>
+        LockExit,
+
+        /// <summary>
+        /// 叠包
+        /// </summary>
+        StackedPackage,
+
+        /// <summary>
+        /// 非本机构条码
+        /// </summary>
+        PostNonLocalBarcode,
+
+        /// <summary>
+        /// 查不到段道
+        /// </summary>
+        PostSegmentNotFound,
     }
 }

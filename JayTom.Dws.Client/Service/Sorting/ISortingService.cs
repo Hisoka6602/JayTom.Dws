@@ -393,7 +393,8 @@ namespace JayTom.Dws.Client.Service.Sorting {
         /// <summary>
         /// 异常口回调指令
         /// </summary>
-        public PackageCloudAbnormalSortingType PackageCloudAbnormalSortingType { get; set; }
+        public PackageCloudAbnormalSortingType PackageCloudAbnormalSortingType { get; set; } =
+            PackageCloudAbnormalSortingType.None;
 
         /// <summary>
         /// 包裹流水号

@@ -23,7 +23,7 @@ using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Repository.LocalData;
 using JayTom.Dws.Domain.Repository.LocalConf.CloudConfig;
 using ApiExceptionType = JayTom.Dws.Interface.ApiExceptionType;
-using InstructionTypeType = JayTom.Dws.Interface.Cloud.InstructionTypeType;
+using InstructionType = JayTom.Dws.Interface.Cloud.InstructionType;
 
 namespace JayTom.Dws.Client.Service.BackgroundService {
 
@@ -243,7 +243,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                         .Select(s => new PackageCloudInstructionInfo {
                                             InstructionContent = s.InstructionContent,
                                             InstructionGeneratedTime = s.InstructionGeneratedTime,
-                                            InstructionType = (InstructionTypeType)s.InstructionType,
+                                            InstructionType = (InstructionType)s.InstructionType,
                                         })?.ToList(),
                                 SortingMode = (int)(packageInfoModel.SortingInfo?.SortingMode ?? 0),
                                 IsSortingUsed = packageInfoModel.SortingInfo?.IsSortingUsed ?? false,

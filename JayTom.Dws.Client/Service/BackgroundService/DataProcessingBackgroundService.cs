@@ -10,6 +10,7 @@ using JayTom.Dws.Data.Package;
 using System.Windows.Documents;
 using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
+using JayTom.Dws.Interface.Cloud;
 using System.Collections.Concurrent;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Service.Sorting;
@@ -289,6 +290,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     var sortingInfoModel = await _sortingRepository.FirstOrDefault(f => f.PackageId.Equals(value.Id), stoppingToken);
                     if (sortingInfoModel is not null) {
                         sortingInfoModel.AbnormalSortingType = (AbnormalSortingType)exceptionSortingModel.PackageCloudAbnormalSortingType;
+                        sortingInfoModel.IsAbnormalSorting = exceptionSortingModel.PackageCloudAbnormalSortingType != PackageCloudAbnormalSortingType.None;
                         var update = await _sortingRepository.Update(sortingInfoModel, stoppingToken);
                         if (!update) {
                             _exceptionSortingItems.Enqueue(exceptionSortingModel);

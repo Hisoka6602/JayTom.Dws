@@ -548,7 +548,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                     {
                                         InstructionContent = args.Instruction,
                                         InstructionGeneratedTime = args.InstructionTime,
-                                        InstructionType = InstructionTypeType.CreatePackage
+                                        InstructionType = InstructionType.CreatePackage
                                     }
                                 }
                             });
@@ -578,7 +578,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                         {
                                             InstructionContent = args.Instruction,
                                             InstructionGeneratedTime = DateTime.Now,
-                                            InstructionType = InstructionTypeType.SignalCallback
+                                            InstructionType = InstructionType.SignalCallback
                                         }
                                     }
                                 });

@@ -476,7 +476,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                                                     InstructionContent = connection?.DeviceCommunicationProtocol?.EncodeData(FunctionType.SendExit, tag,
                                                         instruction, attach) ?? instruction,
                                                     InstructionGeneratedTime =sendTime,
-                                                    InstructionType = InstructionTypeType.SendSorting
+                                                    InstructionType = InstructionType.SendSorting
                                                 }
                                             }
                                         });
@@ -666,7 +666,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                                                     InstructionContent = connection?.DeviceCommunicationProtocol?.EncodeData(FunctionType.SendExit, tag,
                                                         instruction.Instruction, attach) ?? instruction.Instruction,
                                                     InstructionGeneratedTime = sendTime,
-                                                    InstructionType = InstructionTypeType.SendSorting
+                                                    InstructionType = InstructionType.SendSorting
                                                 }
                                             }
                                         });

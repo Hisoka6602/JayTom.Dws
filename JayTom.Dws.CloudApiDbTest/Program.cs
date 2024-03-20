@@ -156,6 +156,15 @@ internal class Program {
                 modelBuilder.Entity<ImageInfoModel>().HasKey(c => new {
                     c.Id
                 });
+                //设备
+                modelBuilder.Entity<PackageInfoModel>()
+                    .HasOne(b => b.DeviceInfo)
+                    .WithOne(n => n.PackageInfo)
+                    .HasForeignKey<DeviceInfoModel>(n => n.PackageId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                modelBuilder.Entity<DeviceInfoModel>().HasKey(c => new {
+                    c.Id
+                });
                 //聚合包裹信息
                 modelBuilder.Entity<PackageInfoModel>()
                     .HasOne(b => b.AggregatePackagesInfo)
