@@ -131,8 +131,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         }
                         var packageInfo =
                             _createPackageSettingsDto.BarcodeQueueOrder == BarcodeQueueOrderEnum.TimeAscending ?
-                                _packageInfos.OrderBy(o => o.Key).FirstOrDefault(f => f.Value.BarCodeInfo == null).Value :
-                                _packageInfos.OrderBy(o => o.Key).LastOrDefault(f => f.Value.BarCodeInfo == null).Value;
+                                _packageInfos.OrderBy(o => o.Key)?.FirstOrDefault(f => f.Value.BarCodeInfo == null).Value :
+                                _packageInfos.OrderBy(o => o.Key)?.LastOrDefault(f => f.Value.BarCodeInfo == null).Value;
                         if ((_createPackageSettingsDto.PackageCreationMethods & PackageCreationMethodsEnum.ScanBarcodeCamera)
                             == PackageCreationMethodsEnum.ScanBarcodeCamera && packageInfo is null) {
                             //支持扫码创建
@@ -207,8 +207,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
                         var packageInfo =
                             _createPackageSettingsDto.BarcodeQueueOrder == BarcodeQueueOrderEnum.TimeAscending ?
-                                _packageInfos.OrderBy(o => o.Key).FirstOrDefault(f => f.Value.BarCodeInfo == null).Value :
-                                _packageInfos.OrderBy(o => o.Key).LastOrDefault(f => f.Value.BarCodeInfo == null).Value;
+                                _packageInfos.OrderBy(o => o.Key)?.FirstOrDefault(f => f.Value.BarCodeInfo == null).Value :
+                                _packageInfos.OrderBy(o => o.Key)?.LastOrDefault(f => f.Value.BarCodeInfo == null).Value;
                         if ((_createPackageSettingsDto.PackageCreationMethods & PackageCreationMethodsEnum.ScanBarcodeCamera) ==
                             PackageCreationMethodsEnum.ScanBarcodeCamera && packageInfo is null) {
                             //扫码相机创建
@@ -266,8 +266,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     await _createPackageSlim.WaitAsync();
                     var packageInfo =
                    _createPackageSettingsDto.BarcodeQueueOrder == BarcodeQueueOrderEnum.TimeAscending ?
-                       _packageInfos.OrderBy(o => o.Key).FirstOrDefault(f => f.Value.VolumeInfo == null).Value :
-                       _packageInfos.OrderBy(o => o.Key).LastOrDefault(f => f.Value.VolumeInfo == null).Value;
+                       _packageInfos.OrderBy(o => o.Key)?.FirstOrDefault(f => f.Value.VolumeInfo == null).Value :
+                       _packageInfos.OrderBy(o => o.Key)?.LastOrDefault(f => f.Value.VolumeInfo == null).Value;
                     if ((_createPackageSettingsDto.PackageCreationMethods & PackageCreationMethodsEnum.VolumeInput) ==
                         PackageCreationMethodsEnum.VolumeInput && packageInfo is null) {
                         packageInfo = new PackageInfo() {
@@ -324,8 +324,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     await _createPackageSlim.WaitAsync();
                     var packageInfo =
                         _createPackageSettingsDto.BarcodeQueueOrder == BarcodeQueueOrderEnum.TimeAscending ?
-                            _packageInfos.OrderBy(o => o.Key).FirstOrDefault(f => f.Value is { IsCompleted: false, WeightInfo: null }).Value :
-                            _packageInfos.OrderBy(o => o.Key).LastOrDefault(f => f.Value is { IsCompleted: false, WeightInfo: null }).Value;
+                            _packageInfos.OrderBy(o => o.Key)?.FirstOrDefault(f => f.Value is { IsCompleted: false, WeightInfo: null }).Value :
+                            _packageInfos.OrderBy(o => o.Key)?.LastOrDefault(f => f.Value is { IsCompleted: false, WeightInfo: null }).Value;
                     if ((_createPackageSettingsDto.PackageCreationMethods & PackageCreationMethodsEnum.StableWeight) ==
                         PackageCreationMethodsEnum.StableWeight && packageInfo is null) {
                         //稳定重量创建
@@ -388,8 +388,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
                     var packageInfo =
                         _createPackageSettingsDto.BarcodeQueueOrder == BarcodeQueueOrderEnum.TimeAscending ?
-                            _packageInfos.OrderBy(o => o.Key).FirstOrDefault(f => f.Value.BarCodeInfo == null).Value :
-                            _packageInfos.OrderBy(o => o.Key).LastOrDefault(f => f.Value.BarCodeInfo == null).Value;
+                            _packageInfos.OrderBy(o => o.Key)?.FirstOrDefault(f => f.Value.BarCodeInfo == null).Value :
+                            _packageInfos.OrderBy(o => o.Key)?.LastOrDefault(f => f.Value.BarCodeInfo == null).Value;
                     if ((_createPackageSettingsDto.PackageCreationMethods & PackageCreationMethodsEnum.TcpInput) ==
                         PackageCreationMethodsEnum.TcpInput && packageInfo is null) {
                         packageInfo = new PackageInfo() {
@@ -461,8 +461,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
                     var packageInfo =
                         _createPackageSettingsDto.BarcodeQueueOrder == BarcodeQueueOrderEnum.TimeAscending ?
-                            _packageInfos.OrderBy(o => o.Key).FirstOrDefault(f => f.Value.VolumeInfo == null).Value :
-                            _packageInfos.OrderBy(o => o.Key).LastOrDefault(f => f.Value.VolumeInfo == null).Value;
+                            _packageInfos.OrderBy(o => o.Key)?.FirstOrDefault(f => f.Value.VolumeInfo == null).Value :
+                            _packageInfos.OrderBy(o => o.Key)?.LastOrDefault(f => f.Value.VolumeInfo == null).Value;
 
                     if ((_createPackageSettingsDto.PackageCreationMethods & PackageCreationMethodsEnum.VolumeInput) ==
                         PackageCreationMethodsEnum.VolumeInput && packageInfo is null) {
@@ -566,7 +566,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         await _createPackageSlim.WaitAsync();
                         var tryParse = int.TryParse(args.Keyword, out var num);
                         if (tryParse) {
-                            var keyValuePair = _packageInfos.FirstOrDefault(f => f.Value.Guid.Equals(num));
+                            var keyValuePair = _packageInfos.OrderBy(o => o.Key).FirstOrDefault(f => f.Value.Guid.Equals(num));
                             if (keyValuePair.Value is not null) {
                                 EventAggregator.Instance.Publish(new InstructionReceived() {
                                     Timestamp = new DateTimeOffset(keyValuePair.Value.CreateTime).ToUnixTimeMilliseconds(),
@@ -584,8 +584,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 });
                                 EventAggregator.Instance.Publish(new CallBackPackageInfo {
                                     CallBackTime = DateTime.Now,
-                                    CreateTime = keyValuePair.Value.CreateTime,
-                                    Guid = keyValuePair.Value.Guid,
+                                    PackageCreateTime = keyValuePair.Value.CreateTime,
+                                    PackageInfo = keyValuePair.Value
                                 });
                                 _packageInfos.TryRemove(keyValuePair);
                             }
@@ -616,8 +616,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     //创建条码
                     var packageInfo =
                         _createPackageSettingsDto.BarcodeQueueOrder == BarcodeQueueOrderEnum.TimeAscending ?
-                            _packageInfos.OrderBy(o => o.Key).FirstOrDefault(f => f.Value.BarCodeInfo == null).Value :
-                            _packageInfos.OrderBy(o => o.Key).LastOrDefault(f => f.Value.BarCodeInfo == null).Value;
+                            _packageInfos.OrderBy(o => o.Key)?.FirstOrDefault(f => f.Value.BarCodeInfo == null).Value :
+                            _packageInfos.OrderBy(o => o.Key)?.LastOrDefault(f => f.Value.BarCodeInfo == null).Value;
                     if ((_createPackageSettingsDto.PackageCreationMethods &
                          PackageCreationMethodsEnum.OcrInfo) ==
                         PackageCreationMethodsEnum.OcrInfo && packageInfo is null) {
@@ -678,8 +678,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         var timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds();
                         var packageInfo =
                             _createPackageSettingsDto.BarcodeQueueOrder == BarcodeQueueOrderEnum.TimeAscending ?
-                                _packageInfos.OrderBy(o => o.Key).FirstOrDefault(f => f.Value.BarCodeInfo == null).Value :
-                                _packageInfos.OrderBy(o => o.Key).LastOrDefault(f => f.Value.BarCodeInfo == null).Value;
+                                _packageInfos.OrderBy(o => o.Key)?.FirstOrDefault(f => f.Value.BarCodeInfo == null).Value :
+                                _packageInfos.OrderBy(o => o.Key)?.LastOrDefault(f => f.Value.BarCodeInfo == null).Value;
                         if ((_createPackageSettingsDto.PackageCreationMethods &
                              PackageCreationMethodsEnum.ControlInput) ==
                             PackageCreationMethodsEnum.ControlInput && packageInfo is null) {
@@ -905,8 +905,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             }
                             var packageInfo =
                                 _createPackageSettingsDto.BarcodeQueueOrder == BarcodeQueueOrderEnum.TimeAscending ?
-                                    _packageInfos.OrderBy(o => o.Key).FirstOrDefault(f => f.Value.BarCodeInfo == null).Value :
-                                    _packageInfos.OrderBy(o => o.Key).LastOrDefault(f => f.Value.BarCodeInfo == null).Value;
+                                    _packageInfos.OrderBy(o => o.Key)?.FirstOrDefault(f => f.Value.BarCodeInfo == null).Value :
+                                    _packageInfos.OrderBy(o => o.Key)?.LastOrDefault(f => f.Value.BarCodeInfo == null).Value;
                             if ((_createPackageSettingsDto.PackageCreationMethods & PackageCreationMethodsEnum.ScanBarcodeCamera)
                                 == PackageCreationMethodsEnum.ScanBarcodeCamera && packageInfo is null) {
                                 //支持扫码创建
@@ -942,9 +942,12 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                                                              _createPackageSettingsDto.EmptyPackageExpiryTime)
                                     ?.ToList();
                                 if (keyValuePairs?.Any() == true) {
-                                    Parallel.ForEach(keyValuePairs, key => {
-                                        _packageInfos.TryRemove(key);
-                                    });
+                                    var keysToRemove = keyValuePairs
+                                        .Where(kvp => _packageInfos.ContainsKey(kvp.Key) && _packageInfos[kvp.Key] == kvp.Value)
+                                        .Select(kvp => kvp.Key)
+                                        .ToList();
+
+                                    keysToRemove.ForEach(key => _packageInfos.TryRemove(key, out _));
                                 }
                             }
                             finally {
@@ -961,9 +964,12 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                                                              _createPackageSettingsDto.PackageExpiryTime)
                                     ?.ToList();
                                 if (keyValuePairs?.Any() == true) {
-                                    Parallel.ForEach(keyValuePairs, key => {
-                                        _packageInfos.TryRemove(key);
-                                    });
+                                    var keysToRemove = keyValuePairs
+                                        .Where(kvp => _packageInfos.ContainsKey(kvp.Key) && _packageInfos[kvp.Key] == kvp.Value)
+                                        .Select(kvp => kvp.Key)
+                                        .ToList();
+
+                                    keysToRemove.ForEach(key => _packageInfos.TryRemove(key, out _));
                                 }
                             }
                             finally {
@@ -971,8 +977,13 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             }
                         }
                         //取出一个未完成包裹
-                        var packageInfo = _packageInfos.OrderBy(o => o.Key).FirstOrDefault(f => f.Value is { IsCompleted: false, BarCodeInfo: not null }).Value;
-                        if (packageInfo != null) {
+                        var value = _packageInfos.Any(a => a.Value is { IsCompleted: false, BarCodeInfo: not null })
+                            ? _packageInfos.Where(f => f.Value is { IsCompleted: false, BarCodeInfo: not null }).OrderBy(o => o.Key)
+                                ?.FirstOrDefault()
+                                .Value
+                            : null;
+
+                        if (value is { IsCompleted: false, BarCodeInfo: not null } packageInfo) {
                             //判断填充包裹信息
                             if (packageInfo.VolumeInfo is not null &&
                                 packageInfo.WeightInfo is not null &&
@@ -1112,21 +1123,24 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
                         if (_createPackageSettingsDto.PackageRemoveMethods == PackageRemoveMethodsEnum.FillInformation) {
                             //告诉界面这些scanBarCodeInfos已经填充完全部信息，即将移除
+                            await _createPackageSlim.WaitAsync(stoppingToken);
+
                             try {
-                                await _createPackageSlim.WaitAsync(stoppingToken);
-                                var packageInfos = _packageInfos.Where(w => w.Value is { IsCompleted: true, IsSavedImage: true } &&
-                                                                            (w.Value.PanoramaCameraImageInfo.All(a => a.IsExists)
-                                                                             || DateTime.Now.Subtract(w.Value.CreateTime).TotalMinutes > 5)
-                                    )
+                                var packageInfos = _packageInfos
+                                    .Where(w => w.Value is { IsCompleted: true, IsSavedImage: true } &&
+                                                (w.Value.PanoramaCameraImageInfo.All(a => a.IsExists) ||
+                                                 DateTime.Now.Subtract(w.Value.CreateTime).TotalMinutes > 5))
                                     .ToList();
-                                Parallel.ForEach(packageInfos, key => {
-                                    _packageInfos.TryRemove(key);
-                                    EventAggregator.Instance.Publish(new CallBackPackageInfo {
-                                        CallBackTime = DateTime.Now,
-                                        CreateTime = key.Value.CreateTime,
-                                        Guid = key.Value.Guid,
-                                    });
-                                });
+
+                                foreach (var kvp in packageInfos) {
+                                    if (_packageInfos.TryRemove(kvp.Key, out var removedValue)) {
+                                        EventAggregator.Instance.Publish(new CallBackPackageInfo {
+                                            CallBackTime = DateTime.Now,
+                                            PackageCreateTime = kvp.Value.CreateTime,
+                                            PackageInfo = kvp.Value
+                                        });
+                                    }
+                                }
                             }
                             finally {
                                 _createPackageSlim.Release();
@@ -1415,12 +1429,9 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         /// <summary>
         /// 包裹创建时间
         /// </summary>
-        public DateTime CreateTime { get; set; } = DateTime.Now;
+        public DateTime PackageCreateTime { get; set; } = DateTime.Now;
 
-        /// <summary>
-        /// Guid
-        /// </summary>
-        public long Guid { get; set; }
+        public PackageInfo PackageInfo { get; set; } = new();
 
         /// <summary>
         /// 包裹完结时间

@@ -239,6 +239,7 @@ namespace JayTom.Dws.Interface.CaiNiao {
             double width = default, double height = default, double volume = default, UploadImageInfo? imageInfo = default,
             List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
             if (other is ReportChuteInfo reportChuteInfo) {
+                NLog.LogManager.GetCurrentClassLogger().Error($"提交分拣报告:{reportChuteInfo.ChuteCodePhysical}");
                 var resultContent = string.Empty;
                 var requestTime = DateTime.Now;
                 var data = new {
@@ -283,6 +284,9 @@ namespace JayTom.Dws.Interface.CaiNiao {
                         resultContent = Regex.Unescape(resultContent);
                         NLog.LogManager.GetCurrentClassLogger().Error($"分拣报告返回:{resultContent}");
                     }
+                }
+                catch (TaskCanceledException) {
+                    NLog.LogManager.GetCurrentClassLogger().Error($"分拣请求超时:{Parameters.TimeOut * 5}ms");
                 }
                 finally {
                     stopwatch.Stop();

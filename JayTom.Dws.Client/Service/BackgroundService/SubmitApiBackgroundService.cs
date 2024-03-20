@@ -50,6 +50,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private static CaiNiaoApi.ApiParameters _caiNiaoApiParam = new();
         private ConcurrentQueue<SavedImageInfo> _savedImageItems = new();
         private ConcurrentQueue<CallBackPackageInfo> _callBackItems = new();
+        private ConcurrentDictionary<long, SortingExitReceived> _sortingExitItems = new();
         private ConcurrentQueue<PackageAggregationInfo> _packageAggregationInfoItems = new();
 
         #region 非通用版本变量(临时)
@@ -307,12 +308,18 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     _callBackItems.Enqueue(info);
                 }
             });
-
             //集包推送
             EventAggregator.Instance.Subscribe<PackageAggregationInfo>(async item => {
                 //加入队列
                 if (item is PackageAggregationInfo info) {
                     _packageAggregationInfoItems.Enqueue(info);
+                }
+            });
+            //格口信息
+            EventAggregator.Instance.Subscribe<SortingExitReceived>(async item => {
+                if (item is SortingExitReceived info) {
+                    await Task.Yield();
+                    _sortingExitItems.TryAdd(info.Timestamp, info);
                 }
             });
         }
@@ -565,41 +572,51 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 var callBackDequeue = _callBackItems.TryDequeue(out var callBackModel);
                 if (callBackDequeue && callBackModel is not null) {
                     Task.Factory.StartNew(async () => {
-                        var (_, packageInfo) = await _packageRepository.FirstOrDefaultInfo(f => f.PackageCreateTime.Equals(callBackModel.CreateTime), stoppingToken);
-                        if (packageInfo is null) {
-                            _callBackItems.Enqueue(callBackModel);
-                            return;
+                        if (callBackModel.PackageInfo is { } packageInfo) {
+                            var (l, sortingExitReceived) = _sortingExitItems.FirstOrDefault(f =>
+                                packageInfo.BarCodeInfo != null &&
+                                f.Value.ScanTime.Equals(packageInfo.BarCodeInfo.ScanTime));
+
+                            if (sortingExitReceived is not null) {
+                                _sortingExitItems.TryRemove(l, out _);
+                                IDataUploader uploader;
+                                UploadResponse? uploadResponse = null;
+                                switch (_apiSettingsDto?.Type) {
+                                    case ApiType.None:
+                                        return;
+
+                                    case ApiType.CaiNiaoApi:
+
+                                        uploader = new CaiNiaoApi(_httpClientFactory);
+                                        var (key, value) = await uploader.SetParameters(_caiNiaoApiParam);
+                                        if (key) {
+                                            uploader.UploadInBackground(packageInfo.BarCodeInfo?.Barcode ?? string.Empty, packageInfo.WeightInfo?.FormattedWeight ?? 0,
+                                                packageInfo.BarCodeInfo?.ScanTime ?? DateTime.Now, imageInfo: new UploadImageInfo() {
+                                                    CameraCustomName = packageInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
+                                                    CameraName = packageInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
+                                                    CameraSerialNumber = packageInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
+                                                }, other: new ReportChuteInfo {
+                                                    ChuteCode = sortingExitReceived.ExitName ?? string.Empty,
+                                                    ChuteCodePhysical = sortingExitReceived.ExitName ?? string.Empty,
+                                                    ErrorReson = (string.IsNullOrEmpty(packageInfo.BarCodeInfo?.Barcode) || packageInfo.BarCodeInfo?.Barcode.ToLower().Equals("noread") == true) ?
+                                                        "无条码" : "分拣成功 ",
+                                                    Status = (string.IsNullOrEmpty(packageInfo.BarCodeInfo?.Barcode) || packageInfo.BarCodeInfo?.Barcode.ToLower().Equals("noread") == true) ?
+                                                        1 : 0,
+                                                }, token: stoppingToken);
+                                        }
+                                        else {
+                                            NLog.LogManager.GetCurrentClassLogger().Error("设置Api参数失败");
+                                        }
+                                        break;
+                                }
+                            }
+                            else {
+                                _callBackItems.Enqueue(callBackModel);
+                                NLog.LogManager.GetCurrentClassLogger().Error($"未找到匹配的报告包裹:{_callBackItems.Count}");
+                            }
                         }
-
-                        IDataUploader uploader;
-                        UploadResponse? uploadResponse = null;
-                        switch (_apiSettingsDto?.Type) {
-                            case ApiType.None:
-                                return;
-
-                            case ApiType.CaiNiaoApi:
-
-                                uploader = new CaiNiaoApi(_httpClientFactory);
-                                var (key, value) = await uploader.SetParameters(_caiNiaoApiParam);
-                                if (key) {
-                                    uploader.UploadInBackground(packageInfo.BarCodeInfo?.Barcode ?? string.Empty, packageInfo.WeightInfo?.FormattedWeight ?? 0,
-                                        packageInfo.BarCodeInfo?.ScanTime ?? DateTime.Now, imageInfo: new UploadImageInfo() {
-                                            CameraCustomName = packageInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
-                                            CameraName = packageInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
-                                            CameraSerialNumber = packageInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
-                                        }, other: new ReportChuteInfo {
-                                            ChuteCode = packageInfo.ExitInfo?.PhysicalExit ?? string.Empty,
-                                            ChuteCodePhysical = packageInfo.ExitInfo?.PhysicalExit ?? string.Empty,
-                                            ErrorReson = (string.IsNullOrEmpty(packageInfo.BarCodeInfo?.Barcode) || packageInfo.BarCodeInfo?.Barcode.ToLower().Equals("noread") == true) ?
-                                                "无条码" : "分拣成功 ",
-                                            Status = (string.IsNullOrEmpty(packageInfo.BarCodeInfo?.Barcode) || packageInfo.BarCodeInfo?.Barcode.ToLower().Equals("noread") == true) ?
-                                                1 : 0,
-                                        }, token: stoppingToken);
-                                }
-                                else {
-                                    Console.WriteLine("设置参数失败!");
-                                }
-                                break;
+                        else {
+                            _callBackItems.Enqueue(callBackModel);
                         }
                     });
                 }

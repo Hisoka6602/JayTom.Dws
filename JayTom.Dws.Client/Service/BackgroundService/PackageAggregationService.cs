@@ -34,7 +34,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             _packageExitDefinitionRepository = packageExitDefinitionRepository;
             EventAggregator.Instance.Subscribe<CallBackPackageInfo>(async item => {
                 if (item is CallBackPackageInfo info) {
-                    var (key, value) = await _packageRepository.FirstOrDefaultInfo(f => f.PackageCreateTime.Equals(info.CreateTime));
+                    var (key, value) = await _packageRepository.FirstOrDefaultInfo(f => f.PackageCreateTime.Equals(info.PackageCreateTime));
                     if (key && value is not null) {
                         //添加包裹到队列
                         _packageInfoItems.Enqueue(value);

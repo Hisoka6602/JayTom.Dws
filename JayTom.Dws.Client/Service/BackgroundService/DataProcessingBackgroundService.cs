@@ -112,215 +112,236 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
             while (!stoppingToken.IsCancellationRequested && !_isWindowsClose) {
-                var tryDequeue = _insertItems.TryDequeue(out var insertModel);
-                if (tryDequeue && insertModel is not null) {
-                    var insert = await _packageRepository.Insert(insertModel, stoppingToken);
-                    if (!insert) {
-                        _insertItems.Enqueue(insertModel);
-                    }
-                }
-
-                var dequeue = _updateResponseItems.TryDequeue(out var responseModel);
-                if (dequeue && responseModel is not null) {
-                    //更新
-                    var (key, value) = await _packageRepository.FirstOrDefaultInfo(f => f.BarCodeInfo != null &&
-                            f.BarCodeInfo.Barcode.Equals(responseModel.Barcode) &&
-                        f.BarCodeInfo.ScanTime.Equals(responseModel.ScanTime),
-                        stoppingToken);
-
-                    if (key && value is { } packageInfoModel && responseModel.UploadResponse is not null) {
-                        var insert = await _uploadRepository.Insert(new UploadInfoModel() {
-                            PackageId = packageInfoModel.Id,
-                            RequestStatus = responseModel.UploadResponse.IsSuccess
-                                ? UploadStatus.Succeeded
-                                : UploadStatus.Failed,
-                            RequestContent = responseModel.UploadResponse.RequestContent,
-                            ResponseContent = responseModel.UploadResponse.ResponseContent,
-                            RequestTime = responseModel.UploadResponse.RequestTime,
-                            ResponseTime = responseModel.UploadResponse.ResponseTime,
-                            DurationInSeconds = responseModel.UploadResponse.Duration,
-                            InterfaceParameters = responseModel.UploadResponse.ApiParameters,
-                            RequestUrl = responseModel.UploadResponse.RequestUrl,
-                            ExceptionMessage = responseModel.UploadResponse.ExceptionMsg,
-                            ApiExceptionType = (ApiExceptionType)responseModel.UploadResponse.ApiExceptionType,
-                        }, stoppingToken);
-
+                try {
+                    var tryDequeue = _insertItems.TryDequeue(out var insertModel);
+                    if (tryDequeue && insertModel is not null) {
+                        var insert = await _packageRepository.Insert(insertModel, stoppingToken);
                         if (!insert) {
+                            NLog.LogManager.GetCurrentClassLogger().Error($"数据保存失败,正在重试...");
+                            _insertItems.Enqueue(insertModel);
+                        }
+                    }
+
+                    var dequeue = _updateResponseItems.TryDequeue(out var responseModel);
+                    if (dequeue && responseModel is not null) {
+                        //更新
+                        var (key, value) = await _packageRepository.FirstOrDefaultInfo(f => f.BarCodeInfo != null &&
+                                f.BarCodeInfo.Barcode.Equals(responseModel.Barcode) &&
+                                f.BarCodeInfo.ScanTime.Equals(responseModel.ScanTime),
+                            stoppingToken);
+
+                        if (key && value is { } packageInfoModel && responseModel.UploadResponse is not null) {
+                            var insert = await _uploadRepository.Insert(new UploadInfoModel() {
+                                PackageId = packageInfoModel.Id,
+                                RequestStatus = responseModel.UploadResponse.IsSuccess
+                                    ? UploadStatus.Succeeded
+                                    : UploadStatus.Failed,
+                                RequestContent = responseModel.UploadResponse.RequestContent,
+                                ResponseContent = responseModel.UploadResponse.ResponseContent,
+                                RequestTime = responseModel.UploadResponse.RequestTime,
+                                ResponseTime = responseModel.UploadResponse.ResponseTime,
+                                DurationInSeconds = responseModel.UploadResponse.Duration,
+                                InterfaceParameters = responseModel.UploadResponse.ApiParameters,
+                                RequestUrl = responseModel.UploadResponse.RequestUrl,
+                                ExceptionMessage = responseModel.UploadResponse.ExceptionMsg,
+                                ApiExceptionType = (ApiExceptionType)responseModel.UploadResponse.ApiExceptionType,
+                            }, stoppingToken);
+
+                            if (!insert) {
+                                _updateResponseItems.Enqueue(responseModel);
+                            }
+                        }
+                        else {
                             _updateResponseItems.Enqueue(responseModel);
                         }
                     }
-                    else {
-                        _updateResponseItems.Enqueue(responseModel);
-                    }
-                }
-                //更新图片路径
+                    //更新图片路径
 
-                var isSaved = _savedImageItems.TryDequeue(out var savedImageInfo);
-                if (isSaved && savedImageInfo is not null) {
-                    if (savedImageInfo.ImageType == SaveImageType.BarcodeImage) {
-                        //扫码图
-                        var (key, value) = await _packageRepository.FirstOrDefaultInfo(f => f.BarCodeInfo != null &&
-                                f.BarCodeInfo.Barcode.Equals(savedImageInfo.BarCode) &&
-                             f.BarCodeInfo.ScanTime.Equals(savedImageInfo.ScanTime),
-                            stoppingToken);
+                    var isSaved = _savedImageItems.TryDequeue(out var savedImageInfo);
+                    if (isSaved && savedImageInfo is not null) {
+                        if (savedImageInfo.ImageType == SaveImageType.BarcodeImage) {
+                            //扫码图
+                            var (key, value) = await _packageRepository.FirstOrDefaultInfo(f => f.BarCodeInfo != null &&
+                                    f.BarCodeInfo.Barcode.Equals(savedImageInfo.BarCode) &&
+                                    f.BarCodeInfo.ScanTime.Equals(savedImageInfo.ScanTime),
+                                stoppingToken);
 
-                        if (key && value is { } packageInfoModel) {
-                            //获取相机信息
-                            var cameraConfigInfoModel = await _barcodeScannerCameraConfigRepository.FirstOrDefault(f =>
-                                f.SerialNumber.Equals(savedImageInfo.CameraSerialNumber), stoppingToken);
+                            if (key && value is { } packageInfoModel) {
+                                //获取相机信息
+                                var cameraConfigInfoModel = await _barcodeScannerCameraConfigRepository.FirstOrDefault(
+                                    f =>
+                                        f.SerialNumber.Equals(savedImageInfo.CameraSerialNumber), stoppingToken);
 
-                            var insert = await _imageRepository.Insert(new ImageInfoModel() {
-                                PackageId = packageInfoModel.Id,
-                                CameraName = cameraConfigInfoModel?.Name ?? string.Empty,
-                                CameraSerialNumber = savedImageInfo.CameraSerialNumber,
-                                CustomCameraName = cameraConfigInfoModel?.CustomName ?? string.Empty,
-                                LocalPath = savedImageInfo.FilePath ?? string.Empty,
-                                Type = 0
-                            }, stoppingToken);
+                                var insert = await _imageRepository.Insert(new ImageInfoModel() {
+                                    PackageId = packageInfoModel.Id,
+                                    CameraName = cameraConfigInfoModel?.Name ?? string.Empty,
+                                    CameraSerialNumber = savedImageInfo.CameraSerialNumber,
+                                    CustomCameraName = cameraConfigInfoModel?.CustomName ?? string.Empty,
+                                    LocalPath = savedImageInfo.FilePath ?? string.Empty,
+                                    Type = 0
+                                }, stoppingToken);
 
-                            if (!insert) {
+                                if (!insert) {
+                                    _savedImageItems.Enqueue(savedImageInfo);
+                                }
+                            }
+                            else {
                                 _savedImageItems.Enqueue(savedImageInfo);
                             }
                         }
-                        else {
-                            _savedImageItems.Enqueue(savedImageInfo);
-                        }
-                    }
-                    else if (savedImageInfo.ImageType == SaveImageType.PanoramaImage) {
-                        //全景图
-                        var (key, value) = await _packageRepository.FirstOrDefaultInfo(f => f.BarCodeInfo != null &&
-                                f.BarCodeInfo.Barcode.Equals(savedImageInfo.BarCode) &&
-                                f.BarCodeInfo.ScanTime.Equals(savedImageInfo.ScanTime),
-                            stoppingToken);
-                        if (key && value is { } packageInfoModel) {
-                            var cameraConfigInfoModel = await _barcodeScannerCameraConfigRepository.FirstOrDefault(f =>
-                                f.SerialNumber.Equals(savedImageInfo.CameraSerialNumber), stoppingToken);
+                        else if (savedImageInfo.ImageType == SaveImageType.PanoramaImage) {
+                            //全景图
+                            var (key, value) = await _packageRepository.FirstOrDefaultInfo(f => f.BarCodeInfo != null &&
+                                    f.BarCodeInfo.Barcode.Equals(savedImageInfo.BarCode) &&
+                                    f.BarCodeInfo.ScanTime.Equals(savedImageInfo.ScanTime),
+                                stoppingToken);
+                            if (key && value is { } packageInfoModel) {
+                                var cameraConfigInfoModel = await _barcodeScannerCameraConfigRepository.FirstOrDefault(
+                                    f =>
+                                        f.SerialNumber.Equals(savedImageInfo.CameraSerialNumber), stoppingToken);
 
-                            var insert = await _imageRepository.Insert(new ImageInfoModel() {
-                                PackageId = packageInfoModel.Id,
-                                CameraName = cameraConfigInfoModel?.Name ?? string.Empty,
-                                CameraSerialNumber = savedImageInfo.CameraSerialNumber,
-                                CustomCameraName = cameraConfigInfoModel?.CustomName ?? string.Empty,
-                                LocalPath = savedImageInfo.FilePath ?? string.Empty,
-                                Type = 1
-                            }, stoppingToken);
+                                var insert = await _imageRepository.Insert(new ImageInfoModel() {
+                                    PackageId = packageInfoModel.Id,
+                                    CameraName = cameraConfigInfoModel?.Name ?? string.Empty,
+                                    CameraSerialNumber = savedImageInfo.CameraSerialNumber,
+                                    CustomCameraName = cameraConfigInfoModel?.CustomName ?? string.Empty,
+                                    LocalPath = savedImageInfo.FilePath ?? string.Empty,
+                                    Type = 1
+                                }, stoppingToken);
 
-                            if (!insert) {
+                                if (!insert) {
+                                    _savedImageItems.Enqueue(savedImageInfo);
+                                }
+                            }
+                            else {
                                 _savedImageItems.Enqueue(savedImageInfo);
                             }
                         }
-                        else {
-                            _savedImageItems.Enqueue(savedImageInfo);
-                        }
                     }
-                }
 
-                var isSorting = _instructionItems.TryDequeue(out var sortingModel);
-                if (isSorting && sortingModel is not null) {
-                    //取出对应条码id(根据条码、扫码时间)
-                    /*var (key, value) = await _packageRepository.FirstOrDefaultInfo(f => f.BarCodeInfo != null &&
-                            f.BarCodeInfo.Barcode.Equals(sortingModel.BarCode) &&
-                            f.BarCodeInfo.ScanTime.Equals(sortingModel.ScanTime),
-                        stoppingToken);*/
-                    var (key, value) = await _packageRepository.FirstOrDefaultInfo(f => f.PackageTimestamped.Equals(sortingModel.Timestamp),
-                        stoppingToken);
-                    if (key && value is { } packageInfoModel) {
-                        //判断是否已存在记录
-                        var sortingInfoModel = await _sortingRepository.
-                            FirstOrDefault(f =>
+                    var isSorting = _instructionItems.TryDequeue(out var sortingModel);
+                    if (isSorting && sortingModel is not null) {
+                        //取出对应条码id(根据条码、扫码时间)
+                        /*var (key, value) = await _packageRepository.FirstOrDefaultInfo(f => f.BarCodeInfo != null &&
+                                f.BarCodeInfo.Barcode.Equals(sortingModel.BarCode) &&
+                                f.BarCodeInfo.ScanTime.Equals(sortingModel.ScanTime),
+                            stoppingToken);*/
+                        var (key, value) = await _packageRepository.FirstOrDefaultInfo(
+                            f => f.PackageTimestamped.Equals(sortingModel.Timestamp),
+                            stoppingToken);
+                        if (key && value is { } packageInfoModel) {
+                            //判断是否已存在记录
+                            var sortingInfoModel = await _sortingRepository.FirstOrDefault(f =>
                                 f.PackageId.Equals(packageInfoModel.Id), stoppingToken);
-                        bool isSortingUpdateInfo;
-                        if (sortingInfoModel is null) {
-                            //存到表
-                            isSortingUpdateInfo = await _sortingRepository.Insert(new SortingInfoModel() {
-                                PackageId = packageInfoModel.Id,
-                                ChecksumProtocolName = sortingModel.ChecksumProtocolName,
-                                CommunicationMethod = sortingModel.CommunicationMethod,
-                                IsCreatedByLowerMachine = sortingModel.IsCreatedByLowerMachine,
-                                IsSortingUsed = true,
-                                SortingCode = sortingModel.SortingCode,
-                                SortingMode = sortingModel.SortingMode,
-                                InstructionInfos = sortingModel.InstructionInfos?.Select(s => new InstructionInfoModel {
-                                    InstructionType = s.InstructionType,
-                                    InstructionContent = s.InstructionContent,
-                                    InstructionGeneratedTime = s.InstructionGeneratedTime,
-                                })?.ToList() ?? new List<InstructionInfoModel>()
-                            }, stoppingToken);
-                        }
-                        else {
-                            //更新
-                            sortingInfoModel.InstructionInfos ??= new List<InstructionInfoModel>();
-                            sortingInfoModel.IsCreatedByLowerMachine = sortingModel.IsCreatedByLowerMachine;
-                            sortingInfoModel.IsSortingUsed = true;
-                            if (!string.IsNullOrEmpty(sortingModel.ChecksumProtocolName)) {
-                                sortingInfoModel.ChecksumProtocolName = sortingModel.ChecksumProtocolName;
+                            bool isSortingUpdateInfo;
+                            if (sortingInfoModel is null) {
+                                //存到表
+                                isSortingUpdateInfo = await _sortingRepository.Insert(new SortingInfoModel() {
+                                    PackageId = packageInfoModel.Id,
+                                    ChecksumProtocolName = sortingModel.ChecksumProtocolName,
+                                    CommunicationMethod = sortingModel.CommunicationMethod,
+                                    IsCreatedByLowerMachine = sortingModel.IsCreatedByLowerMachine,
+                                    IsSortingUsed = true,
+                                    SortingCode = sortingModel.SortingCode,
+                                    SortingMode = sortingModel.SortingMode,
+                                    InstructionInfos = sortingModel.InstructionInfos?.Select(s =>
+                                        new InstructionInfoModel {
+                                            InstructionType = s.InstructionType,
+                                            InstructionContent = s.InstructionContent,
+                                            InstructionGeneratedTime = s.InstructionGeneratedTime,
+                                        })?.ToList() ?? new List<InstructionInfoModel>()
+                                }, stoppingToken);
                             }
-                            if (sortingModel.CommunicationMethod != CommunicationsType.None) {
-                                sortingInfoModel.CommunicationMethod = sortingModel.CommunicationMethod;
-                            }
-                            if (sortingModel.SortingMode != SortMode.None) {
-                                sortingInfoModel.SortingMode = sortingModel.SortingMode;
-                            }
-                            var instructionInfoModels = sortingModel.InstructionInfos?.Select(s => new InstructionInfoModel {
-                                InstructionType = s.InstructionType,
-                                InstructionContent = s.InstructionContent,
-                                InstructionGeneratedTime = s.InstructionGeneratedTime,
-                            })?.ToList() ?? new List<InstructionInfoModel>();
-                            foreach (var instructionInfoModel in instructionInfoModels) {
-                                sortingInfoModel.InstructionInfos.Add(instructionInfoModel);
+                            else {
+                                //更新
+                                sortingInfoModel.InstructionInfos ??= new List<InstructionInfoModel>();
+                                sortingInfoModel.IsCreatedByLowerMachine = sortingModel.IsCreatedByLowerMachine;
+                                sortingInfoModel.IsSortingUsed = true;
+                                if (!string.IsNullOrEmpty(sortingModel.ChecksumProtocolName)) {
+                                    sortingInfoModel.ChecksumProtocolName = sortingModel.ChecksumProtocolName;
+                                }
+
+                                if (sortingModel.CommunicationMethod != CommunicationsType.None) {
+                                    sortingInfoModel.CommunicationMethod = sortingModel.CommunicationMethod;
+                                }
+
+                                if (sortingModel.SortingMode != SortMode.None) {
+                                    sortingInfoModel.SortingMode = sortingModel.SortingMode;
+                                }
+
+                                var instructionInfoModels = sortingModel.InstructionInfos?.Select(s =>
+                                    new InstructionInfoModel {
+                                        InstructionType = s.InstructionType,
+                                        InstructionContent = s.InstructionContent,
+                                        InstructionGeneratedTime = s.InstructionGeneratedTime,
+                                    })?.ToList() ?? new List<InstructionInfoModel>();
+                                foreach (var instructionInfoModel in instructionInfoModels) {
+                                    sortingInfoModel.InstructionInfos.Add(instructionInfoModel);
+                                }
+
+                                isSortingUpdateInfo = await _sortingRepository.Update(sortingInfoModel, stoppingToken);
                             }
 
-                            isSortingUpdateInfo = await _sortingRepository.Update(sortingInfoModel, stoppingToken);
+                            if (!isSortingUpdateInfo) {
+                                _instructionItems.Enqueue(sortingModel);
+                            }
                         }
-                        if (!isSortingUpdateInfo) {
+                        else {
                             _instructionItems.Enqueue(sortingModel);
                         }
                     }
-                    else {
-                        _instructionItems.Enqueue(sortingModel);
-                    }
-                }
 
-                var isExceptionSorting = _exceptionSortingItems.TryDequeue(out var exceptionSortingModel);
-                if (isExceptionSorting && exceptionSortingModel is not null) {
-                    var (key, value) = await _packageRepository.FirstOrDefaultInfo(f => f.BarCodeInfo != null &&
-                            f.BarCodeInfo.Barcode.Equals(exceptionSortingModel.BarCode) &&
-                            f.BarCodeInfo.ScanTime.Equals(exceptionSortingModel.ScanTime),
-                        stoppingToken);
-                    var sortingInfoModel = await _sortingRepository.FirstOrDefault(f => f.PackageId.Equals(value.Id), stoppingToken);
-                    if (sortingInfoModel is not null) {
-                        sortingInfoModel.AbnormalSortingType = (AbnormalSortingType)exceptionSortingModel.PackageCloudAbnormalSortingType;
-                        sortingInfoModel.IsAbnormalSorting = exceptionSortingModel.PackageCloudAbnormalSortingType != PackageCloudAbnormalSortingType.None;
-                        var update = await _sortingRepository.Update(sortingInfoModel, stoppingToken);
-                        if (!update) {
+                    var isExceptionSorting = _exceptionSortingItems.TryDequeue(out var exceptionSortingModel);
+                    if (isExceptionSorting && exceptionSortingModel is not null) {
+                        var (key, value) = await _packageRepository.FirstOrDefaultInfo(f => f.BarCodeInfo != null &&
+                                f.BarCodeInfo.Barcode.Equals(exceptionSortingModel.BarCode) &&
+                                f.BarCodeInfo.ScanTime.Equals(exceptionSortingModel.ScanTime),
+                            stoppingToken);
+                        var sortingInfoModel =
+                            await _sortingRepository.FirstOrDefault(f => f.PackageId.Equals(value.Id), stoppingToken);
+                        if (sortingInfoModel is not null) {
+                            sortingInfoModel.AbnormalSortingType =
+                                (AbnormalSortingType)exceptionSortingModel.PackageCloudAbnormalSortingType;
+                            sortingInfoModel.IsAbnormalSorting =
+                                exceptionSortingModel.PackageCloudAbnormalSortingType !=
+                                PackageCloudAbnormalSortingType.None;
+                            var update = await _sortingRepository.Update(sortingInfoModel, stoppingToken);
+                            if (!update) {
+                                _exceptionSortingItems.Enqueue(exceptionSortingModel);
+                            }
+                        }
+                        else {
                             _exceptionSortingItems.Enqueue(exceptionSortingModel);
                         }
                     }
-                    else {
-                        _exceptionSortingItems.Enqueue(exceptionSortingModel);
-                    }
-                }
 
-                var isSortingExit = _sortingExitItems.TryDequeue(out var sortingExitModel);
-                if (isSortingExit && sortingExitModel is not null) {
-                    var (key, value) = await _packageRepository.FirstOrDefaultInfo(f => f.PackageTimestamped.Equals(sortingExitModel.Timestamp),
-                        stoppingToken);
-                    if (key && value is not null) {
-                        var isExitInfoUpdate = await _exitInfoRepository.Insert(new ExitInfoModel() {
-                            PackageId = value.Id,
-                            PhysicalExit = sortingExitModel.ExitName,
-                            PhysicalExitId = sortingExitModel.ExitId,
-                            TheoreticalExit = sortingExitModel.ExitName
-                        }, stoppingToken);
-                        if (!isExitInfoUpdate) {
+                    var isSortingExit = _sortingExitItems.TryDequeue(out var sortingExitModel);
+                    if (isSortingExit && sortingExitModel is not null) {
+                        var (key, value) = await _packageRepository.FirstOrDefaultInfo(
+                            f => f.PackageTimestamped.Equals(sortingExitModel.Timestamp),
+                            stoppingToken);
+                        if (key && value is not null) {
+                            var isExitInfoUpdate = await _exitInfoRepository.Insert(new ExitInfoModel() {
+                                PackageId = value.Id,
+                                PhysicalExit = sortingExitModel.ExitName,
+                                PhysicalExitId = sortingExitModel.ExitId,
+                                TheoreticalExit = sortingExitModel.ExitName
+                            }, stoppingToken);
+                            if (!isExitInfoUpdate) {
+                                _sortingExitItems.Enqueue(sortingExitModel);
+                            }
+                        }
+                        else {
                             _sortingExitItems.Enqueue(sortingExitModel);
                         }
                     }
-                    else {
-                        _sortingExitItems.Enqueue(sortingExitModel);
-                    }
                 }
-                await Task.Delay(50, stoppingToken);
+                catch (Exception e) {
+                    NLog.LogManager.GetCurrentClassLogger().Error($"数据存储异常,正在重试:{e}");
+                }
+                finally {
+                    await Task.Delay(50, stoppingToken);
+                }
             }
         }
     }

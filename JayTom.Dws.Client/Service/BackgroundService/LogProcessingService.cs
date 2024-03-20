@@ -378,67 +378,85 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
             while (!stoppingToken.IsCancellationRequested && !_isWindowsClose) {
-                //异常日志
-                var isException = _exceptionItems.TryDequeue(out var exception);
-                if (isException && exception is not null) {
-                    await _exceptionLogRepository.Insert(exception, stoppingToken);
+                try {
+                    //异常日志
+                    var isException = _exceptionItems.TryDequeue(out var exception);
+                    if (isException && exception is not null) {
+                        await _exceptionLogRepository.Insert(exception, stoppingToken);
+                    }
+
+                    //程序日志
+                    var isAppLog = _appLogItems.TryDequeue(out var appLog);
+                    if (isAppLog && appLog is not null) {
+                        await _appLogRepository.Insert(appLog, stoppingToken);
+                    }
+
+                    //相机日志
+                    var isCameraLog = _cameraLogItems.TryDequeue(out var cameraLog);
+                    if (isCameraLog && cameraLog is not null) {
+                        await _cameraLogRepository.Insert(cameraLog, stoppingToken);
+                    }
+
+                    //分拣日志
+                    var isSortingLog = _sortingLogItems.TryDequeue(out var sortingLog);
+                    if (isSortingLog && sortingLog is not null) {
+                        await _sortingLogRepository.Insert(sortingLog, stoppingToken);
+                    }
+
+                    //称重日志
+                    var isWeighingLog = _weighingLogItems.TryDequeue(out var weighingLog);
+                    if (isWeighingLog && weighingLog is not null) {
+                        await _weighingLogRepository.Insert(weighingLog, stoppingToken);
+                    }
+
+                    //体积日志
+                    var isVolumeLog = _volumeLogItems.TryDequeue(out var volumeLog);
+                    if (isVolumeLog && volumeLog is not null) {
+                        await _volumeLogRepository.Insert(volumeLog, stoppingToken);
+                    }
+
+                    //API日志
+                    var isApiLog = _apiLogInfoItems.TryDequeue(out var apiLog);
+                    if (isApiLog && apiLog is not null) {
+                        await _apiLogRepository.Insert(apiLog, stoppingToken);
+                    }
+
+                    //输出日志
+                    var isOutputLog = _outputLogItems.TryDequeue(out var outputLog);
+                    if (isOutputLog && outputLog is not null) {
+                        await _outputLogRepository.Insert(outputLog, stoppingToken);
+                    }
+
+                    //输入日志
+                    var isInputLog = _inputLogItems.TryDequeue(out var inputLog);
+                    if (isInputLog && inputLog is not null) {
+                        await _inputLogRepository.Insert(inputLog, stoppingToken);
+                    }
+
+                    //OCR日志
+                    var isOcrLog = _ocrLogItems.TryDequeue(out var ocrLog);
+                    if (isOcrLog && ocrLog is not null) {
+                        await _ocrLogRepository.Insert(ocrLog, stoppingToken);
+                    }
+
+                    //FTP日志
+                    var isFtpLog = _ftpLogItems.TryDequeue(out var ftpLog);
+                    if (isFtpLog && ftpLog is not null) {
+                        await _ftpLogRepository.Insert(ftpLog, stoppingToken);
+                    }
+
+                    //清理记录
+                    var isLogCleaningLog = _logCleaningLogItems.TryDequeue(out var logCleaningLog);
+                    if (isLogCleaningLog && logCleaningLog is not null) {
+                        await _cleanupLogRepository.Insert(logCleaningLog, stoppingToken);
+                    }
                 }
-                //程序日志
-                var isAppLog = _appLogItems.TryDequeue(out var appLog);
-                if (isAppLog && appLog is not null) {
-                    await _appLogRepository.Insert(appLog, stoppingToken);
+                catch (Exception e) {
+                    NLog.LogManager.GetCurrentClassLogger().Error($"日志管理异常:{e}");
                 }
-                //相机日志
-                var isCameraLog = _cameraLogItems.TryDequeue(out var cameraLog);
-                if (isCameraLog && cameraLog is not null) {
-                    await _cameraLogRepository.Insert(cameraLog, stoppingToken);
+                finally {
+                    await Task.Delay(60, stoppingToken);
                 }
-                //分拣日志
-                var isSortingLog = _sortingLogItems.TryDequeue(out var sortingLog);
-                if (isSortingLog && sortingLog is not null) {
-                    await _sortingLogRepository.Insert(sortingLog, stoppingToken);
-                }
-                //称重日志
-                var isWeighingLog = _weighingLogItems.TryDequeue(out var weighingLog);
-                if (isWeighingLog && weighingLog is not null) {
-                    await _weighingLogRepository.Insert(weighingLog, stoppingToken);
-                }
-                //体积日志
-                var isVolumeLog = _volumeLogItems.TryDequeue(out var volumeLog);
-                if (isVolumeLog && volumeLog is not null) {
-                    await _volumeLogRepository.Insert(volumeLog, stoppingToken);
-                }
-                //API日志
-                var isApiLog = _apiLogInfoItems.TryDequeue(out var apiLog);
-                if (isApiLog && apiLog is not null) {
-                    await _apiLogRepository.Insert(apiLog, stoppingToken);
-                }
-                //输出日志
-                var isOutputLog = _outputLogItems.TryDequeue(out var outputLog);
-                if (isOutputLog && outputLog is not null) {
-                    await _outputLogRepository.Insert(outputLog, stoppingToken);
-                }
-                //输入日志
-                var isInputLog = _inputLogItems.TryDequeue(out var inputLog);
-                if (isInputLog && inputLog is not null) {
-                    await _inputLogRepository.Insert(inputLog, stoppingToken);
-                }
-                //OCR日志
-                var isOcrLog = _ocrLogItems.TryDequeue(out var ocrLog);
-                if (isOcrLog && ocrLog is not null) {
-                    await _ocrLogRepository.Insert(ocrLog, stoppingToken);
-                }
-                //FTP日志
-                var isFtpLog = _ftpLogItems.TryDequeue(out var ftpLog);
-                if (isFtpLog && ftpLog is not null) {
-                    await _ftpLogRepository.Insert(ftpLog, stoppingToken);
-                }
-                //清理记录
-                var isLogCleaningLog = _logCleaningLogItems.TryDequeue(out var logCleaningLog);
-                if (isLogCleaningLog && logCleaningLog is not null) {
-                    await _cleanupLogRepository.Insert(logCleaningLog, stoppingToken);
-                }
-                await Task.Delay(60, stoppingToken);
             }
         }
     }

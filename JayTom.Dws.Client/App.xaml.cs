@@ -363,7 +363,7 @@ namespace JayTom.Dws.Client {
                 NotifyExistingInstance();
                 Environment.Exit(0);
             }
-            ThreadPool.SetMinThreads(300, 200);
+            ThreadPool.SetMinThreads(500, 500);
 
             this.DispatcherUnhandledException += delegate (object sender, DispatcherUnhandledExceptionEventArgs args) {
                 //异常触发
