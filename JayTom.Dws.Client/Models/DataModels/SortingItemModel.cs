@@ -8,13 +8,15 @@ namespace JayTom.Dws.Client.Models.DataModels {
 
     public class SortingItemModel : BindableBase {
         private bool _isSortingUsed;
-        private long _exitId;
-        private long _logisticsId;
         private SortMode _sortingMode;
         private bool _isCreatedByLowerMachine;
         private CommunicationsType _communicationMethod = CommunicationsType.None;
         private string _checksumProtocolName = string.Empty;
         private ObservableCollection<InstructionInfoItemModel> _instructionInfoItems = new();
+        private string _sortingCode = string.Empty;
+        private string _connectionName = string.Empty;
+        private bool _isAbnormalSorting;
+        private AbnormalSortingType _abnormalSortingType;
 
         /// <summary>
         /// 是否使用分拣
@@ -25,19 +27,11 @@ namespace JayTom.Dws.Client.Models.DataModels {
         }
 
         /// <summary>
-        /// 格口Id
+        /// 分拣流水号
         /// </summary>
-        public long ExitId {
-            get => _exitId;
-            set => SetProperty(ref _exitId, value);
-        }
-
-        /// <summary>
-        /// 物流Id
-        /// </summary>
-        public long LogisticsId {
-            get => _logisticsId;
-            set => SetProperty(ref _logisticsId, value);
+        public string SortingCode {
+            get => _sortingCode;
+            set => SetProperty(ref _sortingCode, value);
         }
 
         /// <summary>
@@ -70,6 +64,30 @@ namespace JayTom.Dws.Client.Models.DataModels {
         public string ChecksumProtocolName {
             get => _checksumProtocolName;
             set => SetProperty(ref _checksumProtocolName, value);
+        }
+
+        /// <summary>
+        /// 连接名称
+        /// </summary>
+        public string ConnectionName {
+            get => _connectionName;
+            set => SetProperty(ref _connectionName, value);
+        }
+
+        /// <summary>
+        /// 是否异常分拣
+        /// </summary>
+        public bool IsAbnormalSorting {
+            get => _isAbnormalSorting;
+            set => SetProperty(ref _isAbnormalSorting, value);
+        }
+
+        /// <summary>
+        /// 异常分拣类型
+        /// </summary>
+        public AbnormalSortingType AbnormalSortingType {
+            get => _abnormalSortingType;
+            set => SetProperty(ref _abnormalSortingType, value);
         }
 
         /// <summary>

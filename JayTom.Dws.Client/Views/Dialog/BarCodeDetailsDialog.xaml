@@ -10,6 +10,7 @@
     xmlns:local="clr-namespace:JayTom.Dws.Client.Views.Dialog"
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:packageSortingConfiguration="clr-namespace:JayTom.Dws.Client.Converters.PackageSortingConfiguration"
     Name="BarCodeDetailsView"
     d:DesignHeight="450"
     d:DesignWidth="800"
@@ -24,6 +25,7 @@
         <converters:UploadStatusToVisibilityConverter x:Key="UploadStatusToVisibilityConverter" />
         <converters:BooleanNegatedToVisibilityConverter x:Key="BooleanNegatedToVisibilityConverter" />
         <converters:UploadStatusNegatedToVisibilityConverter x:Key="UploadStatusNegatedToVisibilityConverter" />
+        <packageSortingConfiguration:AbnormalSortingTypeConverter x:Key="AbnormalSortingTypeConverter" />
     </UserControl.Resources>
     <b:Interaction.Triggers>
         <b:EventTrigger EventName="Loaded" SourceName="BarCodeDetailsView">
@@ -119,7 +121,7 @@
                             FontWeight="Bold"
                             Foreground="White"
                             IsEnabled="False"
-                            Text="{Binding BarCodeItem.Barcode, UpdateSourceTrigger=PropertyChanged}" />
+                            Text="{Binding PackageItem.Barcode, UpdateSourceTrigger=PropertyChanged}" />
                     </StackPanel>
                     <!--  分拣信息  -->
                     <StackPanel Margin="5,10" Orientation="Vertical">
@@ -149,7 +151,7 @@
                         </StackPanel>
                         <Grid>
                             <!--  空数据底图  -->
-                            <Border Visibility="{Binding BarCodeItem.SortingInfo.IsSortingUsed, Converter={StaticResource BooleanNegatedToVisibilityConverter}}">
+                            <Border Visibility="{Binding PackageItem.SortingInfo.IsSortingUsed, Converter={StaticResource BooleanNegatedToVisibilityConverter}}">
                                 <StackPanel
                                     Margin="10"
                                     HorizontalAlignment="Center"
@@ -172,7 +174,7 @@
                                         Text="{x:Static languages:Language.NoData}" />
                                 </StackPanel>
                             </Border>
-                            <Grid Margin="12,5,0,0" Visibility="{Binding BarCodeItem.SortingInfo.IsSortingUsed, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <Grid Margin="12,5,0,0" Visibility="{Binding PackageItem.SortingInfo.IsSortingUsed, Converter={StaticResource BooleanToVisibilityConverter}}">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="40" />
                                     <RowDefinition Height="40" />
@@ -181,12 +183,14 @@
                                     <RowDefinition Height="100" />
                                     <RowDefinition Height="100" />
                                     <RowDefinition Height="100" />
+                                    <RowDefinition Height="100" />
+                                    <RowDefinition Height="80" />
                                 </Grid.RowDefinitions>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="50*" />
                                     <ColumnDefinition Width="50*" />
                                 </Grid.ColumnDefinitions>
-                                <!--  物流  -->
+                                <!--  连接  -->
                                 <Grid
                                     Grid.Row="0"
                                     Grid.Column="0"
@@ -205,7 +209,7 @@
                                         FontFamily="{StaticResource IconFontFamily}"
                                         FontSize="23"
                                         Foreground="DimGray"
-                                        Text="&#xe7a9;" />
+                                        Text="&#xe7f6;" />
                                     <!--  信息  -->
                                     <TextBlock
                                         Grid.Column="1"
@@ -219,7 +223,7 @@
                                         IsEnabled="False"
                                         TextAlignment="Center"
                                         TextTrimming="WordEllipsis">
-                                        <Run Text="物流:" /> <Run Foreground="#BFFFFFFF" Text="韵达" />
+                                        <Run Text="连接:" /> <Run Foreground="#BFFFFFFF" Text="{Binding PackageItem.SortingInfo.ConnectionName, Converter={StaticResource SortingModeConverter}}" />
                                     </TextBlock>
                                 </Grid>
                                 <!--  分拣模式  -->
@@ -254,10 +258,10 @@
                                         IsEnabled="False"
                                         TextAlignment="Left"
                                         TextTrimming="WordEllipsis">
-                                        <Run Text="分拣模式:" /> <Run Foreground="#BFFFFFFF" Text="{Binding BarCodeItem.SortingInfo.SortingMode, Converter={StaticResource SortingModeConverter}}" />
+                                        <Run Text="分拣模式:" /> <Run Foreground="#BFFFFFFF" Text="{Binding PackageItem.SortingInfo.SortingMode, Converter={StaticResource SortingModeConverter}}" />
                                     </TextBlock>
                                 </Grid>
-                                <!--  创建包裹时间  -->
+                                <!--  分拣编码  -->
                                 <Grid
                                     Grid.Row="1"
                                     Grid.Column="0"
@@ -277,7 +281,7 @@
                                         FontSize="23"
                                         FontWeight="Light"
                                         Foreground="DimGray"
-                                        Text="&#xe82f;" />
+                                        Text="&#xe92b;" />
                                     <!--  信息  -->
                                     <TextBlock
                                         Grid.Column="1"
@@ -290,7 +294,7 @@
                                         IsEnabled="False"
                                         TextAlignment="Center"
                                         TextTrimming="WordEllipsis">
-                                        <Run Text="创建包裹时间:" /> <Run Foreground="#BFFFFFFF" Text="{Binding BarCodeItem.SortingInfo.PackageCreationTime, StringFormat='yyyy-MM-dd HH:mm:ss.fff'}" />
+                                        <Run Text="分拣编码:" /> <Run Foreground="#BFFFFFFF" Text="{Binding PackageItem.SortingInfo.SortingCode}" />
                                     </TextBlock>
                                 </Grid>
                                 <!--  是否由下位机创建  -->
@@ -331,7 +335,9 @@
                                     <CheckBox
                                         Grid.Column="2"
                                         Margin="5,0"
-                                        IsEnabled="False"
+                                        BorderBrush="DodgerBlue"
+                                        BorderThickness="2"
+                                        IsChecked="{Binding PackageItem.SortingInfo.IsCreatedByLowerMachine}"
                                         Style="{StaticResource CustomCheckBoxStyle}" />
                                 </Grid>
                                 <!--  通讯方式  -->
@@ -367,7 +373,7 @@
                                         IsEnabled="False"
                                         TextAlignment="Center"
                                         TextTrimming="WordEllipsis">
-                                        <Run Text="通讯方式:" /> <Run Foreground="#BFFFFFFF" Text="{Binding BarCodeItem.SortingInfo.CommunicationMethod, Converter={StaticResource CommunicationMethodConverter}}" />
+                                        <Run Text="通讯方式:" /> <Run Foreground="#BFFFFFFF" Text="{Binding PackageItem.SortingInfo.CommunicationMethod, Converter={StaticResource CommunicationMethodConverter}}" />
                                     </TextBlock>
                                 </Grid>
                                 <!--  通讯协议  -->
@@ -403,7 +409,7 @@
                                         IsEnabled="False"
                                         TextAlignment="Center"
                                         TextTrimming="WordEllipsis">
-                                        <Run Text="通讯协议:" /> <Run Foreground="#BFFFFFFF" Text="{Binding BarCodeItem.SortingInfo.ChecksumProtocolName}" />
+                                        <Run Text="通讯协议:" /> <Run Foreground="#BFFFFFFF" Text="{Binding PackageItem.SortingInfo.ChecksumProtocolName}" />
                                     </TextBlock>
                                 </Grid>
                                 <!--  创建包裹指令  -->
@@ -535,6 +541,92 @@
                                             VerticalScrollBarVisibility="Auto" />
                                     </Border>
                                 </StackPanel>
+                                <!--  异常分拣原因  -->
+                                <StackPanel
+                                    Grid.Row="7"
+                                    Grid.Column="0"
+                                    Grid.ColumnSpan="2"
+                                    Margin="5"
+                                    HorizontalAlignment="Center"
+                                    Orientation="Vertical">
+                                    <TextBlock
+                                        Margin="5,0"
+                                        VerticalAlignment="Center"
+                                        FontSize="13"
+                                        FontWeight="Bold"
+                                        Foreground="DimGray"
+                                        Text="异常分拣原因:" />
+                                    <Border
+                                        MinHeight="70"
+                                        MaxHeight="100"
+                                        Margin="0,5"
+                                        HorizontalAlignment="Left"
+                                        VerticalAlignment="Center"
+                                        Background="#202020"
+                                        CornerRadius="5">
+                                        <TextBox
+                                            Width="580"
+                                            MinHeight="70"
+                                            MaxWidth="580"
+                                            MaxHeight="70"
+                                            Margin="5,0"
+                                            VerticalContentAlignment="Top"
+                                            Background="Transparent"
+                                            BorderThickness="0"
+                                            FontSize="13"
+                                            FontWeight="Bold"
+                                            Foreground="White"
+                                            InputMethod.IsInputMethodEnabled="False"
+                                            IsReadOnly="True"
+                                            Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                            Text="{Binding PackageItem.SortingInfo.AbnormalSortingType, Converter={StaticResource AbnormalSortingTypeConverter}}"
+                                            TextWrapping="Wrap"
+                                            VerticalScrollBarVisibility="Auto" />
+                                    </Border>
+                                </StackPanel>
+                                <!--  格口  -->
+                                <StackPanel
+                                    Grid.Row="8"
+                                    Grid.Column="0"
+                                    Grid.ColumnSpan="2"
+                                    Margin="5"
+                                    HorizontalAlignment="Center"
+                                    Orientation="Vertical">
+                                    <TextBlock
+                                        Margin="5,0"
+                                        VerticalAlignment="Center"
+                                        FontSize="13"
+                                        FontWeight="Bold"
+                                        Foreground="DimGray"
+                                        Text="格口:" />
+                                    <Border
+                                        MinHeight="50"
+                                        MaxHeight="100"
+                                        Margin="0,5"
+                                        HorizontalAlignment="Left"
+                                        VerticalAlignment="Center"
+                                        Background="#202020"
+                                        CornerRadius="5">
+                                        <TextBox
+                                            Width="580"
+                                            MinHeight="50"
+                                            MaxWidth="580"
+                                            MaxHeight="60"
+                                            Margin="5,0"
+                                            VerticalContentAlignment="Top"
+                                            Background="Transparent"
+                                            BorderThickness="0"
+                                            FontSize="13"
+                                            FontWeight="Bold"
+                                            Foreground="White"
+                                            InputMethod.IsInputMethodEnabled="False"
+                                            IsReadOnly="True"
+                                            Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                            Text="{Binding PackageItem.ExitInfo.PhysicalExit}"
+                                            TextWrapping="Wrap"
+                                            VerticalScrollBarVisibility="Auto" />
+                                    </Border>
+                                </StackPanel>
                             </Grid>
                         </Grid>
                         <Rectangle
@@ -612,7 +704,7 @@
                                     IsEnabled="False"
                                     TextAlignment="Center"
                                     TextTrimming="WordEllipsis">
-                                    <Run Text="来源类型:" /> <Run Foreground="#BFFFFFFF" Text="{Binding BarCodeItem.WeightInfo.SourceType, Converter={StaticResource SourceTypeConverter}}" />
+                                    <Run Text="来源类型:" /> <Run Foreground="#BFFFFFFF" Text="{Binding PackageItem.WeightInfo.SourceType, Converter={StaticResource SourceTypeConverter}}" />
                                 </TextBlock>
                             </Grid>
                             <!--  连接设备名称  -->
@@ -647,7 +739,7 @@
                                     IsEnabled="False"
                                     TextAlignment="Center"
                                     TextTrimming="WordEllipsis">
-                                    <Run Text="连接设备名称:" /> <Run Foreground="#BFFFFFFF" Text="{Binding BarCodeItem.WeightInfo.SerialPortName}" />
+                                    <Run Text="连接设备名称:" /> <Run Foreground="#BFFFFFFF" Text="{Binding PackageItem.WeightInfo.SerialPortName}" />
                                 </TextBlock>
                             </Grid>
                             <!--  源字符  -->
@@ -688,7 +780,7 @@
                                         InputMethod.IsInputMethodEnabled="False"
                                         IsReadOnly="True"
                                         Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                                        Text="{Binding BarCodeItem.WeightInfo.OriginalText, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                        Text="{Binding PackageItem.WeightInfo.OriginalText, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                         TextWrapping="Wrap"
                                         VerticalScrollBarVisibility="Auto" />
                                 </Border>
@@ -725,7 +817,7 @@
                                     IsEnabled="False"
                                     TextAlignment="Center"
                                     TextTrimming="WordEllipsis">
-                                    <Run Text="格式化后重量:" /> <Run Foreground="#BFFFFFFF" Text="{Binding BarCodeItem.WeightInfo.FormattedWeight, StringFormat={}{0:F3}}" />
+                                    <Run Text="格式化后重量:" /> <Run Foreground="#BFFFFFFF" Text="{Binding PackageItem.WeightInfo.FormattedWeight, StringFormat={}{0:F3}}" />
                                 </TextBlock>
                             </Grid>
                             <!--  创建时间  -->
@@ -761,7 +853,7 @@
                                     IsEnabled="False"
                                     TextAlignment="Center"
                                     TextTrimming="WordEllipsis">
-                                    <Run Text="创建时间:" /> <Run Foreground="#BFFFFFFF" Text="{Binding BarCodeItem.WeightInfo.CreateTime, StringFormat='yyyy-MM-dd HH:mm:ss.fff'}" />
+                                    <Run Text="创建时间:" /> <Run Foreground="#BFFFFFFF" Text="{Binding PackageItem.WeightInfo.CreateTime, StringFormat='yyyy-MM-dd HH:mm:ss.fff'}" />
                                 </TextBlock>
                             </Grid>
                         </Grid>
@@ -800,7 +892,7 @@
                         </StackPanel>
                         <Grid>
                             <!--  空数据底图  -->
-                            <Border Visibility="{Binding BarCodeItem.RequestStatus, Converter={StaticResource UploadStatusNegatedToVisibilityConverter}}">
+                            <Border Visibility="{Binding PackageItem.RequestStatus, Converter={StaticResource UploadStatusNegatedToVisibilityConverter}}">
                                 <StackPanel
                                     Margin="10"
                                     HorizontalAlignment="Center"
@@ -823,7 +915,7 @@
                                         Text="{x:Static languages:Language.NoData}" />
                                 </StackPanel>
                             </Border>
-                            <Grid Margin="12,5,0,0" Visibility="{Binding BarCodeItem.RequestStatus, Converter={StaticResource UploadStatusToVisibilityConverter}}">
+                            <Grid Margin="12,5,0,0" Visibility="{Binding PackageItem.RequestStatus, Converter={StaticResource UploadStatusToVisibilityConverter}}">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
                                     <RowDefinition Height="Auto" />
@@ -876,7 +968,7 @@
                                     <CheckBox
                                         Grid.Column="2"
                                         Margin="5,0"
-                                        IsChecked="{Binding BarCodeItem.UploadInfo.IsSuccess}"
+                                        IsChecked="{Binding PackageItem.UploadInfo.IsSuccess}"
                                         IsEnabled="False"
                                         Style="{StaticResource CustomCheckBoxStyle}" />
                                 </Grid>
@@ -912,7 +1004,7 @@
                                         IsEnabled="False"
                                         TextAlignment="Center"
                                         TextTrimming="WordEllipsis">
-                                        <Run Text="耗时(毫秒):" /> <Run Foreground="#BFFFFFFF" Text="{Binding BarCodeItem.UploadInfo.DurationInSeconds, StringFormat={}{0:F3}}" />
+                                        <Run Text="耗时(毫秒):" /> <Run Foreground="#BFFFFFFF" Text="{Binding PackageItem.UploadInfo.DurationInSeconds, StringFormat={}{0:F1}, Converter={StaticResource MathMultiplyConverter}, ConverterParameter=1000}" />
                                     </TextBlock>
                                 </Grid>
                                 <!--  请求时间  -->
@@ -948,7 +1040,7 @@
                                         IsEnabled="False"
                                         TextAlignment="Center"
                                         TextTrimming="WordEllipsis">
-                                        <Run Text="请求时间:" /> <Run Foreground="#BFFFFFFF" Text="{Binding BarCodeItem.UploadInfo.RequestTime, StringFormat='yyyy-MM-dd HH:mm:ss.fff'}" />
+                                        <Run Text="请求时间:" /> <Run Foreground="#BFFFFFFF" Text="{Binding PackageItem.UploadInfo.RequestTime, StringFormat='yyyy-MM-dd HH:mm:ss.fff'}" />
                                     </TextBlock>
                                 </Grid>
                                 <!--  上传内容  -->
@@ -988,7 +1080,7 @@
                                             InputMethod.IsInputMethodEnabled="False"
                                             IsReadOnly="True"
                                             Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                                            Text="{Binding BarCodeItem.UploadInfo.RequestContent}"
+                                            Text="{Binding PackageItem.UploadInfo.RequestContent}"
                                             TextWrapping="Wrap"
                                             VerticalScrollBarVisibility="Auto" />
                                     </Border>
@@ -1026,7 +1118,7 @@
                                         IsEnabled="False"
                                         TextAlignment="Center"
                                         TextTrimming="WordEllipsis">
-                                        <Run Text="响应时间:" /> <Run Foreground="#BFFFFFFF" Text="{Binding BarCodeItem.UploadInfo.ResponseTime, StringFormat='yyyy-MM-dd HH:mm:ss.fff'}" />
+                                        <Run Text="响应时间:" /> <Run Foreground="#BFFFFFFF" Text="{Binding PackageItem.UploadInfo.ResponseTime, StringFormat='yyyy-MM-dd HH:mm:ss.fff'}" />
                                     </TextBlock>
                                 </Grid>
                                 <!--  响应内容  -->
@@ -1066,7 +1158,7 @@
                                             InputMethod.IsInputMethodEnabled="False"
                                             IsReadOnly="True"
                                             Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                                            Text="{Binding BarCodeItem.UploadInfo.ResponseContent}"
+                                            Text="{Binding PackageItem.UploadInfo.ResponseContent}"
                                             TextWrapping="Wrap"
                                             VerticalScrollBarVisibility="Auto" />
                                     </Border>
@@ -1108,7 +1200,7 @@
                                             InputMethod.IsInputMethodEnabled="False"
                                             IsReadOnly="True"
                                             Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                                            Text="{Binding BarCodeItem.UploadInfo.InterfaceParameters}"
+                                            Text="{Binding PackageItem.UploadInfo.InterfaceParameters}"
                                             TextWrapping="Wrap"
                                             VerticalScrollBarVisibility="Auto" />
                                     </Border>
@@ -1151,7 +1243,7 @@
                                             InputMethod.IsInputMethodEnabled="False"
                                             IsReadOnly="True"
                                             Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                                            Text="{Binding BarCodeItem.UploadInfo.RequestUrl}"
+                                            Text="{Binding PackageItem.UploadInfo.RequestUrl}"
                                             TextWrapping="Wrap"
                                             VerticalScrollBarVisibility="Auto" />
                                     </Border>
@@ -1194,7 +1286,7 @@
                                             InputMethod.IsInputMethodEnabled="False"
                                             IsReadOnly="True"
                                             Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                                            Text="{Binding BarCodeItem.UploadInfo.ExceptionMessage}"
+                                            Text="{Binding PackageItem.UploadInfo.ExceptionMessage}"
                                             TextWrapping="Wrap"
                                             VerticalScrollBarVisibility="Auto" />
                                     </Border>
@@ -1278,7 +1370,7 @@
                                     IsEnabled="False"
                                     TextAlignment="Center"
                                     TextTrimming="WordEllipsis">
-                                    <Run Text="来源类型:" /> <Run Foreground="#BFFFFFFF" Text="{Binding BarCodeItem.VolumeInfo.SourceType, Converter={StaticResource SourceTypeConverter}}" />
+                                    <Run Text="来源类型:" /> <Run Foreground="#BFFFFFFF" Text="{Binding PackageItem.VolumeInfo.SourceType, Converter={StaticResource SourceTypeConverter}}" />
                                 </TextBlock>
                             </Grid>
                             <!--  创建时间  -->
@@ -1314,7 +1406,7 @@
                                     IsEnabled="False"
                                     TextAlignment="Center"
                                     TextTrimming="WordEllipsis">
-                                    <Run Text="创建时间:" /> <Run Foreground="#BFFFFFFF" Text="{Binding BarCodeItem.VolumeInfo.CreateTime, StringFormat='yyyy-MM-dd HH:mm:ss.fff'}" />
+                                    <Run Text="创建时间:" /> <Run Foreground="#BFFFFFFF" Text="{Binding PackageItem.VolumeInfo.CreateTime, StringFormat='yyyy-MM-dd HH:mm:ss.fff'}" />
                                 </TextBlock>
                             </Grid>
                             <!--  源字符  -->
@@ -1355,7 +1447,7 @@
                                         InputMethod.IsInputMethodEnabled="False"
                                         IsReadOnly="True"
                                         Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                                        Text="{Binding BarCodeItem.VolumeInfo.OriginalText}"
+                                        Text="{Binding PackageItem.VolumeInfo.OriginalText}"
                                         TextWrapping="Wrap"
                                         VerticalScrollBarVisibility="Auto" />
                                 </Border>
@@ -1384,7 +1476,7 @@
                                     IsEnabled="False"
                                     TextAlignment="Center"
                                     TextTrimming="WordEllipsis">
-                                    <Run Text="格式化的长度:" /> <Run Foreground="#BFFFFFFF" Text="{Binding BarCodeItem.VolumeInfo.FormattedLength, StringFormat={}{0:F3}}" />
+                                    <Run Text="格式化的长度:" /> <Run Foreground="#BFFFFFFF" Text="{Binding PackageItem.VolumeInfo.FormattedLength, StringFormat={}{0:F3}}" />
                                 </TextBlock>
                                 <!--  宽度  -->
                                 <TextBlock
@@ -1398,7 +1490,7 @@
                                     IsEnabled="False"
                                     TextAlignment="Center"
                                     TextTrimming="WordEllipsis">
-                                    <Run Text="格式化的长度:" /> <Run Foreground="#BFFFFFFF" Text="{Binding BarCodeItem.VolumeInfo.FormattedWidth, StringFormat={}{0:F3}}" />
+                                    <Run Text="格式化的长度:" /> <Run Foreground="#BFFFFFFF" Text="{Binding PackageItem.VolumeInfo.FormattedWidth, StringFormat={}{0:F3}}" />
                                 </TextBlock>
                                 <!--  高度  -->
                                 <TextBlock
@@ -1412,7 +1504,7 @@
                                     IsEnabled="False"
                                     TextAlignment="Center"
                                     TextTrimming="WordEllipsis">
-                                    <Run Text="格式化的高度:" /> <Run Foreground="#BFFFFFFF" Text="{Binding BarCodeItem.VolumeInfo.FormattedHeight, StringFormat={}{0:F3}}" />
+                                    <Run Text="格式化的高度:" /> <Run Foreground="#BFFFFFFF" Text="{Binding PackageItem.VolumeInfo.FormattedHeight, StringFormat={}{0:F3}}" />
                                 </TextBlock>
                                 <!--  体积  -->
                                 <TextBlock
@@ -1426,7 +1518,7 @@
                                     IsEnabled="False"
                                     TextAlignment="Center"
                                     TextTrimming="WordEllipsis">
-                                    <Run Text="格式化的体积:" /> <Run Foreground="#BFFFFFFF" Text="{Binding BarCodeItem.VolumeInfo.FormattedVolume, StringFormat={}{0:F3}}" />
+                                    <Run Text="格式化的体积:" /> <Run Foreground="#BFFFFFFF" Text="{Binding PackageItem.VolumeInfo.FormattedVolume, StringFormat={}{0:F3}}" />
                                 </TextBlock>
                             </Grid>
                         </Grid>
@@ -1465,7 +1557,7 @@
                         </StackPanel>
                         <Grid>
 
-                            <Border Visibility="{Binding BarCodeItem.OcrInfo.IsUseOcr, Converter={StaticResource BooleanNegatedToVisibilityConverter}}">
+                            <Border Visibility="{Binding PackageItem.OcrInfo.IsUseOcr, Converter={StaticResource BooleanNegatedToVisibilityConverter}}">
                                 <StackPanel
                                     Margin="10"
                                     HorizontalAlignment="Center"
@@ -1489,7 +1581,7 @@
                                 </StackPanel>
                             </Border>
                         </Grid>
-                        <Grid Margin="12,5,0,0" Visibility="{Binding BarCodeItem.OcrInfo.IsUseOcr, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <Grid Margin="12,5,0,0" Visibility="{Binding PackageItem.OcrInfo.IsUseOcr, Converter={StaticResource BooleanToVisibilityConverter}}">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="40" />
                                 <RowDefinition Height="100" />
@@ -1534,7 +1626,7 @@
                                     IsEnabled="False"
                                     TextAlignment="Center"
                                     TextTrimming="WordEllipsis">
-                                    <Run Text="接口名称:" /> <Run Foreground="#BFFFFFFF" Text="{Binding BarCodeItem.OcrInfo.OcrInterfaceName}" />
+                                    <Run Text="接口名称:" /> <Run Foreground="#BFFFFFFF" Text="{Binding PackageItem.OcrInfo.OcrInterfaceName}" />
                                 </TextBlock>
                             </Grid>
                             <!--  原始内容  -->
@@ -1575,7 +1667,7 @@
                                         InputMethod.IsInputMethodEnabled="False"
                                         IsReadOnly="True"
                                         Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                                        Text="{Binding BarCodeItem.OcrInfo.OriginalContent}"
+                                        Text="{Binding PackageItem.OcrInfo.OriginalContent}"
                                         TextWrapping="Wrap"
                                         VerticalScrollBarVisibility="Auto" />
                                 </Border>
@@ -1618,7 +1710,7 @@
                                         InputMethod.IsInputMethodEnabled="False"
                                         IsReadOnly="True"
                                         Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                                        Text="{Binding BarCodeItem.OcrInfo.ParsedContent}"
+                                        Text="{Binding PackageItem.OcrInfo.ParsedContent}"
                                         TextWrapping="Wrap"
                                         VerticalScrollBarVisibility="Auto" />
                                 </Border>
@@ -1656,7 +1748,7 @@
                                     IsEnabled="False"
                                     TextAlignment="Center"
                                     TextTrimming="WordEllipsis">
-                                    <Run Text="创建时间:" /> <Run Foreground="#BFFFFFFF" Text="{Binding BarCodeItem.OcrInfo.CreateTime, StringFormat='yyyy-MM-dd HH:mm:ss.fff'}" />
+                                    <Run Text="创建时间:" /> <Run Foreground="#BFFFFFFF" Text="{Binding PackageItem.OcrInfo.CreateTime, StringFormat='yyyy-MM-dd HH:mm:ss.fff'}" />
                                 </TextBlock>
                             </Grid>
                         </Grid>

@@ -618,45 +618,50 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         else {
                             _callBackItems.Enqueue(callBackModel);
                         }
+                    });
+                }
+                //判断是否超过60秒,如果超过则强制提交
 
-                        //判断是否超过60秒,如果超过则强制提交
-
-                        var (sortingKey, sortingValue) = _sortingExitItems
-                            .FirstOrDefault(w => w.Value.ScanTime != null &&
-                                                 DateTime.Now.Subtract(w.Value.ScanTime.Value).TotalSeconds >= 60);
-
+                var sortingReport = _sortingExitItems
+                    .Where(w => w.Value.ScanTime != null &&
+                                DateTime.Now.Subtract(w.Value.ScanTime.Value).TotalSeconds >= 60)
+                    ?.ToList();
+                if (sortingReport?.Any() == true) {
+                    Parallel.ForEach(sortingReport, sValue => {
+                        _sortingExitItems.TryRemove(sValue.Key, out var sortingValue);
                         if (sortingValue is not null) {
-                            IDataUploader uploader;
-                            UploadResponse? uploadResponse = null;
-                            switch (_apiSettingsDto?.Type) {
-                                case ApiType.None:
-                                    return;
+                            Task.Factory.StartNew(async () => {
+                                IDataUploader uploader;
+                                UploadResponse? uploadResponse = null;
+                                switch (_apiSettingsDto?.Type) {
+                                    case ApiType.None:
+                                        return;
 
-                                case ApiType.CaiNiaoApi:
+                                    case ApiType.CaiNiaoApi:
 
-                                    uploader = new CaiNiaoApi(_httpClientFactory);
-                                    var (key, value) = await uploader.SetParameters(_caiNiaoApiParam);
-                                    if (key) {
-                                        uploader.UploadInBackground(sortingValue.BarCode ?? string.Empty, 0,
-                                            sortingValue.ScanTime ?? DateTime.Now, imageInfo: new UploadImageInfo() {
-                                                CameraCustomName = string.Empty,
-                                                CameraName = string.Empty,
-                                                CameraSerialNumber = string.Empty,
-                                            }, other: new ReportChuteInfo {
-                                                ChuteCode = sortingValue.ExitName ?? string.Empty,
-                                                ChuteCodePhysical = sortingValue.ExitName ?? string.Empty,
-                                                ErrorReson = (string.IsNullOrEmpty(sortingValue.BarCode) || sortingValue.BarCode.ToLower().Equals("noread") == true) ?
-                                                    "无条码" : "分拣成功 ",
-                                                Status = (string.IsNullOrEmpty(sortingValue.BarCode) || sortingValue.BarCode.ToLower().Equals("noread") == true) ?
-                                                    1 : 0,
-                                            }, token: stoppingToken);
-                                    }
-                                    else {
-                                        NLog.LogManager.GetCurrentClassLogger().Error("设置Api参数失败");
-                                    }
-                                    break;
-                            }
-                            _sortingExitItems.TryRemove(sortingKey, out _);
+                                        uploader = new CaiNiaoApi(_httpClientFactory);
+                                        var (key, value) = await uploader.SetParameters(_caiNiaoApiParam);
+                                        if (key) {
+                                            uploader.UploadInBackground(sortingValue.BarCode ?? string.Empty, 0,
+                                                sortingValue.ScanTime ?? DateTime.Now, imageInfo: new UploadImageInfo() {
+                                                    CameraCustomName = string.Empty,
+                                                    CameraName = string.Empty,
+                                                    CameraSerialNumber = string.Empty,
+                                                }, other: new ReportChuteInfo {
+                                                    ChuteCode = sortingValue.ExitName ?? string.Empty,
+                                                    ChuteCodePhysical = sortingValue.ExitName ?? string.Empty,
+                                                    ErrorReson = (string.IsNullOrEmpty(sortingValue.BarCode) || sortingValue.BarCode.ToLower().Equals("noread") == true) ?
+                                                        "无条码" : "分拣成功 ",
+                                                    Status = (string.IsNullOrEmpty(sortingValue.BarCode) || sortingValue.BarCode.ToLower().Equals("noread") == true) ?
+                                                        1 : 0,
+                                                }, token: stoppingToken);
+                                        }
+                                        else {
+                                            NLog.LogManager.GetCurrentClassLogger().Error("设置Api参数失败");
+                                        }
+                                        break;
+                                }
+                            }, stoppingToken);
                         }
                     });
                 }

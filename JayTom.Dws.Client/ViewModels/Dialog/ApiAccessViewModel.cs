@@ -6,13 +6,12 @@ using System.Windows;
 using System.Windows.Input;
 using Prism.Services.Dialogs;
 using System.Windows.Controls;
+using JayTom.Dws.Data.Package;
 using JayTom.Dws.PluginInterface;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Models.DataModels;
-using JayTom.Dws.Data.Package;
 
-namespace JayTom.Dws.Client.ViewModels.Dialog
-{
+namespace JayTom.Dws.Client.ViewModels.Dialog {
     public class ApiAccessViewModel : BindableBase, IDialogAware {
         private UploadStatus _requestStatus = UploadStatus.NotUploaded;
         private DateTime? _requestTime;
@@ -115,7 +114,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog
                 }
             }
 
-            var itemModel = parameters.GetValue<BarCodeItemModel>("BarCodeItem");
+            var itemModel = parameters.GetValue<PackageItemModel>("PackageItem");
             if (itemModel is not null) {
                 Barcode = itemModel.Barcode;
                 RequestStatus = itemModel.RequestStatus;

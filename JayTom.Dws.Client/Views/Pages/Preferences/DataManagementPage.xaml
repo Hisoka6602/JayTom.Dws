@@ -576,7 +576,7 @@
                 FrozenColumnCount="3"
                 GridLinesVisibility="None"
                 HorizontalScrollBarVisibility="Auto"
-                ItemsSource="{Binding BarCodeItems, UpdateSourceTrigger=PropertyChanged, IsAsync=True}"
+                ItemsSource="{Binding PackageItems, UpdateSourceTrigger=PropertyChanged, IsAsync=True}"
                 RowBackground="#061E90FF"
                 Style="{StaticResource VirtualizingDataGridStyle}">
                 <DataGrid.RowStyle>

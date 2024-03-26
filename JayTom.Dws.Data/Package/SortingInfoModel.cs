@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace JayTom.Dws.Data.Package {
-
     [Table("Data_SortingInfo", Schema = "dbo")]
     public class SortingInfoModel : BasePackageForeignKeyInfoModel {
 
@@ -28,36 +27,6 @@ namespace JayTom.Dws.Data.Package {
         [Column("SortingMode")]
         public SortMode SortingMode { get; set; }
 
-        /*
-        /// <summary>
-        /// 发送的指令
-        /// </summary>
-        [Column("SentInstruction")]
-        public string SentInstruction { get; set; } = string.Empty;
-
-        /// <summary>
-        /// 发送时间
-        /// </summary>
-        [Column("SendTime")]
-        public DateTime SendTime { get; set; }
-
-        /// <summary>
-        /// 接收的指令
-        /// </summary>
-        [Column("ReceivedInstruction")]
-        public string ReceivedInstruction { get; set; } = string.Empty;
-
-        /// <summary>
-        /// 接收时间
-        /// </summary>
-        [Column("ReceivedTime")]
-        public DateTime ReceivedTime { get; set; }
-
-        /// <summary>
-        /// 创建包裹指令
-        /// </summary>
-        [Column("PackageCreationInstruction")]
-        public string PackageCreationInstruction { get; set; } = string.Empty;*/
 
         /// <summary>
         /// 是否有下位机创建
@@ -65,11 +34,6 @@ namespace JayTom.Dws.Data.Package {
         [Column("IsCreatedByLowerMachine")]
         public bool IsCreatedByLowerMachine { get; set; }
 
-        /*/// <summary>
-        /// 指令目标
-        /// </summary>
-        [Column("CommandTarget")]
-        public string CommandTarget { get; set; } = string.Empty;*/
 
         /// <summary>
         /// 通讯方式

@@ -51,7 +51,6 @@ using ExceptionEventArgs = JayTom.Dws.Client.Service.Sorting.ExceptionEventArgs;
 using static JayTom.Dws.Client.Service.BackgroundService.SubmitApiBackgroundService;
 
 namespace JayTom.Dws.Client.ViewModels.Pages {
-
     public class HomeViewModel : BindableBase {
         private readonly IDialogService _dialogService;
         private readonly IComputerInfoReporter _computerInfoReporter;
@@ -68,7 +67,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         private readonly IClientLicenseApi _clientLicenseApi;
         private ObservableCollection<CameraItemInfoModel> _cameraItems = new();
 
-        private ObservableCollection<BarCodeItemModel> _barCodeItems = new();
+        private ObservableCollection<PackageItemModel> _packageItems = new();
 
         private DataGrid? _dataGrid = null;
         private int _totalDataCount;
@@ -108,9 +107,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             set => SetProperty(ref _cameraItems, value);
         }
 
-        public ObservableCollection<BarCodeItemModel> BarCodeItems {
-            get => _barCodeItems;
-            set => SetProperty(ref _barCodeItems, value);
+        public ObservableCollection<PackageItemModel> PackageItems {
+            get => _packageItems;
+            set => SetProperty(ref _packageItems, value);
         }
 
         /// <summary>
@@ -283,7 +282,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     StatusClickCommand = StatusClickCommand,
                 },*/
             };
-            BarCodeItems = new();
+            PackageItems = new();
             _deviceService.CameraInitialized += async delegate (object? sender, List<ICamera> list) {
                 await Application.Current.Dispatcher.BeginInvoke(() => {
                     CameraItems.Clear();
@@ -399,7 +398,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             EventAggregator.Instance.Subscribe<PackageInfo>(async info => {
                 //填充数据到列表
                 if (info is PackageInfo model) {
-                    AddNewRow(new BarCodeItemModel() {
+                    AddNewRow(new PackageItemModel() {
                         Barcode = model.BarCodeInfo?.Barcode ?? string.Empty,
                         ScanTime = model.BarCodeInfo?.ScanTime ?? DateTime.Now,
                         Weight = (float)(model.WeightInfo?.FormattedWeight ?? 0),
@@ -501,7 +500,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                         if (tryDequeue && updateResponse is not null) {
                             try {
                                 await _updateSlim.WaitAsync();
-                                var barCodeItemModel = BarCodeItems.FirstOrDefault(f => f.Barcode.Equals(updateResponse.Barcode) &&
+                                var barCodeItemModel = PackageItems.FirstOrDefault(f => f.Barcode.Equals(updateResponse.Barcode) &&
                                     f.ScanTime.Equals(updateResponse.ScanTime));
                                 if (barCodeItemModel is not null) {
                                     await Application.Current.Dispatcher.BeginInvoke(() => {
@@ -541,7 +540,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                         if (dequeue && exitInfo is not null) {
                             try {
                                 await _updateSlim.WaitAsync();
-                                var barCodeItemModel = BarCodeItems.FirstOrDefault(f => f.Barcode.Equals(exitInfo.BarCode) &&
+                                var barCodeItemModel = PackageItems.FirstOrDefault(f => f.Barcode.Equals(exitInfo.BarCode) &&
                                     f.ScanTime.Equals(exitInfo.ScanTime));
                                 if (barCodeItemModel is not null) {
                                     await Application.Current.Dispatcher.BeginInvoke(() => {
@@ -565,7 +564,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                             try {
                                 await _updateSlim.WaitAsync();
                                 await System.Windows.Application.Current.Dispatcher.BeginInvoke(async () => {
-                                    var barCodeItemModel = BarCodeItems.FirstOrDefault(f => f.Barcode.Equals(cloudVideoUpload.Barcode) &&
+                                    var barCodeItemModel = PackageItems.FirstOrDefault(f => f.Barcode.Equals(cloudVideoUpload.Barcode) &&
                                         f.ScanTime.Equals(cloudVideoUpload.ScanTime));
                                     if (barCodeItemModel is not null) {
                                         barCodeItemModel.IsUploadedToCloudVideo = cloudVideoUpload.IsSuccessful;
@@ -705,7 +704,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         }
 
         public ICommand UploadStatusCommand {
-            get => new DelegateCommand<BarCodeItemModel>(UploadStatusDelegate);
+            get => new DelegateCommand<PackageItemModel>(UploadStatusDelegate);
         }
 
         public ICommand LoadedCommand {
@@ -744,10 +743,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             });
         }
 
-        private void UploadStatusDelegate(BarCodeItemModel obj) {
+        private void UploadStatusDelegate(PackageItemModel obj) {
             //判断状态是否已上传再获进行弹窗
             if (obj.RequestStatus != UploadStatus.NotUploaded) {
-                _dialogService.Show("ApiAccessDialog", new DialogParameters { { "BarCodeItem", obj } }, null);
+                _dialogService.Show("ApiAccessDialog", new DialogParameters { { "PackageItem", obj } }, null);
             }
         }
 
@@ -943,15 +942,15 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         /// <summary>
         /// 添加一行
         /// </summary>
-        private async void AddNewRow(BarCodeItemModel item) {
+        private async void AddNewRow(PackageItemModel item) {
             try {
                 await _updateSlim.WaitAsync();
                 await Application.Current.Dispatcher.BeginInvoke(async () => {
                     item.Num = TotalDataCount += 1;
 
-                    BarCodeItems.Insert(0, item);
-                    if (BarCodeItems.Count > 200) {
-                        BarCodeItems.RemoveAt(BarCodeItems.Count - 1);
+                    PackageItems.Insert(0, item);
+                    if (PackageItems.Count > 200) {
+                        PackageItems.RemoveAt(PackageItems.Count - 1);
                     }
                     item.IsInserting = true;
                 }, DispatcherPriority.Render);

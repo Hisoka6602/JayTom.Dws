@@ -6,7 +6,7 @@
     xmlns:models="clr-namespace:JayTom.Dws.Client.Models"
     xmlns:pages="clr-namespace:JayTom.Dws.Client.ViewModels.Pages">
     <converters:UploadStatusConverter x:Key="UploadStatusConverter" />
-    <DataTemplate x:Key="UploadStatusTemplate" DataType="{x:Type dataModels:BarCodeItemModel}">
+    <DataTemplate x:Key="UploadStatusTemplate" DataType="{x:Type dataModels:PackageItemModel}">
         <DataTemplate.Resources>
             <FontFamily x:Key="CustomFontFamily">
                 pack://application:,,,/Fonts/#更纱黑体 Mono SC Nerd

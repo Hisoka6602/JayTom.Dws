@@ -1,14 +1,13 @@
 ﻿using System;
 using Prism.Mvvm;
 using System.ComponentModel;
+using JayTom.Dws.Data.Package;
 using System.Collections.Generic;
 using JayTom.Dws.Plugin.Excel.Attributes;
-using JayTom.Dws.Data.Package;
 
-namespace JayTom.Dws.Client.Models.DataModels
-{
+namespace JayTom.Dws.Client.Models.DataModels {
 
-    public class BarCodeItemModel : BindableBase {
+    public class PackageItemModel : BindableBase {
         private float _volume;
         private bool _isInserting;
         private bool _isRemoving;
@@ -31,6 +30,7 @@ namespace JayTom.Dws.Client.Models.DataModels
         private OcrItemInfo _ocrInfo = new();
         private string _exitName = string.Empty;
         private bool _isUploadedToCloudVideo;
+        private ExitInfoItemModel _exitInfo = new();
 
         [DisplayName("No."), ExcelInfo(Width = 3000)]
         public int Num {
@@ -190,6 +190,14 @@ namespace JayTom.Dws.Client.Models.DataModels
         public OcrItemInfo OcrInfo {
             get => _ocrInfo;
             set => SetProperty(ref _ocrInfo, value);
+        }
+
+        /// <summary>
+        /// 格口信息
+        /// </summary>
+        public ExitInfoItemModel ExitInfo {
+            get => _exitInfo;
+            set => SetProperty(ref _exitInfo, value);
         }
 
         /// <summary>

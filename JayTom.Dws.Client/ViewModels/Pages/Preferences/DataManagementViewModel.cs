@@ -52,7 +52,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         private float _maxWeight;
         private bool _isLoaded;
 
-        private ObservableCollection<BarCodeItemModel> _barCodeItems = new() {
+        private ObservableCollection<PackageItemModel> _packageItems = new() {
         };
 
         private UploadStatus? _selectedUploadStatus;
@@ -280,9 +280,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             set => SetProperty(ref _pageMaxHeight, value);
         }
 
-        public ObservableCollection<BarCodeItemModel> BarCodeItems {
-            get => _barCodeItems;
-            set => SetProperty(ref _barCodeItems, value);
+        public ObservableCollection<PackageItemModel> PackageItems {
+            get => _packageItems;
+            set => SetProperty(ref _packageItems, value);
         }
 
         public ICommand LoadedCommand {
@@ -366,13 +366,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// 上传状态点击
         /// </summary>
         public ICommand UploadStatusCommand {
-            get => new DelegateCommand<BarCodeItemModel>(UploadStatusDelegate);
+            get => new DelegateCommand<PackageItemModel>(UploadStatusDelegate);
         }
 
-        private void UploadStatusDelegate(BarCodeItemModel obj) {
+        private void UploadStatusDelegate(PackageItemModel obj) {
             //判断状态是否已上传再获进行弹窗
             if (obj.RequestStatus != UploadStatus.NotUploaded) {
-                _dialogService.Show("ApiAccessDialog", new DialogParameters { { "BarCodeItem", obj } }, null);
+                _dialogService.Show("ApiAccessDialog", new DialogParameters { { "PackageItem", obj } }, null);
             }
         }
 
@@ -380,10 +380,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// 打开图片
         /// </summary>
         public ICommand OpenPackagedImageCommand {
-            get => new DelegateCommand<BarCodeItemModel>(OpenPackagedImageDelegate);
+            get => new DelegateCommand<PackageItemModel>(OpenPackagedImageDelegate);
         }
 
-        private void OpenPackagedImageDelegate(BarCodeItemModel obj) {
+        private void OpenPackagedImageDelegate(PackageItemModel obj) {
             if (File.Exists(obj?.BarcodeImagePath)) {
                 try {
                     Process.Start(new ProcessStartInfo(obj.BarcodeImagePath) { UseShellExecute = true });
@@ -398,10 +398,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// 定位图片位置
         /// </summary>
         public ICommand OpenPackagedImageFolderCommand {
-            get => new DelegateCommand<BarCodeItemModel>(OpenPackagedImageFolderDelegate);
+            get => new DelegateCommand<PackageItemModel>(OpenPackagedImageFolderDelegate);
         }
 
-        private void OpenPackagedImageFolderDelegate(BarCodeItemModel obj) {
+        private void OpenPackagedImageFolderDelegate(PackageItemModel obj) {
             if (File.Exists(obj?.BarcodeImagePath)) {
                 try {
                     Process.Start("explorer.exe", $"/select,\"{obj.BarcodeImagePath}\"");
@@ -487,7 +487,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         }
 
         private async void ExportDataDelegate(object obj) {
-            if (BarCodeItems?.Any() != true) {
+            if (PackageItems?.Any() != true) {
                 DataManagementMessageQueue?.Enqueue(Languages.Language.ResourceManager.GetString("列表中没有数据") ?? string.Empty);
                 return;
             }
@@ -508,8 +508,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     DialogHost.Show(exportDialog, model.Identifier);
                     //如果页数超过1页则从数据库获取数据(未完成)
                     var export = await _excel.Export(saveFileDialog.FileName,
-                        $"BarCodeItems",
-                        "BarCodeItems", BarCodeItems?.ToList() ?? new List<BarCodeItemModel>(),
+                        $"PackageItems",
+                        "PackageItems", PackageItems?.ToList() ?? new List<PackageItemModel>(),
                         new List<string>(), async p => {
                             model.Progress = p;
                             model.ProgressText = $"{p}%";
@@ -547,7 +547,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     model.Identifier = "DataManagementDialog";
                     DialogHost.Show(loadingDialog, model.Identifier).ConfigureAwait(false);
                     await Task.Delay(500);
-                    BarCodeItems.Clear();
+                    PackageItems.Clear();
                     //获取格口集合
                     var exitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0, o => o.CreateTime);
                     //获取条数
@@ -576,7 +576,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                             o => o.PackageCreateTime, pageIndex - 1, pageSize, new CancellationToken(false));
 
                         if (infoModels?.Any() == true) {
-                            var itemModels = infoModels?.Select((s, i) => new BarCodeItemModel {
+                            var itemModels = infoModels?.Select((s, i) => new PackageItemModel {
                                 Num = i + 1,
                                 TimestampedGuid = s.PackageTimestamped,
                                 Barcode = s.BarCodeInfo?.Barcode ?? string.Empty,
@@ -614,12 +614,15 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                                     SourceType = s.WeightInfo?.SourceType ?? SourceType.SerialPort
                                 },
                                 SortingInfo = new SortingItemModel {
-                                    ChecksumProtocolName = s.SortingInfo?.ChecksumProtocolName ?? string.Empty,
-
-                                    CommunicationMethod = s.SortingInfo?.CommunicationMethod ?? CommunicationsType.None,
-                                    IsCreatedByLowerMachine = s.SortingInfo?.IsCreatedByLowerMachine ?? false,
                                     IsSortingUsed = s.SortingInfo?.IsSortingUsed ?? false,
+                                    SortingCode = s.SortingInfo?.SortingCode ?? string.Empty,
                                     SortingMode = s.SortingInfo?.SortingMode ?? SortMode.None,
+                                    IsCreatedByLowerMachine = s.SortingInfo?.IsCreatedByLowerMachine ?? false,
+                                    CommunicationMethod = s.SortingInfo?.CommunicationMethod ?? CommunicationsType.None,
+                                    ChecksumProtocolName = s.SortingInfo?.ChecksumProtocolName ?? string.Empty,
+                                    ConnectionName = s.SortingInfo?.ConnectionName ?? string.Empty,
+                                    IsAbnormalSorting = s.SortingInfo?.IsAbnormalSorting ?? false,
+                                    AbnormalSortingType = s.SortingInfo?.AbnormalSortingType ?? AbnormalSortingType.None,
                                     InstructionInfoItems = new ObservableCollection<InstructionInfoItemModel>(s.SortingInfo?.InstructionInfos?
                                         .Select(s1 => new InstructionInfoItemModel() {
                                             InstructionGeneratedTime = s1.InstructionGeneratedTime,
@@ -642,10 +645,15 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                                     OriginalContent = s.OcrInfo?.OriginalContent ?? string.Empty,
                                     ParsedContent = s.OcrInfo?.ParsedContent ?? string.Empty*/
                                 },
+                                ExitInfo = new ExitInfoItemModel() {
+                                    PhysicalExitId = s.ExitInfo?.PhysicalExitId ?? 0,
+                                    PhysicalExit = s.ExitInfo?.PhysicalExit ?? string.Empty,
+                                    TheoreticalExit = s.ExitInfo?.TheoreticalExit ?? string.Empty,
+                                },
                                 IsUploadedToCloudVideo = s.CloudVideoUploadInfo is { UploadTime: not null }
                             })?.ToList();
                             await Task.Delay(100);
-                            BarCodeItems.AddRange(itemModels);
+                            PackageItems.AddRange(itemModels);
                         }
                         else {
                             DataManagementMessageQueue?.Enqueue("Error loading data. Please try again.");
@@ -667,7 +675,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         }
 
         private void ShowDetailsDelegate(object obj) {
-            _dialogService.Show("BarCodeDetailsDialog", new DialogParameters { { "BarCodeItem", obj } }, null);
+            _dialogService.Show("BarCodeDetailsDialog", new DialogParameters { { "PackageItem", obj } }, null);
         }
     }
 }

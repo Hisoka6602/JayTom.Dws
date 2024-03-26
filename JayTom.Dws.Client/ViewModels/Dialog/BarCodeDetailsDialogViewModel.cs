@@ -15,7 +15,7 @@ using JayTom.Dws.Client.Models.DataModels;
 namespace JayTom.Dws.Client.ViewModels.Dialog {
 
     public class BarCodeDetailsDialogViewModel : BindableBase, IDialogAware {
-        private BarCodeItemModel _barCodeItem = new();
+        private PackageItemModel _packageItem = new();
         private string _packageCreationInstruction = string.Empty;
         private string _sentInstruction = string.Empty;
         private string _receivedInstruction = string.Empty;
@@ -35,9 +35,9 @@ namespace JayTom.Dws.Client.ViewModels.Dialog {
             set => SetProperty(ref _receivedInstruction, value);
         }
 
-        public BarCodeItemModel BarCodeItem {
-            get => _barCodeItem;
-            set => SetProperty(ref _barCodeItem, value);
+        public PackageItemModel PackageItem {
+            get => _packageItem;
+            set => SetProperty(ref _packageItem, value);
         }
 
         public bool CanCloseDialog() {
@@ -53,22 +53,29 @@ namespace JayTom.Dws.Client.ViewModels.Dialog {
                     window.Close();
                 }
             }
-            BarCodeItem = parameters.GetValue<BarCodeItemModel>("BarCodeItem");
-            var instructionInfoItemModel = BarCodeItem.SortingInfo.InstructionInfoItems.FirstOrDefault(f =>
-                f.InstructionType == InstructionType.CreatePackage);
-            if (instructionInfoItemModel != null) {
-                PackageCreationInstruction =
-                    $"{instructionInfoItemModel.InstructionGeneratedTime:yyyy-MM-dd HH:mm:ss.fff}:{instructionInfoItemModel.InstructionContent}";
+            PackageItem = parameters.GetValue<PackageItemModel>("PackageItem");
+            var createPackageItems = PackageItem.SortingInfo.InstructionInfoItems?.Where(w => w.InstructionType == InstructionType.CreatePackage)
+                ?.Select(s =>
+                    $"{s.InstructionGeneratedTime:yyyy-MM-dd HH:mm:ss.fff}->{s.InstructionContent}")
+                ?.ToList();
+            if (createPackageItems?.Any() == true) {
+                PackageCreationInstruction = string.Join("\n", createPackageItems);
             }
-            instructionInfoItemModel = BarCodeItem.SortingInfo.InstructionInfoItems.FirstOrDefault(f =>
-               f.InstructionType == InstructionType.SendSorting);
-            if (instructionInfoItemModel != null) {
-                SentInstruction = $"{instructionInfoItemModel.InstructionGeneratedTime:yyyy-MM-dd HH:mm:ss.fff}:{instructionInfoItemModel.InstructionContent}";
+
+            var sendSortingItems = PackageItem.SortingInfo.InstructionInfoItems?.Where(w => w.InstructionType == InstructionType.SendSorting)
+                ?.Select(s =>
+                    $"{s.InstructionGeneratedTime:yyyy-MM-dd HH:mm:ss.fff}->{s.InstructionContent}")
+                ?.ToList();
+            if (sendSortingItems?.Any() == true) {
+                SentInstruction = string.Join("\n", sendSortingItems);
             }
-            instructionInfoItemModel = BarCodeItem.SortingInfo.InstructionInfoItems.FirstOrDefault(f =>
-                f.InstructionType == InstructionType.SignalCallback);
-            if (instructionInfoItemModel != null) {
-                ReceivedInstruction = $"{instructionInfoItemModel.InstructionGeneratedTime:yyyy-MM-dd HH:mm:ss.fff}:{instructionInfoItemModel.InstructionContent}";
+
+            var signalCallbackItems = PackageItem.SortingInfo.InstructionInfoItems?.Where(w => w.InstructionType == InstructionType.SignalCallback)
+                ?.Select(s =>
+                    $"{s.InstructionGeneratedTime:yyyy-MM-dd HH:mm:ss.fff}->{s.InstructionContent}")
+                ?.ToList();
+            if (signalCallbackItems?.Any() == true) {
+                SentInstruction = string.Join("\n", signalCallbackItems);
             }
         }
 
