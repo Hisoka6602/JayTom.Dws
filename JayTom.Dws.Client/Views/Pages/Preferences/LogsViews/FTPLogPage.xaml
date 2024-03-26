@@ -73,6 +73,7 @@
                                     MaxWidth="170"
                                     Margin="5,0"
                                     VerticalAlignment="Center"
+                                    materialDesign:HintAssist.Hint="yyyy-MM-dd HH:mm:ss"
                                     materialDesign:TextFieldAssist.HasClearButton="False"
                                     BorderThickness="0"
                                     Focusable="True"
@@ -84,7 +85,6 @@
                                     <TextBox.InputBindings>
                                         <KeyBinding Key="Enter" Command="{Binding SearchDataCommand}" />
                                     </TextBox.InputBindings>
-
                                 </TextBox>
                                 <Button
                                     Width="30"
@@ -131,6 +131,7 @@
                                     MaxWidth="170"
                                     Margin="5,0"
                                     VerticalAlignment="Center"
+                                    materialDesign:HintAssist.Hint="yyyy-MM-dd HH:mm:ss"
                                     materialDesign:TextFieldAssist.HasClearButton="False"
                                     BorderThickness="0"
                                     Focusable="True"
@@ -142,7 +143,6 @@
                                     <TextBox.InputBindings>
                                         <KeyBinding Key="Enter" Command="{Binding SearchDataCommand}" />
                                     </TextBox.InputBindings>
-
                                 </TextBox>
                                 <Button
                                     Width="30"
@@ -281,7 +281,11 @@
                                 FontSize="15"
                                 FontWeight="Bold"
                                 Foreground="White"
-                                Text="{Binding Message, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                                Text="{Binding Message, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                                <TextBox.InputBindings>
+                                    <KeyBinding Key="Enter" Command="{Binding SearchDataCommand}" />
+                                </TextBox.InputBindings>
+                            </TextBox>
                         </Border>
                     </StackPanel>
                     <!--  按钮  -->
