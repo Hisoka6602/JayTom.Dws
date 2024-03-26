@@ -148,7 +148,7 @@
                 </Button.Template>
             </Button>
             <!--  相机  -->
-            <Button
+            <ToggleButton
                 Margin="2,0"
                 Padding="0"
                 HorizontalAlignment="Center"
@@ -181,12 +181,12 @@
                         Foreground="{Binding CameraItems, Converter={StaticResource CameraStatusSummaryColorConverter}}"
                         Text="&#xe7a6;" />
                 </StackPanel>
-                <Button.Template>
-                    <ControlTemplate TargetType="Button">
+                <ToggleButton.Template>
+                    <ControlTemplate TargetType="ToggleButton">
                         <Grid ClipToBounds="True">
                             <ContentPresenter />
                             <Popup
-                                IsOpen="{TemplateBinding IsMouseOver}"
+                                IsOpen="{Binding IsChecked, RelativeSource={RelativeSource TemplatedParent}}"
                                 Placement="Top"
                                 StaysOpen="False"
                                 Style="{StaticResource LazyUpdatePopupStyle}">
@@ -235,8 +235,8 @@
                             </Popup>
                         </Grid>
                     </ControlTemplate>
-                </Button.Template>
-            </Button>
+                </ToggleButton.Template>
+            </ToggleButton>
             <!--  串口信息  -->
             <Button
                 Margin="2,0"
@@ -328,7 +328,7 @@
                 </Button.Template>
             </Button>
             <!--  电脑信息  -->
-            <Button
+            <ToggleButton
                 Margin="2,0"
                 Padding="0"
                 HorizontalAlignment="Center"
@@ -363,7 +363,7 @@
                         Foreground="{Binding ComputerInfo, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource ComputerColorConverter}}"
                         Text="&#xe7a6;" />
                 </StackPanel>
-            </Button>
+            </ToggleButton>
             <!--  Cpu  -->
             <Border
                 Margin="2,0"

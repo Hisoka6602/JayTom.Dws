@@ -204,8 +204,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel {
 
         private async void ClearSearchCriteriaDelegate(object obj) {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                StartTime = DateTime.Today;
-                EndTime = DateTime.Now;
+                StartTime =
+                EndTime = null;
                 SelectLogType = null;
                 ResponseContent = null;
             });

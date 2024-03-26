@@ -23,6 +23,7 @@ using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Client.Models.LogsItemModels;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel {
+
     public class AppLogPageViewModel : BindableBase {
         private readonly IAppLogRepository _appLogRepository;
         private bool _isLoaded;
@@ -30,8 +31,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel {
         private string _details = string.Empty;
         private int _pageCount;
         private int _pageIndex;
-        private DateTime _startTime = DateTime.Today;
-        private DateTime _endTime = DateTime.Now;
+        private DateTime? _startTime;
+        private DateTime? _endTime;
         private LogType? _selectLogType;
         private string? _message;
         private ObservableCollection<LogType> _logTypeItems = new(Enum.GetValues(typeof(LogType)).Cast<LogType>());
@@ -83,12 +84,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel {
 
         #region 搜索工具栏条件
 
-        public DateTime StartTime {
+        public DateTime? StartTime {
             get => _startTime;
             set => SetProperty(ref _startTime, value);
         }
 
-        public DateTime EndTime {
+        public DateTime? EndTime {
             get => _endTime;
             set => SetProperty(ref _endTime, value);
         }
@@ -221,15 +222,15 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel {
                     Details = string.Empty;
 
                     var total = await _appLogRepository.Total(s =>
-                        (s.CreateTime.CompareTo(StartTime) >= 0) &&
-                        (s.CreateTime.CompareTo(EndTime) <= 0) &&
+                        (StartTime == null || s.CreateTime.CompareTo(StartTime) >= 0) &&
+                        (EndTime == null || s.CreateTime.CompareTo(EndTime) <= 0) &&
                         (SelectLogType == null || s.Type == SelectLogType) &&
                         (string.IsNullOrEmpty(Message) || s.Message.Contains(Message)));
                     if (total > 0) {
                         PageCount = total / pageSize + (total % pageSize > 0 ? 1 : 0);
                         var selectOrderByDescending = await _appLogRepository.SelectOrderByDescending(s =>
-                                (s.CreateTime.CompareTo(StartTime) >= 0) &&
-                                (s.CreateTime.CompareTo(EndTime) <= 0) &&
+                                (StartTime == null || s.CreateTime.CompareTo(StartTime) >= 0) &&
+                                (EndTime == null || s.CreateTime.CompareTo(EndTime) <= 0) &&
                                 (SelectLogType == null || s.Type == SelectLogType) &&
                                 (string.IsNullOrEmpty(Message) || s.Message.Contains(Message)), o => o.CreateTime,
                             pageIndex - 1, pageSize);
@@ -265,8 +266,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel {
 
         private async void ClearSearchCriteriaDelegate(object obj) {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                StartTime = DateTime.Today;
-                EndTime = DateTime.Now;
+                StartTime =
+                EndTime = null;
                 SelectLogType = null;
                 Message = null;
             });

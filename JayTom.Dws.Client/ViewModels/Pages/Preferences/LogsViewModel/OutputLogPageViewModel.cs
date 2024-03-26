@@ -18,15 +18,14 @@ using JayTom.Dws.Domain.Repository.LocalLog;
 using JayTom.Dws.Client.Models.LogsItemModels;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel {
-
     public class OutputLogPageViewModel : BindableBase {
         private readonly IOutputLogRepository _outputLogRepository;
         private string _details = string.Empty;
         private bool _isLoaded;
         private int _pageCount;
         private int _pageIndex;
-        private DateTime _startTime = DateTime.Today;
-        private DateTime _endTime = DateTime.Now;
+        private DateTime? _startTime;
+        private DateTime? _endTime;
         private LogType? _selectLogType;
         private string? _outputContent;
         private ObservableCollection<LogType> _logTypeItems = new(Enum.GetValues(typeof(LogType)).Cast<LogType>());
@@ -70,12 +69,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel {
 
         #region 搜索工具栏条件
 
-        public DateTime StartTime {
+        public DateTime? StartTime {
             get => _startTime;
             set => SetProperty(ref _startTime, value);
         }
 
-        public DateTime EndTime {
+        public DateTime? EndTime {
             get => _endTime;
             set => SetProperty(ref _endTime, value);
         }
@@ -199,8 +198,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel {
 
         private async void ClearSearchCriteriaDelegate(object obj) {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                StartTime = DateTime.Today;
-                EndTime = DateTime.Now;
+                StartTime =
+                EndTime = null;
                 SelectLogType = null;
                 OutputContent = null;
             });
@@ -304,15 +303,15 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel {
                     OutputLogItems.Clear();
                     Details = string.Empty;
                     var total = await _outputLogRepository.Total(s =>
-                        (s.CreateTime.CompareTo(StartTime) >= 0) &&
-                        (s.CreateTime.CompareTo(EndTime) <= 0) &&
+                        (StartTime == null || s.CreateTime.CompareTo(StartTime) >= 0) &&
+                        (EndTime == null || s.CreateTime.CompareTo(EndTime) <= 0) &&
                         (SelectLogType == null || s.Type == SelectLogType) &&
                         (string.IsNullOrEmpty(OutputContent) || s.OutputContent.Contains(OutputContent)));
                     if (total > 0) {
                         PageCount = total / pageSize + (total % pageSize > 0 ? 1 : 0);
                         var selectOrderByDescending = await _outputLogRepository.SelectOrderByDescending(s =>
-                                (s.CreateTime.CompareTo(StartTime) >= 0) &&
-                                (s.CreateTime.CompareTo(EndTime) <= 0) &&
+                                (StartTime == null || s.CreateTime.CompareTo(StartTime) >= 0) &&
+                                (EndTime == null || s.CreateTime.CompareTo(EndTime) <= 0) &&
                                 (SelectLogType == null || s.Type == SelectLogType) &&
                                 (string.IsNullOrEmpty(OutputContent) || s.OutputContent.Contains(OutputContent)), o => o.CreateTime,
                             pageIndex - 1, pageSize);

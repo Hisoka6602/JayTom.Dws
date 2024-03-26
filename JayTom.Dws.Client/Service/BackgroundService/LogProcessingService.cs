@@ -329,12 +329,12 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     Message = $"获取到外部TCP输入:{args.SourceContent}",
                 });
             };
-            _exitMonitor.LockExitEvent += (sender, model) => {
+            /*_exitMonitor.LockExitEvent += (sender, model) => {
                 NLog.LogManager.GetCurrentClassLogger().Info($"{model.CreateTime:yyyy-MM-dd HH:mm:ss.fff}--[锁格]-[格口号:{model.ExitName}]锁定");
             };
             _exitMonitor.UnLockExitEvent += (sender, model) => {
                 NLog.LogManager.GetCurrentClassLogger().Info($"{model.CreateTime:yyyy-MM-dd HH:mm:ss.fff}--[锁格]-[格口号:{model.ExitName}]解锁");
-            };
+            };*/
             EventAggregator.Instance.Subscribe<InstructionReceived>(async item => {
                 await Task.Delay(200);
                 if (item is InstructionReceived model && model.InstructionInfos?.Any() == true

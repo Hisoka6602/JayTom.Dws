@@ -18,14 +18,15 @@ using JayTom.Dws.Domain.Repository.LocalLog;
 using JayTom.Dws.Client.Models.LogsItemModels;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel {
+
     public class CameraLogPageViewModel : BindableBase {
         private readonly ICameraLogRepository _cameraLogRepository;
         private string _details = string.Empty;
         private bool _isLoaded;
         private int _pageCount;
         private int _pageIndex;
-        private DateTime _startTime = DateTime.Today;
-        private DateTime _endTime = DateTime.Now;
+        private DateTime? _startTime;
+        private DateTime? _endTime;
         private LogType? _selectLogType;
         private string? _message;
         private ObservableCollection<LogType> _logTypeItems = new(Enum.GetValues(typeof(LogType)).Cast<LogType>());
@@ -38,6 +39,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel {
         public CameraLogPageViewModel(ICameraLogRepository cameraLogRepository) {
             _cameraLogRepository = cameraLogRepository;
         }
+
         public SnackbarMessageQueue CameraLogMessageQueue {
             get => _cameraLogMessageQueue;
             set => SetProperty(ref _cameraLogMessageQueue, value);
@@ -52,6 +54,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel {
             get => _details;
             set => SetProperty(ref _details, value);
         }
+
         public ICommand ClickCommand {
             get => new DelegateCommand<CameraLogItemModel>(ClickDelegate);
         }
@@ -59,7 +62,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel {
         private async void ClickDelegate(CameraLogItemModel obj) {
             //显示详细信息
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-
                 Details = string.Join("\n", new List<string>()
                 {
                     $"时间:{obj.CreateTime:yyyy-MM-dd HH:mm:ss.fff}",
@@ -68,14 +70,15 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel {
                 });
             });
         }
+
         #region 搜索工具栏条件
 
-        public DateTime StartTime {
+        public DateTime? StartTime {
             get => _startTime;
             set => SetProperty(ref _startTime, value);
         }
 
-        public DateTime EndTime {
+        public DateTime? EndTime {
             get => _endTime;
             set => SetProperty(ref _endTime, value);
         }
@@ -127,6 +130,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel {
         }
 
         #endregion 翻页变量
+
         #region 翻页执行方法
 
         /// <summary>
@@ -197,15 +201,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel {
 
         #endregion 翻页执行方法
 
-
         public ICommand ClearSearchCriteriaCommand {
             get => new DelegateCommand<object>(ClearSearchCriteriaDelegate);
         }
 
         private async void ClearSearchCriteriaDelegate(object obj) {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                StartTime = DateTime.Today;
-                EndTime = DateTime.Now;
+                StartTime =
+                    EndTime = null;
                 SelectLogType = null;
                 CameraSerialNumber = null;
                 Message = null;
@@ -284,6 +287,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel {
                 }
             }, DispatcherPriority.Background);
         }
+
         /// <summary>
         /// 页面加载完成
         /// </summary>
@@ -311,16 +315,16 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel {
                     Details = string.Empty;
 
                     var total = await _cameraLogRepository.Total(s =>
-                        (s.CreateTime.CompareTo(StartTime) >= 0) &&
-                        (s.CreateTime.CompareTo(EndTime) <= 0) &&
+                        (StartTime == null || s.CreateTime.CompareTo(StartTime) >= 0) &&
+                        (EndTime == null || s.CreateTime.CompareTo(EndTime) <= 0) &&
                         (SelectLogType == null || s.Type == SelectLogType) &&
                         (string.IsNullOrEmpty(CameraSerialNumber) || s.CameraSerialNumber.Contains(CameraSerialNumber)) &&
                         (string.IsNullOrEmpty(Message) || s.Message.Contains(Message)));
                     if (total > 0) {
                         PageCount = total / pageSize + (total % pageSize > 0 ? 1 : 0);
                         var selectOrderByDescending = await _cameraLogRepository.SelectOrderByDescending(s =>
-                                (s.CreateTime.CompareTo(StartTime) >= 0) &&
-                                (s.CreateTime.CompareTo(EndTime) <= 0) &&
+                                (StartTime == null || s.CreateTime.CompareTo(StartTime) >= 0) &&
+                                (EndTime == null || s.CreateTime.CompareTo(EndTime) <= 0) &&
                                 (SelectLogType == null || s.Type == SelectLogType) &&
                                 (string.IsNullOrEmpty(CameraSerialNumber) || s.CameraSerialNumber.Contains(CameraSerialNumber)) &&
                                 (string.IsNullOrEmpty(Message) || s.Message.Contains(Message)), o => o.CreateTime,

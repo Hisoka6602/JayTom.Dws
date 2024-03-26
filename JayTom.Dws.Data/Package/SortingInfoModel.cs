@@ -99,7 +99,7 @@ namespace JayTom.Dws.Data.Package {
         /// 异常分拣类型
         /// </summary>
         [Column("AbnormalSortingType")]
-        public AbnormalSortingType AbnormalSortingType { get; set; } = AbnormalSortingType.None;
+        public AbnormalSortingType AbnormalSortingType { get; set; }
 
         public virtual ICollection<InstructionInfoModel>? InstructionInfos { get; set; }
     }

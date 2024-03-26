@@ -12,7 +12,7 @@
     <converters:ByteSizeConverter x:Key="ByteSizeConverter" />
     <converters:ByteSizeUnitConverter x:Key="ByteSizeUnitConverter" />
 
-    <ControlTemplate x:Key="ComputerInfoTemplate" TargetType="Button">
+    <ControlTemplate x:Key="ComputerInfoTemplate" TargetType="ToggleButton">
         <ControlTemplate.Resources>
             <FontFamily x:Key="CustomFontFamily">
                 pack://application:,,,/Fonts/#更纱黑体 Mono SC Nerd
@@ -24,7 +24,7 @@
         <Grid ClipToBounds="True">
             <ContentPresenter />
             <Popup
-                IsOpen="{TemplateBinding IsMouseOver}"
+                IsOpen="{Binding IsChecked, RelativeSource={RelativeSource TemplatedParent}}"
                 Placement="Top"
                 StaysOpen="False"
                 Style="{StaticResource LazyUpdatePopupStyle}">

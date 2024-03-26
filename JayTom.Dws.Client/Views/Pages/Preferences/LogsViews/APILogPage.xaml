@@ -75,12 +75,15 @@
                                     VerticalAlignment="Center"
                                     materialDesign:TextFieldAssist.HasClearButton="False"
                                     BorderThickness="0"
-                                    Focusable="False"
+                                    Focusable="True"
                                     FontSize="12"
                                     FontWeight="Bold"
                                     Foreground="White"
-                                    IsReadOnly="True"
-                                    Text="{Binding StartTime, StringFormat={}{0:yyyy-MM-dd HH:mm:ss}}" />
+                                    Text="{Binding StartTime, StringFormat={}{0:yyyy-MM-dd HH:mm:ss}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                    <TextBox.InputBindings>
+                                        <KeyBinding Key="Enter" Command="{Binding SearchDataCommand}" />
+                                    </TextBox.InputBindings>
+                                </TextBox>
                                 <Button
                                     Width="30"
                                     Margin="0,0,0,0"
@@ -128,12 +131,17 @@
                                     VerticalAlignment="Center"
                                     materialDesign:TextFieldAssist.HasClearButton="False"
                                     BorderThickness="0"
-                                    Focusable="False"
+                                    Focusable="True"
                                     FontSize="12"
                                     FontWeight="Bold"
                                     Foreground="White"
-                                    IsReadOnly="True"
-                                    Text="{Binding EndTime, StringFormat={}{0:yyyy-MM-dd HH:mm:ss}}" />
+                                    IsReadOnly="False"
+                                    Text="{Binding EndTime, StringFormat={}{0:yyyy-MM-dd HH:mm:ss}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                    <TextBox.InputBindings>
+                                        <KeyBinding Key="Enter" Command="{Binding SearchDataCommand}" />
+                                    </TextBox.InputBindings>
+
+                                </TextBox>
                                 <Button
                                     Width="30"
                                     Margin="0,0,0,0"

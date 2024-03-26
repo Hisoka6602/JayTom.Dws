@@ -171,11 +171,11 @@ namespace JayTom.Dws.Infrastructure.Repository.CloudApi {
                 if (totalPackages > 0) {
                     //正常分拣
                     var normalSortingCount = await queryable.Where(w =>
-                            w.SortingInfo != null && w.SortingInfo.IsSortingUsed && !w.SortingInfo.IsAbnormalSorting)
+                            w.SortingInfo != null && w.SortingInfo.AbnormalSortingType == AbnormalSortingType.None)
                         .CountAsync(cancellationToken: cancellationToken);
                     //异常分拣
                     var abnormalSortingCount = await queryable.Where(w =>
-                             w.SortingInfo != null && w.SortingInfo.IsSortingUsed && w.SortingInfo.IsAbnormalSorting)
+                             w.SortingInfo != null && w.SortingInfo.AbnormalSortingType != AbnormalSortingType.None)
                          .CountAsync(cancellationToken: cancellationToken);
                     //平均重量
                     var averageWeight = await queryable.Where(w =>
@@ -213,8 +213,8 @@ namespace JayTom.Dws.Infrastructure.Repository.CloudApi {
                         .Where(w => w.SortingInfo != null && w.BarCodeInfo != null)
                         .OrderBy(o => o.BarCodeInfo.ScanTime);
 
-                    var firstOrDefaultAsync = await packageInfoModels.FirstOrDefaultAsync();
-                    var lastOrDefaultAsync = await packageInfoModels.LastOrDefaultAsync();
+                    var firstOrDefaultAsync = await packageInfoModels.FirstOrDefaultAsync(cancellationToken: cancellationToken);
+                    var lastOrDefaultAsync = await packageInfoModels.LastOrDefaultAsync(cancellationToken: cancellationToken);
                     if (firstOrDefaultAsync?.BarCodeInfo is not null &&
                         lastOrDefaultAsync?.BarCodeInfo is not null) {
                         var totalSeconds = firstOrDefaultAsync.BarCodeInfo.ScanTime.Subtract(lastOrDefaultAsync.BarCodeInfo.ScanTime)
