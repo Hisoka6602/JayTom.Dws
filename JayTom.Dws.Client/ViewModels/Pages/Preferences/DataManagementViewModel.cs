@@ -675,7 +675,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         }
 
         private void ShowDetailsDelegate(object obj) {
-            _dialogService.Show("BarCodeDetailsDialog", new DialogParameters { { "PackageItem", obj } }, null);
+            _dialogService.Show("PackageDetailsDialog", new DialogParameters { { "PackageItem", obj } }, null);
         }
     }
 }

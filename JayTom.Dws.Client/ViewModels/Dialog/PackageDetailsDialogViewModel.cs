@@ -14,7 +14,7 @@ using JayTom.Dws.Client.Models.DataModels;
 
 namespace JayTom.Dws.Client.ViewModels.Dialog {
 
-    public class BarCodeDetailsDialogViewModel : BindableBase, IDialogAware {
+    public class PackageDetailsDialogViewModel : BindableBase, IDialogAware {
         private PackageItemModel _packageItem = new();
         private string _packageCreationInstruction = string.Empty;
         private string _sentInstruction = string.Empty;
@@ -49,7 +49,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog {
 
         public void OnDialogOpened(IDialogParameters parameters) {
             foreach (Window window in Application.Current.Windows) {
-                if (window.Name.Equals("BarCodeDetailsDialog")) {
+                if (window.Name.Equals("PackageDetailsDialog")) {
                     window.Close();
                 }
             }
@@ -75,7 +75,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog {
                     $"{s.InstructionGeneratedTime:yyyy-MM-dd HH:mm:ss.fff}->{s.InstructionContent}")
                 ?.ToList();
             if (signalCallbackItems?.Any() == true) {
-                SentInstruction = string.Join("\n", signalCallbackItems);
+                ReceivedInstruction = string.Join("\n", signalCallbackItems);
             }
         }
 
@@ -99,7 +99,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog {
             var dialogWindow = Application.Current.Windows.OfType<Window>().SingleOrDefault(x => x.IsActive);
             if (dialogWindow is not null) {
                 dialogWindow.Owner = null;
-                dialogWindow.Name = "BarCodeDetailsDialog";
+                dialogWindow.Name = "PackageDetailsDialog";
             }
         }
 
