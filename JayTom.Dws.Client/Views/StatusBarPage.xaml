@@ -20,6 +20,7 @@
         <converters:ExceptionFlagColorConverter x:Key="ExceptionFlagColorConverter" />
         <converters:NullStatusFlagColorConverter x:Key="NullStatusFlagColorConverter" />
         <converters:CameraStatusSummaryColorConverter x:Key="CameraStatusSummaryColorConverter" />
+        <converters:ConnectionSummaryColorConverter x:Key="ConnectionSummaryColorConverter" />
         <converters:SerialPortStatusSummaryColorConverter x:Key="SerialPortStatusSummaryColorConverter" />
         <converters:MemoryRemainingColorConverter x:Key="MemoryRemainingColorConverter" />
         <converters:ComputerColorConverter x:Key="ComputerColorConverter" />
@@ -469,6 +470,98 @@
                         Text="&#xe7a6;" />
                 </StackPanel>
             </Border>
+            <!--  连接状态  -->
+            <ToggleButton
+                Margin="2,0"
+                Padding="0"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Focusable="False"
+                Style="{StaticResource MaterialDesignFlatButton}">
+                <StackPanel Orientation="Horizontal">
+
+                    <TextBlock
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        FontFamily="{StaticResource IconFontFamily}"
+                        FontSize="20"
+                        Foreground="DimGray"
+                        Text="&#xe94d;" />
+                    <TextBlock
+                        Margin="5,0"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        FontFamily="{StaticResource CustomFontFamily}"
+                        FontSize="14"
+                        FontWeight="Bold"
+                        Foreground="DimGray"
+                        Text="连接" />
+                    <TextBlock
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        FontFamily="{StaticResource IconFontFamily}"
+                        FontSize="30"
+                        Foreground="{Binding ConnectionItems, Converter={StaticResource ConnectionSummaryColorConverter}}"
+                        Text="&#xe7a6;" />
+                </StackPanel>
+                <ToggleButton.Template>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Grid ClipToBounds="True">
+                            <ContentPresenter />
+                            <Popup
+                                HorizontalOffset="70"
+                                IsOpen="{Binding IsChecked, RelativeSource={RelativeSource TemplatedParent}}"
+                                Placement="Left"
+                                StaysOpen="False"
+                                Style="{StaticResource LazyUpdatePopupStyle}"
+                                VerticalOffset="-30">
+                                <!--  在这里定义 Popup 的内容  -->
+                                <Grid
+                                    Width="250"
+                                    Height="300"
+                                    Background="#303030"
+                                    ClipToBounds="True">
+
+                                    <!--  连接信息列表  -->
+                                    <ListBox
+                                        Name="ConnectionListBox"
+                                        Grid.Row="0"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        Foreground="White"
+                                        ItemTemplate="{StaticResource ConnectionStatusBarTemplate}"
+                                        ItemsSource="{Binding ConnectionItems, UpdateSourceTrigger=PropertyChanged, IsAsync=True}"
+                                        Style="{StaticResource CustomListBoxStyle}" />
+                                    <!--  空数据底图  -->
+                                    <Border
+                                        Grid.Row="0"
+                                        Background="#303030"
+                                        Visibility="{Binding Items.Count, ElementName=ConnectionListBox, Converter={StaticResource ListBackgroundVisibleConverter}}">
+                                        <StackPanel
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            Orientation="Vertical">
+                                            <TextBlock
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"
+                                                FontFamily="{StaticResource IconFontFamily}"
+                                                FontSize="50"
+                                                Text="&#xe63d;" />
+                                            <TextBlock
+                                                Margin="0,10"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"
+                                                FontFamily="{StaticResource CustomFontFamily}"
+                                                FontSize="16"
+                                                Text="没有数据" />
+                                        </StackPanel>
+                                    </Border>
+                                </Grid>
+                            </Popup>
+                        </Grid>
+                    </ControlTemplate>
+                </ToggleButton.Template>
+            </ToggleButton>
         </StackPanel>
         <!--  运行时间  -->
         <StackPanel

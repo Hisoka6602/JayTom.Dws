@@ -15,8 +15,10 @@ using System.Collections.ObjectModel;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Models.Cameras;
 using JayTom.Dws.Client.Service.Device;
+using JayTom.Dws.Client.Models.StatusBarModels;
 using CameraType = JayTom.Dws.Client.Models.CameraType;
 using CameraStatus = JayTom.Dws.Client.Models.CameraStatus;
+using ConnectionType = JayTom.Dws.Client.Models.ConnectionType;
 
 namespace JayTom.Dws.Client.ViewModels {
 
@@ -90,6 +92,75 @@ namespace JayTom.Dws.Client.ViewModels {
         };
 
         private string _formattedElapsed = string.Empty;
+
+        private ObservableCollection<ConnectionItemInfoModel> _connectionItems = new() {
+            new ConnectionItemInfoModel()
+            {
+                ConnectionName = "FTP图片上传",
+                ConnectionState = ConnectionState.Connected,
+                ConnectionType = Models.StatusBarModels.ConnectionType.FTP,
+            },
+            new ConnectionItemInfoModel()
+            {
+                ConnectionName = "静态称重",
+                ConnectionState = ConnectionState.ConnectionFailed,
+                ConnectionType = Models.StatusBarModels.ConnectionType.SerialPort,
+            },
+            new ConnectionItemInfoModel()
+            {
+                ConnectionName = "动态称重",
+                ConnectionState = ConnectionState.Connecting,
+                ConnectionType = Models.StatusBarModels.ConnectionType.SerialPort,
+            },
+            new ConnectionItemInfoModel()
+            {
+                ConnectionName = "外部体积",
+                ConnectionState = ConnectionState.Connecting,
+                ConnectionType = Models.StatusBarModels.ConnectionType.TCP,
+            },
+            new ConnectionItemInfoModel()
+            {
+                ConnectionName = "TCP输出结果",
+                ConnectionState = ConnectionState.Connected,
+                ConnectionType = Models.StatusBarModels.ConnectionType.TCP,
+            },
+            new ConnectionItemInfoModel()
+            {
+                ConnectionName = "串口输出结果",
+                ConnectionState = ConnectionState.Connected,
+                ConnectionType = Models.StatusBarModels.ConnectionType.SerialPort,
+            },
+            new ConnectionItemInfoModel()
+            {
+                ConnectionName = "音频输出",
+                ConnectionState = ConnectionState.Connected,
+                ConnectionType = Models.StatusBarModels.ConnectionType.Audio,
+            },
+            new ConnectionItemInfoModel()
+            {
+                ConnectionName = "位置输出",
+                ConnectionState = ConnectionState.Connected,
+                ConnectionType = Models.StatusBarModels.ConnectionType.Location,
+            },
+            new ConnectionItemInfoModel()
+            {
+                ConnectionName = "控件输入",
+                ConnectionState = ConnectionState.Connected,
+                ConnectionType = Models.StatusBarModels.ConnectionType.Custom,
+            },
+            new ConnectionItemInfoModel()
+            {
+                ConnectionName = "下位机通讯[分拣]",
+                ConnectionState = ConnectionState.Connected,
+                ConnectionType = Models.StatusBarModels.ConnectionType.TCP,
+            },
+            new ConnectionItemInfoModel()
+            {
+                ConnectionName = "下位机通讯[下包]",
+                ConnectionState = ConnectionState.Connected,
+                ConnectionType = Models.StatusBarModels.ConnectionType.TCP,
+            },
+        };
 
         public StatusBarViewModel(IComputerInfoReporter computerInfoReporter,
             IDeviceService deviceService) {
@@ -232,6 +303,22 @@ namespace JayTom.Dws.Client.ViewModels {
                     _updateSlim.Release();
                 }
             };
+
+            //启动事件
+
+            //停止事件
+
+            //FTP事件
+
+            //静态、动态称重[连接、断开]事件
+            //外部体积输入[连接、断开]事件
+            //Tcp输出[连接、断开]事件
+            //串口输出[连接、断开]事件
+            //音频内容检测(写在启动触发后)
+            //内容输入 [连接、断开]事件
+            //下位机 [连接、断开]事件
+            //锁格[连接、断开]事件
+            //叠包[连接、断开]事件
         }
 
         public string FormattedElapsed {
@@ -252,6 +339,14 @@ namespace JayTom.Dws.Client.ViewModels {
         public ObservableCollection<SerialPortInfoModel> SerialPortItems {
             get => _serialPortItems;
             set => SetProperty(ref _serialPortItems, value);
+        }
+
+        /// <summary>
+        /// 连接信息
+        /// </summary>
+        public ObservableCollection<ConnectionItemInfoModel> ConnectionItems {
+            get => _connectionItems;
+            set => SetProperty(ref _connectionItems, value);
         }
 
         /// <summary>
