@@ -839,7 +839,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             _stackedPackageService.StackedPackageReturned += (sender, args) => {
                 var packageInfo = _packageInfos.FirstOrDefault(f => f.Key.Equals(args.PackageTime)).Value;
                 if (packageInfo is not null) {
-                    packageInfo.IsStackedPackage = true;
+                    packageInfo.IsStackedPackage = args.IsStacked;
                 }
             };
         }

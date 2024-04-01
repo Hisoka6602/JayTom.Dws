@@ -55,5 +55,20 @@ namespace JayTom.Dws.Client.Service.Sorting {
         /// 包裹信息
         /// </summary>
         public PackageInfo? PackageInfo { get; set; }
+
+        /// <summary>
+        /// 接收内容
+        /// </summary>
+        public string StackedContent { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 是否重叠
+        /// </summary>
+        public bool IsStacked { get; set; }
+
+        /// <summary>
+        /// 接收时间
+        /// </summary>
+        public DateTime ReceivedTime { get; set; } = DateTime.Now;
     }
 }

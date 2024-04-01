@@ -51,6 +51,7 @@ using ExceptionEventArgs = JayTom.Dws.Client.Service.Sorting.ExceptionEventArgs;
 using static JayTom.Dws.Client.Service.BackgroundService.SubmitApiBackgroundService;
 
 namespace JayTom.Dws.Client.ViewModels.Pages {
+
     public class HomeViewModel : BindableBase {
         private readonly IDialogService _dialogService;
         private readonly IComputerInfoReporter _computerInfoReporter;
@@ -958,6 +959,29 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             finally {
                 _updateSlim.Release();
             }
+        }
+
+        /// <summary>
+        /// 清空计数
+        /// </summary>
+        public ICommand ClearCountCommand {
+            get => new DelegateCommand<object>(ClearCountDelegate);
+        }
+
+        private async void ClearCountDelegate(object obj) {
+            await Application.Current.Dispatcher.BeginInvoke(async () => {
+                if (_deviceService.RunningStatus) {
+                    HomeMessageQueue.Enqueue("请先停止运行再清空");
+                    return;
+                }
+                PackageItems.Clear();
+                TotalDataCount =
+                    UploadedDataCount =
+                        AbnormalDataCount = 0;
+                _updateResponseItems.Clear();
+                _sortingExitItems.Clear();
+                _cloudVideoUploadItems.Clear();
+            }, DispatcherPriority.Background);
         }
     }
 }

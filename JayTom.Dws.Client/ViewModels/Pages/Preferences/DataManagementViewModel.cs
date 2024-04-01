@@ -35,7 +35,6 @@ using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
-
     public class DataManagementViewModel : BindableBase {
         private readonly IDialogService _dialogService;
         private readonly IExcel _excel;
@@ -507,9 +506,107 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     model.Message = "Retrieving data...";
                     DialogHost.Show(exportDialog, model.Identifier);
                     //如果页数超过1页则从数据库获取数据(未完成)
+                    var packageItemModels = new List<PackageItemModel>();
+                    if (PageCount > 1) {
+                        for (var i = 0; i < PageCount; i++) {
+                            var (key, infoModels) = await _packageRepository.SelectPackageOrderByDescending(s =>
+                               s.BarCodeInfo != null && s.WeightInfo != null &&
+                               (StartTime == null || s.BarCodeInfo.ScanTime >= StartTime) &&
+                               (EndTime == null || s.BarCodeInfo.ScanTime <= EndTime) &&
+                               (string.IsNullOrWhiteSpace(BarCode) || EF.Functions.Like(s.BarCodeInfo.Barcode, "%" + BarCode + "%")) &&
+                               (SelectExitDefinitionInfo == null || (s.ExitInfo != null && s.ExitInfo.PhysicalExit.Equals(SelectExitDefinitionInfo.ExitName))) &&
+                               (MinWeight <= 0 || s.WeightInfo.FormattedWeight >= MinWeight) &&
+                               (MaxWeight <= 0 || s.WeightInfo.FormattedWeight <= MaxWeight) &&
+                               (SelectedUploadStatus == null || (s.UploadInfo != null && s.UploadInfo.RequestStatus.Equals(SelectedUploadStatus))),
+                           o => o.PackageCreateTime, i, 500, new CancellationToken(false));
+
+                            if (infoModels?.Any() == true) {
+                                var itemModels = infoModels?.Select((s, num) => new PackageItemModel {
+                                    Num = num + 1 + (i * 500),
+                                    TimestampedGuid = s.PackageTimestamped,
+                                    Barcode = s.BarCodeInfo?.Barcode ?? string.Empty,
+                                    Weight = (float)(s.WeightInfo?.FormattedWeight ?? 0),
+                                    Length = (float)(s.VolumeInfo?.FormattedLength ?? 0),
+                                    Width = (float)(s.VolumeInfo?.FormattedWidth ?? 0),
+                                    Height = (float)(s.VolumeInfo?.FormattedHeight ?? 0),
+                                    Volume = (float)(s.VolumeInfo?.FormattedVolume ?? 0),
+                                    ScanTime = s.BarCodeInfo?.ScanTime ?? s.PackageCreateTime,
+                                    RequestStatus = s.UploadInfo?.RequestStatus ?? UploadStatus.NotUploaded,
+                                    BarcodeImagePath = s.ImageInfos?.LastOrDefault(l => l.Type == 0)?.LocalPath ?? string.Empty,
+                                    IsBarcodeImageExists = s.ImageInfos?.LastOrDefault(l => l.Type == 0)?.LocalPath?.IsFileExists() ?? false,
+                                    Other = s.Other ?? string.Empty,
+                                    ExitName = s.ExitInfo?.PhysicalExit ?? string.Empty,
+                                    PanoramaImageItems = s.ImageInfos?.Where(w => w.Type == 1)?.Select(ps =>
+                                    new PanoramaImageItemModel() {
+                                        IsPanoramaImageExists = ps.LocalPath?.IsFileExists() ?? false,
+                                        PanoramaImagePath = ps.LocalPath
+                                    })?.ToList() ?? new List<PanoramaImageItemModel>(),
+                                    UploadInfo = new UploadItemModel {
+                                        DurationInSeconds = s.UploadInfo?.DurationInSeconds ?? 0,
+                                        ExceptionMessage = s.UploadInfo?.ExceptionMessage ?? string.Empty,
+                                        InterfaceParameters = s.UploadInfo?.InterfaceParameters ?? string.Empty,
+                                        IsSuccess = s.UploadInfo?.RequestStatus == UploadStatus.Succeeded,
+                                        RequestContent = s.UploadInfo?.RequestContent ?? string.Empty,
+                                        RequestTime = s.UploadInfo?.RequestTime,
+                                        RequestUrl = s.UploadInfo?.RequestUrl ?? string.Empty,
+                                        ResponseContent = s.UploadInfo?.ResponseContent ?? string.Empty,
+                                        ResponseTime = s.UploadInfo?.ResponseTime
+                                    },
+                                    WeightInfo = new WeightItemModel() {
+                                        CreateTime = s.WeightInfo?.CreateTime,
+                                        FormattedWeight = s.WeightInfo?.FormattedWeight ?? 0,
+                                        OriginalText = s.WeightInfo?.OriginalText ?? string.Empty,
+                                        SourceType = s.WeightInfo?.SourceType ?? SourceType.SerialPort
+                                    },
+                                    SortingInfo = new SortingItemModel {
+                                        IsSortingUsed = s.SortingInfo?.IsSortingUsed ?? false,
+                                        SortingCode = s.SortingInfo?.SortingCode ?? string.Empty,
+                                        SortingMode = s.SortingInfo?.SortingMode ?? SortMode.None,
+                                        IsCreatedByLowerMachine = s.SortingInfo?.IsCreatedByLowerMachine ?? false,
+                                        CommunicationMethod = s.SortingInfo?.CommunicationMethod ?? CommunicationsType.None,
+                                        ChecksumProtocolName = s.SortingInfo?.ChecksumProtocolName ?? string.Empty,
+                                        ConnectionName = s.SortingInfo?.ConnectionName ?? string.Empty,
+                                        IsAbnormalSorting = s.SortingInfo?.IsAbnormalSorting ?? false,
+                                        AbnormalSortingType = s.SortingInfo?.AbnormalSortingType ?? AbnormalSortingType.None,
+                                        InstructionInfoItems = new ObservableCollection<InstructionInfoItemModel>(s.SortingInfo?.InstructionInfos?
+                                            .Select(s1 => new InstructionInfoItemModel() {
+                                                InstructionGeneratedTime = s1.InstructionGeneratedTime,
+                                                InstructionType = s1.InstructionType,
+                                                InstructionContent = s1.InstructionContent
+                                            })?.ToList() ?? new List<InstructionInfoItemModel>())
+                                    },
+                                    VolumeInfo = new VolumeItemModel() {
+                                        CreateTime = s.VolumeInfo?.CreateTime,
+                                        FormattedHeight = s.VolumeInfo?.FormattedHeight ?? 0,
+                                        FormattedLength = s.VolumeInfo?.FormattedLength ?? 0,
+                                        FormattedVolume = s.VolumeInfo?.FormattedVolume ?? 0,
+                                        FormattedWidth = s.VolumeInfo?.FormattedWidth ?? 0,
+                                        OriginalText = s.VolumeInfo?.OriginalText ?? string.Empty,
+                                        SourceType = s.VolumeInfo?.SourceType ?? SourceType.Camera
+                                    },
+                                    OcrInfo = new OcrItemInfo() {
+                                        CreateTime = s.OcrInfo?.RecognizeTime,
+                                        /*OcrInterfaceName = s.OcrInfo?.OcrInterfaceName ?? string.Empty,
+                                        OriginalContent = s.OcrInfo?.OriginalContent ?? string.Empty,
+                                        ParsedContent = s.OcrInfo?.ParsedContent ?? string.Empty*/
+                                    },
+                                    ExitInfo = new ExitInfoItemModel() {
+                                        PhysicalExitId = s.ExitInfo?.PhysicalExitId ?? 0,
+                                        PhysicalExit = s.ExitInfo?.PhysicalExit ?? string.Empty,
+                                        TheoreticalExit = s.ExitInfo?.TheoreticalExit ?? string.Empty,
+                                    },
+                                    IsUploadedToCloudVideo = s.CloudVideoUploadInfo is { UploadTime: not null }
+                                })?.ToList();
+                                packageItemModels.AddRange(itemModels ?? new List<PackageItemModel>());
+                            }
+                        }
+                    }
+                    else {
+                        packageItemModels.AddRange(PackageItems?.ToList() ?? new List<PackageItemModel>());
+                    }
                     var export = await _excel.Export(saveFileDialog.FileName,
                         $"PackageItems",
-                        "PackageItems", PackageItems?.ToList() ?? new List<PackageItemModel>(),
+                        "PackageItems", packageItemModels,
                         new List<string>(), async p => {
                             model.Progress = p;
                             model.ProgressText = $"{p}%";
@@ -654,6 +751,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                             })?.ToList();
                             await Task.Delay(100);
                             PackageItems.AddRange(itemModels);
+                            DataManagementMessageQueue?.Enqueue($"共查询到:{total}条数据,显示{PackageItems?.Count}条");
                         }
                         else {
                             DataManagementMessageQueue?.Enqueue("Error loading data. Please try again.");

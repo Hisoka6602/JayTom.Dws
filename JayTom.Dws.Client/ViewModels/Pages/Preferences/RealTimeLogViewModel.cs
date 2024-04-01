@@ -80,6 +80,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     OnAddLog(model.CreateTime, $"[输入]-{model.Message}");
                 }
             });
+
             /*//输出日志队列
             EventAggregator.Instance.Subscribe<OutputLogInfoModel>(item => {
                 if (item is OutputLogInfoModel model) {

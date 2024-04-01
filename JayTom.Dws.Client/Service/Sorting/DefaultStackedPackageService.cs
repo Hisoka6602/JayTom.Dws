@@ -43,18 +43,18 @@ namespace JayTom.Dws.Client.Service.Sorting {
                 //串口接收内容
                 if (_stackedPackageDetectionSettingsDto is not null) {
                     try {
-                        var isMatch = Regex.IsMatch(args.AsciiMessage, _stackedPackageDetectionSettingsDto.RegularExpression);
-                        if (isMatch) {
-                            //发送
-                            NLog.LogManager.GetCurrentClassLogger().Error($"接收到叠件信号");
-                            var tryDequeue = _stackedPackageItems.TryDequeue(out var result);
-                            if (tryDequeue && result is not null) {
-                                OnStackedPackageReturned(new StackedPackageEventArgs() {
-                                    PackageInfo = result,
-                                    PackageTime = result.CreateTime
-                                });
-                            }
+                        var isStacked = false;
+                        var tryDequeue = _stackedPackageItems.TryDequeue(out var result);
+                        if (tryDequeue && result is not null) {
+                            isStacked = Regex.IsMatch(args.AsciiMessage, _stackedPackageDetectionSettingsDto.RegularExpression);
                         }
+
+                        OnStackedPackageReturned(new StackedPackageEventArgs() {
+                            PackageInfo = result,
+                            PackageTime = result?.CreateTime ?? DateTime.MinValue,
+                            IsStacked = isStacked,
+                            StackedContent = args.AsciiMessage
+                        });
                     }
                     catch (Exception e) {
                         OnExceptionOccurred(new ExceptionEventArgs() {
@@ -74,17 +74,18 @@ namespace JayTom.Dws.Client.Service.Sorting {
 
                 if (_stackedPackageDetectionSettingsDto is not null) {
                     try {
-                        var isMatch = Regex.IsMatch(info.Content, _stackedPackageDetectionSettingsDto.RegularExpression);
-                        if (isMatch) {
-                            var tryDequeue = _stackedPackageItems.TryDequeue(out var result);
-                            if (tryDequeue && result is not null) {
-                                await Task.Delay(200);
-                                OnStackedPackageReturned(new StackedPackageEventArgs() {
-                                    PackageInfo = result,
-                                    PackageTime = result.CreateTime
-                                });
-                            }
+                        var isStacked = false;
+                        var tryDequeue = _stackedPackageItems.TryDequeue(out var result);
+                        if (tryDequeue && result is not null) {
+                            isStacked = Regex.IsMatch(info.Content, _stackedPackageDetectionSettingsDto.RegularExpression);
                         }
+
+                        OnStackedPackageReturned(new StackedPackageEventArgs() {
+                            PackageInfo = result,
+                            PackageTime = result?.CreateTime ?? DateTime.MinValue,
+                            IsStacked = isStacked,
+                            StackedContent = info.Content
+                        });
                     }
                     catch (Exception e) {
                         OnExceptionOccurred(new ExceptionEventArgs() {
@@ -252,11 +253,14 @@ namespace JayTom.Dws.Client.Service.Sorting {
 
         protected virtual async void OnStackedPackageReturned(StackedPackageEventArgs e) {
             await Task.Yield();
-            EventAggregator.Instance.Publish(new SortingLogInfoModel {
-                CreateTime = DateTime.Now,
-                Message = $"包裹:[{e.PackageInfo?.Guid:X4}]-[{e.PackageInfo?.BarCodeInfo?.Barcode}],叠包",
-                Type = LogType.Information
-            });
+            if (e.IsStacked) {
+                EventAggregator.Instance.Publish(new SortingLogInfoModel {
+                    CreateTime = DateTime.Now,
+                    Message = $"包裹:[{e.PackageInfo?.Guid:X4}]-[{e.PackageInfo?.BarCodeInfo?.Barcode}],叠包",
+                    Type = LogType.Information
+                });
+            }
+
             StackedPackageReturned?.Invoke(this, e);
         }
 

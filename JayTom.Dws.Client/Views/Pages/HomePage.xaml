@@ -1101,6 +1101,14 @@
                                 <!--  ... 可以添加更多列  -->
                             </GridView>
                         </ListView.View>
+                        <ListView.ContextMenu>
+                            <ContextMenu BorderThickness="0" Style="{StaticResource MaterialDesignContextMenu}">
+                                <MenuItem
+                                    Command="{Binding ClearCountCommand}"
+                                    Header="清空计数"
+                                    Style="{StaticResource MaterialDesignMenuItem}" />
+                            </ContextMenu>
+                        </ListView.ContextMenu>
                     </ListView>
                     <!--  实时日志  -->
 

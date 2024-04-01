@@ -43,6 +43,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private readonly IExternalDataService _externalDataService;
         private readonly ISortingService _sortingService;
         private readonly IExitMonitor _exitMonitor;
+        private readonly IStackedPackageService _stackedPackageService;
         private ConcurrentQueue<ExceptionLogInfoModel> _exceptionItems = new();
         private ConcurrentQueue<AppLogInfoModel> _appLogItems = new();
         private ConcurrentQueue<CameraLogInfoModel> _cameraLogItems = new();
@@ -73,7 +74,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             IDeviceService deviceService,
             IExternalDataService externalDataService,
             ISortingService sortingService,
-            IExitMonitor exitMonitor) {
+            IExitMonitor exitMonitor,
+            IStackedPackageService stackedPackageService) {
             _appLogRepository = appLogRepository;
             _cameraLogRepository = cameraLogRepository;
             _sortingLogRepository = sortingLogRepository;
@@ -90,6 +92,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             _externalDataService = externalDataService;
             _sortingService = sortingService;
             _exitMonitor = exitMonitor;
+            _stackedPackageService = stackedPackageService;
             EventAggregator.Instance.Subscribe<SettingsChangedEvent>(item => {
                 if (item is SettingsChangedEvent model) {
                     _appLogItems.Enqueue(new AppLogInfoModel() {
@@ -372,6 +375,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     });
                 }
             });
+            _stackedPackageService.StackedPackageReturned += (sender, args) => {
+                NLog.LogManager.GetCurrentClassLogger()
+                    .Info(
+                        $"{args.ReceivedTime:yyyy-MM-dd HH:mm:ss.fff}--[叠包判断]-[判断结果:{(args.IsStacked ? "叠包" : "不叠包")}]-[序号:{args.PackageInfo?.Guid}]-{args.StackedContent}");
+            };
 
             //写出log字符串的信息
         }
