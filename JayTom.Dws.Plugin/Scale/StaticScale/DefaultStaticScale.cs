@@ -143,6 +143,7 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
             catch (Exception e) {
                 Dispose();
                 OnExcepted(e);
+                OnDisconnected(this);
                 return false;
             }
             return false;

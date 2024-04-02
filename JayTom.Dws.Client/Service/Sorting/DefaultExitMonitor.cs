@@ -38,6 +38,11 @@ namespace JayTom.Dws.Client.Service.Sorting {
         public event EventHandler<List<PackageExitDefinitionInfoModel>>? Initialized;
 
         public bool IsConnected { get; private set; } = false;
+
+        public event EventHandler<EventArgs>? Connected;
+
+        public event EventHandler<EventArgs>? Disconnected;
+
         private static Task? _monitorThread;
         private static CancellationTokenSource? _cancellationTokenSource;
         private static List<PackageExitDefinitionInfoModel> _definitionInfoModels = new();
@@ -150,95 +155,6 @@ namespace JayTom.Dws.Client.Service.Sorting {
                                         });
                                     }
 
-                                    /*var tasks = _lockBindingInfoModels.Select(f1 => Task.Run((
-                                    ) => {
-                                        try {
-                                            if (plc is null) return;
-                                            int.TryParse(f1.Address, out var address);
-
-                                            var readBytesAsync = plc.ReadBytes(DataType.DataBlock,
-                                                _packageExitLockSettingsDto.S7Config.Db, address, f1.Length);
-                                            /*var readBytesAsync =
-                                                    await plc.ReadBytesAsync(DataType.DataBlock,
-                                                        _packageExitLockSettingsDto.S7Config.Db, address, f1.Length,
-                                                        token);#1#
-                                            var infoModel =
-                                                _definitionInfoModels.FirstOrDefault(f =>
-                                                    f.Id.Equals(f1.ExitId));
-
-                                            if (readBytesAsync?.FirstOrDefault() == 0) {
-                                                //解锁
-                                                if (!initialized && infoModel is not null) {
-                                                    infoModel.IsLockExit = false;
-                                                }
-
-                                                if (infoModel?.IsLockExit == true) {
-                                                    OnUnLockExitEvent(infoModel);
-                                                    infoModel.IsLockExit = false;
-                                                }
-                                            }
-                                            else {
-                                                if (!initialized && infoModel is not null) {
-                                                    infoModel.IsLockExit = true;
-                                                }
-
-                                                // 锁
-                                                if (infoModel?.IsLockExit == false) {
-                                                    OnLockExitEvent(infoModel);
-                                                    infoModel.IsLockExit = true;
-                                                }
-                                            }
-                                        }
-                                        catch (Exception e) {
-                                            OnExceptionOccurred(new ExceptionEventArgs() {
-                                                ExceptionMessage = e.Message
-                                            });
-                                        }
-                                    })).ToList();
-
-                                    Task.WaitAll(tasks.ToArray());*/
-
-                                    /*
-                                    foreach (var model in _lockBindingInfoModels) {
-                                        await Task.Delay(50, token);
-                                        try {
-                                            if (plc is not null) {
-                                                int.TryParse(model.Address, out var address);
-
-                                                var readBytesAsync =
-                                                    await plc.ReadBytesAsync(DataType.DataBlock, _packageExitLockSettingsDto.S7Config.Db, address, model.Length, token);
-                                                var infoModel = _definitionInfoModels.FirstOrDefault(f => f.Id.Equals(model.ExitId));
-
-                                                if (readBytesAsync?.FirstOrDefault() == 0) {
-                                                    //解锁
-                                                    if (!isInitialized && infoModel is not null) {
-                                                        infoModel.IsLockExit = false;
-                                                    }
-                                                    if (infoModel?.IsLockExit == true) {
-                                                        OnUnLockExitEvent(infoModel);
-                                                        infoModel.IsLockExit = false;
-                                                    }
-                                                }
-                                                else {
-                                                    if (!isInitialized && infoModel is not null) {
-                                                        infoModel.IsLockExit = true;
-                                                    }
-                                                    // 锁
-                                                    if (infoModel?.IsLockExit == false) {
-                                                        OnLockExitEvent(infoModel);
-                                                        infoModel.IsLockExit = true;
-                                                    }
-                                                }
-                                            }
-                                        }
-                                        catch (Exception e) {
-                                            OnExceptionOccurred(new ExceptionEventArgs() {
-                                                ExceptionMessage = e.Message
-                                            });
-                                        }
-                                    }
-                                    */
-
                                     await Task.Delay(150, token);
                                     if (!isInitialized) {
                                         isInitialized = true;
@@ -247,11 +163,14 @@ namespace JayTom.Dws.Client.Service.Sorting {
                                 }
                             }, token);
                         }
+                        OnConnected();
                         return new KeyValuePair<bool, string>(true, "连接成功");
                     }
+                    OnDisconnected();
                     return new KeyValuePair<bool, string>(false, "未识别到连接协议");
                 }
                 else {
+                    OnDisconnected();
                     return new KeyValuePair<bool, string>(true, "无需判断格口锁定");
                 }
             }
@@ -259,6 +178,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                 /*OnExceptionOccurred(new ExceptionEventArgs() {
                     ExceptionMessage = e.Message
                 });*/
+                OnDisconnected();
                 return new KeyValuePair<bool, string>(false, e.Message);
             }
         }
@@ -278,6 +198,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
 
                 plc?.Close();
                 plc = null;
+                OnDisconnected();
                 return new KeyValuePair<bool, string>(true, "断开成功");
             }
             catch (Exception e) {
@@ -329,6 +250,16 @@ namespace JayTom.Dws.Client.Service.Sorting {
         protected virtual async void OnInitialized(List<PackageExitDefinitionInfoModel> e) {
             await Task.Yield();
             Initialized?.Invoke(this, e);
+        }
+
+        protected virtual async void OnConnected() {
+            await Task.Yield();
+            Connected?.Invoke(this, EventArgs.Empty);
+        }
+
+        protected virtual async void OnDisconnected() {
+            await Task.Yield();
+            Disconnected?.Invoke(this, EventArgs.Empty);
         }
     }
 }

@@ -159,6 +159,7 @@ namespace JayTom.Dws.Plugin.Scale.DynamicScale {
             catch (Exception e) {
                 Dispose();
                 OnExcepted(e);
+                OnDisconnected(this);
                 return false;
             }
             return false;

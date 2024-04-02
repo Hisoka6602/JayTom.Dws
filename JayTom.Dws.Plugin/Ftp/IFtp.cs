@@ -15,6 +15,16 @@ namespace JayTom.Dws.Plugin.Ftp {
         bool IsConnected { get; }
 
         /// <summary>
+        /// 连接事件
+        /// </summary>
+        event EventHandler<EventArgs> Connected;
+
+        /// <summary>
+        /// 断开连接事件
+        /// </summary>
+        event EventHandler<EventArgs> Disconnected;
+
+        /// <summary>
         /// 连接
         /// </summary>
         /// <param name="server"></param>

@@ -156,7 +156,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         private SnackbarMessageQueue _weightSettingsMessageQueue = new(TimeSpan.FromSeconds(2));
         private bool _isLoaded;
         private string _receivedData = string.Empty;
-        private string _weightSourceContent;
+        private string _weightSourceContent = string.Empty;
         private float _parsedWeight;
 
         public WeightSettingViewModel(IDynamicScale dynamicScale,

@@ -180,6 +180,17 @@
       <HintPath>..\..\..\dynamsoft-barcode-reader-dotnet-9.6.30\dynamsoft-barcode-reader-dotnet-9.6.30\Samples\BarcodeReaderDemo\BarcodeReaderDemo\bin\Debug_VS2010\DynamsoftCommon.dll</HintPath>
     </Reference>
   </ItemGroup>
+  <Target Name="CreateLicenseFolder" AfterTargets="BeforeBuild">
+    <!-- 设置要创建的文件夹路径 -->
+    <PropertyGroup>
+      <LicenseFolder>$(OutDir)License</LicenseFolder>
+    </PropertyGroup>
+
+    <!-- 使用 Condition 属性检查文件夹是否存在 -->
+    <MakeDir Directories="$(LicenseFolder)" Condition="!Exists('$(LicenseFolder)')" />
+  </Target>
+
+
   <!--<Target Name="CopyDeviceLib" AfterTargets="AfterBuild">
     <ItemGroup>
       <DeviceLibFiles Include="$(SolutionDir)JayTom.Dws.Device\DeviceLib\*\*" />

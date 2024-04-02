@@ -20,7 +20,6 @@
         <converters:ExceptionFlagColorConverter x:Key="ExceptionFlagColorConverter" />
         <converters:NullStatusFlagColorConverter x:Key="NullStatusFlagColorConverter" />
         <converters:CameraStatusSummaryColorConverter x:Key="CameraStatusSummaryColorConverter" />
-        <converters:ConnectionSummaryColorConverter x:Key="ConnectionSummaryColorConverter" />
         <converters:SerialPortStatusSummaryColorConverter x:Key="SerialPortStatusSummaryColorConverter" />
         <converters:MemoryRemainingColorConverter x:Key="MemoryRemainingColorConverter" />
         <converters:ComputerColorConverter x:Key="ComputerColorConverter" />
@@ -33,6 +32,7 @@
             MinWidth="1700"
             HorizontalAlignment="Stretch"
             VerticalAlignment="Center"
+            Cursor=""
             Orientation="Horizontal">
             <!--  状态  -->
             <Button
@@ -179,7 +179,7 @@
                         VerticalAlignment="Center"
                         FontFamily="{StaticResource IconFontFamily}"
                         FontSize="30"
-                        Foreground="{Binding CameraItems, Converter={StaticResource CameraStatusSummaryColorConverter}}"
+                        Foreground="{Binding CameraSolidColorBrush, UpdateSourceTrigger=PropertyChanged}"
                         Text="&#xe7a6;" />
                 </StackPanel>
                 <ToggleButton.Template>
@@ -476,6 +476,7 @@
                 Padding="0"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
+                Cursor="Hand"
                 Focusable="False"
                 Style="{StaticResource MaterialDesignFlatButton}">
                 <StackPanel Orientation="Horizontal">
@@ -501,7 +502,7 @@
                         VerticalAlignment="Center"
                         FontFamily="{StaticResource IconFontFamily}"
                         FontSize="30"
-                        Foreground="{Binding ConnectionItems, Converter={StaticResource ConnectionSummaryColorConverter}}"
+                        Foreground="{Binding ConnectionSolidColorBrush, UpdateSourceTrigger=PropertyChanged}"
                         Text="&#xe7a6;" />
                 </StackPanel>
                 <ToggleButton.Template>
@@ -530,7 +531,7 @@
                                         BorderThickness="0"
                                         Foreground="White"
                                         ItemTemplate="{StaticResource ConnectionStatusBarTemplate}"
-                                        ItemsSource="{Binding ConnectionItems, UpdateSourceTrigger=PropertyChanged, IsAsync=True}"
+                                        ItemsSource="{Binding ConnectionItems, UpdateSourceTrigger=PropertyChanged}"
                                         Style="{StaticResource CustomListBoxStyle}" />
                                     <!--  空数据底图  -->
                                     <Border

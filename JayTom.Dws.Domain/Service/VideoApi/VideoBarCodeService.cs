@@ -8,6 +8,7 @@ using System.Drawing.Imaging;
 using System.Collections.Generic;
 using JayTom.Dws.Data.VideoApiData;
 using JayTom.Dws.Domain.Dto.VideoApi;
+using JayTom.Dws.Domain.Dto.CloudApiDto;
 using JayTom.Dws.Domain.Repository.VideoApiData;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
@@ -26,7 +27,7 @@ namespace JayTom.Dws.Domain.Service.VideoApi {
             _videoScanNodeRepository = videoScanNodeRepository;
         }
 
-        public async Task<KeyValuePair<bool, object>> AddOrUpdateBarcodeInfo(BarcodeImageDto barcodeImageInfo, List<BarcodeImageDto> panoramaImageInfos, ScanNodeDto scanNodeInfo, string rootImagePath) {
+        public async Task<KeyValuePair<bool, object>> AddOrUpdateBarcodeInfo(BarcodeImageDto barcodeImageInfo, List<BarcodeImageDto> panoramaImageInfos, PackageDto scanNodeInfo, string rootImagePath) {
             try {
                 var imageInfoModels = new List<VideoNodeImageInfoModel>();
                 await Task.Yield();
@@ -60,8 +61,8 @@ namespace JayTom.Dws.Domain.Service.VideoApi {
                     var num = 0;
                     var videoNodeImageInfoModels = panoramaImageInfos.Select(s => {
                         var panoramaImagePath = $"{panoramaRootImage}\\{DateTimeOffset.Now.ToUnixTimeMilliseconds()}-{num}.jpg";
-                        s.Image.Save(panoramaImagePath, ImageFormat.Jpeg);
-                        s.Image.Dispose();
+                        s.Image?.Save(panoramaImagePath, ImageFormat.Jpeg);
+                        s.Image?.Dispose();
                         num++;
                         return new VideoNodeImageInfoModel {
                             CameraName = s.CameraName,
@@ -74,21 +75,26 @@ namespace JayTom.Dws.Domain.Service.VideoApi {
                     imageInfoModels?.AddRange(videoNodeImageInfoModels);
                 }
                 //保存图片
-                var model = await _videoBarCodeRepository.FirstOrDefault(f => f.Barcode.Equals(scanNodeInfo.Barcode));
+                if (scanNodeInfo.BarCodeInfo is null) {
+                    return new KeyValuePair<bool, object>(false, "保存失败,条码信息不能为空!");
+                }
+                if (scanNodeInfo.DeviceInfos is null) {
+                    return new KeyValuePair<bool, object>(false, "保存失败,设备信息不能为空!");
+                }
+                var model = await _videoBarCodeRepository.FirstOrDefault(f => f.Barcode.Equals(scanNodeInfo.BarCodeInfo.Barcode));
                 if (model is null) {
                     var videoBarCodeInfoModel = new VideoBarCodeInfoModel() {
-                        Barcode = scanNodeInfo.Barcode,
-                        ScanTime = scanNodeInfo.ScanTime,
-                        TimestampedGuid = new DateTimeOffset(scanNodeInfo.ScanTime).ToUnixTimeMilliseconds(),
+                        Barcode = scanNodeInfo.BarCodeInfo.Barcode,
+                        ScanTime = scanNodeInfo.BarCodeInfo.ScanTime,
+                        TimestampedGuid = new DateTimeOffset(scanNodeInfo.BarCodeInfo.ScanTime).ToUnixTimeMilliseconds(),
                         VideoScanNodeInfos = new List<VideoScanNodeInfoModel>()
                         {
                             new()
                             {
-                                Description = scanNodeInfo.Description,
-                                Name = scanNodeInfo.ScanNodName,
-                                ScanTime = scanNodeInfo.ScanTime,
+                                Name = scanNodeInfo.DeviceInfos.NodeName,
+                                ScanTime = scanNodeInfo.BarCodeInfo.ScanTime,
                                 VideoNodeImageInfos = imageInfoModels,
-                                VideoNvrCameraBindingInfos =scanNodeInfo?.NvrCameraBindingInfos?
+                                VideoNvrCameraBindingInfos =scanNodeInfo?.CloudNvrCameraBindingInfos?
                             .Select(s => new VideoNvrCameraBindingInfoModel {
                                 BarcodeScannerSerialNumber = s.BarcodeScannerSerialNumber,
                                 Channel = s.Channel,
@@ -109,11 +115,10 @@ namespace JayTom.Dws.Domain.Service.VideoApi {
                 else {
                     var videoScanNodeInfoModel = new VideoScanNodeInfoModel() {
                         BarcodeId = model.Id,
-                        Description = scanNodeInfo.Description,
-                        Name = scanNodeInfo.ScanNodName,
-                        ScanTime = scanNodeInfo.ScanTime,
+                        Name = scanNodeInfo.DeviceInfos.NodeName,
+                        ScanTime = scanNodeInfo.BarCodeInfo.ScanTime,
                         VideoNodeImageInfos = imageInfoModels,
-                        VideoNvrCameraBindingInfos = scanNodeInfo?.NvrCameraBindingInfos?
+                        VideoNvrCameraBindingInfos = scanNodeInfo?.CloudNvrCameraBindingInfos?
                             .Select(s => new VideoNvrCameraBindingInfoModel {
                                 BarcodeScannerSerialNumber = s.BarcodeScannerSerialNumber,
                                 Channel = s.Channel,

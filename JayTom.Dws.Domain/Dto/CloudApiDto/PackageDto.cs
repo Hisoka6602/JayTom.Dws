@@ -75,6 +75,11 @@ namespace JayTom.Dws.Domain.Dto.CloudApiDto {
         /// 设备信息
         /// </summary>
         public DeviceInfoDto? DeviceInfos { get; set; }
+
+        /// <summary>
+        /// Nvr信息
+        /// </summary>
+        public List<CloudNvrCameraBindingInfoDto>? CloudNvrCameraBindingInfos { get; set; }
     }
 
     /// <summary>
@@ -483,5 +488,41 @@ namespace JayTom.Dws.Domain.Dto.CloudApiDto {
         /// 指令类型
         /// </summary>
         public InstructionType InstructionType { get; set; } = InstructionType.None;
+    }
+
+    /// <summary>
+    /// NVR绑定信息
+    /// </summary>
+    public class CloudNvrCameraBindingInfoDto {
+
+        /// <summary>
+        /// IP地址
+        /// </summary>
+        public string IpAddress { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 端口号
+        /// </summary>
+        public int Port { get; set; }
+
+        /// <summary>
+        /// 用户名
+        /// </summary>
+        public string Username { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 密码
+        /// </summary>
+        public string Password { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 通道
+        /// </summary>
+        public int Channel { get; set; }
+
+        /// <summary>
+        /// 扫码相机序列号
+        /// </summary>
+        public string BarcodeScannerSerialNumber { get; set; } = string.Empty;
     }
 }

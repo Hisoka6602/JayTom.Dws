@@ -61,6 +61,8 @@ namespace JayTom.Dws.Client.Service.Sorting {
             //获取对应连接
         }
 
+        public event EventHandler<ConnectionInfo>? Connected;
+
         public async Task ConfigurationInitializer() {
             _connectionConfigInfoModels = await _communicationConnectionConfigRepository.CommunicationConnectionConfigItems(
                 s =>
@@ -152,9 +154,21 @@ namespace JayTom.Dws.Client.Service.Sorting {
                             DeviceCommunicationProtocol = protocol
                         });
                     }
+
+                    if (connect) {
+                        OnConnected(new ConnectionInfo() {
+                            SortingSerialPort = sortingSerialPort,
+                            Type = type,
+                            ConnectionName = connectionName
+                        });
+                    }
                     return new KeyValuePair<bool, string>(connect, $"[{connectionName}]连接{(connect ? "成功" : "失败")}");
                 }
                 else {
+                    OnDisconnected(new ConnectionInfo() {
+                        Type = type,
+                        ConnectionName = connectionName
+                    });
                     return new KeyValuePair<bool, string>(false, "连接参数不匹配");
                 }
             }
@@ -199,6 +213,10 @@ namespace JayTom.Dws.Client.Service.Sorting {
                                 CreateTime = DateTime.Now,
                                 Message = $"连接:{connectionName},下位机已连接",
                                 Type = LogType.Information
+                            });
+                            OnConnected(new ConnectionInfo() {
+                                ConnectionName = connectionName,
+                                Type = type,
                             });
                         };
                         var tcpConfigInfoModel = info.TcpConfigItems?.FirstOrDefault(f => f.Type == 0);
@@ -275,6 +293,10 @@ namespace JayTom.Dws.Client.Service.Sorting {
                                 CreateTime = DateTime.Now,
                                 Message = $"连接:{connectionName},下位机已连接",
                                 Type = LogType.Information
+                            });
+                            OnConnected(new ConnectionInfo() {
+                                ConnectionName = connectionName,
+                                Type = type,
                             });
                         };
                         var tcpConfigInfoModel = info.TcpConfigItems?.FirstOrDefault(f => f.Type != 0);
@@ -794,6 +816,11 @@ namespace JayTom.Dws.Client.Service.Sorting {
                 await Task.Delay(5);
             } while (DateTime.Now.Subtract(startTime) < timeOut);
             return false;
+        }
+
+        protected virtual async void OnConnected(ConnectionInfo e) {
+            await Task.Yield();
+            Connected?.Invoke(this, e);
         }
     }
 }

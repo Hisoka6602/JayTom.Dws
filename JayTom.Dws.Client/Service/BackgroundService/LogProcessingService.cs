@@ -339,7 +339,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 NLog.LogManager.GetCurrentClassLogger().Info($"{model.CreateTime:yyyy-MM-dd HH:mm:ss.fff}--[锁格]-[格口号:{model.ExitName}]解锁");
             };*/
             EventAggregator.Instance.Subscribe<InstructionReceived>(async item => {
-                await Task.Delay(200);
+                await Task.Delay(100);
                 if (item is InstructionReceived model && model.InstructionInfos?.Any() == true
                     ) {
                     var instructionInfoModel = model.InstructionInfos.FirstOrDefault();

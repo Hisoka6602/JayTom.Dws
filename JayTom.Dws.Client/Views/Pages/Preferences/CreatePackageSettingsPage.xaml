@@ -221,7 +221,7 @@
                         FontSize="16"
                         FontWeight="Bold"
                         Foreground="DarkGray"
-                        Text="空包裹过滤:" />
+                        Text="包裹过滤:" />
                 </StackPanel>
                 <!--  内容  -->
                 <StackPanel Margin="50,5,0,0" Orientation="Vertical">
@@ -279,7 +279,8 @@
                     <StackPanel
                         HorizontalAlignment="Left"
                         VerticalAlignment="Center"
-                        Orientation="Horizontal">
+                        Orientation="Horizontal"
+                        Visibility="Collapsed">
                         <TextBlock
                             Margin="5,0"
                             VerticalAlignment="Center"
@@ -293,6 +294,37 @@
                             Focusable="False"
                             IsChecked="{Binding CreatePackageSettingsInfo.IsGroupBarCode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                             Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <!--  图标  -->
+                        <TextBlock
+                            Margin="5,0"
+                            VerticalAlignment="Center"
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="DarkGray"
+                            Text="最小创建包裹间隔时间(ms):" />
+                        <Border
+                            Margin="5,0"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Background="#1A696969"
+                            CornerRadius="5">
+                            <TextBox
+                                Width="130"
+                                Height="30"
+                                MaxWidth="500"
+                                Margin="5,0"
+                                materialDesign:TextFieldAssist.HasClearButton="False"
+                                materialDesign:TextFieldAssist.HasFilledTextField="True"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="White"
+                                InputMethod.IsInputMethodEnabled="False"
+                                Text="{Binding CreatePackageSettingsInfo.PackageCreationInterval, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                        </Border>
                     </StackPanel>
                 </StackPanel>
             </StackPanel>
@@ -360,7 +392,7 @@
             <!--  创建包裹方式  -->
             <StackPanel
                 Grid.Row="4"
-                Margin="5,10"
+                Margin="5,5"
                 VerticalAlignment="Top"
                 Orientation="Vertical">
                 <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
@@ -529,7 +561,7 @@
             <!--  移除包裹方式  -->
             <StackPanel
                 Grid.Row="5"
-                Margin="5,10"
+                Margin="5,5"
                 VerticalAlignment="Top"
                 Orientation="Vertical">
                 <StackPanel VerticalAlignment="Center" Orientation="Horizontal">

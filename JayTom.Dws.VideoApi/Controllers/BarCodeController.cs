@@ -12,6 +12,7 @@ using JayTom.Dws.Data.VideoApiData;
 using JayTom.Dws.Domain.Dto.VideoApi;
 using System.Runtime.InteropServices;
 using System.Diagnostics.CodeAnalysis;
+using JayTom.Dws.Domain.Dto.CloudApiDto;
 using Microsoft.AspNetCore.Authorization;
 using JayTom.Dws.Application.Service.VideoApi;
 using JayTom.Dws.Domain.Repository.VideoApiData;
@@ -47,22 +48,23 @@ namespace JayTom.Dws.VideoApi.Controllers {
         }
 
         [HttpPost("UploadBarcodeData")]
-        public async Task<JsonResult> UploadBarcodeData([FromForm][NotNull] IFormFile barcodeImage,
-            [FromForm] List<IFormFile> panoramaImages,
-            [FromForm][NotNull] string jsonData,
+        public async Task<JsonResult> UploadBarcodeData([FromForm] IFormFile? barcodeImage,
+            [FromForm] List<IFormFile>? panoramaImages,
+            [FromForm][NotNull] string packageInfo,
             CancellationToken cancellationToken) {
             _saveImagePath ??= _hostEnvironment.WebRootPath;
             try {
-                var scanNodeDto = JsonConvert.DeserializeObject<ScanNodeDto>(jsonData);
-                if (scanNodeDto is not null) {
-                    var strings = Path.GetFileNameWithoutExtension(barcodeImage.FileName)?.Split("_");
+                //var scanNodeDto = JsonConvert.DeserializeObject<ScanNodeDto>(jsonData);
+                var packageDto = JsonConvert.DeserializeObject<PackageDto>(packageInfo);
+                if (packageDto is not null) {
+                    var strings = Path.GetFileNameWithoutExtension(barcodeImage?.FileName)?.Split("_");
                     //判断是否已存在
                     var (key, value) = await _videoBarCodeAppService.AddOrUpdateBarcodeInfo(new BarcodeImageDto() {
                         CameraSerialNumber = strings?.Length > 0 ? strings[0] : string.Empty,
                         CameraName = strings?.Length > 1 ? strings[1] : string.Empty,
-                        Image = FileUtils.ConvertIFormFileToBitmap(barcodeImage),
-                        Name = barcodeImage.FileName
-                    }, panoramaImages.Select(s => {
+                        Image = barcodeImage != null ? FileUtils.ConvertIFormFileToBitmap(barcodeImage) : null,
+                        Name = barcodeImage?.FileName ?? string.Empty,
+                    }, panoramaImages?.Select(s => {
                         var split = Path.GetFileNameWithoutExtension(s.FileName)?.Split("_");
                         return new BarcodeImageDto {
                             CameraSerialNumber = split?.Length > 0 ? split[0] :
@@ -73,7 +75,7 @@ namespace JayTom.Dws.VideoApi.Controllers {
                             Name = s.FileName
                         };
                     })?.ToList() ?? new List<BarcodeImageDto>(),
-                        scanNodeDto, _saveImagePath);
+                    packageDto, _saveImagePath);
                     if (key) {
                         if (value is VideoBarCodeInfoModel videoBarCodeInfoModel) {
                             //添加

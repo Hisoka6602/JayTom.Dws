@@ -8,6 +8,7 @@ using JayTom.Dws.Application.Dto;
 using JayTom.Dws.Data.VideoApiData;
 using JayTom.Dws.Domain.Dto.CloudDto;
 using JayTom.Dws.Domain.Dto.VideoApi;
+using JayTom.Dws.Domain.Dto.CloudApiDto;
 using JayTom.Dws.Domain.Service.VideoApi;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
@@ -20,7 +21,7 @@ namespace JayTom.Dws.Application.Service.VideoApi {
             _videoBarCodeService = videoBarCodeService;
         }
 
-        public Task<KeyValuePair<bool, object>> AddOrUpdateBarcodeInfo(BarcodeImageDto barcodeImageInfo, List<BarcodeImageDto> panoramaImageInfos, ScanNodeDto scanNodeInfo,
+        public Task<KeyValuePair<bool, object>> AddOrUpdateBarcodeInfo(BarcodeImageDto barcodeImageInfo, List<BarcodeImageDto> panoramaImageInfos, PackageDto scanNodeInfo,
             string rootImagePath) {
             return _videoBarCodeService.AddOrUpdateBarcodeInfo(barcodeImageInfo,
                  panoramaImageInfos, scanNodeInfo, rootImagePath);

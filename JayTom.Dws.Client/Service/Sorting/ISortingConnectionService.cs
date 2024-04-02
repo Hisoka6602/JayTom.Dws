@@ -3,16 +3,21 @@ using System.Linq;
 using System.Text;
 using JayTom.Dws.Plugin.Tcp;
 using System.Threading.Tasks;
+using JayTom.Dws.Data.Package;
 using System.Collections.Generic;
 using JayTom.Dws.Domain.DownstreamProtocols;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Client.Service.Sorting.Communication.TcpComm;
 using JayTom.Dws.Client.Service.Sorting.Communication.SerialComm;
-using JayTom.Dws.Data.Package;
 
-namespace JayTom.Dws.Client.Service.Sorting
-{
+namespace JayTom.Dws.Client.Service.Sorting {
+
     public interface ISortingConnectionService {
+
+        /// <summary>
+        /// 连接事件
+        /// </summary>
+        event EventHandler<ConnectionInfo> Connected;
 
         /// <summary>
         /// 配置初始化

@@ -106,12 +106,6 @@ namespace JayTom.Dws.Client.Service.Sorting {
                     ExceptionMessage = $"监测Tcp连接异常:{s}"
                 });
             };
-            /*EventAggregator.Instance.Subscribe<PackageInfo>(async item => {
-                if (item is PackageInfo info) {
-                    _stackedPackageItems.Enqueue(info);
-                    NLog.LogManager.GetCurrentClassLogger().Error($"队列数:{_stackedPackageItems.Count}");
-                }
-            });*/
             EventAggregator.Instance.Subscribe<TriggerPositionEvent>(async item => {
                 if (item is TriggerPositionEvent { TriggerPosition: TriggerPositionEnum.PackageTrigger } info) {
                     _stackedPackageItems.Enqueue(info.PackageInfo ?? new PackageInfo());
@@ -119,6 +113,10 @@ namespace JayTom.Dws.Client.Service.Sorting {
                 }
             });
         }
+
+        public event EventHandler<EventArgs>? Connected;
+
+        public event EventHandler<EventArgs>? Disconnected;
 
         public event EventHandler<StackedPackageEventArgs>? StackedPackageReturned;
 
@@ -179,6 +177,12 @@ namespace JayTom.Dws.Client.Service.Sorting {
                         _stackedPackageDetectionSettingsDto.SerialPortConfigInfo.StopBits,
                         (SerialPortFormat)_stackedPackageDetectionSettingsDto.SerialPortConfigInfo.DataFormat
                     );
+                    if (connect) {
+                        OnConnected();
+                    }
+                    else {
+                        OnDisconnected();
+                    }
                     return new KeyValuePair<bool, string>(connect, $"叠包监测连接:{(connect ? "成功" : "失败")}");
                 }
                 else if (_stackedPackageDetectionSettingsDto.CommunicationType == CommunicationsType.TCP) {
@@ -197,6 +201,12 @@ namespace JayTom.Dws.Client.Service.Sorting {
                             1000,
                             (FormatType)_stackedPackageDetectionSettingsDto.TcpConnectionConfigInfo.DataFormat,
                             0, token);
+                        if (connect) {
+                            OnConnected();
+                        }
+                        else {
+                            OnDisconnected();
+                        }
                         return new KeyValuePair<bool, string>(connect, $"叠包监测连接:{(connect ? "成功" : "失败")}");
                     }
                     else if (_stackedPackageDetectionSettingsDto.TcpConnectionConfigInfo.ConnectionMode == TcpConnectionMode.Client) {
@@ -207,6 +217,12 @@ namespace JayTom.Dws.Client.Service.Sorting {
                             1000,
                             (FormatType)_stackedPackageDetectionSettingsDto.TcpConnectionConfigInfo.DataFormat,
                             0, token);
+                        if (connect) {
+                            OnConnected();
+                        }
+                        else {
+                            OnDisconnected();
+                        }
                         return new KeyValuePair<bool, string>(connect, $"叠包监测连接:{(connect ? "成功" : "失败")}");
                     }
                 }
@@ -235,7 +251,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                 if (_packageDetectionSerialPort.Status == SerialPortStatus.Running) {
                     _packageDetectionTcp.Close();
                 }
-
+                OnDisconnected();
                 return new KeyValuePair<bool, string>(true, "停止成功");
             }
             catch (Exception e) {
@@ -267,6 +283,16 @@ namespace JayTom.Dws.Client.Service.Sorting {
         protected virtual async void OnExceptionOccurred(ExceptionEventArgs e) {
             await Task.Yield();
             ExceptionOccurred?.Invoke(this, e);
+        }
+
+        protected virtual async void OnConnected() {
+            await Task.Yield();
+            Connected?.Invoke(this, EventArgs.Empty);
+        }
+
+        protected virtual async void OnDisconnected() {
+            await Task.Yield();
+            Disconnected?.Invoke(this, EventArgs.Empty);
         }
     }
 }

@@ -37,6 +37,16 @@ namespace JayTom.Dws.Client.Service.Sorting {
         bool IsConnected { get; }
 
         /// <summary>
+        /// 连接事件
+        /// </summary>
+        event EventHandler<EventArgs> Connected;
+
+        /// <summary>
+        /// 断开连接事件
+        /// </summary>
+        event EventHandler<EventArgs> Disconnected;
+
+        /// <summary>
         /// 启动监控服务
         /// </summary>
         Task<KeyValuePair<bool, string>> Start(CancellationToken token = default);

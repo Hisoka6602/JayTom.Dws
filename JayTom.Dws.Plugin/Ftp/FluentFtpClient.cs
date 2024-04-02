@@ -23,10 +23,15 @@ namespace JayTom.Dws.Plugin.Ftp {
 
         public bool IsConnected => _ftpClient.IsConnected;
 
+        public event EventHandler<EventArgs>? Connected;
+
+        public event EventHandler<EventArgs>? Disconnected;
+
         public async Task<KeyValuePair<bool, string>> Connect(string server, int port, string username, string password, CancellationToken cancellationToken = default) {
             try {
                 await _connectSlim.WaitAsync(cancellationToken);
                 if (_ftpClient.IsConnected) {
+                    OnConnected();
                     return new KeyValuePair<bool, string>(true, "连接成功!");
                 }
                 _ftpClient.Host = server;
@@ -38,10 +43,12 @@ namespace JayTom.Dws.Plugin.Ftp {
                 _ftpClient.Config.DataConnectionType = FtpDataConnectionType.AutoPassive;
                 _ftpClient.Credentials = new NetworkCredential(username, password);
                 _ftpClient.Connect();
+                OnConnected();
                 return new KeyValuePair<bool, string>(true, "连接成功!");
             }
             catch (Exception ex) {
                 NLog.LogManager.GetCurrentClassLogger().Error($"{ex}");
+                OnDisconnected();
                 return new KeyValuePair<bool, string>(false, ex.Message);
             }
             finally {
@@ -63,6 +70,7 @@ namespace JayTom.Dws.Plugin.Ftp {
             try {
                 await _semaphore.WaitAsync(cancellationToken);
                 if (!_ftpClient.IsConnected) {
+                    OnDisconnected();
                     return new KeyValuePair<bool, string>(false, "Ftp未连接!");
                 }
 
@@ -202,6 +210,16 @@ namespace JayTom.Dws.Plugin.Ftp {
                 }
             }
             return fileNames;
+        }
+
+        protected virtual async void OnConnected() {
+            await Task.Yield();
+            Connected?.Invoke(this, EventArgs.Empty);
+        }
+
+        protected virtual async void OnDisconnected() {
+            await Task.Yield();
+            Disconnected?.Invoke(this, EventArgs.Empty);
         }
     }
 }

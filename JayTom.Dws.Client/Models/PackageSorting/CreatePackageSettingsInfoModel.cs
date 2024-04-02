@@ -35,6 +35,7 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         private bool _isUseNoReadFilter;
         private int _filterInterval = 100;
         private bool _isGroupBarCode;
+        private int _packageCreationInterval;
 
         /// <summary>
         /// 是否使用包裹过期
@@ -144,6 +145,14 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         public bool IsGroupBarCode {
             get => _isGroupBarCode;
             set => SetProperty(ref _isGroupBarCode, value);
+        }
+
+        /// <summary>
+        /// 最小创建包裹间隔时间
+        /// </summary>
+        public int PackageCreationInterval {
+            get => _packageCreationInterval;
+            set => SetProperty(ref _packageCreationInterval, value);
         }
     }
 

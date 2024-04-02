@@ -57,7 +57,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private ConcurrentDictionary<string, BarCodeFrameInfo> _barCodeFrameInfoItem = new();
         private static bool _isWindowsClose;
         private SemaphoreSlim _createPackageSlim = new(1);
-        private DateTime lastNoReadTime = DateTime.Now;
+        private SemaphoreSlim _takePackageSlim = new(1);
+        private DateTime _lastNoReadTime = DateTime.Now;
 
         public PackageBackgroundService(IDeviceService deviceService,
             IResultOutputService resultOutputService,
@@ -197,11 +198,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     }
                     else {
                         if (_createPackageSettingsDto.IsUseNoReadFilter) {
-                            if (DateTime.Now.Subtract(lastNoReadTime).TotalMilliseconds < _createPackageSettingsDto.FilterInterval) {
+                            if (DateTime.Now.Subtract(_lastNoReadTime).TotalMilliseconds < _createPackageSettingsDto.FilterInterval) {
                                 return;
                             }
                             else {
-                                lastNoReadTime = args.ScanTime;
+                                _lastNoReadTime = args.ScanTime;
                             }
                         }
 
@@ -532,12 +533,12 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 PackageCreationInstruction = args.Instruction,
                                 CreateTime = DateTime.Now,
                             };
+
                             EventAggregator.Instance.Publish(new TriggerPositionEvent() {
                                 IsSuccess = true,
                                 TriggerPosition = TriggerPositionEnum.PackageTrigger,
                                 PackageInfo = packageInfo
                             });
-
                             EventAggregator.Instance.Publish(new InstructionReceived() {
                                 Timestamp = new DateTimeOffset(packageInfo.CreateTime).ToUnixTimeMilliseconds(),
                                 IsCreatedByLowerMachine = true,
@@ -778,6 +779,21 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             //创建包裹后触发
             EventAggregator.Instance.Subscribe<TriggerPositionEvent>(async item => {
                 if (item is TriggerPositionEvent { TriggerPosition: TriggerPositionEnum.PackageTrigger, PackageInfo: { } packageInfo }) {
+                    try {
+                        await _takePackageSlim.WaitAsync();
+                        var info = _packageInfos.OrderBy(o => o.Key)?.LastOrDefault()
+                            .Value;
+
+                        if (info is not null &&
+                            packageInfo.CreateTime.Subtract(info.CreateTime).TotalMilliseconds <
+                            _createPackageSettingsDto.PackageCreationInterval) {
+                            return;
+                        }
+                    }
+                    finally {
+                        _takePackageSlim.Release();
+                    }
+
                     packageInfo.Timestamp = new DateTimeOffset(packageInfo.CreateTime).ToUnixTimeMilliseconds();
                     _packageInfos.TryAdd(packageInfo.CreateTime, packageInfo);
 

@@ -5,6 +5,7 @@ using System.Drawing;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using JayTom.Dws.Domain.Dto.VideoApi;
+using JayTom.Dws.Domain.Dto.CloudApiDto;
 
 namespace JayTom.Dws.Application.Service.VideoApi {
 
@@ -29,7 +30,7 @@ namespace JayTom.Dws.Application.Service.VideoApi {
         /// </summary>
         /// <returns></returns>
         public Task<KeyValuePair<bool, object>> AddOrUpdateBarcodeInfo(BarcodeImageDto barcodeImageInfo,
-            List<BarcodeImageDto> panoramaImageInfos, ScanNodeDto scanNodeInfo, string rootImagePath);
+            List<BarcodeImageDto> panoramaImageInfos, PackageDto scanNodeInfo, string rootImagePath);
 
         /// <summary>
         /// 获取节点分组

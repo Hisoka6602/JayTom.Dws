@@ -70,10 +70,9 @@ namespace JayTom.Dws.Domain.Dto {
         public int FilterInterval { get; set; } = 100;
 
         /// <summary>
-        /// 是否多相机组码
+        /// 最小创建包裹间隔时间
         /// </summary>
-
-        //public bool IsGroupBarCode { get; set; }
+        public int PackageCreationInterval { get; set; } = 150;
     }
 
     public enum BarcodeHandlingMethodEnum {

@@ -11,6 +11,16 @@ namespace JayTom.Dws.Client.Service.Sorting {
     public interface IStackedPackageService {
 
         /// <summary>
+        /// 连接事件
+        /// </summary>
+        event EventHandler<EventArgs> Connected;
+
+        /// <summary>
+        /// 断开连接事件
+        /// </summary>
+        event EventHandler<EventArgs> Disconnected;
+
+        /// <summary>
         /// 叠包返回事件
         /// </summary>
         event EventHandler<StackedPackageEventArgs> StackedPackageReturned;
