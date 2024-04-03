@@ -181,6 +181,7 @@ namespace JayTom.Dws.Client {
                 containerRegistry.RegisterForNavigation<GridSettingsPage>();
                 containerRegistry.RegisterForNavigation<OtherSettingsPage>();
                 containerRegistry.RegisterForNavigation<LicensePage>();
+                containerRegistry.RegisterForNavigation<SyncSettingsPage>();
 
                 //云端服务
                 containerRegistry.RegisterForNavigation<CloudDataPage>();
@@ -666,6 +667,7 @@ namespace JayTom.Dws.Client {
             ViewModelLocationProvider.Register<GridSettingsPage, GridSettingsViewModel>();
             ViewModelLocationProvider.Register<OtherSettingsPage, OtherSettingsViewModel>();
             ViewModelLocationProvider.Register<LicensePage, LicensePageViewModel>();
+            ViewModelLocationProvider.Register<SyncSettingsPage, SyncSettingsViewModel>();
             //组包设置
             ViewModelLocationProvider.Register<CreatePackageSettingsPage, CreatePackageSettingsViewModel>();
             //日志

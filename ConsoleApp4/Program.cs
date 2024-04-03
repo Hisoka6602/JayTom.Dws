@@ -9,16 +9,16 @@ internal class Program {
 
     private static void Main(string[] args) {
         try {
-            var s = "{\"result\":[{\"code\":0,\"command\":\"sorter.dest_request\",\"error\":\"\",\"params\":{\"bcrName\":\"sorter\",\"chuteCode\":\"5\",\"theoryWeight\":0,\"weight\":192,\"errorCode\":0,\"optionalChuteCodes\":\"\",\"barCode\":\"4PXTEST240227000006\"}}],\"requestId\":1710834606}";
+            var s = "{\"code\":1,\"msg\":\"请求成功\",\"version\":null,\"data\":[{\"waybillNo\":\"JT5264019990398\",\"terminalDispatchCode\":\"432 R851-00 307\",\"firstDispatchCode\":\"432\",\"secondDispatchCode\":\"R851-00\",\"thirdlyDispatchCode\":\"307\",\"customerCode\":null,\"interceptor\":2,\"orderType\":2,\"pickNetworkCode\":\"\",\"destinationCode\":\"\",\"extendJson\":\"\",\"codeList\":null},{\"waybillNo\":\"JT5264019990398\",\"terminalDispatchCode\":\"432 R851-00 307\",\"firstDispatchCode\":\"432\",\"secondDispatchCode\":\"R851-00\",\"thirdlyDispatchCode\":\"307\",\"customerCode\":null,\"interceptor\":2,\"orderType\":2,\"pickNetworkCode\":\"\",\"destinationCode\":\"\",\"extendJson\":\"\",\"codeList\":null},{\"waybillNo\":\"JT5264019990398\",\"terminalDispatchCode\":\"902,H346-00,005\",\"firstDispatchCode\":\"902\",\"secondDispatchCode\":\"H346-00\",\"thirdlyDispatchCode\":\"005\",\"customerCode\":null,\"interceptor\":1,\"orderType\":1,\"pickNetworkCode\":\"4579114\",\"destinationCode\":\"510100\",\"extendJson\":\"{\\\"stationCode\\\":\\\"5O\\\"}\",\"codeList\":null}],\"succ\":true,\"fail\":false}";
             var resultContent = Regex.Unescape(s);
 
             var replace = Regex.Replace(s, @"[\u0000-\u001f\b]", "");
             var reader = new System.Text.Json.Utf8JsonReader(Encoding.UTF8.GetBytes(replace));
             var tryParseValue = JsonDocument.TryParseValue(ref reader, out var document);
             if (tryParseValue && document is not null) {
-                var fieldValue = FindFieldValue(document.RootElement, "chuteCode");
+                var fieldValue = FindFieldValue(document.RootElement, "thirdlyDispatchCode");
                 if (fieldValue.HasValue) {
-                    var equals = fieldValue.Value.ToString()?.Equals("5");
+                    var equals = fieldValue.Value.ToString()?.Equals("307");
                     Console.WriteLine(equals);
                 }
             }

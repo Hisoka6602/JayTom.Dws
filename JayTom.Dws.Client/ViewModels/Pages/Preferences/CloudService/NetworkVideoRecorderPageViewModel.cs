@@ -41,14 +41,11 @@ using JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService {
 
-    public class NetworkVideoRecorderPageViewModel : BindableBase {
-        private readonly IConfigRepository _configRepository;
+    public class NetworkVideoRecorderPageViewModel : SettingsPageTemplateViewModel {
         private readonly INvrManager _nvrManager;
         private NvrClientSettingsModel _vnrClientSettingsInfo = new();
         private ObservableCollection<int> _channelItems = new();
-        private SnackbarMessageQueue _networkVideoRecorderMessageQueue = new(TimeSpan.FromSeconds(2));
         private bool _isLogInProgress;
-        private bool _isSavingInProgress;
         private bool _isLoaded;
         private int _selectChannel;
         private MemoryStream _videoMemoryStream = new();
@@ -57,8 +54,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService {
         private SemaphoreSlim _playSlim = new(1);
 
         public NetworkVideoRecorderPageViewModel(IConfigRepository configRepository,
-            INvrManager nvrManager) {
-            _configRepository = configRepository;
+            INvrManager nvrManager) : base(configRepository) {
             _nvrManager = nvrManager;
             _nvrManager.RealTimePreviewCallback += async delegate (object? sender, RealTimePreviewEventArgs args) {
                 /*if (args.Data is not null) {
@@ -119,11 +115,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService {
             set => SetProperty(ref _isPlaying, value);
         }
 
-        public SnackbarMessageQueue NetworkVideoRecorderMessageQueue {
-            get => _networkVideoRecorderMessageQueue;
-            set => SetProperty(ref _networkVideoRecorderMessageQueue, value);
-        }
-
         /// <summary>
         /// 是否登录中
         /// </summary>
@@ -132,64 +123,30 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService {
             set => SetProperty(ref _isLogInProgress, value);
         }
 
-        /// <summary>
-        /// 是否保存中
-        /// </summary>
-        public bool IsSavingInProgress {
-            get => _isSavingInProgress;
-            set => SetProperty(ref _isSavingInProgress, value);
+        public override string Identifier => "NetworkVideoRecorderSettingsDialogHost";
+        public override string SettingsName => "NetworkVideoRecorderSettings";
+
+        protected override async Task<bool> SaveSettingsProcess() {
+            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
+                ConfigName = SettingsName,
+                Value = JsonConvert.SerializeObject(new NvrClientSettingsDto() {
+                    Ip = NvrClientSettingsInfo.Ip,
+                    Port = NvrClientSettingsInfo.Port,
+                    IsUseBarcodeWatermark = NvrClientSettingsInfo.IsUseBarcodeWatermark,
+                    MaxWatermarkTime = NvrClientSettingsInfo.MaxWatermarkTime,
+                    Password = NvrClientSettingsInfo.Password,
+                    Username = NvrClientSettingsInfo.Username
+                })
+            });
+            base.MessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
+                Languages.Language.ResourceManager.GetString("SaveFailed"))}");
+            return insertOrUpdate;
         }
 
-        /// <summary>
-        /// 保存设置
-        /// </summary>
-        public ICommand SaveSettingsCommand {
-            get => new DelegateCommand<object>(SaveSettingDelegate);
-        }
-
-        private async void SaveSettingDelegate(object obj) {
-            if (!IsSavingInProgress) {
-                IsSavingInProgress = true;
-
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
-                    //保存绑定表
-
-                    //保存设置
-
-                    var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
-                        ConfigName = "NetworkVideoRecorderSettings",
-                        Value = JsonConvert.SerializeObject(new NvrClientSettingsDto() {
-                            Ip = NvrClientSettingsInfo.Ip,
-                            Port = NvrClientSettingsInfo.Port,
-                            IsUseBarcodeWatermark = NvrClientSettingsInfo.IsUseBarcodeWatermark,
-                            MaxWatermarkTime = NvrClientSettingsInfo.MaxWatermarkTime,
-                            Password = NvrClientSettingsInfo.Password,
-                            Username = NvrClientSettingsInfo.Username
-                        })
-                    });
-                    if (insertOrUpdate) {
-                        EventAggregator.Instance.Publish(new SettingsChangedEvent {
-                            SettingsName = "NetworkVideoRecorderSettings"
-                        });
-                    }
-
-                    IsSavingInProgress = false;
-                    NetworkVideoRecorderMessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
-                        Languages.Language.ResourceManager.GetString("SaveFailed"))}");
-                });
-            }
-        }
-
-        /// <summary>
-        /// 页面加载完成
-        /// </summary>
-        public ICommand LoadedCommand {
-            get => new DelegateCommand<object>(LoadedDelegate);
-        }
-
-        private async void LoadedDelegate(object obj) {
+        public override async void LoadedDelegate(object obj) {
             if (!_isLoaded) {
                 _isLoaded = true;
+
                 try {
                     if (obj is Page page) {
                         var visualChild = PluginInterface.Utils.Utils.GetVisualChild<VlcControl>(page, f => f.Name.Equals("VlcPlayer"));
@@ -201,30 +158,23 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService {
                 }
                 catch (Exception e) {
                     NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
-                    NetworkVideoRecorderMessageQueue.Enqueue($"{e.Message}");
+                    base.MessageQueue.Enqueue($"{e.Message}");
                 }
 
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
-                    var configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("NetworkVideoRecorderSettings"));
-                    if (configInfoModel is not null) {
-                        try {
-                            var vnrClientSettingsDto = JsonConvert.DeserializeObject<NvrClientSettingsDto>(configInfoModel.Value);
-                            if (vnrClientSettingsDto is not null) {
-                                NvrClientSettingsInfo = new NvrClientSettingsModel() {
-                                    Ip = vnrClientSettingsDto.Ip,
-                                    Port = vnrClientSettingsDto.Port,
-                                    IsUseBarcodeWatermark = vnrClientSettingsDto.IsUseBarcodeWatermark,
-                                    MaxWatermarkTime = vnrClientSettingsDto.MaxWatermarkTime,
-                                    Password = vnrClientSettingsDto.Password,
-                                    Username = vnrClientSettingsDto.Username
-                                };
-                            }
-                        }
-                        catch (Exception e) {
-                            NetworkVideoRecorderMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("加载设置失败") ?? string.Empty}:{e.Message}");
-                        }
-                    }
-                });
+                var vnrClientSettingsDto = await _configRepository.FirstOrDefaultEntity<NvrClientSettingsDto>(SettingsName);
+                if (vnrClientSettingsDto is not null) {
+                    NvrClientSettingsInfo = new NvrClientSettingsModel() {
+                        Ip = vnrClientSettingsDto.Ip,
+                        Port = vnrClientSettingsDto.Port,
+                        IsUseBarcodeWatermark = vnrClientSettingsDto.IsUseBarcodeWatermark,
+                        MaxWatermarkTime = vnrClientSettingsDto.MaxWatermarkTime,
+                        Password = vnrClientSettingsDto.Password,
+                        Username = vnrClientSettingsDto.Username
+                    };
+                }
+                else {
+                    base.MessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("加载设置失败") ?? string.Empty}");
+                }
             }
         }
 
@@ -303,14 +253,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService {
                             var (b, ints) = await _nvrManager.EnumerateChannels();
                             if (b) {
                                 ChannelItems.AddRange(ints);
-                                NetworkVideoRecorderMessageQueue.Enqueue("枚举通道成功!");
+                                base.MessageQueue.Enqueue("枚举通道成功!");
                             }
                             else {
-                                NetworkVideoRecorderMessageQueue.Enqueue("枚举通道失败!");
+                                base.MessageQueue.Enqueue("枚举通道失败!");
                             }
                         }
                         else {
-                            NetworkVideoRecorderMessageQueue.Enqueue(value);
+                            base.MessageQueue.Enqueue(value);
                         }
 
                         IsLogInProgress = false;
@@ -337,7 +287,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService {
                 model.Password = NvrClientSettingsInfo.Password;
                 await DialogHost.Show(nvrCameraBindingEditor, model.Identifier);
                 if (!string.IsNullOrEmpty(model.Message)) {
-                    NetworkVideoRecorderMessageQueue.Enqueue(model.Message);
+                    base.MessageQueue.Enqueue(model.Message);
                 }
             }
 

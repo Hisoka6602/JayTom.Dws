@@ -27,18 +27,13 @@ using JayTom.Dws.Client.Models.CloudSettingModel;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService {
 
-    public class CloudVideoSettingsPageViewModel : BindableBase {
-        private readonly IConfigRepository _configRepository;
+    public class CloudVideoSettingsPageViewModel : SettingsPageTemplateViewModel {
         private CloudVideoSettingsModel _cloudVideoSettings = new();
-        private bool _isSavingInProgress;
         private bool _isLoaded;
-        private SnackbarMessageQueue _cloudVideoSettingsMessageQueue = new(TimeSpan.FromSeconds(2));
         private ObservableCollection<BaseLogItemModel> _logItems = new();
         private SemaphoreSlim _logSlim = new(1);
 
-        public CloudVideoSettingsPageViewModel(IConfigRepository configRepository) {
-            _configRepository = configRepository;
-
+        public CloudVideoSettingsPageViewModel(IConfigRepository configRepository) : base(configRepository) {
             EventAggregator.Instance.Subscribe<CloudVideoUploadMessage>(async item => {
                 if (item is CloudVideoUploadMessage model) {
                     Task.Factory.StartNew(async () => {
@@ -84,11 +79,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService {
             });
         }
 
-        public SnackbarMessageQueue CloudVideoSettingsMessageQueue {
-            get => _cloudVideoSettingsMessageQueue;
-            set => SetProperty(ref _cloudVideoSettingsMessageQueue, value);
-        }
-
         public CloudVideoSettingsModel CloudVideoSettings {
             get => _cloudVideoSettings;
             set => SetProperty(ref _cloudVideoSettings, value);
@@ -99,83 +89,49 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService {
             set => SetProperty(ref _logItems, value);
         }
 
-        public bool IsSavingInProgress {
-            get => _isSavingInProgress;
-            set => SetProperty(ref _isSavingInProgress, value);
+        public override string Identifier => "CloudVideoSettingsDialogHost";
+        public override string SettingsName => "CloudVideoSettings";
+
+        protected override async Task<bool> SaveSettingsProcess() {
+            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
+                ConfigName = SettingsName,
+                Value = JsonConvert.SerializeObject(new CloudVideoSettingsDto() {
+                    Concurrency = CloudVideoSettings.Concurrency,
+                    IsAutoUploadUnsyncedData = CloudVideoSettings.IsAutoUploadUnsyncedData,
+                    IsUseCloudVideoUpload = CloudVideoSettings.IsUseCloudVideoUpload,
+                    LoginName = CloudVideoSettings.LoginName,
+                    NodeName = CloudVideoSettings.NodeName,
+                    RequestTimeout = CloudVideoSettings.RequestTimeout,
+                    RetryAttempts = CloudVideoSettings.RetryAttempts,
+                    WebDoMain = CloudVideoSettings.WebDoMain,
+                    UploadIntervalInSeconds = CloudVideoSettings.UploadIntervalInSeconds
+                })
+            });
+            base.MessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
+                Languages.Language.ResourceManager.GetString("SaveFailed"))}");
+            return insertOrUpdate;
         }
 
-        /// <summary>
-        /// 保存设置
-        /// </summary>
-        public ICommand SaveSettingsCommand {
-            get => new DelegateCommand<object>(SaveSettingDelegate);
-        }
-
-        private async void SaveSettingDelegate(object obj) {
-            if (!IsSavingInProgress) {
-                IsSavingInProgress = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
-                    var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
-                        ConfigName = "CloudVideoSettings",
-                        Value = JsonConvert.SerializeObject(new CloudVideoSettingsDto() {
-                            Concurrency = CloudVideoSettings.Concurrency,
-                            IsAutoUploadUnsyncedData = CloudVideoSettings.IsAutoUploadUnsyncedData,
-                            IsUseCloudVideoUpload = CloudVideoSettings.IsUseCloudVideoUpload,
-                            LoginName = CloudVideoSettings.LoginName,
-                            NodeName = CloudVideoSettings.NodeName,
-                            RequestTimeout = CloudVideoSettings.RequestTimeout,
-                            RetryAttempts = CloudVideoSettings.RetryAttempts,
-                            WebDoMain = CloudVideoSettings.WebDoMain,
-                            UploadIntervalInSeconds = CloudVideoSettings.UploadIntervalInSeconds
-                        })
-                    });
-                    if (insertOrUpdate) {
-                        EventAggregator.Instance.Publish(new SettingsChangedEvent {
-                            SettingsName = "CloudVideoSettings"
-                        });
-                    }
-
-                    IsSavingInProgress = false;
-                    CloudVideoSettingsMessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
-                        Languages.Language.ResourceManager.GetString("SaveFailed"))}");
-                });
-            }
-        }
-
-        /// <summary>
-        /// 页面加载完成
-        /// </summary>
-        public ICommand LoadedCommand {
-            get => new DelegateCommand<object>(LoadedDelegate);
-        }
-
-        private async void LoadedDelegate(object obj) {
+        public override async void LoadedDelegate(object obj) {
             if (!_isLoaded) {
                 _isLoaded = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
-                    var configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("CloudVideoSettings"));
-                    if (configInfoModel is not null) {
-                        try {
-                            var cloudVideoSettingsDto = JsonConvert.DeserializeObject<CloudVideoSettingsDto>(configInfoModel.Value);
-                            if (cloudVideoSettingsDto is not null) {
-                                CloudVideoSettings = new CloudVideoSettingsModel() {
-                                    Concurrency = cloudVideoSettingsDto.Concurrency,
-                                    IsAutoUploadUnsyncedData = cloudVideoSettingsDto.IsAutoUploadUnsyncedData,
-                                    IsUseCloudVideoUpload = cloudVideoSettingsDto.IsUseCloudVideoUpload,
-                                    LoginName = cloudVideoSettingsDto.LoginName,
-                                    NodeName = cloudVideoSettingsDto.NodeName,
-                                    RequestTimeout = cloudVideoSettingsDto.RequestTimeout,
-                                    RetryAttempts = cloudVideoSettingsDto.RetryAttempts,
-                                    WebDoMain = cloudVideoSettingsDto.WebDoMain,
-                                    UploadIntervalInSeconds = cloudVideoSettingsDto.UploadIntervalInSeconds
-                                };
-                            }
-                        }
-                        catch (Exception e) {
-                            CloudVideoSettingsMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("加载设置失败") ?? string.Empty}:{e.Message}");
-                        }
-                    }
-                });
+                var cloudVideoSettingsDto = await _configRepository.FirstOrDefaultEntity<CloudVideoSettingsDto>(SettingsName);
+                if (cloudVideoSettingsDto is not null) {
+                    CloudVideoSettings = new CloudVideoSettingsModel() {
+                        Concurrency = cloudVideoSettingsDto.Concurrency,
+                        IsAutoUploadUnsyncedData = cloudVideoSettingsDto.IsAutoUploadUnsyncedData,
+                        IsUseCloudVideoUpload = cloudVideoSettingsDto.IsUseCloudVideoUpload,
+                        LoginName = cloudVideoSettingsDto.LoginName,
+                        NodeName = cloudVideoSettingsDto.NodeName,
+                        RequestTimeout = cloudVideoSettingsDto.RequestTimeout,
+                        RetryAttempts = cloudVideoSettingsDto.RetryAttempts,
+                        WebDoMain = cloudVideoSettingsDto.WebDoMain,
+                        UploadIntervalInSeconds = cloudVideoSettingsDto.UploadIntervalInSeconds
+                    };
+                }
+                else {
+                    base.MessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("加载设置失败") ?? string.Empty}");
+                }
             }
         }
 

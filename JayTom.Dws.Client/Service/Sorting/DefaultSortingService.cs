@@ -702,6 +702,13 @@ namespace JayTom.Dws.Client.Service.Sorting {
             else {
                 //走异常口
                 ExceptionSorting(param, token);
+                //无分拣规则
+                EventAggregator.Instance.Publish(new ExceptionSortingReceived {
+                    ScanTime = param.ScanTime,
+                    BarCode = param.BarCode,
+                    Timestamp = param.Timestamp,
+                    PackageCloudAbnormalSortingType = PackageCloudAbnormalSortingType.UnmatchedRule
+                });
 
                 #region 邮政额外定制
 

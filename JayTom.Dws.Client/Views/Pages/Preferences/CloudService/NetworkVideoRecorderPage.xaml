@@ -21,335 +21,222 @@
     mvvm:ViewModelLocator.AutoWireViewModel="True"
     Focusable="False"
     FontFamily="{StaticResource CustomFontFamily}"
+    Template="{StaticResource SettingsPageTemplate}"
     mc:Ignorable="d">
     <Page.Resources>
         <cloudConverters:IsPlayingConverter x:Key="IsPlayingConverter" />
     </Page.Resources>
     <b:Interaction.Triggers>
-        <b:EventTrigger EventName="Loaded" SourceName="NetworkVideoRecorderView">
-            <b:InvokeCommandAction Command="{Binding LoadedCommand, IsAsync=False}" CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Page}}}" />
+        <b:EventTrigger EventName="Loaded" SourceName="{Binding Name, RelativeSource={RelativeSource AncestorType={x:Type Page}}}">
+            <b:InvokeCommandAction Command="{Binding LoadedCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Page}}}" />
         </b:EventTrigger>
     </b:Interaction.Triggers>
-    <materialDesign:DialogHost
-        Background="Transparent"
-        DialogBackground="Transparent"
-        DialogMargin="5"
-        FocusVisualStyle="{x:Null}"
-        Focusable="False"
-        Identifier="NetworkVideoRecorderDialog"
-        Style="{StaticResource MaterialDesignEmbeddedDialogHost}">
-        <Grid Margin="20,0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="50*" />
-                <ColumnDefinition Width="50*" />
-            </Grid.ColumnDefinitions>
-            <!--  左边  -->
-            <Border Grid.Column="0" VerticalAlignment="Top">
-                <StackPanel Orientation="Vertical">
-                    <!--  设备IP  -->
-                    <StackPanel
-                        Margin="0,5"
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="50*" />
+            <ColumnDefinition Width="50*" />
+        </Grid.ColumnDefinitions>
+        <!--  左边  -->
+        <Border Grid.Column="0" VerticalAlignment="Top">
+            <StackPanel Orientation="Vertical">
+                <!--  设备IP  -->
+                <StackPanel
+                    Margin="0,5"
+                    VerticalAlignment="Center"
+                    Orientation="Horizontal">
+                    <TextBlock
+                        Margin="0,0,0,1"
                         VerticalAlignment="Center"
-                        Orientation="Horizontal">
-                        <TextBlock
-                            Margin="0,0,0,1"
-                            VerticalAlignment="Center"
-                            FontFamily="{StaticResource IconFontFamily}"
-                            FontSize="23"
-                            Foreground="DarkGray"
-                            Text="&#xe8c8;" />
-                        <TextBlock
-                            Margin="5,0"
-                            VerticalAlignment="Center"
-                            FontSize="13"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            Text="设备IP:" />
-                        <Border
-                            Margin="5"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Background="#1A696969"
-                            CornerRadius="5">
-                            <TextBox
-                                Width="165"
-                                Height="30"
-                                MaxWidth="500"
-                                Margin="5,0"
-                                materialDesign:TextFieldAssist.HasClearButton="False"
-                                materialDesign:TextFieldAssist.HasFilledTextField="True"
-                                Background="Transparent"
-                                BorderThickness="0"
-                                FontSize="13"
-                                FontWeight="Bold"
-                                Foreground="White"
-                                InputMethod.IsInputMethodEnabled="False">
-                                <TextBox.Text>
-                                    <Binding
-                                        Mode="TwoWay"
-                                        Path="NvrClientSettingsInfo.Ip"
-                                        UpdateSourceTrigger="PropertyChanged">
-                                        <Binding.ValidationRules>
-                                            <validationRules:RegexValidationRule ErrorMessage="请输入有效的 IP 地址" Pattern="^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$" />
-                                        </Binding.ValidationRules>
-                                    </Binding>
-                                </TextBox.Text>
-                            </TextBox>
-                        </Border>
-                    </StackPanel>
-                    <!--  端口  -->
-                    <StackPanel
-                        Margin="0,5"
+                        FontFamily="{StaticResource IconFontFamily}"
+                        FontSize="23"
+                        Foreground="DarkGray"
+                        Text="&#xe8c8;" />
+                    <TextBlock
+                        Margin="5,0"
                         VerticalAlignment="Center"
-                        Orientation="Horizontal">
-                        <TextBlock
-                            Margin="0,0,0,1"
-                            VerticalAlignment="Center"
-                            FontFamily="{StaticResource IconFontFamily}"
-                            FontSize="23"
-                            Foreground="DarkGray"
-                            Text="&#xe631;" />
-                        <TextBlock
-                            Margin="5,0"
-                            VerticalAlignment="Center"
-                            FontSize="13"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            Text="端口:" />
-                        <Border
-                            Margin="5"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Background="#1A696969"
-                            CornerRadius="5">
-                            <TextBox
-                                Width="180"
-                                Height="30"
-                                MaxWidth="500"
-                                Margin="5,0"
-                                materialDesign:TextFieldAssist.HasClearButton="False"
-                                materialDesign:TextFieldAssist.HasFilledTextField="True"
-                                Background="Transparent"
-                                BorderThickness="0"
-                                FontSize="13"
-                                FontWeight="Bold"
-                                Foreground="White"
-                                InputMethod.IsInputMethodEnabled="False">
-                                <TextBox.Text>
-                                    <Binding
-                                        Mode="TwoWay"
-                                        Path="NvrClientSettingsInfo.Port"
-                                        UpdateSourceTrigger="PropertyChanged">
-                                        <Binding.ValidationRules>
-                                            <validationRules:RegexValidationRule ErrorMessage="请输入有效的TCP端口号 (0-65535)" Pattern="^(?:0|6553[0-5]|655[0-2]\d|65[0-4]\d{2}|6[0-4]\d{3}|[1-5]\d{4}|\d{1,4})$" />
-                                        </Binding.ValidationRules>
-                                    </Binding>
-                                </TextBox.Text>
-                            </TextBox>
-                        </Border>
-                    </StackPanel>
-                    <!--  用户名  -->
-                    <StackPanel
-                        Margin="0,5"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="设备IP:" />
+                    <Border
+                        Margin="5"
+                        HorizontalAlignment="Center"
                         VerticalAlignment="Center"
-                        Orientation="Horizontal">
-                        <TextBlock
-                            Margin="0,0,0,1"
-                            VerticalAlignment="Center"
-                            FontFamily="{StaticResource IconFontFamily}"
-                            FontSize="23"
-                            Foreground="DarkGray"
-                            Text="&#xe752;" />
-                        <TextBlock
+                        Background="#1A696969"
+                        CornerRadius="5">
+                        <TextBox
+                            Width="165"
+                            Height="30"
+                            MaxWidth="500"
                             Margin="5,0"
-                            VerticalAlignment="Center"
-                            FontSize="13"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            Text="用户名:" />
-                        <Border
-                            Margin="5"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Background="#1A696969"
-                            CornerRadius="5">
-                            <TextBox
-                                Width="165"
-                                Height="30"
-                                MaxWidth="500"
-                                Margin="5,0"
-                                materialDesign:TextFieldAssist.HasClearButton="False"
-                                materialDesign:TextFieldAssist.HasFilledTextField="True"
-                                Background="Transparent"
-                                BorderThickness="0"
-                                FontSize="13"
-                                FontWeight="Bold"
-                                Foreground="White"
-                                InputMethod.IsInputMethodEnabled="False"
-                                Text="{Binding NvrClientSettingsInfo.Username, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-                        </Border>
-                    </StackPanel>
-                    <!--  密码  -->
-                    <StackPanel
-                        Margin="0,5"
-                        VerticalAlignment="Center"
-                        Orientation="Horizontal">
-                        <TextBlock
-                            Margin="0,0,0,1"
-                            VerticalAlignment="Center"
-                            FontFamily="{StaticResource IconFontFamily}"
-                            FontSize="23"
-                            Foreground="DarkGray"
-                            Text="&#xe75a;" />
-                        <TextBlock
-                            Margin="5,0"
-                            VerticalAlignment="Center"
-                            FontSize="13"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            Text="密  码:" />
-                        <Border
-                            Margin="5"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Background="#1A696969"
-                            CornerRadius="5">
-                            <TextBox
-                                Width="165"
-                                Height="30"
-                                MaxWidth="500"
-                                Margin="5,0"
-                                materialDesign:TextFieldAssist.HasClearButton="False"
-                                materialDesign:TextFieldAssist.HasFilledTextField="True"
-                                Background="Transparent"
-                                BorderThickness="0"
-                                FontSize="13"
-                                FontWeight="Bold"
-                                Foreground="White"
-                                InputMethod.IsInputMethodEnabled="False"
-                                Text="{Binding NvrClientSettingsInfo.Password}" />
-                        </Border>
-                    </StackPanel>
-                    <!--  登录按钮  -->
-                    <Button
-                        MinHeight="30"
-                        Margin="30,10"
-                        HorizontalAlignment="Left"
-                        materialDesign:ButtonAssist.CornerRadius="5"
-                        Background="#2E2E2E"
-                        BorderThickness="0"
-                        Command="{Binding LogInCommand}"
-                        FocusVisualStyle="{x:Null}"
-                        Style="{StaticResource MaterialDesignFlatAccentBgButton}">
-
-                        <Grid>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock
-                                    Margin="2,1,0,0"
-                                    VerticalAlignment="Center"
-                                    FontFamily="{StaticResource CustomFontFamily}"
-                                    FontSize="14"
-                                    FontWeight="Bold"
-                                    Foreground="DarkGray"
-                                    Text="登录" />
-                                <StackPanel.Style>
-                                    <Style TargetType="StackPanel">
-                                        <Setter Property="Visibility" Value="Visible" />
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding IsLogInProgress}" Value="True">
-                                                <Setter Property="Visibility" Value="Hidden" />
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding IsLogInProgress}" Value="False">
-                                                <Setter Property="Visibility" Value="Visible" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </StackPanel.Style>
-                            </StackPanel>
-                            <ProgressBar
-                                Width="25"
-                                Height="25"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                IsIndeterminate="True"
-                                Value="0">
-                                <ProgressBar.Style>
-                                    <Style BasedOn="{StaticResource MaterialDesignCircularProgressBar}" TargetType="ProgressBar">
-                                        <Setter Property="Visibility" Value="Hidden" />
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding IsLogInProgress}" Value="True">
-                                                <Setter Property="Visibility" Value="Visible" />
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding IsLogInProgress}" Value="False">
-                                                <Setter Property="Visibility" Value="Hidden" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </ProgressBar.Style>
-                            </ProgressBar>
-                        </Grid>
-                    </Button>
-                    <!--  通道选择(下拉)  -->
-                    <StackPanel Orientation="Horizontal">
-                        <StackPanel Margin="0" Orientation="Horizontal">
-                            <!--  图标  -->
-                            <TextBlock
-                                Margin="0,0,0,1"
-                                VerticalAlignment="Center"
-                                FontFamily="{StaticResource IconFontFamily}"
-                                FontSize="20"
-                                Foreground="DarkGray"
-                                Text="&#xe8d4;" />
-                            <TextBlock
-                                Margin="5,0"
-                                VerticalAlignment="Center"
-                                FontSize="13"
-                                FontWeight="Bold"
-                                Foreground="DarkGray"
-                                Text="通道选择:" />
-                            <Border
-                                Margin="5"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                Background="#1A696969"
-                                CornerRadius="5">
-                                <ComboBox
-                                    Height="30"
-                                    MinWidth="160"
-                                    Padding="5,0"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    HorizontalContentAlignment="Center"
-                                    VerticalContentAlignment="Center"
-                                    materialDesign:ButtonAssist.CornerRadius="15"
-                                    materialDesign:ColorZoneAssist.Mode="Dark"
-                                    BorderThickness="0"
-                                    FontSize="12"
-                                    FontWeight="Bold"
-                                    Foreground="White"
-                                    ItemsSource="{Binding ChannelItems, UpdateSourceTrigger=PropertyChanged}"
-                                    SelectedItem="{Binding SelectChannel, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                    Style="{StaticResource MaterialDesignComboBox}">
-                                    <b:Interaction.Triggers>
-                                        <b:EventTrigger EventName="SelectionChanged">
-                                            <mvvm:InvokeCommandAction Command="{Binding ChannelSelectionChangedCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ComboBox}}, Path=SelectionChangedEventArgs}" />
-                                        </b:EventTrigger>
-                                    </b:Interaction.Triggers>
-                                </ComboBox>
-                            </Border>
-                        </StackPanel>
-                        <!--  绑定  -->
-                        <Button
-                            MinHeight="30"
-                            Margin="10,10"
-                            HorizontalAlignment="Left"
-                            materialDesign:ButtonAssist.CornerRadius="5"
-                            Background="#2E2E2E"
+                            materialDesign:TextFieldAssist.HasClearButton="False"
+                            materialDesign:TextFieldAssist.HasFilledTextField="True"
+                            Background="Transparent"
                             BorderThickness="0"
-                            Command="{Binding BindingCommand}"
-                            FocusVisualStyle="{x:Null}"
-                            Style="{StaticResource MaterialDesignFlatAccentBgButton}">
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="White"
+                            InputMethod.IsInputMethodEnabled="False">
+                            <TextBox.Text>
+                                <Binding
+                                    Mode="TwoWay"
+                                    Path="NvrClientSettingsInfo.Ip"
+                                    UpdateSourceTrigger="PropertyChanged">
+                                    <Binding.ValidationRules>
+                                        <validationRules:RegexValidationRule ErrorMessage="请输入有效的 IP 地址" Pattern="^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$" />
+                                    </Binding.ValidationRules>
+                                </Binding>
+                            </TextBox.Text>
+                        </TextBox>
+                    </Border>
+                </StackPanel>
+                <!--  端口  -->
+                <StackPanel
+                    Margin="0,5"
+                    VerticalAlignment="Center"
+                    Orientation="Horizontal">
+                    <TextBlock
+                        Margin="0,0,0,1"
+                        VerticalAlignment="Center"
+                        FontFamily="{StaticResource IconFontFamily}"
+                        FontSize="23"
+                        Foreground="DarkGray"
+                        Text="&#xe631;" />
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="端口:" />
+                    <Border
+                        Margin="5"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Background="#1A696969"
+                        CornerRadius="5">
+                        <TextBox
+                            Width="180"
+                            Height="30"
+                            MaxWidth="500"
+                            Margin="5,0"
+                            materialDesign:TextFieldAssist.HasClearButton="False"
+                            materialDesign:TextFieldAssist.HasFilledTextField="True"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="White"
+                            InputMethod.IsInputMethodEnabled="False">
+                            <TextBox.Text>
+                                <Binding
+                                    Mode="TwoWay"
+                                    Path="NvrClientSettingsInfo.Port"
+                                    UpdateSourceTrigger="PropertyChanged">
+                                    <Binding.ValidationRules>
+                                        <validationRules:RegexValidationRule ErrorMessage="请输入有效的TCP端口号 (0-65535)" Pattern="^(?:0|6553[0-5]|655[0-2]\d|65[0-4]\d{2}|6[0-4]\d{3}|[1-5]\d{4}|\d{1,4})$" />
+                                    </Binding.ValidationRules>
+                                </Binding>
+                            </TextBox.Text>
+                        </TextBox>
+                    </Border>
+                </StackPanel>
+                <!--  用户名  -->
+                <StackPanel
+                    Margin="0,5"
+                    VerticalAlignment="Center"
+                    Orientation="Horizontal">
+                    <TextBlock
+                        Margin="0,0,0,1"
+                        VerticalAlignment="Center"
+                        FontFamily="{StaticResource IconFontFamily}"
+                        FontSize="23"
+                        Foreground="DarkGray"
+                        Text="&#xe752;" />
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="用户名:" />
+                    <Border
+                        Margin="5"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Background="#1A696969"
+                        CornerRadius="5">
+                        <TextBox
+                            Width="165"
+                            Height="30"
+                            MaxWidth="500"
+                            Margin="5,0"
+                            materialDesign:TextFieldAssist.HasClearButton="False"
+                            materialDesign:TextFieldAssist.HasFilledTextField="True"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="White"
+                            InputMethod.IsInputMethodEnabled="False"
+                            Text="{Binding NvrClientSettingsInfo.Username, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    </Border>
+                </StackPanel>
+                <!--  密码  -->
+                <StackPanel
+                    Margin="0,5"
+                    VerticalAlignment="Center"
+                    Orientation="Horizontal">
+                    <TextBlock
+                        Margin="0,0,0,1"
+                        VerticalAlignment="Center"
+                        FontFamily="{StaticResource IconFontFamily}"
+                        FontSize="23"
+                        Foreground="DarkGray"
+                        Text="&#xe75a;" />
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="密  码:" />
+                    <Border
+                        Margin="5"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Background="#1A696969"
+                        CornerRadius="5">
+                        <TextBox
+                            Width="165"
+                            Height="30"
+                            MaxWidth="500"
+                            Margin="5,0"
+                            materialDesign:TextFieldAssist.HasClearButton="False"
+                            materialDesign:TextFieldAssist.HasFilledTextField="True"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="White"
+                            InputMethod.IsInputMethodEnabled="False"
+                            Text="{Binding NvrClientSettingsInfo.Password}" />
+                    </Border>
+                </StackPanel>
+                <!--  登录按钮  -->
+                <Button
+                    MinHeight="30"
+                    Margin="30,10"
+                    HorizontalAlignment="Left"
+                    materialDesign:ButtonAssist.CornerRadius="5"
+                    Background="#2E2E2E"
+                    BorderThickness="0"
+                    Command="{Binding LogInCommand}"
+                    FocusVisualStyle="{x:Null}"
+                    Style="{StaticResource MaterialDesignFlatAccentBgButton}">
 
+                    <Grid>
+                        <StackPanel Orientation="Horizontal">
                             <TextBlock
                                 Margin="2,1,0,0"
                                 VerticalAlignment="Center"
@@ -357,221 +244,105 @@
                                 FontSize="14"
                                 FontWeight="Bold"
                                 Foreground="DarkGray"
-                                Text="绑定" />
-                        </Button>
-                    </StackPanel>
-                    <Rectangle
-                        Height="1"
-                        Margin="0,0,300,0"
-                        Opacity="0.15"
-                        Stroke="DimGray"
-                        StrokeDashArray="8"
-                        StrokeThickness="1" />
-                    <!--  水印  -->
-                    <StackPanel Orientation="Vertical">
-                        <StackPanel
-                            Margin="0,10"
+                                Text="登录" />
+                            <StackPanel.Style>
+                                <Style TargetType="StackPanel">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsLogInProgress}" Value="True">
+                                            <Setter Property="Visibility" Value="Hidden" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding IsLogInProgress}" Value="False">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </StackPanel.Style>
+                        </StackPanel>
+                        <ProgressBar
+                            Width="25"
+                            Height="25"
+                            HorizontalAlignment="Center"
                             VerticalAlignment="Center"
-                            Orientation="Horizontal">
-                            <TextBlock
-                                Margin="0,0,0,1"
-                                VerticalAlignment="Center"
-                                FontFamily="{StaticResource IconFontFamily}"
-                                FontSize="22"
-                                Foreground="DarkGray"
-                                Text="&#xe6c8;" />
-                            <TextBlock
-                                Margin="5,0"
-                                VerticalAlignment="Center"
-                                FontSize="16"
-                                FontWeight="Bold"
-                                Foreground="DarkGray"
-                                Text="{x:Static languages:Language.Watermark}" />
-                        </StackPanel>
-                        <!--  水印内容  -->
-                        <StackPanel Margin="50,5,0,0" Orientation="Horizontal">
-                            <TextBlock
-                                Margin="5,0"
-                                VerticalAlignment="Center"
-                                FontSize="13"
-                                FontWeight="Bold"
-                                Foreground="DarkGray"
-                                Text="条码" />
-                            <CheckBox
-                                BorderBrush="DodgerBlue"
-                                BorderThickness="2"
-                                IsChecked="{Binding NvrClientSettingsInfo.IsUseBarcodeWatermark, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                Style="{StaticResource CustomCheckBoxStyle}" />
-                        </StackPanel>
-
-                        <StackPanel
-                            Margin="50,5,0,0"
-                            VerticalAlignment="Center"
-                            Orientation="Horizontal">
-                            <TextBlock
-                                Margin="0,0,0,1"
-                                VerticalAlignment="Center"
-                                FontFamily="{StaticResource IconFontFamily}"
-                                FontSize="23"
-                                Foreground="DarkGray"
-                                Text="&#xe8ce;" />
-                            <TextBlock
-                                Margin="5,0"
-                                VerticalAlignment="Center"
-                                FontSize="13"
-                                FontWeight="Bold"
-                                Foreground="DarkGray"
-                                Text="最长水印时间(秒):" />
-                            <Border
-                                Margin="5"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                Background="#1A696969"
-                                CornerRadius="5">
-                                <TextBox
-                                    Width="120"
-                                    Height="30"
-                                    MaxWidth="500"
-                                    Margin="5,0"
-                                    materialDesign:TextFieldAssist.HasClearButton="False"
-                                    materialDesign:TextFieldAssist.HasFilledTextField="True"
-                                    Background="Transparent"
-                                    BorderThickness="0"
-                                    FontSize="13"
-                                    FontWeight="Bold"
-                                    Foreground="White"
-                                    InputMethod.IsInputMethodEnabled="False">
-                                    <TextBox.Text>
-                                        <Binding
-                                            Mode="TwoWay"
-                                            Path="NvrClientSettingsInfo.MaxWatermarkTime"
-                                            UpdateSourceTrigger="PropertyChanged">
-                                            <Binding.ValidationRules>
-                                                <validationRules:RegexValidationRule ErrorMessage="请输入有效的正整数" Pattern="^[1-9]\d*$" />
-                                            </Binding.ValidationRules>
-                                        </Binding>
-                                    </TextBox.Text>
-                                </TextBox>
-                            </Border>
-                        </StackPanel>
-                    </StackPanel>
-
-                    <!--  最长水印时间  -->
-                </StackPanel>
-            </Border>
-            <!--  右边  -->
-            <Border
-                Grid.Column="1"
-                MaxHeight="680"
-                Margin="10,50"
-                Padding="10"
-                Background="#2E2E2E"
-                CornerRadius="15">
-                <StackPanel Orientation="Vertical">
-                    <!--  视频框  -->
-                    <Grid>
-                        <wpf:VlcControl
-                            x:Name="VlcPlayer"
-                            Width="640"
-                            MinHeight="600"
-                            Background="Black"
-                            Visibility="{Binding IsPlaying, Converter={StaticResource BooleanToVisibilityConverter}}">
-                            <wpf:VlcControl.Clip>
-                                <RectangleGeometry
-                                    RadiusX="15"
-                                    RadiusY="15"
-                                    Rect="0,0,635,600" />
-                            </wpf:VlcControl.Clip>
-                        </wpf:VlcControl>
-                        <Border
-                            Width="640"
-                            MinHeight="600"
-                            CornerRadius="15"
-                            Visibility="{Binding IsPlaying, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
-                            <TextBlock
-                                Margin="10"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                FontFamily="{StaticResource IconFontFamily}"
-                                FontSize="160"
-                                FontWeight="Bold"
-                                Foreground="DarkGray"
-                                Text="&#xe8da;" />
-                        </Border>
+                            IsIndeterminate="True"
+                            Value="0">
+                            <ProgressBar.Style>
+                                <Style BasedOn="{StaticResource MaterialDesignCircularProgressBar}" TargetType="ProgressBar">
+                                    <Setter Property="Visibility" Value="Hidden" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsLogInProgress}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding IsLogInProgress}" Value="False">
+                                            <Setter Property="Visibility" Value="Hidden" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ProgressBar.Style>
+                        </ProgressBar>
                     </Grid>
-
-                    <Grid HorizontalAlignment="Stretch" VerticalAlignment="Bottom">
-                        <!--  播放按钮  -->
-                        <Button
-                            Width="50"
-                            Height="50"
-                            Margin="5"
-                            HorizontalAlignment="Left"
-                            VerticalAlignment="Bottom"
-                            materialDesign:ElevationAssist.Elevation="Dp6"
-                            materialDesign:RippleAssist.ClipToBounds="True"
-                            Background="#12A9A9A9"
-                            BorderBrush="Transparent"
-                            BorderThickness="0"
-                            Command="{Binding PlayCommand}"
-                            Focusable="False"
-                            Style="{StaticResource MaterialDesignFloatingActionLightButton}">
-                            <TextBlock
-                                Margin="10"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                FontFamily="{StaticResource IconFontFamily}"
-                                FontSize="30"
-                                FontWeight="Bold"
-                                Foreground="DarkGray"
-                                Text="{Binding IsPlaying, Converter={StaticResource IsPlayingConverter}, UpdateSourceTrigger=PropertyChanged}" />
-                        </Button>
-                        <StackPanel
-                            HorizontalAlignment="Right"
-                            VerticalAlignment="Center"
-                            Orientation="Horizontal">
-                            <!--<TextBlock
-                                Margin="10,0"
-                                VerticalAlignment="Center"
-                                FontSize="13"
-                                Foreground="DimGray">
-                                <Run Text="Channel(通道):" /><Run Text="1" />
-                            </TextBlock>-->
-                            <TextBlock
-                                Margin="10,0"
-                                VerticalAlignment="Center"
-                                FontSize="13"
-                                Foreground="DimGray">
-                                <Run Text="Steram(码流):" /><Run Text="主码流" />
-                            </TextBlock>
-                        </StackPanel>
-                    </Grid>
-                </StackPanel>
-            </Border>
-
-            <!--  保存设置  -->
-            <Button
-                Grid.Column="0"
-                MinHeight="30"
-                Margin="30,10"
-                HorizontalAlignment="Left"
-                VerticalAlignment="Bottom"
-                materialDesign:ButtonAssist.CornerRadius="5"
-                Background="#2E2E2E"
-                BorderThickness="0"
-                Command="{Binding SaveSettingsCommand}"
-                FocusVisualStyle="{x:Null}"
-                Style="{StaticResource MaterialDesignFlatAccentBgButton}">
-
-                <Grid>
-                    <StackPanel Orientation="Horizontal">
+                </Button>
+                <!--  通道选择(下拉)  -->
+                <StackPanel Orientation="Horizontal">
+                    <StackPanel Margin="0" Orientation="Horizontal">
+                        <!--  图标  -->
                         <TextBlock
-                            Margin="0,0,0,0"
+                            Margin="0,0,0,1"
                             VerticalAlignment="Center"
                             FontFamily="{StaticResource IconFontFamily}"
-                            FontSize="18"
+                            FontSize="20"
                             Foreground="DarkGray"
-                            Text="&#xe66e;" />
+                            Text="&#xe8d4;" />
+                        <TextBlock
+                            Margin="5,0"
+                            VerticalAlignment="Center"
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="DarkGray"
+                            Text="通道选择:" />
+                        <Border
+                            Margin="5"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Background="#1A696969"
+                            CornerRadius="5">
+                            <ComboBox
+                                Height="30"
+                                MinWidth="160"
+                                Padding="5,0"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                HorizontalContentAlignment="Center"
+                                VerticalContentAlignment="Center"
+                                materialDesign:ButtonAssist.CornerRadius="15"
+                                materialDesign:ColorZoneAssist.Mode="Dark"
+                                BorderThickness="0"
+                                FontSize="12"
+                                FontWeight="Bold"
+                                Foreground="White"
+                                ItemsSource="{Binding ChannelItems, UpdateSourceTrigger=PropertyChanged}"
+                                SelectedItem="{Binding SelectChannel, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                Style="{StaticResource MaterialDesignComboBox}">
+                                <b:Interaction.Triggers>
+                                    <b:EventTrigger EventName="SelectionChanged">
+                                        <mvvm:InvokeCommandAction Command="{Binding ChannelSelectionChangedCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ComboBox}}, Path=SelectionChangedEventArgs}" />
+                                    </b:EventTrigger>
+                                </b:Interaction.Triggers>
+                            </ComboBox>
+                        </Border>
+                    </StackPanel>
+                    <!--  绑定  -->
+                    <Button
+                        MinHeight="30"
+                        Margin="10,10"
+                        HorizontalAlignment="Left"
+                        materialDesign:ButtonAssist.CornerRadius="5"
+                        Background="#2E2E2E"
+                        BorderThickness="0"
+                        Command="{Binding BindingCommand}"
+                        FocusVisualStyle="{x:Null}"
+                        Style="{StaticResource MaterialDesignFlatAccentBgButton}">
+
                         <TextBlock
                             Margin="2,1,0,0"
                             VerticalAlignment="Center"
@@ -579,56 +350,196 @@
                             FontSize="14"
                             FontWeight="Bold"
                             Foreground="DarkGray"
-                            Text="{x:Static languages:Language.SaveSettings}" />
-                        <StackPanel.Style>
-                            <Style TargetType="StackPanel">
-                                <Setter Property="Visibility" Value="Visible" />
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsSavingInProgress}" Value="True">
-                                        <Setter Property="Visibility" Value="Hidden" />
-                                    </DataTrigger>
-                                    <DataTrigger Binding="{Binding IsSavingInProgress}" Value="False">
-                                        <Setter Property="Visibility" Value="Visible" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </StackPanel.Style>
-                    </StackPanel>
-                    <ProgressBar
-                        Name="StatusProgressBar"
-                        Width="25"
-                        Height="25"
-                        HorizontalAlignment="Center"
+                            Text="绑定" />
+                    </Button>
+                </StackPanel>
+                <Rectangle
+                    Height="1"
+                    Margin="0,0,300,0"
+                    Opacity="0.15"
+                    Stroke="DimGray"
+                    StrokeDashArray="8"
+                    StrokeThickness="1" />
+                <!--  水印  -->
+                <StackPanel Orientation="Vertical">
+                    <StackPanel
+                        Margin="0,10"
                         VerticalAlignment="Center"
-                        IsIndeterminate="True"
-                        Value="0">
-                        <ProgressBar.Style>
-                            <Style BasedOn="{StaticResource MaterialDesignCircularProgressBar}" TargetType="ProgressBar">
-                                <Setter Property="Visibility" Value="Hidden" />
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsSavingInProgress}" Value="True">
-                                        <Setter Property="Visibility" Value="Visible" />
-                                    </DataTrigger>
-                                    <DataTrigger Binding="{Binding IsSavingInProgress}" Value="False">
-                                        <Setter Property="Visibility" Value="Hidden" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </ProgressBar.Style>
-                    </ProgressBar>
+                        Orientation="Horizontal">
+                        <TextBlock
+                            Margin="0,0,0,1"
+                            VerticalAlignment="Center"
+                            FontFamily="{StaticResource IconFontFamily}"
+                            FontSize="22"
+                            Foreground="DarkGray"
+                            Text="&#xe6c8;" />
+                        <TextBlock
+                            Margin="5,0"
+                            VerticalAlignment="Center"
+                            FontSize="16"
+                            FontWeight="Bold"
+                            Foreground="DarkGray"
+                            Text="{x:Static languages:Language.Watermark}" />
+                    </StackPanel>
+                    <!--  水印内容  -->
+                    <StackPanel Margin="50,5,0,0" Orientation="Horizontal">
+                        <TextBlock
+                            Margin="5,0"
+                            VerticalAlignment="Center"
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="DarkGray"
+                            Text="条码" />
+                        <CheckBox
+                            BorderBrush="DodgerBlue"
+                            BorderThickness="2"
+                            IsChecked="{Binding NvrClientSettingsInfo.IsUseBarcodeWatermark, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                            Style="{StaticResource CustomCheckBoxStyle}" />
+                    </StackPanel>
+
+                    <StackPanel
+                        Margin="50,5,0,0"
+                        VerticalAlignment="Center"
+                        Orientation="Horizontal">
+                        <TextBlock
+                            Margin="0,0,0,1"
+                            VerticalAlignment="Center"
+                            FontFamily="{StaticResource IconFontFamily}"
+                            FontSize="23"
+                            Foreground="DarkGray"
+                            Text="&#xe8ce;" />
+                        <TextBlock
+                            Margin="5,0"
+                            VerticalAlignment="Center"
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="DarkGray"
+                            Text="最长水印时间(秒):" />
+                        <Border
+                            Margin="5"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Background="#1A696969"
+                            CornerRadius="5">
+                            <TextBox
+                                Width="120"
+                                Height="30"
+                                MaxWidth="500"
+                                Margin="5,0"
+                                materialDesign:TextFieldAssist.HasClearButton="False"
+                                materialDesign:TextFieldAssist.HasFilledTextField="True"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="White"
+                                InputMethod.IsInputMethodEnabled="False">
+                                <TextBox.Text>
+                                    <Binding
+                                        Mode="TwoWay"
+                                        Path="NvrClientSettingsInfo.MaxWatermarkTime"
+                                        UpdateSourceTrigger="PropertyChanged">
+                                        <Binding.ValidationRules>
+                                            <validationRules:RegexValidationRule ErrorMessage="请输入有效的正整数" Pattern="^[1-9]\d*$" />
+                                        </Binding.ValidationRules>
+                                    </Binding>
+                                </TextBox.Text>
+                            </TextBox>
+                        </Border>
+                    </StackPanel>
+                </StackPanel>
+
+                <!--  最长水印时间  -->
+            </StackPanel>
+        </Border>
+        <!--  右边  -->
+        <Border
+            Grid.Column="1"
+            MaxHeight="680"
+            Margin="10,50"
+            Padding="10"
+            Background="#2E2E2E"
+            CornerRadius="15">
+            <StackPanel Orientation="Vertical">
+                <!--  视频框  -->
+                <Grid>
+                    <wpf:VlcControl
+                        x:Name="VlcPlayer"
+                        Width="640"
+                        MinHeight="600"
+                        Background="Black"
+                        Visibility="{Binding IsPlaying, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <wpf:VlcControl.Clip>
+                            <RectangleGeometry
+                                RadiusX="15"
+                                RadiusY="15"
+                                Rect="0,0,635,600" />
+                        </wpf:VlcControl.Clip>
+                    </wpf:VlcControl>
+                    <Border
+                        Width="640"
+                        MinHeight="600"
+                        CornerRadius="15"
+                        Visibility="{Binding IsPlaying, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
+                        <TextBlock
+                            Margin="10"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontFamily="{StaticResource IconFontFamily}"
+                            FontSize="160"
+                            FontWeight="Bold"
+                            Foreground="DarkGray"
+                            Text="&#xe8da;" />
+                    </Border>
                 </Grid>
-            </Button>
-            <!--  提示框  -->
-            <materialDesign:Snackbar
-                Grid.Column="0"
-                Grid.ColumnSpan="2"
-                Width="Auto"
-                Height="Auto"
-                VerticalAlignment="Bottom"
-                Background="BlueViolet"
-                FontFamily="LoadFiraCode"
-                FontWeight="Bold"
-                MessageQueue="{Binding NetworkVideoRecorderMessageQueue}" />
-        </Grid>
-    </materialDesign:DialogHost>
+
+                <Grid HorizontalAlignment="Stretch" VerticalAlignment="Bottom">
+                    <!--  播放按钮  -->
+                    <Button
+                        Width="50"
+                        Height="50"
+                        Margin="5"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Bottom"
+                        materialDesign:ElevationAssist.Elevation="Dp6"
+                        materialDesign:RippleAssist.ClipToBounds="True"
+                        Background="#12A9A9A9"
+                        BorderBrush="Transparent"
+                        BorderThickness="0"
+                        Command="{Binding PlayCommand}"
+                        Focusable="False"
+                        Style="{StaticResource MaterialDesignFloatingActionLightButton}">
+                        <TextBlock
+                            Margin="10"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontFamily="{StaticResource IconFontFamily}"
+                            FontSize="30"
+                            FontWeight="Bold"
+                            Foreground="DarkGray"
+                            Text="{Binding IsPlaying, Converter={StaticResource IsPlayingConverter}, UpdateSourceTrigger=PropertyChanged}" />
+                    </Button>
+                    <StackPanel
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                        Orientation="Horizontal">
+                        <!--<TextBlock
+                         Margin="10,0"
+                         VerticalAlignment="Center"
+                         FontSize="13"
+                         Foreground="DimGray">
+                         <Run Text="Channel(通道):" /><Run Text="1" />
+                     </TextBlock>-->
+                        <TextBlock
+                            Margin="10,0"
+                            VerticalAlignment="Center"
+                            FontSize="13"
+                            Foreground="DimGray">
+                            <Run Text="Steram(码流):" /><Run Text="主码流" />
+                        </TextBlock>
+                    </StackPanel>
+                </Grid>
+            </StackPanel>
+        </Border>
+    </Grid>
 </Page>

@@ -18,471 +18,384 @@
     mvvm:ViewModelLocator.AutoWireViewModel="True"
     Focusable="False"
     FontFamily="{StaticResource CustomFontFamily}"
+    Template="{StaticResource SettingsPageTemplate}"
     mc:Ignorable="d">
     <Page.Resources>
         <settingsConverter:TcpConnectionModeToBooleanConverter x:Key="TcpConnectionModeToBooleanConverter" />
     </Page.Resources>
     <b:Interaction.Triggers>
-        <b:EventTrigger EventName="Loaded" SourceName="ContentInputSettingsView">
-            <b:InvokeCommandAction Command="{Binding LoadedCommand, IsAsync=False}" CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Page}}}" />
+        <b:EventTrigger EventName="Loaded" SourceName="{Binding Name, RelativeSource={RelativeSource AncestorType={x:Type Page}}}">
+            <b:InvokeCommandAction Command="{Binding LoadedCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Page}}}" />
         </b:EventTrigger>
     </b:Interaction.Triggers>
-    <materialDesign:DialogHost
-        Background="Transparent"
-        DialogBackground="Transparent"
-        DialogMargin="5"
-        FocusVisualStyle="{x:Null}"
-        Focusable="False"
-        Identifier="ResultOutputSettingsDialog"
-        Style="{StaticResource MaterialDesignEmbeddedDialogHost}">
-        <Grid Margin="20,0">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="*" />
-            </Grid.RowDefinitions>
-            <!--  使用Tcp输入  -->
-            <StackPanel
-                Grid.Row="0"
-                Margin="5,0"
-                VerticalAlignment="Center"
-                Orientation="Vertical">
-                <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
-                    <TextBlock
-                        Margin="0,0,0,1"
-                        VerticalAlignment="Center"
-                        FontFamily="{StaticResource IconFontFamily}"
-                        FontSize="20"
-                        Foreground="DarkGray"
-                        Text="&#xe62f;" />
-                    <TextBlock
-                        Margin="5,0"
-                        VerticalAlignment="Center"
-                        FontSize="16"
-                        FontWeight="Bold"
-                        Foreground="DarkGray"
-                        Text="{x:Static languages:Language.IsUseTCPInput}" />
-                    <ToggleButton
-                        Name="TcpToggleButton"
-                        materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
-                        materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
-                        Focusable="False"
-                        IsChecked="{Binding IsUseTcpInput, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                        Style="{StaticResource MaterialDesignSwitchToggleButton}" />
-                </StackPanel>
-                <StackPanel
-                    Margin="50,5,0,0"
-                    IsEnabled="{Binding ElementName=TcpToggleButton, Path=IsChecked}"
-                    Orientation="Horizontal"
-                    Visibility="{Binding ElementName=TcpToggleButton, Path=IsChecked, Converter={StaticResource BooleanToVisibilityConverter}}">
-
-                    <StackPanel Orientation="Vertical">
-                        <!--  使用Tcp服务端  -->
-                        <RadioButton
-                            Content="{x:Static languages:Language.IsUseTCPServer}"
-                            Focusable="False"
-                            FontSize="13"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            IsChecked="{Binding TcpSettingsInfo.ConnectionMode, Converter={StaticResource TcpConnectionModeToBooleanConverter}, ConverterParameter=Server}"
-                            Template="{StaticResource CustomRadioButtonTemplate}" />
-                        <StackPanel Margin="50,0,0,0" Orientation="Horizontal">
-                            <StackPanel Orientation="Horizontal">
-                                <!--  图标  -->
-                                <TextBlock
-                                    Margin="5,0"
-                                    VerticalAlignment="Center"
-                                    FontSize="13"
-                                    FontWeight="Bold"
-                                    Foreground="DarkGray"
-                                    Text="{x:Static languages:Language.IPAddress}" />
-                                <Border
-                                    Margin="5"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    Background="#1A696969"
-                                    CornerRadius="5">
-                                    <TextBox
-                                        Width="100"
-                                        Height="30"
-                                        MaxWidth="500"
-                                        Margin="5,0"
-                                        materialDesign:TextFieldAssist.HasClearButton="False"
-                                        materialDesign:TextFieldAssist.HasFilledTextField="True"
-                                        Background="Transparent"
-                                        BorderThickness="0"
-                                        FontSize="13"
-                                        FontWeight="Bold"
-                                        Foreground="White"
-                                        InputMethod.IsInputMethodEnabled="False"
-                                        IsReadOnly="True"
-                                        Text="{Binding TcpSettingsInfo.ServerConfig.IpAddress, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-                                </Border>
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal">
-                                <!--  图标  -->
-                                <TextBlock
-                                    Margin="5,0"
-                                    VerticalAlignment="Center"
-                                    FontSize="13"
-                                    FontWeight="Bold"
-                                    Foreground="DarkGray"
-                                    Text="{x:Static languages:Language.Port}" />
-                                <Border
-                                    Margin="5"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    Background="#1A696969"
-                                    CornerRadius="5">
-                                    <TextBox
-                                        Width="80"
-                                        Height="30"
-                                        MaxWidth="500"
-                                        Margin="5,0"
-                                        materialDesign:TextFieldAssist.HasClearButton="False"
-                                        materialDesign:TextFieldAssist.HasFilledTextField="True"
-                                        Background="Transparent"
-                                        BorderThickness="0"
-                                        FontSize="13"
-                                        FontWeight="Bold"
-                                        Foreground="White"
-                                        InputMethod.IsInputMethodEnabled="False"
-                                        Text="{Binding TcpSettingsInfo.ServerConfig.Port, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-                                </Border>
-                            </StackPanel>
-                        </StackPanel>
-                        <!--  使用Tcp客户端  -->
-                        <RadioButton
-                            Content="{x:Static languages:Language.IsUseTCPClient}"
-                            Focusable="False"
-                            FontSize="13"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            IsChecked="{Binding TcpSettingsInfo.ConnectionMode, Converter={StaticResource TcpConnectionModeToBooleanConverter}, ConverterParameter=Client}"
-                            Template="{StaticResource CustomRadioButtonTemplate}" />
-                        <StackPanel Margin="50,0,0,0" Orientation="Horizontal">
-                            <StackPanel Orientation="Horizontal">
-                                <!--  图标  -->
-                                <TextBlock
-                                    Margin="5,0"
-                                    VerticalAlignment="Center"
-                                    FontSize="13"
-                                    FontWeight="Bold"
-                                    Foreground="DarkGray"
-                                    Text="{x:Static languages:Language.IPAddress}" />
-                                <Border
-                                    Margin="5"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    Background="#1A696969"
-                                    CornerRadius="5">
-                                    <TextBox
-                                        Width="100"
-                                        Height="30"
-                                        MaxWidth="500"
-                                        Margin="5,0"
-                                        materialDesign:TextFieldAssist.HasClearButton="False"
-                                        materialDesign:TextFieldAssist.HasFilledTextField="True"
-                                        Background="Transparent"
-                                        BorderThickness="0"
-                                        FontSize="13"
-                                        FontWeight="Bold"
-                                        Foreground="White"
-                                        InputMethod.IsInputMethodEnabled="False">
-                                        <TextBox.Text>
-                                            <Binding
-                                                Mode="TwoWay"
-                                                Path="TcpSettingsInfo.ClientConfig.IpAddress"
-                                                UpdateSourceTrigger="PropertyChanged">
-                                                <Binding.ValidationRules>
-                                                    <validationRules:RegexValidationRule ErrorMessage="请输入有效的 IP 地址" Pattern="^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$" />
-                                                </Binding.ValidationRules>
-                                            </Binding>
-                                        </TextBox.Text>
-                                    </TextBox>
-                                </Border>
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal">
-                                <!--  图标  -->
-                                <TextBlock
-                                    Margin="5,0"
-                                    VerticalAlignment="Center"
-                                    FontSize="13"
-                                    FontWeight="Bold"
-                                    Foreground="DarkGray"
-                                    Text="{x:Static languages:Language.Port}" />
-                                <Border
-                                    Margin="5"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    Background="#1A696969"
-                                    CornerRadius="5">
-                                    <TextBox
-                                        Width="80"
-                                        Height="30"
-                                        MaxWidth="500"
-                                        Margin="5,0"
-                                        materialDesign:TextFieldAssist.HasClearButton="False"
-                                        materialDesign:TextFieldAssist.HasFilledTextField="True"
-                                        Background="Transparent"
-                                        BorderThickness="0"
-                                        FontSize="13"
-                                        FontWeight="Bold"
-                                        Foreground="White"
-                                        InputMethod.IsInputMethodEnabled="False"
-                                        Text="{Binding TcpSettingsInfo.ClientConfig.Port, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-                                </Border>
-                            </StackPanel>
-                        </StackPanel>
-                        <!--  支持的内容格式  -->
-                        <TextBlock
-                            Margin="5,0"
-                            VerticalAlignment="Center"
-                            FontSize="13"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            Text="{x:Static languages:Language.ContentFormat}" />
-                        <Border
-                            Height="170"
-                            MinHeight="80"
-                            MaxHeight="200"
-                            Margin="0,5"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Background="#1A696969"
-                            CornerRadius="5">
-                            <TextBox
-                                Width="330"
-                                MinHeight="150"
-                                MaxWidth="500"
-                                Margin="5,0"
-                                AcceptsReturn="True"
-                                Background="Transparent"
-                                BorderThickness="0"
-                                FontSize="13"
-                                FontWeight="Bold"
-                                Foreground="White"
-                                IsReadOnly="True"
-                                Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                                Text="{Binding ExampleJson, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
-                                TextWrapping="Wrap"
-                                VerticalScrollBarVisibility="Auto" />
-                        </Border>
-                    </StackPanel>
-                </StackPanel>
-            </StackPanel>
-            <!--  使用控件输入  -->
-            <StackPanel
-                Grid.Row="1"
-                Margin="5,0"
-                VerticalAlignment="Center"
-                Orientation="Vertical">
-                <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
-                    <TextBlock
-                        Margin="0,0,0,1"
-                        VerticalAlignment="Center"
-                        FontFamily="{StaticResource IconFontFamily}"
-                        FontSize="20"
-                        Foreground="DarkGray"
-                        Text="&#xe6dd;" />
-                    <TextBlock
-                        Margin="5,0"
-                        VerticalAlignment="Center"
-                        FontSize="16"
-                        FontWeight="Bold"
-                        Foreground="DarkGray"
-                        Text="{x:Static languages:Language.IsUseControlInput}" />
-                    <ToggleButton
-                        Name="ControlToggleButton"
-                        materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
-                        materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
-                        Focusable="False"
-                        IsChecked="{Binding IsUseControlInput, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                        Style="{StaticResource MaterialDesignSwitchToggleButton}" />
-                </StackPanel>
-                <StackPanel
-                    Margin="50,5,0,5"
-                    IsEnabled="{Binding ElementName=ControlToggleButton, Path=IsChecked}"
-                    Orientation="Horizontal"
-                    Visibility="{Binding ElementName=ControlToggleButton, Path=IsChecked, Converter={StaticResource BooleanToVisibilityConverter}}">
-                    <!--  条码  -->
-                    <StackPanel
-                        Margin="5"
-                        VerticalAlignment="Center"
-                        Orientation="Horizontal">
-                        <CheckBox materialDesign:CheckBoxAssist.CheckBoxSize="20" IsChecked="{Binding ControlInputInfo.IsReceiveBarcode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-                        <TextBlock
-                            Margin="5,0"
-                            VerticalAlignment="Center"
-                            FontSize="13"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            Text="{x:Static languages:Language.TableHeaderBarCode}" />
-                    </StackPanel>
-                    <!--  重量  -->
-                    <StackPanel
-                        Margin="5"
-                        VerticalAlignment="Center"
-                        Orientation="Horizontal">
-                        <CheckBox materialDesign:CheckBoxAssist.CheckBoxSize="20" IsChecked="{Binding ControlInputInfo.IsReceiveWeight, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-                        <TextBlock
-                            Margin="5,0"
-                            VerticalAlignment="Center"
-                            FontSize="13"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            Text="{x:Static languages:Language.TableHeaderWeight}" />
-                    </StackPanel>
-                    <!--  长度  -->
-                    <StackPanel
-                        Margin="5"
-                        VerticalAlignment="Center"
-                        Orientation="Horizontal">
-                        <CheckBox materialDesign:CheckBoxAssist.CheckBoxSize="20" IsChecked="{Binding ControlInputInfo.IsReceiveLength, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-                        <TextBlock
-                            Margin="5,0"
-                            VerticalAlignment="Center"
-                            FontSize="13"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            Text="{x:Static languages:Language.TableHeaderLength}" />
-                    </StackPanel>
-                    <!--  宽度  -->
-                    <StackPanel
-                        Margin="5"
-                        VerticalAlignment="Center"
-                        Orientation="Horizontal">
-                        <CheckBox materialDesign:CheckBoxAssist.CheckBoxSize="20" IsChecked="{Binding ControlInputInfo.IsReceiveWidth, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-                        <TextBlock
-                            Margin="5,0"
-                            VerticalAlignment="Center"
-                            FontSize="13"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            Text="{x:Static languages:Language.TableHeaderWidth}" />
-                    </StackPanel>
-                    <!--  高度  -->
-                    <StackPanel
-                        Margin="5"
-                        VerticalAlignment="Center"
-                        Orientation="Horizontal">
-                        <CheckBox materialDesign:CheckBoxAssist.CheckBoxSize="20" IsChecked="{Binding ControlInputInfo.IsReceiveHeight, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-                        <TextBlock
-                            Margin="5,0"
-                            VerticalAlignment="Center"
-                            FontSize="13"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            Text="{x:Static languages:Language.TableHeaderHeight}" />
-                    </StackPanel>
-                    <!--  体积  -->
-                    <StackPanel
-                        Margin="5"
-                        VerticalAlignment="Center"
-                        Orientation="Horizontal">
-                        <CheckBox materialDesign:CheckBoxAssist.CheckBoxSize="20" IsChecked="{Binding ControlInputInfo.IsReceiveVolume, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-                        <TextBlock
-                            Margin="5,0"
-                            VerticalAlignment="Center"
-                            FontSize="13"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            Text="{x:Static languages:Language.TableHeaderVolume}" />
-                    </StackPanel>
-                </StackPanel>
-                <!--  说明  -->
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <!--  使用Tcp输入  -->
+        <StackPanel
+            Grid.Row="0"
+            Margin="5,0"
+            VerticalAlignment="Center"
+            Orientation="Vertical">
+            <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
                 <TextBlock
-                    Width="390"
-                    Margin="50,5,0,5"
-                    HorizontalAlignment="Left"
+                    Margin="0,0,0,1"
                     VerticalAlignment="Center"
-                    FontSize="13"
+                    FontFamily="{StaticResource IconFontFamily}"
+                    FontSize="20"
+                    Foreground="DarkGray"
+                    Text="&#xe62f;" />
+                <TextBlock
+                    Margin="5,0"
+                    VerticalAlignment="Center"
+                    FontSize="16"
                     FontWeight="Bold"
                     Foreground="DarkGray"
-                    Text="勾选需要输入的元素后可在主页对应的元素框上输入内容,任意输入框按回车键(Enter)提交,Tab键切换下一个输入控件"
-                    TextWrapping="Wrap"
-                    Visibility="Collapsed" />
+                    Text="{x:Static languages:Language.IsUseTCPInput}" />
+                <ToggleButton
+                    Name="TcpToggleButton"
+                    materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
+                    materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
+                    Focusable="False"
+                    IsChecked="{Binding IsUseTcpInput, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                    Style="{StaticResource MaterialDesignSwitchToggleButton}" />
             </StackPanel>
-            <!--  保存设置  -->
-            <Button
-                Grid.Row="2"
-                MinHeight="30"
-                Margin="30,10"
-                HorizontalAlignment="Left"
-                materialDesign:ButtonAssist.CornerRadius="5"
-                Background="#2E2E2E"
-                BorderThickness="0"
-                Command="{Binding SaveSettingsCommand}"
-                FocusVisualStyle="{x:Null}"
-                Style="{StaticResource MaterialDesignFlatAccentBgButton}">
+            <StackPanel
+                Margin="50,5,0,0"
+                IsEnabled="{Binding ElementName=TcpToggleButton, Path=IsChecked}"
+                Orientation="Horizontal"
+                Visibility="{Binding ElementName=TcpToggleButton, Path=IsChecked, Converter={StaticResource BooleanToVisibilityConverter}}">
 
-                <Grid>
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock
-                            Margin="0,0,0,0"
-                            VerticalAlignment="Center"
-                            FontFamily="{StaticResource IconFontFamily}"
-                            FontSize="18"
-                            Foreground="DarkGray"
-                            Text="&#xe66e;" />
-                        <TextBlock
-                            Margin="2,1,0,0"
-                            VerticalAlignment="Center"
-                            FontFamily="{StaticResource CustomFontFamily}"
-                            FontSize="14"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            Text="{x:Static languages:Language.SaveSettings}" />
-                        <StackPanel.Style>
-                            <Style TargetType="StackPanel">
-                                <Setter Property="Visibility" Value="Visible" />
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsSavingInProgress}" Value="True">
-                                        <Setter Property="Visibility" Value="Hidden" />
-                                    </DataTrigger>
-                                    <DataTrigger Binding="{Binding IsSavingInProgress}" Value="False">
-                                        <Setter Property="Visibility" Value="Visible" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </StackPanel.Style>
+                <StackPanel Orientation="Vertical">
+                    <!--  使用Tcp服务端  -->
+                    <RadioButton
+                        Content="{x:Static languages:Language.IsUseTCPServer}"
+                        Focusable="False"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        IsChecked="{Binding TcpSettingsInfo.ConnectionMode, Converter={StaticResource TcpConnectionModeToBooleanConverter}, ConverterParameter=Server}"
+                        Template="{StaticResource CustomRadioButtonTemplate}" />
+                    <StackPanel Margin="50,0,0,0" Orientation="Horizontal">
+                        <StackPanel Orientation="Horizontal">
+                            <!--  图标  -->
+                            <TextBlock
+                                Margin="5,0"
+                                VerticalAlignment="Center"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                Text="{x:Static languages:Language.IPAddress}" />
+                            <Border
+                                Margin="5"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Background="#1A696969"
+                                CornerRadius="5">
+                                <TextBox
+                                    Width="100"
+                                    Height="30"
+                                    MaxWidth="500"
+                                    Margin="5,0"
+                                    materialDesign:TextFieldAssist.HasClearButton="False"
+                                    materialDesign:TextFieldAssist.HasFilledTextField="True"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    FontSize="13"
+                                    FontWeight="Bold"
+                                    Foreground="White"
+                                    InputMethod.IsInputMethodEnabled="False"
+                                    IsReadOnly="True"
+                                    Text="{Binding TcpSettingsInfo.ServerConfig.IpAddress, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                            </Border>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <!--  图标  -->
+                            <TextBlock
+                                Margin="5,0"
+                                VerticalAlignment="Center"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                Text="{x:Static languages:Language.Port}" />
+                            <Border
+                                Margin="5"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Background="#1A696969"
+                                CornerRadius="5">
+                                <TextBox
+                                    Width="80"
+                                    Height="30"
+                                    MaxWidth="500"
+                                    Margin="5,0"
+                                    materialDesign:TextFieldAssist.HasClearButton="False"
+                                    materialDesign:TextFieldAssist.HasFilledTextField="True"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    FontSize="13"
+                                    FontWeight="Bold"
+                                    Foreground="White"
+                                    InputMethod.IsInputMethodEnabled="False"
+                                    Text="{Binding TcpSettingsInfo.ServerConfig.Port, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                            </Border>
+                        </StackPanel>
                     </StackPanel>
-                    <ProgressBar
-                        Name="StatusProgressBar"
-                        Width="25"
-                        Height="25"
+                    <!--  使用Tcp客户端  -->
+                    <RadioButton
+                        Content="{x:Static languages:Language.IsUseTCPClient}"
+                        Focusable="False"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        IsChecked="{Binding TcpSettingsInfo.ConnectionMode, Converter={StaticResource TcpConnectionModeToBooleanConverter}, ConverterParameter=Client}"
+                        Template="{StaticResource CustomRadioButtonTemplate}" />
+                    <StackPanel Margin="50,0,0,0" Orientation="Horizontal">
+                        <StackPanel Orientation="Horizontal">
+                            <!--  图标  -->
+                            <TextBlock
+                                Margin="5,0"
+                                VerticalAlignment="Center"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                Text="{x:Static languages:Language.IPAddress}" />
+                            <Border
+                                Margin="5"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Background="#1A696969"
+                                CornerRadius="5">
+                                <TextBox
+                                    Width="100"
+                                    Height="30"
+                                    MaxWidth="500"
+                                    Margin="5,0"
+                                    materialDesign:TextFieldAssist.HasClearButton="False"
+                                    materialDesign:TextFieldAssist.HasFilledTextField="True"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    FontSize="13"
+                                    FontWeight="Bold"
+                                    Foreground="White"
+                                    InputMethod.IsInputMethodEnabled="False">
+                                    <TextBox.Text>
+                                        <Binding
+                                            Mode="TwoWay"
+                                            Path="TcpSettingsInfo.ClientConfig.IpAddress"
+                                            UpdateSourceTrigger="PropertyChanged">
+                                            <Binding.ValidationRules>
+                                                <validationRules:RegexValidationRule ErrorMessage="请输入有效的 IP 地址" Pattern="^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$" />
+                                            </Binding.ValidationRules>
+                                        </Binding>
+                                    </TextBox.Text>
+                                </TextBox>
+                            </Border>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <!--  图标  -->
+                            <TextBlock
+                                Margin="5,0"
+                                VerticalAlignment="Center"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                Text="{x:Static languages:Language.Port}" />
+                            <Border
+                                Margin="5"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Background="#1A696969"
+                                CornerRadius="5">
+                                <TextBox
+                                    Width="80"
+                                    Height="30"
+                                    MaxWidth="500"
+                                    Margin="5,0"
+                                    materialDesign:TextFieldAssist.HasClearButton="False"
+                                    materialDesign:TextFieldAssist.HasFilledTextField="True"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    FontSize="13"
+                                    FontWeight="Bold"
+                                    Foreground="White"
+                                    InputMethod.IsInputMethodEnabled="False"
+                                    Text="{Binding TcpSettingsInfo.ClientConfig.Port, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                            </Border>
+                        </StackPanel>
+                    </StackPanel>
+                    <!--  支持的内容格式  -->
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="{x:Static languages:Language.ContentFormat}" />
+                    <Border
+                        Height="170"
+                        MinHeight="80"
+                        MaxHeight="200"
+                        Margin="0,5"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
-                        IsIndeterminate="True"
-                        Value="0">
-                        <ProgressBar.Style>
-                            <Style BasedOn="{StaticResource MaterialDesignCircularProgressBar}" TargetType="ProgressBar">
-                                <Setter Property="Visibility" Value="Hidden" />
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsSavingInProgress}" Value="True">
-                                        <Setter Property="Visibility" Value="Visible" />
-                                    </DataTrigger>
-                                    <DataTrigger Binding="{Binding IsSavingInProgress}" Value="False">
-                                        <Setter Property="Visibility" Value="Hidden" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </ProgressBar.Style>
-                    </ProgressBar>
-                </Grid>
-            </Button>
-            <!--  提示框  -->
-            <materialDesign:Snackbar
-                Grid.Row="2"
-                Grid.RowSpan="2"
-                Width="Auto"
-                Height="Auto"
-                VerticalAlignment="Bottom"
-                Background="BlueViolet"
-                FontFamily="LoadFiraCode"
+                        Background="#1A696969"
+                        CornerRadius="5">
+                        <TextBox
+                            Width="330"
+                            MinHeight="150"
+                            MaxWidth="500"
+                            Margin="5,0"
+                            AcceptsReturn="True"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="White"
+                            IsReadOnly="True"
+                            Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                            Text="{Binding ExampleJson, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
+                            TextWrapping="Wrap"
+                            VerticalScrollBarVisibility="Auto" />
+                    </Border>
+                </StackPanel>
+            </StackPanel>
+        </StackPanel>
+        <!--  使用控件输入  -->
+        <StackPanel
+            Grid.Row="1"
+            Margin="5,0"
+            VerticalAlignment="Center"
+            Orientation="Vertical">
+            <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
+                <TextBlock
+                    Margin="0,0,0,1"
+                    VerticalAlignment="Center"
+                    FontFamily="{StaticResource IconFontFamily}"
+                    FontSize="20"
+                    Foreground="DarkGray"
+                    Text="&#xe6dd;" />
+                <TextBlock
+                    Margin="5,0"
+                    VerticalAlignment="Center"
+                    FontSize="16"
+                    FontWeight="Bold"
+                    Foreground="DarkGray"
+                    Text="{x:Static languages:Language.IsUseControlInput}" />
+                <ToggleButton
+                    Name="ControlToggleButton"
+                    materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
+                    materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
+                    Focusable="False"
+                    IsChecked="{Binding IsUseControlInput, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                    Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+            </StackPanel>
+            <StackPanel
+                Margin="50,5,0,5"
+                IsEnabled="{Binding ElementName=ControlToggleButton, Path=IsChecked}"
+                Orientation="Horizontal"
+                Visibility="{Binding ElementName=ControlToggleButton, Path=IsChecked, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <!--  条码  -->
+                <StackPanel
+                    Margin="5"
+                    VerticalAlignment="Center"
+                    Orientation="Horizontal">
+                    <CheckBox materialDesign:CheckBoxAssist.CheckBoxSize="20" IsChecked="{Binding ControlInputInfo.IsReceiveBarcode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="{x:Static languages:Language.TableHeaderBarCode}" />
+                </StackPanel>
+                <!--  重量  -->
+                <StackPanel
+                    Margin="5"
+                    VerticalAlignment="Center"
+                    Orientation="Horizontal">
+                    <CheckBox materialDesign:CheckBoxAssist.CheckBoxSize="20" IsChecked="{Binding ControlInputInfo.IsReceiveWeight, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="{x:Static languages:Language.TableHeaderWeight}" />
+                </StackPanel>
+                <!--  长度  -->
+                <StackPanel
+                    Margin="5"
+                    VerticalAlignment="Center"
+                    Orientation="Horizontal">
+                    <CheckBox materialDesign:CheckBoxAssist.CheckBoxSize="20" IsChecked="{Binding ControlInputInfo.IsReceiveLength, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="{x:Static languages:Language.TableHeaderLength}" />
+                </StackPanel>
+                <!--  宽度  -->
+                <StackPanel
+                    Margin="5"
+                    VerticalAlignment="Center"
+                    Orientation="Horizontal">
+                    <CheckBox materialDesign:CheckBoxAssist.CheckBoxSize="20" IsChecked="{Binding ControlInputInfo.IsReceiveWidth, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="{x:Static languages:Language.TableHeaderWidth}" />
+                </StackPanel>
+                <!--  高度  -->
+                <StackPanel
+                    Margin="5"
+                    VerticalAlignment="Center"
+                    Orientation="Horizontal">
+                    <CheckBox materialDesign:CheckBoxAssist.CheckBoxSize="20" IsChecked="{Binding ControlInputInfo.IsReceiveHeight, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="{x:Static languages:Language.TableHeaderHeight}" />
+                </StackPanel>
+                <!--  体积  -->
+                <StackPanel
+                    Margin="5"
+                    VerticalAlignment="Center"
+                    Orientation="Horizontal">
+                    <CheckBox materialDesign:CheckBoxAssist.CheckBoxSize="20" IsChecked="{Binding ControlInputInfo.IsReceiveVolume, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="{x:Static languages:Language.TableHeaderVolume}" />
+                </StackPanel>
+            </StackPanel>
+            <!--  说明  -->
+            <TextBlock
+                Width="390"
+                Margin="50,5,0,5"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                FontSize="13"
                 FontWeight="Bold"
-                MessageQueue="{Binding ContentInputSettingsMessageQueue}" />
-        </Grid>
-    </materialDesign:DialogHost>
+                Foreground="DarkGray"
+                Text="勾选需要输入的元素后可在主页对应的元素框上输入内容,任意输入框按回车键(Enter)提交,Tab键切换下一个输入控件"
+                TextWrapping="Wrap"
+                Visibility="Collapsed" />
+        </StackPanel>
+    </Grid>
 </Page>

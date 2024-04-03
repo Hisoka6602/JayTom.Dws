@@ -1,25 +1,25 @@
-﻿using JayTom.Dws.Client.EventMediators;
-using JayTom.Dws.Client.Models.CacheClearSettings;
-using JayTom.Dws.Data.LocalConf;
+﻿using System;
+using System.IO;
+using Prism.Mvvm;
+using System.Linq;
+using Prism.Commands;
+using Newtonsoft.Json;
+using System.Windows.Input;
 using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Plugin.Ftp;
+using System.Threading.Tasks;
+using MaterialDesignThemes.Wpf;
+using JayTom.Dws.Data.LocalConf;
+using JayTom.Dws.Client.EventMediators;
+using JayTom.Dws.Infrastructure.IComputer;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Service.CacheCleanup;
-using JayTom.Dws.Infrastructure.IComputer;
-using JayTom.Dws.Plugin.Ftp;
-using MaterialDesignThemes.Wpf;
-using Newtonsoft.Json;
-using Prism.Commands;
-using Prism.Mvvm;
-using System;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Windows.Input;
+using JayTom.Dws.Client.Models.CacheClearSettings;
+using JayTom.Dws.Infrastructure.Repository.LocalConf;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
 
-    public class CacheClearSettingsPageViewModel : BindableBase {
-        private readonly IConfigRepository _configRepository;
+    public class CacheClearSettingsPageViewModel : SettingsPageTemplateViewModel {
         private readonly IComputer _computer;
         private readonly IFtp _ftp;
         private readonly ICacheCleanupService _cacheCleanupService;
@@ -30,22 +30,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         private CacheClearSettingsInfoModel _manualCleanupParams = new();
         private long _minimumSpaceRetention;
         private bool _isDeletingInProgress;
-        private bool _isSavingInProgress;
-        private SnackbarMessageQueue _cacheClearSettingsMessageQueue = new(TimeSpan.FromSeconds(2));
         private ImageSettingsDto? _imageSettingsDto;
         private bool _isShowingFtpSpaceInfo;
 
         public CacheClearSettingsPageViewModel(IConfigRepository configRepository,
-            IComputer computer, IFtp ftp, ICacheCleanupService cacheCleanupService) {
-            _configRepository = configRepository;
+            IComputer computer, IFtp ftp, ICacheCleanupService cacheCleanupService) : base(configRepository) {
             _computer = computer;
             _ftp = ftp;
             _cacheCleanupService = cacheCleanupService;
-        }
-
-        public SnackbarMessageQueue CacheClearSettingsMessageQueue {
-            get => _cacheClearSettingsMessageQueue;
-            set => SetProperty(ref _cacheClearSettingsMessageQueue, value);
         }
 
         /// <summary>
@@ -54,14 +46,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         public bool IsDeletingInProgress {
             get => _isDeletingInProgress;
             set => SetProperty(ref _isDeletingInProgress, value);
-        }
-
-        /// <summary>
-        /// 是否保存中
-        /// </summary>
-        public bool IsSavingInProgress {
-            get => _isSavingInProgress;
-            set => SetProperty(ref _isSavingInProgress, value);
         }
 
         /// <summary>
@@ -139,7 +123,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                                     ManualCleanupParams.BarcodeDataAgoDays);
 
                             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                                CacheClearSettingsMessageQueue.Enqueue(key ? Languages.Language.ResourceManager.GetString("删除成功") ?? string.Empty
+                                base.MessageQueue.Enqueue(key ? Languages.Language.ResourceManager.GetString("删除成功") ?? string.Empty
                                     : $"{Languages.Language.ResourceManager.GetString("删除失败") ?? string.Empty},{value}");
                             });
                             IsDeletingInProgress = false;
@@ -157,7 +141,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                                     .ScanImageAgoDays);
 
                             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                                CacheClearSettingsMessageQueue.Enqueue(key ? Languages.Language.ResourceManager.GetString("删除成功") ?? string.Empty
+                                base.MessageQueue.Enqueue(key ? Languages.Language.ResourceManager.GetString("删除成功") ?? string.Empty
                                     : $"{Languages.Language.ResourceManager.GetString("删除失败") ?? string.Empty},{value}");
                             });
                             IsDeletingInProgress = false;
@@ -173,7 +157,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                             var (key, value) =
                                 await _cacheCleanupService.DeletePanoramaImagesOlderThanDays(ManualCleanupParams.PanoramaImageAgoDays);
                             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                                CacheClearSettingsMessageQueue.Enqueue(key ? Languages.Language.ResourceManager.GetString("删除成功") ?? string.Empty
+                                base.MessageQueue.Enqueue(key ? Languages.Language.ResourceManager.GetString("删除成功") ?? string.Empty
                                     : $"{Languages.Language.ResourceManager.GetString("删除失败") ?? string.Empty},{value}");
                             });
                             IsDeletingInProgress = false;
@@ -189,7 +173,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                             var (key, value) =
                                 await _cacheCleanupService.DeleteFtpImagesOlderThanDays(ManualCleanupParams.FtpImageAgoDays);
                             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                                CacheClearSettingsMessageQueue.Enqueue(key ? Languages.Language.ResourceManager.GetString("删除成功") ?? string.Empty
+                                base.MessageQueue.Enqueue(key ? Languages.Language.ResourceManager.GetString("删除成功") ?? string.Empty
                                     : $"{Languages.Language.ResourceManager.GetString("删除失败") ?? string.Empty},{value}");
                             });
                             IsDeletingInProgress = false;
@@ -205,7 +189,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                             var (key, value) =
                                 await _cacheCleanupService.DeleteLogDataOlderThanDays(ManualCleanupParams.LogDataAgoDays);
                             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                                CacheClearSettingsMessageQueue.Enqueue(key ? Languages.Language.ResourceManager.GetString("删除成功") ?? string.Empty
+                                base.MessageQueue.Enqueue(key ? Languages.Language.ResourceManager.GetString("删除成功") ?? string.Empty
                                     : $"{Languages.Language.ResourceManager.GetString("删除失败") ?? string.Empty},{value}");
                             });
                             IsDeletingInProgress = false;
@@ -215,79 +199,47 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             }
         }
 
-        /// <summary>
-        /// 保存设置
-        /// </summary>
-        public ICommand SaveSettingsCommand {
-            get => new DelegateCommand<object>(SaveSettingDelegate);
+        public override string Identifier => "CacheClearSettingsDialogHost";
+        public override string SettingsName => "CacheClearSettings";
+
+        protected override async Task<bool> SaveSettingsProcess() {
+            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
+                ConfigName = SettingsName,
+                Value = JsonConvert.SerializeObject(new CacheClearSettingsDto() {
+                    BarcodeDataAgoDays = AutoCleanupParams.BarcodeDataAgoDays,
+                    FtpImageAgoDays = AutoCleanupParams.FtpImageAgoDays,
+                    LogDataAgoDays = AutoCleanupParams.LogDataAgoDays,
+                    MinimumSpaceRetention = MinimumSpaceRetention,
+                    PanoramaImageAgoDays = AutoCleanupParams.PanoramaImageAgoDays,
+                    ScanImageAgoDays = AutoCleanupParams.ScanImageAgoDays
+                })
+            });
+
+            base.MessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
+                Languages.Language.ResourceManager.GetString("SaveFailed"))}");
+            return insertOrUpdate;
         }
 
-        private async void SaveSettingDelegate(object obj) {
-            if (!IsSavingInProgress) {
-                IsSavingInProgress = true;
-
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
-                    var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
-                        ConfigName = "CacheClearSettings",
-                        Value = JsonConvert.SerializeObject(new CacheClearSettingsDto() {
-                            BarcodeDataAgoDays = AutoCleanupParams.BarcodeDataAgoDays,
-                            FtpImageAgoDays = AutoCleanupParams.FtpImageAgoDays,
-                            LogDataAgoDays = AutoCleanupParams.LogDataAgoDays,
-                            MinimumSpaceRetention = MinimumSpaceRetention,
-                            PanoramaImageAgoDays = AutoCleanupParams.PanoramaImageAgoDays,
-                            ScanImageAgoDays = AutoCleanupParams.ScanImageAgoDays
-                        })
-                    });
-                    if (insertOrUpdate) {
-                        EventAggregator.Instance.Publish(new SettingsChangedEvent {
-                            SettingsName = "CacheClearSettings"
-                        });
-                    }
-                    IsSavingInProgress = false;
-                    CacheClearSettingsMessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
-                        Languages.Language.ResourceManager.GetString("SaveFailed"))}");
-                });
-            }
-        }
-
-        /// <summary>
-        /// 页面加载完成
-        /// </summary>
-        public ICommand LoadedCommand {
-            get => new DelegateCommand<object>(LoadedDelegate);
-        }
-
-        private void LoadedDelegate(object obj) {
+        public override void LoadedDelegate(object obj) {
             Task.Run(async () => {
-                //判断是否在同一个
                 LocalDiskUsageInfo localDiskUsageInfo = new();
                 FtpUsageInfo ftpUsageInfo = new();
-                var orDefault = await _configRepository.
-                    FirstOrDefault(f => f.ConfigName.Equals("SaveImageSettings"));
-                if (orDefault is not null) {
-                    try {
-                        _imageSettingsDto = JsonConvert.DeserializeObject<ImageSettingsDto>(orDefault.Value);
-                        if (_imageSettingsDto is not null) {
-                            if (!string.IsNullOrEmpty(_imageSettingsDto?.ImageRootDirectory)) {
-                                var pathRoot = Path.GetPathRoot(_imageSettingsDto.ImageRootDirectory);
-                                IsSameDiskStorage = string.Equals(pathRoot, Path.GetPathRoot(System.Diagnostics.Process.GetCurrentProcess()?.MainModule?.FileName), StringComparison.OrdinalIgnoreCase) &&
-                                                    Directory.Exists($"{_imageSettingsDto?.ImageRootDirectory}\\BarcodeImage") &&
-                                                    Directory.Exists($"{_imageSettingsDto?.ImageRootDirectory}\\PanoramaImage");
-                            }
-
-                            if (!_ftp.IsConnected) {
-                                var (key, value) = await _ftp.Connect(_imageSettingsDto.FtpInfo.IpAddress, _imageSettingsDto.FtpInfo.Port, _imageSettingsDto.FtpInfo.Username,
-                                    _imageSettingsDto.FtpInfo.Password);
-                                IsShowingFtpSpaceInfo = (key && await _ftp.DirectoryExists("BarcodeImage") &&
-                                                         await _ftp.DirectoryExists("PanoramaImage"));
-                            }
-                        }
+                _imageSettingsDto = await _configRepository.FirstOrDefaultEntity<ImageSettingsDto>("SaveImageSettings");
+                if (_imageSettingsDto is not null) {
+                    if (!string.IsNullOrEmpty(_imageSettingsDto.ImageRootDirectory)) {
+                        var pathRoot = Path.GetPathRoot(_imageSettingsDto.ImageRootDirectory);
+                        IsSameDiskStorage = string.Equals(pathRoot, Path.GetPathRoot(System.Diagnostics.Process.GetCurrentProcess()?.MainModule?.FileName), StringComparison.OrdinalIgnoreCase) &&
+                                            Directory.Exists($"{_imageSettingsDto.ImageRootDirectory}\\BarcodeImage") &&
+                                            Directory.Exists($"{_imageSettingsDto.ImageRootDirectory}\\PanoramaImage");
                     }
-                    catch {
-                        //
+
+                    if (!_ftp.IsConnected) {
+                        var (key, value) = await _ftp.Connect(_imageSettingsDto.FtpInfo.IpAddress, _imageSettingsDto.FtpInfo.Port, _imageSettingsDto.FtpInfo.Username,
+                            _imageSettingsDto.FtpInfo.Password);
+                        IsShowingFtpSpaceInfo = (key && await _ftp.DirectoryExists("BarcodeImage") &&
+                                                 await _ftp.DirectoryExists("PanoramaImage"));
                     }
                 }
-
                 if (IsSameDiskStorage) {
                     localDiskUsageInfo = GetDiskUsageInfo();
                 }
@@ -323,28 +275,19 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                         //NLog.LogManager.GetCurrentClassLogger().Error(JsonConvert.SerializeObject(FtpUsageInfo));
                     }
                 });
-                var configInfoModel = await _configRepository.
-                    FirstOrDefault(f =>
-                        f.ConfigName.Equals("CacheClearSettings"));
-                if (configInfoModel != null) {
-                    try {
-                        var cacheClearSettingsDto = JsonConvert.DeserializeObject<CacheClearSettingsDto>(configInfoModel.Value);
 
-                        if (cacheClearSettingsDto is not null) {
-                            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                                AutoCleanupParams = new CacheClearSettingsInfoModel() {
-                                    BarcodeDataAgoDays = cacheClearSettingsDto.BarcodeDataAgoDays,
-                                    FtpImageAgoDays = cacheClearSettingsDto.FtpImageAgoDays,
-                                    LogDataAgoDays = cacheClearSettingsDto.LogDataAgoDays,
-                                    PanoramaImageAgoDays = cacheClearSettingsDto.PanoramaImageAgoDays,
-                                    ScanImageAgoDays = cacheClearSettingsDto.ScanImageAgoDays
-                                };
-                                MinimumSpaceRetention = cacheClearSettingsDto.MinimumSpaceRetention;
-                            });
-                        }
-                    }
-                    catch (Exception e) {
-                    }
+                var cacheClearSettingsDto = await _configRepository.FirstOrDefaultEntity<CacheClearSettingsDto>(SettingsName);
+                if (cacheClearSettingsDto is not null) {
+                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                        AutoCleanupParams = new CacheClearSettingsInfoModel() {
+                            BarcodeDataAgoDays = cacheClearSettingsDto.BarcodeDataAgoDays,
+                            FtpImageAgoDays = cacheClearSettingsDto.FtpImageAgoDays,
+                            LogDataAgoDays = cacheClearSettingsDto.LogDataAgoDays,
+                            PanoramaImageAgoDays = cacheClearSettingsDto.PanoramaImageAgoDays,
+                            ScanImageAgoDays = cacheClearSettingsDto.ScanImageAgoDays
+                        };
+                        MinimumSpaceRetention = cacheClearSettingsDto.MinimumSpaceRetention;
+                    });
                 }
             });
         }

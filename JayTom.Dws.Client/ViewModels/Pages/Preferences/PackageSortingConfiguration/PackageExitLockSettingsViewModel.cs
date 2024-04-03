@@ -33,10 +33,10 @@ using JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration {
 
-    public class PackageExitLockSettingsViewModel : BindableBase {
+    public class PackageExitLockSettingsViewModel : SettingsPageTemplateViewModel {
         private readonly IPackageExitLockBindingRepository _packageExitLockBindingRepository;
         private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
-        private readonly IConfigRepository _configRepository;
+
         private readonly IExcel _excel;
         private readonly IDeviceService _deviceService;
         private readonly IExitMonitor _exitMonitor;
@@ -44,16 +44,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         private PackageExitLockSettingsModel _packageExitLockSettings = new();
         private ObservableCollection<LockProtocolType> _lockProtocolTypeItems = new(Enum.GetValues(typeof(LockProtocolType)).Cast<LockProtocolType>());
         private bool _isLoaded;
-        private SnackbarMessageQueue _packageExitLockSettingsMessageQueue = new(TimeSpan.FromSeconds(2));
-        private bool _isSavingInProgress;
 
         public PackageExitLockSettingsViewModel(IPackageExitLockBindingRepository packageExitLockBindingRepository,
             IPackageExitDefinitionRepository packageExitDefinitionRepository,
             IConfigRepository configRepository, IExcel excel,
-            IDeviceService deviceService, IExitMonitor exitMonitor) {
+            IDeviceService deviceService, IExitMonitor exitMonitor) : base(configRepository) {
             _packageExitLockBindingRepository = packageExitLockBindingRepository;
             _packageExitDefinitionRepository = packageExitDefinitionRepository;
-            _configRepository = configRepository;
+
             _excel = excel;
             _deviceService = deviceService;
             _exitMonitor = exitMonitor;
@@ -76,16 +74,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             };
         }
 
-        public SnackbarMessageQueue PackageExitLockSettingsMessageQueue {
-            get => _packageExitLockSettingsMessageQueue;
-            set => SetProperty(ref _packageExitLockSettingsMessageQueue, value);
-        }
-
-        public bool IsSavingInProgress {
-            get => _isSavingInProgress;
-            set => SetProperty(ref _isSavingInProgress, value);
-        }
-
         public ObservableCollection<PackageExitLockBindingItemInfoModel> PackageExitLockBindingItems {
             get => _packageExitLockBindingItems;
             set => SetProperty(ref _packageExitLockBindingItems, value);
@@ -101,37 +89,26 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             set => SetProperty(ref _lockProtocolTypeItems, value);
         }
 
-        public ICommand LoadedCommand {
-            get => new DelegateCommand<object>(LoadedDelegate);
-        }
-
-        private async void LoadedDelegate(object obj) {
+        public override async void LoadedDelegate(object obj) {
             if (!_isLoaded) {
                 _isLoaded = true;
                 await Application.Current.Dispatcher.InvokeAsync(async () => {
-                    //PackageExitLockSettings
-                    var configInfoModel = await _configRepository.FirstOrDefault(f =>
-                        f.ConfigName.Equals("PackageExitLockSettings"));
-                    if (configInfoModel is not null) {
-                        try {
-                            var packageExitLockSettingsDto = JsonConvert.DeserializeObject<PackageExitLockSettingsDto>(configInfoModel.Value?.ToString() ?? string.Empty);
-                            if (packageExitLockSettingsDto is not null) {
-                                PackageExitLockSettings = new PackageExitLockSettingsModel() {
-                                    IsUsePackageExitLock = packageExitLockSettingsDto.IsUsePackageExitLock,
-                                    ProtocolType = packageExitLockSettingsDto.ProtocolType,
-                                    S7Config = new S7ConfigModel() {
-                                        Db = packageExitLockSettingsDto.S7Config.Db,
-                                        Ip = packageExitLockSettingsDto.S7Config.Ip,
-                                        Slot = packageExitLockSettingsDto.S7Config.Slot,
-                                        Rack = packageExitLockSettingsDto.S7Config.Rack,
-                                        Timeout = packageExitLockSettingsDto.S7Config.Timeout
-                                    }
-                                };
+                    var packageExitLockSettingsDto = await _configRepository.FirstOrDefaultEntity<PackageExitLockSettingsDto>(SettingsName);
+                    if (packageExitLockSettingsDto is not null) {
+                        PackageExitLockSettings = new PackageExitLockSettingsModel() {
+                            IsUsePackageExitLock = packageExitLockSettingsDto.IsUsePackageExitLock,
+                            ProtocolType = packageExitLockSettingsDto.ProtocolType,
+                            S7Config = new S7ConfigModel() {
+                                Db = packageExitLockSettingsDto.S7Config.Db,
+                                Ip = packageExitLockSettingsDto.S7Config.Ip,
+                                Slot = packageExitLockSettingsDto.S7Config.Slot,
+                                Rack = packageExitLockSettingsDto.S7Config.Rack,
+                                Timeout = packageExitLockSettingsDto.S7Config.Timeout
                             }
-                        }
-                        catch (Exception e) {
-                            PackageExitLockSettingsMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("加载设置失败") ?? string.Empty}:{e.Message}");
-                        }
+                        };
+                    }
+                    else {
+                        base.MessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("加载设置失败") ?? string.Empty}");
                     }
                 });
             }
@@ -149,7 +126,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                     model.Identifier = "PackageExitLockDialog";
                     await DialogHost.Show(packageExitLockEditor, model.Identifier);
                     if (!string.IsNullOrEmpty(model.ExceptionContent)) {
-                        PackageExitLockSettingsMessageQueue.Enqueue(model.ExceptionContent);
+                        base.MessageQueue.Enqueue(model.ExceptionContent);
                         return;
                     }
 
@@ -168,19 +145,19 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         var bindingInfoModel = await _packageExitLockBindingRepository.FirstOrDefault(
                             s => s.ExitId.Equals(model.SelectExitDefinitionInfo.Id));
                         if (bindingInfoModel is not null) {
-                            PackageExitLockSettingsMessageQueue.Enqueue($"格口:{model.SelectExitDefinitionInfo.ExitName} 重复绑定");
+                            base.MessageQueue.Enqueue($"格口:{model.SelectExitDefinitionInfo.ExitName} 重复绑定");
                             return;
                         }
 
                         var insert = await _packageExitLockBindingRepository.Insert(packageExitLockBindingInfoModel);
                         if (insert) {
                             EventAggregator.Instance.Publish(packageExitLockBindingInfoModel);
-                            PackageExitLockSettingsMessageQueue.Enqueue("保存成功");
+                            base.MessageQueue.Enqueue("保存成功");
                             //刷新列表
                             RefreshData();
                         }
                         else {
-                            PackageExitLockSettingsMessageQueue.Enqueue("保存失败");
+                            base.MessageQueue.Enqueue("保存失败");
                         }
                     }
                 }
@@ -223,7 +200,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                                 DialogHost.Close(model.Identifier);
                             }
                         });
-                        PackageExitLockSettingsMessageQueue?.Enqueue(e.Message);
+                        base.MessageQueue?.Enqueue(e.Message);
                     });
                     await Task.Delay(500);
                     if (models?.Any() == true) {
@@ -233,7 +210,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                             .ToList();
                         if (duplicateExitNames.Any()) {
                             var join = string.Join(",", duplicateExitNames);
-                            PackageExitLockSettingsMessageQueue.Enqueue($"{join},重复了");
+                            base.MessageQueue.Enqueue($"{join},重复了");
                             return;
                         }
                         //批量添加到数据库
@@ -254,12 +231,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         var insertOrUpdate = await _packageExitLockBindingRepository.InsertOrUpdateRange(infoModels);
                         if (insertOrUpdate) {
                             EventAggregator.Instance.Publish(infoModels.FirstOrDefault());
-                            PackageExitLockSettingsMessageQueue.Enqueue("保存成功");
+                            base.MessageQueue.Enqueue("保存成功");
                             //刷新列表
                             RefreshData();
                         }
                         else {
-                            PackageExitLockSettingsMessageQueue.Enqueue("保存失败");
+                            base.MessageQueue.Enqueue("保存失败");
                         }
                     }
                 }
@@ -273,7 +250,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         private async void ExportDelegate(object obj) {
             //导出
             if (PackageExitLockBindingItems?.Any() != true) {
-                PackageExitLockSettingsMessageQueue?.Enqueue(Languages.Language.ResourceManager.GetString("列表中没有数据") ?? string.Empty);
+                base.MessageQueue?.Enqueue(Languages.Language.ResourceManager.GetString("列表中没有数据") ?? string.Empty);
                 return;
             }
 
@@ -306,7 +283,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                                 });
                             }
                         }, e => {
-                            PackageExitLockSettingsMessageQueue?.Enqueue(e.Message);
+                            base.MessageQueue?.Enqueue(e.Message);
                         });
                     if (!export) {
                         await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
@@ -331,7 +308,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                     model.PackageExitLockBindingItemInfo = obj;
                     await DialogHost.Show(packageExitLockEditor, model.Identifier);
                     if (!string.IsNullOrEmpty(model.ExceptionContent)) {
-                        PackageExitLockSettingsMessageQueue.Enqueue(model.ExceptionContent);
+                        base.MessageQueue.Enqueue(model.ExceptionContent);
                         return;
                     }
 
@@ -351,12 +328,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         var update = await _packageExitLockBindingRepository.Update(packageExitLockBindingInfoModel);
                         if (update) {
                             EventAggregator.Instance.Publish(packageExitLockBindingInfoModel);
-                            PackageExitLockSettingsMessageQueue.Enqueue("保存成功");
+                            base.MessageQueue.Enqueue("保存成功");
                             //刷新列表
                             RefreshData();
                         }
                         else {
-                            PackageExitLockSettingsMessageQueue.Enqueue("保存失败");
+                            base.MessageQueue.Enqueue("保存失败");
                         }
                     }
                 }
@@ -381,48 +358,32 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             });
         }
 
-        /// <summary>
-        /// 保存设置
-        /// </summary>
-        public ICommand SaveSettingsCommand {
-            get => new DelegateCommand<object>(SaveSettingDelegate);
-        }
+        public override string Identifier => "PackageExitLockSettingsDialogHost";
+        public override string SettingsName => "PackageExitLockSettings";
 
-        private async void SaveSettingDelegate(object obj) {
-            if (!IsSavingInProgress) {
-                IsSavingInProgress = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
-                    if (_deviceService.RunningStatus) {
-                        IsSavingInProgress = false;
-                        PackageExitLockSettingsMessageQueue.Enqueue($"设备工作中,无法设置");
-                        return;
-                    }
-
-                    var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
-                        ConfigName = "PackageExitLockSettings",
-                        Value = JsonConvert.SerializeObject(new PackageExitLockSettingsDto() {
-                            IsUsePackageExitLock = PackageExitLockSettings.IsUsePackageExitLock,
-                            ProtocolType = PackageExitLockSettings.ProtocolType,
-                            S7Config = new S7ConfigDto {
-                                Db = PackageExitLockSettings.S7Config.Db,
-                                Ip = PackageExitLockSettings.S7Config.Ip,
-                                Slot = PackageExitLockSettings.S7Config.Slot,
-                                Rack = PackageExitLockSettings.S7Config.Rack,
-                                Timeout = PackageExitLockSettings.S7Config.Timeout
-                            }
-                        })
-                    });
-                    if (insertOrUpdate) {
-                        EventAggregator.Instance.Publish(new SettingsChangedEvent {
-                            SettingsName = "PackageExitLockSettings"
-                        });
-                    }
-
-                    IsSavingInProgress = false;
-                    PackageExitLockSettingsMessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
-                        Languages.Language.ResourceManager.GetString("SaveFailed"))}");
-                });
+        protected override async Task<bool> SaveSettingsProcess() {
+            if (_deviceService.RunningStatus) {
+                IsSavingInProgress = false;
+                MessageQueue.Enqueue($"设备工作中,无法设置");
+                return false;
             }
+            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
+                ConfigName = SettingsName,
+                Value = JsonConvert.SerializeObject(new PackageExitLockSettingsDto() {
+                    IsUsePackageExitLock = PackageExitLockSettings.IsUsePackageExitLock,
+                    ProtocolType = PackageExitLockSettings.ProtocolType,
+                    S7Config = new S7ConfigDto {
+                        Db = PackageExitLockSettings.S7Config.Db,
+                        Ip = PackageExitLockSettings.S7Config.Ip,
+                        Slot = PackageExitLockSettings.S7Config.Slot,
+                        Rack = PackageExitLockSettings.S7Config.Rack,
+                        Timeout = PackageExitLockSettings.S7Config.Timeout
+                    }
+                })
+            });
+            base.MessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
+                Languages.Language.ResourceManager.GetString("SaveFailed"))}");
+            return true;
         }
 
         private async void RefreshData() {

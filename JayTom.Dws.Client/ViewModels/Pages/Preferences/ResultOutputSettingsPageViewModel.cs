@@ -8,6 +8,7 @@ using System.IO.Ports;
 using System.Windows.Forms;
 using System.Windows.Input;
 using JayTom.Dws.Domain.Dto;
+using System.Threading.Tasks;
 using JayTom.Dws.Client.Models;
 using JayTom.Dws.Data.LocalLog;
 using MaterialDesignThemes.Wpf;
@@ -24,9 +25,8 @@ using JayTom.Dws.Client.Models.ResultOutputSettingsModel;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
 
-    public class ResultOutputSettingsPageViewModel : BindableBase {
+    public class ResultOutputSettingsPageViewModel : SettingsPageTemplateViewModel {
         private readonly ISoundRepository _soundRepository;
-        private readonly IConfigRepository _configRepository;
 
         private ObservableCollection<ItemBaseTemplateModel> _outputItems = new()
         {
@@ -194,9 +194,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         private TriggerPositionResultModel _selectedTriggerPositionResult = new();
         private string _soundFilePath = string.Empty;
         private ObservableCollection<string> _sounds = new();
-        private SnackbarMessageQueue _resultOutputSettingsMessageQueue = new(TimeSpan.FromSeconds(2));
+
         private AudioOutputSettingsInfoModel _audioOutputSettingsInfo = new();
-        private bool _isSavingInProgress;
+
         private SerialPortResultOutputModel _serialPortResultOutput = new();
 
         private ObservableCollection<DataFormatTypeInfoModel> _dataFormatTypeItems = new()
@@ -216,14 +216,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         private DataFormatTypeInfoModel _selectDataFormat = new();
 
         public ResultOutputSettingsPageViewModel(ISoundRepository soundRepository,
-            IConfigRepository configRepository) {
+            IConfigRepository configRepository) : base(configRepository) {
             _soundRepository = soundRepository;
-            _configRepository = configRepository;
-        }
-
-        public SnackbarMessageQueue ResultOutputSettingsMessageQueue {
-            get => _resultOutputSettingsMessageQueue;
-            set => SetProperty(ref _resultOutputSettingsMessageQueue, value);
         }
 
         /// <summary>
@@ -465,14 +459,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             set => SetProperty(ref _soundFilePath, value);
         }
 
-        /// <summary>
-        /// 是否保存中
-        /// </summary>
-        public bool IsSavingInProgress {
-            get => _isSavingInProgress;
-            set => SetProperty(ref _isSavingInProgress, value);
-        }
-
         public ICommand BarCodeKeyDownCommand {
             get => new DelegateCommand<System.Windows.Input.KeyEventArgs>(BarCodeKeyDownDelegate);
         }
@@ -499,7 +485,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
 
         private async void BrowseSoundFileDelegate(object obj) {
             var openFileDialog = new OpenFileDialog() {
-                Filter = $"{Languages.Language.ResourceManager.GetString("声音文件") ?? string.Empty}|*.wav;*.mp3",
+                Filter = $@"{Languages.Language.ResourceManager.GetString("声音文件") ?? string.Empty}|*.wav;*.mp3",
                 Title = Languages.Language.ResourceManager.GetString("请选择声音文件"),
                 InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop)
             };
@@ -530,112 +516,85 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                         if (soundInfoModels?.Any() == true) {
                             Sounds.AddRange(soundInfoModels.Select(s => s.SoundName));
                         }
-                        ResultOutputSettingsMessageQueue.Enqueue(Languages.Language.ResourceManager.GetString("添加成功") ?? string.Empty);
+                        base.MessageQueue.Enqueue(Languages.Language.ResourceManager.GetString("添加成功") ?? string.Empty);
                     }
                     else {
-                        ResultOutputSettingsMessageQueue.Enqueue(Languages.Language.ResourceManager.GetString("添加失败") ?? string.Empty);
+                        base.MessageQueue.Enqueue(Languages.Language.ResourceManager.GetString("添加失败") ?? string.Empty);
                         //提示失败
                     }
                 });
             }
         }
 
-        /// <summary>
-        /// 保存设置
-        /// </summary>
-        public ICommand SaveSettingsCommand {
-            get => new DelegateCommand<object>(SaveSettingDelegate);
+        public override string Identifier => "ResultOutputSettingsDialogHost";
+        public override string SettingsName => "ResultOutputSettings";
+
+        protected override async Task<bool> SaveSettingsProcess() {
+            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
+                ConfigName = SettingsName,
+                Value = JsonConvert.SerializeObject(new ResultOutputSettingsDto {
+                    DataTemplate = OutputItems.Select(s => new ItemTemplateInfo {
+                        ApplicationType = s.ApplicationType,
+                        Content = s.Content,
+                        Type = s.Type,
+                    }).ToList(),
+                    UploadSettingsInfo = new UploadSettingsInfo() {
+                        IsAutoUploadOnRestart = UploadSettingsInfo.IsAutoUploadOnRestart,
+                        RetryCount = UploadSettingsInfo.RetryCount,
+                        SendDelay = UploadSettingsInfo.SendDelay,
+                    },
+                    IsUseTcpOutput = IsUseTcpOutput,
+                    TcpSettingsInfo = new TcpSettingsInfo() {
+                        ClientConfig = new TcpInfo() {
+                            IpAddress = TcpSettingsInfo.ClientConfig.IpAddress,
+                            Port = TcpSettingsInfo.ClientConfig.Port
+                        },
+                        ServerConfig = new TcpInfo() {
+                            IpAddress = TcpSettingsInfo.ServerConfig.IpAddress,
+                            Port = TcpSettingsInfo.ServerConfig.Port
+                        },
+                        ConnectionMode = TcpSettingsInfo.ConnectionMode
+                    },
+                    IsUseSerialOutput = IsUseSerialOutput,
+                    SerialPortSettingsInfo = new SerialPortSettingsInfo() {
+                        BaudRate = SelectBaudRate,
+                        Parity = SelectedParity.Value,
+                        PortName = SelectedPort,
+                        DataBits = SelectedDataBits,
+                        StopBits = SelectedStopBits.Value,
+                        DataFormat = SelectDataFormat.Value,
+                    },
+                    SerialPortResultOutputInfo = new SerialPortResultOutputInfo() {
+                        CustomOutputContent = SerialPortResultOutput.CustomOutputContent,
+                        IsUseCustomContentOutput = SerialPortResultOutput.IsUseCustomContentOutput,
+                        IsUseDataTemplateOutput = SerialPortResultOutput.IsUseDataTemplateOutput
+                    },
+                    IsUseAudioOutput = IsUseAudioOutput,
+                    AudioOutputSettingsInfo = new AudioOutputSettingsInfo() {
+                        FailureAudio = AudioOutputSettingsInfo.FailureAudio,
+                        SuccessAudio = AudioOutputSettingsInfo.SuccessAudio,
+                        TriggerPosition = SelectedTriggerPosition.TriggerPositionValue,
+                        Result = SelectedTriggerPositionResult.ResultValue,
+                    },
+                    IsUseLocationOutput = IsUseLocationOutput,
+                    LocationOutputSettingsInfo = new LocationOutputSettingsInfo() {
+                        BarcodeOutputKey = LocationOutputSettingsInfo.BarcodeOutputKey,
+                        BarcodeOutputPosition = LocationOutputSettingsInfo.BarcodeOutputPosition,
+                        IsOutputBarcode = LocationOutputSettingsInfo.IsOutputBarcode,
+                        IsOutputWeight = LocationOutputSettingsInfo.IsOutputWeight,
+                        IsOutputWeightFirst = LocationOutputSettingsInfo.IsOutputWeightFirst,
+                        OperationDelay = LocationOutputSettingsInfo.OperationDelay,
+                        WeightOutputKey = LocationOutputSettingsInfo.WeightOutputKey,
+                        WeightOutputPosition = LocationOutputSettingsInfo.WeightOutputPosition
+                    },
+                })
+            });
+            base.MessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
+                Languages.Language.ResourceManager.GetString("SaveFailed"))}");
+            return insertOrUpdate;
         }
 
-        private async void SaveSettingDelegate(object obj) {
-            if (!IsSavingInProgress) {
-                IsSavingInProgress = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
-                    var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
-                        ConfigName = "ResultOutputSettings",
-                        Value = JsonConvert.SerializeObject(new ResultOutputSettingsDto {
-                            DataTemplate = OutputItems.Select(s => new ItemTemplateInfo {
-                                ApplicationType = s.ApplicationType,
-                                Content = s.Content,
-                                Type = s.Type,
-                            }).ToList(),
-                            UploadSettingsInfo = new UploadSettingsInfo() {
-                                IsAutoUploadOnRestart = UploadSettingsInfo.IsAutoUploadOnRestart,
-                                RetryCount = UploadSettingsInfo.RetryCount,
-                                SendDelay = UploadSettingsInfo.SendDelay,
-                            },
-                            IsUseTcpOutput = IsUseTcpOutput,
-                            TcpSettingsInfo = new TcpSettingsInfo() {
-                                ClientConfig = new TcpInfo() {
-                                    IpAddress = TcpSettingsInfo.ClientConfig.IpAddress,
-                                    Port = TcpSettingsInfo.ClientConfig.Port
-                                },
-                                ServerConfig = new TcpInfo() {
-                                    IpAddress = TcpSettingsInfo.ServerConfig.IpAddress,
-                                    Port = TcpSettingsInfo.ServerConfig.Port
-                                },
-                                ConnectionMode = TcpSettingsInfo.ConnectionMode
-                            },
-                            IsUseSerialOutput = IsUseSerialOutput,
-                            SerialPortSettingsInfo = new SerialPortSettingsInfo() {
-                                BaudRate = SelectBaudRate,
-                                Parity = SelectedParity.Value,
-                                PortName = SelectedPort,
-                                DataBits = SelectedDataBits,
-                                StopBits = SelectedStopBits.Value,
-                                DataFormat = SelectDataFormat.Value,
-                            },
-                            SerialPortResultOutputInfo = new SerialPortResultOutputInfo() {
-                                CustomOutputContent = SerialPortResultOutput.CustomOutputContent,
-                                IsUseCustomContentOutput = SerialPortResultOutput.IsUseCustomContentOutput,
-                                IsUseDataTemplateOutput = SerialPortResultOutput.IsUseDataTemplateOutput
-                            },
-                            IsUseAudioOutput = IsUseAudioOutput,
-                            AudioOutputSettingsInfo = new AudioOutputSettingsInfo() {
-                                FailureAudio = AudioOutputSettingsInfo.FailureAudio,
-                                SuccessAudio = AudioOutputSettingsInfo.SuccessAudio,
-                                TriggerPosition = SelectedTriggerPosition.TriggerPositionValue,
-                                Result = SelectedTriggerPositionResult.ResultValue,
-                            },
-                            IsUseLocationOutput = IsUseLocationOutput,
-                            LocationOutputSettingsInfo = new LocationOutputSettingsInfo() {
-                                BarcodeOutputKey = LocationOutputSettingsInfo.BarcodeOutputKey,
-                                BarcodeOutputPosition = LocationOutputSettingsInfo.BarcodeOutputPosition,
-                                IsOutputBarcode = LocationOutputSettingsInfo.IsOutputBarcode,
-                                IsOutputWeight = LocationOutputSettingsInfo.IsOutputWeight,
-                                IsOutputWeightFirst = LocationOutputSettingsInfo.IsOutputWeightFirst,
-                                OperationDelay = LocationOutputSettingsInfo.OperationDelay,
-                                WeightOutputKey = LocationOutputSettingsInfo.WeightOutputKey,
-                                WeightOutputPosition = LocationOutputSettingsInfo.WeightOutputPosition
-                            },
-                        })
-                    });
-                    if (insertOrUpdate) {
-                        EventAggregator.Instance.Publish(new SettingsChangedEvent {
-                            SettingsName = "ResultOutputSettings"
-                        });
-                    }
-
-                    IsSavingInProgress = false;
-                    ResultOutputSettingsMessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
-                        Languages.Language.ResourceManager.GetString("SaveFailed"))}");
-                });
-            }
-
-            //显示遮罩
-            //保存设置到数据库
-            //通知设置更改事件
-            //隐藏遮罩
-        }
-
-        /// <summary>
-        /// 页面加载完成
-        /// </summary>
-        public ICommand LoadedCommand {
-            get => new DelegateCommand<object>(LoadedDelegate);
-        }
-
-        private async void LoadedDelegate(object obj) {
+        public override async void LoadedDelegate(object obj) {
             if (!_isLoaded) {
                 _isLoaded = true;
                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
@@ -648,96 +607,86 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     PortItems.Clear();
                     //加载串口列表
                     PortItems.AddRange(SerialPort.GetPortNames()?.ToList());
-
-                    var configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("ResultOutputSettings"));
-                    if (configInfoModel is not null) {
-                        try {
-                            var settingsDto = JsonConvert.DeserializeObject<ResultOutputSettingsDto>(configInfoModel.Value);
-                            if (settingsDto is not null) {
-                                //加载停止位的值
-                                SelectedStopBits = StopBitsItems.FirstOrDefault(f =>
-                                    f.Value.Equals(settingsDto.SerialPortSettingsInfo.StopBits)) ?? new StopBitsInfoModel();
-                                //加载效验位的值
-                                SelectedParity = ParityItems.FirstOrDefault(f =>
-                                    f.Value.Equals(settingsDto.SerialPortSettingsInfo.Parity)) ?? new ParityInfoModel();
-                                //加载触发位置的值
-                                SelectedTriggerPosition = TriggerPositionItems.FirstOrDefault(f =>
-                                    f.TriggerPositionValue.Equals(settingsDto.AudioOutputSettingsInfo.TriggerPosition)) ?? new TriggerPositionModel();
-                                //加载结果判断值
-                                SelectedTriggerPositionResult = TriggerPositionResultItems.FirstOrDefault(f =>
-                                    f.ResultValue.Equals(settingsDto.AudioOutputSettingsInfo.Result)) ?? new TriggerPositionResultModel();
-                                SelectDataFormat =
-                                    DataFormatTypeItems?.FirstOrDefault(f =>
-                                        f.Value.Equals(settingsDto.SerialPortSettingsInfo.DataFormat)) ??
-                                    new DataFormatTypeInfoModel();
-                                SelectedPort = PortItems.FirstOrDefault(f =>
-                                    f.Equals(settingsDto.SerialPortSettingsInfo.PortName)) ?? string.Empty;
-                                OutputItems.Clear();
-                                var models = settingsDto.DataTemplate.Select((s, i) => new ItemBaseTemplateModel() {
-                                    ApplicationType = s.ApplicationType,
-                                    Content = s.Content,
-                                    Type = s.Type,
-                                    Id = i + 1
-                                }).ToList();
-                                OutputItems.AddRange(models);
-                                UploadSettingsInfo = new UploadSettingsInfoModel() {
-                                    IsAutoUploadOnRestart = settingsDto.UploadSettingsInfo.IsAutoUploadOnRestart,
-                                    RetryCount = settingsDto.UploadSettingsInfo.RetryCount,
-                                    SendDelay = settingsDto.UploadSettingsInfo.SendDelay,
-                                };
-                                IsUseTcpOutput = settingsDto.IsUseTcpOutput;
-                                TcpSettingsInfo = new TcpSettingsInfoModel() {
-                                    ClientConfig = new TcpInfoModel() {
-                                        IpAddress = settingsDto.TcpSettingsInfo.ClientConfig.IpAddress,
-                                        Port = settingsDto.TcpSettingsInfo.ClientConfig.Port,
-                                    },
-                                    ServerConfig = new TcpInfoModel() {
-                                        IpAddress = settingsDto.TcpSettingsInfo.ServerConfig.IpAddress,
-                                        Port = settingsDto.TcpSettingsInfo.ServerConfig.Port,
-                                    },
-                                    ConnectionMode = settingsDto.TcpSettingsInfo.ConnectionMode,
-                                };
-                                IsUseSerialOutput = settingsDto.IsUseSerialOutput;
-                                SerialPortSettingsInfo = new SerialPortSettingsInfoModel() {
-                                    BaudRate = settingsDto.SerialPortSettingsInfo.BaudRate,
-                                    Parity = settingsDto.SerialPortSettingsInfo.Parity,
-                                    DataBits = settingsDto.SerialPortSettingsInfo.DataBits,
-                                    PortName = settingsDto.SerialPortSettingsInfo.PortName,
-                                    StopBits = settingsDto.SerialPortSettingsInfo.StopBits,
-                                    DataFormat = settingsDto.SerialPortSettingsInfo.DataFormat
-                                };
-                                SerialPortResultOutput = new SerialPortResultOutputModel() {
-                                    CustomOutputContent = settingsDto.SerialPortResultOutputInfo.CustomOutputContent,
-                                    IsUseCustomContentOutput =
-                                        settingsDto.SerialPortResultOutputInfo.IsUseCustomContentOutput,
-                                    IsUseDataTemplateOutput =
-                                        settingsDto.SerialPortResultOutputInfo.IsUseDataTemplateOutput
-                                };
-                                IsUseAudioOutput = settingsDto.IsUseAudioOutput;
-                                AudioOutputSettingsInfo = new AudioOutputSettingsInfoModel() {
-                                    FailureAudio = settingsDto.AudioOutputSettingsInfo.FailureAudio,
-                                    Result = settingsDto.AudioOutputSettingsInfo.Result,
-                                    SuccessAudio = settingsDto.AudioOutputSettingsInfo.SuccessAudio,
-                                    TriggerPosition = settingsDto.AudioOutputSettingsInfo.TriggerPosition,
-                                };
-                                IsUseLocationOutput = settingsDto.IsUseLocationOutput;
-                                LocationOutputSettingsInfo = new LocationOutputSettingsInfoModel() {
-                                    BarcodeOutputKey = settingsDto.LocationOutputSettingsInfo.BarcodeOutputKey,
-                                    BarcodeOutputPosition =
-                                        settingsDto.LocationOutputSettingsInfo.BarcodeOutputPosition,
-                                    IsOutputBarcode = settingsDto.LocationOutputSettingsInfo.IsOutputBarcode,
-                                    IsOutputWeight = settingsDto.LocationOutputSettingsInfo.IsOutputWeight,
-                                    IsOutputWeightFirst = settingsDto.LocationOutputSettingsInfo.IsOutputWeightFirst,
-                                    OperationDelay = settingsDto.LocationOutputSettingsInfo.OperationDelay,
-                                    WeightOutputKey = settingsDto.LocationOutputSettingsInfo.WeightOutputKey,
-                                    WeightOutputPosition = settingsDto.LocationOutputSettingsInfo.WeightOutputPosition,
-                                };
-                            }
-                        }
-                        catch (Exception e) {
-                            ResultOutputSettingsMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("加载设置失败") ?? string.Empty}:{e.Message}");
-                        }
-                    }
+                    var settingsDto = await _configRepository.FirstOrDefaultEntity<ResultOutputSettingsDto>(SettingsName) ??
+                          new ResultOutputSettingsDto();
+                    //加载停止位的值
+                    SelectedStopBits = StopBitsItems.FirstOrDefault(f =>
+                        f.Value.Equals(settingsDto.SerialPortSettingsInfo.StopBits)) ?? new StopBitsInfoModel();
+                    //加载效验位的值
+                    SelectedParity = ParityItems.FirstOrDefault(f =>
+                        f.Value.Equals(settingsDto.SerialPortSettingsInfo.Parity)) ?? new ParityInfoModel();
+                    //加载触发位置的值
+                    SelectedTriggerPosition = TriggerPositionItems.FirstOrDefault(f =>
+                        f.TriggerPositionValue.Equals(settingsDto.AudioOutputSettingsInfo.TriggerPosition)) ?? new TriggerPositionModel();
+                    //加载结果判断值
+                    SelectedTriggerPositionResult = TriggerPositionResultItems.FirstOrDefault(f =>
+                        f.ResultValue.Equals(settingsDto.AudioOutputSettingsInfo.Result)) ?? new TriggerPositionResultModel();
+                    SelectDataFormat =
+                        DataFormatTypeItems?.FirstOrDefault(f =>
+                            f.Value.Equals(settingsDto.SerialPortSettingsInfo.DataFormat)) ??
+                        new DataFormatTypeInfoModel();
+                    SelectedPort = PortItems.FirstOrDefault(f =>
+                        f.Equals(settingsDto.SerialPortSettingsInfo.PortName)) ?? string.Empty;
+                    OutputItems.Clear();
+                    var models = settingsDto.DataTemplate.Select((s, i) => new ItemBaseTemplateModel() {
+                        ApplicationType = s.ApplicationType,
+                        Content = s.Content,
+                        Type = s.Type,
+                        Id = i + 1
+                    }).ToList();
+                    OutputItems.AddRange(models);
+                    UploadSettingsInfo = new UploadSettingsInfoModel() {
+                        IsAutoUploadOnRestart = settingsDto.UploadSettingsInfo.IsAutoUploadOnRestart,
+                        RetryCount = settingsDto.UploadSettingsInfo.RetryCount,
+                        SendDelay = settingsDto.UploadSettingsInfo.SendDelay,
+                    };
+                    IsUseTcpOutput = settingsDto.IsUseTcpOutput;
+                    TcpSettingsInfo = new TcpSettingsInfoModel() {
+                        ClientConfig = new TcpInfoModel() {
+                            IpAddress = settingsDto.TcpSettingsInfo.ClientConfig.IpAddress,
+                            Port = settingsDto.TcpSettingsInfo.ClientConfig.Port,
+                        },
+                        ServerConfig = new TcpInfoModel() {
+                            IpAddress = settingsDto.TcpSettingsInfo.ServerConfig.IpAddress,
+                            Port = settingsDto.TcpSettingsInfo.ServerConfig.Port,
+                        },
+                        ConnectionMode = settingsDto.TcpSettingsInfo.ConnectionMode,
+                    };
+                    IsUseSerialOutput = settingsDto.IsUseSerialOutput;
+                    SerialPortSettingsInfo = new SerialPortSettingsInfoModel() {
+                        BaudRate = settingsDto.SerialPortSettingsInfo.BaudRate,
+                        Parity = settingsDto.SerialPortSettingsInfo.Parity,
+                        DataBits = settingsDto.SerialPortSettingsInfo.DataBits,
+                        PortName = settingsDto.SerialPortSettingsInfo.PortName,
+                        StopBits = settingsDto.SerialPortSettingsInfo.StopBits,
+                        DataFormat = settingsDto.SerialPortSettingsInfo.DataFormat
+                    };
+                    SerialPortResultOutput = new SerialPortResultOutputModel() {
+                        CustomOutputContent = settingsDto.SerialPortResultOutputInfo.CustomOutputContent,
+                        IsUseCustomContentOutput =
+                            settingsDto.SerialPortResultOutputInfo.IsUseCustomContentOutput,
+                        IsUseDataTemplateOutput =
+                            settingsDto.SerialPortResultOutputInfo.IsUseDataTemplateOutput
+                    };
+                    IsUseAudioOutput = settingsDto.IsUseAudioOutput;
+                    AudioOutputSettingsInfo = new AudioOutputSettingsInfoModel() {
+                        FailureAudio = settingsDto.AudioOutputSettingsInfo.FailureAudio,
+                        Result = settingsDto.AudioOutputSettingsInfo.Result,
+                        SuccessAudio = settingsDto.AudioOutputSettingsInfo.SuccessAudio,
+                        TriggerPosition = settingsDto.AudioOutputSettingsInfo.TriggerPosition,
+                    };
+                    IsUseLocationOutput = settingsDto.IsUseLocationOutput;
+                    LocationOutputSettingsInfo = new LocationOutputSettingsInfoModel() {
+                        BarcodeOutputKey = settingsDto.LocationOutputSettingsInfo.BarcodeOutputKey,
+                        BarcodeOutputPosition =
+                            settingsDto.LocationOutputSettingsInfo.BarcodeOutputPosition,
+                        IsOutputBarcode = settingsDto.LocationOutputSettingsInfo.IsOutputBarcode,
+                        IsOutputWeight = settingsDto.LocationOutputSettingsInfo.IsOutputWeight,
+                        IsOutputWeightFirst = settingsDto.LocationOutputSettingsInfo.IsOutputWeightFirst,
+                        OperationDelay = settingsDto.LocationOutputSettingsInfo.OperationDelay,
+                        WeightOutputKey = settingsDto.LocationOutputSettingsInfo.WeightOutputKey,
+                        WeightOutputPosition = settingsDto.LocationOutputSettingsInfo.WeightOutputPosition,
+                    };
                 });
             }
         }

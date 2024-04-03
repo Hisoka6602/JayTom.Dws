@@ -5,6 +5,7 @@ using Newtonsoft.Json;
 using System.Net.Http;
 using System.Windows.Input;
 using Prism.Services.Dialogs;
+using System.Threading.Tasks;
 using MaterialDesignThemes.Wpf;
 using JayTom.Dws.Data.LocalConf;
 using JayTom.Dws.Domain.Dto.ApiDto;
@@ -15,8 +16,7 @@ using JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
 
-    public class SzjyApiPageViewModel : BindableBase {
-        private readonly IConfigRepository _configRepository;
+    public class SzjyApiPageViewModel : SettingsPageTemplateViewModel {
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IDialogService _dialogService;
         private string _barcode = string.Empty;
@@ -30,14 +30,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
         private string _username = string.Empty;
         private int _uid;
         private bool _isLoginSuccessful;
-        private bool _isSavingInProgress;
+
         private bool _isLoaded;
-        private SnackbarMessageQueue _szjyApiMessageQueue = new(TimeSpan.FromSeconds(2));
+
         private string _nickname = string.Empty;
 
         public SzjyApiPageViewModel(IConfigRepository configRepository, IHttpClientFactory httpClientFactory,
-            IDialogService dialogService) {
-            _configRepository = configRepository;
+            IDialogService dialogService) : base(configRepository) {
             _httpClientFactory = httpClientFactory;
             _dialogService = dialogService;
         }
@@ -45,11 +44,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
         public SzjyApiInfoModel SzjyApiInfo {
             get => _szjyApiInfo;
             set => SetProperty(ref _szjyApiInfo, value);
-        }
-
-        public SnackbarMessageQueue SzjyApiMessageQueue {
-            get => _szjyApiMessageQueue;
-            set => SetProperty(ref _szjyApiMessageQueue, value);
         }
 
         /// <summary>
@@ -140,68 +134,37 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
             set => SetProperty(ref _isUploading, value);
         }
 
-        /// <summary>
-        /// 是否保存中
-        /// </summary>
-        public bool IsSavingInProgress {
-            get => _isSavingInProgress;
-            set => SetProperty(ref _isSavingInProgress, value);
+        public override string Identifier => "SzjyApiParametersDialogHost";
+        public override string SettingsName => "SzjyApiParameters";
+
+        protected override async Task<bool> SaveSettingsProcess() {
+            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
+                ConfigName = SettingsName,
+                Value = JsonConvert.SerializeObject(new SzjyApiDto {
+                    UserName = SzjyApiInfo.UserName,
+                    Machine = SzjyApiInfo.Machine,
+                    Password = SzjyApiInfo.Password,
+                    TimeOut = SzjyApiInfo.TimeOut,
+                    Url = SzjyApiInfo.Url,
+                })
+            });
+            base.MessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
+                Languages.Language.ResourceManager.GetString("SaveFailed"))}");
+            return insertOrUpdate;
         }
 
-        public ICommand SaveSettingsCommand {
-            get => new DelegateCommand<object>(SaveSettingDelegate);
-        }
-
-        private async void SaveSettingDelegate(object obj) {
-            if (!IsSavingInProgress) {
-                IsSavingInProgress = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
-                    var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
-                        ConfigName = "SzjyApiParameters",
-                        Value = JsonConvert.SerializeObject(new SzjyApiDto {
-                            UserName = SzjyApiInfo.UserName,
-                            Machine = SzjyApiInfo.Machine,
-                            Password = SzjyApiInfo.Password,
-                            TimeOut = SzjyApiInfo.TimeOut,
-                            Url = SzjyApiInfo.Url,
-                        })
-                    });
-                    if (insertOrUpdate) {
-                        EventAggregator.Instance.Publish(new SettingsChangedEvent {
-                            SettingsName = "SzjyApiParameters"
-                        });
-                    }
-                    IsSavingInProgress = false;
-                    SzjyApiMessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
-                        Languages.Language.ResourceManager.GetString("SaveFailed"))}");
-                });
-            }
-        }
-
-        /// <summary>
-        /// 页面加载完成
-        /// </summary>
-        public ICommand LoadedCommand {
-            get => new DelegateCommand<object>(LoadedDelegate);
-        }
-
-        private async void LoadedDelegate(object obj) {
+        public override async void LoadedDelegate(object obj) {
             if (!_isLoaded) {
                 _isLoaded = true;
                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
-                    var configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("SzjyApiParameters"));
-                    if (configInfoModel is not null) {
-                        var settingsDto = JsonConvert.DeserializeObject<SzjyApiDto>(configInfoModel.Value);
-                        if (settingsDto is not null) {
-                            SzjyApiInfo = new SzjyApiInfoModel() {
-                                Url = settingsDto.Url,
-                                Machine = settingsDto.Machine,
-                                Password = settingsDto.Password,
-                                TimeOut = settingsDto.TimeOut,
-                                UserName = settingsDto.UserName
-                            };
-                        }
-                    }
+                    var settingsDto = await _configRepository.FirstOrDefaultEntity<SzjyApiDto>(SettingsName) ?? new SzjyApiDto();
+                    SzjyApiInfo = new SzjyApiInfoModel() {
+                        Url = settingsDto.Url,
+                        Machine = settingsDto.Machine,
+                        Password = settingsDto.Password,
+                        TimeOut = settingsDto.TimeOut,
+                        UserName = settingsDto.UserName
+                    };
                 });
             }
         }
@@ -236,11 +199,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
                             IsLoginSuccessful = true;
                         }
                         else {
-                            SzjyApiMessageQueue.Enqueue($"{value.Message}");
+                            base.MessageQueue.Enqueue($"{value.Message}");
                         }
                     }
                     else {
-                        SzjyApiMessageQueue.Enqueue("连接失败!");
+                        base.MessageQueue.Enqueue("连接失败!");
                     }
                     IsLoggingIn = false;
                 });

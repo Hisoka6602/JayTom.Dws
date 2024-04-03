@@ -20,6 +20,7 @@
     mvvm:ViewModelLocator.AutoWireViewModel="True"
     Focusable="False"
     FontFamily="{StaticResource CustomFontFamily}"
+    Template="{StaticResource SettingsPageTemplate}"
     mc:Ignorable="d">
     <Page.Resources>
         <materialDesign:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
@@ -70,822 +71,267 @@
             TextBoxTemplate="{StaticResource ImageSettingTextBoxTemplate}" />
     </Page.Resources>
     <b:Interaction.Triggers>
-        <b:EventTrigger EventName="Loaded" SourceName="ResultOutputSettingsView">
-            <b:InvokeCommandAction Command="{Binding LoadedCommand, IsAsync=False}" CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Page}}}" />
+        <b:EventTrigger EventName="Loaded" SourceName="{Binding Name, RelativeSource={RelativeSource AncestorType={x:Type Page}}}">
+            <b:InvokeCommandAction Command="{Binding LoadedCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Page}}}" />
         </b:EventTrigger>
     </b:Interaction.Triggers>
-    <materialDesign:DialogHost
-        Background="Transparent"
-        DialogBackground="Transparent"
-        DialogMargin="5"
-        FocusVisualStyle="{x:Null}"
-        Focusable="False"
-        Identifier="ResultOutputSettingsDialog"
-        Style="{StaticResource MaterialDesignEmbeddedDialogHost}">
-        <Grid Margin="20,0">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="*" />
-            </Grid.RowDefinitions>
-            <!--  数据模板  -->
-            <StackPanel
-                Grid.Row="0"
-                Margin="5,0"
-                VerticalAlignment="Center"
-                Orientation="Vertical">
-                <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
-                    <TextBlock
-                        Margin="0,0,0,1"
-                        VerticalAlignment="Center"
-                        FontFamily="{StaticResource IconFontFamily}"
-                        FontSize="18"
-                        FontWeight="Bold"
-                        Foreground="DarkGray"
-                        Text="&#xe6b6;" />
-                    <TextBlock
-                        Margin="5,0"
-                        VerticalAlignment="Center"
-                        FontSize="16"
-                        FontWeight="Bold"
-                        Foreground="DarkGray"
-                        Text="{x:Static languages:Language.DataTemplate}" />
-                </StackPanel>
-                <StackPanel Margin="50,10,0,0" Orientation="Horizontal">
-                    <TextBlock
-                        Margin="5,0"
-                        VerticalAlignment="Center"
-                        FontSize="13"
-                        FontWeight="Bold"
-                        Foreground="DarkGray"
-                        Text="{x:Static languages:Language.OutputData}" />
-                    <StackPanel Orientation="Horizontal">
-                        <Button
-                            Height="30"
-                            Margin="5,0"
-                            materialDesign:ButtonAssist.CornerRadius="15"
-                            Background="DarkGray"
-                            BorderThickness="0"
-                            Command="{Binding AddOutputItemCommand}"
-                            CommandParameter="'{BarCode}'"
-                            Focusable="False"
-                            Style="{StaticResource MaterialDesignRaisedDarkButton}">
-                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.TableHeaderBarCode}" />
-                        </Button>
-                        <Button
-                            Height="30"
-                            Margin="5,0"
-                            materialDesign:ButtonAssist.CornerRadius="15"
-                            Background="DarkGray"
-                            BorderThickness="0"
-                            Command="{Binding AddOutputItemCommand}"
-                            CommandParameter="'{Weight}'"
-                            Focusable="False"
-                            Style="{StaticResource MaterialDesignRaisedDarkButton}">
-                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.TableHeaderWeight}" />
-                        </Button>
-                        <Button
-                            Height="30"
-                            Margin="5,0"
-                            materialDesign:ButtonAssist.CornerRadius="15"
-                            Background="DarkGray"
-                            BorderThickness="0"
-                            Command="{Binding AddOutputItemCommand}"
-                            CommandParameter="'{ScanTime}'"
-                            Focusable="False"
-                            Style="{StaticResource MaterialDesignRaisedDarkButton}">
-                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.TableHeaderScanTime}" />
-                        </Button>
-                        <Button
-                            Height="30"
-                            Margin="5,0"
-                            materialDesign:ButtonAssist.CornerRadius="15"
-                            Background="DarkGray"
-                            BorderThickness="0"
-                            Command="{Binding AddOutputItemCommand}"
-                            CommandParameter="'{TimestampedGuid}'"
-                            Focusable="False"
-                            Style="{StaticResource MaterialDesignRaisedDarkButton}">
-                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.TableHeaderTimestampGuid}" />
-                        </Button>
-                        <Button
-                            Height="30"
-                            Margin="5,0"
-                            materialDesign:ButtonAssist.CornerRadius="15"
-                            Background="DarkGray"
-                            BorderThickness="0"
-                            Command="{Binding AddOutputItemCommand}"
-                            CommandParameter="'{Length}'"
-                            Focusable="False"
-                            Style="{StaticResource MaterialDesignRaisedDarkButton}">
-                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.TableHeaderLength}" />
-                        </Button>
-                        <Button
-                            Height="30"
-                            Margin="5,0"
-                            materialDesign:ButtonAssist.CornerRadius="15"
-                            Background="DarkGray"
-                            BorderThickness="0"
-                            Command="{Binding AddOutputItemCommand}"
-                            CommandParameter="'{Width}'"
-                            Focusable="False"
-                            Style="{StaticResource MaterialDesignRaisedDarkButton}">
-                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.TableHeaderWidth}" />
-                        </Button>
-                        <Button
-                            Height="30"
-                            Margin="5,0"
-                            materialDesign:ButtonAssist.CornerRadius="15"
-                            Background="DarkGray"
-                            BorderThickness="0"
-                            Command="{Binding AddOutputItemCommand}"
-                            CommandParameter="'{Height}'"
-                            Focusable="False"
-                            Style="{StaticResource MaterialDesignRaisedDarkButton}">
-                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.TableHeaderHeight}" />
-                        </Button>
-                        <Button
-                            Height="30"
-                            Margin="5,0"
-                            materialDesign:ButtonAssist.CornerRadius="15"
-                            Background="DarkGray"
-                            BorderThickness="0"
-                            Command="{Binding AddOutputItemCommand}"
-                            CommandParameter="'{Volume}'"
-                            Focusable="False"
-                            Style="{StaticResource MaterialDesignRaisedDarkButton}">
-                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.TableHeaderVolume}" />
-                        </Button>
-                        <Button
-                            Height="30"
-                            Margin="5,0"
-                            materialDesign:ButtonAssist.CornerRadius="15"
-                            Background="DarkGray"
-                            BorderThickness="0"
-                            Command="{Binding AddOutputItemCommand}"
-                            CommandParameter="'{CameraSerialNumber}'"
-                            Focusable="False"
-                            Style="{StaticResource MaterialDesignRaisedDarkButton}">
-                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.TableHeaderSerialNumber}" />
-                        </Button>
-                    </StackPanel>
-                </StackPanel>
-                <Border
-                    Margin="50,10,0,5"
-                    HorizontalAlignment="Left"
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <!--  数据模板  -->
+        <StackPanel
+            Grid.Row="0"
+            Margin="5,0"
+            VerticalAlignment="Center"
+            Orientation="Vertical">
+            <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
+                <TextBlock
+                    Margin="0,0,0,1"
                     VerticalAlignment="Center"
-                    Background="#1A696969"
-                    CornerRadius="5">
-                    <Grid>
-                        <Border
-                            Width="50"
-                            Margin="2"
-                            HorizontalAlignment="Left"
-                            Background="DarkGray"
-                            CornerRadius="5">
-                            <TextBlock
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                FontFamily="{StaticResource CustomFontFamily}"
-                                FontSize="12"
-                                FontWeight="Bold"
-                                Foreground="#2E2E2E"
-                                Text="{x:Static languages:Language.Content}" />
-                        </Border>
-                        <ListView
-                            Width="820"
-                            Height="30"
-                            MaxWidth="900"
-                            Margin="60,0,0,0"
-                            Focusable="False"
-                            ItemTemplateSelector="{StaticResource ImageSettingItemDataTemplateSelectors}"
-                            ItemsSource="{Binding OutputItems, UpdateSourceTrigger=PropertyChanged}"
-                            ScrollViewer.HorizontalScrollBarVisibility="Hidden"
-                            ScrollViewer.VerticalScrollBarVisibility="Hidden"
-                            SelectionMode="Extended">
-                            <ListView.ItemContainerStyle>
-                                <Style TargetType="ListViewItem">
-                                    <Setter Property="Background" Value="Transparent" />
-                                    <Setter Property="Template">
-                                        <Setter.Value>
-                                            <ControlTemplate TargetType="ListViewItem">
-                                                <Border
-                                                    x:Name="Border"
-                                                    Background="{TemplateBinding Background}"
-                                                    BorderBrush="{TemplateBinding BorderBrush}"
-                                                    BorderThickness="1"
-                                                    SnapsToDevicePixels="True">
-                                                    <ContentPresenter
-                                                        HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                                        VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                                                        SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
-                                                </Border>
-                                                <ControlTemplate.Triggers>
-                                                    <Trigger Property="IsSelected" Value="True">
-                                                        <Setter TargetName="Border" Property="Background" Value="Transparent" />
-                                                        <Setter TargetName="Border" Property="BorderBrush" Value="Transparent" />
-                                                    </Trigger>
-                                                </ControlTemplate.Triggers>
-                                            </ControlTemplate>
-                                        </Setter.Value>
-                                    </Setter>
-                                </Style>
-                            </ListView.ItemContainerStyle>
-                            <ListView.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <StackPanel Background="Transparent" Orientation="Horizontal" />
-                                </ItemsPanelTemplate>
-                            </ListView.ItemsPanel>
-                        </ListView>
-                    </Grid>
-                </Border>
+                    FontFamily="{StaticResource IconFontFamily}"
+                    FontSize="18"
+                    FontWeight="Bold"
+                    Foreground="DarkGray"
+                    Text="&#xe6b6;" />
+                <TextBlock
+                    Margin="5,0"
+                    VerticalAlignment="Center"
+                    FontSize="16"
+                    FontWeight="Bold"
+                    Foreground="DarkGray"
+                    Text="{x:Static languages:Language.DataTemplate}" />
             </StackPanel>
-            <!--  上传配置  -->
-            <StackPanel
-                Grid.Row="1"
-                Margin="5,0"
-                VerticalAlignment="Center"
-                Orientation="Vertical">
-                <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
-                    <TextBlock
-                        Margin="0,0,0,1"
-                        VerticalAlignment="Center"
-                        FontFamily="{StaticResource IconFontFamily}"
-                        FontSize="20"
-                        Foreground="DarkGray"
-                        Text="&#x100cf;" />
-                    <TextBlock
+            <StackPanel Margin="50,10,0,0" Orientation="Horizontal">
+                <TextBlock
+                    Margin="5,0"
+                    VerticalAlignment="Center"
+                    FontSize="13"
+                    FontWeight="Bold"
+                    Foreground="DarkGray"
+                    Text="{x:Static languages:Language.OutputData}" />
+                <StackPanel Orientation="Horizontal">
+                    <Button
+                        Height="30"
                         Margin="5,0"
-                        VerticalAlignment="Center"
-                        FontSize="16"
-                        FontWeight="Bold"
-                        Foreground="DarkGray"
-                        Text="{x:Static languages:Language.OutputConfiguration}" />
-                </StackPanel>
-                <StackPanel Margin="50,5,0,0" Orientation="Horizontal">
-                    <StackPanel Orientation="Horizontal">
-                        <StackPanel Orientation="Horizontal">
-                            <!--  图标  -->
-                            <TextBlock
-                                Margin="5,0"
-                                VerticalAlignment="Center"
-                                FontSize="13"
-                                FontWeight="Bold"
-                                Foreground="DarkGray"
-                                Text="{x:Static languages:Language.RetryCount}" />
-                            <Border
-                                Margin="5"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                Background="#1A696969"
-                                CornerRadius="5">
-                                <TextBox
-                                    Width="80"
-                                    Height="30"
-                                    MaxWidth="500"
-                                    Margin="5,0"
-                                    materialDesign:TextFieldAssist.HasClearButton="False"
-                                    materialDesign:TextFieldAssist.HasFilledTextField="True"
-                                    Background="Transparent"
-                                    BorderThickness="0"
-                                    FontSize="13"
-                                    FontWeight="Bold"
-                                    Foreground="White"
-                                    InputMethod.IsInputMethodEnabled="False"
-                                    Text="{Binding UploadSettingsInfo.RetryCount, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-                            </Border>
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal">
-                            <!--  图标  -->
-                            <TextBlock
-                                Margin="5,0"
-                                VerticalAlignment="Center"
-                                FontSize="13"
-                                FontWeight="Bold"
-                                Foreground="DarkGray"
-                                Text="{x:Static languages:Language.OutputDelay}" />
-                            <Border
-                                Margin="5"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                Background="#1A696969"
-                                CornerRadius="5">
-                                <TextBox
-                                    Width="80"
-                                    Height="30"
-                                    MaxWidth="500"
-                                    Margin="5,0"
-                                    materialDesign:HintAssist.Hint="ms"
-                                    materialDesign:TextFieldAssist.HasClearButton="False"
-                                    materialDesign:TextFieldAssist.HasFilledTextField="True"
-                                    Background="Transparent"
-                                    BorderThickness="0"
-                                    FontSize="13"
-                                    FontWeight="Bold"
-                                    Foreground="White"
-                                    InputMethod.IsInputMethodEnabled="False"
-                                    Text="{Binding UploadSettingsInfo.SendDelay, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-                            </Border>
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal">
-                            <!--  图标  -->
-                            <TextBlock
-                                Margin="5,0"
-                                VerticalAlignment="Center"
-                                FontSize="13"
-                                FontWeight="Bold"
-                                Foreground="DarkGray"
-                                Text="{x:Static languages:Language.IsRetryOutput}" />
-                            <ToggleButton
-                                materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
-                                materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
-                                Focusable="False"
-                                IsChecked="{Binding UploadSettingsInfo.IsAutoUploadOnRestart, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                Style="{StaticResource MaterialDesignSwitchToggleButton}" />
-                        </StackPanel>
-                    </StackPanel>
-                </StackPanel>
-            </StackPanel>
-            <!--  Tcp输出  -->
-            <StackPanel
-                Grid.Row="2"
-                Margin="5,0"
-                VerticalAlignment="Center"
-                Orientation="Vertical">
-                <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
-                    <TextBlock
-                        Margin="0,0,0,1"
-                        VerticalAlignment="Center"
-                        FontFamily="{StaticResource IconFontFamily}"
-                        FontSize="20"
-                        Foreground="DarkGray"
-                        Text="&#xe62f;" />
-                    <TextBlock
-                        Margin="5,0"
-                        VerticalAlignment="Center"
-                        FontSize="16"
-                        FontWeight="Bold"
-                        Foreground="DarkGray"
-                        Text="{x:Static languages:Language.IsUseTCPOutput}" />
-                    <ToggleButton
-                        Name="TcpToggleButton"
-                        materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
-                        materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
+                        materialDesign:ButtonAssist.CornerRadius="15"
+                        Background="DarkGray"
+                        BorderThickness="0"
+                        Command="{Binding AddOutputItemCommand}"
+                        CommandParameter="'{BarCode}'"
                         Focusable="False"
-                        IsChecked="{Binding IsUseTcpOutput, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                        Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+                        Style="{StaticResource MaterialDesignRaisedDarkButton}">
+                        <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.TableHeaderBarCode}" />
+                    </Button>
+                    <Button
+                        Height="30"
+                        Margin="5,0"
+                        materialDesign:ButtonAssist.CornerRadius="15"
+                        Background="DarkGray"
+                        BorderThickness="0"
+                        Command="{Binding AddOutputItemCommand}"
+                        CommandParameter="'{Weight}'"
+                        Focusable="False"
+                        Style="{StaticResource MaterialDesignRaisedDarkButton}">
+                        <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.TableHeaderWeight}" />
+                    </Button>
+                    <Button
+                        Height="30"
+                        Margin="5,0"
+                        materialDesign:ButtonAssist.CornerRadius="15"
+                        Background="DarkGray"
+                        BorderThickness="0"
+                        Command="{Binding AddOutputItemCommand}"
+                        CommandParameter="'{ScanTime}'"
+                        Focusable="False"
+                        Style="{StaticResource MaterialDesignRaisedDarkButton}">
+                        <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.TableHeaderScanTime}" />
+                    </Button>
+                    <Button
+                        Height="30"
+                        Margin="5,0"
+                        materialDesign:ButtonAssist.CornerRadius="15"
+                        Background="DarkGray"
+                        BorderThickness="0"
+                        Command="{Binding AddOutputItemCommand}"
+                        CommandParameter="'{TimestampedGuid}'"
+                        Focusable="False"
+                        Style="{StaticResource MaterialDesignRaisedDarkButton}">
+                        <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.TableHeaderTimestampGuid}" />
+                    </Button>
+                    <Button
+                        Height="30"
+                        Margin="5,0"
+                        materialDesign:ButtonAssist.CornerRadius="15"
+                        Background="DarkGray"
+                        BorderThickness="0"
+                        Command="{Binding AddOutputItemCommand}"
+                        CommandParameter="'{Length}'"
+                        Focusable="False"
+                        Style="{StaticResource MaterialDesignRaisedDarkButton}">
+                        <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.TableHeaderLength}" />
+                    </Button>
+                    <Button
+                        Height="30"
+                        Margin="5,0"
+                        materialDesign:ButtonAssist.CornerRadius="15"
+                        Background="DarkGray"
+                        BorderThickness="0"
+                        Command="{Binding AddOutputItemCommand}"
+                        CommandParameter="'{Width}'"
+                        Focusable="False"
+                        Style="{StaticResource MaterialDesignRaisedDarkButton}">
+                        <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.TableHeaderWidth}" />
+                    </Button>
+                    <Button
+                        Height="30"
+                        Margin="5,0"
+                        materialDesign:ButtonAssist.CornerRadius="15"
+                        Background="DarkGray"
+                        BorderThickness="0"
+                        Command="{Binding AddOutputItemCommand}"
+                        CommandParameter="'{Height}'"
+                        Focusable="False"
+                        Style="{StaticResource MaterialDesignRaisedDarkButton}">
+                        <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.TableHeaderHeight}" />
+                    </Button>
+                    <Button
+                        Height="30"
+                        Margin="5,0"
+                        materialDesign:ButtonAssist.CornerRadius="15"
+                        Background="DarkGray"
+                        BorderThickness="0"
+                        Command="{Binding AddOutputItemCommand}"
+                        CommandParameter="'{Volume}'"
+                        Focusable="False"
+                        Style="{StaticResource MaterialDesignRaisedDarkButton}">
+                        <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.TableHeaderVolume}" />
+                    </Button>
+                    <Button
+                        Height="30"
+                        Margin="5,0"
+                        materialDesign:ButtonAssist.CornerRadius="15"
+                        Background="DarkGray"
+                        BorderThickness="0"
+                        Command="{Binding AddOutputItemCommand}"
+                        CommandParameter="'{CameraSerialNumber}'"
+                        Focusable="False"
+                        Style="{StaticResource MaterialDesignRaisedDarkButton}">
+                        <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.TableHeaderSerialNumber}" />
+                    </Button>
                 </StackPanel>
-                <StackPanel
-                    Margin="50,5,0,0"
-                    IsEnabled="{Binding ElementName=TcpToggleButton, Path=IsChecked}"
-                    Orientation="Horizontal"
-                    Visibility="{Binding ElementName=TcpToggleButton, Path=IsChecked, Converter={StaticResource BooleanToVisibilityConverter}}">
-
-                    <StackPanel Orientation="Vertical">
-                        <!--  使用Tcp服务端  -->
-                        <RadioButton
-                            Content="{x:Static languages:Language.IsUseTCPServer}"
-                            Focusable="False"
-                            FontSize="13"
+            </StackPanel>
+            <Border
+                Margin="50,10,0,5"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                Background="#1A696969"
+                CornerRadius="5">
+                <Grid>
+                    <Border
+                        Width="50"
+                        Margin="2"
+                        HorizontalAlignment="Left"
+                        Background="DarkGray"
+                        CornerRadius="5">
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontFamily="{StaticResource CustomFontFamily}"
+                            FontSize="12"
                             FontWeight="Bold"
-                            Foreground="DarkGray"
-                            IsChecked="{Binding TcpSettingsInfo.ConnectionMode, Converter={StaticResource TcpConnectionModeToBooleanConverter}, ConverterParameter=Server}"
-                            Template="{StaticResource CustomRadioButtonTemplate}" />
-                        <StackPanel Margin="50,0,0,0" Orientation="Horizontal">
-                            <StackPanel Orientation="Horizontal">
-                                <!--  图标  -->
-                                <TextBlock
-                                    Margin="5,0"
-                                    VerticalAlignment="Center"
-                                    FontSize="13"
-                                    FontWeight="Bold"
-                                    Foreground="DarkGray"
-                                    Text="{x:Static languages:Language.IPAddress}" />
-                                <Border
-                                    Margin="5"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    Background="#1A696969"
-                                    CornerRadius="5">
-                                    <TextBox
-                                        Width="100"
-                                        Height="30"
-                                        MaxWidth="500"
-                                        Margin="5,0"
-                                        materialDesign:TextFieldAssist.HasClearButton="False"
-                                        materialDesign:TextFieldAssist.HasFilledTextField="True"
-                                        Background="Transparent"
-                                        BorderThickness="0"
-                                        FontSize="13"
-                                        FontWeight="Bold"
-                                        Foreground="White"
-                                        InputMethod.IsInputMethodEnabled="False"
-                                        IsReadOnly="True"
-                                        Text="{Binding TcpSettingsInfo.ServerConfig.IpAddress, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-                                </Border>
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal">
-                                <!--  图标  -->
-                                <TextBlock
-                                    Margin="5,0"
-                                    VerticalAlignment="Center"
-                                    FontSize="13"
-                                    FontWeight="Bold"
-                                    Foreground="DarkGray"
-                                    Text="{x:Static languages:Language.Port}" />
-                                <Border
-                                    Margin="5"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    Background="#1A696969"
-                                    CornerRadius="5">
-                                    <TextBox
-                                        Width="80"
-                                        Height="30"
-                                        MaxWidth="500"
-                                        Margin="5,0"
-                                        materialDesign:TextFieldAssist.HasClearButton="False"
-                                        materialDesign:TextFieldAssist.HasFilledTextField="True"
-                                        Background="Transparent"
-                                        BorderThickness="0"
-                                        FontSize="13"
-                                        FontWeight="Bold"
-                                        Foreground="White"
-                                        InputMethod.IsInputMethodEnabled="False"
-                                        Text="{Binding TcpSettingsInfo.ServerConfig.Port, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-                                </Border>
-                            </StackPanel>
-                        </StackPanel>
-                        <!--  使用Tcp客户端  -->
-                        <RadioButton
-                            Content="{x:Static languages:Language.IsUseTCPClient}"
-                            Focusable="False"
-                            FontSize="13"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            IsChecked="{Binding TcpSettingsInfo.ConnectionMode, Converter={StaticResource TcpConnectionModeToBooleanConverter}, ConverterParameter=Client}"
-                            Template="{StaticResource CustomRadioButtonTemplate}" />
-                        <StackPanel Margin="50,0,0,0" Orientation="Horizontal">
-                            <StackPanel Orientation="Horizontal">
-                                <!--  图标  -->
-                                <TextBlock
-                                    Margin="5,0"
-                                    VerticalAlignment="Center"
-                                    FontSize="13"
-                                    FontWeight="Bold"
-                                    Foreground="DarkGray"
-                                    Text="{x:Static languages:Language.IPAddress}" />
-                                <Border
-                                    Margin="5"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    Background="#1A696969"
-                                    CornerRadius="5">
-                                    <TextBox
-                                        Width="100"
-                                        Height="30"
-                                        MaxWidth="500"
-                                        Margin="5,0"
-                                        materialDesign:TextFieldAssist.HasClearButton="False"
-                                        materialDesign:TextFieldAssist.HasFilledTextField="True"
-                                        Background="Transparent"
-                                        BorderThickness="0"
-                                        FontSize="13"
-                                        FontWeight="Bold"
-                                        Foreground="White"
-                                        InputMethod.IsInputMethodEnabled="False">
-                                        <TextBox.Text>
-                                            <Binding
-                                                Mode="TwoWay"
-                                                Path="TcpSettingsInfo.ClientConfig.IpAddress"
-                                                UpdateSourceTrigger="PropertyChanged">
-                                                <Binding.ValidationRules>
-                                                    <validationRules:RegexValidationRule ErrorMessage="请输入有效的 IP 地址" Pattern="^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$" />
-                                                </Binding.ValidationRules>
-                                            </Binding>
-                                        </TextBox.Text>
-                                    </TextBox>
-                                </Border>
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal">
-                                <!--  图标  -->
-                                <TextBlock
-                                    Margin="5,0"
-                                    VerticalAlignment="Center"
-                                    FontSize="13"
-                                    FontWeight="Bold"
-                                    Foreground="DarkGray"
-                                    Text="{x:Static languages:Language.Port}" />
-                                <Border
-                                    Margin="5"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    Background="#1A696969"
-                                    CornerRadius="5">
-                                    <TextBox
-                                        Width="80"
-                                        Height="30"
-                                        MaxWidth="500"
-                                        Margin="5,0"
-                                        materialDesign:TextFieldAssist.HasClearButton="False"
-                                        materialDesign:TextFieldAssist.HasFilledTextField="True"
-                                        Background="Transparent"
-                                        BorderThickness="0"
-                                        FontSize="13"
-                                        FontWeight="Bold"
-                                        Foreground="White"
-                                        InputMethod.IsInputMethodEnabled="False"
-                                        Text="{Binding TcpSettingsInfo.ClientConfig.Port, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-                                </Border>
-                            </StackPanel>
-                        </StackPanel>
-                    </StackPanel>
-                </StackPanel>
+                            Foreground="#2E2E2E"
+                            Text="{x:Static languages:Language.Content}" />
+                    </Border>
+                    <ListView
+                        Width="820"
+                        Height="30"
+                        MaxWidth="900"
+                        Margin="60,0,0,0"
+                        Focusable="False"
+                        ItemTemplateSelector="{StaticResource ImageSettingItemDataTemplateSelectors}"
+                        ItemsSource="{Binding OutputItems, UpdateSourceTrigger=PropertyChanged}"
+                        ScrollViewer.HorizontalScrollBarVisibility="Hidden"
+                        ScrollViewer.VerticalScrollBarVisibility="Hidden"
+                        SelectionMode="Extended">
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="ListViewItem">
+                                <Setter Property="Background" Value="Transparent" />
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="ListViewItem">
+                                            <Border
+                                                x:Name="Border"
+                                                Background="{TemplateBinding Background}"
+                                                BorderBrush="{TemplateBinding BorderBrush}"
+                                                BorderThickness="1"
+                                                SnapsToDevicePixels="True">
+                                                <ContentPresenter
+                                                    HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                    VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                                    SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsSelected" Value="True">
+                                                    <Setter TargetName="Border" Property="Background" Value="Transparent" />
+                                                    <Setter TargetName="Border" Property="BorderBrush" Value="Transparent" />
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </ListView.ItemContainerStyle>
+                        <ListView.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Background="Transparent" Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                        </ListView.ItemsPanel>
+                    </ListView>
+                </Grid>
+            </Border>
+        </StackPanel>
+        <!--  上传配置  -->
+        <StackPanel
+            Grid.Row="1"
+            Margin="5,0"
+            VerticalAlignment="Center"
+            Orientation="Vertical">
+            <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
+                <TextBlock
+                    Margin="0,0,0,1"
+                    VerticalAlignment="Center"
+                    FontFamily="{StaticResource IconFontFamily}"
+                    FontSize="20"
+                    Foreground="DarkGray"
+                    Text="&#x100cf;" />
+                <TextBlock
+                    Margin="5,0"
+                    VerticalAlignment="Center"
+                    FontSize="16"
+                    FontWeight="Bold"
+                    Foreground="DarkGray"
+                    Text="{x:Static languages:Language.OutputConfiguration}" />
             </StackPanel>
-            <!--  串口输出  -->
-            <StackPanel
-                Grid.Row="4"
-                Margin="5,0"
-                VerticalAlignment="Center"
-                Orientation="Vertical">
-                <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
-                    <TextBlock
-                        Margin="0,0,0,1"
-                        VerticalAlignment="Center"
-                        FontFamily="{StaticResource IconFontFamily}"
-                        FontSize="20"
-                        Foreground="DarkGray"
-                        Text="&#xe62c;" />
-                    <TextBlock
-                        Margin="5,0"
-                        VerticalAlignment="Center"
-                        FontSize="16"
-                        FontWeight="Bold"
-                        Foreground="DarkGray"
-                        Text="{x:Static languages:Language.IsUseSerialPortOutput}" />
-                    <ToggleButton
-                        Name="SerialOutputToggleButton"
-                        materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
-                        materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
-                        Focusable="False"
-                        IsChecked="{Binding IsUseSerialOutput, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                        Style="{StaticResource MaterialDesignSwitchToggleButton}" />
-                </StackPanel>
-                <StackPanel
-                    Margin="50,5,0,10"
-                    IsEnabled="{Binding ElementName=SerialOutputToggleButton, Path=IsChecked}"
-                    Orientation="Vertical"
-                    Visibility="{Binding ElementName=SerialOutputToggleButton, Path=IsChecked, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <StackPanel Margin="50,5,0,0" Orientation="Horizontal">
+                <StackPanel Orientation="Horizontal">
                     <StackPanel Orientation="Horizontal">
-                        <StackPanel Orientation="Horizontal">
-                            <!--  图标  -->
-                            <TextBlock
-                                Margin="5,0"
-                                VerticalAlignment="Center"
-                                FontSize="13"
-                                FontWeight="Bold"
-                                Foreground="DarkGray"
-                                Text="{x:Static languages:Language.SerialPortName}" />
-                            <Border
-                                Margin="5"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                Background="#1A696969"
-                                CornerRadius="5">
-                                <ComboBox
-                                    Height="30"
-                                    MinWidth="115"
-                                    Padding="5,0"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    HorizontalContentAlignment="Center"
-                                    VerticalContentAlignment="Center"
-                                    materialDesign:ButtonAssist.CornerRadius="15"
-                                    materialDesign:ColorZoneAssist.Mode="Dark"
-                                    BorderThickness="0"
-                                    FontSize="12"
-                                    FontWeight="Bold"
-                                    Foreground="White"
-                                    ItemsSource="{Binding PortItems, UpdateSourceTrigger=PropertyChanged}"
-                                    SelectedItem="{Binding SelectedPort, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                    Style="{StaticResource MaterialDesignComboBox}" />
-                            </Border>
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal">
-                            <!--  图标  -->
-                            <TextBlock
-                                Margin="5,0"
-                                VerticalAlignment="Center"
-                                FontSize="13"
-                                FontWeight="Bold"
-                                Foreground="DarkGray"
-                                Text="{x:Static languages:Language.BaudRate}" />
-                            <Border
-                                Margin="5"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                Background="#1A696969"
-                                CornerRadius="5">
-                                <ComboBox
-                                    Height="30"
-                                    MinWidth="70"
-                                    Padding="5,0"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    HorizontalContentAlignment="Center"
-                                    VerticalContentAlignment="Center"
-                                    materialDesign:ButtonAssist.CornerRadius="15"
-                                    materialDesign:ColorZoneAssist.Mode="Dark"
-                                    BorderThickness="0"
-                                    FontSize="12"
-                                    FontWeight="Bold"
-                                    Foreground="White"
-                                    ItemsSource="{Binding BaudRateItems, UpdateSourceTrigger=PropertyChanged}"
-                                    SelectedItem="{Binding SelectBaudRate, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                    Style="{StaticResource MaterialDesignComboBox}" />
-                            </Border>
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal">
-                            <!--  图标  -->
-                            <TextBlock
-                                Margin="5,0"
-                                VerticalAlignment="Center"
-                                FontSize="13"
-                                FontWeight="Bold"
-                                Foreground="DarkGray"
-                                Text="{x:Static languages:Language.DataBits}" />
-                            <Border
-                                Margin="5"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                Background="#1A696969"
-                                CornerRadius="5">
-                                <ComboBox
-                                    Height="30"
-                                    MinWidth="70"
-                                    Padding="5,0"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    HorizontalContentAlignment="Center"
-                                    VerticalContentAlignment="Center"
-                                    materialDesign:ButtonAssist.CornerRadius="15"
-                                    materialDesign:ColorZoneAssist.Mode="Dark"
-                                    BorderThickness="0"
-                                    FontSize="12"
-                                    FontWeight="Bold"
-                                    Foreground="White"
-                                    ItemsSource="{Binding DataBitsItems, UpdateSourceTrigger=PropertyChanged}"
-                                    SelectedItem="{Binding SelectedDataBits, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                    Style="{StaticResource MaterialDesignComboBox}" />
-                            </Border>
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal">
-                            <!--  图标  -->
-                            <TextBlock
-                                Margin="5,0"
-                                VerticalAlignment="Center"
-                                FontSize="13"
-                                FontWeight="Bold"
-                                Foreground="DarkGray"
-                                Text="{x:Static languages:Language.ParityBit}" />
-                            <Border
-                                Margin="5"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                Background="#1A696969"
-                                CornerRadius="5">
-                                <ComboBox
-                                    Height="30"
-                                    MinWidth="80"
-                                    Padding="5,0"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    HorizontalContentAlignment="Center"
-                                    VerticalContentAlignment="Center"
-                                    materialDesign:ButtonAssist.CornerRadius="15"
-                                    materialDesign:ColorZoneAssist.Mode="Dark"
-                                    BorderThickness="0"
-                                    DisplayMemberPath="Name"
-                                    FontSize="12"
-                                    FontWeight="Bold"
-                                    Foreground="White"
-                                    ItemsSource="{Binding ParityItems, UpdateSourceTrigger=PropertyChanged}"
-                                    SelectedItem="{Binding SelectedParity, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                    SelectedValuePath="Value"
-                                    Style="{StaticResource MaterialDesignComboBox}" />
-                            </Border>
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal">
-                            <!--  图标  -->
-                            <TextBlock
-                                Margin="5,0"
-                                VerticalAlignment="Center"
-                                FontSize="13"
-                                FontWeight="Bold"
-                                Foreground="DarkGray"
-                                Text="{x:Static languages:Language.StopBits}" />
-                            <Border
-                                Margin="5"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                Background="#1A696969"
-                                CornerRadius="5">
-                                <ComboBox
-                                    Height="30"
-                                    MinWidth="80"
-                                    Padding="5,0"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    HorizontalContentAlignment="Center"
-                                    VerticalContentAlignment="Center"
-                                    materialDesign:ButtonAssist.CornerRadius="15"
-                                    materialDesign:ColorZoneAssist.Mode="Dark"
-                                    BorderThickness="0"
-                                    DisplayMemberPath="Name"
-                                    FontSize="12"
-                                    FontWeight="Bold"
-                                    Foreground="White"
-                                    ItemsSource="{Binding StopBitsItems, UpdateSourceTrigger=PropertyChanged}"
-                                    SelectedItem="{Binding SelectedStopBits, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                    SelectedValuePath="Value"
-                                    Style="{StaticResource MaterialDesignComboBox}" />
-                            </Border>
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal">
-                            <!--  图标  -->
-                            <TextBlock
-                                Margin="5,0"
-                                VerticalAlignment="Center"
-                                FontSize="13"
-                                FontWeight="Bold"
-                                Foreground="DarkGray"
-                                Text="{x:Static languages:Language.DataFormat}" />
-                            <Border
-                                Margin="5"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                Background="#1A696969"
-                                CornerRadius="5">
-                                <ComboBox
-                                    Height="30"
-                                    MinWidth="80"
-                                    Padding="5,0"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    HorizontalContentAlignment="Center"
-                                    VerticalContentAlignment="Center"
-                                    materialDesign:ButtonAssist.CornerRadius="15"
-                                    materialDesign:ColorZoneAssist.Mode="Dark"
-                                    BorderThickness="0"
-                                    DisplayMemberPath="Name"
-                                    FontSize="12"
-                                    FontWeight="Bold"
-                                    Foreground="White"
-                                    ItemsSource="{Binding DataFormatTypeItems, UpdateSourceTrigger=PropertyChanged}"
-                                    SelectedItem="{Binding SelectDataFormat, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                    SelectedValuePath="Value"
-                                    Style="{StaticResource MaterialDesignComboBox}" />
-                            </Border>
-                        </StackPanel>
-                    </StackPanel>
-                    <!--  使用模板数据输出  -->
-                    <RadioButton
-                        Margin="0,10"
-                        Content="使用模板数据输出"
-                        Focusable="False"
-                        FontSize="13"
-                        FontWeight="Bold"
-                        Foreground="DarkGray"
-                        IsChecked="{Binding SerialPortResultOutput.IsUseDataTemplateOutput, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                        Template="{StaticResource CustomRadioButtonTemplate}" />
-                    <!--  使用自定义输出  -->
-                    <RadioButton
-                        Name="IsUseCustomSerialPortOutputRadioButton"
-                        Content="使用自定义输出"
-                        Focusable="False"
-                        FontSize="13"
-                        FontWeight="Bold"
-                        Foreground="DarkGray"
-                        IsChecked="{Binding SerialPortResultOutput.IsUseCustomContentOutput, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                        Template="{StaticResource CustomRadioButtonTemplate}" />
-                    <StackPanel
-                        Margin="50,0,0,0"
-                        IsEnabled="{Binding ElementName=IsUseCustomSerialPortOutputRadioButton, Path=IsChecked}"
-                        Orientation="Horizontal"
-                        Visibility="{Binding ElementName=IsUseCustomSerialPortOutputRadioButton, Path=IsChecked, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <!--  图标  -->
                         <TextBlock
                             Margin="5,0"
                             VerticalAlignment="Center"
                             FontSize="13"
                             FontWeight="Bold"
                             Foreground="DarkGray"
-                            Text="自定义内容:" />
+                            Text="{x:Static languages:Language.RetryCount}" />
                         <Border
                             Margin="5"
                             HorizontalAlignment="Center"
@@ -893,7 +339,7 @@
                             Background="#1A696969"
                             CornerRadius="5">
                             <TextBox
-                                Width="480"
+                                Width="80"
                                 Height="30"
                                 MaxWidth="500"
                                 Margin="5,0"
@@ -905,518 +351,10 @@
                                 FontWeight="Bold"
                                 Foreground="White"
                                 InputMethod.IsInputMethodEnabled="False"
-                                Text="{Binding SerialPortResultOutput.CustomOutputContent, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                                Text="{Binding UploadSettingsInfo.RetryCount, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                         </Border>
                     </StackPanel>
-                </StackPanel>
-            </StackPanel>
-            <!--  音频输出  -->
-            <StackPanel
-                Grid.Row="5"
-                Margin="5,0"
-                VerticalAlignment="Center"
-                Orientation="Vertical">
-                <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
-                    <TextBlock
-                        Margin="0,0,0,1"
-                        VerticalAlignment="Center"
-                        FontFamily="{StaticResource IconFontFamily}"
-                        FontSize="20"
-                        Foreground="DarkGray"
-                        Text="&#xe6ff;" />
-                    <TextBlock
-                        Margin="5,0"
-                        VerticalAlignment="Center"
-                        FontSize="16"
-                        FontWeight="Bold"
-                        Foreground="DarkGray"
-                        Text="{x:Static languages:Language.IsUseAudioOutput}" />
-                    <ToggleButton
-                        Name="AudioOutputToggleButton"
-                        materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
-                        materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
-                        Focusable="False"
-                        IsChecked="{Binding IsUseAudioOutput, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                        Style="{StaticResource MaterialDesignSwitchToggleButton}" />
-                </StackPanel>
-                <StackPanel
-                    Margin="50,5,0,0"
-                    IsEnabled="{Binding ElementName=AudioOutputToggleButton, Path=IsChecked}"
-                    Orientation="Horizontal"
-                    Visibility="{Binding ElementName=AudioOutputToggleButton, Path=IsChecked, Converter={StaticResource BooleanToVisibilityConverter}}">
-                    <StackPanel Orientation="Vertical">
-                        <StackPanel Orientation="Horizontal">
-                            <StackPanel Orientation="Horizontal">
-                                <!--  图标  -->
-                                <TextBlock
-                                    Margin="5,0"
-                                    VerticalAlignment="Center"
-                                    FontSize="13"
-                                    FontWeight="Bold"
-                                    Foreground="DarkGray"
-                                    Text="{x:Static languages:Language.SuccessAudio}" />
-                                <Border
-                                    Margin="5"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    Background="#1A696969"
-                                    CornerRadius="5">
-                                    <ComboBox
-                                        Height="30"
-                                        MinWidth="120"
-                                        Padding="5,0"
-                                        HorizontalAlignment="Center"
-                                        VerticalAlignment="Center"
-                                        HorizontalContentAlignment="Center"
-                                        VerticalContentAlignment="Center"
-                                        materialDesign:ButtonAssist.CornerRadius="15"
-                                        materialDesign:ColorZoneAssist.Mode="Dark"
-                                        BorderThickness="0"
-                                        FontSize="12"
-                                        FontWeight="Bold"
-                                        Foreground="White"
-                                        ItemsSource="{Binding Sounds, UpdateSourceTrigger=PropertyChanged}"
-                                        SelectedItem="{Binding AudioOutputSettingsInfo.SuccessAudio}"
-                                        Style="{StaticResource MaterialDesignComboBox}" />
-                                </Border>
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal">
-                                <!--  图标  -->
-                                <TextBlock
-                                    Margin="5,0"
-                                    VerticalAlignment="Center"
-                                    FontSize="13"
-                                    FontWeight="Bold"
-                                    Foreground="DarkGray"
-                                    Text="{x:Static languages:Language.FailureAudio}" />
-                                <Border
-                                    Margin="5"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    Background="#1A696969"
-                                    CornerRadius="5">
-                                    <ComboBox
-                                        Height="30"
-                                        MinWidth="120"
-                                        Padding="5,0"
-                                        HorizontalAlignment="Center"
-                                        VerticalAlignment="Center"
-                                        HorizontalContentAlignment="Center"
-                                        VerticalContentAlignment="Center"
-                                        materialDesign:ButtonAssist.CornerRadius="15"
-                                        materialDesign:ColorZoneAssist.Mode="Dark"
-                                        BorderThickness="0"
-                                        FontSize="12"
-                                        FontWeight="Bold"
-                                        Foreground="White"
-                                        ItemsSource="{Binding Sounds, UpdateSourceTrigger=PropertyChanged}"
-                                        SelectedItem="{Binding AudioOutputSettingsInfo.FailureAudio}"
-                                        Style="{StaticResource MaterialDesignComboBox}" />
-                                </Border>
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal">
-                                <!--  图标  -->
-                                <TextBlock
-                                    Margin="5,0"
-                                    VerticalAlignment="Center"
-                                    FontSize="13"
-                                    FontWeight="Bold"
-                                    Foreground="DarkGray"
-                                    Text="{x:Static languages:Language.TriggerPosition}" />
-                                <Border
-                                    Margin="5"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    Background="#1A696969"
-                                    CornerRadius="5">
-                                    <ComboBox
-                                        Height="30"
-                                        MinWidth="100"
-                                        Padding="5,0"
-                                        HorizontalAlignment="Center"
-                                        VerticalAlignment="Center"
-                                        HorizontalContentAlignment="Center"
-                                        VerticalContentAlignment="Center"
-                                        materialDesign:ButtonAssist.CornerRadius="15"
-                                        materialDesign:ColorZoneAssist.Mode="Dark"
-                                        BorderThickness="0"
-                                        DisplayMemberPath="TriggerPositionName"
-                                        FontSize="12"
-                                        FontWeight="Bold"
-                                        Foreground="White"
-                                        ItemsSource="{Binding TriggerPositionItems, UpdateSourceTrigger=PropertyChanged}"
-                                        SelectedItem="{Binding SelectedTriggerPosition, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                        SelectedValuePath="TriggerPositionValue"
-                                        Style="{StaticResource MaterialDesignComboBox}" />
-                                </Border>
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal">
-                                <!--  图标  -->
-                                <TextBlock
-                                    Margin="5,0"
-                                    VerticalAlignment="Center"
-                                    FontSize="13"
-                                    FontWeight="Bold"
-                                    Foreground="DarkGray"
-                                    Text="{x:Static languages:Language.ResultEvaluation}" />
-                                <Border
-                                    Margin="5"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    Background="#1A696969"
-                                    CornerRadius="5">
-                                    <ComboBox
-                                        Height="30"
-                                        MinWidth="100"
-                                        Padding="5,0"
-                                        HorizontalAlignment="Center"
-                                        VerticalAlignment="Center"
-                                        HorizontalContentAlignment="Center"
-                                        VerticalContentAlignment="Center"
-                                        materialDesign:ButtonAssist.CornerRadius="15"
-                                        materialDesign:ColorZoneAssist.Mode="Dark"
-                                        BorderThickness="0"
-                                        DisplayMemberPath="ResultName"
-                                        FontSize="12"
-                                        FontWeight="Bold"
-                                        Foreground="White"
-                                        ItemsSource="{Binding TriggerPositionResultItems, UpdateSourceTrigger=PropertyChanged}"
-                                        SelectedItem="{Binding SelectedTriggerPositionResult, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                        SelectedValuePath="ResultValue"
-                                        Style="{StaticResource MaterialDesignComboBox}" />
-                                </Border>
-                            </StackPanel>
-                        </StackPanel>
-                        <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
-                            <TextBlock
-                                Margin="5,0"
-                                VerticalAlignment="Center"
-                                FontSize="13"
-                                FontWeight="Bold"
-                                Foreground="DarkGray"
-                                Text="{x:Static languages:Language.AddAudio}" />
-                            <Border
-                                Margin="5"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                Background="#1A696969"
-                                CornerRadius="5">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBox
-                                        Width="368"
-                                        Height="30"
-                                        MaxWidth="500"
-                                        Margin="5,0"
-                                        materialDesign:TextFieldAssist.HasClearButton="False"
-                                        materialDesign:TextFieldAssist.HasFilledTextField="True"
-                                        Background="Transparent"
-                                        BorderThickness="0"
-                                        FontSize="15"
-                                        FontWeight="Bold"
-                                        Foreground="White"
-                                        IsReadOnly="True"
-                                        Text="{Binding SoundFilePath, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-                                    <Button
-                                        Width="60"
-                                        MinHeight="30"
-                                        Margin="0"
-                                        HorizontalAlignment="Left"
-                                        materialDesign:ButtonAssist.CornerRadius="5"
-                                        Background="#2E2E2E"
-                                        BorderThickness="0"
-                                        Command="{Binding BrowseSoundFileCommand}"
-                                        FocusVisualStyle="{x:Null}"
-                                        Style="{StaticResource MaterialDesignFlatAccentBgButton}">
-                                        <TextBlock
-                                            Margin="2,1,0,0"
-                                            VerticalAlignment="Center"
-                                            FontFamily="{StaticResource CustomFontFamily}"
-                                            FontSize="14"
-                                            FontWeight="Bold"
-                                            Foreground="DarkGray"
-                                            Text="..." />
-                                    </Button>
-                                </StackPanel>
-                            </Border>
-                            <Button
-                                Width="70"
-                                MinHeight="30"
-                                Margin="5,0,0,0"
-                                HorizontalAlignment="Left"
-                                materialDesign:ButtonAssist.CornerRadius="5"
-                                Background="#2E2E2E"
-                                BorderThickness="0"
-                                Command="{Binding AddSoundFileCommand}"
-                                FocusVisualStyle="{x:Null}"
-                                Style="{StaticResource MaterialDesignFlatAccentBgButton}">
-                                <TextBlock
-                                    Margin="2,1,0,0"
-                                    VerticalAlignment="Center"
-                                    FontFamily="{StaticResource CustomFontFamily}"
-                                    FontSize="14"
-                                    FontWeight="Bold"
-                                    Foreground="DarkGray"
-                                    Text="{x:Static languages:Language.Add}" />
-                            </Button>
-                        </StackPanel>
-                    </StackPanel>
-                </StackPanel>
-            </StackPanel>
-            <!--  位置输出  -->
-            <StackPanel
-                Grid.Row="6"
-                Margin="5,0"
-                VerticalAlignment="Center"
-                Orientation="Vertical">
-                <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
-                    <TextBlock
-                        Margin="0,0,0,1"
-                        VerticalAlignment="Center"
-                        FontFamily="{StaticResource IconFontFamily}"
-                        FontSize="20"
-                        Foreground="DarkGray"
-                        Text="&#xe6f7;" />
-                    <TextBlock
-                        Margin="5,0"
-                        VerticalAlignment="Center"
-                        FontSize="16"
-                        FontWeight="Bold"
-                        Foreground="DarkGray"
-                        Text="{x:Static languages:Language.IsUsePositionOutput}" />
-                    <ToggleButton
-                        Name="LocationOutputToggleButton"
-                        materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
-                        materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
-                        Focusable="False"
-                        IsChecked="{Binding IsUseLocationOutput, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                        Style="{StaticResource MaterialDesignSwitchToggleButton}" />
-                </StackPanel>
-                <StackPanel
-                    Margin="50,5,0,0"
-                    IsEnabled="{Binding ElementName=LocationOutputToggleButton, Path=IsChecked}"
-                    Orientation="Horizontal"
-                    Visibility="{Binding ElementName=LocationOutputToggleButton, Path=IsChecked, Converter={StaticResource BooleanToVisibilityConverter}}">
-
-                    <StackPanel Orientation="Vertical">
-                        <!--  输出条码  -->
-                        <CheckBox
-                            materialDesign:CheckBoxAssist.CheckBoxSize="20"
-                            Content="{x:Static languages:Language.IsOutputBarcode}"
-                            Focusable="False"
-                            FontSize="13"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            IsChecked="{Binding LocationOutputSettingsInfo.IsOutputBarcode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-                        <StackPanel Margin="50,0,0,0" Orientation="Horizontal">
-                            <StackPanel Orientation="Horizontal">
-                                <!--  图标  -->
-                                <TextBlock
-                                    Margin="5,0"
-                                    VerticalAlignment="Center"
-                                    FontSize="13"
-                                    FontWeight="Bold"
-                                    Foreground="DarkGray"
-                                    Text="{x:Static languages:Language.BarcodePoints}" />
-                                <Border
-                                    Margin="5"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    Background="#1A696969"
-                                    CornerRadius="5">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBox
-                                            Width="80"
-                                            Height="30"
-                                            MaxWidth="500"
-                                            Margin="5,0"
-                                            materialDesign:TextFieldAssist.HasClearButton="False"
-                                            materialDesign:TextFieldAssist.HasFilledTextField="True"
-                                            Background="Transparent"
-                                            BorderThickness="0"
-                                            FontSize="13"
-                                            FontWeight="Bold"
-                                            Foreground="White"
-                                            InputMethod.IsInputMethodEnabled="False"
-                                            IsReadOnly="True"
-                                            Text="{Binding LocationOutputSettingsInfo.BarcodeOutputPosition, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-                                        <Button
-                                            Width="60"
-                                            MinHeight="30"
-                                            Margin="5,0,0,0"
-                                            HorizontalAlignment="Left"
-                                            materialDesign:ButtonAssist.CornerRadius="5"
-                                            Background="#2E2E2E"
-                                            BorderThickness="0"
-                                            Command="{Binding OpenFolderCommand}"
-                                            FocusVisualStyle="{x:Null}"
-                                            Style="{StaticResource MaterialDesignFlatAccentBgButton}">
-                                            <TextBlock
-                                                Margin="2,1,0,0"
-                                                VerticalAlignment="Center"
-                                                FontFamily="{StaticResource IconFontFamily}"
-                                                FontSize="25"
-                                                Foreground="DarkGray"
-                                                Text="&#xe6f8;" />
-                                        </Button>
-                                    </StackPanel>
-                                </Border>
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal">
-                                <!--  图标  -->
-                                <TextBlock
-                                    Margin="5,0"
-                                    VerticalAlignment="Center"
-                                    FontSize="13"
-                                    FontWeight="Bold"
-                                    Foreground="DarkGray"
-                                    Text="{x:Static languages:Language.KeyPressAfterOutputtingBarcode}" />
-                                <Border
-                                    Margin="5"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    Background="#1A696969"
-                                    CornerRadius="5">
-                                    <TextBox
-                                        Width="80"
-                                        Height="30"
-                                        MaxWidth="500"
-                                        Margin="5,0"
-                                        materialDesign:TextFieldAssist.HasClearButton="True"
-                                        Background="Transparent"
-                                        BorderThickness="0"
-                                        FontSize="13"
-                                        FontWeight="Bold"
-                                        Foreground="White"
-                                        InputMethod.IsInputMethodEnabled="False"
-                                        IsReadOnly="True"
-                                        Text="{Binding LocationOutputSettingsInfo.BarcodeOutputKey, UpdateSourceTrigger=PropertyChanged}">
-                                        <b:Interaction.Triggers>
-                                            <b:EventTrigger EventName="PreviewKeyDown">
-                                                <mvvm:InvokeCommandAction Command="{Binding BarCodeKeyDownCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type TextBox}}, Path=KeyEventArgs}" />
-                                            </b:EventTrigger>
-                                        </b:Interaction.Triggers>
-                                    </TextBox>
-                                </Border>
-                            </StackPanel>
-                        </StackPanel>
-                        <!--  输出重量  -->
-                        <CheckBox
-                            materialDesign:CheckBoxAssist.CheckBoxSize="20"
-                            Content="{x:Static languages:Language.IsOutputWeight}"
-                            Focusable="False"
-                            FontSize="13"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            IsChecked="{Binding LocationOutputSettingsInfo.IsOutputWeight, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-                        <StackPanel Margin="50,0,0,0" Orientation="Horizontal">
-                            <StackPanel Orientation="Horizontal">
-                                <!--  图标  -->
-                                <TextBlock
-                                    Margin="5,0"
-                                    VerticalAlignment="Center"
-                                    FontSize="13"
-                                    FontWeight="Bold"
-                                    Foreground="DarkGray"
-                                    Text="{x:Static languages:Language.WeightPoints}" />
-                                <Border
-                                    Margin="5"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    Background="#1A696969"
-                                    CornerRadius="5">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBox
-                                            Width="80"
-                                            Height="30"
-                                            MaxWidth="500"
-                                            Margin="5,0"
-                                            materialDesign:TextFieldAssist.HasClearButton="False"
-                                            materialDesign:TextFieldAssist.HasFilledTextField="True"
-                                            Background="Transparent"
-                                            BorderThickness="0"
-                                            FontSize="13"
-                                            FontWeight="Bold"
-                                            Foreground="White"
-                                            InputMethod.IsInputMethodEnabled="False"
-                                            IsReadOnly="True"
-                                            Text="{Binding LocationOutputSettingsInfo.WeightOutputPosition, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-                                        <Button
-                                            Width="60"
-                                            MinHeight="30"
-                                            Margin="5,0,0,0"
-                                            HorizontalAlignment="Left"
-                                            materialDesign:ButtonAssist.CornerRadius="5"
-                                            Background="#2E2E2E"
-                                            BorderThickness="0"
-                                            Command="{Binding OpenFolderCommand}"
-                                            FocusVisualStyle="{x:Null}"
-                                            Style="{StaticResource MaterialDesignFlatAccentBgButton}">
-                                            <TextBlock
-                                                Margin="2,1,0,0"
-                                                VerticalAlignment="Center"
-                                                FontFamily="{StaticResource IconFontFamily}"
-                                                FontSize="25"
-                                                Foreground="DarkGray"
-                                                Text="&#xe6f8;" />
-                                        </Button>
-                                    </StackPanel>
-                                </Border>
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal">
-                                <!--  图标  -->
-                                <TextBlock
-                                    Margin="5,0"
-                                    VerticalAlignment="Center"
-                                    FontSize="13"
-                                    FontWeight="Bold"
-                                    Foreground="DarkGray"
-                                    Text="{x:Static languages:Language.KeyPressAfterOutputtingWeight}" />
-                                <Border
-                                    Margin="5"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    Background="#1A696969"
-                                    CornerRadius="5">
-                                    <TextBox
-                                        Width="80"
-                                        Height="30"
-                                        MaxWidth="500"
-                                        Margin="5,0"
-                                        materialDesign:TextFieldAssist.HasClearButton="True"
-                                        Background="Transparent"
-                                        BorderThickness="0"
-                                        FontSize="13"
-                                        FontWeight="Bold"
-                                        Foreground="White"
-                                        InputMethod.IsInputMethodEnabled="False"
-                                        IsReadOnly="True"
-                                        Text="{Binding LocationOutputSettingsInfo.WeightOutputKey, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
-                                        <b:Interaction.Triggers>
-                                            <b:EventTrigger EventName="PreviewKeyDown">
-                                                <mvvm:InvokeCommandAction Command="{Binding WeightKeyDownCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type TextBox}}, Path=KeyEventArgs}" />
-                                            </b:EventTrigger>
-                                        </b:Interaction.Triggers>
-                                    </TextBox>
-                                </Border>
-                            </StackPanel>
-                        </StackPanel>
-                    </StackPanel>
-                </StackPanel>
-                <StackPanel
-                    Margin="50,5,0,0"
-                    IsEnabled="{Binding ElementName=LocationOutputToggleButton, Path=IsChecked}"
-                    Orientation="Horizontal"
-                    Visibility="{Binding ElementName=LocationOutputToggleButton, Path=IsChecked, Converter={StaticResource BooleanToVisibilityConverter}}">
-                    <!--  是否先输出重量  -->
-                    <CheckBox
-                        materialDesign:CheckBoxAssist.CheckBoxSize="20"
-                        Content="{x:Static languages:Language.IsPrioritizeWeightOutput}"
-                        Focusable="False"
-                        FontSize="13"
-                        FontWeight="Bold"
-                        Foreground="DarkGray"
-                        IsChecked="{Binding LocationOutputSettingsInfo.IsOutputWeightFirst, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-                    <StackPanel Margin="30,0,0,0" Orientation="Horizontal">
+                    <StackPanel Orientation="Horizontal">
                         <!--  图标  -->
                         <TextBlock
                             Margin="5,0"
@@ -1432,7 +370,7 @@
                             Background="#1A696969"
                             CornerRadius="5">
                             <TextBox
-                                Width="60"
+                                Width="80"
                                 Height="30"
                                 MaxWidth="500"
                                 Margin="5,0"
@@ -1445,91 +383,1065 @@
                                 FontWeight="Bold"
                                 Foreground="White"
                                 InputMethod.IsInputMethodEnabled="False"
-                                Text="{Binding LocationOutputSettingsInfo.OperationDelay, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                                Text="{Binding UploadSettingsInfo.SendDelay, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                         </Border>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <!--  图标  -->
+                        <TextBlock
+                            Margin="5,0"
+                            VerticalAlignment="Center"
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="DarkGray"
+                            Text="{x:Static languages:Language.IsRetryOutput}" />
+                        <ToggleButton
+                            materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
+                            materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
+                            Focusable="False"
+                            IsChecked="{Binding UploadSettingsInfo.IsAutoUploadOnRestart, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                            Style="{StaticResource MaterialDesignSwitchToggleButton}" />
                     </StackPanel>
                 </StackPanel>
             </StackPanel>
-            <!--  保存设置  -->
-            <Button
-                Grid.Row="7"
-                Grid.Column="0"
-                MinHeight="30"
-                Margin="30,10"
-                HorizontalAlignment="Left"
-                materialDesign:ButtonAssist.CornerRadius="5"
-                Background="#2E2E2E"
-                BorderThickness="0"
-                Command="{Binding SaveSettingsCommand}"
-                FocusVisualStyle="{x:Null}"
-                Style="{StaticResource MaterialDesignFlatAccentBgButton}">
+        </StackPanel>
+        <!--  Tcp输出  -->
+        <StackPanel
+            Grid.Row="2"
+            Margin="5,0"
+            VerticalAlignment="Center"
+            Orientation="Vertical">
+            <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
+                <TextBlock
+                    Margin="0,0,0,1"
+                    VerticalAlignment="Center"
+                    FontFamily="{StaticResource IconFontFamily}"
+                    FontSize="20"
+                    Foreground="DarkGray"
+                    Text="&#xe62f;" />
+                <TextBlock
+                    Margin="5,0"
+                    VerticalAlignment="Center"
+                    FontSize="16"
+                    FontWeight="Bold"
+                    Foreground="DarkGray"
+                    Text="{x:Static languages:Language.IsUseTCPOutput}" />
+                <ToggleButton
+                    Name="TcpToggleButton"
+                    materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
+                    materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
+                    Focusable="False"
+                    IsChecked="{Binding IsUseTcpOutput, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                    Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+            </StackPanel>
+            <StackPanel
+                Margin="50,5,0,0"
+                IsEnabled="{Binding ElementName=TcpToggleButton, Path=IsChecked}"
+                Orientation="Horizontal"
+                Visibility="{Binding ElementName=TcpToggleButton, Path=IsChecked, Converter={StaticResource BooleanToVisibilityConverter}}">
 
-                <Grid>
+                <StackPanel Orientation="Vertical">
+                    <!--  使用Tcp服务端  -->
+                    <RadioButton
+                        Content="{x:Static languages:Language.IsUseTCPServer}"
+                        Focusable="False"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        IsChecked="{Binding TcpSettingsInfo.ConnectionMode, Converter={StaticResource TcpConnectionModeToBooleanConverter}, ConverterParameter=Server}"
+                        Template="{StaticResource CustomRadioButtonTemplate}" />
+                    <StackPanel Margin="50,0,0,0" Orientation="Horizontal">
+                        <StackPanel Orientation="Horizontal">
+                            <!--  图标  -->
+                            <TextBlock
+                                Margin="5,0"
+                                VerticalAlignment="Center"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                Text="{x:Static languages:Language.IPAddress}" />
+                            <Border
+                                Margin="5"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Background="#1A696969"
+                                CornerRadius="5">
+                                <TextBox
+                                    Width="100"
+                                    Height="30"
+                                    MaxWidth="500"
+                                    Margin="5,0"
+                                    materialDesign:TextFieldAssist.HasClearButton="False"
+                                    materialDesign:TextFieldAssist.HasFilledTextField="True"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    FontSize="13"
+                                    FontWeight="Bold"
+                                    Foreground="White"
+                                    InputMethod.IsInputMethodEnabled="False"
+                                    IsReadOnly="True"
+                                    Text="{Binding TcpSettingsInfo.ServerConfig.IpAddress, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                            </Border>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <!--  图标  -->
+                            <TextBlock
+                                Margin="5,0"
+                                VerticalAlignment="Center"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                Text="{x:Static languages:Language.Port}" />
+                            <Border
+                                Margin="5"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Background="#1A696969"
+                                CornerRadius="5">
+                                <TextBox
+                                    Width="80"
+                                    Height="30"
+                                    MaxWidth="500"
+                                    Margin="5,0"
+                                    materialDesign:TextFieldAssist.HasClearButton="False"
+                                    materialDesign:TextFieldAssist.HasFilledTextField="True"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    FontSize="13"
+                                    FontWeight="Bold"
+                                    Foreground="White"
+                                    InputMethod.IsInputMethodEnabled="False"
+                                    Text="{Binding TcpSettingsInfo.ServerConfig.Port, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                            </Border>
+                        </StackPanel>
+                    </StackPanel>
+                    <!--  使用Tcp客户端  -->
+                    <RadioButton
+                        Content="{x:Static languages:Language.IsUseTCPClient}"
+                        Focusable="False"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        IsChecked="{Binding TcpSettingsInfo.ConnectionMode, Converter={StaticResource TcpConnectionModeToBooleanConverter}, ConverterParameter=Client}"
+                        Template="{StaticResource CustomRadioButtonTemplate}" />
+                    <StackPanel Margin="50,0,0,0" Orientation="Horizontal">
+                        <StackPanel Orientation="Horizontal">
+                            <!--  图标  -->
+                            <TextBlock
+                                Margin="5,0"
+                                VerticalAlignment="Center"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                Text="{x:Static languages:Language.IPAddress}" />
+                            <Border
+                                Margin="5"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Background="#1A696969"
+                                CornerRadius="5">
+                                <TextBox
+                                    Width="100"
+                                    Height="30"
+                                    MaxWidth="500"
+                                    Margin="5,0"
+                                    materialDesign:TextFieldAssist.HasClearButton="False"
+                                    materialDesign:TextFieldAssist.HasFilledTextField="True"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    FontSize="13"
+                                    FontWeight="Bold"
+                                    Foreground="White"
+                                    InputMethod.IsInputMethodEnabled="False">
+                                    <TextBox.Text>
+                                        <Binding
+                                            Mode="TwoWay"
+                                            Path="TcpSettingsInfo.ClientConfig.IpAddress"
+                                            UpdateSourceTrigger="PropertyChanged">
+                                            <Binding.ValidationRules>
+                                                <validationRules:RegexValidationRule ErrorMessage="请输入有效的 IP 地址" Pattern="^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$" />
+                                            </Binding.ValidationRules>
+                                        </Binding>
+                                    </TextBox.Text>
+                                </TextBox>
+                            </Border>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <!--  图标  -->
+                            <TextBlock
+                                Margin="5,0"
+                                VerticalAlignment="Center"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                Text="{x:Static languages:Language.Port}" />
+                            <Border
+                                Margin="5"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Background="#1A696969"
+                                CornerRadius="5">
+                                <TextBox
+                                    Width="80"
+                                    Height="30"
+                                    MaxWidth="500"
+                                    Margin="5,0"
+                                    materialDesign:TextFieldAssist.HasClearButton="False"
+                                    materialDesign:TextFieldAssist.HasFilledTextField="True"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    FontSize="13"
+                                    FontWeight="Bold"
+                                    Foreground="White"
+                                    InputMethod.IsInputMethodEnabled="False"
+                                    Text="{Binding TcpSettingsInfo.ClientConfig.Port, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                            </Border>
+                        </StackPanel>
+                    </StackPanel>
+                </StackPanel>
+            </StackPanel>
+        </StackPanel>
+        <!--  串口输出  -->
+        <StackPanel
+            Grid.Row="4"
+            Margin="5,0"
+            VerticalAlignment="Center"
+            Orientation="Vertical">
+            <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
+                <TextBlock
+                    Margin="0,0,0,1"
+                    VerticalAlignment="Center"
+                    FontFamily="{StaticResource IconFontFamily}"
+                    FontSize="20"
+                    Foreground="DarkGray"
+                    Text="&#xe62c;" />
+                <TextBlock
+                    Margin="5,0"
+                    VerticalAlignment="Center"
+                    FontSize="16"
+                    FontWeight="Bold"
+                    Foreground="DarkGray"
+                    Text="{x:Static languages:Language.IsUseSerialPortOutput}" />
+                <ToggleButton
+                    Name="SerialOutputToggleButton"
+                    materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
+                    materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
+                    Focusable="False"
+                    IsChecked="{Binding IsUseSerialOutput, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                    Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+            </StackPanel>
+            <StackPanel
+                Margin="50,5,0,10"
+                IsEnabled="{Binding ElementName=SerialOutputToggleButton, Path=IsChecked}"
+                Orientation="Vertical"
+                Visibility="{Binding ElementName=SerialOutputToggleButton, Path=IsChecked, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <StackPanel Orientation="Horizontal">
                     <StackPanel Orientation="Horizontal">
+                        <!--  图标  -->
                         <TextBlock
-                            Margin="0,0,0,0"
+                            Margin="5,0"
                             VerticalAlignment="Center"
-                            FontFamily="{StaticResource IconFontFamily}"
-                            FontSize="18"
-                            Foreground="DarkGray"
-                            Text="&#xe66e;" />
-                        <TextBlock
-                            Margin="2,1,0,0"
-                            VerticalAlignment="Center"
-                            FontFamily="{StaticResource CustomFontFamily}"
-                            FontSize="14"
+                            FontSize="13"
                             FontWeight="Bold"
                             Foreground="DarkGray"
-                            Text="{x:Static languages:Language.SaveSettings}" />
-                        <StackPanel.Style>
-                            <Style TargetType="StackPanel">
-                                <Setter Property="Visibility" Value="Visible" />
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsSavingInProgress}" Value="True">
-                                        <Setter Property="Visibility" Value="Hidden" />
-                                    </DataTrigger>
-                                    <DataTrigger Binding="{Binding IsSavingInProgress}" Value="False">
-                                        <Setter Property="Visibility" Value="Visible" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </StackPanel.Style>
+                            Text="{x:Static languages:Language.SerialPortName}" />
+                        <Border
+                            Margin="5"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Background="#1A696969"
+                            CornerRadius="5">
+                            <ComboBox
+                                Height="30"
+                                MinWidth="115"
+                                Padding="5,0"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                HorizontalContentAlignment="Center"
+                                VerticalContentAlignment="Center"
+                                materialDesign:ButtonAssist.CornerRadius="15"
+                                materialDesign:ColorZoneAssist.Mode="Dark"
+                                BorderThickness="0"
+                                FontSize="12"
+                                FontWeight="Bold"
+                                Foreground="White"
+                                ItemsSource="{Binding PortItems, UpdateSourceTrigger=PropertyChanged}"
+                                SelectedItem="{Binding SelectedPort, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                Style="{StaticResource MaterialDesignComboBox}" />
+                        </Border>
                     </StackPanel>
-                    <ProgressBar
-                        Name="StatusProgressBar"
-                        Width="25"
-                        Height="25"
+                    <StackPanel Orientation="Horizontal">
+                        <!--  图标  -->
+                        <TextBlock
+                            Margin="5,0"
+                            VerticalAlignment="Center"
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="DarkGray"
+                            Text="{x:Static languages:Language.BaudRate}" />
+                        <Border
+                            Margin="5"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Background="#1A696969"
+                            CornerRadius="5">
+                            <ComboBox
+                                Height="30"
+                                MinWidth="70"
+                                Padding="5,0"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                HorizontalContentAlignment="Center"
+                                VerticalContentAlignment="Center"
+                                materialDesign:ButtonAssist.CornerRadius="15"
+                                materialDesign:ColorZoneAssist.Mode="Dark"
+                                BorderThickness="0"
+                                FontSize="12"
+                                FontWeight="Bold"
+                                Foreground="White"
+                                ItemsSource="{Binding BaudRateItems, UpdateSourceTrigger=PropertyChanged}"
+                                SelectedItem="{Binding SelectBaudRate, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                Style="{StaticResource MaterialDesignComboBox}" />
+                        </Border>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <!--  图标  -->
+                        <TextBlock
+                            Margin="5,0"
+                            VerticalAlignment="Center"
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="DarkGray"
+                            Text="{x:Static languages:Language.DataBits}" />
+                        <Border
+                            Margin="5"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Background="#1A696969"
+                            CornerRadius="5">
+                            <ComboBox
+                                Height="30"
+                                MinWidth="70"
+                                Padding="5,0"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                HorizontalContentAlignment="Center"
+                                VerticalContentAlignment="Center"
+                                materialDesign:ButtonAssist.CornerRadius="15"
+                                materialDesign:ColorZoneAssist.Mode="Dark"
+                                BorderThickness="0"
+                                FontSize="12"
+                                FontWeight="Bold"
+                                Foreground="White"
+                                ItemsSource="{Binding DataBitsItems, UpdateSourceTrigger=PropertyChanged}"
+                                SelectedItem="{Binding SelectedDataBits, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                Style="{StaticResource MaterialDesignComboBox}" />
+                        </Border>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <!--  图标  -->
+                        <TextBlock
+                            Margin="5,0"
+                            VerticalAlignment="Center"
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="DarkGray"
+                            Text="{x:Static languages:Language.ParityBit}" />
+                        <Border
+                            Margin="5"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Background="#1A696969"
+                            CornerRadius="5">
+                            <ComboBox
+                                Height="30"
+                                MinWidth="80"
+                                Padding="5,0"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                HorizontalContentAlignment="Center"
+                                VerticalContentAlignment="Center"
+                                materialDesign:ButtonAssist.CornerRadius="15"
+                                materialDesign:ColorZoneAssist.Mode="Dark"
+                                BorderThickness="0"
+                                DisplayMemberPath="Name"
+                                FontSize="12"
+                                FontWeight="Bold"
+                                Foreground="White"
+                                ItemsSource="{Binding ParityItems, UpdateSourceTrigger=PropertyChanged}"
+                                SelectedItem="{Binding SelectedParity, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                SelectedValuePath="Value"
+                                Style="{StaticResource MaterialDesignComboBox}" />
+                        </Border>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <!--  图标  -->
+                        <TextBlock
+                            Margin="5,0"
+                            VerticalAlignment="Center"
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="DarkGray"
+                            Text="{x:Static languages:Language.StopBits}" />
+                        <Border
+                            Margin="5"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Background="#1A696969"
+                            CornerRadius="5">
+                            <ComboBox
+                                Height="30"
+                                MinWidth="80"
+                                Padding="5,0"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                HorizontalContentAlignment="Center"
+                                VerticalContentAlignment="Center"
+                                materialDesign:ButtonAssist.CornerRadius="15"
+                                materialDesign:ColorZoneAssist.Mode="Dark"
+                                BorderThickness="0"
+                                DisplayMemberPath="Name"
+                                FontSize="12"
+                                FontWeight="Bold"
+                                Foreground="White"
+                                ItemsSource="{Binding StopBitsItems, UpdateSourceTrigger=PropertyChanged}"
+                                SelectedItem="{Binding SelectedStopBits, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                SelectedValuePath="Value"
+                                Style="{StaticResource MaterialDesignComboBox}" />
+                        </Border>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <!--  图标  -->
+                        <TextBlock
+                            Margin="5,0"
+                            VerticalAlignment="Center"
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="DarkGray"
+                            Text="{x:Static languages:Language.DataFormat}" />
+                        <Border
+                            Margin="5"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Background="#1A696969"
+                            CornerRadius="5">
+                            <ComboBox
+                                Height="30"
+                                MinWidth="80"
+                                Padding="5,0"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                HorizontalContentAlignment="Center"
+                                VerticalContentAlignment="Center"
+                                materialDesign:ButtonAssist.CornerRadius="15"
+                                materialDesign:ColorZoneAssist.Mode="Dark"
+                                BorderThickness="0"
+                                DisplayMemberPath="Name"
+                                FontSize="12"
+                                FontWeight="Bold"
+                                Foreground="White"
+                                ItemsSource="{Binding DataFormatTypeItems, UpdateSourceTrigger=PropertyChanged}"
+                                SelectedItem="{Binding SelectDataFormat, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                SelectedValuePath="Value"
+                                Style="{StaticResource MaterialDesignComboBox}" />
+                        </Border>
+                    </StackPanel>
+                </StackPanel>
+                <!--  使用模板数据输出  -->
+                <RadioButton
+                    Margin="0,10"
+                    Content="使用模板数据输出"
+                    Focusable="False"
+                    FontSize="13"
+                    FontWeight="Bold"
+                    Foreground="DarkGray"
+                    IsChecked="{Binding SerialPortResultOutput.IsUseDataTemplateOutput, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                    Template="{StaticResource CustomRadioButtonTemplate}" />
+                <!--  使用自定义输出  -->
+                <RadioButton
+                    Name="IsUseCustomSerialPortOutputRadioButton"
+                    Content="使用自定义输出"
+                    Focusable="False"
+                    FontSize="13"
+                    FontWeight="Bold"
+                    Foreground="DarkGray"
+                    IsChecked="{Binding SerialPortResultOutput.IsUseCustomContentOutput, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                    Template="{StaticResource CustomRadioButtonTemplate}" />
+                <StackPanel
+                    Margin="50,0,0,0"
+                    IsEnabled="{Binding ElementName=IsUseCustomSerialPortOutputRadioButton, Path=IsChecked}"
+                    Orientation="Horizontal"
+                    Visibility="{Binding ElementName=IsUseCustomSerialPortOutputRadioButton, Path=IsChecked, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="自定义内容:" />
+                    <Border
+                        Margin="5"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
-                        IsIndeterminate="True"
-                        Value="0">
-                        <ProgressBar.Style>
-                            <Style BasedOn="{StaticResource MaterialDesignCircularProgressBar}" TargetType="ProgressBar">
-                                <Setter Property="Visibility" Value="Hidden" />
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsSavingInProgress}" Value="True">
-                                        <Setter Property="Visibility" Value="Visible" />
-                                    </DataTrigger>
-                                    <DataTrigger Binding="{Binding IsSavingInProgress}" Value="False">
-                                        <Setter Property="Visibility" Value="Hidden" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </ProgressBar.Style>
-                    </ProgressBar>
-                </Grid>
-            </Button>
-            <!--  提示框  -->
-            <materialDesign:Snackbar
-                Grid.Row="5"
-                Grid.RowSpan="4"
-                Width="Auto"
-                Height="Auto"
-                VerticalAlignment="Bottom"
-                Background="BlueViolet"
-                FontFamily="LoadFiraCode"
-                FontWeight="Bold"
-                MessageQueue="{Binding ResultOutputSettingsMessageQueue}" />
-        </Grid>
-    </materialDesign:DialogHost>
+                        Background="#1A696969"
+                        CornerRadius="5">
+                        <TextBox
+                            Width="480"
+                            Height="30"
+                            MaxWidth="500"
+                            Margin="5,0"
+                            materialDesign:TextFieldAssist.HasClearButton="False"
+                            materialDesign:TextFieldAssist.HasFilledTextField="True"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="White"
+                            InputMethod.IsInputMethodEnabled="False"
+                            Text="{Binding SerialPortResultOutput.CustomOutputContent, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    </Border>
+                </StackPanel>
+            </StackPanel>
+        </StackPanel>
+        <!--  音频输出  -->
+        <StackPanel
+            Grid.Row="5"
+            Margin="5,0"
+            VerticalAlignment="Center"
+            Orientation="Vertical">
+            <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
+                <TextBlock
+                    Margin="0,0,0,1"
+                    VerticalAlignment="Center"
+                    FontFamily="{StaticResource IconFontFamily}"
+                    FontSize="20"
+                    Foreground="DarkGray"
+                    Text="&#xe6ff;" />
+                <TextBlock
+                    Margin="5,0"
+                    VerticalAlignment="Center"
+                    FontSize="16"
+                    FontWeight="Bold"
+                    Foreground="DarkGray"
+                    Text="{x:Static languages:Language.IsUseAudioOutput}" />
+                <ToggleButton
+                    Name="AudioOutputToggleButton"
+                    materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
+                    materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
+                    Focusable="False"
+                    IsChecked="{Binding IsUseAudioOutput, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                    Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+            </StackPanel>
+            <StackPanel
+                Margin="50,5,0,0"
+                IsEnabled="{Binding ElementName=AudioOutputToggleButton, Path=IsChecked}"
+                Orientation="Horizontal"
+                Visibility="{Binding ElementName=AudioOutputToggleButton, Path=IsChecked, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <StackPanel Orientation="Vertical">
+                    <StackPanel Orientation="Horizontal">
+                        <StackPanel Orientation="Horizontal">
+                            <!--  图标  -->
+                            <TextBlock
+                                Margin="5,0"
+                                VerticalAlignment="Center"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                Text="{x:Static languages:Language.SuccessAudio}" />
+                            <Border
+                                Margin="5"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Background="#1A696969"
+                                CornerRadius="5">
+                                <ComboBox
+                                    Height="30"
+                                    MinWidth="120"
+                                    Padding="5,0"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    HorizontalContentAlignment="Center"
+                                    VerticalContentAlignment="Center"
+                                    materialDesign:ButtonAssist.CornerRadius="15"
+                                    materialDesign:ColorZoneAssist.Mode="Dark"
+                                    BorderThickness="0"
+                                    FontSize="12"
+                                    FontWeight="Bold"
+                                    Foreground="White"
+                                    ItemsSource="{Binding Sounds, UpdateSourceTrigger=PropertyChanged}"
+                                    SelectedItem="{Binding AudioOutputSettingsInfo.SuccessAudio}"
+                                    Style="{StaticResource MaterialDesignComboBox}" />
+                            </Border>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <!--  图标  -->
+                            <TextBlock
+                                Margin="5,0"
+                                VerticalAlignment="Center"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                Text="{x:Static languages:Language.FailureAudio}" />
+                            <Border
+                                Margin="5"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Background="#1A696969"
+                                CornerRadius="5">
+                                <ComboBox
+                                    Height="30"
+                                    MinWidth="120"
+                                    Padding="5,0"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    HorizontalContentAlignment="Center"
+                                    VerticalContentAlignment="Center"
+                                    materialDesign:ButtonAssist.CornerRadius="15"
+                                    materialDesign:ColorZoneAssist.Mode="Dark"
+                                    BorderThickness="0"
+                                    FontSize="12"
+                                    FontWeight="Bold"
+                                    Foreground="White"
+                                    ItemsSource="{Binding Sounds, UpdateSourceTrigger=PropertyChanged}"
+                                    SelectedItem="{Binding AudioOutputSettingsInfo.FailureAudio}"
+                                    Style="{StaticResource MaterialDesignComboBox}" />
+                            </Border>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <!--  图标  -->
+                            <TextBlock
+                                Margin="5,0"
+                                VerticalAlignment="Center"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                Text="{x:Static languages:Language.TriggerPosition}" />
+                            <Border
+                                Margin="5"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Background="#1A696969"
+                                CornerRadius="5">
+                                <ComboBox
+                                    Height="30"
+                                    MinWidth="100"
+                                    Padding="5,0"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    HorizontalContentAlignment="Center"
+                                    VerticalContentAlignment="Center"
+                                    materialDesign:ButtonAssist.CornerRadius="15"
+                                    materialDesign:ColorZoneAssist.Mode="Dark"
+                                    BorderThickness="0"
+                                    DisplayMemberPath="TriggerPositionName"
+                                    FontSize="12"
+                                    FontWeight="Bold"
+                                    Foreground="White"
+                                    ItemsSource="{Binding TriggerPositionItems, UpdateSourceTrigger=PropertyChanged}"
+                                    SelectedItem="{Binding SelectedTriggerPosition, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                    SelectedValuePath="TriggerPositionValue"
+                                    Style="{StaticResource MaterialDesignComboBox}" />
+                            </Border>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <!--  图标  -->
+                            <TextBlock
+                                Margin="5,0"
+                                VerticalAlignment="Center"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                Text="{x:Static languages:Language.ResultEvaluation}" />
+                            <Border
+                                Margin="5"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Background="#1A696969"
+                                CornerRadius="5">
+                                <ComboBox
+                                    Height="30"
+                                    MinWidth="100"
+                                    Padding="5,0"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    HorizontalContentAlignment="Center"
+                                    VerticalContentAlignment="Center"
+                                    materialDesign:ButtonAssist.CornerRadius="15"
+                                    materialDesign:ColorZoneAssist.Mode="Dark"
+                                    BorderThickness="0"
+                                    DisplayMemberPath="ResultName"
+                                    FontSize="12"
+                                    FontWeight="Bold"
+                                    Foreground="White"
+                                    ItemsSource="{Binding TriggerPositionResultItems, UpdateSourceTrigger=PropertyChanged}"
+                                    SelectedItem="{Binding SelectedTriggerPositionResult, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                    SelectedValuePath="ResultValue"
+                                    Style="{StaticResource MaterialDesignComboBox}" />
+                            </Border>
+                        </StackPanel>
+                    </StackPanel>
+                    <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
+                        <TextBlock
+                            Margin="5,0"
+                            VerticalAlignment="Center"
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="DarkGray"
+                            Text="{x:Static languages:Language.AddAudio}" />
+                        <Border
+                            Margin="5"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Background="#1A696969"
+                            CornerRadius="5">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBox
+                                    Width="368"
+                                    Height="30"
+                                    MaxWidth="500"
+                                    Margin="5,0"
+                                    materialDesign:TextFieldAssist.HasClearButton="False"
+                                    materialDesign:TextFieldAssist.HasFilledTextField="True"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    FontSize="15"
+                                    FontWeight="Bold"
+                                    Foreground="White"
+                                    IsReadOnly="True"
+                                    Text="{Binding SoundFilePath, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                                <Button
+                                    Width="60"
+                                    MinHeight="30"
+                                    Margin="0"
+                                    HorizontalAlignment="Left"
+                                    materialDesign:ButtonAssist.CornerRadius="5"
+                                    Background="#2E2E2E"
+                                    BorderThickness="0"
+                                    Command="{Binding BrowseSoundFileCommand}"
+                                    FocusVisualStyle="{x:Null}"
+                                    Style="{StaticResource MaterialDesignFlatAccentBgButton}">
+                                    <TextBlock
+                                        Margin="2,1,0,0"
+                                        VerticalAlignment="Center"
+                                        FontFamily="{StaticResource CustomFontFamily}"
+                                        FontSize="14"
+                                        FontWeight="Bold"
+                                        Foreground="DarkGray"
+                                        Text="..." />
+                                </Button>
+                            </StackPanel>
+                        </Border>
+                        <Button
+                            Width="70"
+                            MinHeight="30"
+                            Margin="5,0,0,0"
+                            HorizontalAlignment="Left"
+                            materialDesign:ButtonAssist.CornerRadius="5"
+                            Background="#2E2E2E"
+                            BorderThickness="0"
+                            Command="{Binding AddSoundFileCommand}"
+                            FocusVisualStyle="{x:Null}"
+                            Style="{StaticResource MaterialDesignFlatAccentBgButton}">
+                            <TextBlock
+                                Margin="2,1,0,0"
+                                VerticalAlignment="Center"
+                                FontFamily="{StaticResource CustomFontFamily}"
+                                FontSize="14"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                Text="{x:Static languages:Language.Add}" />
+                        </Button>
+                    </StackPanel>
+                </StackPanel>
+            </StackPanel>
+        </StackPanel>
+        <!--  位置输出  -->
+        <StackPanel
+            Grid.Row="6"
+            Margin="5,0"
+            VerticalAlignment="Center"
+            Orientation="Vertical">
+            <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
+                <TextBlock
+                    Margin="0,0,0,1"
+                    VerticalAlignment="Center"
+                    FontFamily="{StaticResource IconFontFamily}"
+                    FontSize="20"
+                    Foreground="DarkGray"
+                    Text="&#xe6f7;" />
+                <TextBlock
+                    Margin="5,0"
+                    VerticalAlignment="Center"
+                    FontSize="16"
+                    FontWeight="Bold"
+                    Foreground="DarkGray"
+                    Text="{x:Static languages:Language.IsUsePositionOutput}" />
+                <ToggleButton
+                    Name="LocationOutputToggleButton"
+                    materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
+                    materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
+                    Focusable="False"
+                    IsChecked="{Binding IsUseLocationOutput, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                    Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+            </StackPanel>
+            <StackPanel
+                Margin="50,5,0,0"
+                IsEnabled="{Binding ElementName=LocationOutputToggleButton, Path=IsChecked}"
+                Orientation="Horizontal"
+                Visibility="{Binding ElementName=LocationOutputToggleButton, Path=IsChecked, Converter={StaticResource BooleanToVisibilityConverter}}">
+
+                <StackPanel Orientation="Vertical">
+                    <!--  输出条码  -->
+                    <CheckBox
+                        materialDesign:CheckBoxAssist.CheckBoxSize="20"
+                        Content="{x:Static languages:Language.IsOutputBarcode}"
+                        Focusable="False"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        IsChecked="{Binding LocationOutputSettingsInfo.IsOutputBarcode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    <StackPanel Margin="50,0,0,0" Orientation="Horizontal">
+                        <StackPanel Orientation="Horizontal">
+                            <!--  图标  -->
+                            <TextBlock
+                                Margin="5,0"
+                                VerticalAlignment="Center"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                Text="{x:Static languages:Language.BarcodePoints}" />
+                            <Border
+                                Margin="5"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Background="#1A696969"
+                                CornerRadius="5">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBox
+                                        Width="80"
+                                        Height="30"
+                                        MaxWidth="500"
+                                        Margin="5,0"
+                                        materialDesign:TextFieldAssist.HasClearButton="False"
+                                        materialDesign:TextFieldAssist.HasFilledTextField="True"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        FontSize="13"
+                                        FontWeight="Bold"
+                                        Foreground="White"
+                                        InputMethod.IsInputMethodEnabled="False"
+                                        IsReadOnly="True"
+                                        Text="{Binding LocationOutputSettingsInfo.BarcodeOutputPosition, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                                    <Button
+                                        Width="60"
+                                        MinHeight="30"
+                                        Margin="5,0,0,0"
+                                        HorizontalAlignment="Left"
+                                        materialDesign:ButtonAssist.CornerRadius="5"
+                                        Background="#2E2E2E"
+                                        BorderThickness="0"
+                                        Command="{Binding OpenFolderCommand}"
+                                        FocusVisualStyle="{x:Null}"
+                                        Style="{StaticResource MaterialDesignFlatAccentBgButton}">
+                                        <TextBlock
+                                            Margin="2,1,0,0"
+                                            VerticalAlignment="Center"
+                                            FontFamily="{StaticResource IconFontFamily}"
+                                            FontSize="25"
+                                            Foreground="DarkGray"
+                                            Text="&#xe6f8;" />
+                                    </Button>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <!--  图标  -->
+                            <TextBlock
+                                Margin="5,0"
+                                VerticalAlignment="Center"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                Text="{x:Static languages:Language.KeyPressAfterOutputtingBarcode}" />
+                            <Border
+                                Margin="5"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Background="#1A696969"
+                                CornerRadius="5">
+                                <TextBox
+                                    Width="80"
+                                    Height="30"
+                                    MaxWidth="500"
+                                    Margin="5,0"
+                                    materialDesign:TextFieldAssist.HasClearButton="True"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    FontSize="13"
+                                    FontWeight="Bold"
+                                    Foreground="White"
+                                    InputMethod.IsInputMethodEnabled="False"
+                                    IsReadOnly="True"
+                                    Text="{Binding LocationOutputSettingsInfo.BarcodeOutputKey, UpdateSourceTrigger=PropertyChanged}">
+                                    <b:Interaction.Triggers>
+                                        <b:EventTrigger EventName="PreviewKeyDown">
+                                            <mvvm:InvokeCommandAction Command="{Binding BarCodeKeyDownCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type TextBox}}, Path=KeyEventArgs}" />
+                                        </b:EventTrigger>
+                                    </b:Interaction.Triggers>
+                                </TextBox>
+                            </Border>
+                        </StackPanel>
+                    </StackPanel>
+                    <!--  输出重量  -->
+                    <CheckBox
+                        materialDesign:CheckBoxAssist.CheckBoxSize="20"
+                        Content="{x:Static languages:Language.IsOutputWeight}"
+                        Focusable="False"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        IsChecked="{Binding LocationOutputSettingsInfo.IsOutputWeight, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    <StackPanel Margin="50,0,0,0" Orientation="Horizontal">
+                        <StackPanel Orientation="Horizontal">
+                            <!--  图标  -->
+                            <TextBlock
+                                Margin="5,0"
+                                VerticalAlignment="Center"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                Text="{x:Static languages:Language.WeightPoints}" />
+                            <Border
+                                Margin="5"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Background="#1A696969"
+                                CornerRadius="5">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBox
+                                        Width="80"
+                                        Height="30"
+                                        MaxWidth="500"
+                                        Margin="5,0"
+                                        materialDesign:TextFieldAssist.HasClearButton="False"
+                                        materialDesign:TextFieldAssist.HasFilledTextField="True"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        FontSize="13"
+                                        FontWeight="Bold"
+                                        Foreground="White"
+                                        InputMethod.IsInputMethodEnabled="False"
+                                        IsReadOnly="True"
+                                        Text="{Binding LocationOutputSettingsInfo.WeightOutputPosition, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                                    <Button
+                                        Width="60"
+                                        MinHeight="30"
+                                        Margin="5,0,0,0"
+                                        HorizontalAlignment="Left"
+                                        materialDesign:ButtonAssist.CornerRadius="5"
+                                        Background="#2E2E2E"
+                                        BorderThickness="0"
+                                        Command="{Binding OpenFolderCommand}"
+                                        FocusVisualStyle="{x:Null}"
+                                        Style="{StaticResource MaterialDesignFlatAccentBgButton}">
+                                        <TextBlock
+                                            Margin="2,1,0,0"
+                                            VerticalAlignment="Center"
+                                            FontFamily="{StaticResource IconFontFamily}"
+                                            FontSize="25"
+                                            Foreground="DarkGray"
+                                            Text="&#xe6f8;" />
+                                    </Button>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <!--  图标  -->
+                            <TextBlock
+                                Margin="5,0"
+                                VerticalAlignment="Center"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                Text="{x:Static languages:Language.KeyPressAfterOutputtingWeight}" />
+                            <Border
+                                Margin="5"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Background="#1A696969"
+                                CornerRadius="5">
+                                <TextBox
+                                    Width="80"
+                                    Height="30"
+                                    MaxWidth="500"
+                                    Margin="5,0"
+                                    materialDesign:TextFieldAssist.HasClearButton="True"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    FontSize="13"
+                                    FontWeight="Bold"
+                                    Foreground="White"
+                                    InputMethod.IsInputMethodEnabled="False"
+                                    IsReadOnly="True"
+                                    Text="{Binding LocationOutputSettingsInfo.WeightOutputKey, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                                    <b:Interaction.Triggers>
+                                        <b:EventTrigger EventName="PreviewKeyDown">
+                                            <mvvm:InvokeCommandAction Command="{Binding WeightKeyDownCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type TextBox}}, Path=KeyEventArgs}" />
+                                        </b:EventTrigger>
+                                    </b:Interaction.Triggers>
+                                </TextBox>
+                            </Border>
+                        </StackPanel>
+                    </StackPanel>
+                </StackPanel>
+            </StackPanel>
+            <StackPanel
+                Margin="50,5,0,0"
+                IsEnabled="{Binding ElementName=LocationOutputToggleButton, Path=IsChecked}"
+                Orientation="Horizontal"
+                Visibility="{Binding ElementName=LocationOutputToggleButton, Path=IsChecked, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <!--  是否先输出重量  -->
+                <CheckBox
+                    materialDesign:CheckBoxAssist.CheckBoxSize="20"
+                    Content="{x:Static languages:Language.IsPrioritizeWeightOutput}"
+                    Focusable="False"
+                    FontSize="13"
+                    FontWeight="Bold"
+                    Foreground="DarkGray"
+                    IsChecked="{Binding LocationOutputSettingsInfo.IsOutputWeightFirst, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                <StackPanel Margin="30,0,0,0" Orientation="Horizontal">
+                    <!--  图标  -->
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="{x:Static languages:Language.OutputDelay}" />
+                    <Border
+                        Margin="5"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Background="#1A696969"
+                        CornerRadius="5">
+                        <TextBox
+                            Width="60"
+                            Height="30"
+                            MaxWidth="500"
+                            Margin="5,0"
+                            materialDesign:HintAssist.Hint="ms"
+                            materialDesign:TextFieldAssist.HasClearButton="False"
+                            materialDesign:TextFieldAssist.HasFilledTextField="True"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="White"
+                            InputMethod.IsInputMethodEnabled="False"
+                            Text="{Binding LocationOutputSettingsInfo.OperationDelay, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    </Border>
+                </StackPanel>
+            </StackPanel>
+        </StackPanel>
+    </Grid>
 </Page>

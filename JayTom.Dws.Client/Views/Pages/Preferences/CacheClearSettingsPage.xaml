@@ -16,1080 +16,316 @@
     mvvm:ViewModelLocator.AutoWireViewModel="True"
     Focusable="False"
     FontFamily="{StaticResource CustomFontFamily}"
+    Template="{StaticResource SettingsPageTemplate}"
     mc:Ignorable="d">
     <b:Interaction.Triggers>
-        <b:EventTrigger EventName="Loaded" SourceName="CacheClearSettingsView">
-            <b:InvokeCommandAction Command="{Binding LoadedCommand, IsAsync=False}" CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Page}}}" />
+        <b:EventTrigger EventName="Loaded" SourceName="{Binding Name, RelativeSource={RelativeSource AncestorType={x:Type Page}}}">
+            <b:InvokeCommandAction Command="{Binding LoadedCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Page}}}" />
         </b:EventTrigger>
     </b:Interaction.Triggers>
-    <Grid Margin="20">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
+    <StackPanel Orientation="Vertical">
+
+        <!--  磁盘空间  -->
+        <StackPanel
+            Margin="0,5"
+            Orientation="Horizontal"
+            Visibility="{Binding IsSameDiskStorage, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <TextBlock
+                Margin="0,0,0,1"
+                VerticalAlignment="Center"
+                FontFamily="{StaticResource IconFontFamily}"
+                FontSize="20"
+                Foreground="DarkGray"
+                Text="&#xe615;" />
+            <TextBlock
+                Margin="5,0"
+                VerticalAlignment="Center"
+                FontSize="16"
+                FontWeight="Bold"
+                Foreground="DarkGray"
+                Text="{x:Static languages:Language.DiskSpace}" />
+            <StackPanel
+                Margin="10,0"
+                VerticalAlignment="Center"
+                Orientation="Vertical">
+                <ProgressBar
+                    Width="500"
+                    Height="15"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Center"
+                    Background="#2E2E2E"
+                    Maximum="100"
+                    Minimum="0"
+                    Style="{StaticResource CustomProgressBarStyle}"
+                    Value="{Binding LocalDiskUsageInfo.DiskUsagePercentage}">
+                    <ProgressBar.Foreground>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                            <GradientStop Offset="0" Color="MediumSeaGreen" />
+                            <GradientStop Offset="{Binding LocalDiskUsageInfo.DataUsagePercentage}" Color="MediumSeaGreen" />
+                            <GradientStop Offset="{Binding LocalDiskUsageInfo.DataUsagePercentage}" Color="RoyalBlue" />
+                            <GradientStop Offset="{Binding LocalDiskUsageInfo.ScanImageUsagePercentage}" Color="RoyalBlue" />
+                            <GradientStop Offset="{Binding LocalDiskUsageInfo.ScanImageUsagePercentage}" Color="DarkOrange" />
+                            <GradientStop Offset="{Binding LocalDiskUsageInfo.PanoramaImageUsagePercentage}" Color="DarkOrange" />
+                            <GradientStop Offset="{Binding LocalDiskUsageInfo.PanoramaImageUsagePercentage}" Color="IndianRed" />
+                            <GradientStop Offset="{Binding LocalDiskUsageInfo.LogFileUsagePercentage}" Color="IndianRed" />
+                            <GradientStop Offset="{Binding LocalDiskUsageInfo.LogFileUsagePercentage}" Color="DimGray" />
+
+                            <GradientStop Offset="1" Color="DimGray" />
+                        </LinearGradientBrush>
+                    </ProgressBar.Foreground>
+                </ProgressBar>
+                <StackPanel Orientation="Horizontal">
+                    <!--  数据  -->
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Margin="5,0"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontFamily="{StaticResource CustomFontFamily}"
+                            FontSize="14"
+                            FontWeight="Bold"
+                            Foreground="DimGray"
+                            Text="{x:Static languages:Language.Data}" />
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontFamily="{StaticResource IconFontFamily}"
+                            FontSize="30"
+                            Foreground="MediumSeaGreen"
+                            Text="&#xe7a6;" />
+                    </StackPanel>
+                    <!--  扫码图片  -->
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Margin="5,0"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontFamily="{StaticResource CustomFontFamily}"
+                            FontSize="14"
+                            FontWeight="Bold"
+                            Foreground="DimGray"
+                            Text="{x:Static languages:Language.ScannedImages}" />
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontFamily="{StaticResource IconFontFamily}"
+                            FontSize="30"
+                            Foreground="RoyalBlue"
+                            Text="&#xe7a6;" />
+                    </StackPanel>
+                    <!--  扫码图片  -->
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Margin="5,0"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontFamily="{StaticResource CustomFontFamily}"
+                            FontSize="14"
+                            FontWeight="Bold"
+                            Foreground="DimGray"
+                            Text="{x:Static languages:Language.PanoramaImages}" />
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontFamily="{StaticResource IconFontFamily}"
+                            FontSize="30"
+                            Foreground="DarkOrange"
+                            Text="&#xe7a6;" />
+                    </StackPanel>
+                    <!--  日志  -->
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Margin="5,0"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontFamily="{StaticResource CustomFontFamily}"
+                            FontSize="14"
+                            FontWeight="Bold"
+                            Foreground="DimGray"
+                            Text="{x:Static languages:Language.LogInformation}" />
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontFamily="{StaticResource IconFontFamily}"
+                            FontSize="30"
+                            Foreground="IndianRed"
+                            Text="&#xe7a6;" />
+                    </StackPanel>
+                    <!--  非程序占用  -->
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Margin="5,0"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontFamily="{StaticResource CustomFontFamily}"
+                            FontSize="14"
+                            FontWeight="Bold"
+                            Foreground="DimGray"
+                            Text="{x:Static languages:Language.Non_ProgramUsage}" />
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontFamily="{StaticResource IconFontFamily}"
+                            FontSize="30"
+                            Foreground="DimGray"
+                            Text="&#xe7a6;" />
+                    </StackPanel>
+                </StackPanel>
+            </StackPanel>
+        </StackPanel>
+        <!--  FTP空间  -->
+        <StackPanel
+            Margin="0,5"
+            Orientation="Horizontal"
+            Visibility="{Binding IsShowingFtpSpaceInfo, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <TextBlock
+                Margin="0,0,0,1"
+                VerticalAlignment="Center"
+                FontFamily="{StaticResource IconFontFamily}"
+                FontSize="20"
+                Foreground="DarkGray"
+                Text="&#xe6c9;" />
+            <TextBlock
+                Margin="5,0"
+                VerticalAlignment="Center"
+                FontSize="16"
+                FontWeight="Bold"
+                Foreground="DarkGray"
+                Text="{x:Static languages:Language.FTPSpace}" />
+            <StackPanel
+                Margin="10,0"
+                VerticalAlignment="Center"
+                Orientation="Vertical">
+                <ProgressBar
+                    Width="500"
+                    Height="15"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Center"
+                    Background="#2E2E2E"
+                    Maximum="100"
+                    Minimum="0"
+                    Style="{StaticResource CustomProgressBarStyle}"
+                    Value="70">
+                    <ProgressBar.Foreground>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                            <GradientStop Offset="0" Color="MediumSeaGreen" />
+                            <GradientStop Offset="0.33" Color="MediumSeaGreen" />
+                            <GradientStop Offset="0.33" Color="RoyalBlue" />
+                            <GradientStop Offset="0.66" Color="RoyalBlue" />
+                            <GradientStop Offset="0.66" Color="DarkOrange" />
+                            <GradientStop Offset="0.88" Color="DarkOrange" />
+                            <GradientStop Offset="0.88" Color="DimGray" />
+                            <GradientStop Offset="1" Color="DimGray" />
+                        </LinearGradientBrush>
+                    </ProgressBar.Foreground>
+                </ProgressBar>
+                <StackPanel Orientation="Horizontal">
+                    <!--  数据  -->
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Margin="5,0"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontFamily="{StaticResource CustomFontFamily}"
+                            FontSize="14"
+                            FontWeight="Bold"
+                            Foreground="DimGray"
+                            Text="{x:Static languages:Language.Data}" />
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontFamily="{StaticResource IconFontFamily}"
+                            FontSize="30"
+                            Foreground="MediumSeaGreen"
+                            Text="&#xe7a6;" />
+                    </StackPanel>
+                    <!--  扫码图片  -->
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Margin="5,0"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontFamily="{StaticResource CustomFontFamily}"
+                            FontSize="14"
+                            FontWeight="Bold"
+                            Foreground="DimGray"
+                            Text="{x:Static languages:Language.ScannedImages}" />
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontFamily="{StaticResource IconFontFamily}"
+                            FontSize="30"
+                            Foreground="RoyalBlue"
+                            Text="&#xe7a6;" />
+                    </StackPanel>
+                    <!--  扫码图片  -->
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Margin="5,0"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontFamily="{StaticResource CustomFontFamily}"
+                            FontSize="14"
+                            FontWeight="Bold"
+                            Foreground="DimGray"
+                            Text="{x:Static languages:Language.PanoramaImages}" />
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontFamily="{StaticResource IconFontFamily}"
+                            FontSize="30"
+                            Foreground="DarkOrange"
+                            Text="&#xe7a6;" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Margin="5,0"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontFamily="{StaticResource CustomFontFamily}"
+                            FontSize="14"
+                            FontWeight="Bold"
+                            Foreground="DimGray"
+                            Text="{x:Static languages:Language.Non_ProgramUsage}" />
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontFamily="{StaticResource IconFontFamily}"
+                            FontSize="30"
+                            Foreground="DimGray"
+                            Text="&#xe7a6;" />
+                    </StackPanel>
+                </StackPanel>
+            </StackPanel>
+        </StackPanel>
+        <!--  手动清理  -->
         <StackPanel Orientation="Vertical">
-
-            <!--  磁盘空间  -->
-            <StackPanel
-                Margin="0,5"
-                Orientation="Horizontal"
-                Visibility="{Binding IsSameDiskStorage, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <StackPanel Orientation="Horizontal">
                 <TextBlock
                     Margin="0,0,0,1"
                     VerticalAlignment="Center"
                     FontFamily="{StaticResource IconFontFamily}"
                     FontSize="20"
                     Foreground="DarkGray"
-                    Text="&#xe615;" />
+                    Text="&#xe77d;" />
                 <TextBlock
                     Margin="5,0"
                     VerticalAlignment="Center"
                     FontSize="16"
                     FontWeight="Bold"
                     Foreground="DarkGray"
-                    Text="{x:Static languages:Language.DiskSpace}" />
-                <StackPanel
-                    Margin="10,0"
-                    VerticalAlignment="Center"
-                    Orientation="Vertical">
-                    <ProgressBar
-                        Width="500"
-                        Height="15"
-                        HorizontalAlignment="Left"
-                        VerticalAlignment="Center"
-                        Background="#2E2E2E"
-                        Maximum="100"
-                        Minimum="0"
-                        Style="{StaticResource CustomProgressBarStyle}"
-                        Value="{Binding LocalDiskUsageInfo.DiskUsagePercentage}">
-                        <ProgressBar.Foreground>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                <GradientStop Offset="0" Color="MediumSeaGreen" />
-                                <GradientStop Offset="{Binding LocalDiskUsageInfo.DataUsagePercentage}" Color="MediumSeaGreen" />
-                                <GradientStop Offset="{Binding LocalDiskUsageInfo.DataUsagePercentage}" Color="RoyalBlue" />
-                                <GradientStop Offset="{Binding LocalDiskUsageInfo.ScanImageUsagePercentage}" Color="RoyalBlue" />
-                                <GradientStop Offset="{Binding LocalDiskUsageInfo.ScanImageUsagePercentage}" Color="DarkOrange" />
-                                <GradientStop Offset="{Binding LocalDiskUsageInfo.PanoramaImageUsagePercentage}" Color="DarkOrange" />
-                                <GradientStop Offset="{Binding LocalDiskUsageInfo.PanoramaImageUsagePercentage}" Color="IndianRed" />
-                                <GradientStop Offset="{Binding LocalDiskUsageInfo.LogFileUsagePercentage}" Color="IndianRed" />
-                                <GradientStop Offset="{Binding LocalDiskUsageInfo.LogFileUsagePercentage}" Color="DimGray" />
-
-                                <GradientStop Offset="1" Color="DimGray" />
-                            </LinearGradientBrush>
-                        </ProgressBar.Foreground>
-                    </ProgressBar>
-                    <StackPanel Orientation="Horizontal">
-                        <!--  数据  -->
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock
-                                Margin="5,0"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                FontFamily="{StaticResource CustomFontFamily}"
-                                FontSize="14"
-                                FontWeight="Bold"
-                                Foreground="DimGray"
-                                Text="{x:Static languages:Language.Data}" />
-                            <TextBlock
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                FontFamily="{StaticResource IconFontFamily}"
-                                FontSize="30"
-                                Foreground="MediumSeaGreen"
-                                Text="&#xe7a6;" />
-                        </StackPanel>
-                        <!--  扫码图片  -->
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock
-                                Margin="5,0"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                FontFamily="{StaticResource CustomFontFamily}"
-                                FontSize="14"
-                                FontWeight="Bold"
-                                Foreground="DimGray"
-                                Text="{x:Static languages:Language.ScannedImages}" />
-                            <TextBlock
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                FontFamily="{StaticResource IconFontFamily}"
-                                FontSize="30"
-                                Foreground="RoyalBlue"
-                                Text="&#xe7a6;" />
-                        </StackPanel>
-                        <!--  扫码图片  -->
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock
-                                Margin="5,0"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                FontFamily="{StaticResource CustomFontFamily}"
-                                FontSize="14"
-                                FontWeight="Bold"
-                                Foreground="DimGray"
-                                Text="{x:Static languages:Language.PanoramaImages}" />
-                            <TextBlock
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                FontFamily="{StaticResource IconFontFamily}"
-                                FontSize="30"
-                                Foreground="DarkOrange"
-                                Text="&#xe7a6;" />
-                        </StackPanel>
-                        <!--  日志  -->
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock
-                                Margin="5,0"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                FontFamily="{StaticResource CustomFontFamily}"
-                                FontSize="14"
-                                FontWeight="Bold"
-                                Foreground="DimGray"
-                                Text="{x:Static languages:Language.LogInformation}" />
-                            <TextBlock
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                FontFamily="{StaticResource IconFontFamily}"
-                                FontSize="30"
-                                Foreground="IndianRed"
-                                Text="&#xe7a6;" />
-                        </StackPanel>
-                        <!--  非程序占用  -->
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock
-                                Margin="5,0"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                FontFamily="{StaticResource CustomFontFamily}"
-                                FontSize="14"
-                                FontWeight="Bold"
-                                Foreground="DimGray"
-                                Text="{x:Static languages:Language.Non_ProgramUsage}" />
-                            <TextBlock
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                FontFamily="{StaticResource IconFontFamily}"
-                                FontSize="30"
-                                Foreground="DimGray"
-                                Text="&#xe7a6;" />
-                        </StackPanel>
-                    </StackPanel>
-                </StackPanel>
+                    Text="{x:Static languages:Language.ManualCleanup}" />
             </StackPanel>
-            <!--  FTP空间  -->
-            <StackPanel
-                Margin="0,5"
-                Orientation="Horizontal"
-                Visibility="{Binding IsShowingFtpSpaceInfo, Converter={StaticResource BooleanToVisibilityConverter}}">
-                <TextBlock
-                    Margin="0,0,0,1"
-                    VerticalAlignment="Center"
-                    FontFamily="{StaticResource IconFontFamily}"
-                    FontSize="20"
-                    Foreground="DarkGray"
-                    Text="&#xe6c9;" />
-                <TextBlock
-                    Margin="5,0"
-                    VerticalAlignment="Center"
-                    FontSize="16"
-                    FontWeight="Bold"
-                    Foreground="DarkGray"
-                    Text="{x:Static languages:Language.FTPSpace}" />
-                <StackPanel
-                    Margin="10,0"
-                    VerticalAlignment="Center"
-                    Orientation="Vertical">
-                    <ProgressBar
-                        Width="500"
-                        Height="15"
-                        HorizontalAlignment="Left"
-                        VerticalAlignment="Center"
-                        Background="#2E2E2E"
-                        Maximum="100"
-                        Minimum="0"
-                        Style="{StaticResource CustomProgressBarStyle}"
-                        Value="70">
-                        <ProgressBar.Foreground>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                <GradientStop Offset="0" Color="MediumSeaGreen" />
-                                <GradientStop Offset="0.33" Color="MediumSeaGreen" />
-                                <GradientStop Offset="0.33" Color="RoyalBlue" />
-                                <GradientStop Offset="0.66" Color="RoyalBlue" />
-                                <GradientStop Offset="0.66" Color="DarkOrange" />
-                                <GradientStop Offset="0.88" Color="DarkOrange" />
-                                <GradientStop Offset="0.88" Color="DimGray" />
-                                <GradientStop Offset="1" Color="DimGray" />
-                            </LinearGradientBrush>
-                        </ProgressBar.Foreground>
-                    </ProgressBar>
-                    <StackPanel Orientation="Horizontal">
-                        <!--  数据  -->
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock
-                                Margin="5,0"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                FontFamily="{StaticResource CustomFontFamily}"
-                                FontSize="14"
-                                FontWeight="Bold"
-                                Foreground="DimGray"
-                                Text="{x:Static languages:Language.Data}" />
-                            <TextBlock
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                FontFamily="{StaticResource IconFontFamily}"
-                                FontSize="30"
-                                Foreground="MediumSeaGreen"
-                                Text="&#xe7a6;" />
-                        </StackPanel>
-                        <!--  扫码图片  -->
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock
-                                Margin="5,0"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                FontFamily="{StaticResource CustomFontFamily}"
-                                FontSize="14"
-                                FontWeight="Bold"
-                                Foreground="DimGray"
-                                Text="{x:Static languages:Language.ScannedImages}" />
-                            <TextBlock
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                FontFamily="{StaticResource IconFontFamily}"
-                                FontSize="30"
-                                Foreground="RoyalBlue"
-                                Text="&#xe7a6;" />
-                        </StackPanel>
-                        <!--  扫码图片  -->
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock
-                                Margin="5,0"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                FontFamily="{StaticResource CustomFontFamily}"
-                                FontSize="14"
-                                FontWeight="Bold"
-                                Foreground="DimGray"
-                                Text="{x:Static languages:Language.PanoramaImages}" />
-                            <TextBlock
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                FontFamily="{StaticResource IconFontFamily}"
-                                FontSize="30"
-                                Foreground="DarkOrange"
-                                Text="&#xe7a6;" />
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock
-                                Margin="5,0"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                FontFamily="{StaticResource CustomFontFamily}"
-                                FontSize="14"
-                                FontWeight="Bold"
-                                Foreground="DimGray"
-                                Text="{x:Static languages:Language.Non_ProgramUsage}" />
-                            <TextBlock
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                FontFamily="{StaticResource IconFontFamily}"
-                                FontSize="30"
-                                Foreground="DimGray"
-                                Text="&#xe7a6;" />
-                        </StackPanel>
-                    </StackPanel>
-                </StackPanel>
-            </StackPanel>
-            <!--  手动清理  -->
-            <StackPanel Orientation="Vertical">
+            <StackPanel Margin="50,0,0,0" Orientation="Vertical">
+                <!--  删除 N天之前的数据  -->
                 <StackPanel Orientation="Horizontal">
-                    <TextBlock
-                        Margin="0,0,0,1"
-                        VerticalAlignment="Center"
-                        FontFamily="{StaticResource IconFontFamily}"
-                        FontSize="20"
-                        Foreground="DarkGray"
-                        Text="&#xe77d;" />
-                    <TextBlock
-                        Margin="5,0"
-                        VerticalAlignment="Center"
-                        FontSize="16"
-                        FontWeight="Bold"
-                        Foreground="DarkGray"
-                        Text="{x:Static languages:Language.ManualCleanup}" />
-                </StackPanel>
-                <StackPanel Margin="50,0,0,0" Orientation="Vertical">
-                    <!--  删除 N天之前的数据  -->
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock
-                            Margin="5,0"
-                            VerticalAlignment="Center"
-                            FontSize="13"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            Text="{x:Static languages:Language.Delete}" />
-                        <Border
-                            Margin="5"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Background="#1A696969"
-                            CornerRadius="5">
-                            <TextBox
-                                Width="50"
-                                Height="30"
-                                MaxWidth="500"
-                                Margin="5,0"
-                                materialDesign:TextFieldAssist.HasClearButton="False"
-                                materialDesign:TextFieldAssist.HasFilledTextField="True"
-                                Background="Transparent"
-                                BorderThickness="0"
-                                FontSize="13"
-                                FontWeight="Bold"
-                                Foreground="White"
-                                InputMethod.IsInputMethodEnabled="False"
-                                Text="{Binding ManualCleanupParams.BarcodeDataAgoDays, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-                        </Border>
-                        <TextBlock
-                            Margin="5,0"
-                            VerticalAlignment="Center"
-                            FontSize="13"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            Text="{x:Static languages:Language.BarcodeDataDaysAgo}" />
-                        <Button
-                            Height="Auto"
-                            MinHeight="30"
-                            Margin="30,0"
-                            HorizontalAlignment="Left"
-                            VerticalAlignment="Bottom"
-                            materialDesign:ButtonAssist.CornerRadius="5"
-                            Background="#2E2E2E"
-                            BorderThickness="0"
-                            Command="{Binding ManualCleanupCommand}"
-                            CommandParameter="BarcodeData"
-                            FocusVisualStyle="{x:Null}"
-                            Style="{StaticResource MaterialDesignFlatAccentBgButton}">
-
-                            <Grid>
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock
-                                        Margin="0,0,0,0"
-                                        VerticalAlignment="Center"
-                                        FontFamily="{StaticResource IconFontFamily}"
-                                        FontSize="18"
-                                        Foreground="DarkGray"
-                                        Text="&#xe77d;" />
-                                    <TextBlock
-                                        Margin="2,1,0,0"
-                                        VerticalAlignment="Center"
-                                        FontFamily="{StaticResource CustomFontFamily}"
-                                        FontSize="14"
-                                        FontWeight="Bold"
-                                        Foreground="DarkGray"
-                                        Text="{x:Static languages:Language.Delete}" />
-                                    <StackPanel.Style>
-                                        <Style TargetType="StackPanel">
-                                            <Setter Property="Visibility" Value="Visible" />
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding IsDeletingInProgress}" Value="True">
-                                                    <Setter Property="Visibility" Value="Hidden" />
-                                                </DataTrigger>
-                                                <DataTrigger Binding="{Binding IsDeletingInProgress}" Value="False">
-                                                    <Setter Property="Visibility" Value="Visible" />
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </StackPanel.Style>
-                                </StackPanel>
-                                <ProgressBar
-                                    Width="25"
-                                    Height="25"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    IsIndeterminate="True"
-                                    Value="0">
-                                    <ProgressBar.Style>
-                                        <Style BasedOn="{StaticResource MaterialDesignCircularProgressBar}" TargetType="ProgressBar">
-                                            <Setter Property="Visibility" Value="Hidden" />
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding IsDeletingInProgress}" Value="True">
-                                                    <Setter Property="Visibility" Value="Visible" />
-                                                </DataTrigger>
-                                                <DataTrigger Binding="{Binding IsDeletingInProgress}" Value="False">
-                                                    <Setter Property="Visibility" Value="Hidden" />
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </ProgressBar.Style>
-                                </ProgressBar>
-                            </Grid>
-                        </Button>
-                    </StackPanel>
-                    <!--  删除 N天之前的扫码图片  -->
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock
-                            Margin="5,0"
-                            VerticalAlignment="Center"
-                            FontSize="13"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            Text="{x:Static languages:Language.Delete}" />
-                        <Border
-                            Margin="5"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Background="#1A696969"
-                            CornerRadius="5">
-                            <TextBox
-                                Width="50"
-                                Height="30"
-                                MaxWidth="500"
-                                Margin="5,0"
-                                materialDesign:TextFieldAssist.HasClearButton="False"
-                                materialDesign:TextFieldAssist.HasFilledTextField="True"
-                                Background="Transparent"
-                                BorderThickness="0"
-                                FontSize="13"
-                                FontWeight="Bold"
-                                Foreground="White"
-                                InputMethod.IsInputMethodEnabled="False"
-                                Text="{Binding ManualCleanupParams.ScanImageAgoDays, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-                        </Border>
-                        <TextBlock
-                            Margin="5,0"
-                            VerticalAlignment="Center"
-                            FontSize="13"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            Text="{x:Static languages:Language.ScannedImageDaysAgo}" />
-                        <Button
-                            Height="Auto"
-                            MinHeight="30"
-                            Margin="30,0"
-                            HorizontalAlignment="Left"
-                            VerticalAlignment="Bottom"
-                            materialDesign:ButtonAssist.CornerRadius="5"
-                            Background="#2E2E2E"
-                            BorderThickness="0"
-                            Command="{Binding ManualCleanupCommand}"
-                            CommandParameter="ScanImage"
-                            FocusVisualStyle="{x:Null}"
-                            Style="{StaticResource MaterialDesignFlatAccentBgButton}">
-
-                            <Grid>
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock
-                                        Margin="0,0,0,0"
-                                        VerticalAlignment="Center"
-                                        FontFamily="{StaticResource IconFontFamily}"
-                                        FontSize="18"
-                                        Foreground="DarkGray"
-                                        Text="&#xe77d;" />
-                                    <TextBlock
-                                        Margin="2,1,0,0"
-                                        VerticalAlignment="Center"
-                                        FontFamily="{StaticResource CustomFontFamily}"
-                                        FontSize="14"
-                                        FontWeight="Bold"
-                                        Foreground="DarkGray"
-                                        Text="{x:Static languages:Language.Delete}" />
-                                    <StackPanel.Style>
-                                        <Style TargetType="StackPanel">
-                                            <Setter Property="Visibility" Value="Visible" />
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding IsDeletingInProgress}" Value="True">
-                                                    <Setter Property="Visibility" Value="Hidden" />
-                                                </DataTrigger>
-                                                <DataTrigger Binding="{Binding IsDeletingInProgress}" Value="False">
-                                                    <Setter Property="Visibility" Value="Visible" />
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </StackPanel.Style>
-                                </StackPanel>
-                                <ProgressBar
-                                    Width="25"
-                                    Height="25"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    IsIndeterminate="True"
-                                    Value="0">
-                                    <ProgressBar.Style>
-                                        <Style BasedOn="{StaticResource MaterialDesignCircularProgressBar}" TargetType="ProgressBar">
-                                            <Setter Property="Visibility" Value="Hidden" />
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding IsDeletingInProgress}" Value="True">
-                                                    <Setter Property="Visibility" Value="Visible" />
-                                                </DataTrigger>
-                                                <DataTrigger Binding="{Binding IsDeletingInProgress}" Value="False">
-                                                    <Setter Property="Visibility" Value="Hidden" />
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </ProgressBar.Style>
-                                </ProgressBar>
-                            </Grid>
-                        </Button>
-                    </StackPanel>
-                    <!--  删除 N天之前的全景图片  -->
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock
-                            Margin="5,0"
-                            VerticalAlignment="Center"
-                            FontSize="13"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            Text="{x:Static languages:Language.Delete}" />
-                        <Border
-                            Margin="5"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Background="#1A696969"
-                            CornerRadius="5">
-                            <TextBox
-                                Width="50"
-                                Height="30"
-                                MaxWidth="500"
-                                Margin="5,0"
-                                materialDesign:TextFieldAssist.HasClearButton="False"
-                                materialDesign:TextFieldAssist.HasFilledTextField="True"
-                                Background="Transparent"
-                                BorderThickness="0"
-                                FontSize="13"
-                                FontWeight="Bold"
-                                Foreground="White"
-                                InputMethod.IsInputMethodEnabled="False"
-                                Text="{Binding ManualCleanupParams.PanoramaImageAgoDays, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-                        </Border>
-                        <TextBlock
-                            Margin="5,0"
-                            VerticalAlignment="Center"
-                            FontSize="13"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            Text="{x:Static languages:Language.PanoramaImageDaysAgo}" />
-                        <Button
-                            Height="Auto"
-                            MinHeight="30"
-                            Margin="30,0"
-                            HorizontalAlignment="Left"
-                            VerticalAlignment="Bottom"
-                            materialDesign:ButtonAssist.CornerRadius="5"
-                            Background="#2E2E2E"
-                            BorderThickness="0"
-                            Command="{Binding ManualCleanupCommand}"
-                            CommandParameter="PanoramaImage"
-                            FocusVisualStyle="{x:Null}"
-                            Style="{StaticResource MaterialDesignFlatAccentBgButton}">
-
-                            <Grid>
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock
-                                        Margin="0,0,0,0"
-                                        VerticalAlignment="Center"
-                                        FontFamily="{StaticResource IconFontFamily}"
-                                        FontSize="18"
-                                        Foreground="DarkGray"
-                                        Text="&#xe77d;" />
-                                    <TextBlock
-                                        Margin="2,1,0,0"
-                                        VerticalAlignment="Center"
-                                        FontFamily="{StaticResource CustomFontFamily}"
-                                        FontSize="14"
-                                        FontWeight="Bold"
-                                        Foreground="DarkGray"
-                                        Text="{x:Static languages:Language.Delete}" />
-                                    <StackPanel.Style>
-                                        <Style TargetType="StackPanel">
-                                            <Setter Property="Visibility" Value="Visible" />
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding IsDeletingInProgress}" Value="True">
-                                                    <Setter Property="Visibility" Value="Hidden" />
-                                                </DataTrigger>
-                                                <DataTrigger Binding="{Binding IsDeletingInProgress}" Value="False">
-                                                    <Setter Property="Visibility" Value="Visible" />
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </StackPanel.Style>
-                                </StackPanel>
-                                <ProgressBar
-                                    Width="25"
-                                    Height="25"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    IsIndeterminate="True"
-                                    Value="0">
-                                    <ProgressBar.Style>
-                                        <Style BasedOn="{StaticResource MaterialDesignCircularProgressBar}" TargetType="ProgressBar">
-                                            <Setter Property="Visibility" Value="Hidden" />
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding IsDeletingInProgress}" Value="True">
-                                                    <Setter Property="Visibility" Value="Visible" />
-                                                </DataTrigger>
-                                                <DataTrigger Binding="{Binding IsDeletingInProgress}" Value="False">
-                                                    <Setter Property="Visibility" Value="Hidden" />
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </ProgressBar.Style>
-                                </ProgressBar>
-                            </Grid>
-                        </Button>
-                    </StackPanel>
-                    <!--  删除 N天之前的FTP图片  -->
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock
-                            Margin="5,0"
-                            VerticalAlignment="Center"
-                            FontSize="13"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            Text="{x:Static languages:Language.Delete}" />
-                        <Border
-                            Margin="5"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Background="#1A696969"
-                            CornerRadius="5">
-                            <TextBox
-                                Width="50"
-                                Height="30"
-                                MaxWidth="500"
-                                Margin="5,0"
-                                materialDesign:TextFieldAssist.HasClearButton="False"
-                                materialDesign:TextFieldAssist.HasFilledTextField="True"
-                                Background="Transparent"
-                                BorderThickness="0"
-                                FontSize="13"
-                                FontWeight="Bold"
-                                Foreground="White"
-                                InputMethod.IsInputMethodEnabled="False"
-                                Text="{Binding ManualCleanupParams.FtpImageAgoDays, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-                        </Border>
-                        <TextBlock
-                            Margin="5,0"
-                            VerticalAlignment="Center"
-                            FontSize="13"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            Text="{x:Static languages:Language.FTPImageDaysAgo}" />
-                        <Button
-                            Height="Auto"
-                            MinHeight="30"
-                            Margin="30,0"
-                            HorizontalAlignment="Left"
-                            VerticalAlignment="Bottom"
-                            materialDesign:ButtonAssist.CornerRadius="5"
-                            Background="#2E2E2E"
-                            BorderThickness="0"
-                            Command="{Binding ManualCleanupCommand}"
-                            CommandParameter="FtpImage"
-                            FocusVisualStyle="{x:Null}"
-                            Style="{StaticResource MaterialDesignFlatAccentBgButton}">
-
-                            <Grid>
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock
-                                        Margin="0,0,0,0"
-                                        VerticalAlignment="Center"
-                                        FontFamily="{StaticResource IconFontFamily}"
-                                        FontSize="18"
-                                        Foreground="DarkGray"
-                                        Text="&#xe77d;" />
-                                    <TextBlock
-                                        Margin="2,1,0,0"
-                                        VerticalAlignment="Center"
-                                        FontFamily="{StaticResource CustomFontFamily}"
-                                        FontSize="14"
-                                        FontWeight="Bold"
-                                        Foreground="DarkGray"
-                                        Text="{x:Static languages:Language.Delete}" />
-                                    <StackPanel.Style>
-                                        <Style TargetType="StackPanel">
-                                            <Setter Property="Visibility" Value="Visible" />
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding IsDeletingInProgress}" Value="True">
-                                                    <Setter Property="Visibility" Value="Hidden" />
-                                                </DataTrigger>
-                                                <DataTrigger Binding="{Binding IsDeletingInProgress}" Value="False">
-                                                    <Setter Property="Visibility" Value="Visible" />
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </StackPanel.Style>
-                                </StackPanel>
-                                <ProgressBar
-                                    Width="25"
-                                    Height="25"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    IsIndeterminate="True"
-                                    Value="0">
-                                    <ProgressBar.Style>
-                                        <Style BasedOn="{StaticResource MaterialDesignCircularProgressBar}" TargetType="ProgressBar">
-                                            <Setter Property="Visibility" Value="Hidden" />
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding IsDeletingInProgress}" Value="True">
-                                                    <Setter Property="Visibility" Value="Visible" />
-                                                </DataTrigger>
-                                                <DataTrigger Binding="{Binding IsDeletingInProgress}" Value="False">
-                                                    <Setter Property="Visibility" Value="Hidden" />
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </ProgressBar.Style>
-                                </ProgressBar>
-                            </Grid>
-                        </Button>
-                    </StackPanel>
-                    <!--  删除 N天之前的日志  -->
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock
-                            Margin="5,0"
-                            VerticalAlignment="Center"
-                            FontSize="13"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            Text="{x:Static languages:Language.Delete}" />
-                        <Border
-                            Margin="5"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Background="#1A696969"
-                            CornerRadius="5">
-                            <TextBox
-                                Width="50"
-                                Height="30"
-                                MaxWidth="500"
-                                Margin="5,0"
-                                materialDesign:TextFieldAssist.HasClearButton="False"
-                                materialDesign:TextFieldAssist.HasFilledTextField="True"
-                                Background="Transparent"
-                                BorderThickness="0"
-                                FontSize="13"
-                                FontWeight="Bold"
-                                Foreground="White"
-                                InputMethod.IsInputMethodEnabled="False"
-                                Text="{Binding ManualCleanupParams.LogDataAgoDays, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-                        </Border>
-                        <TextBlock
-                            Margin="5,0"
-                            VerticalAlignment="Center"
-                            FontSize="13"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            Text="{x:Static languages:Language.LogDataDaysAgo}" />
-                        <Button
-                            Height="Auto"
-                            MinHeight="30"
-                            Margin="30,0"
-                            HorizontalAlignment="Left"
-                            VerticalAlignment="Bottom"
-                            materialDesign:ButtonAssist.CornerRadius="5"
-                            Background="#2E2E2E"
-                            BorderThickness="0"
-                            Command="{Binding ManualCleanupCommand}"
-                            CommandParameter="LogData"
-                            FocusVisualStyle="{x:Null}"
-                            Style="{StaticResource MaterialDesignFlatAccentBgButton}">
-
-                            <Grid>
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock
-                                        Margin="0,0,0,0"
-                                        VerticalAlignment="Center"
-                                        FontFamily="{StaticResource IconFontFamily}"
-                                        FontSize="18"
-                                        Foreground="DarkGray"
-                                        Text="&#xe77d;" />
-                                    <TextBlock
-                                        Margin="2,1,0,0"
-                                        VerticalAlignment="Center"
-                                        FontFamily="{StaticResource CustomFontFamily}"
-                                        FontSize="14"
-                                        FontWeight="Bold"
-                                        Foreground="DarkGray"
-                                        Text="{x:Static languages:Language.Delete}" />
-                                    <StackPanel.Style>
-                                        <Style TargetType="StackPanel">
-                                            <Setter Property="Visibility" Value="Visible" />
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding IsDeletingInProgress}" Value="True">
-                                                    <Setter Property="Visibility" Value="Hidden" />
-                                                </DataTrigger>
-                                                <DataTrigger Binding="{Binding IsDeletingInProgress}" Value="False">
-                                                    <Setter Property="Visibility" Value="Visible" />
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </StackPanel.Style>
-                                </StackPanel>
-                                <ProgressBar
-                                    Width="25"
-                                    Height="25"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    IsIndeterminate="True"
-                                    Value="0">
-                                    <ProgressBar.Style>
-                                        <Style BasedOn="{StaticResource MaterialDesignCircularProgressBar}" TargetType="ProgressBar">
-                                            <Setter Property="Visibility" Value="Hidden" />
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding IsDeletingInProgress}" Value="True">
-                                                    <Setter Property="Visibility" Value="Visible" />
-                                                </DataTrigger>
-                                                <DataTrigger Binding="{Binding IsDeletingInProgress}" Value="False">
-                                                    <Setter Property="Visibility" Value="Hidden" />
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </ProgressBar.Style>
-                                </ProgressBar>
-                            </Grid>
-                        </Button>
-                    </StackPanel>
-                </StackPanel>
-            </StackPanel>
-            <!--  自动清理(最短时间为一周)  -->
-            <StackPanel Orientation="Vertical">
-                <StackPanel Orientation="Horizontal">
-                    <TextBlock
-                        Margin="0,0,0,1"
-                        VerticalAlignment="Center"
-                        FontFamily="{StaticResource IconFontFamily}"
-                        FontSize="20"
-                        Foreground="DarkGray"
-                        Text="&#xe782;" />
-                    <TextBlock
-                        Margin="5,0"
-                        VerticalAlignment="Center"
-                        FontSize="16"
-                        FontWeight="Bold"
-                        Foreground="DarkGray"
-                        Text="{x:Static languages:Language.AutomaticCleanup}" />
-                </StackPanel>
-                <StackPanel Margin="50,0,0,0" Orientation="Vertical">
-                    <!--  删除 N天之前的数据  -->
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock
-                            Margin="5,0"
-                            VerticalAlignment="Center"
-                            FontSize="13"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            Text="{x:Static languages:Language.Delete}" />
-                        <Border
-                            Margin="5"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Background="#1A696969"
-                            CornerRadius="5">
-                            <TextBox
-                                Width="50"
-                                Height="30"
-                                MaxWidth="500"
-                                Margin="5,0"
-                                materialDesign:TextFieldAssist.HasClearButton="False"
-                                materialDesign:TextFieldAssist.HasFilledTextField="True"
-                                Background="Transparent"
-                                BorderThickness="0"
-                                FontSize="13"
-                                FontWeight="Bold"
-                                Foreground="White"
-                                InputMethod.IsInputMethodEnabled="False"
-                                Text="{Binding AutoCleanupParams.BarcodeDataAgoDays, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-                        </Border>
-                        <TextBlock
-                            Margin="5,0"
-                            VerticalAlignment="Center"
-                            FontSize="13"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            Text="{x:Static languages:Language.BarcodeDataDaysAgo}" />
-                    </StackPanel>
-                    <!--  删除 N天之前的扫码图片  -->
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock
-                            Margin="5,0"
-                            VerticalAlignment="Center"
-                            FontSize="13"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            Text="{x:Static languages:Language.Delete}" />
-                        <Border
-                            Margin="5"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Background="#1A696969"
-                            CornerRadius="5">
-                            <TextBox
-                                Width="50"
-                                Height="30"
-                                MaxWidth="500"
-                                Margin="5,0"
-                                materialDesign:TextFieldAssist.HasClearButton="False"
-                                materialDesign:TextFieldAssist.HasFilledTextField="True"
-                                Background="Transparent"
-                                BorderThickness="0"
-                                FontSize="13"
-                                FontWeight="Bold"
-                                Foreground="White"
-                                InputMethod.IsInputMethodEnabled="False"
-                                Text="{Binding AutoCleanupParams.ScanImageAgoDays, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-                        </Border>
-                        <TextBlock
-                            Margin="5,0"
-                            VerticalAlignment="Center"
-                            FontSize="13"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            Text="{x:Static languages:Language.ScannedImageDaysAgo}" />
-                    </StackPanel>
-                    <!--  删除 N天之前的全景图片  -->
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock
-                            Margin="5,0"
-                            VerticalAlignment="Center"
-                            FontSize="13"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            Text="{x:Static languages:Language.Delete}" />
-                        <Border
-                            Margin="5"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Background="#1A696969"
-                            CornerRadius="5">
-                            <TextBox
-                                Width="50"
-                                Height="30"
-                                MaxWidth="500"
-                                Margin="5,0"
-                                materialDesign:TextFieldAssist.HasClearButton="False"
-                                materialDesign:TextFieldAssist.HasFilledTextField="True"
-                                Background="Transparent"
-                                BorderThickness="0"
-                                FontSize="13"
-                                FontWeight="Bold"
-                                Foreground="White"
-                                InputMethod.IsInputMethodEnabled="False"
-                                Text="{Binding AutoCleanupParams.PanoramaImageAgoDays, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-                        </Border>
-                        <TextBlock
-                            Margin="5,0"
-                            VerticalAlignment="Center"
-                            FontSize="13"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            Text="{x:Static languages:Language.PanoramaImageDaysAgo}" />
-                    </StackPanel>
-                    <!--  删除 N天之前的FTP图片  -->
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock
-                            Margin="5,0"
-                            VerticalAlignment="Center"
-                            FontSize="13"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            Text="{x:Static languages:Language.Delete}" />
-                        <Border
-                            Margin="5"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Background="#1A696969"
-                            CornerRadius="5">
-                            <TextBox
-                                Width="50"
-                                Height="30"
-                                MaxWidth="500"
-                                Margin="5,0"
-                                materialDesign:TextFieldAssist.HasClearButton="False"
-                                materialDesign:TextFieldAssist.HasFilledTextField="True"
-                                Background="Transparent"
-                                BorderThickness="0"
-                                FontSize="13"
-                                FontWeight="Bold"
-                                Foreground="White"
-                                InputMethod.IsInputMethodEnabled="False"
-                                Text="{Binding AutoCleanupParams.FtpImageAgoDays, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-                        </Border>
-                        <TextBlock
-                            Margin="5,0"
-                            VerticalAlignment="Center"
-                            FontSize="13"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            Text="{x:Static languages:Language.FTPImageDaysAgo}" />
-                    </StackPanel>
-                    <!--  删除 N天之前的日志  -->
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock
-                            Margin="5,0"
-                            VerticalAlignment="Center"
-                            FontSize="13"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            Text="{x:Static languages:Language.Delete}" />
-                        <Border
-                            Margin="5"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Background="#1A696969"
-                            CornerRadius="5">
-                            <TextBox
-                                Width="50"
-                                Height="30"
-                                MaxWidth="500"
-                                Margin="5,0"
-                                materialDesign:TextFieldAssist.HasClearButton="False"
-                                materialDesign:TextFieldAssist.HasFilledTextField="True"
-                                Background="Transparent"
-                                BorderThickness="0"
-                                FontSize="13"
-                                FontWeight="Bold"
-                                Foreground="White"
-                                InputMethod.IsInputMethodEnabled="False"
-                                Text="{Binding AutoCleanupParams.LogDataAgoDays, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-                        </Border>
-                        <TextBlock
-                            Margin="5,0"
-                            VerticalAlignment="Center"
-                            FontSize="13"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            Text="{x:Static languages:Language.LogDataDaysAgo}" />
-                    </StackPanel>
-                </StackPanel>
-            </StackPanel>
-            <!--  最小空间保障  -->
-            <StackPanel Orientation="Vertical">
-                <StackPanel Orientation="Horizontal">
-                    <TextBlock
-                        Margin="0,0,0,1"
-                        VerticalAlignment="Center"
-                        FontFamily="{StaticResource IconFontFamily}"
-                        FontSize="20"
-                        Foreground="DarkGray"
-                        Text="&#xe77d;" />
-                    <TextBlock
-                        Margin="5,0"
-                        VerticalAlignment="Center"
-                        FontSize="16"
-                        FontWeight="Bold"
-                        Foreground="DarkGray"
-                        Text="{x:Static languages:Language.MinAvailable}" />
-                </StackPanel>
-                <StackPanel Margin="50,0,0,0" Orientation="Horizontal">
                     <TextBlock
                         Margin="5,0"
                         VerticalAlignment="Center"
                         FontSize="13"
                         FontWeight="Bold"
                         Foreground="DarkGray"
-                        Text="{x:Static languages:Language.MinimumRetention}" />
+                        Text="{x:Static languages:Language.Delete}" />
                     <Border
                         Margin="5"
                         HorizontalAlignment="Center"
@@ -1109,7 +345,7 @@
                             FontWeight="Bold"
                             Foreground="White"
                             InputMethod.IsInputMethodEnabled="False"
-                            Text="{Binding MinimumSpaceRetention, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                            Text="{Binding ManualCleanupParams.BarcodeDataAgoDays, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                     </Border>
                     <TextBlock
                         Margin="5,0"
@@ -1117,90 +353,768 @@
                         FontSize="13"
                         FontWeight="Bold"
                         Foreground="DarkGray"
-                        Text="{x:Static languages:Language.AvailableSpace}" />
+                        Text="{x:Static languages:Language.BarcodeDataDaysAgo}" />
+                    <Button
+                        Height="Auto"
+                        MinHeight="30"
+                        Margin="30,0"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Bottom"
+                        materialDesign:ButtonAssist.CornerRadius="5"
+                        Background="#2E2E2E"
+                        BorderThickness="0"
+                        Command="{Binding ManualCleanupCommand}"
+                        CommandParameter="BarcodeData"
+                        FocusVisualStyle="{x:Null}"
+                        Style="{StaticResource MaterialDesignFlatAccentBgButton}">
+
+                        <Grid>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock
+                                    Margin="0,0,0,0"
+                                    VerticalAlignment="Center"
+                                    FontFamily="{StaticResource IconFontFamily}"
+                                    FontSize="18"
+                                    Foreground="DarkGray"
+                                    Text="&#xe77d;" />
+                                <TextBlock
+                                    Margin="2,1,0,0"
+                                    VerticalAlignment="Center"
+                                    FontFamily="{StaticResource CustomFontFamily}"
+                                    FontSize="14"
+                                    FontWeight="Bold"
+                                    Foreground="DarkGray"
+                                    Text="{x:Static languages:Language.Delete}" />
+                                <StackPanel.Style>
+                                    <Style TargetType="StackPanel">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsDeletingInProgress}" Value="True">
+                                                <Setter Property="Visibility" Value="Hidden" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding IsDeletingInProgress}" Value="False">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </StackPanel.Style>
+                            </StackPanel>
+                            <ProgressBar
+                                Width="25"
+                                Height="25"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                IsIndeterminate="True"
+                                Value="0">
+                                <ProgressBar.Style>
+                                    <Style BasedOn="{StaticResource MaterialDesignCircularProgressBar}" TargetType="ProgressBar">
+                                        <Setter Property="Visibility" Value="Hidden" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsDeletingInProgress}" Value="True">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding IsDeletingInProgress}" Value="False">
+                                                <Setter Property="Visibility" Value="Hidden" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ProgressBar.Style>
+                            </ProgressBar>
+                        </Grid>
+                    </Button>
+                </StackPanel>
+                <!--  删除 N天之前的扫码图片  -->
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="{x:Static languages:Language.Delete}" />
+                    <Border
+                        Margin="5"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Background="#1A696969"
+                        CornerRadius="5">
+                        <TextBox
+                            Width="50"
+                            Height="30"
+                            MaxWidth="500"
+                            Margin="5,0"
+                            materialDesign:TextFieldAssist.HasClearButton="False"
+                            materialDesign:TextFieldAssist.HasFilledTextField="True"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="White"
+                            InputMethod.IsInputMethodEnabled="False"
+                            Text="{Binding ManualCleanupParams.ScanImageAgoDays, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    </Border>
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="{x:Static languages:Language.ScannedImageDaysAgo}" />
+                    <Button
+                        Height="Auto"
+                        MinHeight="30"
+                        Margin="30,0"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Bottom"
+                        materialDesign:ButtonAssist.CornerRadius="5"
+                        Background="#2E2E2E"
+                        BorderThickness="0"
+                        Command="{Binding ManualCleanupCommand}"
+                        CommandParameter="ScanImage"
+                        FocusVisualStyle="{x:Null}"
+                        Style="{StaticResource MaterialDesignFlatAccentBgButton}">
+
+                        <Grid>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock
+                                    Margin="0,0,0,0"
+                                    VerticalAlignment="Center"
+                                    FontFamily="{StaticResource IconFontFamily}"
+                                    FontSize="18"
+                                    Foreground="DarkGray"
+                                    Text="&#xe77d;" />
+                                <TextBlock
+                                    Margin="2,1,0,0"
+                                    VerticalAlignment="Center"
+                                    FontFamily="{StaticResource CustomFontFamily}"
+                                    FontSize="14"
+                                    FontWeight="Bold"
+                                    Foreground="DarkGray"
+                                    Text="{x:Static languages:Language.Delete}" />
+                                <StackPanel.Style>
+                                    <Style TargetType="StackPanel">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsDeletingInProgress}" Value="True">
+                                                <Setter Property="Visibility" Value="Hidden" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding IsDeletingInProgress}" Value="False">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </StackPanel.Style>
+                            </StackPanel>
+                            <ProgressBar
+                                Width="25"
+                                Height="25"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                IsIndeterminate="True"
+                                Value="0">
+                                <ProgressBar.Style>
+                                    <Style BasedOn="{StaticResource MaterialDesignCircularProgressBar}" TargetType="ProgressBar">
+                                        <Setter Property="Visibility" Value="Hidden" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsDeletingInProgress}" Value="True">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding IsDeletingInProgress}" Value="False">
+                                                <Setter Property="Visibility" Value="Hidden" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ProgressBar.Style>
+                            </ProgressBar>
+                        </Grid>
+                    </Button>
+                </StackPanel>
+                <!--  删除 N天之前的全景图片  -->
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="{x:Static languages:Language.Delete}" />
+                    <Border
+                        Margin="5"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Background="#1A696969"
+                        CornerRadius="5">
+                        <TextBox
+                            Width="50"
+                            Height="30"
+                            MaxWidth="500"
+                            Margin="5,0"
+                            materialDesign:TextFieldAssist.HasClearButton="False"
+                            materialDesign:TextFieldAssist.HasFilledTextField="True"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="White"
+                            InputMethod.IsInputMethodEnabled="False"
+                            Text="{Binding ManualCleanupParams.PanoramaImageAgoDays, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    </Border>
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="{x:Static languages:Language.PanoramaImageDaysAgo}" />
+                    <Button
+                        Height="Auto"
+                        MinHeight="30"
+                        Margin="30,0"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Bottom"
+                        materialDesign:ButtonAssist.CornerRadius="5"
+                        Background="#2E2E2E"
+                        BorderThickness="0"
+                        Command="{Binding ManualCleanupCommand}"
+                        CommandParameter="PanoramaImage"
+                        FocusVisualStyle="{x:Null}"
+                        Style="{StaticResource MaterialDesignFlatAccentBgButton}">
+
+                        <Grid>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock
+                                    Margin="0,0,0,0"
+                                    VerticalAlignment="Center"
+                                    FontFamily="{StaticResource IconFontFamily}"
+                                    FontSize="18"
+                                    Foreground="DarkGray"
+                                    Text="&#xe77d;" />
+                                <TextBlock
+                                    Margin="2,1,0,0"
+                                    VerticalAlignment="Center"
+                                    FontFamily="{StaticResource CustomFontFamily}"
+                                    FontSize="14"
+                                    FontWeight="Bold"
+                                    Foreground="DarkGray"
+                                    Text="{x:Static languages:Language.Delete}" />
+                                <StackPanel.Style>
+                                    <Style TargetType="StackPanel">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsDeletingInProgress}" Value="True">
+                                                <Setter Property="Visibility" Value="Hidden" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding IsDeletingInProgress}" Value="False">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </StackPanel.Style>
+                            </StackPanel>
+                            <ProgressBar
+                                Width="25"
+                                Height="25"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                IsIndeterminate="True"
+                                Value="0">
+                                <ProgressBar.Style>
+                                    <Style BasedOn="{StaticResource MaterialDesignCircularProgressBar}" TargetType="ProgressBar">
+                                        <Setter Property="Visibility" Value="Hidden" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsDeletingInProgress}" Value="True">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding IsDeletingInProgress}" Value="False">
+                                                <Setter Property="Visibility" Value="Hidden" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ProgressBar.Style>
+                            </ProgressBar>
+                        </Grid>
+                    </Button>
+                </StackPanel>
+                <!--  删除 N天之前的FTP图片  -->
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="{x:Static languages:Language.Delete}" />
+                    <Border
+                        Margin="5"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Background="#1A696969"
+                        CornerRadius="5">
+                        <TextBox
+                            Width="50"
+                            Height="30"
+                            MaxWidth="500"
+                            Margin="5,0"
+                            materialDesign:TextFieldAssist.HasClearButton="False"
+                            materialDesign:TextFieldAssist.HasFilledTextField="True"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="White"
+                            InputMethod.IsInputMethodEnabled="False"
+                            Text="{Binding ManualCleanupParams.FtpImageAgoDays, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    </Border>
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="{x:Static languages:Language.FTPImageDaysAgo}" />
+                    <Button
+                        Height="Auto"
+                        MinHeight="30"
+                        Margin="30,0"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Bottom"
+                        materialDesign:ButtonAssist.CornerRadius="5"
+                        Background="#2E2E2E"
+                        BorderThickness="0"
+                        Command="{Binding ManualCleanupCommand}"
+                        CommandParameter="FtpImage"
+                        FocusVisualStyle="{x:Null}"
+                        Style="{StaticResource MaterialDesignFlatAccentBgButton}">
+
+                        <Grid>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock
+                                    Margin="0,0,0,0"
+                                    VerticalAlignment="Center"
+                                    FontFamily="{StaticResource IconFontFamily}"
+                                    FontSize="18"
+                                    Foreground="DarkGray"
+                                    Text="&#xe77d;" />
+                                <TextBlock
+                                    Margin="2,1,0,0"
+                                    VerticalAlignment="Center"
+                                    FontFamily="{StaticResource CustomFontFamily}"
+                                    FontSize="14"
+                                    FontWeight="Bold"
+                                    Foreground="DarkGray"
+                                    Text="{x:Static languages:Language.Delete}" />
+                                <StackPanel.Style>
+                                    <Style TargetType="StackPanel">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsDeletingInProgress}" Value="True">
+                                                <Setter Property="Visibility" Value="Hidden" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding IsDeletingInProgress}" Value="False">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </StackPanel.Style>
+                            </StackPanel>
+                            <ProgressBar
+                                Width="25"
+                                Height="25"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                IsIndeterminate="True"
+                                Value="0">
+                                <ProgressBar.Style>
+                                    <Style BasedOn="{StaticResource MaterialDesignCircularProgressBar}" TargetType="ProgressBar">
+                                        <Setter Property="Visibility" Value="Hidden" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsDeletingInProgress}" Value="True">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding IsDeletingInProgress}" Value="False">
+                                                <Setter Property="Visibility" Value="Hidden" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ProgressBar.Style>
+                            </ProgressBar>
+                        </Grid>
+                    </Button>
+                </StackPanel>
+                <!--  删除 N天之前的日志  -->
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="{x:Static languages:Language.Delete}" />
+                    <Border
+                        Margin="5"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Background="#1A696969"
+                        CornerRadius="5">
+                        <TextBox
+                            Width="50"
+                            Height="30"
+                            MaxWidth="500"
+                            Margin="5,0"
+                            materialDesign:TextFieldAssist.HasClearButton="False"
+                            materialDesign:TextFieldAssist.HasFilledTextField="True"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="White"
+                            InputMethod.IsInputMethodEnabled="False"
+                            Text="{Binding ManualCleanupParams.LogDataAgoDays, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    </Border>
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="{x:Static languages:Language.LogDataDaysAgo}" />
+                    <Button
+                        Height="Auto"
+                        MinHeight="30"
+                        Margin="30,0"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Bottom"
+                        materialDesign:ButtonAssist.CornerRadius="5"
+                        Background="#2E2E2E"
+                        BorderThickness="0"
+                        Command="{Binding ManualCleanupCommand}"
+                        CommandParameter="LogData"
+                        FocusVisualStyle="{x:Null}"
+                        Style="{StaticResource MaterialDesignFlatAccentBgButton}">
+
+                        <Grid>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock
+                                    Margin="0,0,0,0"
+                                    VerticalAlignment="Center"
+                                    FontFamily="{StaticResource IconFontFamily}"
+                                    FontSize="18"
+                                    Foreground="DarkGray"
+                                    Text="&#xe77d;" />
+                                <TextBlock
+                                    Margin="2,1,0,0"
+                                    VerticalAlignment="Center"
+                                    FontFamily="{StaticResource CustomFontFamily}"
+                                    FontSize="14"
+                                    FontWeight="Bold"
+                                    Foreground="DarkGray"
+                                    Text="{x:Static languages:Language.Delete}" />
+                                <StackPanel.Style>
+                                    <Style TargetType="StackPanel">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsDeletingInProgress}" Value="True">
+                                                <Setter Property="Visibility" Value="Hidden" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding IsDeletingInProgress}" Value="False">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </StackPanel.Style>
+                            </StackPanel>
+                            <ProgressBar
+                                Width="25"
+                                Height="25"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                IsIndeterminate="True"
+                                Value="0">
+                                <ProgressBar.Style>
+                                    <Style BasedOn="{StaticResource MaterialDesignCircularProgressBar}" TargetType="ProgressBar">
+                                        <Setter Property="Visibility" Value="Hidden" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsDeletingInProgress}" Value="True">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding IsDeletingInProgress}" Value="False">
+                                                <Setter Property="Visibility" Value="Hidden" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ProgressBar.Style>
+                            </ProgressBar>
+                        </Grid>
+                    </Button>
                 </StackPanel>
             </StackPanel>
         </StackPanel>
-        <!--  保存按钮  -->
-        <Button
-            Grid.Row="1"
-            Height="Auto"
-            MinHeight="30"
-            Margin="30,10"
-            HorizontalAlignment="Left"
-            VerticalAlignment="Bottom"
-            materialDesign:ButtonAssist.CornerRadius="5"
-            Background="#2E2E2E"
-            BorderThickness="0"
-            Command="{Binding SaveSettingsCommand}"
-            FocusVisualStyle="{x:Null}"
-            Style="{StaticResource MaterialDesignFlatAccentBgButton}">
-
-            <Grid>
+        <!--  自动清理(最短时间为一周)  -->
+        <StackPanel Orientation="Vertical">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock
+                    Margin="0,0,0,1"
+                    VerticalAlignment="Center"
+                    FontFamily="{StaticResource IconFontFamily}"
+                    FontSize="20"
+                    Foreground="DarkGray"
+                    Text="&#xe782;" />
+                <TextBlock
+                    Margin="5,0"
+                    VerticalAlignment="Center"
+                    FontSize="16"
+                    FontWeight="Bold"
+                    Foreground="DarkGray"
+                    Text="{x:Static languages:Language.AutomaticCleanup}" />
+            </StackPanel>
+            <StackPanel Margin="50,0,0,0" Orientation="Vertical">
+                <!--  删除 N天之前的数据  -->
                 <StackPanel Orientation="Horizontal">
                     <TextBlock
-                        Margin="0,0,0,0"
+                        Margin="5,0"
                         VerticalAlignment="Center"
-                        FontFamily="{StaticResource IconFontFamily}"
-                        FontSize="18"
-                        Foreground="DarkGray"
-                        Text="&#xe66e;" />
-                    <TextBlock
-                        Margin="2,1,0,0"
-                        VerticalAlignment="Center"
-                        FontFamily="{StaticResource CustomFontFamily}"
-                        FontSize="14"
+                        FontSize="13"
                         FontWeight="Bold"
                         Foreground="DarkGray"
-                        Text="{x:Static languages:Language.SaveSettings}" />
-                    <StackPanel.Style>
-                        <Style TargetType="StackPanel">
-                            <Setter Property="Visibility" Value="Visible" />
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding IsSavingInProgress}" Value="True">
-                                    <Setter Property="Visibility" Value="Hidden" />
-                                </DataTrigger>
-                                <DataTrigger Binding="{Binding IsSavingInProgress}" Value="False">
-                                    <Setter Property="Visibility" Value="Visible" />
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </StackPanel.Style>
+                        Text="{x:Static languages:Language.Delete}" />
+                    <Border
+                        Margin="5"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Background="#1A696969"
+                        CornerRadius="5">
+                        <TextBox
+                            Width="50"
+                            Height="30"
+                            MaxWidth="500"
+                            Margin="5,0"
+                            materialDesign:TextFieldAssist.HasClearButton="False"
+                            materialDesign:TextFieldAssist.HasFilledTextField="True"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="White"
+                            InputMethod.IsInputMethodEnabled="False"
+                            Text="{Binding AutoCleanupParams.BarcodeDataAgoDays, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    </Border>
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="{x:Static languages:Language.BarcodeDataDaysAgo}" />
                 </StackPanel>
-                <ProgressBar
-                    Name="StatusProgressBar"
-                    Width="25"
-                    Height="25"
+                <!--  删除 N天之前的扫码图片  -->
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="{x:Static languages:Language.Delete}" />
+                    <Border
+                        Margin="5"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Background="#1A696969"
+                        CornerRadius="5">
+                        <TextBox
+                            Width="50"
+                            Height="30"
+                            MaxWidth="500"
+                            Margin="5,0"
+                            materialDesign:TextFieldAssist.HasClearButton="False"
+                            materialDesign:TextFieldAssist.HasFilledTextField="True"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="White"
+                            InputMethod.IsInputMethodEnabled="False"
+                            Text="{Binding AutoCleanupParams.ScanImageAgoDays, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    </Border>
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="{x:Static languages:Language.ScannedImageDaysAgo}" />
+                </StackPanel>
+                <!--  删除 N天之前的全景图片  -->
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="{x:Static languages:Language.Delete}" />
+                    <Border
+                        Margin="5"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Background="#1A696969"
+                        CornerRadius="5">
+                        <TextBox
+                            Width="50"
+                            Height="30"
+                            MaxWidth="500"
+                            Margin="5,0"
+                            materialDesign:TextFieldAssist.HasClearButton="False"
+                            materialDesign:TextFieldAssist.HasFilledTextField="True"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="White"
+                            InputMethod.IsInputMethodEnabled="False"
+                            Text="{Binding AutoCleanupParams.PanoramaImageAgoDays, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    </Border>
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="{x:Static languages:Language.PanoramaImageDaysAgo}" />
+                </StackPanel>
+                <!--  删除 N天之前的FTP图片  -->
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="{x:Static languages:Language.Delete}" />
+                    <Border
+                        Margin="5"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Background="#1A696969"
+                        CornerRadius="5">
+                        <TextBox
+                            Width="50"
+                            Height="30"
+                            MaxWidth="500"
+                            Margin="5,0"
+                            materialDesign:TextFieldAssist.HasClearButton="False"
+                            materialDesign:TextFieldAssist.HasFilledTextField="True"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="White"
+                            InputMethod.IsInputMethodEnabled="False"
+                            Text="{Binding AutoCleanupParams.FtpImageAgoDays, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    </Border>
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="{x:Static languages:Language.FTPImageDaysAgo}" />
+                </StackPanel>
+                <!--  删除 N天之前的日志  -->
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="{x:Static languages:Language.Delete}" />
+                    <Border
+                        Margin="5"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Background="#1A696969"
+                        CornerRadius="5">
+                        <TextBox
+                            Width="50"
+                            Height="30"
+                            MaxWidth="500"
+                            Margin="5,0"
+                            materialDesign:TextFieldAssist.HasClearButton="False"
+                            materialDesign:TextFieldAssist.HasFilledTextField="True"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="White"
+                            InputMethod.IsInputMethodEnabled="False"
+                            Text="{Binding AutoCleanupParams.LogDataAgoDays, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    </Border>
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="{x:Static languages:Language.LogDataDaysAgo}" />
+                </StackPanel>
+            </StackPanel>
+        </StackPanel>
+        <!--  最小空间保障  -->
+        <StackPanel Orientation="Vertical">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock
+                    Margin="0,0,0,1"
+                    VerticalAlignment="Center"
+                    FontFamily="{StaticResource IconFontFamily}"
+                    FontSize="20"
+                    Foreground="DarkGray"
+                    Text="&#xe77d;" />
+                <TextBlock
+                    Margin="5,0"
+                    VerticalAlignment="Center"
+                    FontSize="16"
+                    FontWeight="Bold"
+                    Foreground="DarkGray"
+                    Text="{x:Static languages:Language.MinAvailable}" />
+            </StackPanel>
+            <StackPanel Margin="50,0,0,0" Orientation="Horizontal">
+                <TextBlock
+                    Margin="5,0"
+                    VerticalAlignment="Center"
+                    FontSize="13"
+                    FontWeight="Bold"
+                    Foreground="DarkGray"
+                    Text="{x:Static languages:Language.MinimumRetention}" />
+                <Border
+                    Margin="5"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"
-                    IsIndeterminate="True"
-                    Value="0">
-                    <ProgressBar.Style>
-                        <Style BasedOn="{StaticResource MaterialDesignCircularProgressBar}" TargetType="ProgressBar">
-                            <Setter Property="Visibility" Value="Hidden" />
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding IsSavingInProgress}" Value="True">
-                                    <Setter Property="Visibility" Value="Visible" />
-                                </DataTrigger>
-                                <DataTrigger Binding="{Binding IsSavingInProgress}" Value="False">
-                                    <Setter Property="Visibility" Value="Hidden" />
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </ProgressBar.Style>
-                </ProgressBar>
-            </Grid>
-        </Button>
-        <!--  提示框  -->
-        <materialDesign:Snackbar
-            Grid.Row="1"
-            Grid.ColumnSpan="2"
-            Width="Auto"
-            Height="Auto"
-            VerticalAlignment="Bottom"
-            Background="BlueViolet"
-            FontFamily="LoadFiraCode"
-            FontWeight="Bold"
-            MessageQueue="{Binding CacheClearSettingsMessageQueue}" />
-    </Grid>
+                    Background="#1A696969"
+                    CornerRadius="5">
+                    <TextBox
+                        Width="50"
+                        Height="30"
+                        MaxWidth="500"
+                        Margin="5,0"
+                        materialDesign:TextFieldAssist.HasClearButton="False"
+                        materialDesign:TextFieldAssist.HasFilledTextField="True"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="White"
+                        InputMethod.IsInputMethodEnabled="False"
+                        Text="{Binding MinimumSpaceRetention, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                </Border>
+                <TextBlock
+                    Margin="5,0"
+                    VerticalAlignment="Center"
+                    FontSize="13"
+                    FontWeight="Bold"
+                    Foreground="DarkGray"
+                    Text="{x:Static languages:Language.AvailableSpace}" />
+            </StackPanel>
+        </StackPanel>
+    </StackPanel>
 </Page>

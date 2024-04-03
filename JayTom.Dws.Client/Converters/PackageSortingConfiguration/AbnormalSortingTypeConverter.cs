@@ -47,6 +47,9 @@ namespace JayTom.Dws.Client.Converters.PackageSortingConfiguration {
 
                     case AbnormalSortingType.PostSegmentNotFound:
                         return "查不到段道";
+
+                    case AbnormalSortingType.UnmatchedRule:
+                        return "未命中规则";
                 }
             }
             return Binding.DoNothing;

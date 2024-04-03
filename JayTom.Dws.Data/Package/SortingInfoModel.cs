@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace JayTom.Dws.Data.Package {
+
     [Table("Data_SortingInfo", Schema = "dbo")]
     public class SortingInfoModel : BasePackageForeignKeyInfoModel {
 
@@ -27,13 +28,11 @@ namespace JayTom.Dws.Data.Package {
         [Column("SortingMode")]
         public SortMode SortingMode { get; set; }
 
-
         /// <summary>
         /// 是否有下位机创建
         /// </summary>
         [Column("IsCreatedByLowerMachine")]
         public bool IsCreatedByLowerMachine { get; set; }
-
 
         /// <summary>
         /// 通讯方式
@@ -273,5 +272,10 @@ namespace JayTom.Dws.Data.Package {
         /// 查不到段道
         /// </summary>
         PostSegmentNotFound,
+
+        /// <summary>
+        /// 未命中规则
+        /// </summary>
+        UnmatchedRule,
     }
 }

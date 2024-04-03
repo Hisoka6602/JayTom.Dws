@@ -64,6 +64,19 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     PageClassName = "LicensePage",
                     ClickCommand = ClickCommand
                 },
+                new()
+                {
+                    Title = "设置同步",
+                    IconFont = new IconInfoModel()
+                    {
+                        IconFont = "pack://application:,,,/Fonts/#iconfont",
+                        IconCode = "\xe957",
+                        IconSize = 25
+                    },
+                    Description = "设置同步",
+                    PageClassName = "SyncSettingsPage",
+                    ClickCommand = ClickCommand
+                },
             };
         }
 

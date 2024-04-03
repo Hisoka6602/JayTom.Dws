@@ -23,8 +23,7 @@ using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
 
-    public class SaveImageSettingsPageViewModel : BindableBase {
-        private readonly IConfigRepository _configRepository;
+    public class SaveImageSettingsPageViewModel : SettingsPageTemplateViewModel {
         private bool _isUseWatermark;
         private string _watermarkText = Languages.Language.ResourceManager.GetString("测试水印") ?? string.Empty;
         private System.Windows.Media.Color _watermarkColor = Color.FromRgb(System.Drawing.Color.DodgerBlue.R, System.Drawing.Color.DodgerBlue.G, System.Drawing.Color.DodgerBlue.B);
@@ -135,12 +134,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         private string _password = string.Empty;
         private bool _isSaveOriginalImage;
         private int _timeout;
-        private SnackbarMessageQueue _saveImageSettingsMessageQueue = new(TimeSpan.FromSeconds(2));
-        private bool _isSavingInProgress;
         private bool _isLoaded;
 
-        public SaveImageSettingsPageViewModel(IConfigRepository configRepository) {
-            _configRepository = configRepository;
+        public SaveImageSettingsPageViewModel(IConfigRepository configRepository) : base(configRepository) {
             _imageSource = _originalImage;
         }
 
@@ -159,14 +155,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             set => SetProperty(ref _imageNamingItems, value);
         }
 
-        /// <summary>
-        /// 提示内容
-        /// </summary>
-        public SnackbarMessageQueue SaveImageSettingsMessageQueue {
-            get => _saveImageSettingsMessageQueue;
-            set => SetProperty(ref _saveImageSettingsMessageQueue, value);
-        }
-
         public ICommand SliderValueChangedCommand {
             get => new DelegateCommand(SetWatermarkToImage);
         }
@@ -175,21 +163,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             get => new DelegateCommand(SetWatermarkToImage);
         }
 
-        public ICommand CheckBoxValueChangedCommand {
-            get => new DelegateCommand(SetWatermarkToImage);
-        }
+        public ICommand CheckBoxValueChangedCommand => new DelegateCommand(SetWatermarkToImage);
 
-        public ICommand WatermarkPositionCommand {
-            get => new DelegateCommand(SetWatermarkToImage);
-        }
-
-        /// <summary>
-        /// 是否保存中
-        /// </summary>
-        public bool IsSavingInProgress {
-            get => _isSavingInProgress;
-            set => SetProperty(ref _isSavingInProgress, value);
-        }
+        public ICommand WatermarkPositionCommand => new DelegateCommand(SetWatermarkToImage);
 
         /// <summary>
         /// 存图根目录
@@ -343,70 +319,54 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             set => SetProperty(ref _imageSource, value);
         }
 
-        /// <summary>
-        /// 页面加载完成
-        /// </summary>
-        public ICommand LoadedCommand {
-            get => new DelegateCommand<object>(LoadedDelegate);
-        }
-
-        private async void LoadedDelegate(object obj) {
+        public override async void LoadedDelegate(object obj) {
             if (!_isLoaded) {
                 _isLoaded = true;
                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
                     //加载配置 SaveImageSettings
-                    var configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("SaveImageSettings"));
-                    if (configInfoModel is not null) {
-                        try {
-                            WatermarkItems.Clear();
-                            SubDirectoryItems.Clear();
-                            ImageNamingItems.Clear();
-                            var imageSettingsDto = JsonConvert.DeserializeObject<ImageSettingsDto>(configInfoModel.Value);
-                            if (imageSettingsDto is not null) {
-                                ImageRootDirectory = imageSettingsDto.ImageRootDirectory;
-                                IsSaveBarcodeImage = imageSettingsDto.IsSaveBarcodeImage;
-                                IsSavePanoramaImage = imageSettingsDto.IsSavePanoramaImage;
-                                IsSaveVolumeImage = imageSettingsDto.IsSaveVolumeImage;
-                                IsSaveOriginalImage = imageSettingsDto.IsSaveOriginalImage;
-                                IsUseWatermark = imageSettingsDto.IsUseWatermark;
-                                WatermarkColor = Color.FromRgb(imageSettingsDto.WatermarkInfo.WatermarkColor.R,
-                                    imageSettingsDto.WatermarkInfo.WatermarkColor.G,
-                                    imageSettingsDto.WatermarkInfo.WatermarkColor.B);
-                                WatermarkFontSize = imageSettingsDto.WatermarkInfo.WatermarkFontSize;
-                                WatermarkPosition = imageSettingsDto.WatermarkInfo.WatermarkPosition;
-                                var templateModels = imageSettingsDto.WatermarkInfo.ItemTemplate.Select((s, i) => new ItemBaseTemplateModel {
-                                    ApplicationType = s.ApplicationType,
-                                    Content = s.Content,
-                                    Type = s.Type,
-                                    Id = i + 1,
-                                })?.ToList();
-                                WatermarkItems.AddRange(templateModels);
-                                var models = imageSettingsDto.SubDirectoryTemplate?.Select((s, i) => new ItemBaseTemplateModel() {
-                                    ApplicationType = s.ApplicationType,
-                                    Content = s.Content,
-                                    Type = s.Type,
-                                    Id = i + 1
-                                }).ToList();
-                                SubDirectoryItems.AddRange(models);
-                                var list = imageSettingsDto.ImageNamingTemplate.Select((s, i) => new ItemBaseTemplateModel {
-                                    ApplicationType = s.ApplicationType,
-                                    Content = s.Content,
-                                    Type = s.Type,
-                                    Id = i + 1,
-                                }).ToList();
-                                ImageNamingItems.AddRange(list);
-                                IsFtpUploadEnabled = imageSettingsDto.IsFtpUploadEnabled;
-                                IpAddress = imageSettingsDto.FtpInfo.IpAddress;
-                                Port = imageSettingsDto.FtpInfo.Port;
-                                Password = imageSettingsDto.FtpInfo.Password;
-                                Timeout = imageSettingsDto.FtpInfo.Timeout;
-                                Username = imageSettingsDto.FtpInfo.Username;
-                            }
-                        }
-                        catch (Exception e) {
-                            SaveImageSettingsMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("加载设置失败") ?? string.Empty}:{e.Message}");
-                        }
-                    }
+                    WatermarkItems.Clear();
+                    SubDirectoryItems.Clear();
+                    ImageNamingItems.Clear();
+                    var imageSettingsDto = await _configRepository.FirstOrDefaultEntity<ImageSettingsDto>(SettingsName) ??
+                                           new ImageSettingsDto();
+                    ImageRootDirectory = imageSettingsDto.ImageRootDirectory;
+                    IsSaveBarcodeImage = imageSettingsDto.IsSaveBarcodeImage;
+                    IsSavePanoramaImage = imageSettingsDto.IsSavePanoramaImage;
+                    IsSaveVolumeImage = imageSettingsDto.IsSaveVolumeImage;
+                    IsSaveOriginalImage = imageSettingsDto.IsSaveOriginalImage;
+                    IsUseWatermark = imageSettingsDto.IsUseWatermark;
+                    WatermarkColor = Color.FromRgb(imageSettingsDto.WatermarkInfo.WatermarkColor.R,
+                        imageSettingsDto.WatermarkInfo.WatermarkColor.G,
+                        imageSettingsDto.WatermarkInfo.WatermarkColor.B);
+                    WatermarkFontSize = imageSettingsDto.WatermarkInfo.WatermarkFontSize;
+                    WatermarkPosition = imageSettingsDto.WatermarkInfo.WatermarkPosition;
+                    var templateModels = imageSettingsDto.WatermarkInfo.ItemTemplate.Select((s, i) => new ItemBaseTemplateModel {
+                        ApplicationType = s.ApplicationType,
+                        Content = s.Content,
+                        Type = s.Type,
+                        Id = i + 1,
+                    })?.ToList();
+                    WatermarkItems.AddRange(templateModels);
+                    var models = imageSettingsDto.SubDirectoryTemplate?.Select((s, i) => new ItemBaseTemplateModel() {
+                        ApplicationType = s.ApplicationType,
+                        Content = s.Content,
+                        Type = s.Type,
+                        Id = i + 1
+                    }).ToList();
+                    SubDirectoryItems.AddRange(models);
+                    var list = imageSettingsDto.ImageNamingTemplate.Select((s, i) => new ItemBaseTemplateModel {
+                        ApplicationType = s.ApplicationType,
+                        Content = s.Content,
+                        Type = s.Type,
+                        Id = i + 1,
+                    }).ToList();
+                    ImageNamingItems.AddRange(list);
+                    IsFtpUploadEnabled = imageSettingsDto.IsFtpUploadEnabled;
+                    IpAddress = imageSettingsDto.FtpInfo.IpAddress;
+                    Port = imageSettingsDto.FtpInfo.Port;
+                    Password = imageSettingsDto.FtpInfo.Password;
+                    Timeout = imageSettingsDto.FtpInfo.Timeout;
+                    Username = imageSettingsDto.FtpInfo.Username;
                 });
             }
         }
@@ -414,9 +374,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 浏览目录
         /// </summary>
-        public ICommand OpenFolderCommand {
-            get => new DelegateCommand<object>(OpenFolderDelegate);
-        }
+        public ICommand OpenFolderCommand => new DelegateCommand<object>(OpenFolderDelegate);
 
         private void OpenFolderDelegate(object obj) {
             var folderBrowserDialog = new FolderBrowserDialog() {
@@ -427,75 +385,53 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             }
         }
 
-        /// <summary>
-        /// 保存设置
-        /// </summary>
-        public ICommand SaveSettingsCommand {
-            get => new DelegateCommand<object>(SaveSettingDelegate);
-        }
+        public override string Identifier => "SaveImageSettingsDialogHost";
+        public override string SettingsName => "SaveImageSettings";
 
-        private async void SaveSettingDelegate(object obj) {
-            if (!IsSavingInProgress) {
-                IsSavingInProgress = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
-                    // var loadingDialog = new LoadingDialog();
-                    var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
-                        ConfigName = "SaveImageSettings",
-                        Value = JsonConvert.SerializeObject(new ImageSettingsDto {
-                            ImageRootDirectory = ImageRootDirectory,
-                            IsSaveBarcodeImage = IsSaveBarcodeImage,
-                            IsSavePanoramaImage = IsSavePanoramaImage,
-                            IsSaveVolumeImage = IsSaveVolumeImage,
-                            IsSaveOriginalImage = IsSaveOriginalImage,
-                            IsUseWatermark = IsUseWatermark,
-                            WatermarkInfo = new WatermarkInfo {
-                                WatermarkColor = System.Drawing.Color.FromArgb(WatermarkColor.A,
-                                    WatermarkColor.R, WatermarkColor.G, WatermarkColor.B),
-                                WatermarkFontSize = WatermarkFontSize,
-                                WatermarkPosition = WatermarkPosition,
-                                ItemTemplate = WatermarkItems.Select(s => new ItemTemplateInfo {
-                                    ApplicationType = s.ApplicationType,
-                                    Content = s.Content,
-                                    Type = s.Type,
-                                }).ToList()
-                            },
-                            SubDirectoryTemplate = SubDirectoryItems.Select(s => new ItemTemplateInfo() {
-                                ApplicationType = s.ApplicationType,
-                                Content = s.Content,
-                                Type = s.Type,
-                            }).ToList(),
-                            ImageNamingTemplate = ImageNamingItems.Select(s => new ItemTemplateInfo() {
-                                ApplicationType = s.ApplicationType,
-                                Content = s.Content,
-                                Type = s.Type,
-                            }).ToList(),
-                            IsFtpUploadEnabled = IsFtpUploadEnabled,
-                            FtpInfo = new FtpInfo() {
-                                IpAddress = IpAddress,
-                                Password = Password,
-                                Port = Port,
-                                Timeout = Timeout,
-                                Username = Username
-                            }
-                        })
-                    });
-                    if (insertOrUpdate) {
-                        EventAggregator.Instance.Publish(new SettingsChangedEvent {
-                            SettingsName = "SaveImageSettings"
-                        });
+        protected override async Task<bool> SaveSettingsProcess() {
+            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
+                ConfigName = SettingsName,
+                Value = JsonConvert.SerializeObject(new ImageSettingsDto {
+                    ImageRootDirectory = ImageRootDirectory,
+                    IsSaveBarcodeImage = IsSaveBarcodeImage,
+                    IsSavePanoramaImage = IsSavePanoramaImage,
+                    IsSaveVolumeImage = IsSaveVolumeImage,
+                    IsSaveOriginalImage = IsSaveOriginalImage,
+                    IsUseWatermark = IsUseWatermark,
+                    WatermarkInfo = new WatermarkInfo {
+                        WatermarkColor = System.Drawing.Color.FromArgb(WatermarkColor.A,
+                            WatermarkColor.R, WatermarkColor.G, WatermarkColor.B),
+                        WatermarkFontSize = WatermarkFontSize,
+                        WatermarkPosition = WatermarkPosition,
+                        ItemTemplate = WatermarkItems.Select(s => new ItemTemplateInfo {
+                            ApplicationType = s.ApplicationType,
+                            Content = s.Content,
+                            Type = s.Type,
+                        }).ToList()
+                    },
+                    SubDirectoryTemplate = SubDirectoryItems.Select(s => new ItemTemplateInfo() {
+                        ApplicationType = s.ApplicationType,
+                        Content = s.Content,
+                        Type = s.Type,
+                    }).ToList(),
+                    ImageNamingTemplate = ImageNamingItems.Select(s => new ItemTemplateInfo() {
+                        ApplicationType = s.ApplicationType,
+                        Content = s.Content,
+                        Type = s.Type,
+                    }).ToList(),
+                    IsFtpUploadEnabled = IsFtpUploadEnabled,
+                    FtpInfo = new FtpInfo() {
+                        IpAddress = IpAddress,
+                        Password = Password,
+                        Port = Port,
+                        Timeout = Timeout,
+                        Username = Username
                     }
-
-                    IsSavingInProgress = false;
-
-                    SaveImageSettingsMessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
-                        Languages.Language.ResourceManager.GetString("SaveFailed"))}");
-                });
-            }
-
-            //显示遮罩
-            //保存设置到数据库
-            //通知设置更改事件
-            //隐藏遮罩
+                })
+            });
+            base.MessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
+                Languages.Language.ResourceManager.GetString("SaveFailed"))}");
+            return insertOrUpdate;
         }
 
         /// <summary>

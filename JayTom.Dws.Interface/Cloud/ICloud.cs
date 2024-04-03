@@ -652,7 +652,7 @@ namespace JayTom.Dws.Interface.Cloud {
         NoSortingInstruction,
 
         /// <summary>
-        /// 无物理格口(无适应规则)
+        /// 无物理格口
         /// </summary>
         NoPhysicalMailbox,
 
@@ -675,6 +675,11 @@ namespace JayTom.Dws.Interface.Cloud {
         /// 查不到段道
         /// </summary>
         PostSegmentNotFound,
+
+        /// <summary>
+        /// 未命中规则
+        /// </summary>
+        UnmatchedRule,
     }
 
     public enum InstructionType {

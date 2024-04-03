@@ -6,6 +6,7 @@ using Newtonsoft.Json;
 using System.Text.Json;
 using System.Text.Unicode;
 using System.Windows.Input;
+using System.Threading.Tasks;
 using MaterialDesignThemes.Wpf;
 using JayTom.Dws.Data.LocalConf;
 using System.Text.Encodings.Web;
@@ -16,25 +17,18 @@ using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Client.Models.ImageSettingModels;
+using JayTom.Dws.Infrastructure.Repository.LocalConf;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 using JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
-    public class DefaultApiPageViewModel : BindableBase {
-        private readonly IConfigRepository _configRepository;
+
+    public class DefaultApiPageViewModel : SettingsPageTemplateViewModel {
         private DefaultApiModel _defaultApiInfo = new();
         private string _jsonContent = string.Empty;
-        private SnackbarMessageQueue _defaultApiMessageQueue = new(TimeSpan.FromSeconds(2));
-        private bool _isSavingInProgress;
         private bool _isLoaded;
 
-        public DefaultApiPageViewModel(IConfigRepository configRepository) {
-            _configRepository = configRepository;
-        }
-
-        public SnackbarMessageQueue DefaultApiMessageQueue {
-            get => _defaultApiMessageQueue;
-            set => SetProperty(ref _defaultApiMessageQueue, value);
+        public DefaultApiPageViewModel(IConfigRepository configRepository) : base(configRepository) {
         }
 
         /// <summary>
@@ -51,14 +45,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
         public string JsonContent {
             get => _jsonContent;
             set => SetProperty(ref _jsonContent, value);
-        }
-
-        /// <summary>
-        /// 是否保存中
-        /// </summary>
-        public bool IsSavingInProgress {
-            get => _isSavingInProgress;
-            set => SetProperty(ref _isSavingInProgress, value);
         }
 
         /// <summary>
@@ -124,92 +110,67 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
             });
         }
 
-        /// <summary>
-        /// 保存设置
-        /// </summary>
-        public ICommand SaveSettingsCommand {
-            get => new DelegateCommand<object>(SaveSettingDelegate);
+        public override string Identifier => "DefaultApiParametersDialogHost";
+        public override string SettingsName => "DefaultApiParameters";
+
+        protected override async Task<bool> SaveSettingsProcess() {
+            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
+                ConfigName = SettingsName,
+                Value = JsonConvert.SerializeObject(new DefaultApiDto {
+                    CompleteMatch = DefaultApiInfo.CompleteMatch,
+                    DataTemplate = DefaultApiInfo.DataTemplate.Select(s =>
+                        new ItemTemplateInfo() {
+                            ApplicationType = s.ApplicationType,
+                            Content = s.Content,
+                            Type = s.Type
+                        })?.ToList() ?? new List<ItemTemplateInfo>(),
+                    IsUseJsonUpload = DefaultApiInfo.IsUseJsonUpload,
+                    RegularExpression = DefaultApiInfo.RegularExpression,
+                    StringContains = DefaultApiInfo.StringContains,
+                    Timeout = TimeSpan.FromMilliseconds(DefaultApiInfo.Timeout),
+                    Url = DefaultApiInfo.Url,
+                    ValidationMode = DefaultApiInfo.ValidationMode,
+                    JsonTemplate = JsonContent,
+                    StringTemplate = string.Join(",", DefaultApiInfo.DataTemplate.Where(w => w.ApplicationType == ItemApplicationType.ApiData)
+                        .Select(s => s.Content)?.ToList() ?? new List<string>()),
+                    IsUploadPanoramaImage = DefaultApiInfo.IsUploadPanoramaImage,
+                    IsUploadScanImage = DefaultApiInfo.IsUploadScanImage,
+                    IsUseUploadImage = DefaultApiInfo.IsUseUploadImage
+                })
+            });
+            base.MessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
+                Languages.Language.ResourceManager.GetString("SaveFailed"))}");
+            return insertOrUpdate;
         }
 
-        private async void SaveSettingDelegate(object obj) {
-            if (!IsSavingInProgress) {
-                IsSavingInProgress = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
-                    var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
-                        ConfigName = "DefaultApiParameters",
-                        Value = JsonConvert.SerializeObject(new DefaultApiDto {
-                            CompleteMatch = DefaultApiInfo.CompleteMatch,
-                            DataTemplate = DefaultApiInfo.DataTemplate.Select(s =>
-                                new ItemTemplateInfo() {
-                                    ApplicationType = s.ApplicationType,
-                                    Content = s.Content,
-                                    Type = s.Type
-                                })?.ToList() ?? new List<ItemTemplateInfo>(),
-                            IsUseJsonUpload = DefaultApiInfo.IsUseJsonUpload,
-                            RegularExpression = DefaultApiInfo.RegularExpression,
-                            StringContains = DefaultApiInfo.StringContains,
-                            Timeout = TimeSpan.FromMilliseconds(DefaultApiInfo.Timeout),
-                            Url = DefaultApiInfo.Url,
-                            ValidationMode = DefaultApiInfo.ValidationMode,
-                            JsonTemplate = JsonContent,
-                            StringTemplate = string.Join(",", DefaultApiInfo.DataTemplate.Where(w => w.ApplicationType == ItemApplicationType.ApiData)
-                                .Select(s => s.Content)?.ToList() ?? new List<string>()),
-                            IsUploadPanoramaImage = DefaultApiInfo.IsUploadPanoramaImage,
-                            IsUploadScanImage = DefaultApiInfo.IsUploadScanImage,
-                            IsUseUploadImage = DefaultApiInfo.IsUseUploadImage
-                        })
-                    });
-                    if (insertOrUpdate) {
-                        EventAggregator.Instance.Publish(new SettingsChangedEvent {
-                            SettingsName = "DefaultApiParameters"
-                        });
-                    }
-                    IsSavingInProgress = false;
-                    DefaultApiMessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
-                        Languages.Language.ResourceManager.GetString("SaveFailed"))}");
-                });
-            }
-        }
-
-        /// <summary>
-        /// 页面加载完成
-        /// </summary>
-        public ICommand LoadedCommand {
-            get => new DelegateCommand<object>(LoadedDelegate);
-        }
-
-        private async void LoadedDelegate(object obj) {
+        public override async void LoadedDelegate(object obj) {
             if (!_isLoaded) {
                 _isLoaded = true;
 
                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
-                    var configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("DefaultApiParameters"));
-                    if (configInfoModel is not null) {
-                        var settingsDto = JsonConvert.DeserializeObject<DefaultApiDto>(configInfoModel.Value);
-                        if (settingsDto is not null) {
-                            var templateModels = settingsDto.DataTemplate.Select(s => new ItemBaseTemplateModel() {
-                                ApplicationType = s.ApplicationType,
-                                Content = s.Content,
-                                Type = s.Type
-                            })?.ToList();
+                    var settingsDto = await _configRepository.FirstOrDefaultEntity<DefaultApiDto>(SettingsName) ?? new DefaultApiDto();
 
-                            DefaultApiInfo = new DefaultApiModel() {
-                                CompleteMatch = settingsDto.CompleteMatch,
-                                DataTemplate = new ObservableCollection<ItemBaseTemplateModel>(),
-                                IsUseJsonUpload = settingsDto.IsUseJsonUpload,
-                                RegularExpression = settingsDto.RegularExpression,
-                                StringContains = settingsDto.StringContains,
-                                Timeout = (int)settingsDto.Timeout.TotalMilliseconds,
-                                Url = settingsDto.Url,
-                                ValidationMode = settingsDto.ValidationMode,
-                                IsUploadPanoramaImage = settingsDto.IsUploadPanoramaImage,
-                                IsUploadScanImage = settingsDto.IsUploadScanImage,
-                                IsUseUploadImage = settingsDto.IsUseUploadImage
-                            };
-                            DefaultApiInfo.DataTemplate.AddRange(templateModels);
-                            JsonContent = ChangeJsonContent(DefaultApiInfo.DataTemplate);
-                        }
-                    }
+                    var templateModels = settingsDto.DataTemplate.Select(s => new ItemBaseTemplateModel() {
+                        ApplicationType = s.ApplicationType,
+                        Content = s.Content,
+                        Type = s.Type
+                    })?.ToList();
+
+                    DefaultApiInfo = new DefaultApiModel() {
+                        CompleteMatch = settingsDto.CompleteMatch,
+                        DataTemplate = new ObservableCollection<ItemBaseTemplateModel>(),
+                        IsUseJsonUpload = settingsDto.IsUseJsonUpload,
+                        RegularExpression = settingsDto.RegularExpression,
+                        StringContains = settingsDto.StringContains,
+                        Timeout = (int)settingsDto.Timeout.TotalMilliseconds,
+                        Url = settingsDto.Url,
+                        ValidationMode = settingsDto.ValidationMode,
+                        IsUploadPanoramaImage = settingsDto.IsUploadPanoramaImage,
+                        IsUploadScanImage = settingsDto.IsUploadScanImage,
+                        IsUseUploadImage = settingsDto.IsUseUploadImage
+                    };
+                    DefaultApiInfo.DataTemplate.AddRange(templateModels);
+                    JsonContent = ChangeJsonContent(DefaultApiInfo.DataTemplate);
                 });
             }
         }

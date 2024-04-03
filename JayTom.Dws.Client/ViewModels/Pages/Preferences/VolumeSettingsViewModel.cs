@@ -6,6 +6,7 @@ using Newtonsoft.Json;
 using System.IO.Ports;
 using System.Windows.Input;
 using JayTom.Dws.Domain.Dto;
+using System.Threading.Tasks;
 using JayTom.Dws.Client.Models;
 using JayTom.Dws.Data.LocalLog;
 using MaterialDesignThemes.Wpf;
@@ -19,11 +20,11 @@ using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Client.Models.ImageSettingModels;
 using JayTom.Dws.Client.Models.VolumeSettingsModel;
 using JayTom.Dws.Client.Models.SettingsCommomModels;
+using JayTom.Dws.Infrastructure.Repository.LocalConf;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
 
-    public class VolumeSettingsViewModel : BindableBase {
-        private readonly IConfigRepository _configRepository;
+    public class VolumeSettingsViewModel : SettingsPageTemplateViewModel {
         private VolumeSettingsInfoModel _volumeSettingsInfo = new();
         private ParityInfoModel _selectParity = new();
         private StopBitsInfoModel _selectStopBits = new();
@@ -123,9 +124,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         };
 
         private VolumeTriggerPositionModel _selectTriggerPosition = new();
-        private bool _isSavingInProgress;
         private bool _isLoaded;
-        private SnackbarMessageQueue _volumeSettingsMessageQueue = new(TimeSpan.FromSeconds(2));
 
         private ObservableCollection<VolumeUnitInfoModel> _volumeUnitInfoItem = new()
         {
@@ -151,13 +150,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             Value = VolumeUnit.Millimeter
         };
 
-        public VolumeSettingsViewModel(IConfigRepository configRepository) {
-            _configRepository = configRepository;
-        }
-
-        public SnackbarMessageQueue VolumeSettingsMessageQueue {
-            get => _volumeSettingsMessageQueue;
-            set => SetProperty(ref _volumeSettingsMessageQueue, value);
+        public VolumeSettingsViewModel(IConfigRepository configRepository) : base(configRepository) {
         }
 
         public VolumeSettingsInfoModel VolumeSettingsInfo {
@@ -266,14 +259,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         }
 
         /// <summary>
-        /// 是否保存中
-        /// </summary>
-        public bool IsSavingInProgress {
-            get => _isSavingInProgress;
-            set => SetProperty(ref _isSavingInProgress, value);
-        }
-
-        /// <summary>
         /// 串口刷新
         /// </summary>
         public ICommand PortUpdateCommand {
@@ -346,159 +331,133 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             });
         }
 
-        /// <summary>
-        /// 保存设置
-        /// </summary>
-        public ICommand SaveSettingsCommand {
-            get => new DelegateCommand<object>(SaveSettingDelegate);
-        }
+        public override string Identifier => "VolumeSettingsDialogHost";
+        public override string SettingsName => "VolumeSettings";
 
-        private async void SaveSettingDelegate(object obj) {
-            if (!IsSavingInProgress) {
-                IsSavingInProgress = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
-                    var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
-                        ConfigName = "VolumeSettings",
-                        Value = JsonConvert.SerializeObject(new VolumeSettingsDto {
-                            Unit = SelectVolumeUnitInfo.Value,
-                            DataTemplate = VolumeSettingsInfo.DataTemplate.Select(s => new ItemTemplateInfo() {
-                                ApplicationType = s.ApplicationType,
-                                Content = s.Content,
-                                Type = s.Type
-                            })?.ToList() ?? new List<ItemTemplateInfo>(),
-                            Separator = VolumeSettingsInfo.Separator,
-                            IsUseExternalVolumeInput = VolumeSettingsInfo.IsUseExternalVolumeInput,
-                            IsTriggerVolumeRequest = VolumeSettingsInfo.IsTriggerVolumeRequest,
-                            IsUseFusionTimeout = VolumeSettingsInfo.IsUseFusionTimeout,
-                            FusionTimeout = VolumeSettingsInfo.FusionTimeout,
-                            VolumeInformationRequesterInfo = new VolumeInformationRequesterInfo() {
-                                VolumeTriggerPosition = SelectTriggerPosition.Value,
-                                SendContent = VolumeSettingsInfo.VolumeInformationRequesterInfo.SendContent,
-                                SendDelay = VolumeSettingsInfo.VolumeInformationRequesterInfo.SendDelay,
-                                SendCount = VolumeSettingsInfo.VolumeInformationRequesterInfo.SendCount,
-                                SendInterval = VolumeSettingsInfo.VolumeInformationRequesterInfo.SendInterval,
-                                VolumeRequesterType = VolumeSettingsInfo.VolumeInformationRequesterInfo.VolumeRequesterType,
-                                TcpSettingsInfo = new TcpSettingsInfo() {
-                                    ConnectionMode = VolumeSettingsInfo.VolumeInformationRequesterInfo.TcpSettingsInfo.ConnectionMode,
-                                    ServerConfig = new TcpInfo() {
-                                        IpAddress = VolumeSettingsInfo.VolumeInformationRequesterInfo.TcpSettingsInfo.ServerConfig.IpAddress,
-                                        Port = VolumeSettingsInfo.VolumeInformationRequesterInfo.TcpSettingsInfo.ServerConfig.Port,
-                                    },
-                                    ClientConfig = new TcpInfo() {
-                                        IpAddress = VolumeSettingsInfo.VolumeInformationRequesterInfo.TcpSettingsInfo.ClientConfig.IpAddress,
-                                        Port = VolumeSettingsInfo.VolumeInformationRequesterInfo.TcpSettingsInfo.ClientConfig.Port,
-                                    }
-                                },
-                                SerialPortSettingsInfo = new SerialPortSettingsInfo() {
-                                    BaudRate = VolumeSettingsInfo.VolumeInformationRequesterInfo.SerialPortSettingsInfo.BaudRate,
-                                    DataBits = VolumeSettingsInfo.VolumeInformationRequesterInfo.SerialPortSettingsInfo.DataBits,
-                                    DataFormat = SelectDataFormat.Value,
-                                    Parity = SelectParity.Value,
-                                    PortName = VolumeSettingsInfo.VolumeInformationRequesterInfo.SerialPortSettingsInfo.PortName,
-                                    StopBits = SelectStopBits.Value,
-                                }
+        protected override async Task<bool> SaveSettingsProcess() {
+            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
+                ConfigName = SettingsName,
+                Value = JsonConvert.SerializeObject(new VolumeSettingsDto {
+                    Unit = SelectVolumeUnitInfo.Value,
+                    DataTemplate = VolumeSettingsInfo.DataTemplate.Select(s => new ItemTemplateInfo() {
+                        ApplicationType = s.ApplicationType,
+                        Content = s.Content,
+                        Type = s.Type
+                    })?.ToList() ?? new List<ItemTemplateInfo>(),
+                    Separator = VolumeSettingsInfo.Separator,
+                    IsUseExternalVolumeInput = VolumeSettingsInfo.IsUseExternalVolumeInput,
+                    IsTriggerVolumeRequest = VolumeSettingsInfo.IsTriggerVolumeRequest,
+                    IsUseFusionTimeout = VolumeSettingsInfo.IsUseFusionTimeout,
+                    FusionTimeout = VolumeSettingsInfo.FusionTimeout,
+                    VolumeInformationRequesterInfo = new VolumeInformationRequesterInfo() {
+                        VolumeTriggerPosition = SelectTriggerPosition.Value,
+                        SendContent = VolumeSettingsInfo.VolumeInformationRequesterInfo.SendContent,
+                        SendDelay = VolumeSettingsInfo.VolumeInformationRequesterInfo.SendDelay,
+                        SendCount = VolumeSettingsInfo.VolumeInformationRequesterInfo.SendCount,
+                        SendInterval = VolumeSettingsInfo.VolumeInformationRequesterInfo.SendInterval,
+                        VolumeRequesterType = VolumeSettingsInfo.VolumeInformationRequesterInfo.VolumeRequesterType,
+                        TcpSettingsInfo = new TcpSettingsInfo() {
+                            ConnectionMode = VolumeSettingsInfo.VolumeInformationRequesterInfo.TcpSettingsInfo.ConnectionMode,
+                            ServerConfig = new TcpInfo() {
+                                IpAddress = VolumeSettingsInfo.VolumeInformationRequesterInfo.TcpSettingsInfo.ServerConfig.IpAddress,
+                                Port = VolumeSettingsInfo.VolumeInformationRequesterInfo.TcpSettingsInfo.ServerConfig.Port,
+                            },
+                            ClientConfig = new TcpInfo() {
+                                IpAddress = VolumeSettingsInfo.VolumeInformationRequesterInfo.TcpSettingsInfo.ClientConfig.IpAddress,
+                                Port = VolumeSettingsInfo.VolumeInformationRequesterInfo.TcpSettingsInfo.ClientConfig.Port,
                             }
-                        })
-                    });
-                    if (insertOrUpdate) {
-                        EventAggregator.Instance.Publish(new SettingsChangedEvent {
-                            SettingsName = "VolumeSettings"
-                        });
+                        },
+                        SerialPortSettingsInfo = new SerialPortSettingsInfo() {
+                            BaudRate = VolumeSettingsInfo.VolumeInformationRequesterInfo.SerialPortSettingsInfo.BaudRate,
+                            DataBits = VolumeSettingsInfo.VolumeInformationRequesterInfo.SerialPortSettingsInfo.DataBits,
+                            DataFormat = SelectDataFormat.Value,
+                            Parity = SelectParity.Value,
+                            PortName = VolumeSettingsInfo.VolumeInformationRequesterInfo.SerialPortSettingsInfo.PortName,
+                            StopBits = SelectStopBits.Value,
+                        }
                     }
-                    IsSavingInProgress = false;
-                    VolumeSettingsMessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
-                        Languages.Language.ResourceManager.GetString("SaveFailed"))}");
-                });
-            }
+                })
+            });
+            base.MessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
+                Languages.Language.ResourceManager.GetString("SaveFailed"))}");
+            return insertOrUpdate;
         }
 
-        /// <summary>
-        /// 页面加载完成
-        /// </summary>
-        public ICommand LoadedCommand {
-            get => new DelegateCommand<object>(LoadedDelegate);
-        }
-
-        private async void LoadedDelegate(object obj) {
+        public override async void LoadedDelegate(object obj) {
             if (!_isLoaded) {
                 _isLoaded = true;
 
                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
                     PortItems.Clear();
                     PortItems.AddRange(SerialPort.GetPortNames());
+                    var settingsDto = await _configRepository.FirstOrDefaultEntity<VolumeSettingsDto>(SettingsName) ??
+                                      new VolumeSettingsDto();
+                    var templateModels = settingsDto.DataTemplate.Select(s => new ItemBaseTemplateModel() {
+                        ApplicationType = s.ApplicationType,
+                        Content = s.Content,
+                        Type = s.Type
+                    })?.ToList();
 
-                    var configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("VolumeSettings"));
-                    if (configInfoModel is not null) {
-                        var settingsDto = JsonConvert.DeserializeObject<VolumeSettingsDto>(configInfoModel.Value);
-                        if (settingsDto is not null) {
-                            var templateModels = settingsDto.DataTemplate.Select(s => new ItemBaseTemplateModel() {
-                                ApplicationType = s.ApplicationType,
-                                Content = s.Content,
-                                Type = s.Type
-                            })?.ToList();
-
-                            VolumeSettingsInfo = new VolumeSettingsInfoModel() {
-                                Unit = settingsDto.Unit,
-                                Separator = settingsDto.Separator,
-                                IsUseExternalVolumeInput = settingsDto.IsUseExternalVolumeInput,
-                                IsTriggerVolumeRequest = settingsDto.IsTriggerVolumeRequest,
-                                FusionTimeout = settingsDto.FusionTimeout,
-                                IsUseFusionTimeout = settingsDto.IsUseFusionTimeout,
-                                VolumeInformationRequesterInfo = new VolumeInformationRequesterInfoModel() {
-                                    VolumeTriggerPosition = settingsDto.VolumeInformationRequesterInfo.VolumeTriggerPosition,
-                                    SendContent = settingsDto.VolumeInformationRequesterInfo.SendContent,
-                                    SendDelay = settingsDto.VolumeInformationRequesterInfo.SendDelay,
-                                    SendCount = settingsDto.VolumeInformationRequesterInfo.SendCount,
-                                    SendInterval = settingsDto.VolumeInformationRequesterInfo.SendInterval,
-                                    VolumeRequesterType = settingsDto.VolumeInformationRequesterInfo.VolumeRequesterType,
-                                    TcpSettingsInfo = new TcpSettingsInfo() {
-                                        ConnectionMode = settingsDto.VolumeInformationRequesterInfo.TcpSettingsInfo
-                                            .ConnectionMode,
-                                        ServerConfig = new TcpInfo() {
-                                            IpAddress = settingsDto.VolumeInformationRequesterInfo.TcpSettingsInfo
-                                                .ServerConfig.IpAddress,
-                                            Port = settingsDto.VolumeInformationRequesterInfo.TcpSettingsInfo
-                                                .ServerConfig.Port,
-                                        },
-                                        ClientConfig = new TcpInfo() {
-                                            IpAddress = settingsDto.VolumeInformationRequesterInfo.TcpSettingsInfo
-                                                .ClientConfig.IpAddress,
-                                            Port = settingsDto.VolumeInformationRequesterInfo.TcpSettingsInfo
-                                                .ClientConfig.Port,
-                                        }
-                                    },
-                                    SerialPortSettingsInfo = new SerialPortSettingsInfoModel() {
-                                        BaudRate = settingsDto.VolumeInformationRequesterInfo.SerialPortSettingsInfo
-                                            .BaudRate,
-                                        DataBits = settingsDto.VolumeInformationRequesterInfo.SerialPortSettingsInfo
-                                            .DataBits,
-                                        DataFormat = settingsDto.VolumeInformationRequesterInfo.SerialPortSettingsInfo
-                                            .DataFormat,
-                                        Parity = SelectParity.Value,
-                                        PortName = settingsDto.VolumeInformationRequesterInfo.SerialPortSettingsInfo
-                                            .PortName,
-                                        StopBits = settingsDto.VolumeInformationRequesterInfo.SerialPortSettingsInfo
-                                            .StopBits,
-                                    }
+                    VolumeSettingsInfo = new VolumeSettingsInfoModel() {
+                        Unit = settingsDto.Unit,
+                        Separator = settingsDto.Separator,
+                        IsUseExternalVolumeInput = settingsDto.IsUseExternalVolumeInput,
+                        IsTriggerVolumeRequest = settingsDto.IsTriggerVolumeRequest,
+                        FusionTimeout = settingsDto.FusionTimeout,
+                        IsUseFusionTimeout = settingsDto.IsUseFusionTimeout,
+                        VolumeInformationRequesterInfo = new VolumeInformationRequesterInfoModel() {
+                            VolumeTriggerPosition = settingsDto.VolumeInformationRequesterInfo.VolumeTriggerPosition,
+                            SendContent = settingsDto.VolumeInformationRequesterInfo.SendContent,
+                            SendDelay = settingsDto.VolumeInformationRequesterInfo.SendDelay,
+                            SendCount = settingsDto.VolumeInformationRequesterInfo.SendCount,
+                            SendInterval = settingsDto.VolumeInformationRequesterInfo.SendInterval,
+                            VolumeRequesterType = settingsDto.VolumeInformationRequesterInfo.VolumeRequesterType,
+                            TcpSettingsInfo = new TcpSettingsInfo() {
+                                ConnectionMode = settingsDto.VolumeInformationRequesterInfo.TcpSettingsInfo
+                                    .ConnectionMode,
+                                ServerConfig = new TcpInfo() {
+                                    IpAddress = settingsDto.VolumeInformationRequesterInfo.TcpSettingsInfo
+                                        .ServerConfig.IpAddress,
+                                    Port = settingsDto.VolumeInformationRequesterInfo.TcpSettingsInfo
+                                        .ServerConfig.Port,
+                                },
+                                ClientConfig = new TcpInfo() {
+                                    IpAddress = settingsDto.VolumeInformationRequesterInfo.TcpSettingsInfo
+                                        .ClientConfig.IpAddress,
+                                    Port = settingsDto.VolumeInformationRequesterInfo.TcpSettingsInfo
+                                        .ClientConfig.Port,
                                 }
-                            };
-                            SelectTriggerPosition = VolumeTriggerPositionItems.FirstOrDefault(f =>
-                                f.Value.Equals(settingsDto.VolumeInformationRequesterInfo.VolumeTriggerPosition)) ?? new VolumeTriggerPositionModel();
-                            SelectParity = ParityItems.FirstOrDefault(f =>
-                                f.Value.Equals(settingsDto.VolumeInformationRequesterInfo.SerialPortSettingsInfo
-                                    .Parity)) ?? new ParityInfoModel();
-                            SelectDataFormat = DataFormatTypeItems.FirstOrDefault(f =>
-                                f.Value.Equals(settingsDto.VolumeInformationRequesterInfo.SerialPortSettingsInfo
-                                    .DataFormat)) ?? new DataFormatTypeInfoModel();
-                            SelectStopBits = StopBitsItems.FirstOrDefault(f =>
-                                f.Value.Equals(settingsDto.VolumeInformationRequesterInfo.SerialPortSettingsInfo
-                                    .StopBits)) ?? new StopBitsInfoModel();
-                            SelectVolumeUnitInfo =
-                                VolumeUnitInfoItem.FirstOrDefault(f => f.Value.Equals(settingsDto.Unit)) ??
-                                new VolumeUnitInfoModel();
-                            VolumeSettingsInfo.DataTemplate.AddRange(templateModels);
+                            },
+                            SerialPortSettingsInfo = new SerialPortSettingsInfoModel() {
+                                BaudRate = settingsDto.VolumeInformationRequesterInfo.SerialPortSettingsInfo
+                                    .BaudRate,
+                                DataBits = settingsDto.VolumeInformationRequesterInfo.SerialPortSettingsInfo
+                                    .DataBits,
+                                DataFormat = settingsDto.VolumeInformationRequesterInfo.SerialPortSettingsInfo
+                                    .DataFormat,
+                                Parity = SelectParity.Value,
+                                PortName = settingsDto.VolumeInformationRequesterInfo.SerialPortSettingsInfo
+                                    .PortName,
+                                StopBits = settingsDto.VolumeInformationRequesterInfo.SerialPortSettingsInfo
+                                    .StopBits,
+                            }
                         }
-                    }
+                    };
+                    SelectTriggerPosition = VolumeTriggerPositionItems.FirstOrDefault(f =>
+                        f.Value.Equals(settingsDto.VolumeInformationRequesterInfo.VolumeTriggerPosition)) ?? new VolumeTriggerPositionModel();
+                    SelectParity = ParityItems.FirstOrDefault(f =>
+                        f.Value.Equals(settingsDto.VolumeInformationRequesterInfo.SerialPortSettingsInfo
+                            .Parity)) ?? new ParityInfoModel();
+                    SelectDataFormat = DataFormatTypeItems.FirstOrDefault(f =>
+                        f.Value.Equals(settingsDto.VolumeInformationRequesterInfo.SerialPortSettingsInfo
+                            .DataFormat)) ?? new DataFormatTypeInfoModel();
+                    SelectStopBits = StopBitsItems.FirstOrDefault(f =>
+                        f.Value.Equals(settingsDto.VolumeInformationRequesterInfo.SerialPortSettingsInfo
+                            .StopBits)) ?? new StopBitsInfoModel();
+                    SelectVolumeUnitInfo =
+                        VolumeUnitInfoItem.FirstOrDefault(f => f.Value.Equals(settingsDto.Unit)) ??
+                        new VolumeUnitInfoModel();
+                    VolumeSettingsInfo.DataTemplate.AddRange(templateModels);
                 });
             }
         }

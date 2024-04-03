@@ -16,12 +16,12 @@ using System.Collections.ObjectModel;
 using JayTom.Dws.Interface.Jtexpress;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Infrastructure.Repository.LocalConf;
 using JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
 
-    public class JtExpressApiPageViewModel : BindableBase {
-        private readonly IConfigRepository _configRepository;
+    public class JtExpressApiPageViewModel : SettingsPageTemplateViewModel {
         private readonly IHttpClientFactory _httpClientFactory;
         private JtExpressApiModel _jtExpressApiInfo = new();
         private bool _isLoaded;
@@ -106,8 +106,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
             },
         };
 
-        private SnackbarMessageQueue _jtExpressApiMessageQueue = new(TimeSpan.FromSeconds(2));
-        private bool _isSavingInProgress;
         private string _networkId = string.Empty;
         private string _networkCode = string.Empty;
         private string _networkName = string.Empty;
@@ -116,14 +114,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
         private bool _isLoggingIn;
 
         public JtExpressApiPageViewModel(IConfigRepository configRepository,
-            IHttpClientFactory httpClientFactory) {
-            _configRepository = configRepository;
+            IHttpClientFactory httpClientFactory) : base(configRepository) {
             _httpClientFactory = httpClientFactory;
-        }
-
-        public bool IsSavingInProgress {
-            get => _isSavingInProgress;
-            set => SetProperty(ref _isSavingInProgress, value);
         }
 
         public JtExpressApiModel JtExpressApiInfo {
@@ -154,11 +146,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
         public ObservableCollection<IntegerItemModel> TypeItems {
             get => _typeItems;
             set => SetProperty(ref _typeItems, value);
-        }
-
-        public SnackbarMessageQueue JtExpressApiMessageQueue {
-            get => _jtExpressApiMessageQueue;
-            set => SetProperty(ref _jtExpressApiMessageQueue, value);
         }
 
         /// <summary>
@@ -243,10 +230,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
                         NetworkId = value.NetworkId;
                         NetworkCode = value.NetworkCode;
                         NetworkName = value.NetworkName;
-                        JtExpressApiMessageQueue.Enqueue("登录成功");
+                        base.MessageQueue.Enqueue("登录成功");
                     }
                     else {
-                        JtExpressApiMessageQueue.Enqueue($"登录失败,{value.ExceptionMsg}");
+                        base.MessageQueue.Enqueue($"登录失败,{value.ExceptionMsg}");
                     }
                     IsLoginSuccessful = key;
                     IsLoggingIn = false;
@@ -254,92 +241,67 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
             }
         }
 
-        public ICommand LoadedCommand {
-            get => new DelegateCommand<object>(LoadedDelegate);
-        }
-
-        private async void LoadedDelegate(object obj) {
-            //页面加载完成
+        public override async void LoadedDelegate(object obj) {
             if (!_isLoaded) {
                 _isLoaded = true;
                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
-                    var configInfoModel = await _configRepository.FirstOrDefault(w =>
-                        w.ConfigName.Equals("JtExpressApiParameters"));
-                    if (configInfoModel is not null) {
-                        var settingsDto = JsonConvert.DeserializeObject<JtExpressDto>(configInfoModel.Value);
-                        if (settingsDto is not null) {
-                            JtExpressApiInfo = new JtExpressApiModel() {
-                                AppKey = settingsDto.AppKey,
-                                AppSecret = settingsDto.AppSecret,
-                                Url = settingsDto.Url,
-                                UserName = settingsDto.UserName,
-                                Password = settingsDto.Password,
-                                ScanPda = settingsDto.ScanPda,
-                                ScanType = ScanTypeItems.FirstOrDefault(f => f.Value.Equals(settingsDto.ScanType)) ??
-                                           new IntegerItemModel(),
-                                BusinessType =
-                                    TypeItems.FirstOrDefault(f => f.Value.Equals((int)settingsDto.BusinessType)) ??
-                                    new IntegerItemModel(),
-                                ScanTypeCode =
-                                    ScanTypeCodeItems.FirstOrDefault(f => f.Value.Equals(settingsDto.ScanTypeCode)) ??
-                                    new StringItemModel(),
-                                SegmentCodeTimeOut = settingsDto.SegmentCodeTimeOut,
-                                SegmentCodeUrl = settingsDto.SegmentCodeUrl,
-                                WeightFlag =
-                                    WeightFlagItems.FirstOrDefault(f => f.Value.Equals(settingsDto.WeightFlag)) ??
-                                    new StringItemModel(),
-                                TimeOut = settingsDto.TimeOut,
-                                TransportTypeCode =
-                                    TransportTypeCodeItems.FirstOrDefault(f =>
-                                        f.Value.Equals(settingsDto.TransportTypeCode)) ?? new StringItemModel(),
-                            };
-                        }
-                    }
+                    var settingsDto = await _configRepository.FirstOrDefaultEntity<JtExpressDto>(SettingsName) ?? new JtExpressDto();
+
+                    JtExpressApiInfo = new JtExpressApiModel() {
+                        AppKey = settingsDto.AppKey,
+                        AppSecret = settingsDto.AppSecret,
+                        Url = settingsDto.Url,
+                        UserName = settingsDto.UserName,
+                        Password = settingsDto.Password,
+                        ScanPda = settingsDto.ScanPda,
+                        ScanType = ScanTypeItems.FirstOrDefault(f => f.Value.Equals(settingsDto.ScanType)) ??
+                                   new IntegerItemModel(),
+                        BusinessType =
+                            TypeItems.FirstOrDefault(f => f.Value.Equals((int)settingsDto.BusinessType)) ??
+                            new IntegerItemModel(),
+                        ScanTypeCode =
+                            ScanTypeCodeItems.FirstOrDefault(f => f.Value.Equals(settingsDto.ScanTypeCode)) ??
+                            new StringItemModel(),
+                        SegmentCodeTimeOut = settingsDto.SegmentCodeTimeOut,
+                        SegmentCodeUrl = settingsDto.SegmentCodeUrl,
+                        WeightFlag =
+                            WeightFlagItems.FirstOrDefault(f => f.Value.Equals(settingsDto.WeightFlag)) ??
+                            new StringItemModel(),
+                        TimeOut = settingsDto.TimeOut,
+                        TransportTypeCode =
+                            TransportTypeCodeItems.FirstOrDefault(f =>
+                                f.Value.Equals(settingsDto.TransportTypeCode)) ?? new StringItemModel(),
+                    };
                 });
             }
         }
 
-        /// <summary>
-        /// 保存设置
-        /// </summary>
-        public ICommand SaveSettingsCommand {
-            get => new DelegateCommand<object>(SaveSettingDelegate);
-        }
+        public override string Identifier => "JtExpressApiParametersDialogHost";
+        public override string SettingsName => "JtExpressApiParameters";
 
-        private async void SaveSettingDelegate(object obj) {
-            //保存
-            if (!IsSavingInProgress) {
-                IsSavingInProgress = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
-                    var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
-                        ConfigName = "JtExpressApiParameters",
-                        Value = JsonConvert.SerializeObject(new JtExpressDto() {
-                            AppKey = JtExpressApiInfo.AppKey,
-                            AppSecret = JtExpressApiInfo.AppSecret,
-                            Url = JtExpressApiInfo.Url,
-                            UserName = JtExpressApiInfo.UserName,
-                            Password = JtExpressApiInfo.Password,
-                            ScanPda = JtExpressApiInfo.ScanPda,
-                            ScanType = JtExpressApiInfo.ScanType.Value,
-                            BusinessType = (BusinessType)JtExpressApiInfo.BusinessType.Value,
-                            ScanTypeCode = JtExpressApiInfo.ScanTypeCode.Value,
-                            SegmentCodeTimeOut = JtExpressApiInfo.SegmentCodeTimeOut,
-                            SegmentCodeUrl = JtExpressApiInfo.SegmentCodeUrl,
-                            WeightFlag = JtExpressApiInfo.WeightFlag.Value,
-                            TimeOut = JtExpressApiInfo.TimeOut,
-                            TransportTypeCode = JtExpressApiInfo.TransportTypeCode.Value,
-                        })
-                    });
-                    if (insertOrUpdate) {
-                        EventAggregator.Instance.Publish(new SettingsChangedEvent {
-                            SettingsName = "JtExpressApiParameters"
-                        });
-                    }
-                    IsSavingInProgress = false;
-                    JtExpressApiMessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
-                        Languages.Language.ResourceManager.GetString("SaveFailed"))}");
-                });
-            }
+        protected override async Task<bool> SaveSettingsProcess() {
+            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
+                ConfigName = SettingsName,
+                Value = JsonConvert.SerializeObject(new JtExpressDto() {
+                    AppKey = JtExpressApiInfo.AppKey,
+                    AppSecret = JtExpressApiInfo.AppSecret,
+                    Url = JtExpressApiInfo.Url,
+                    UserName = JtExpressApiInfo.UserName,
+                    Password = JtExpressApiInfo.Password,
+                    ScanPda = JtExpressApiInfo.ScanPda,
+                    ScanType = JtExpressApiInfo.ScanType.Value,
+                    BusinessType = (BusinessType)JtExpressApiInfo.BusinessType.Value,
+                    ScanTypeCode = JtExpressApiInfo.ScanTypeCode.Value,
+                    SegmentCodeTimeOut = JtExpressApiInfo.SegmentCodeTimeOut,
+                    SegmentCodeUrl = JtExpressApiInfo.SegmentCodeUrl,
+                    WeightFlag = JtExpressApiInfo.WeightFlag.Value,
+                    TimeOut = JtExpressApiInfo.TimeOut,
+                    TransportTypeCode = JtExpressApiInfo.TransportTypeCode.Value,
+                })
+            });
+            base.MessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
+                Languages.Language.ResourceManager.GetString("SaveFailed"))}");
+            return insertOrUpdate;
         }
     }
 }

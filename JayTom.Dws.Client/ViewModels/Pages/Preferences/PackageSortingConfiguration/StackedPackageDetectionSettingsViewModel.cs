@@ -26,10 +26,10 @@ using JayTom.Dws.Client.Models.CommunicationsSettingsModel;
 using JayTom.Dws.Client.Models.PackageSorting.CommunicationConnectionSub;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration {
-    public class StackedPackageDetectionSettingsViewModel : BindableBase {
-        private readonly IConfigRepository _configRepository;
+
+    public class StackedPackageDetectionSettingsViewModel : SettingsPageTemplateViewModel {
         private readonly IDeviceService _deviceService;
-        private bool _isSavingInProgress;
+
         private ObservableCollection<string> _portItems = new();
 
         private ObservableCollection<CommunicationsTypeInfoModel> _communicationsTypeItems = new()
@@ -125,13 +125,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             },
         };
 
-        private SnackbarMessageQueue _stackedPackageDetectionSettingsMessageQueue = new();
         private StackedPackageDetectionItemInfoModel _stackedPackageDetectionItemInfo = new();
         private bool _isLoaded;
 
         public StackedPackageDetectionSettingsViewModel(IConfigRepository configRepository,
-            IDeviceService deviceService) {
-            _configRepository = configRepository;
+            IDeviceService deviceService) : base(configRepository) {
             _deviceService = deviceService;
         }
 
@@ -190,19 +188,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             set => SetProperty(ref _dataBitsItems, value);
         }
 
-        /// <summary>
-        /// 是否保存中
-        /// </summary>
-        public bool IsSavingInProgress {
-            get => _isSavingInProgress;
-            set => SetProperty(ref _isSavingInProgress, value);
-        }
-
-        public SnackbarMessageQueue StackedPackageDetectionSettingsMessageQueue {
-            get => _stackedPackageDetectionSettingsMessageQueue;
-            set => SetProperty(ref _stackedPackageDetectionSettingsMessageQueue, value);
-        }
-
         public StackedPackageDetectionItemInfoModel StackedPackageDetectionItemInfo {
             get => _stackedPackageDetectionItemInfo;
             set => SetProperty(ref _stackedPackageDetectionItemInfo, value);
@@ -221,91 +206,71 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             });
         }
 
-        /// <summary>
-        /// 保存
-        /// </summary>
-        public ICommand SaveSettingsCommand => new DelegateCommand(SaveDelegate);
+        public override string Identifier => "StackedPackageDetectionSettingsDialogHost";
+        public override string SettingsName => "StackedPackageDetectionSettings";
 
-        private async void SaveDelegate() {
-            if (!IsSavingInProgress) {
-                IsSavingInProgress = true;
-
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
-                    if (_deviceService.RunningStatus) {
-                        IsSavingInProgress = false;
-                        StackedPackageDetectionSettingsMessageQueue.Enqueue($"设备工作中,无法设置");
-                        return;
-                    }
-
-                    string regularExpression = string.Empty;
-                    if (!string.IsNullOrEmpty(StackedPackageDetectionItemInfo.CheckerContent)) {
-                        var strings = StackedPackageDetectionItemInfo.CheckerContent.Split(";");
-                        var patterns = strings.Select(s => $"(?=.*{s})").ToList();
-                        regularExpression = string.Join("|", patterns);
-                    }
-
-                    var stackedPackageDetectionSettingsDto = new StackedPackageDetectionSettingsDto() {
-                        CheckerContent = StackedPackageDetectionItemInfo.CheckerContent,
-                        CommunicationType = StackedPackageDetectionItemInfo.CommunicationsType.Value,
-                        IsStackedPackageDetection = StackedPackageDetectionItemInfo.IsStackedPackageDetection,
-                        RegularExpression = regularExpression,
-                        SerialPortConfigInfo = new SerialPortSettingsInfo() {
-                            BaudRate = StackedPackageDetectionItemInfo.SerialPortConfigInfo?.BaudRate ?? 0,
-                            DataBits = StackedPackageDetectionItemInfo.SerialPortConfigInfo?.DataBits ?? 0,
-                            DataFormat = StackedPackageDetectionItemInfo.SerialPortConfigInfo?.DataFormat?.Value ??
-                                         DataFormatType.Ascii,
-                            PortName = StackedPackageDetectionItemInfo.SerialPortConfigInfo?.PortName ?? string.Empty,
-                            Parity = StackedPackageDetectionItemInfo.SerialPortConfigInfo?.Parity?.Value ?? Parity.None,
-                            StopBits = StackedPackageDetectionItemInfo.SerialPortConfigInfo?.StopBits?.Value ?? StopBits.None
-                        },
-                        TcpConnectionConfigInfo = new TcpSettingsInfo() {
-                            ConnectionMode = StackedPackageDetectionItemInfo.TcpConnectionConfigInfo?.ConnectionMode ??
-                                             TcpConnectionMode.Client,
-                            DataFormat = StackedPackageDetectionItemInfo.TcpConnectionConfigInfo?.DataFormat?.Value ??
-                                         DataFormatType.Ascii,
-
-                            ClientConfig = new TcpInfo() {
-                                IpAddress = StackedPackageDetectionItemInfo.TcpConnectionConfigInfo?.ClientParameter
-                                                ?.IpAddress ??
-                                            string.Empty,
-                                Port = StackedPackageDetectionItemInfo.TcpConnectionConfigInfo?.ClientParameter?.Port ??
-                                       0,
-                            },
-                            ServerConfig = new TcpInfo() {
-                                IpAddress = StackedPackageDetectionItemInfo.TcpConnectionConfigInfo?.ServerParameter
-                                                ?.IpAddress ??
-                                            string.Empty,
-                                Port = StackedPackageDetectionItemInfo.TcpConnectionConfigInfo?.ServerParameter?.Port ??
-                                       0,
-                            }
-                        },
-                        Timeout = StackedPackageDetectionItemInfo.Timeout,
-                        IsAutoExceptionSorting = StackedPackageDetectionItemInfo.IsAutoExceptionSorting,
-                    };
-                    var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
-                        ConfigName = "StackedPackageDetectionSettings",
-                        Value = JsonConvert.SerializeObject(stackedPackageDetectionSettingsDto)
-                    });
-                    if (insertOrUpdate) {
-                        EventAggregator.Instance.Publish(new SettingsChangedEvent {
-                            SettingsName = "StackedPackageDetectionSettings"
-                        });
-                    }
-
-                    IsSavingInProgress = false;
-                    StackedPackageDetectionSettingsMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("Save") ?? string.Empty}{(insertOrUpdate ?
-                        Languages.Language.ResourceManager.GetString("Success") :
-                        Languages.Language.ResourceManager.GetString("Failure"))}");
-                });
+        protected override async Task<bool> SaveSettingsProcess() {
+            if (_deviceService.RunningStatus) {
+                IsSavingInProgress = false;
+                base.MessageQueue.Enqueue($"设备工作中,无法设置");
+                return false;
             }
+            string regularExpression = string.Empty;
+            if (!string.IsNullOrEmpty(StackedPackageDetectionItemInfo.CheckerContent)) {
+                var strings = StackedPackageDetectionItemInfo.CheckerContent.Split(";");
+                var patterns = strings.Select(s => $"(?=.*{s})").ToList();
+                regularExpression = string.Join("|", patterns);
+            }
+
+            var stackedPackageDetectionSettingsDto = new StackedPackageDetectionSettingsDto() {
+                CheckerContent = StackedPackageDetectionItemInfo.CheckerContent,
+                CommunicationType = StackedPackageDetectionItemInfo.CommunicationsType.Value,
+                IsStackedPackageDetection = StackedPackageDetectionItemInfo.IsStackedPackageDetection,
+                RegularExpression = regularExpression,
+                SerialPortConfigInfo = new SerialPortSettingsInfo() {
+                    BaudRate = StackedPackageDetectionItemInfo.SerialPortConfigInfo?.BaudRate ?? 0,
+                    DataBits = StackedPackageDetectionItemInfo.SerialPortConfigInfo?.DataBits ?? 0,
+                    DataFormat = StackedPackageDetectionItemInfo.SerialPortConfigInfo?.DataFormat?.Value ??
+                                 DataFormatType.Ascii,
+                    PortName = StackedPackageDetectionItemInfo.SerialPortConfigInfo?.PortName ?? string.Empty,
+                    Parity = StackedPackageDetectionItemInfo.SerialPortConfigInfo?.Parity?.Value ?? Parity.None,
+                    StopBits = StackedPackageDetectionItemInfo.SerialPortConfigInfo?.StopBits?.Value ?? StopBits.None
+                },
+                TcpConnectionConfigInfo = new TcpSettingsInfo() {
+                    ConnectionMode = StackedPackageDetectionItemInfo.TcpConnectionConfigInfo?.ConnectionMode ??
+                                     TcpConnectionMode.Client,
+                    DataFormat = StackedPackageDetectionItemInfo.TcpConnectionConfigInfo?.DataFormat?.Value ??
+                                 DataFormatType.Ascii,
+
+                    ClientConfig = new TcpInfo() {
+                        IpAddress = StackedPackageDetectionItemInfo.TcpConnectionConfigInfo?.ClientParameter
+                                        ?.IpAddress ??
+                                    string.Empty,
+                        Port = StackedPackageDetectionItemInfo.TcpConnectionConfigInfo?.ClientParameter?.Port ??
+                               0,
+                    },
+                    ServerConfig = new TcpInfo() {
+                        IpAddress = StackedPackageDetectionItemInfo.TcpConnectionConfigInfo?.ServerParameter
+                                        ?.IpAddress ??
+                                    string.Empty,
+                        Port = StackedPackageDetectionItemInfo.TcpConnectionConfigInfo?.ServerParameter?.Port ??
+                               0,
+                    }
+                },
+                Timeout = StackedPackageDetectionItemInfo.Timeout,
+                IsAutoExceptionSorting = StackedPackageDetectionItemInfo.IsAutoExceptionSorting,
+            };
+            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
+                ConfigName = SettingsName,
+                Value = JsonConvert.SerializeObject(stackedPackageDetectionSettingsDto)
+            });
+            base.MessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("Save") ?? string.Empty}{(insertOrUpdate ?
+                Languages.Language.ResourceManager.GetString("Success") :
+                Languages.Language.ResourceManager.GetString("Failure"))}");
+            return insertOrUpdate;
         }
 
-        /// <summary>
-        /// 加载方法
-        /// </summary>
-        public ICommand LoadedCommand => new DelegateCommand<object>(LoadedDelegate);
-
-        private async void LoadedDelegate(object obj) {
+        public override async void LoadedDelegate(object obj) {
             if (!_isLoaded) {
                 _isLoaded = true;
                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
@@ -313,61 +278,50 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                     PortItems.AddRange(SerialPort.GetPortNames());
                     //读配置
 
-                    var configInfoModel = await _configRepository.
-                        FirstOrDefault(f => f.ConfigName.Equals("StackedPackageDetectionSettings"));
+                    var settingsDto = await _configRepository.FirstOrDefaultEntity<StackedPackageDetectionSettingsDto>(SettingsName) ?? new StackedPackageDetectionSettingsDto();
 
-                    if (configInfoModel is not null) {
-                        try {
-                            var settingsDto = JsonConvert.DeserializeObject<StackedPackageDetectionSettingsDto>(configInfoModel.Value);
-                            if (settingsDto is not null) {
-                                StackedPackageDetectionItemInfo = new StackedPackageDetectionItemInfoModel() {
-                                    CheckerContent = settingsDto.CheckerContent,
-                                    CommunicationsType =
-                                        CommunicationsTypeItems.FirstOrDefault(f =>
-                                            f.Value.Equals(settingsDto.CommunicationType)) ??
-                                        new CommunicationsTypeInfoModel(),
-                                    IsStackedPackageDetection = settingsDto.IsStackedPackageDetection,
-                                    RegularExpression = settingsDto.RegularExpression,
-                                    SerialPortConfigInfo = new SerialPortConfigItemInfoModel() {
-                                        BaudRate = settingsDto.SerialPortConfigInfo?.BaudRate ?? 0,
-                                        DataBits = settingsDto.SerialPortConfigInfo?.DataBits ?? 0,
-                                        DataFormat =
-                                            DataFormatTypeItems.FirstOrDefault(f =>
-                                                f.Value.Equals(settingsDto.SerialPortConfigInfo?.DataFormat)) ??
+                    StackedPackageDetectionItemInfo = new StackedPackageDetectionItemInfoModel {
+                        CheckerContent = settingsDto.CheckerContent,
+                        CommunicationsType =
+                               CommunicationsTypeItems.FirstOrDefault(f =>
+                                   f.Value.Equals(settingsDto.CommunicationType)) ??
+                               new CommunicationsTypeInfoModel(),
+                        IsStackedPackageDetection = settingsDto.IsStackedPackageDetection,
+                        RegularExpression = settingsDto.RegularExpression,
+                        SerialPortConfigInfo = new SerialPortConfigItemInfoModel() {
+                            BaudRate = settingsDto.SerialPortConfigInfo?.BaudRate ?? 0,
+                            DataBits = settingsDto.SerialPortConfigInfo?.DataBits ?? 0,
+                            DataFormat =
+                                   DataFormatTypeItems.FirstOrDefault(f =>
+                                       f.Value.Equals(settingsDto.SerialPortConfigInfo?.DataFormat)) ??
+                                   new DataFormatTypeInfoModel(),
+                            PortName = settingsDto.SerialPortConfigInfo?.PortName ?? string.Empty,
+                            Parity = ParityItems.FirstOrDefault(f =>
+                                         f.Value.Equals(settingsDto.SerialPortConfigInfo?.Parity)) ??
+                                        new ParityInfoModel(),
+                            StopBits = StopBitsItems.FirstOrDefault(f =>
+                                f.Value.Equals(settingsDto.SerialPortConfigInfo?.StopBits)) ?? new StopBitsInfoModel()
+                        },
+                        TcpConnectionConfigInfo = new TcpConnectionConfigItemInfoModel() {
+                            ConnectionMode = settingsDto.TcpConnectionConfigInfo?.ConnectionMode ??
+                                                TcpConnectionMode.Client,
+                            DataFormat = DataFormatTypeItems.FirstOrDefault(f =>
+                                             f.Value.Equals(settingsDto.TcpConnectionConfigInfo?.DataFormat)) ??
                                             new DataFormatTypeInfoModel(),
-                                        PortName = settingsDto.SerialPortConfigInfo?.PortName ?? string.Empty,
-                                        Parity = ParityItems.FirstOrDefault(f =>
-                                                     f.Value.Equals(settingsDto.SerialPortConfigInfo?.Parity)) ??
-                                                 new ParityInfoModel(),
-                                        StopBits = StopBitsItems.FirstOrDefault(f =>
-                                            f.Value.Equals(settingsDto.SerialPortConfigInfo?.StopBits)) ?? new StopBitsInfoModel()
-                                    },
-                                    TcpConnectionConfigInfo = new TcpConnectionConfigItemInfoModel() {
-                                        ConnectionMode = settingsDto.TcpConnectionConfigInfo?.ConnectionMode ??
-                                                         TcpConnectionMode.Client,
-                                        DataFormat = DataFormatTypeItems.FirstOrDefault(f =>
-                                                         f.Value.Equals(settingsDto.TcpConnectionConfigInfo?.DataFormat)) ??
-                                                     new DataFormatTypeInfoModel(),
-                                        ClientParameter = new TcpConfigItemInfoModel() {
-                                            IpAddress = settingsDto.TcpConnectionConfigInfo?.ClientConfig?.IpAddress ??
-                                                        string.Empty,
-                                            Port = settingsDto.TcpConnectionConfigInfo?.ClientConfig?.Port ?? 0,
-                                        },
-                                        ServerParameter = new TcpConfigItemInfoModel() {
-                                            IpAddress = settingsDto.TcpConnectionConfigInfo?.ServerConfig?.IpAddress ??
-                                                        string.Empty,
-                                            Port = settingsDto.TcpConnectionConfigInfo?.ServerConfig?.Port ?? 0,
-                                        }
-                                    },
-                                    Timeout = settingsDto.Timeout,
-                                    IsAutoExceptionSorting = settingsDto.IsAutoExceptionSorting
-                                };
+                            ClientParameter = new TcpConfigItemInfoModel() {
+                                IpAddress = settingsDto.TcpConnectionConfigInfo?.ClientConfig?.IpAddress ??
+                                               string.Empty,
+                                Port = settingsDto.TcpConnectionConfigInfo?.ClientConfig?.Port ?? 0,
+                            },
+                            ServerParameter = new TcpConfigItemInfoModel() {
+                                IpAddress = settingsDto.TcpConnectionConfigInfo?.ServerConfig?.IpAddress ??
+                                               string.Empty,
+                                Port = settingsDto.TcpConnectionConfigInfo?.ServerConfig?.Port ?? 0,
                             }
-                        }
-                        catch (Exception e) {
-                            StackedPackageDetectionSettingsMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("加载设置失败") ?? string.Empty}:{e.Message}");
-                        }
-                    }
+                        },
+                        Timeout = settingsDto.Timeout,
+                        IsAutoExceptionSorting = settingsDto.IsAutoExceptionSorting
+                    };
                 });
             }
         }

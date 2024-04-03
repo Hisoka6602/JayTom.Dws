@@ -1,21 +1,21 @@
-﻿using ImTools;
-using JayTom.Dws.Client.EventMediators;
-using JayTom.Dws.Data.LocalConf;
-using JayTom.Dws.Domain.Dto;
-using JayTom.Dws.Domain.Repository.LocalConf;
-using MaterialDesignThemes.Wpf;
-using Newtonsoft.Json;
-using Prism.Commands;
+﻿using System;
+using ImTools;
 using Prism.Mvvm;
-using System;
+using Prism.Commands;
+using Newtonsoft.Json;
+using System.Windows.Input;
+using JayTom.Dws.Domain.Dto;
+using System.Threading.Tasks;
+using MaterialDesignThemes.Wpf;
+using JayTom.Dws.Data.LocalConf;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using System.Windows.Input;
+using JayTom.Dws.Client.EventMediators;
+using JayTom.Dws.Domain.Repository.LocalConf;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
 
-    public class BarcodeFilterSettingsPageViewModel : BindableBase {
-        private readonly IConfigRepository _configRepository;
+    public class BarcodeFilterSettingsPageViewModel : SettingsPageTemplateViewModel {
         private int _minimumLength = 10;
         private int _maximumLength = 22;
         private CharacterType _startCharacterType = CharacterType.Alphanumeric;
@@ -25,21 +25,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         private int _scanInterval = 1000;
         private string _regularExpression = "(?=^([0-9a-zA-Z]).*)(?=.*([0-9])$)(^.{10,22}$)";
         private string _testBarcode = string.Empty;
-        private SnackbarMessageQueue _barcodeFilterSettingsMessageQueue = new(TimeSpan.FromSeconds(2));
-        private bool _isSavingInProgress;
         private bool _isLoaded;
         private int _duplicateBarcodeFilterCount;
 
-        public BarcodeFilterSettingsPageViewModel(IConfigRepository configRepository) {
-            _configRepository = configRepository;
-        }
-
-        /// <summary>
-        /// 是否保存中
-        /// </summary>
-        public bool IsSavingInProgress {
-            get => _isSavingInProgress;
-            set => SetProperty(ref _isSavingInProgress, value);
+        public BarcodeFilterSettingsPageViewModel(IConfigRepository configRepository) : base(configRepository) {
         }
 
         /// <summary>
@@ -122,11 +111,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             set => SetProperty(ref _testBarcode, value);
         }
 
-        public SnackbarMessageQueue BarcodeFilterSettingsMessageQueue {
-            get => _barcodeFilterSettingsMessageQueue;
-            set => SetProperty(ref _barcodeFilterSettingsMessageQueue, value);
-        }
-
         public ICommand MinimumLengthChangedCommand {
             get => new DelegateCommand(UpdateRegularExpression);
         }
@@ -163,85 +147,56 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
                 try {
                     var isMatch = Regex.IsMatch(TestBarcode, RegularExpression);
-                    BarcodeFilterSettingsMessageQueue.Enqueue(isMatch ? Languages.Language.ResourceManager.GetString("验证通过") ?? string.Empty
+                    base.MessageQueue.Enqueue(isMatch ? Languages.Language.ResourceManager.GetString("验证通过") ?? string.Empty
                         : Languages.Language.ResourceManager.GetString("验证不通过") ?? string.Empty);
                 }
                 catch (Exception e) {
-                    BarcodeFilterSettingsMessageQueue.Enqueue(Languages.Language.ResourceManager.GetString("不是正确的正则表达式") ?? string.Empty);
+                    base.MessageQueue.Enqueue(Languages.Language.ResourceManager.GetString("不是正确的正则表达式") ?? string.Empty);
                 }
             });
         }
 
-        public ICommand SaveSettingsCommand {
-            get => new DelegateCommand(SaveSettingsDelegate);
+        public override string Identifier => "BarcodeFilterSettingsDialogHost";
+        public override string SettingsName => "BarcodeFilterSettings";
+
+        protected override async Task<bool> SaveSettingsProcess() {
+            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
+                ConfigName = SettingsName,
+                Value = JsonConvert.SerializeObject(new BarcodeFilterSettingsDto {
+                    MinimumLength = MinimumLength,
+                    MaximumLength = MaximumLength,
+                    StartCharacterType = StartCharacterType,
+                    EndCharacterType = EndCharacterType,
+                    DisallowedCharacters = DisallowedCharacters,
+                    RequiredCharacters = RequiredCharacters,
+                    ScanInterval = ScanInterval,
+                    RegularExpression = RegularExpression,
+                    DuplicateBarcodeFilterCount = DuplicateBarcodeFilterCount
+                })
+            });
+            base.MessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("Save") ?? string.Empty}{(insertOrUpdate ?
+                Languages.Language.ResourceManager.GetString("Success") :
+                Languages.Language.ResourceManager.GetString("Failure"))}");
+            return insertOrUpdate;
         }
 
-        private async void SaveSettingsDelegate() {
-            if (!IsSavingInProgress) {
-                IsSavingInProgress = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
-                    // var loadingDialog = new LoadingDialog();
-                    var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
-                        ConfigName = "BarcodeFilterSettings",
-                        Value = JsonConvert.SerializeObject(new BarcodeFilterSettingsDto {
-                            MinimumLength = MinimumLength,
-                            MaximumLength = MaximumLength,
-                            StartCharacterType = StartCharacterType,
-                            EndCharacterType = EndCharacterType,
-                            DisallowedCharacters = DisallowedCharacters,
-                            RequiredCharacters = RequiredCharacters,
-                            ScanInterval = ScanInterval,
-                            RegularExpression = RegularExpression,
-                            DuplicateBarcodeFilterCount = DuplicateBarcodeFilterCount
-                        })
-                    });
-                    if (insertOrUpdate) {
-                        EventAggregator.Instance.Publish(new SettingsChangedEvent {
-                            SettingsName = "BarcodeFilterSettings"
-                        });
-                    }
-
-                    IsSavingInProgress = false;
-                    BarcodeFilterSettingsMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("Save") ?? string.Empty}{(insertOrUpdate ?
-                        Languages.Language.ResourceManager.GetString("Success") :
-                        Languages.Language.ResourceManager.GetString("Failure"))}");
-                });
-            }
-        }
-
-        /// <summary>
-        /// 页面加载完成
-        /// </summary>
-        public ICommand LoadedCommand {
-            get => new DelegateCommand<object>(LoadedDelegate);
-        }
-
-        private async void LoadedDelegate(object obj) {
+        public override async void LoadedDelegate(object obj) {
             if (!_isLoaded) {
                 _isLoaded = true;
                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
-                    var configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("BarcodeFilterSettings"));
-                    if (configInfoModel is not null) {
-                        try {
-                            var settingsDto = JsonConvert.DeserializeObject<BarcodeFilterSettingsDto>(configInfoModel.Value);
-                            if (settingsDto is not null) {
-                                MinimumLength = settingsDto.MinimumLength;
-                                MaximumLength = settingsDto.MaximumLength;
-                                StartCharacterType = settingsDto.StartCharacterType;
+                    var settingsDto = await _configRepository.FirstOrDefaultEntity<BarcodeFilterSettingsDto>(SettingsName) ??
+                                      new BarcodeFilterSettingsDto();
+                    MinimumLength = settingsDto.MinimumLength;
+                    MaximumLength = settingsDto.MaximumLength;
+                    StartCharacterType = settingsDto.StartCharacterType;
 
-                                EndCharacterType = settingsDto.EndCharacterType;
-                                DisallowedCharacters = settingsDto.DisallowedCharacters;
-                                RequiredCharacters = settingsDto.RequiredCharacters;
+                    EndCharacterType = settingsDto.EndCharacterType;
+                    DisallowedCharacters = settingsDto.DisallowedCharacters;
+                    RequiredCharacters = settingsDto.RequiredCharacters;
 
-                                ScanInterval = settingsDto.ScanInterval;
-                                RegularExpression = settingsDto.RegularExpression;
-                                DuplicateBarcodeFilterCount = settingsDto.DuplicateBarcodeFilterCount;
-                            }
-                        }
-                        catch (Exception e) {
-                            BarcodeFilterSettingsMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("加载设置失败") ?? string.Empty}:{e.Message}");
-                        }
-                    }
+                    ScanInterval = settingsDto.ScanInterval;
+                    RegularExpression = settingsDto.RegularExpression;
+                    DuplicateBarcodeFilterCount = settingsDto.DuplicateBarcodeFilterCount;
                 });
             }
         }

@@ -10,6 +10,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Forms;
 using JayTom.Dws.Domain.Dto;
+using System.Threading.Tasks;
 using MaterialDesignThemes.Wpf;
 using JayTom.Dws.Data.LocalConf;
 using System.Security.Principal;
@@ -24,17 +25,13 @@ using OpenFileDialog = System.Windows.Forms.OpenFileDialog;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings {
 
-    public class OtherSettingsViewModel : BindableBase {
-        private readonly IConfigRepository _configRepository;
+    public class OtherSettingsViewModel : SettingsPageTemplateViewModel {
         private OtherSettingsModel _otherSettingsInfo = new();
-        private SnackbarMessageQueue _otherSettingsMessageQueue = new(TimeSpan.FromSeconds(2));
         private ImageSource? _icon;
-        private bool _isSavingInProgress;
         private string _fileName = string.Empty;
         private bool _isLoaded;
 
-        public OtherSettingsViewModel(IConfigRepository configRepository) {
-            _configRepository = configRepository;
+        public OtherSettingsViewModel(IConfigRepository configRepository) : base(configRepository) {
         }
 
         public OtherSettingsModel OtherSettingsInfo {
@@ -42,22 +39,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings {
             set => SetProperty(ref _otherSettingsInfo, value);
         }
 
-        public SnackbarMessageQueue OtherSettingsMessageQueue {
-            get => _otherSettingsMessageQueue;
-            set => SetProperty(ref _otherSettingsMessageQueue, value);
-        }
-
         public string FileName {
             get => _fileName;
             set => SetProperty(ref _fileName, value);
-        }
-
-        /// <summary>
-        /// 是否保存中
-        /// </summary>
-        public bool IsSavingInProgress {
-            get => _isSavingInProgress;
-            set => SetProperty(ref _isSavingInProgress, value);
         }
 
         /// <summary>
@@ -68,92 +52,68 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings {
             set => SetProperty(ref _icon, value);
         }
 
-        /// <summary>
-        /// 保存设置
-        /// </summary>
-        public ICommand SaveSettingsCommand {
-            get => new DelegateCommand<object>(SaveSettingDelegate);
-        }
+        public override string Identifier => "OtherSettingsDialogHost";
+        public override string SettingsName => "OtherSettings";
 
-        private async void SaveSettingDelegate(object obj) {
-            if (!IsSavingInProgress) {
-                IsSavingInProgress = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
-                    try {
-                        if (!Directory.Exists($"{AppContext.BaseDirectory}Logo")) {
-                            //创建图片路径
-                            Directory.CreateDirectory($"{AppContext.BaseDirectory}Logo");
-                        }
-                        var dest = string.Empty;
-                        if (!string.IsNullOrEmpty(FileName)) {
-                            dest = $"{AppContext.BaseDirectory}Logo\\{new FileInfo(FileName).Name}";
-                            File.Copy(FileName, dest, true);
-                        }
+        protected override async Task<bool> SaveSettingsProcess() {
+            try {
+                if (!Directory.Exists($"{AppContext.BaseDirectory}Logo")) {
+                    //创建图片路径
+                    Directory.CreateDirectory($"{AppContext.BaseDirectory}Logo");
+                }
+                var dest = string.Empty;
+                if (!string.IsNullOrEmpty(FileName)) {
+                    dest = $"{AppContext.BaseDirectory}Logo\\{new FileInfo(FileName).Name}";
+                    File.Copy(FileName, dest, true);
+                }
 
-                        var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
-                            ConfigName = "OtherSettings",
-                            Value = JsonConvert.SerializeObject(new OtherSettingsDto() {
-                                IsAutoMaximize = OtherSettingsInfo.IsAutoMaximize,
-                                IsAutoStart = OtherSettingsInfo.IsAutoStart,
-                                ProgramTitle = OtherSettingsInfo.ProgramTitle,
-                                ProgramLogoPath = dest,
-                                IsAutoRunEnabled = OtherSettingsInfo.IsAutoRunEnabled
-                            })
-                        });
-                        if (insertOrUpdate) {
-                            EventAggregator.Instance.Publish(new SettingsChangedEvent {
-                                SettingsName = "OtherSettings"
-                            });
-                            SetAutoRun(OtherSettingsInfo.IsAutoRunEnabled);
-                            OtherSettingsMessageQueue.Enqueue($"保存成功!");
-                        }
-                        else {
-                            OtherSettingsMessageQueue.Enqueue($"保存失败!");
-                        }
-                    }
-                    catch (Exception e) {
-                        OtherSettingsMessageQueue.Enqueue(e.Message);
-                    }
-                    finally {
-                        IsSavingInProgress = false;
-                    }
+                var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
+                    ConfigName = SettingsName,
+                    Value = JsonConvert.SerializeObject(new OtherSettingsDto() {
+                        IsAutoMaximize = OtherSettingsInfo.IsAutoMaximize,
+                        IsAutoStart = OtherSettingsInfo.IsAutoStart,
+                        ProgramTitle = OtherSettingsInfo.ProgramTitle,
+                        ProgramLogoPath = dest,
+                        IsAutoRunEnabled = OtherSettingsInfo.IsAutoRunEnabled
+                    })
                 });
+                if (insertOrUpdate) {
+                    SetAutoRun(OtherSettingsInfo.IsAutoRunEnabled);
+                    base.MessageQueue.Enqueue($"保存成功!");
+                    return true;
+                }
+                else {
+                    base.MessageQueue.Enqueue($"保存失败!");
+                }
             }
+            catch (Exception e) {
+                base.MessageQueue.Enqueue(e.Message);
+            }
+
+            return false;
         }
 
-        /// <summary>
-        /// 页面加载完成
-        /// </summary>
-        public ICommand LoadedCommand {
-            get => new DelegateCommand<object>(LoadedDelegate);
-        }
-
-        private async void LoadedDelegate(object obj) {
+        public override async void LoadedDelegate(object obj) {
             if (!_isLoaded) {
                 _isLoaded = true;
                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
-                    var configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("OtherSettings"));
-                    if (configInfoModel is not null) {
-                        try {
-                            var otherSettingsDto = JsonConvert.DeserializeObject<OtherSettingsDto>(configInfoModel.Value);
-                            if (otherSettingsDto is not null) {
-                                OtherSettingsInfo = new OtherSettingsModel() {
-                                    IsAutoMaximize = otherSettingsDto.IsAutoMaximize,
-                                    IsAutoStart = otherSettingsDto.IsAutoStart,
-                                    ProgramLogoPath = otherSettingsDto.ProgramLogoPath,
-                                    ProgramTitle = otherSettingsDto.ProgramTitle,
-                                    IsAutoRunEnabled = otherSettingsDto.IsAutoRunEnabled
-                                };
-                            }
-                            //检查图片是否存在
-                            //加载图片
-                            if (File.Exists(OtherSettingsInfo.ProgramLogoPath)) {
-                                Icon = CreateBitmapImage(new Uri(OtherSettingsInfo.ProgramLogoPath), 30, 30);
-                            }
-                        }
-                        catch (Exception e) {
-                            OtherSettingsMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("加载设置失败") ?? string.Empty}:{e.Message}");
-                        }
+                    var otherSettingsDto = await _configRepository.FirstOrDefaultEntity<OtherSettingsDto>(SettingsName);
+                    if (otherSettingsDto is not null) {
+                        OtherSettingsInfo = new OtherSettingsModel() {
+                            IsAutoMaximize = otherSettingsDto.IsAutoMaximize,
+                            IsAutoStart = otherSettingsDto.IsAutoStart,
+                            ProgramLogoPath = otherSettingsDto.ProgramLogoPath,
+                            ProgramTitle = otherSettingsDto.ProgramTitle,
+                            IsAutoRunEnabled = otherSettingsDto.IsAutoRunEnabled
+                        };
+                    }
+                    else {
+                        base.MessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("加载设置失败") ?? string.Empty}");
+                    }
+                    //检查图片是否存在
+                    //加载图片
+                    if (File.Exists(OtherSettingsInfo.ProgramLogoPath)) {
+                        Icon = CreateBitmapImage(new Uri(OtherSettingsInfo.ProgramLogoPath), 30, 30);
                     }
                 });
             }

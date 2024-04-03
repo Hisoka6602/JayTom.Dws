@@ -5,6 +5,7 @@ using Newtonsoft.Json;
 using System.Net.Http;
 using System.Windows.Input;
 using Prism.Services.Dialogs;
+using System.Threading.Tasks;
 using JayTom.Dws.Interface.Wdt;
 using MaterialDesignThemes.Wpf;
 using JayTom.Dws.Data.LocalConf;
@@ -15,34 +16,25 @@ using JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
 
-    public class WdtWmsApiPageViewModel : BindableBase {
+    public class WdtWmsApiPageViewModel : SettingsPageTemplateViewModel {
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IDialogService _dialogService;
-        private readonly IConfigRepository _configRepository;
         private WdtWmsApiInfo _wdtWmsApiInfo = new();
         private bool _isLoaded;
-        private SnackbarMessageQueue _wdtWmsApiMessageQueue = new(TimeSpan.FromSeconds(2));
         private string _barcode = string.Empty;
         private double _weight;
         private bool _isUploading;
-        private bool _isSavingInProgress;
 
         public WdtWmsApiPageViewModel(IHttpClientFactory httpClientFactory,
             IDialogService dialogService,
-            IConfigRepository configRepository) {
+            IConfigRepository configRepository) : base(configRepository) {
             _httpClientFactory = httpClientFactory;
             _dialogService = dialogService;
-            _configRepository = configRepository;
         }
 
         public WdtWmsApiInfo WdtWmsApiInfo {
             get => _wdtWmsApiInfo;
             set => SetProperty(ref _wdtWmsApiInfo, value);
-        }
-
-        public SnackbarMessageQueue WdtWmsApiMessageQueue {
-            get => _wdtWmsApiMessageQueue;
-            set => SetProperty(ref _wdtWmsApiMessageQueue, value);
         }
 
         /// <summary>
@@ -69,77 +61,44 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
             set => SetProperty(ref _isUploading, value);
         }
 
-        /// <summary>
-        /// 是否保存中
-        /// </summary>
-        public bool IsSavingInProgress {
-            get => _isSavingInProgress;
-            set => SetProperty(ref _isSavingInProgress, value);
+        public override string Identifier => "WdtWmsApiParametersDialogHost";
+        public override string SettingsName => "WdtWmsApiParameters";
+
+        protected override async Task<bool> SaveSettingsProcess() {
+            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
+                ConfigName = SettingsName,
+                Value = JsonConvert.SerializeObject(new WdtWmsApiDto() {
+                    AppKey = WdtWmsApiInfo.AppKey,
+                    AppSecret = WdtWmsApiInfo.AppSecret,
+                    Sid = WdtWmsApiInfo.Sid,
+                    Method = WdtWmsApiInfo.Method,
+                    Url = WdtWmsApiInfo.Url,
+                    TimeOut = WdtWmsApiInfo.TimeOut,
+                })
+            });
+            base.MessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
+                Languages.Language.ResourceManager.GetString("SaveFailed"))}");
+            return insertOrUpdate;
         }
 
-        public ICommand SaveSettingsCommand {
-            get => new DelegateCommand<object>(SaveSettingDelegate);
-        }
-
-        private async void SaveSettingDelegate(object obj) {
-            if (!IsSavingInProgress) {
-                IsSavingInProgress = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
-                    var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
-                        ConfigName = "WdtWmsApiParameters",
-                        Value = JsonConvert.SerializeObject(new WdtWmsApiDto() {
-                            AppKey = WdtWmsApiInfo.AppKey,
-                            AppSecret = WdtWmsApiInfo.AppSecret,
-                            Sid = WdtWmsApiInfo.Sid,
-                            Method = WdtWmsApiInfo.Method,
-                            Url = WdtWmsApiInfo.Url,
-                            TimeOut = WdtWmsApiInfo.TimeOut,
-                        })
-                    });
-                    if (insertOrUpdate) {
-                        EventAggregator.Instance.Publish(new SettingsChangedEvent {
-                            SettingsName = "WdtWmsApiParameters"
-                        });
-                    }
-                    IsSavingInProgress = false;
-                    WdtWmsApiMessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
-                        Languages.Language.ResourceManager.GetString("SaveFailed"))}");
-                });
-            }
-        }
-
-        /// <summary>
-        /// 页面加载完成
-        /// </summary>
-        public ICommand LoadedCommand {
-            get => new DelegateCommand<object>(LoadedDelegate);
-        }
-
-        private async void LoadedDelegate(object obj) {
+        public override async void LoadedDelegate(object obj) {
             if (!_isLoaded) {
                 _isLoaded = true;
                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
-                    var configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("WdtWmsApiParameters"));
-                    if (configInfoModel is not null) {
-                        var settingsDto = JsonConvert.DeserializeObject<WdtWmsApiDto>(configInfoModel.Value);
-                        if (settingsDto is not null) {
-                            WdtWmsApiInfo = new WdtWmsApiInfo() {
-                                Url = settingsDto.Url,
-                                AppKey = settingsDto.AppKey,
-                                AppSecret = settingsDto.AppSecret,
-                                Sid = settingsDto.Sid,
-                                Method = settingsDto.Method,
-                                TimeOut = settingsDto.TimeOut,
-                            };
-                        }
-                    }
+                    var settingsDto = await _configRepository.FirstOrDefaultEntity<WdtWmsApiDto>(SettingsName) ?? new WdtWmsApiDto();
+                    WdtWmsApiInfo = new WdtWmsApiInfo() {
+                        Url = settingsDto.Url,
+                        AppKey = settingsDto.AppKey,
+                        AppSecret = settingsDto.AppSecret,
+                        Sid = settingsDto.Sid,
+                        Method = settingsDto.Method,
+                        TimeOut = settingsDto.TimeOut,
+                    };
                 });
             }
         }
 
-        public ICommand UploadCommand {
-            get => new DelegateCommand<object>(UploadDelegate);
-        }
+        public ICommand UploadCommand => new DelegateCommand<object>(UploadDelegate);
 
         private async void UploadDelegate(object obj) {
             if (!IsUploading) {

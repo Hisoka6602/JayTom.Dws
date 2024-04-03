@@ -32,13 +32,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async settings => {
                 if (settings is SettingsChangedEvent { SettingsName: "SaveImageSettings" }) {
                     await _semaphore.WaitAsync();
-                    var configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("SaveImageSettings"));
-                    try {
-                        _imageSettingsDto = JsonConvert.DeserializeObject<ImageSettingsDto>(configInfoModel.Value);
-                    }
-                    catch (Exception e) {
-                        _imageSettingsDto ??= new ImageSettingsDto();
-                    }
+                    _imageSettingsDto = await _configRepository.FirstOrDefaultEntity<ImageSettingsDto>("SaveImageSettings") ?? new ImageSettingsDto();
                     if (_imageSettingsDto is not null) {
                         if (!string.IsNullOrEmpty(_imageSettingsDto?.ImageRootDirectory)) {
                             _imagePathRoot = Path.GetPathRoot(_imageSettingsDto.ImageRootDirectory) ?? string.Empty;
@@ -48,14 +42,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 }
                 else if (settings is SettingsChangedEvent { SettingsName: "CacheClearSettings" }) {
                     await _semaphore.WaitAsync();
-                    var configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("CacheClearSettings"));
-                    try {
-                        _cacheClearSettingsDto = JsonConvert.DeserializeObject<CacheClearSettingsDto>(configInfoModel.Value);
-                    }
-                    catch (Exception e) {
-                        _cacheClearSettingsDto ??= new CacheClearSettingsDto();
-                    }
-
+                    _cacheClearSettingsDto = await _configRepository.FirstOrDefaultEntity<CacheClearSettingsDto>("CacheClearSettings");
                     _semaphore.Release();
                     //CacheClearSettings
                 }
@@ -68,32 +55,12 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
-            var configInfoModel = await _configRepository.FirstOrDefault(f =>
-                f.ConfigName.Equals("SaveImageSettings"), stoppingToken);
-            if (configInfoModel != null) {
-                try {
-                    _imageSettingsDto = JsonConvert.DeserializeObject<ImageSettingsDto>(configInfoModel.Value);
-                    if (_imageSettingsDto is not null) {
-                        if (!string.IsNullOrEmpty(_imageSettingsDto?.ImageRootDirectory)) {
-                            _imagePathRoot = Path.GetPathRoot(_imageSettingsDto.ImageRootDirectory) ?? string.Empty;
-                        }
-                    }
-                }
-                catch (Exception e) {
-                    _imageSettingsDto = new ImageSettingsDto();
-                }
+            _imageSettingsDto = await _configRepository.FirstOrDefaultEntity<ImageSettingsDto>("SaveImageSettings", stoppingToken) ?? new ImageSettingsDto();
+            if (!string.IsNullOrEmpty(_imageSettingsDto?.ImageRootDirectory)) {
+                _imagePathRoot = Path.GetPathRoot(_imageSettingsDto.ImageRootDirectory) ?? string.Empty;
             }
-            configInfoModel = await _configRepository.
-               FirstOrDefault(f =>
-                   f.ConfigName.Equals("CacheClearSettings"), stoppingToken);
-            if (configInfoModel != null) {
-                try {
-                    _cacheClearSettingsDto = JsonConvert.DeserializeObject<CacheClearSettingsDto>(configInfoModel.Value);
-                }
-                catch (Exception e) {
-                    _cacheClearSettingsDto = new CacheClearSettingsDto();
-                }
-            }
+
+            _cacheClearSettingsDto = await _configRepository.FirstOrDefaultEntity<CacheClearSettingsDto>("CacheClearSettings", stoppingToken);
             while (!stoppingToken.IsCancellationRequested && !_isWindowsClose) {
                 //数据盘
                 if (_cacheClearSettingsDto?.MinimumSpaceRetention > 0) {

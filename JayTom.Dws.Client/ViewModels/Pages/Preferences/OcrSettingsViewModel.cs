@@ -30,14 +30,10 @@ using SaveFileDialog = Microsoft.Win32.SaveFileDialog;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
 
-    public class OcrSettingsViewModel : BindableBase {
-        private readonly IConfigRepository _configRepository;
+    public class OcrSettingsViewModel : SettingsPageTemplateViewModel {
         private readonly IOcr _ocr;
         private readonly IDeviceService _deviceService;
         private OcrSettingsInfoModel _ocrSettingsInfo = new();
-        private SnackbarMessageQueue _ocrSettingsMessageQueue = new(TimeSpan.FromSeconds(2));
-        private bool _isSavingInProgress;
-        private bool _isLoaded;
         private ObservableCollection<string> _modelFiles = new();
         private string _selectModelFile = string.Empty;
         private string _loadImagePath = string.Empty;
@@ -46,25 +42,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         private Bitmap? _cropImage = null;
 
         public OcrSettingsViewModel(IConfigRepository configRepository, IOcr ocr,
-            IDeviceService deviceService) {
-            _configRepository = configRepository;
+            IDeviceService deviceService) : base(configRepository) {
             _ocr = ocr;
             _deviceService = deviceService;
-        }
-
-        public SnackbarMessageQueue OcrSettingsMessageQueue {
-            get => _ocrSettingsMessageQueue;
-            set => SetProperty(ref _ocrSettingsMessageQueue, value);
         }
 
         public OcrSettingsInfoModel OcrSettingsInfo {
             get => _ocrSettingsInfo;
             set => SetProperty(ref _ocrSettingsInfo, value);
-        }
-
-        public bool IsSavingInProgress {
-            get => _isSavingInProgress;
-            set => SetProperty(ref _isSavingInProgress, value);
         }
 
         /// <summary>
@@ -194,7 +179,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         private async void SaveCropImageDelegate(object obj) {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
                 if (_cropImage is null) {
-                    OcrSettingsMessageQueue.Enqueue("未获取到截图!");
+                    base.MessageQueue.Enqueue("未获取到截图!");
                     return;
                 }
                 else {
@@ -367,111 +352,78 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             return lineWidthMultiplier;
         }
 
-        /// <summary>
-        /// 保存设置
-        /// </summary>
-        public ICommand SaveSettingsCommand {
-            get => new DelegateCommand<object>(SaveSettingDelegate);
-        }
+        public override string Identifier => "OcrSettingsDialogHost";
+        public override string SettingsName => "OcrSettings";
 
-        private async void SaveSettingDelegate(object obj) {
-            if (!IsSavingInProgress) {
-                IsSavingInProgress = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
-                    if (_deviceService.RunningStatus) {
-                        IsSavingInProgress = false;
-                        OcrSettingsMessageQueue.Enqueue($"设备工作中,无法设置");
-                        return;
-                    }
-
-                    //即时设置Ocr文件
-                    var dictionary = new Dictionary<string, object>()
-                    {
-                        {"three_segment_code", OcrSettingsInfo.IsThreeSegmentCode},
-                        {"recipient_name", OcrSettingsInfo.IsShowReceiverInfo},
-                        {"recipient_phone", OcrSettingsInfo.IsShowReceiverInfo},
-                        {"recipient_addr", OcrSettingsInfo.IsShowReceiverInfo},
-                        {"sender_name", OcrSettingsInfo.IsShowSenderInfo},
-                        {"sender_phone", OcrSettingsInfo.IsShowSenderInfo},
-                        {"sender_addr", OcrSettingsInfo.IsShowSenderInfo},
-                    };
-                    await _ocr.SetOcrParameters(dictionary);
-                    var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
-                        ConfigName = "OcrSettings",
-                        Value = JsonConvert.SerializeObject(new OcrSettingsDto() {
-                            IsThreeSegmentCode = OcrSettingsInfo.IsThreeSegmentCode,
-                            IsShowReceiverInfo = OcrSettingsInfo.IsShowReceiverInfo,
-                            IsShowRecognitionTime = OcrSettingsInfo.IsShowRecognitionTime,
-                            IsShowSenderInfo = OcrSettingsInfo.IsShowSenderInfo,
-                            IsUseOcr = OcrSettingsInfo.IsUseOcr,
-                            RecognitionTimeout = OcrSettingsInfo.RecognitionTimeout,
-                            CropImagePath = OcrSettingsInfo.CropImagePath,
-                            ConfidenceThreshold = OcrSettingsInfo.ConfidenceThreshold,
-                            IsSaveCropImage = OcrSettingsInfo.IsSaveCropImage,
-                            ModelFilePath = SelectModelFile,
-                            RectangleScale = OcrSettingsInfo.RectangleScale
-                        })
-                    });
-                    if (insertOrUpdate) {
-                        EventAggregator.Instance.Publish(new SettingsChangedEvent {
-                            SettingsName = "OcrSettings"
-                        });
-                    }
-
-                    IsSavingInProgress = false;
-                    OcrSettingsMessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
-                        Languages.Language.ResourceManager.GetString("SaveFailed"))}");
-                });
+        protected override async Task<bool> SaveSettingsProcess() {
+            if (_deviceService.RunningStatus) {
+                IsSavingInProgress = false;
+                base.MessageQueue.Enqueue($"设备工作中,无法设置");
+                return false;
             }
+            //即时设置Ocr文件
+            var dictionary = new Dictionary<string, object>()
+            {
+                {"three_segment_code", OcrSettingsInfo.IsThreeSegmentCode},
+                {"recipient_name", OcrSettingsInfo.IsShowReceiverInfo},
+                {"recipient_phone", OcrSettingsInfo.IsShowReceiverInfo},
+                {"recipient_addr", OcrSettingsInfo.IsShowReceiverInfo},
+                {"sender_name", OcrSettingsInfo.IsShowSenderInfo},
+                {"sender_phone", OcrSettingsInfo.IsShowSenderInfo},
+                {"sender_addr", OcrSettingsInfo.IsShowSenderInfo},
+            };
+            await _ocr.SetOcrParameters(dictionary);
+            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
+                ConfigName = SettingsName,
+                Value = JsonConvert.SerializeObject(new OcrSettingsDto() {
+                    IsThreeSegmentCode = OcrSettingsInfo.IsThreeSegmentCode,
+                    IsShowReceiverInfo = OcrSettingsInfo.IsShowReceiverInfo,
+                    IsShowRecognitionTime = OcrSettingsInfo.IsShowRecognitionTime,
+                    IsShowSenderInfo = OcrSettingsInfo.IsShowSenderInfo,
+                    IsUseOcr = OcrSettingsInfo.IsUseOcr,
+                    RecognitionTimeout = OcrSettingsInfo.RecognitionTimeout,
+                    CropImagePath = OcrSettingsInfo.CropImagePath,
+                    ConfidenceThreshold = OcrSettingsInfo.ConfidenceThreshold,
+                    IsSaveCropImage = OcrSettingsInfo.IsSaveCropImage,
+                    ModelFilePath = SelectModelFile,
+                    RectangleScale = OcrSettingsInfo.RectangleScale
+                })
+            });
+            base.MessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
+                Languages.Language.ResourceManager.GetString("SaveFailed"))}");
+            return insertOrUpdate;
         }
 
-        /// <summary>
-        /// 页面加载完成
-        /// </summary>
-        public ICommand LoadedCommand {
-            get => new DelegateCommand<object>(LoadedDelegate);
-        }
-
-        private async void LoadedDelegate(object obj) {
+        public override async void LoadedDelegate(object obj) {
             ModelFiles.Clear();
             var modelNames = Directory.GetFiles($"{System.AppDomain.CurrentDomain.BaseDirectory}OnnxModels")
                 ?.Select(s => new FileInfo(s))?.Where(w => w.Extension.Contains("onnx"))
                 ?.Select(s1 => s1.Name)?.ToList();
             ModelFiles.AddRange(modelNames);
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
-                var configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("OcrSettings"));
-                if (configInfoModel is not null) {
-                    try {
-                        var ocrSettingsDto = JsonConvert.DeserializeObject<OcrSettingsDto>(configInfoModel.Value);
-                        if (ocrSettingsDto is not null) {
-                            OcrSettingsInfo = new OcrSettingsInfoModel() {
-                                IsShowReceiverInfo = ocrSettingsDto.IsShowReceiverInfo,
-                                IsShowRecognitionTime = ocrSettingsDto.IsShowRecognitionTime,
-                                IsShowSenderInfo = ocrSettingsDto.IsShowSenderInfo,
-                                IsUseOcr = ocrSettingsDto.IsUseOcr,
-                                IsThreeSegmentCode = ocrSettingsDto.IsThreeSegmentCode,
-                                RecognitionTimeout = ocrSettingsDto.RecognitionTimeout,
-                                ConfidenceThreshold = ocrSettingsDto.ConfidenceThreshold,
-                                CropImagePath = ocrSettingsDto.CropImagePath,
-                                IsSaveCropImage = ocrSettingsDto.IsSaveCropImage,
-                                ModelFilePath = ocrSettingsDto.ModelFilePath,
-                                RectangleScale = ocrSettingsDto.RectangleScale,
-                            };
-                            SelectModelFile = ocrSettingsDto.ModelFilePath;
-                        }
-                    }
-                    catch (Exception e) {
-                        OcrSettingsMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("加载设置失败") ?? string.Empty}:{e.Message}");
-                    }
+                var ocrSettingsDto = await _configRepository.FirstOrDefaultEntity<OcrSettingsDto>(SettingsName);
+
+                if (ocrSettingsDto is not null) {
+                    OcrSettingsInfo = new OcrSettingsInfoModel() {
+                        IsShowReceiverInfo = ocrSettingsDto.IsShowReceiverInfo,
+                        IsShowRecognitionTime = ocrSettingsDto.IsShowRecognitionTime,
+                        IsShowSenderInfo = ocrSettingsDto.IsShowSenderInfo,
+                        IsUseOcr = ocrSettingsDto.IsUseOcr,
+                        IsThreeSegmentCode = ocrSettingsDto.IsThreeSegmentCode,
+                        RecognitionTimeout = ocrSettingsDto.RecognitionTimeout,
+                        ConfidenceThreshold = ocrSettingsDto.ConfidenceThreshold,
+                        CropImagePath = ocrSettingsDto.CropImagePath,
+                        IsSaveCropImage = ocrSettingsDto.IsSaveCropImage,
+                        ModelFilePath = ocrSettingsDto.ModelFilePath,
+                        RectangleScale = ocrSettingsDto.RectangleScale,
+                    };
+                    SelectModelFile = ocrSettingsDto.ModelFilePath;
                 }
                 //读取算法文件夹文件
                 if (!Directory.Exists($"{System.AppDomain.CurrentDomain.BaseDirectory}OnnxModels")) {
                     Directory.CreateDirectory($"{System.AppDomain.CurrentDomain.BaseDirectory}OnnxModels");
                 }
             });
-            /*if (!_isLoaded) {
-                _isLoaded = true;
-            }*/
         }
     }
 }

@@ -26,10 +26,9 @@ using WeightAccessMode = JayTom.Dws.Domain.Dto.WeightAccessMode;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
 
-    public class WeightSettingViewModel : BindableBase {
+    public class WeightSettingViewModel : SettingsPageTemplateViewModel {
         private readonly IDynamicScale _dynamicScale;
         private readonly IStaticScale _staticScale;
-        private readonly IConfigRepository _configRepository;
         private WeightSettingsInfoModel _weightSettingsInfo = new();
         private ObservableCollection<string> _portItems = new();
 
@@ -152,18 +151,15 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         private WeightModeInfoModel _selectWeightMode = new();
         private bool _isRealtimeDataEnabled;
         private float _realtimeWeight;
-        private bool _isSavingInProgress;
-        private SnackbarMessageQueue _weightSettingsMessageQueue = new(TimeSpan.FromSeconds(2));
         private bool _isLoaded;
         private string _receivedData = string.Empty;
         private string _weightSourceContent = string.Empty;
         private float _parsedWeight;
 
         public WeightSettingViewModel(IDynamicScale dynamicScale,
-            IStaticScale staticScale, IConfigRepository configRepository) {
+            IStaticScale staticScale, IConfigRepository configRepository) : base(configRepository) {
             _dynamicScale = dynamicScale;
             _staticScale = staticScale;
-            _configRepository = configRepository;
             _dynamicScale.StabledWeight += async delegate (object? sender, float f) {
                 if (SelectWeightMode.Value == WeightMode.Dynamic) {
                     await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
@@ -203,30 +199,25 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             _dynamicScale.Excepted += async delegate (object? sender, Exception exception) {
                 //异常的输出之后需要取消
                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                    WeightSettingsMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("动态称异常") ?? string.Empty}:{exception.Message}");
+                    base.MessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("动态称异常") ?? string.Empty}:{exception.Message}");
                 });
             };
             _staticScale.Excepted += async delegate (object? sender, Exception exception) {
                 //异常的输出之后需要取消
                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                    WeightSettingsMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("静态称异常")}:{exception.Message}");
+                    base.MessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("静态称异常")}:{exception.Message}");
                 });
             };
             _dynamicScale.Connected += async delegate (object? sender, IScale scale) {
                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                    WeightSettingsMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("动态称连接成功")}");
+                    base.MessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("动态称连接成功")}");
                 });
             };
             _staticScale.Connected += async delegate (object? sender, IScale scale) {
                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                    WeightSettingsMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("静态称连接成功")}");
+                    base.MessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("静态称连接成功")}");
                 });
             };
-        }
-
-        public SnackbarMessageQueue WeightSettingsMessageQueue {
-            get => _weightSettingsMessageQueue;
-            set => SetProperty(ref _weightSettingsMessageQueue, value);
         }
 
         public WeightSettingsInfoModel WeightSettingsInfo {
@@ -353,14 +344,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         }
 
         /// <summary>
-        /// 是否保存中
-        /// </summary>
-        public bool IsSavingInProgress {
-            get => _isSavingInProgress;
-            set => SetProperty(ref _isSavingInProgress, value);
-        }
-
-        /// <summary>
         /// 重量源内容
         /// </summary>
         public string WeightSourceContent {
@@ -406,149 +389,127 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             }*/
         }
 
-        /// <summary>
-        /// 保存设置
-        /// </summary>
-        public ICommand SaveSettingsCommand {
-            get => new DelegateCommand<object>(SaveSettingDelegate);
-        }
+        public override string Identifier => "WeightSettingsDialogHost";
+        public override string SettingsName => "WeightSettings";
 
-        private async void SaveSettingDelegate(object obj) {
-            if (!IsSavingInProgress) {
-                IsSavingInProgress = true;
-                _staticScale.Dispose();
-                _dynamicScale.Dispose();
-                await Task.Delay(TimeSpan.FromSeconds(1));
-                var properties = new WeightAdditionalProperties() {
-                    IsUseActualWeightConversionRate =
-                        WeightSettingsInfo.AdditionalWeight.IsUseActualWeightConversionRate,
-                    IsUseAppendedWeight = WeightSettingsInfo.AdditionalWeight.IsUseAppendedWeight,
-                    IsUseFixedWeight = WeightSettingsInfo.AdditionalWeight.IsUseFixedWeight,
-                    IsUseMergedWeightTimeout = WeightSettingsInfo.AdditionalWeight.IsUseMergedWeightTimeout,
-                    WeightConversionRate = WeightSettingsInfo.AdditionalWeight.WeightConversionRate,
-                    AppendedWeightValue = WeightSettingsInfo.AdditionalWeight.AppendedWeightValue,
-                    FixedWeightValue = WeightSettingsInfo.AdditionalWeight.FixedWeightValue,
-                    MergedWeightTimeout = WeightSettingsInfo.AdditionalWeight.MergedWeightTimeout
-                };
-                switch (SelectWeightMode.Value) {
-                    //连接、并保存设置
-                    case WeightMode.Static:
-                        _staticScale.WeightFormat = (ScaleWeightFormat)SelectDataFormat.Value;
-                        _staticScale.WeightAdditionalProperties = properties;
-                        _staticScale.SetWeightCalculationParameters(new DefaultStaticScaleValueParameters() {
-                            AccessMode = (Plugin.Scale.StaticScale.WeightAccessMode)SelectedWeightAccess.Value,
-                            BalanceCount = WeightSettingsInfo.StaticWeight.BalanceCount,
-                            BalanceQty = WeightSettingsInfo.StaticWeight.BalanceQty,
-                            CharacterLength = WeightSettingsInfo.StaticWeight.CharacterLength,
-                            DataInterval = TimeSpan.FromMilliseconds(WeightSettingsInfo.StaticWeight.DataInterval),
-                            DecimalEndPosition = WeightSettingsInfo.StaticWeight.DecimalEndPosition,
-                            DecimalStartPosition = WeightSettingsInfo.StaticWeight.DecimalStartPosition,
-                            Identifier = WeightSettingsInfo.StaticWeight.Identifier,
-                            IdentifierPosition = WeightSettingsInfo.StaticWeight.IdentifierPosition,
-                            IntegerEndPosition = WeightSettingsInfo.StaticWeight.IntegerEndPosition,
-                            IntegerStartPosition = WeightSettingsInfo.StaticWeight.IntegerStartPosition,
-                            IsReversed = WeightSettingsInfo.StaticWeight.IsReversed,
-                            SendingContent = WeightSettingsInfo.StaticWeight.SendingContent,
-                            SendingFormat = (ScaleWeightFormat)SendDataFormat.Value,
-                            MaxWeight = WeightSettingsInfo.CommonWeight.MaxWeight,
-                            MinWeight = WeightSettingsInfo.CommonWeight.MinWeight
-                        });
-                        _staticScale.Connect(new BaseScaleConnectParam() {
-                            PortName = WeightSettingsInfo.Connection.PortName,
-                            BaudRate = WeightSettingsInfo.Connection.BaudRate,
-                            DataBits = WeightSettingsInfo.Connection.DataBits,
-                            Parity = SelectParity.Value,
-                            StopBits = SelectStopBits.Value
-                        });
-                        //连接静态称
-                        break;
-
-                    case WeightMode.Dynamic:
-                        //连接动态称
-                        _dynamicScale.WeightFormat = (ScaleWeightFormat)SelectDataFormat.Value;
-                        _dynamicScale.WeightAdditionalProperties = properties;
-                        _dynamicScale.SetWeightCalculationParameters(new DefaultDynamicScaleValueParameters() {
-                            DecimalPlaces = WeightSettingsInfo.DynamicWeight.DecimalPrecision
-                        });
-                        _dynamicScale.Connect(new BaseScaleConnectParam() {
-                            PortName = WeightSettingsInfo.Connection.PortName,
-                            BaudRate = WeightSettingsInfo.Connection.BaudRate,
-                            DataBits = WeightSettingsInfo.Connection.DataBits,
-                            Parity = SelectParity.Value,
-                            StopBits = SelectStopBits.Value
-                        });
-                        break;
-                }
-                //保存到数据库
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
-                    var insertOrUpdate = await _configRepository.InsertOrUpdate(new() {
-                        ConfigName = "WeightSettings",
-                        Value = JsonConvert.SerializeObject(new WeightSettingsDto {
-                            Mode = SelectWeightMode.Value,
-                            Connection = new SerialPortSettingsInfo {
-                                BaudRate = WeightSettingsInfo.Connection.BaudRate,
-                                DataBits = WeightSettingsInfo.Connection.DataBits,
-                                DataFormat = SelectDataFormat.Value,
-                                Parity = SelectParity.Value,
-                                PortName = WeightSettingsInfo.Connection.PortName,
-                                StopBits = SelectStopBits.Value
-                            },
-                            CommonWeight = new CommonWeightParams {
-                                MaxWeight = WeightSettingsInfo.CommonWeight.MaxWeight,
-                                MinWeight = WeightSettingsInfo.CommonWeight.MinWeight
-                            },
-                            StaticWeight = new StaticWeightParams {
-                                AccessMode = SelectedWeightAccess.Value,
-                                BalanceCount = WeightSettingsInfo.StaticWeight.BalanceCount,
-                                BalanceQty = WeightSettingsInfo.StaticWeight.BalanceQty,
-                                CharacterLength = WeightSettingsInfo.StaticWeight.CharacterLength,
-                                DataInterval = TimeSpan.FromMilliseconds(WeightSettingsInfo.StaticWeight.DataInterval),
-                                DecimalEndPosition = WeightSettingsInfo.StaticWeight.DecimalEndPosition,
-                                DecimalStartPosition = WeightSettingsInfo.StaticWeight.DecimalStartPosition,
-                                Identifier = WeightSettingsInfo.StaticWeight.Identifier,
-                                IdentifierPosition = WeightSettingsInfo.StaticWeight.IdentifierPosition,
-                                IntegerEndPosition = WeightSettingsInfo.StaticWeight.IntegerEndPosition,
-                                IntegerStartPosition = WeightSettingsInfo.StaticWeight.IntegerStartPosition,
-                                IsReversed = WeightSettingsInfo.StaticWeight.IsReversed,
-                                SendingContent = WeightSettingsInfo.StaticWeight.SendingContent,
-                                SendingFormat = SendDataFormat.Value
-                            },
-                            DynamicWeight = new DynamicWeightParams() {
-                                DecimalPrecision = WeightSettingsInfo.DynamicWeight.DecimalPrecision,
-                            },
-                            AdditionalWeight = new AdditionalWeightProperties() {
-                                IsUseActualWeightConversionRate = WeightSettingsInfo.AdditionalWeight.IsUseActualWeightConversionRate,
-                                IsUseAppendedWeight = WeightSettingsInfo.AdditionalWeight.IsUseAppendedWeight,
-                                IsUseFixedWeight = WeightSettingsInfo.AdditionalWeight.IsUseFixedWeight,
-                                IsUseMergedWeightTimeout = WeightSettingsInfo.AdditionalWeight.IsUseMergedWeightTimeout,
-                                AppendedWeightValue = WeightSettingsInfo.AdditionalWeight.AppendedWeightValue,
-                                WeightConversionRate = WeightSettingsInfo.AdditionalWeight.WeightConversionRate,
-                                FixedWeightValue = WeightSettingsInfo.AdditionalWeight.FixedWeightValue,
-                                MergedWeightTimeout = WeightSettingsInfo.AdditionalWeight.MergedWeightTimeout
-                            }
-                        })
+        protected override async Task<bool> SaveSettingsProcess() {
+            _staticScale.Dispose();
+            _dynamicScale.Dispose();
+            await Task.Delay(TimeSpan.FromSeconds(1));
+            var properties = new WeightAdditionalProperties() {
+                IsUseActualWeightConversionRate =
+                    WeightSettingsInfo.AdditionalWeight.IsUseActualWeightConversionRate,
+                IsUseAppendedWeight = WeightSettingsInfo.AdditionalWeight.IsUseAppendedWeight,
+                IsUseFixedWeight = WeightSettingsInfo.AdditionalWeight.IsUseFixedWeight,
+                IsUseMergedWeightTimeout = WeightSettingsInfo.AdditionalWeight.IsUseMergedWeightTimeout,
+                WeightConversionRate = WeightSettingsInfo.AdditionalWeight.WeightConversionRate,
+                AppendedWeightValue = WeightSettingsInfo.AdditionalWeight.AppendedWeightValue,
+                FixedWeightValue = WeightSettingsInfo.AdditionalWeight.FixedWeightValue,
+                MergedWeightTimeout = WeightSettingsInfo.AdditionalWeight.MergedWeightTimeout
+            };
+            switch (SelectWeightMode.Value) {
+                //连接、并保存设置
+                case WeightMode.Static:
+                    _staticScale.WeightFormat = (ScaleWeightFormat)SelectDataFormat.Value;
+                    _staticScale.WeightAdditionalProperties = properties;
+                    _staticScale.SetWeightCalculationParameters(new DefaultStaticScaleValueParameters() {
+                        AccessMode = (Plugin.Scale.StaticScale.WeightAccessMode)SelectedWeightAccess.Value,
+                        BalanceCount = WeightSettingsInfo.StaticWeight.BalanceCount,
+                        BalanceQty = WeightSettingsInfo.StaticWeight.BalanceQty,
+                        CharacterLength = WeightSettingsInfo.StaticWeight.CharacterLength,
+                        DataInterval = TimeSpan.FromMilliseconds(WeightSettingsInfo.StaticWeight.DataInterval),
+                        DecimalEndPosition = WeightSettingsInfo.StaticWeight.DecimalEndPosition,
+                        DecimalStartPosition = WeightSettingsInfo.StaticWeight.DecimalStartPosition,
+                        Identifier = WeightSettingsInfo.StaticWeight.Identifier,
+                        IdentifierPosition = WeightSettingsInfo.StaticWeight.IdentifierPosition,
+                        IntegerEndPosition = WeightSettingsInfo.StaticWeight.IntegerEndPosition,
+                        IntegerStartPosition = WeightSettingsInfo.StaticWeight.IntegerStartPosition,
+                        IsReversed = WeightSettingsInfo.StaticWeight.IsReversed,
+                        SendingContent = WeightSettingsInfo.StaticWeight.SendingContent,
+                        SendingFormat = (ScaleWeightFormat)SendDataFormat.Value,
+                        MaxWeight = WeightSettingsInfo.CommonWeight.MaxWeight,
+                        MinWeight = WeightSettingsInfo.CommonWeight.MinWeight
                     });
-                    if (insertOrUpdate) {
-                        EventAggregator.Instance.Publish(new SettingsChangedEvent {
-                            SettingsName = "WeightSettings"
-                        });
-                    }
+                    _staticScale.Connect(new BaseScaleConnectParam() {
+                        PortName = WeightSettingsInfo.Connection.PortName,
+                        BaudRate = WeightSettingsInfo.Connection.BaudRate,
+                        DataBits = WeightSettingsInfo.Connection.DataBits,
+                        Parity = SelectParity.Value,
+                        StopBits = SelectStopBits.Value
+                    });
+                    //连接静态称
+                    break;
 
-                    IsSavingInProgress = false;
-                    WeightSettingsMessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
-                        Languages.Language.ResourceManager.GetString("SaveFailed"))}");
-                });
+                case WeightMode.Dynamic:
+                    //连接动态称
+                    _dynamicScale.WeightFormat = (ScaleWeightFormat)SelectDataFormat.Value;
+                    _dynamicScale.WeightAdditionalProperties = properties;
+                    _dynamicScale.SetWeightCalculationParameters(new DefaultDynamicScaleValueParameters() {
+                        DecimalPlaces = WeightSettingsInfo.DynamicWeight.DecimalPrecision
+                    });
+                    _dynamicScale.Connect(new BaseScaleConnectParam() {
+                        PortName = WeightSettingsInfo.Connection.PortName,
+                        BaudRate = WeightSettingsInfo.Connection.BaudRate,
+                        DataBits = WeightSettingsInfo.Connection.DataBits,
+                        Parity = SelectParity.Value,
+                        StopBits = SelectStopBits.Value
+                    });
+                    break;
             }
+
+            var insertOrUpdate = await _configRepository.InsertOrUpdate(new() {
+                ConfigName = SettingsName,
+                Value = JsonConvert.SerializeObject(new WeightSettingsDto {
+                    Mode = SelectWeightMode.Value,
+                    Connection = new SerialPortSettingsInfo {
+                        BaudRate = WeightSettingsInfo.Connection.BaudRate,
+                        DataBits = WeightSettingsInfo.Connection.DataBits,
+                        DataFormat = SelectDataFormat.Value,
+                        Parity = SelectParity.Value,
+                        PortName = WeightSettingsInfo.Connection.PortName,
+                        StopBits = SelectStopBits.Value
+                    },
+                    CommonWeight = new CommonWeightParams {
+                        MaxWeight = WeightSettingsInfo.CommonWeight.MaxWeight,
+                        MinWeight = WeightSettingsInfo.CommonWeight.MinWeight
+                    },
+                    StaticWeight = new StaticWeightParams {
+                        AccessMode = SelectedWeightAccess.Value,
+                        BalanceCount = WeightSettingsInfo.StaticWeight.BalanceCount,
+                        BalanceQty = WeightSettingsInfo.StaticWeight.BalanceQty,
+                        CharacterLength = WeightSettingsInfo.StaticWeight.CharacterLength,
+                        DataInterval = TimeSpan.FromMilliseconds(WeightSettingsInfo.StaticWeight.DataInterval),
+                        DecimalEndPosition = WeightSettingsInfo.StaticWeight.DecimalEndPosition,
+                        DecimalStartPosition = WeightSettingsInfo.StaticWeight.DecimalStartPosition,
+                        Identifier = WeightSettingsInfo.StaticWeight.Identifier,
+                        IdentifierPosition = WeightSettingsInfo.StaticWeight.IdentifierPosition,
+                        IntegerEndPosition = WeightSettingsInfo.StaticWeight.IntegerEndPosition,
+                        IntegerStartPosition = WeightSettingsInfo.StaticWeight.IntegerStartPosition,
+                        IsReversed = WeightSettingsInfo.StaticWeight.IsReversed,
+                        SendingContent = WeightSettingsInfo.StaticWeight.SendingContent,
+                        SendingFormat = SendDataFormat.Value
+                    },
+                    DynamicWeight = new DynamicWeightParams() {
+                        DecimalPrecision = WeightSettingsInfo.DynamicWeight.DecimalPrecision,
+                    },
+                    AdditionalWeight = new AdditionalWeightProperties() {
+                        IsUseActualWeightConversionRate = WeightSettingsInfo.AdditionalWeight.IsUseActualWeightConversionRate,
+                        IsUseAppendedWeight = WeightSettingsInfo.AdditionalWeight.IsUseAppendedWeight,
+                        IsUseFixedWeight = WeightSettingsInfo.AdditionalWeight.IsUseFixedWeight,
+                        IsUseMergedWeightTimeout = WeightSettingsInfo.AdditionalWeight.IsUseMergedWeightTimeout,
+                        AppendedWeightValue = WeightSettingsInfo.AdditionalWeight.AppendedWeightValue,
+                        WeightConversionRate = WeightSettingsInfo.AdditionalWeight.WeightConversionRate,
+                        FixedWeightValue = WeightSettingsInfo.AdditionalWeight.FixedWeightValue,
+                        MergedWeightTimeout = WeightSettingsInfo.AdditionalWeight.MergedWeightTimeout
+                    }
+                })
+            });
+            base.MessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
+                Languages.Language.ResourceManager.GetString("SaveFailed"))}");
+            return insertOrUpdate;
         }
 
-        /// <summary>
-        /// 页面加载完成
-        /// </summary>
-        public ICommand LoadedCommand {
-            get => new DelegateCommand<object>(LoadedDelegate);
-        }
-
-        private async void LoadedDelegate(object obj) {
+        public override async void LoadedDelegate(object obj) {
             if (!_isLoaded) {
                 _isLoaded = true;
 
@@ -556,81 +517,71 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     PortItems.Clear();
                     PortItems.AddRange(SerialPort.GetPortNames());
                     //加载
-
-                    var configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("WeightSettings"));
-                    if (configInfoModel is not null) {
-                        try {
-                            var settingsDto = JsonConvert.DeserializeObject<WeightSettingsDto>(configInfoModel.Value);
-                            if (settingsDto is not null) {
-                                SelectWeightMode = WeightModeItems.FirstOrDefault(f => f.Value == settingsDto.Mode) ?? new WeightModeInfoModel();
-                                SelectDataFormat =
-                                    DataFormatTypeItems.FirstOrDefault(
-                                        f => f.Value == settingsDto.Connection.DataFormat) ??
-                                    new DataFormatTypeInfoModel();
-                                SelectParity =
-                                    ParityItems.FirstOrDefault(f => f.Value == settingsDto.Connection.Parity) ??
-                                    new ParityInfoModel();
-                                SelectStopBits =
-                                    StopBitsItems.FirstOrDefault(f => f.Value == settingsDto.Connection.StopBits) ??
-                                    new StopBitsInfoModel();
-                                SelectedWeightAccess =
-                                    WeightAccessItems.FirstOrDefault(
-                                        f => f.Value == settingsDto.StaticWeight.AccessMode) ??
-                                    new WeightAccessInfoMode();
-                                SendDataFormat =
-                                    DataFormatTypeItems.FirstOrDefault(f =>
-                                        f.Value == settingsDto.StaticWeight.SendingFormat) ??
-                                    new DataFormatTypeInfoModel();
-                                WeightSettingsInfo = new WeightSettingsInfoModel() {
-                                    Mode = settingsDto.Mode,
-                                    Connection = new SerialPortSettingsInfoModel() {
-                                        BaudRate = settingsDto.Connection.BaudRate,
-                                        DataBits = settingsDto.Connection.DataBits,
-                                        DataFormat = settingsDto.Connection.DataFormat,
-                                        Parity = settingsDto.Connection.Parity,
-                                        PortName = settingsDto.Connection.PortName,
-                                        StopBits = settingsDto.Connection.StopBits
-                                    },
-                                    CommonWeight = new CommonWeightParamsModel() {
-                                        MaxWeight = settingsDto.CommonWeight.MaxWeight,
-                                        MinWeight = settingsDto.CommonWeight.MinWeight,
-                                    },
-                                    StaticWeight = new StaticWeightParamsModel() {
-                                        AccessMode = settingsDto.StaticWeight.AccessMode,
-                                        BalanceCount = settingsDto.StaticWeight.BalanceCount,
-                                        BalanceQty = settingsDto.StaticWeight.BalanceQty,
-                                        CharacterLength = settingsDto.StaticWeight.CharacterLength,
-                                        DataInterval = (int)settingsDto.StaticWeight.DataInterval.TotalMilliseconds,
-                                        DecimalEndPosition = settingsDto.StaticWeight.DecimalEndPosition,
-                                        DecimalStartPosition = settingsDto.StaticWeight.DecimalStartPosition,
-                                        Identifier = settingsDto.StaticWeight.Identifier,
-                                        IdentifierPosition = settingsDto.StaticWeight.IdentifierPosition,
-                                        IntegerEndPosition = settingsDto.StaticWeight.IntegerEndPosition,
-                                        IntegerStartPosition = settingsDto.StaticWeight.IntegerStartPosition,
-                                        IsReversed = settingsDto.StaticWeight.IsReversed,
-                                        SendingContent = settingsDto.StaticWeight.SendingContent,
-                                        SendingFormat = settingsDto.StaticWeight.SendingFormat
-                                    },
-                                    DynamicWeight = new DynamicWeightParamsModel() {
-                                        DecimalPrecision = settingsDto.DynamicWeight.DecimalPrecision,
-                                    },
-                                    AdditionalWeight = new AdditionalWeightPropertiesModel() {
-                                        IsUseActualWeightConversionRate = settingsDto.AdditionalWeight.IsUseActualWeightConversionRate,
-                                        IsUseAppendedWeight = settingsDto.AdditionalWeight.IsUseAppendedWeight,
-                                        IsUseFixedWeight = settingsDto.AdditionalWeight.IsUseFixedWeight,
-                                        IsUseMergedWeightTimeout = settingsDto.AdditionalWeight.IsUseMergedWeightTimeout,
-                                        AppendedWeightValue = settingsDto.AdditionalWeight.AppendedWeightValue,
-                                        WeightConversionRate = settingsDto.AdditionalWeight.WeightConversionRate,
-                                        FixedWeightValue = settingsDto.AdditionalWeight.FixedWeightValue,
-                                        MergedWeightTimeout = settingsDto.AdditionalWeight.MergedWeightTimeout
-                                    }
-                                };
-                            }
+                    var settingsDto = await _configRepository.FirstOrDefaultEntity<WeightSettingsDto>(SettingsName) ??
+                                      new WeightSettingsDto();
+                    SelectWeightMode = WeightModeItems.FirstOrDefault(f => f.Value == settingsDto.Mode) ?? new WeightModeInfoModel();
+                    SelectDataFormat =
+                        DataFormatTypeItems.FirstOrDefault(
+                            f => f.Value == settingsDto.Connection.DataFormat) ??
+                        new DataFormatTypeInfoModel();
+                    SelectParity =
+                        ParityItems.FirstOrDefault(f => f.Value == settingsDto.Connection.Parity) ??
+                        new ParityInfoModel();
+                    SelectStopBits =
+                        StopBitsItems.FirstOrDefault(f => f.Value == settingsDto.Connection.StopBits) ??
+                        new StopBitsInfoModel();
+                    SelectedWeightAccess =
+                        WeightAccessItems.FirstOrDefault(
+                            f => f.Value == settingsDto.StaticWeight.AccessMode) ??
+                        new WeightAccessInfoMode();
+                    SendDataFormat =
+                        DataFormatTypeItems.FirstOrDefault(f =>
+                            f.Value == settingsDto.StaticWeight.SendingFormat) ??
+                        new DataFormatTypeInfoModel();
+                    WeightSettingsInfo = new WeightSettingsInfoModel() {
+                        Mode = settingsDto.Mode,
+                        Connection = new SerialPortSettingsInfoModel() {
+                            BaudRate = settingsDto.Connection.BaudRate,
+                            DataBits = settingsDto.Connection.DataBits,
+                            DataFormat = settingsDto.Connection.DataFormat,
+                            Parity = settingsDto.Connection.Parity,
+                            PortName = settingsDto.Connection.PortName,
+                            StopBits = settingsDto.Connection.StopBits
+                        },
+                        CommonWeight = new CommonWeightParamsModel() {
+                            MaxWeight = settingsDto.CommonWeight.MaxWeight,
+                            MinWeight = settingsDto.CommonWeight.MinWeight,
+                        },
+                        StaticWeight = new StaticWeightParamsModel() {
+                            AccessMode = settingsDto.StaticWeight.AccessMode,
+                            BalanceCount = settingsDto.StaticWeight.BalanceCount,
+                            BalanceQty = settingsDto.StaticWeight.BalanceQty,
+                            CharacterLength = settingsDto.StaticWeight.CharacterLength,
+                            DataInterval = (int)settingsDto.StaticWeight.DataInterval.TotalMilliseconds,
+                            DecimalEndPosition = settingsDto.StaticWeight.DecimalEndPosition,
+                            DecimalStartPosition = settingsDto.StaticWeight.DecimalStartPosition,
+                            Identifier = settingsDto.StaticWeight.Identifier,
+                            IdentifierPosition = settingsDto.StaticWeight.IdentifierPosition,
+                            IntegerEndPosition = settingsDto.StaticWeight.IntegerEndPosition,
+                            IntegerStartPosition = settingsDto.StaticWeight.IntegerStartPosition,
+                            IsReversed = settingsDto.StaticWeight.IsReversed,
+                            SendingContent = settingsDto.StaticWeight.SendingContent,
+                            SendingFormat = settingsDto.StaticWeight.SendingFormat
+                        },
+                        DynamicWeight = new DynamicWeightParamsModel() {
+                            DecimalPrecision = settingsDto.DynamicWeight.DecimalPrecision,
+                        },
+                        AdditionalWeight = new AdditionalWeightPropertiesModel() {
+                            IsUseActualWeightConversionRate = settingsDto.AdditionalWeight.IsUseActualWeightConversionRate,
+                            IsUseAppendedWeight = settingsDto.AdditionalWeight.IsUseAppendedWeight,
+                            IsUseFixedWeight = settingsDto.AdditionalWeight.IsUseFixedWeight,
+                            IsUseMergedWeightTimeout = settingsDto.AdditionalWeight.IsUseMergedWeightTimeout,
+                            AppendedWeightValue = settingsDto.AdditionalWeight.AppendedWeightValue,
+                            WeightConversionRate = settingsDto.AdditionalWeight.WeightConversionRate,
+                            FixedWeightValue = settingsDto.AdditionalWeight.FixedWeightValue,
+                            MergedWeightTimeout = settingsDto.AdditionalWeight.MergedWeightTimeout
                         }
-                        catch (Exception e) {
-                            WeightSettingsMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("加载设置失败")}:{e.Message}");
-                        }
-                    }
+                    };
                 });
             }
         }
@@ -652,7 +603,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                         .Select(group => group.Key)
                         .FirstOrDefault();
                     if (orDefault == 0) {
-                        WeightSettingsMessageQueue.Enqueue($"获取不到标识符,请检查源内容中是否有唯一标识,或在标识符位置填写标识符");
+                        base.MessageQueue.Enqueue($"获取不到标识符,请检查源内容中是否有唯一标识,或在标识符位置填写标识符");
                     }
                     else {
                         identifier = orDefault.ToString();
@@ -660,7 +611,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     //获取小数点位置
                     var indexOf = WeightSourceContent.IndexOf('.');
                     if (indexOf == 0 || indexOf == WeightSourceContent.Length - 1) {
-                        WeightSettingsMessageQueue.Enqueue($"源内容中小数点不能在最前或者最后");
+                        base.MessageQueue.Enqueue($"源内容中小数点不能在最前或者最后");
                         return;
                     }
                     //左边
@@ -684,7 +635,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                             }
 
                             if (isReversed is null) {
-                                WeightSettingsMessageQueue.Enqueue($"重量和源内容无法匹配");
+                                base.MessageQueue.Enqueue($"重量和源内容无法匹配");
                                 return;
                             }
                             else {
@@ -734,22 +685,22 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                                 WeightSettingsInfo.StaticWeight.IntegerEndPosition = integerEndPosition;
                                 WeightSettingsInfo.StaticWeight.DecimalStartPosition = decimalStartPosition;
                                 WeightSettingsInfo.StaticWeight.DecimalEndPosition = decimalEndPosition;
-                                WeightSettingsMessageQueue.Enqueue($"规则解析成功");
+                                base.MessageQueue.Enqueue($"规则解析成功");
                             }
                         }
                         else {
-                            WeightSettingsMessageQueue.Enqueue($"匹配不到小数点右边数据");
+                            base.MessageQueue.Enqueue($"匹配不到小数点右边数据");
                         }
                     }
                     else {
-                        WeightSettingsMessageQueue.Enqueue($"源内容未找到小数点");
+                        base.MessageQueue.Enqueue($"源内容未找到小数点");
                     }
                     //判断是否反转
 
                     //获取小数位置(小数最多3位)
                 }
                 else {
-                    WeightSettingsMessageQueue.Enqueue($"源内容不能为空,重量不能等于0");
+                    base.MessageQueue.Enqueue($"源内容不能为空,重量不能等于0");
                 }
                 PortItems.AddRange(SerialPort.GetPortNames());
             });
