@@ -12,6 +12,7 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         private string _remarks = string.Empty;
         private DateTime _createTime = DateTime.Now;
         private DateTime _modifyTime = DateTime.Now;
+        private bool _isSelect;
 
         /// <summary>
         /// Id
@@ -19,6 +20,11 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         public long Id {
             get => _id;
             set => SetProperty(ref _id, value);
+        }
+
+        public bool IsSelect {
+            get => _isSelect;
+            set => SetProperty(ref _isSelect, value);
         }
 
         /// <summary>

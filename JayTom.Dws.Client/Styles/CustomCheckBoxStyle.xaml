@@ -4,9 +4,10 @@
         BasedOn="{StaticResource MaterialDesignCheckBox}"
         TargetType="{x:Type CheckBox}">
         <Setter Property="Background" Value="#FFFAF0" />
-        <Setter Property="BorderBrush" Value="#FF262E34" />
+        <Setter Property="BorderBrush" Value="DodgerBlue" />
         <Setter Property="Foreground" Value="#FF262E34" />
-        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="BorderThickness" Value="2" />
+        <Setter Property="Focusable" Value="False" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type CheckBox}">

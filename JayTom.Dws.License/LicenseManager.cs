@@ -168,7 +168,7 @@ namespace JayTom.Dws.License {
                                 return new KeyValuePair<bool, string>(false, "授权已过期!");
                             }
 
-                            if (Math.Abs(data.CreationTime.Subtract(DateTime.Now).TotalMinutes) >= 60) {
+                            if (data.CreationTime.Subtract(DateTime.Now).TotalMinutes >= 10) {
                                 return new KeyValuePair<bool, string>(false, "授权时间异常!");
                             }
                             return new KeyValuePair<bool, string>(true, "授权正常");
@@ -429,8 +429,7 @@ namespace JayTom.Dws.License {
                             if (data.ExpirationDate.CompareTo(DateTime.Now) <= 0) {
                                 return new KeyValuePair<bool, string>(false, "授权已过期!");
                             }
-
-                            if (data.CreationTime.CompareTo(DateTime.Now) >= 0) {
+                            if (data.CreationTime.Subtract(DateTime.Now).TotalMinutes >= 10) {
                                 return new KeyValuePair<bool, string>(false, "授权时间异常!");
                             }
                             if (!data.IsAvailable) {

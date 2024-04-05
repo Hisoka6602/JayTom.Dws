@@ -8,6 +8,11 @@ using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech;
 internal class Program {
 
     private static void Main(string[] args) {
+        //var totalMinutes = DateTime.Now.AddMinutes(20).Subtract(DateTime.Now).TotalMinutes;
+
+        var totalMinutes = DateTime.Now.Subtract(DateTime.Now.AddMinutes(20)).TotalMinutes;
+        Console.WriteLine(totalMinutes);
+
         try {
             var s = "{\"code\":1,\"msg\":\"请求成功\",\"version\":null,\"data\":[{\"waybillNo\":\"JT5264019990398\",\"terminalDispatchCode\":\"432 R851-00 307\",\"firstDispatchCode\":\"432\",\"secondDispatchCode\":\"R851-00\",\"thirdlyDispatchCode\":\"307\",\"customerCode\":null,\"interceptor\":2,\"orderType\":2,\"pickNetworkCode\":\"\",\"destinationCode\":\"\",\"extendJson\":\"\",\"codeList\":null},{\"waybillNo\":\"JT5264019990398\",\"terminalDispatchCode\":\"432 R851-00 307\",\"firstDispatchCode\":\"432\",\"secondDispatchCode\":\"R851-00\",\"thirdlyDispatchCode\":\"307\",\"customerCode\":null,\"interceptor\":2,\"orderType\":2,\"pickNetworkCode\":\"\",\"destinationCode\":\"\",\"extendJson\":\"\",\"codeList\":null},{\"waybillNo\":\"JT5264019990398\",\"terminalDispatchCode\":\"902,H346-00,005\",\"firstDispatchCode\":\"902\",\"secondDispatchCode\":\"H346-00\",\"thirdlyDispatchCode\":\"005\",\"customerCode\":null,\"interceptor\":1,\"orderType\":1,\"pickNetworkCode\":\"4579114\",\"destinationCode\":\"510100\",\"extendJson\":\"{\\\"stationCode\\\":\\\"5O\\\"}\",\"codeList\":null}],\"succ\":true,\"fail\":false}";
             var resultContent = Regex.Unescape(s);

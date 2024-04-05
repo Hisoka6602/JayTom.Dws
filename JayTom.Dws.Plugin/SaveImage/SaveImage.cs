@@ -10,12 +10,11 @@ using Encoder = System.Drawing.Imaging.Encoder;
 namespace JayTom.Dws.Plugin.SaveImage {
 
     public class SaveImage : ISaveImage {
-        private SemaphoreSlim _semaphore = new(1);
+        private SemaphoreSlim _semaphore = new(10);
 
         public async Task<KeyValuePair<bool, string>> SaveOriginalImage(Image? image, string imageName, string imagePath, WatermarkParams? watermarkParams = null,
             CancellationToken cancellationToken = default) {
             if (image is null) return new KeyValuePair<bool, string>(false, "图片不能为空!");
-
             try {
                 await _semaphore.WaitAsync(cancellationToken);
                 if (image.PixelFormat == PixelFormat.Format8bppIndexed) {
@@ -76,9 +75,8 @@ namespace JayTom.Dws.Plugin.SaveImage {
                 return new KeyValuePair<bool, string>(false, ex.Message); // 返回保存失败的信息
             }
             finally {
-                _semaphore.Release();
-                //如果有两个条码则不能释放
                 //image?.Dispose();
+                _semaphore.Release();
             }
         }
 

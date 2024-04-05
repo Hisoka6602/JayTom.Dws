@@ -22,7 +22,7 @@ namespace JayTom.Dws.Client.Service.ImageStorage {
         private readonly IConfigRepository _configRepository;
         private readonly IFtp _ftp;
         private SemaphoreSlim _semaphore = new(1);
-        private SemaphoreSlim _saveSemaphore = new(1);
+        private SemaphoreSlim _saveSemaphore = new(10);
 
         public DefaultImageStorageService(ISaveImage saveImage, IConfigRepository configRepository,
             IFtp ftp) {
@@ -201,6 +201,7 @@ namespace JayTom.Dws.Client.Service.ImageStorage {
                 OnImageSaveFailed(new Exception($"{Languages.Language.ResourceManager.GetString("存图异常") ?? string.Empty}:{e.Message}"));
             }
             finally {
+                image?.Dispose();
                 _saveSemaphore.Release();
             }
         }

@@ -85,7 +85,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         private bool _isSwitchingState;
         private VolumeUnit _volumeUnit;
         private static SemaphoreSlim _runningSemaphoreSlim = new(1, 1);
-        private static SemaphoreSlim _imageSemaphoreSlim = new(1, 1);
         private static SemaphoreSlim _updateSlim = new(1, 1);
         private OcrSettingsInfoModel _ocrSettingsInfo = new();
         private OcrInfoItemModel _ocrItemInfo = new();
@@ -254,35 +253,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             _computer = computer;
             _certificateValidationService = certificateValidationService;
             _clientLicenseApi = clientLicenseApi;
-            CameraItems = new() {
-                /*new CameraItemInfoModel()
-                {
-                    CameraName = "海康工业相机.1",
-                    Status = CameraStatus.Running,
-                    Type = CameraType.IndustrialCamera,
-                    ConnectionType = ConnectionType.Bluetooth,
-                    ImageClickCommand = ImageClickCommand,
-                    StatusClickCommand = StatusClickCommand,
-                },
-                new CameraItemInfoModel()
-                {
-                    CameraName = "海康工业相机.2",
-                    Status = CameraStatus.Running,
-                    Type = CameraType.PanoramaCamera,
-                    ConnectionType = ConnectionType.Ethernet,
-                    ImageClickCommand = ImageClickCommand,
-                    StatusClickCommand = StatusClickCommand,
-                },
-                new CameraItemInfoModel()
-                {
-                    CameraName = "海康工业相机.2",
-                    Status = CameraStatus.Running,
-                    Type = CameraType.PanoramaCamera,
-                    ConnectionType = ConnectionType.Ethernet,
-                    ImageClickCommand = ImageClickCommand,
-                    StatusClickCommand = StatusClickCommand,
-                },*/
-            };
+            CameraItems = new();
             PackageItems = new();
             _deviceService.CameraInitialized += async delegate (object? sender, List<ICamera> list) {
                 await Application.Current.Dispatcher.BeginInvoke(() => {

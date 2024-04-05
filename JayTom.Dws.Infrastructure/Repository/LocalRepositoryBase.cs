@@ -807,7 +807,7 @@ namespace JayTom.Dws.Infrastructure.Repository {
             return null;
         }
 
-        public async Task<T> FirstOrDefault(Expression<Func<T, bool>> @where, CancellationToken token) {
+        public async Task<T?> FirstOrDefault(Expression<Func<T, bool>> @where, CancellationToken token) {
             try {
                 await using var concardContext = _contextFactory.CreateDbContext();
                 var dbSet = concardContext?.Set<T>();

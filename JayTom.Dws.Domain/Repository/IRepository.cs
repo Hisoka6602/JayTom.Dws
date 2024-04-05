@@ -200,7 +200,7 @@ namespace JayTom.Dws.Domain.Repository {
         /// <param name="where"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<T> FirstOrDefault([NotNull] Expression<Func<T, bool>> @where, CancellationToken token = default);
+        Task<T?> FirstOrDefault([NotNull] Expression<Func<T, bool>> @where, CancellationToken token = default);
 
         /// <summary>
         /// 总数
