@@ -95,17 +95,7 @@
                     <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="规则名称" />
                 </DataGridTextColumn.Header>
             </DataGridTextColumn>
-            <!--  备注  -->
-            <DataGridTextColumn
-                Width="180"
-                MinWidth="180"
-                Binding="{Binding Remarks, UpdateSourceTrigger=PropertyChanged}"
-                CellStyle="{StaticResource CustomDataGridTextCellStyle}"
-                EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
-                <DataGridTextColumn.Header>
-                    <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="备注" />
-                </DataGridTextColumn.Header>
-            </DataGridTextColumn>
+
             <!--  规则  -->
             <DataGridTextColumn
                 Width="500"
@@ -115,6 +105,17 @@
                 EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
                 <DataGridTextColumn.Header>
                     <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="规则" />
+                </DataGridTextColumn.Header>
+            </DataGridTextColumn>
+            <!--  备注  -->
+            <DataGridTextColumn
+                Width="180"
+                MinWidth="180"
+                Binding="{Binding Remarks, UpdateSourceTrigger=PropertyChanged}"
+                CellStyle="{StaticResource CustomDataGridTextCellStyle}"
+                EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
+                <DataGridTextColumn.Header>
+                    <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="备注" />
                 </DataGridTextColumn.Header>
             </DataGridTextColumn>
             <!--  操作  -->

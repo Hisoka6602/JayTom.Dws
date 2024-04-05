@@ -97,7 +97,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                 var bulkDeleteAccessDialog = new BulkDeleteAccessDialog();
                 if (bulkDeleteAccessDialog.DataContext is BulkDeleteAccessViewModel model) {
                     model.Identifier = Identifier;
-
+                    model.TipContent = "是否删除[选中]内容?";
                     await DialogHost.Show(bulkDeleteAccessDialog, Identifier);
                     if (model.IsOk) {
                         await BulkDeleteProcess();
@@ -233,7 +233,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             var bulkDeleteAccessDialog = new BulkDeleteAccessDialog();
             if (bulkDeleteAccessDialog.DataContext is BulkDeleteAccessViewModel model) {
                 model.Identifier = Identifier;
-
+                model.TipContent = "是否清空[全部]内容?";
                 await DialogHost.Show(bulkDeleteAccessDialog, Identifier);
                 if (model.IsOk) {
                     await ClearProcess();
