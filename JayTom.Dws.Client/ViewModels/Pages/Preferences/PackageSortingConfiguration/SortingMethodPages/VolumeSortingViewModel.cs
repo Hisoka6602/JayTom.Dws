@@ -24,25 +24,22 @@ using JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.SortingMe
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration.SortingMethodPages {
 
-    public class VolumeSortingViewModel : BindableBase {
+    public class VolumeSortingViewModel : BulkOperationsTemplateViewModel<VolumeSortingItemInfoModel> {
         private readonly IVolumeSortingRepository _volumeSortingRepository;
         private readonly IVolumeRuleRepository _volumeRuleRepository;
         private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
-        private readonly IExcel _excel;
 
         private ObservableCollection<VolumeSortingItemInfoModel> _volumeSortingItems = new();
 
-        private SnackbarMessageQueue _volumeSortingMessageQueue = new(TimeSpan.FromSeconds(2));
         private bool _isLoaded;
 
         public VolumeSortingViewModel(IVolumeSortingRepository volumeSortingRepository,
             IVolumeRuleRepository volumeRuleRepository,
             IPackageExitDefinitionRepository packageExitDefinitionRepository,
-            IExcel excel) {
+            IExcel excel) : base(excel) {
             _volumeSortingRepository = volumeSortingRepository;
             _volumeRuleRepository = volumeRuleRepository;
             _packageExitDefinitionRepository = packageExitDefinitionRepository;
-            _excel = excel;
         }
 
         public ObservableCollection<VolumeSortingItemInfoModel> VolumeSortingItems {
@@ -50,23 +47,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             set => SetProperty(ref _volumeSortingItems, value);
         }
 
-        public SnackbarMessageQueue VolumeSortingMessageQueue {
-            get => _volumeSortingMessageQueue;
-            set => SetProperty(ref _volumeSortingMessageQueue, value);
-        }
-
-        public ICommand AddCommand {
-            get => new DelegateCommand<object>(AddDelegate);
-        }
-
-        private async void AddDelegate(object obj) {
+        protected override async void AddDelegate(object obj) {
             await Application.Current.Dispatcher.InvokeAsync(async () => {
                 var volumeSortingRuleEditor = new VolumeSortingRuleEditor();
                 if (volumeSortingRuleEditor.DataContext is VolumeSortingRuleEditorViewModel model) {
-                    model.Identifier = "VolumeSortingDialog";
+                    model.Identifier = Identifier;
                     await DialogHost.Show(volumeSortingRuleEditor, model.Identifier);
                     if (!string.IsNullOrEmpty(model.ExceptionContent)) {
-                        VolumeSortingMessageQueue.Enqueue(model.ExceptionContent);
+                        MessageQueue.Enqueue(model.ExceptionContent);
                         return;
                     }
                     if (model.IsOk) {
@@ -87,10 +75,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         var insert = await _volumeSortingRepository.InsertDetailAsync(volumeSortingInfoModel);
                         if (insert) {
                             EventAggregator.Instance.Publish(volumeSortingInfoModel);
-                            VolumeSortingMessageQueue.Enqueue("保存成功");
+                            MessageQueue.Enqueue("保存成功");
                         }
                         else {
-                            VolumeSortingMessageQueue.Enqueue("保存失败");
+                            MessageQueue.Enqueue("保存失败");
                         }
                     }
                     RefreshData();
@@ -98,276 +86,175 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             });
         }
 
-        public ICommand LoadedCommand {
-            get => new DelegateCommand<object>(LoadedDelegate);
-        }
+        public override string Identifier => "SortingMethodDialog";
+        public override string ExcelTitle => "体积分拣列表";
+        public override string SheetName => "体积分拣列表";
 
-        private void LoadedDelegate(object obj) {
+        public override void LoadedDelegate(object obj) {
             if (!_isLoaded) {
                 _isLoaded = true;
                 RefreshData();
             }
         }
 
-        public ICommand ModifyCommand {
-            get => new DelegateCommand<VolumeSortingItemInfoModel>(ModifyDelegate);
+        protected override async Task<bool> DeleteProcess(object obj) {
+            if (obj is VolumeSortingItemInfoModel item) {
+                var volumeSortingInfoModel = await _volumeSortingRepository.
+                    FirstOrDefault(f => f.Id.Equals(item.Id));
+                if (volumeSortingInfoModel is not null) {
+                    return await _volumeSortingRepository.Delete(volumeSortingInfoModel);
+                }
+            }
+
+            return false;
         }
 
-        private async void ModifyDelegate(VolumeSortingItemInfoModel obj) {
-            await Application.Current.Dispatcher.InvokeAsync(async () => {
-                var volumeSortingRuleEditor = new VolumeSortingRuleEditor();
-                if (volumeSortingRuleEditor.DataContext is VolumeSortingRuleEditorViewModel model) {
-                    model.Identifier = "VolumeSortingDialog";
-                    model.VolumeSortingItemInfo = obj;
-                    model.VolumeRuleItems = obj.VolumeRuleItems;
-                    await DialogHost.Show(volumeSortingRuleEditor, model.Identifier);
-                    if (!string.IsNullOrEmpty(model.ExceptionContent)) {
-                        VolumeSortingMessageQueue.Enqueue(model.ExceptionContent);
+        protected override async void ModifyDelegate(object obj) {
+            if (obj is VolumeSortingItemInfoModel item) {
+                await Application.Current.Dispatcher.InvokeAsync(async () => {
+                    var volumeSortingRuleEditor = new VolumeSortingRuleEditor();
+                    if (volumeSortingRuleEditor.DataContext is VolumeSortingRuleEditorViewModel model) {
+                        model.Identifier = Identifier;
+                        model.VolumeSortingItemInfo = item;
+                        model.VolumeRuleItems = item.VolumeRuleItems;
+                        await DialogHost.Show(volumeSortingRuleEditor, model.Identifier);
+                        if (!string.IsNullOrEmpty(model.ExceptionContent)) {
+                            MessageQueue.Enqueue(model.ExceptionContent);
+                            RefreshData();
+                            return;
+                        }
+                        if (model.IsOk) {
+                            //添加到数据库
+                            var volumeSortingInfoModel = new VolumeSortingInfoModel() {
+                                CreateTime = model.VolumeSortingItemInfo.CreateTime,
+                                ModifyTime = model.VolumeSortingItemInfo.ModifyTime,
+                                ExitId = model.SelectPackageExitDefinitionInfo.Id,
+                                Remarks = model.VolumeSortingItemInfo.Remarks,
+                                SortingName = model.VolumeSortingItemInfo.SortingName,
+                                Id = model.VolumeSortingItemInfo.Id,
+                                VolumeRuleItems = model.VolumeRuleItems?.Select(s => new VolumeRuleInfoModel() {
+                                    CreateTime = s.CreateTime,
+                                    Formula = s.Formula,
+                                    ModifyTime = s.ModifyTime,
+                                    Remarks = s.Remarks,
+                                    VolumeSortingId = model.VolumeSortingItemInfo.Id,
+                                })?.ToList()
+                            };
+                            var insert = await _volumeSortingRepository.UpdateDetailAsync(volumeSortingInfoModel);
+                            if (insert) {
+                                EventAggregator.Instance.Publish(volumeSortingInfoModel);
+                                MessageQueue.Enqueue("保存成功");
+                            }
+                            else {
+                                MessageQueue.Enqueue("保存失败");
+                            }
+                        }
                         RefreshData();
-                        return;
                     }
-                    if (model.IsOk) {
-                        //添加到数据库
-                        var volumeSortingInfoModel = new VolumeSortingInfoModel() {
-                            CreateTime = model.VolumeSortingItemInfo.CreateTime,
-                            ModifyTime = model.VolumeSortingItemInfo.ModifyTime,
-                            ExitId = model.SelectPackageExitDefinitionInfo.Id,
-                            Remarks = model.VolumeSortingItemInfo.Remarks,
-                            SortingName = model.VolumeSortingItemInfo.SortingName,
-                            Id = model.VolumeSortingItemInfo.Id,
-                            VolumeRuleItems = model.VolumeRuleItems?.Select(s => new VolumeRuleInfoModel() {
-                                CreateTime = s.CreateTime,
-                                Formula = s.Formula,
-                                ModifyTime = s.ModifyTime,
-                                Remarks = s.Remarks,
-                                VolumeSortingId = model.VolumeSortingItemInfo.Id,
-                            })?.ToList()
-                        };
-                        var insert = await _volumeSortingRepository.UpdateDetailAsync(volumeSortingInfoModel);
-                        if (insert) {
-                            EventAggregator.Instance.Publish(volumeSortingInfoModel);
-                            VolumeSortingMessageQueue.Enqueue("保存成功");
-                        }
-                        else {
-                            VolumeSortingMessageQueue.Enqueue("保存失败");
-                        }
-                    }
-                    RefreshData();
-                }
-            });
-        }
-
-        public ICommand DeleteCommand {
-            get => new DelegateCommand<VolumeSortingItemInfoModel>(DeleteDelegate);
-        }
-
-        private async void DeleteDelegate(VolumeSortingItemInfoModel obj) {
-            var volumeSortingInfoModel = await _volumeSortingRepository.
-                FirstOrDefault(f => f.Id.Equals(obj.Id));
-            if (volumeSortingInfoModel is not null) {
-                var delete = await _volumeSortingRepository.Delete(volumeSortingInfoModel);
-                if (delete) {
-                    //刷新列表
-                    RefreshData();
-                }
+                });
             }
         }
 
-        private async void RefreshData() {
-            var loadingDialog = new LoadingDialog();
-            if (loadingDialog.DataContext is not LoadingDialogViewModel model) return;
-            await Application.Current.Dispatcher.InvokeAsync(() => {
-                model.Identifier = "VolumeSortingDialog";
-                DialogHost.Show(loadingDialog, model.Identifier).ConfigureAwait(false);
-            });
+        protected override async Task ClearProcess() {
+            var volumeSortingInfoModels = await _volumeSortingRepository.Select(s => s.Id > 0,
+                o => o.Id);
+            await _volumeSortingRepository.DeleteRange(volumeSortingInfoModels);
+        }
+
+        protected override async Task RefreshDataProcess() {
+            await Task.Delay(300);
             var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0, o => o.CreateTime);
             var models = await _volumeSortingRepository
                 .VolumeSortingItems(s => s.Id > 0);
-
-            await Application.Current.Dispatcher.InvokeAsync(() => {
-                VolumeSortingItems.Clear();
-                var infoModels = models?.Select((s, i) => new VolumeSortingItemInfoModel() {
-                    CreateTime = s.CreateTime,
-                    Id = s.Id,
-                    ModifyTime = s.ModifyTime,
-                    Num = i + 1,
-                    Remarks = s.Remarks,
-                    ExitId = s.ExitId,
-                    SortingName = s.SortingName,
-                    ExitName = packageExitDefinitionInfoModels?.FirstOrDefault(f => f.Id.Equals(s.ExitId))?.ExitName ?? string.Empty,
-                    VolumeRuleItems = new ObservableCollection<VolumeRuleItemInfoModel>(s.VolumeRuleItems?.Select((s1, i1) => new VolumeRuleItemInfoModel() {
-                        CreateTime = s1.CreateTime,
-                        Id = s1.Id,
-                        VolumeSortingId = s1.VolumeSortingId,
-                        ModifyTime = s1.ModifyTime,
-                        Num = i1 + 1,
-                        Remarks = s1.Remarks,
-                        Formula = s1.Formula
-                    }).ToList() ?? new List<VolumeRuleItemInfoModel>()),
-                    SortingRuleGroup = string.Join("\n", s.VolumeRuleItems?.Select(s2 => s2.Formula) ?? Array.Empty<string>())
-                })?.ToList();
-                VolumeSortingItems.AddRange(infoModels);
-                if (DialogHost.IsDialogOpen(model.Identifier)) {
-                    DialogHost.Close(model.Identifier);
-                }
-            });
+            VolumeSortingItems.Clear();
+            var infoModels = models?.Select((s, i) => new VolumeSortingItemInfoModel() {
+                CreateTime = s.CreateTime,
+                Id = s.Id,
+                ModifyTime = s.ModifyTime,
+                Num = i + 1,
+                Remarks = s.Remarks,
+                ExitId = s.ExitId,
+                SortingName = s.SortingName,
+                ExitName = packageExitDefinitionInfoModels?.FirstOrDefault(f => f.Id.Equals(s.ExitId))?.ExitName ?? string.Empty,
+                VolumeRuleItems = new ObservableCollection<VolumeRuleItemInfoModel>(s.VolumeRuleItems?.Select((s1, i1) => new VolumeRuleItemInfoModel() {
+                    CreateTime = s1.CreateTime,
+                    Id = s1.Id,
+                    VolumeSortingId = s1.VolumeSortingId,
+                    ModifyTime = s1.ModifyTime,
+                    Num = i1 + 1,
+                    Remarks = s1.Remarks,
+                    Formula = s1.Formula
+                }).ToList() ?? new List<VolumeRuleItemInfoModel>()),
+                SortingRuleGroup = string.Join("\n", s.VolumeRuleItems?.Select(s2 => s2.Formula) ?? Array.Empty<string>())
+            })?.ToList();
+            VolumeSortingItems.AddRange(infoModels);
         }
 
-        /// <summary>
-        /// 导出
-        /// </summary>
-        public ICommand ExportCommand {
-            get => new DelegateCommand<object>(ExportDelegate);
+        protected override bool IsSelectAnyItem() => VolumeSortingItems.Any(a => a.IsSelect);
+
+        protected override async Task BulkDeleteProcess() {
+            var selectIds = VolumeSortingItems.Where(w => w.IsSelect)
+                .Select(s => s.Id).ToList();
+            var volumeSortingInfoModels = await _volumeSortingRepository.Select(s => selectIds.Contains(s.Id),
+                o => o.Id);
+            await _volumeSortingRepository.DeleteRange(volumeSortingInfoModels);
         }
 
-        private async void ExportDelegate(object obj) {
-            //导出
-            if (VolumeSortingItems?.Any() != true) {
-                VolumeSortingMessageQueue?.Enqueue(Languages.Language.ResourceManager.GetString("列表中没有数据") ?? string.Empty);
-                return;
-            }
-
-            //导出
-
-            var saveFileDialog = new Microsoft.Win32.SaveFileDialog() {
-                Title = "Please select the location to save the file.",
-                Filter = $"{Languages.Language.ResourceManager.GetString("Excel文件") ?? string.Empty}(xlsx)|*.xlsx",
-                DefaultExt = "xlsx",
-                InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
-            };
-            if (saveFileDialog.ShowDialog() == true) {
-                var exportDialog = new ExportDialog();
-                if (exportDialog.DataContext is ExportDialogViewModel model) {
-                    model.FilePath = saveFileDialog.FileName;
-                    model.Identifier = "MainDialog";
-                    model.Message = "Retrieving data...";
-                    DialogHost.Show(exportDialog, model.Identifier);
-                    var result = VolumeSortingItems
-                        ?.SelectMany(s => s.SortingRuleGroup.Split("\n")
-                            .Select(item => new VolumeSortingItemInfoModel() {
-                                CreateTime = s.CreateTime,
-                                ExitId = s.ExitId,
-                                ModifyTime = s.ModifyTime,
-                                Remarks = s.Remarks,
-                                ExitName = s.ExitName,
-                                SortingName = s.SortingName,
-                                Num = s.Num,
-                                Id = s.Id,
-                                SortingRuleGroup = item,
-                            }))
-                        ?.ToList();
-                    var export = await _excel.Export(saveFileDialog.FileName,
-                        $"体积分拣列表",
-                        "体积分拣列表", result ?? new List<VolumeSortingItemInfoModel>(),
-                        new List<string>(), async p => {
-                            model.Progress = p;
-                            model.ProgressText = $"{p}%";
-                            if (p == 100) {
-                                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                                    if (DialogHost.IsDialogOpen(model.Identifier)) {
-                                        DialogHost.Close(model.Identifier);
-                                    }
-                                });
-                            }
-                        }, e => {
-                            VolumeSortingMessageQueue?.Enqueue(e.Message);
-                        });
-                    if (!export) {
-                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                            if (DialogHost.IsDialogOpen(model.Identifier)) {
-                                DialogHost.Close(model.Identifier);
-                            }
-                        });
-                    }
-                }
-            }
+        protected override List<VolumeSortingItemInfoModel> ExportProcess() {
+            return VolumeSortingItems
+                ?.SelectMany(s => s.SortingRuleGroup.Split("\n")
+                    .Select(item => new VolumeSortingItemInfoModel() {
+                        CreateTime = s.CreateTime,
+                        ExitId = s.ExitId,
+                        ModifyTime = s.ModifyTime,
+                        Remarks = s.Remarks,
+                        ExitName = s.ExitName,
+                        SortingName = s.SortingName,
+                        Num = s.Num,
+                        Id = s.Id,
+                        SortingRuleGroup = item,
+                    }))
+                ?.ToList() ?? new List<VolumeSortingItemInfoModel>();
         }
 
-        public ICommand ImportCommand {
-            get => new DelegateCommand<object>(ImportDelegate);
-        }
-
-        private async void ImportDelegate(object obj) {
-            //导入
-            var openFileDialog = new Microsoft.Win32.OpenFileDialog() {
-                Title = "Please select the file to import.",
-                Filter = $"{Languages.Language.ResourceManager.GetString("Excel文件") ?? string.Empty}(xlsx)|*.xlsx",
-                DefaultExt = "xlsx",
-                InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
-            };
-            if (openFileDialog.ShowDialog() == true) {
-                var exportDialog = new ExportDialog();
-                if (exportDialog.DataContext is ExportDialogViewModel model) {
-                    model.FilePath = openFileDialog.FileName;
-                    model.Identifier = "MainDialog";
-                    model.Message = "Retrieving data...";
-                    DialogHost.Show(exportDialog, model.Identifier);
-
-                    var models = await _excel.ReadExcel<VolumeSortingItemInfoModel>(openFileDialog.FileName, async p => {
-                        model.Progress = p;
-                        model.ProgressText = $"{p}%";
-                        if (p == 100) {
-                            await Application.Current.Dispatcher.InvokeAsync(() => {
-                                if (DialogHost.IsDialogOpen(model.Identifier)) {
-                                    DialogHost.Close(model.Identifier);
-                                }
-                            });
-                        }
-                    }, async e => {
-                        await Application.Current.Dispatcher.InvokeAsync(() => {
-                            if (DialogHost.IsDialogOpen(model.Identifier)) {
-                                DialogHost.Close(model.Identifier);
-                            }
-                        });
-                        VolumeSortingMessageQueue?.Enqueue(e.Message);
-                    });
-                    await Task.Delay(500);
-                    if (models?.Any() == true) {
-                        var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0,
-                            o => o.CreateTime);
-                        var dateTime = DateTime.Now;
-                        var volumeSortingInfoModels = models
-                            .Select(s => new VolumeSortingInfoModel() {
+        protected override async Task<bool> ImportProcess(List<VolumeSortingItemInfoModel> items) {
+            if (items?.Any() == true) {
+                var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0,
+                    o => o.CreateTime);
+                var dateTime = DateTime.Now;
+                var volumeSortingInfoModels = items
+                    .Select(s => new VolumeSortingInfoModel() {
+                        CreateTime = dateTime,
+                        ExitId = packageExitDefinitionInfoModels.FirstOrDefault(f => f.ExitName.Equals(s.ExitName))?.Id ?? 0,
+                        ModifyTime = dateTime,
+                        SortingName = s.SortingName,
+                        Remarks = s.Remarks,
+                        VolumeRuleItems = new List<VolumeRuleInfoModel>
+                        {
+                            new()
+                            {
                                 CreateTime = dateTime,
-                                ExitId = packageExitDefinitionInfoModels.FirstOrDefault(f => f.ExitName.Equals(s.ExitName))?.Id ?? 0,
                                 ModifyTime = dateTime,
-                                SortingName = s.SortingName,
-                                Remarks = s.Remarks,
-                                VolumeRuleItems = new List<VolumeRuleInfoModel>
-                                {
-                                    new()
-                                    {
-                                        CreateTime = dateTime,
-                                        ModifyTime = dateTime,
-                                        Formula = s.SortingRuleGroup
-                                    }
-                                }
-                            })
-                            .GroupBy(s => s.SortingName)
-                            .Select(group => new VolumeSortingInfoModel {
-                                CreateTime = group.First().CreateTime,
-                                ExitId = group.First().ExitId,
-                                SortingName = group.Key,
-                                ModifyTime = group.First().ModifyTime,
-                                Remarks = group.First().Remarks,
-                                VolumeRuleItems = group.SelectMany(item => item.VolumeRuleItems).ToList()
-                            })
-                            .ToList();
-
-                        //批量添加
-                        var range = await _volumeSortingRepository.InsertRangeDetailAsync(volumeSortingInfoModels);
-                        if (range) {
-                            //取出数据库对应指令列表内容
-
-                            VolumeSortingMessageQueue.Enqueue("保存成功");
-                            RefreshData();
+                                Formula = s.SortingRuleGroup
+                            }
                         }
-                        else {
-                            VolumeSortingMessageQueue.Enqueue("保存失败");
-                        }
-                    }
-                }
+                    })
+                    .GroupBy(s => s.SortingName)
+                    .Select(group => new VolumeSortingInfoModel {
+                        CreateTime = group.First().CreateTime,
+                        ExitId = group.First().ExitId,
+                        SortingName = group.Key,
+                        ModifyTime = group.First().ModifyTime,
+                        Remarks = group.First().Remarks,
+                        VolumeRuleItems = group.SelectMany(item => item.VolumeRuleItems ?? new List<VolumeRuleInfoModel>()).ToList()
+                    })
+                    .ToList();
+
+                //批量添加
+                return await _volumeSortingRepository.InsertRangeDetailAsync(volumeSortingInfoModels);
             }
+
+            return false;
         }
     }
 }

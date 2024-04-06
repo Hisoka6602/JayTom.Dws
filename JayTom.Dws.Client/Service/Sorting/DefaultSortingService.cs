@@ -629,7 +629,6 @@ namespace JayTom.Dws.Client.Service.Sorting {
 
         public void OcrSorting(SortingParam param, CancellationToken token = default) {
             try {
-                NLog.LogManager.GetCurrentClassLogger().Error("Ocr分拣方法");
                 var ocrRuleInfoModel = _ocrRuleInfoModels.FirstOrDefault(f =>
                     ValidateOcrRule(param.OcrInfo, f.JsonContent));
 

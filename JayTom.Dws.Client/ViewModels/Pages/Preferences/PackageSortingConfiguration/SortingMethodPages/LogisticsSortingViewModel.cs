@@ -15,6 +15,7 @@ using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.ViewModels.Dialog;
 using JayTom.Dws.Client.Models.PackageSorting;
 using JayTom.Dws.Client.Models.PackageSorting.Rule;
+using JayTom.Dws.Client.Models.PackageSorting.Excel;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig.RuleConfig;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
@@ -24,26 +25,23 @@ using JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.SortingMe
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration.SortingMethodPages {
 
-    public class LogisticsSortingViewModel : BindableBase {
+    public class LogisticsSortingViewModel : BulkOperationsTemplateViewModel<LogisticsSortingItemInfoModel> {
         private readonly ILogisticsSortingRepository _logisticsSortingRepository;
         private readonly ILogisticsRuleRepository _logisticsRuleRepository;
         private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
         private readonly ILogisticsCodeRecognitionRepository _logisticsCodeRecognitionRepository;
-        private readonly IExcel _excel;
         private bool _isLoaded;
         private ObservableCollection<LogisticsSortingItemInfoModel> _logisticsSortingItems = new();
-        private SnackbarMessageQueue _logisticsSortingMessageQueue = new(TimeSpan.FromSeconds(2));
 
         public LogisticsSortingViewModel(ILogisticsSortingRepository logisticsSortingRepository,
             ILogisticsRuleRepository logisticsRuleRepository,
             IPackageExitDefinitionRepository packageExitDefinitionRepository,
             ILogisticsCodeRecognitionRepository logisticsCodeRecognitionRepository,
-            IExcel excel) {
+            IExcel excel) : base(excel) {
             _logisticsSortingRepository = logisticsSortingRepository;
             _logisticsRuleRepository = logisticsRuleRepository;
             _packageExitDefinitionRepository = packageExitDefinitionRepository;
             _logisticsCodeRecognitionRepository = logisticsCodeRecognitionRepository;
-            _excel = excel;
         }
 
         public ObservableCollection<LogisticsSortingItemInfoModel> LogisticsSortingItems {
@@ -51,23 +49,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             set => SetProperty(ref _logisticsSortingItems, value);
         }
 
-        public SnackbarMessageQueue LogisticsSortingMessageQueue {
-            get => _logisticsSortingMessageQueue;
-            set => SetProperty(ref _logisticsSortingMessageQueue, value);
-        }
-
-        public ICommand AddCommand {
-            get => new DelegateCommand<object>(AddDelegate);
-        }
-
-        private async void AddDelegate(object obj) {
+        protected override async void AddDelegate(object obj) {
             await Application.Current.Dispatcher.InvokeAsync(async () => {
                 var logisticsSortingRuleEditor = new LogisticsSortingRuleEditor();
                 if (logisticsSortingRuleEditor.DataContext is LogisticsSortingRuleEditorViewModel model) {
-                    model.Identifier = "LogisticsSortingDialog";
+                    model.Identifier = Identifier;
                     await DialogHost.Show(logisticsSortingRuleEditor, model.Identifier);
                     if (!string.IsNullOrEmpty(model.ExceptionContent)) {
-                        LogisticsSortingMessageQueue.Enqueue(model.ExceptionContent);
+                        MessageQueue.Enqueue(model.ExceptionContent);
                         return;
                     }
                     if (model.IsOk) {
@@ -88,10 +77,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         var insert = await _logisticsSortingRepository.InsertDetailAsync(logisticsSortingInfoModel);
                         if (insert) {
                             EventAggregator.Instance.Publish(logisticsSortingInfoModel);
-                            LogisticsSortingMessageQueue.Enqueue("保存成功");
+                            MessageQueue.Enqueue("保存成功");
                         }
                         else {
-                            LogisticsSortingMessageQueue.Enqueue("保存失败");
+                            MessageQueue.Enqueue("保存失败");
                         }
                     }
                     RefreshData();
@@ -99,280 +88,181 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             });
         }
 
-        public ICommand LoadedCommand {
-            get => new DelegateCommand<object>(LoadedDelegate);
-        }
+        public override string Identifier => "SortingMethodDialog";
+        public override string ExcelTitle => "物流分拣规则列表";
+        public override string SheetName => "物流分拣规则列表";
 
-        private void LoadedDelegate(object obj) {
+        public override void LoadedDelegate(object obj) {
             if (!_isLoaded) {
                 _isLoaded = true;
                 RefreshData();
             }
         }
 
-        public ICommand ModifyCommand {
-            get => new DelegateCommand<LogisticsSortingItemInfoModel>(ModifyDelegate);
+        protected override async Task<bool> DeleteProcess(object obj) {
+            if (obj is LogisticsSortingItemInfoModel item) {
+                var logisticsSortingInfoModel = await _logisticsSortingRepository.
+                    FirstOrDefault(f => f.Id.Equals(item.Id));
+                if (logisticsSortingInfoModel is not null) {
+                    return await _logisticsSortingRepository.Delete(logisticsSortingInfoModel);
+                }
+            }
+
+            return false;
         }
 
-        private async void ModifyDelegate(LogisticsSortingItemInfoModel obj) {
-            await Application.Current.Dispatcher.InvokeAsync(async () => {
-                var logisticsSortingRuleEditor = new LogisticsSortingRuleEditor();
-                if (logisticsSortingRuleEditor.DataContext is LogisticsSortingRuleEditorViewModel model) {
-                    model.Identifier = "LogisticsSortingDialog";
-                    model.LogisticsSortingItemInfo = obj;
-                    model.LogisticsRuleItems = obj.LogisticsRuleItems;
-                    await DialogHost.Show(logisticsSortingRuleEditor, model.Identifier);
-                    if (!string.IsNullOrEmpty(model.ExceptionContent)) {
-                        LogisticsSortingMessageQueue.Enqueue(model.ExceptionContent);
+        protected override async void ModifyDelegate(object obj) {
+            if (obj is LogisticsSortingItemInfoModel item) {
+                await Application.Current.Dispatcher.InvokeAsync(async () => {
+                    var logisticsSortingRuleEditor = new LogisticsSortingRuleEditor();
+                    if (logisticsSortingRuleEditor.DataContext is LogisticsSortingRuleEditorViewModel model) {
+                        model.Identifier = Identifier;
+                        model.LogisticsSortingItemInfo = item;
+                        model.LogisticsRuleItems = item.LogisticsRuleItems;
+                        await DialogHost.Show(logisticsSortingRuleEditor, model.Identifier);
+                        if (!string.IsNullOrEmpty(model.ExceptionContent)) {
+                            MessageQueue.Enqueue(model.ExceptionContent);
+                            RefreshData();
+                            return;
+                        }
+                        if (model.IsOk) {
+                            //添加到数据库
+                            var logisticsSortingInfoModel = new LogisticsSortingInfoModel() {
+                                CreateTime = model.LogisticsSortingItemInfo.CreateTime,
+                                ModifyTime = model.LogisticsSortingItemInfo.ModifyTime,
+                                ExitId = model.SelectPackageExitDefinitionInfo.Id,
+                                Remarks = model.LogisticsSortingItemInfo.Remarks,
+                                SortingName = model.LogisticsSortingItemInfo.SortingName,
+                                Id = model.LogisticsSortingItemInfo.Id,
+                                LogisticsRuleItems = model.LogisticsRuleItems.Select(s => new LogisticsRuleInfoModel() {
+                                    CreateTime = s.CreateTime,
+                                    ModifyTime = s.ModifyTime,
+                                    LogisticsId = s.LogisticsId,
+                                    Remarks = s.Remarks,
+                                })?.ToList()
+                            };
+                            var update = await _logisticsSortingRepository.UpdateDetailAsync(logisticsSortingInfoModel);
+                            if (update) {
+                                EventAggregator.Instance.Publish(logisticsSortingInfoModel);
+                                MessageQueue.Enqueue("保存成功");
+                            }
+                            else {
+                                MessageQueue.Enqueue("保存失败");
+                            }
+                        }
                         RefreshData();
-                        return;
                     }
-                    if (model.IsOk) {
-                        //添加到数据库
-                        var logisticsSortingInfoModel = new LogisticsSortingInfoModel() {
-                            CreateTime = model.LogisticsSortingItemInfo.CreateTime,
-                            ModifyTime = model.LogisticsSortingItemInfo.ModifyTime,
-                            ExitId = model.SelectPackageExitDefinitionInfo.Id,
-                            Remarks = model.LogisticsSortingItemInfo.Remarks,
-                            SortingName = model.LogisticsSortingItemInfo.SortingName,
-                            Id = model.LogisticsSortingItemInfo.Id,
-                            LogisticsRuleItems = model.LogisticsRuleItems.Select(s => new LogisticsRuleInfoModel() {
-                                CreateTime = s.CreateTime,
-                                ModifyTime = s.ModifyTime,
-                                LogisticsId = s.LogisticsId,
-                                Remarks = s.Remarks,
-                            })?.ToList()
-                        };
-                        var update = await _logisticsSortingRepository.UpdateDetailAsync(logisticsSortingInfoModel);
-                        if (update) {
-                            EventAggregator.Instance.Publish(logisticsSortingInfoModel);
-                            LogisticsSortingMessageQueue.Enqueue("保存成功");
-                        }
-                        else {
-                            LogisticsSortingMessageQueue.Enqueue("保存失败");
-                        }
-                    }
-                    RefreshData();
-                }
-            });
-        }
-
-        public ICommand DeleteCommand {
-            get => new DelegateCommand<LogisticsSortingItemInfoModel>(DeleteDelegate);
-        }
-
-        private async void DeleteDelegate(LogisticsSortingItemInfoModel obj) {
-            var logisticsSortingInfoModel = await _logisticsSortingRepository.
-                FirstOrDefault(f => f.Id.Equals(obj.Id));
-            if (logisticsSortingInfoModel is not null) {
-                var delete = await _logisticsSortingRepository.Delete(logisticsSortingInfoModel);
-                if (delete) {
-                    //刷新列表
-                    RefreshData();
-                }
+                });
             }
         }
 
-        private async void RefreshData() {
-            var loadingDialog = new LoadingDialog();
-            if (loadingDialog.DataContext is not LoadingDialogViewModel model) return;
-            await Application.Current.Dispatcher.InvokeAsync(() => {
-                model.Identifier = "LogisticsSortingDialog";
-                DialogHost.Show(loadingDialog, model.Identifier).ConfigureAwait(false);
-            });
+        protected override async Task ClearProcess() {
+            var logisticsSortingInfoModels = await _logisticsSortingRepository.
+                Select(s => s.Id > 0,
+                    o => o.Id);
+            await _logisticsSortingRepository.DeleteRange(logisticsSortingInfoModels);
+        }
+
+        protected override async Task RefreshDataProcess() {
             var logisticsCodeRecognitionInfoModels = await _logisticsCodeRecognitionRepository.Select(s => s.Id > 0,
                 o => o.ModifyTime);
 
             var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0, o => o.CreateTime);
             var models = await _logisticsSortingRepository
                 .LogisticsSortingItems(s => s.Id > 0);
-
-            await Application.Current.Dispatcher.InvokeAsync(() => {
-                LogisticsSortingItems.Clear();
-                var infoModels = models?.Select((s, i) => new LogisticsSortingItemInfoModel() {
-                    CreateTime = s.CreateTime,
-                    Id = s.Id,
-                    ModifyTime = s.ModifyTime,
-                    Num = i + 1,
-                    Remarks = s.Remarks,
-                    ExitId = s.ExitId,
-                    SortingName = s.SortingName,
-                    ExitName = packageExitDefinitionInfoModels?.FirstOrDefault(f => f.Id.Equals(s.ExitId))?.ExitName ?? string.Empty,
-                    LogisticsRuleItems = new ObservableCollection<LogisticsRuleItemInfoModel>(s.LogisticsRuleItems?.Select((s1, i1) => new LogisticsRuleItemInfoModel() {
-                        CreateTime = s1.CreateTime,
-                        Id = s1.Id,
-                        LogisticsSortingId = s1.LogisticsSortingId,
-                        ModifyTime = s1.ModifyTime,
-                        Num = i1 + 1,
-                        Remarks = s1.Remarks,
-                        LogisticsId = s1.LogisticsId,
-                        LogisticsName = logisticsCodeRecognitionInfoModels.FirstOrDefault(f => f.Id.Equals(s1.LogisticsId))?.LogisticsName ?? string.Empty
-                    }).ToList() ?? new List<LogisticsRuleItemInfoModel>()),
-                    SortingRuleGroup = string.Join(",", s.LogisticsRuleItems?.Select(s2 =>
-                        logisticsCodeRecognitionInfoModels.FirstOrDefault(f => f.Id.Equals(s2.LogisticsId))?.LogisticsName ?? string.Empty) ?? Array.Empty<string>())
-                })?.ToList();
-                LogisticsSortingItems.AddRange(infoModels);
-                if (DialogHost.IsDialogOpen(model.Identifier)) {
-                    DialogHost.Close(model.Identifier);
-                }
-            });
+            LogisticsSortingItems.Clear();
+            var infoModels = models?.Select((s, i) => new LogisticsSortingItemInfoModel() {
+                CreateTime = s.CreateTime,
+                Id = s.Id,
+                ModifyTime = s.ModifyTime,
+                Num = i + 1,
+                Remarks = s.Remarks,
+                ExitId = s.ExitId,
+                SortingName = s.SortingName,
+                ExitName = packageExitDefinitionInfoModels?.FirstOrDefault(f => f.Id.Equals(s.ExitId))?.ExitName ?? string.Empty,
+                LogisticsRuleItems = new ObservableCollection<LogisticsRuleItemInfoModel>(s.LogisticsRuleItems?.Select((s1, i1) => new LogisticsRuleItemInfoModel() {
+                    CreateTime = s1.CreateTime,
+                    Id = s1.Id,
+                    LogisticsSortingId = s1.LogisticsSortingId,
+                    ModifyTime = s1.ModifyTime,
+                    Num = i1 + 1,
+                    Remarks = s1.Remarks,
+                    LogisticsId = s1.LogisticsId,
+                    LogisticsName = logisticsCodeRecognitionInfoModels.FirstOrDefault(f => f.Id.Equals(s1.LogisticsId))?.LogisticsName ?? string.Empty
+                }).ToList() ?? new List<LogisticsRuleItemInfoModel>()),
+                SortingRuleGroup = string.Join(",", s.LogisticsRuleItems?.Select(s2 =>
+                    logisticsCodeRecognitionInfoModels.FirstOrDefault(f => f.Id.Equals(s2.LogisticsId))?.LogisticsName ?? string.Empty) ?? Array.Empty<string>())
+            })?.ToList();
+            LogisticsSortingItems.AddRange(infoModels);
         }
 
-        /// <summary>
-        /// 导出
-        /// </summary>
-        public ICommand ExportCommand {
-            get => new DelegateCommand<object>(ExportDelegate);
+        protected override bool IsSelectAnyItem() => LogisticsSortingItems.Any(a => a.IsSelect);
+
+        protected override async Task BulkDeleteProcess() {
+            var selectIds = LogisticsSortingItems.Where(w => w.IsSelect)
+                .Select(s => s.Id).ToList();
+            var logisticsSortingInfoModels = await _logisticsSortingRepository.Select(s => selectIds.Contains(s.Id),
+                o => o.Id);
+            await _logisticsSortingRepository.DeleteRange(logisticsSortingInfoModels);
         }
 
-        private async void ExportDelegate(object obj) {
-            //导出
-            if (LogisticsSortingItems?.Any() != true) {
-                LogisticsSortingMessageQueue?.Enqueue(Languages.Language.ResourceManager.GetString("列表中没有数据") ?? string.Empty);
-                return;
-            }
-
-            //导出
-
-            var saveFileDialog = new Microsoft.Win32.SaveFileDialog() {
-                Title = "Please select the location to save the file.",
-                Filter = $"{Languages.Language.ResourceManager.GetString("Excel文件") ?? string.Empty}(xlsx)|*.xlsx",
-                DefaultExt = "xlsx",
-                InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
-            };
-            if (saveFileDialog.ShowDialog() == true) {
-                var exportDialog = new ExportDialog();
-                if (exportDialog.DataContext is ExportDialogViewModel model) {
-                    model.FilePath = saveFileDialog.FileName;
-                    model.Identifier = "MainDialog";
-                    model.Message = "Retrieving data...";
-                    DialogHost.Show(exportDialog, model.Identifier);
-                    var result = LogisticsSortingItems
-                        ?.SelectMany(s => s.SortingRuleGroup.Split(",")
-                            .Select(item => new LogisticsSortingItemInfoModel() {
-                                CreateTime = s.CreateTime,
-                                ExitId = s.ExitId,
-                                ModifyTime = s.ModifyTime,
-                                Remarks = s.Remarks,
-                                ExitName = s.ExitName,
-                                SortingName = s.SortingName,
-                                Num = s.Num,
-                                Id = s.Id,
-                                SortingRuleGroup = item,
-                            }))
-                        ?.ToList();
-                    var export = await _excel.Export(saveFileDialog.FileName,
-                        $"物流分拣列表",
-                        "物流分拣列表", result ?? new List<LogisticsSortingItemInfoModel>(),
-                        new List<string>(), async p => {
-                            model.Progress = p;
-                            model.ProgressText = $"{p}%";
-                            if (p == 100) {
-                                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                                    if (DialogHost.IsDialogOpen(model.Identifier)) {
-                                        DialogHost.Close(model.Identifier);
-                                    }
-                                });
-                            }
-                        }, e => {
-                            LogisticsSortingMessageQueue?.Enqueue(e.Message);
-                        });
-                    if (!export) {
-                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                            if (DialogHost.IsDialogOpen(model.Identifier)) {
-                                DialogHost.Close(model.Identifier);
-                            }
-                        });
-                    }
-                }
-            }
+        protected override List<LogisticsSortingItemInfoModel> ExportProcess() {
+            return LogisticsSortingItems
+                ?.SelectMany(s => s.SortingRuleGroup.Split(",")
+                    .Select(item => new LogisticsSortingItemInfoModel() {
+                        CreateTime = s.CreateTime,
+                        ExitId = s.ExitId,
+                        ModifyTime = s.ModifyTime,
+                        Remarks = s.Remarks,
+                        ExitName = s.ExitName,
+                        SortingName = s.SortingName,
+                        Num = s.Num,
+                        Id = s.Id,
+                        SortingRuleGroup = item,
+                    }))
+                ?.ToList() ?? new List<LogisticsSortingItemInfoModel>();
         }
 
-        public ICommand ImportCommand {
-            get => new DelegateCommand<object>(ImportDelegate);
-        }
-
-        private async void ImportDelegate(object obj) {
-            //导入
-            var openFileDialog = new Microsoft.Win32.OpenFileDialog() {
-                Title = "Please select the file to import.",
-                Filter = $"{Languages.Language.ResourceManager.GetString("Excel文件") ?? string.Empty}(xlsx)|*.xlsx",
-                DefaultExt = "xlsx",
-                InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
-            };
-            if (openFileDialog.ShowDialog() == true) {
-                var exportDialog = new ExportDialog();
-                if (exportDialog.DataContext is ExportDialogViewModel model) {
-                    model.FilePath = openFileDialog.FileName;
-                    model.Identifier = "MainDialog";
-                    model.Message = "Retrieving data...";
-                    DialogHost.Show(exportDialog, model.Identifier);
-
-                    var models = await _excel.ReadExcel<LogisticsSortingItemInfoModel>(openFileDialog.FileName, async p => {
-                        model.Progress = p;
-                        model.ProgressText = $"{p}%";
-                        if (p == 100) {
-                            await Application.Current.Dispatcher.InvokeAsync(() => {
-                                if (DialogHost.IsDialogOpen(model.Identifier)) {
-                                    DialogHost.Close(model.Identifier);
-                                }
-                            });
-                        }
-                    }, async e => {
-                        await Application.Current.Dispatcher.InvokeAsync(() => {
-                            if (DialogHost.IsDialogOpen(model.Identifier)) {
-                                DialogHost.Close(model.Identifier);
-                            }
-                        });
-                        LogisticsSortingMessageQueue?.Enqueue(e.Message);
-                    });
-                    await Task.Delay(500);
-                    if (models?.Any() == true) {
-                        var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0,
-                            o => o.CreateTime);
-                        var logisticsCodeRecognitionInfoModels = await _logisticsCodeRecognitionRepository.Select(s => s.Id > 0,
-                            o => o.CreateTime);
-                        var dateTime = DateTime.Now;
-                        var logisticsSortingInfoModels = models
-                            .Select(s => new LogisticsSortingInfoModel() {
+        protected override async Task<bool> ImportProcess(List<LogisticsSortingItemInfoModel> items) {
+            if (items?.Any() == true) {
+                var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0,
+                    o => o.CreateTime);
+                var logisticsCodeRecognitionInfoModels = await _logisticsCodeRecognitionRepository.Select(s => s.Id > 0,
+                    o => o.CreateTime);
+                var dateTime = DateTime.Now;
+                var logisticsSortingInfoModels = items
+                    .Select(s => new LogisticsSortingInfoModel() {
+                        CreateTime = dateTime,
+                        ExitId = packageExitDefinitionInfoModels.FirstOrDefault(f => f.ExitName.Equals(s.ExitName))?.Id ?? 0,
+                        ModifyTime = dateTime,
+                        SortingName = s.SortingName,
+                        Remarks = s.Remarks,
+                        LogisticsRuleItems = new List<LogisticsRuleInfoModel>
+                        {
+                            new()
+                            {
                                 CreateTime = dateTime,
-                                ExitId = packageExitDefinitionInfoModels.FirstOrDefault(f => f.ExitName.Equals(s.ExitName))?.Id ?? 0,
                                 ModifyTime = dateTime,
-                                SortingName = s.SortingName,
-                                Remarks = s.Remarks,
-                                LogisticsRuleItems = new List<LogisticsRuleInfoModel>
-                                {
-                                    new()
-                                    {
-                                        CreateTime = dateTime,
-                                        ModifyTime = dateTime,
-                                        LogisticsId = logisticsCodeRecognitionInfoModels?.FirstOrDefault(f=>f.LogisticsName.Equals(s.SortingRuleGroup))?.Id??0,
-                                    }
-                                }
-                            })
-                            .GroupBy(s => s.SortingName)
-                            .Select(group => new LogisticsSortingInfoModel {
-                                CreateTime = group.First().CreateTime,
-                                ExitId = group.First().ExitId,
-                                SortingName = group.Key,
-                                ModifyTime = group.First().ModifyTime,
-                                Remarks = group.First().Remarks,
-                                LogisticsRuleItems = group.SelectMany(item => item.LogisticsRuleItems).ToList()
-                            })
-                            .ToList();
+                                LogisticsId = logisticsCodeRecognitionInfoModels?.FirstOrDefault(f=>f.LogisticsName.Equals(s.SortingRuleGroup))?.Id??0,
+                            }
+                        }
+                    })
+                    .GroupBy(s => s.SortingName)
+                    .Select(group => new LogisticsSortingInfoModel {
+                        CreateTime = group.First().CreateTime,
+                        ExitId = group.First().ExitId,
+                        SortingName = group.Key,
+                        ModifyTime = group.First().ModifyTime,
+                        Remarks = group.First().Remarks,
+                        LogisticsRuleItems = group.SelectMany(item => item.LogisticsRuleItems ?? new List<LogisticsRuleInfoModel>()).ToList()
+                    })
+                    .ToList();
 
-                        //批量添加
-                        var range = await _logisticsSortingRepository.InsertRangeDetailAsync(logisticsSortingInfoModels);
-                        if (range) {
-                            LogisticsSortingMessageQueue.Enqueue("保存成功");
-                            RefreshData();
-                        }
-                        else {
-                            LogisticsSortingMessageQueue.Enqueue("保存失败");
-                        }
-                    }
-                }
+                //批量添加
+                return await _logisticsSortingRepository.InsertRangeDetailAsync(logisticsSortingInfoModels);
             }
+
+            return false;
         }
     }
 }

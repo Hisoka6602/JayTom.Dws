@@ -42,7 +42,7 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 规则组
         /// </summary>
-        [DisplayName("正则表达式"), MemberNotNull, ExcelInfo(Width = 8000)]
+        [DisplayName("规则表达式"), MemberNotNull, ExcelInfo(Width = 8000)]
         public string SortingRuleGroup {
             get => _sortingRuleGroup;
             set => SetProperty(ref _sortingRuleGroup, value);
