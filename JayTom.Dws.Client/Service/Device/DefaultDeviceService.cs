@@ -256,17 +256,8 @@ namespace JayTom.Dws.Client.Service.Device {
             };
             EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async settings => {
                 if (settings is SettingsChangedEvent { SettingsName: "BarcodeFilterSettings" }) {
-                    var configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("BarcodeFilterSettings"));
-                    if (configInfoModel is not null) {
-                        try {
-                            _barcodeFilterSettingsDto = JsonConvert.DeserializeObject<BarcodeFilterSettingsDto>(configInfoModel.Value);
-                        }
-                        catch (Exception e) {
-                            OnDeviceException(new DeviceExceptionEventArgs() {
-                                ExceptionMessage = new Exception($"{Languages.Language.ResourceManager.GetString("加载过滤设置失败") ?? string.Empty}:{e.Message}")
-                            });
-                        }
-                    }
+                    _barcodeFilterSettingsDto = await _configRepository.FirstOrDefaultEntity<BarcodeFilterSettingsDto>("BarcodeFilterSettings") ??
+                        new BarcodeFilterSettingsDto();
 
                     if (RunningStatus) {
                         OnDeviceException(new DeviceExceptionEventArgs() {
@@ -379,6 +370,11 @@ namespace JayTom.Dws.Client.Service.Device {
                             DuplicateBarcodeFilterCount = _barcodeFilterSettingsDto?.DuplicateBarcodeFilterCount ?? 0,
                             RegularExpression = _barcodeFilterSettingsDto?.RegularExpression ?? string.Empty,
                             ScanInterval = _barcodeFilterSettingsDto?.ScanInterval ?? 1000,
+                            FilterOutContent = _barcodeFilterSettingsDto?.FilterOutputType switch {
+                                FilterOutputType.NoRead => "NoRead",
+                                FilterOutputType.Filtered => "Filtered",
+                                _ => string.Empty
+                            }
                         });
                     }
                     else if (camera is ISmartCamera smartCamera) {
@@ -386,6 +382,11 @@ namespace JayTom.Dws.Client.Service.Device {
                             DuplicateBarcodeFilterCount = _barcodeFilterSettingsDto?.DuplicateBarcodeFilterCount ?? 0,
                             RegularExpression = _barcodeFilterSettingsDto?.RegularExpression ?? string.Empty,
                             ScanInterval = _barcodeFilterSettingsDto?.ScanInterval ?? 1000,
+                            FilterOutContent = _barcodeFilterSettingsDto?.FilterOutputType switch {
+                                FilterOutputType.NoRead => "NoRead",
+                                FilterOutputType.Filtered => "Filtered",
+                                _ => string.Empty
+                            }
                         });
                     }
                 }
@@ -459,19 +460,12 @@ namespace JayTom.Dws.Client.Service.Device {
             await Task.Run(async () => {
                 OcrSettingsDto ocrSettingsDto = new();
                 try {
-                    var configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("BarcodeFilterSettings"));
-                    try {
-                        _barcodeFilterSettingsDto = JsonConvert.DeserializeObject<BarcodeFilterSettingsDto>(configInfoModel?.Value ?? string.Empty);
-                    }
-                    catch (Exception e) {
-                        OnDeviceException(new DeviceExceptionEventArgs() {
-                            ExceptionMessage = new Exception($"{Languages.Language.ResourceManager.GetString("加载过滤设置失败") ?? string.Empty}:{e.Message}")
-                        });
-                    }
+                    _barcodeFilterSettingsDto = await _configRepository.FirstOrDefaultEntity<BarcodeFilterSettingsDto>("BarcodeFilterSettings") ??
+                                                new BarcodeFilterSettingsDto();
 
-                    configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("OcrSettings"));
                     try {
-                        ocrSettingsDto = JsonConvert.DeserializeObject<OcrSettingsDto>(configInfoModel?.Value ?? string.Empty) ?? new OcrSettingsDto();
+                        ocrSettingsDto = await _configRepository.FirstOrDefaultEntity<OcrSettingsDto>("OcrSettings") ??
+                            new OcrSettingsDto();
                         var modelFilePath = ocrSettingsDto.ModelFilePath;
                         if (string.IsNullOrEmpty(modelFilePath)) {
                             if (!Directory.Exists($"{System.AppDomain.CurrentDomain.BaseDirectory}OnnxModels")) {

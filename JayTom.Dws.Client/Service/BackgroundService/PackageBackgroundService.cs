@@ -46,6 +46,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         //private CommunicationsSettingsDto _communicationsSettingsDto = new();
         private VolumeSettingsDto _volumeSettingsDto = new();
 
+        private BarcodeFilterSettingsDto _barcodeFilterSettingsDto = new();
         private WeightSettingsDto _weightSettingsDto = new();
         private CreatePackageSettingsDto _createPackageSettingsDto = new();
         private StackedPackageDetectionSettingsDto _stackedPackageDetectionSettingsDto = new();
@@ -126,7 +127,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                       args.CameraSerialNumber));
                         if (info.Value is { BarCodeInfo: not null } && _createPackageSettingsDto.BarcodeHandlingMethod != BarcodeHandlingMethodEnum.UseMultipleBarcodes) {
                             if (_createPackageSettingsDto.BarcodeHandlingMethod == BarcodeHandlingMethodEnum.MergeBarcodes) {
-                                info.Value.BarCodeInfo.Barcode += $"_{args.Barcode}";
+                                info.Value.BarCodeInfo.Barcode += $"{_barcodeFilterSettingsDto.MultiBarcodeDelimiter}{args.Barcode}";
                             }
                             return;
                         }
@@ -724,53 +725,32 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 if (item is SettingsChangedEvent model) {
                     switch (model.SettingsName) {
                         case "VolumeSettings":
-                            try {
-                                var configInfoModel = await _configRepository.FirstOrDefault(f => f.ConfigName.Equals("VolumeSettings"));
-                                if (configInfoModel != null) {
-                                    _volumeSettingsDto = JsonConvert.DeserializeObject<VolumeSettingsDto>(configInfoModel.Value) ?? new VolumeSettingsDto();
-                                }
-                            }
-                            catch (Exception e) {
-                                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
-                            }
+                            _volumeSettingsDto = await _configRepository.FirstOrDefaultEntity<VolumeSettingsDto>(model.SettingsName) ??
+                                                 new VolumeSettingsDto();
 
                             break;
 
                         case "WeightSettings":
-                            try {
-                                var configInfoModel = await _configRepository.FirstOrDefault(f => f.ConfigName.Equals("WeightSettings"));
-                                if (configInfoModel != null) {
-                                    _weightSettingsDto = JsonConvert.DeserializeObject<WeightSettingsDto>(configInfoModel.Value) ?? new WeightSettingsDto();
-                                }
-                            }
-                            catch (Exception e) {
-                                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
-                            }
+                            _weightSettingsDto = await _configRepository.FirstOrDefaultEntity<WeightSettingsDto>(model.SettingsName) ??
+                                                 new WeightSettingsDto();
 
                             break;
 
                         case "CreatePackageSettings":
-                            try {
-                                var configInfoModel = await _configRepository.FirstOrDefault(f => f.ConfigName.Equals("CreatePackageSettings"));
-                                if (configInfoModel != null) {
-                                    _createPackageSettingsDto = JsonConvert.DeserializeObject<CreatePackageSettingsDto>(configInfoModel.Value) ?? new CreatePackageSettingsDto();
-                                }
-                            }
-                            catch (Exception e) {
-                                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
-                            }
+                            _createPackageSettingsDto = await _configRepository.FirstOrDefaultEntity<CreatePackageSettingsDto>(model.SettingsName) ??
+                                                        new CreatePackageSettingsDto();
+
                             break;
 
                         case "StackedPackageDetectionSettings":
-                            try {
-                                var configInfoModel = await _configRepository.FirstOrDefault(f => f.ConfigName.Equals("StackedPackageDetectionSettings"));
-                                if (configInfoModel != null) {
-                                    _stackedPackageDetectionSettingsDto = JsonConvert.DeserializeObject<StackedPackageDetectionSettingsDto>(configInfoModel.Value) ?? new StackedPackageDetectionSettingsDto();
-                                }
-                            }
-                            catch (Exception e) {
-                                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
-                            }
+
+                            _stackedPackageDetectionSettingsDto = await _configRepository.FirstOrDefaultEntity<StackedPackageDetectionSettingsDto>(model.SettingsName) ??
+                                                                  new StackedPackageDetectionSettingsDto();
+                            break;
+
+                        case "BarcodeFilterSettings":
+                            _barcodeFilterSettingsDto = await _configRepository.FirstOrDefaultEntity<BarcodeFilterSettingsDto>(model.SettingsName) ??
+                                                        new BarcodeFilterSettingsDto();
                             break;
                     }
                     //其他设置
@@ -883,6 +863,10 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 if (configInfoModel is not null) {
                     _stackedPackageDetectionSettingsDto = JsonConvert.DeserializeObject<StackedPackageDetectionSettingsDto>(configInfoModel.Value) ?? new StackedPackageDetectionSettingsDto();
                 }
+                configInfoModel = _configInfoModels?.FirstOrDefault(f => f.ConfigName.Equals("BarcodeFilterSettings"));
+                if (configInfoModel is not null) {
+                    _barcodeFilterSettingsDto = JsonConvert.DeserializeObject<BarcodeFilterSettingsDto>(configInfoModel.Value) ?? new BarcodeFilterSettingsDto();
+                }
             }
             catch (Exception e) {
                 Console.WriteLine(e);
@@ -896,7 +880,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         if ((_barCodeFrameInfoItem.Count == _cameras.Count(c => c.BindingType == CameraBindingType.ScannerCamera)) ||
                             (DateTime.Now.Subtract(_barCodeFrameInfoItem.Where(w => w.Value.BarCodeInfo != null)
                                 .OrderBy(o => o.Value.BarCodeInfo.ScanTime)
-                                .FirstOrDefault().Value.BarCodeInfo.ScanTime).TotalMilliseconds > 400) ||
+                                .FirstOrDefault().Value.BarCodeInfo.ScanTime).TotalMilliseconds > _barcodeFilterSettingsDto.MergeTimeout) ||
                             _barCodeFrameInfoItem.Where(w => w.Value.BarCodeInfo != null)
                                 .GroupBy(g => g.Value.BarCodeInfo.Barcode).Count() > 1
 
@@ -917,7 +901,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             else {
                                 barCodeFrameInfo = _barCodeFrameInfoItem.Where(w => w.Value.BarCodeInfo != null)
                                     .LastOrDefault(a =>
-                                        !a.Value.BarCodeInfo.Barcode.ToLower().Equals("noread")).Value;
+                                        !a.Value.BarCodeInfo.Barcode.ToLower().Equals("noread") &&
+                                        !a.Value.BarCodeInfo.Barcode.ToLower().Equals("filtered")).Value;
                             }
                             var packageInfo =
                                 _createPackageSettingsDto.BarcodeQueueOrder == BarcodeQueueOrderEnum.TimeAscending ?

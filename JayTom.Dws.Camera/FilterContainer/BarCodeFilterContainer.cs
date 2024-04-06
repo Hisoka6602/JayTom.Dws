@@ -37,6 +37,11 @@ namespace JayTom.Dws.Camera.FilterContainer {
         /// </summary>
         public TimeSpan ExpirationTime { get; set; } = TimeSpan.FromSeconds(1);
 
+        /// <summary>
+        /// 过滤输出内容(为空则不输出)
+        /// </summary>
+        public string FilterOutContent { get; set; } = string.Empty;
+
         public bool InsertOrUpdate(BarCodeFilterInfo data) {
             if (!string.IsNullOrEmpty(Pattern)) {
                 try {

@@ -494,6 +494,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
             _barCodeFilterContainer.Pattern = @params.RegularExpression;
             _barCodeFilterContainer.MaxSize = @params.DuplicateBarcodeFilterCount;
             _barCodeFilterContainer.ExpirationTime = TimeSpan.FromMilliseconds(@params.ScanInterval);
+            _barCodeFilterContainer.FilterOutContent = @params.FilterOutContent;
         }
 
         private static IPAddress ConvertUintToIpAddress(uint ipAddressValue) {
@@ -618,7 +619,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                                                 BarCode = string.IsNullOrWhiteSpace(barcode) ? "NoRead" : barcode,
                                                 ScanTime = scanTime
                                             });
-                                            if (validateData) {
+                                            if (validateData || !string.IsNullOrWhiteSpace(_barCodeFilterContainer.FilterOutContent)) {
                                                 if (stBcrResultEx2.stBcrInfoEx2 is not null &&
                                                     bmp is { Size: { Width: > 0, Height: > 0 } } &&
                                                     stFrameInfoEx2 is { nWidth: > 0, nHeight: > 0 }) {
@@ -632,7 +633,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                                                             (MvCodeReader.MV_CODEREADER_CODE_TYPE)stBcrResultEx2
                                                                 .stBcrInfoEx2[i]
                                                                 .nBarType),
-                                                        Barcode = string.IsNullOrWhiteSpace(barcode) ? "NoRead" : barcode,
+                                                        Barcode = (validateData ? barcode : _barCodeFilterContainer.FilterOutContent) ?? "NoRead",
                                                         Image = bmp,
                                                         ThumbImage = (Bitmap?)thumbnailImage,
                                                         AppearCount = stBcrResultEx2.stBcrInfoEx2[i].sAppearCount,

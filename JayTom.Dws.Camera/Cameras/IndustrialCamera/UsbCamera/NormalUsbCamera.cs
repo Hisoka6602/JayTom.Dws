@@ -175,10 +175,10 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.UsbCamera {
                                                                     BarCode = barcodeInfo.Barcode ?? "NoRead",
                                                                     ScanTime = DateTime.Now
                                                                 })
-                                                                where validateData
-                                                                select barcodeInfo) {
+                                                                where validateData || !string.IsNullOrWhiteSpace(_barCodeFilterContainer.FilterOutContent)
+                                                                select new { BarcodeInfo = barcodeInfo, IsValid = validateData }) {
                                         OnBarcodeRead(new BarcodeReadEventArgs() {
-                                            Barcode = barcodeInfo.Barcode ?? "NoRead",
+                                            Barcode = (barcodeInfo.IsValid ? barcodeInfo.BarcodeInfo.Barcode : _barCodeFilterContainer.FilterOutContent) ?? "NoRead",
                                             CameraSerialNumber = args?.CameraSerialNumber ?? this.Info.SerialNumber,
                                             Image = args?.Image,
                                             ScanTime = scanTime,
@@ -348,6 +348,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.UsbCamera {
             _barCodeFilterContainer.Pattern = @params.RegularExpression;
             _barCodeFilterContainer.MaxSize = @params.DuplicateBarcodeFilterCount;
             _barCodeFilterContainer.ExpirationTime = TimeSpan.FromMilliseconds(@params.ScanInterval);
+            _barCodeFilterContainer.FilterOutContent = @params.FilterOutContent;
         }
 
         protected virtual async void OnCameraExceptionOccurred(CameraExceptionEventArgs e) {

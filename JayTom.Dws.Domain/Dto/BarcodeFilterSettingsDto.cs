@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 
 namespace JayTom.Dws.Domain.Dto {
+
     public class BarcodeFilterSettingsDto {
 
         /// <summary>
@@ -46,15 +47,38 @@ namespace JayTom.Dws.Domain.Dto {
         /// 正则表达式
         /// </summary>
         public string RegularExpression { get; set; } = string.Empty;
+
         /// <summary>
         /// 重复条码过滤数量
         /// </summary>
         public int DuplicateBarcodeFilterCount { get; set; }
+
+        /// <summary>
+        /// 过滤输出类型
+        /// </summary>
+        public FilterOutputType FilterOutputType { get; set; } = FilterOutputType.NotOutput;
+
+        /// <summary>
+        /// 融合超时时间
+        /// </summary>
+        public int MergeTimeout { get; set; } = 300;
+
+        /// <summary>
+        /// 多条码分隔符
+        /// </summary>
+        public string MultiBarcodeDelimiter { get; set; } = "_";
     }
 
     public enum CharacterType {
         Alphanumeric = 0, // 字母或数字
         Letter = 1,       // 字母
-        Number = 2       // 数字
+        Number = 2,       // 数字
+        Any = 3           //任意
+    }
+
+    public enum FilterOutputType {
+        NotOutput, // 不输出
+        Filtered,  // 过滤输出
+        NoRead     // 不可读
     }
 }

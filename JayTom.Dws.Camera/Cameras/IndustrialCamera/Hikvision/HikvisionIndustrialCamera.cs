@@ -609,6 +609,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
             _barCodeFilterContainer.Pattern = @params.RegularExpression;
             _barCodeFilterContainer.MaxSize = @params.DuplicateBarcodeFilterCount;
             _barCodeFilterContainer.ExpirationTime = TimeSpan.FromMilliseconds(@params.ScanInterval);
+            _barCodeFilterContainer.FilterOutContent = @params.FilterOutContent;
         }
 
         public async Task<Bitmap> DrawIndicator(Bitmap thumbnail, Size originalSize,
@@ -767,11 +768,11 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                                 BarCode = mvidCodeInfo.strCode,
                                 ScanTime = scanTime
                             });
-                            if (validateData) {
+                            if (validateData || !string.IsNullOrWhiteSpace(_barCodeFilterContainer.FilterOutContent)) {
                                 //发处理条形码，提高处理速度
                                 await Task.Factory.StartNew(() => {
                                     OnBarcodeRead(new BarcodeReadEventArgs() {
-                                        Barcode = mvidCodeInfo.strCode,
+                                        Barcode = validateData ? mvidCodeInfo.strCode : _barCodeFilterContainer.FilterOutContent,
                                         Timestamp = timestamp,
                                         CameraSerialNumber = this.Structure.chSerialNumber,
                                         ScanTime = scanTime,

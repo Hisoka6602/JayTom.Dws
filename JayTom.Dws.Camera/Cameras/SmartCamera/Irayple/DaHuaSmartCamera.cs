@@ -15,6 +15,7 @@ using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
 using JayTom.Dws.Camera.FilterContainer;
+using static MVIDCodeReaderNet.MVIDCodeReader;
 
 namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
 
@@ -294,6 +295,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
             _barCodeFilterContainer.Pattern = @params.RegularExpression;
             _barCodeFilterContainer.MaxSize = @params.DuplicateBarcodeFilterCount;
             _barCodeFilterContainer.ExpirationTime = TimeSpan.FromMilliseconds(@params.ScanInterval);
+            _barCodeFilterContainer.FilterOutContent = @params.FilterOutContent;
         }
 
         /// <summary>
@@ -370,7 +372,10 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
                                     : daHuaBarcodeInfo.BarCode,
                                 ScanTime = scanTime
                             });
-                            if (validateData) {
+                            if (validateData || !string.IsNullOrWhiteSpace(_barCodeFilterContainer.FilterOutContent)) {
+                                daHuaBarcodeInfo.BarCode = validateData
+                                    ? daHuaBarcodeInfo.BarCode
+                                    : _barCodeFilterContainer.FilterOutContent;
                                 barcodeInfo.Enqueue(daHuaBarcodeInfo);
                             }
                         }

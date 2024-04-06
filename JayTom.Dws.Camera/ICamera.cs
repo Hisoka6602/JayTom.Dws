@@ -210,10 +210,12 @@ namespace JayTom.Dws.Camera {
         /// 相机连接类型
         /// </summary>
         public CameraConnectionType ConnectionType { get; set; }
+
         /// <summary>
         /// 自定义名称
         /// </summary>
         public string CustomName { get; set; } = string.Empty;
+
         public override bool Equals(object? obj) {
             if (obj == null || GetType() != obj.GetType())
                 return false;
@@ -488,5 +490,10 @@ namespace JayTom.Dws.Camera {
         /// 重复条码过滤数量
         /// </summary>
         public int DuplicateBarcodeFilterCount { get; set; }
+
+        /// <summary>
+        /// 过滤输出内容(为空则不输出)
+        /// </summary>
+        public string FilterOutContent { get; set; } = string.Empty;
     }
 }

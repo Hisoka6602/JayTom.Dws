@@ -27,6 +27,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         private string _testBarcode = string.Empty;
         private bool _isLoaded;
         private int _duplicateBarcodeFilterCount;
+        private string _anyCharacters = string.Empty;
+        private FilterOutputType _filterOutputType = FilterOutputType.NotOutput;
+        private int _mergeTimeout = 300;
+        private string _multiBarcodeDelimiter = "_";
 
         public BarcodeFilterSettingsPageViewModel(IConfigRepository configRepository) : base(configRepository) {
         }
@@ -80,6 +84,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         }
 
         /// <summary>
+        /// 包含任意字符
+        /// </summary>
+        public string AnyCharacters {
+            get => _anyCharacters;
+            set => SetProperty(ref _anyCharacters, value);
+        }
+
+        /// <summary>
         /// 扫码时间间隔
         /// </summary>
         public int ScanInterval {
@@ -93,6 +105,30 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         public int DuplicateBarcodeFilterCount {
             get => _duplicateBarcodeFilterCount;
             set => SetProperty(ref _duplicateBarcodeFilterCount, value);
+        }
+
+        /// <summary>
+        /// 过滤输出类型
+        /// </summary>
+        public FilterOutputType FilterOutputType {
+            get => _filterOutputType;
+            set => SetProperty(ref _filterOutputType, value);
+        }
+
+        /// <summary>
+        /// 融合超时时间
+        /// </summary>
+        public int MergeTimeout {
+            get => _mergeTimeout;
+            set => SetProperty(ref _mergeTimeout, value);
+        }
+
+        /// <summary>
+        /// 多条码分隔符
+        /// </summary>
+        public string MultiBarcodeDelimiter {
+            get => _multiBarcodeDelimiter;
+            set => SetProperty(ref _multiBarcodeDelimiter, value);
         }
 
         /// <summary>
@@ -111,37 +147,21 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             set => SetProperty(ref _testBarcode, value);
         }
 
-        public ICommand MinimumLengthChangedCommand {
-            get => new DelegateCommand(UpdateRegularExpression);
-        }
+        public ICommand MinimumLengthChangedCommand => new DelegateCommand(UpdateRegularExpression);
 
-        public ICommand MaximumLengthChangedCommand {
-            get => new DelegateCommand(UpdateRegularExpression);
-        }
+        public ICommand MaximumLengthChangedCommand => new DelegateCommand(UpdateRegularExpression);
 
-        public ICommand StartCharacterTypeChangedCommand {
-            get => new DelegateCommand(UpdateRegularExpression);
-        }
+        public ICommand StartCharacterTypeChangedCommand => new DelegateCommand(UpdateRegularExpression);
 
-        public ICommand EndCharacterTypeChangedCommand {
-            get => new DelegateCommand(UpdateRegularExpression);
-        }
+        public ICommand EndCharacterTypeChangedCommand => new DelegateCommand(UpdateRegularExpression);
 
-        public ICommand DisallowedCharactersChangedCommand {
-            get => new DelegateCommand(UpdateRegularExpression);
-        }
+        public ICommand DisallowedCharactersChangedCommand => new DelegateCommand(UpdateRegularExpression);
 
-        public ICommand RequiredCharactersChangedCommand {
-            get => new DelegateCommand(UpdateRegularExpression);
-        }
+        public ICommand RequiredCharactersChangedCommand => new DelegateCommand(UpdateRegularExpression);
+        public ICommand AnyCharactersChangedCommand => new DelegateCommand(UpdateRegularExpression);
+        public ICommand ScanIntervalChangedCommand => new DelegateCommand(UpdateRegularExpression);
 
-        public ICommand ScanIntervalChangedCommand {
-            get => new DelegateCommand(UpdateRegularExpression);
-        }
-
-        public ICommand TestCommand {
-            get => new DelegateCommand(TestDelegate);
-        }
+        public ICommand TestCommand => new DelegateCommand(TestDelegate);
 
         private async void TestDelegate() {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
@@ -171,7 +191,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     RequiredCharacters = RequiredCharacters,
                     ScanInterval = ScanInterval,
                     RegularExpression = RegularExpression,
-                    DuplicateBarcodeFilterCount = DuplicateBarcodeFilterCount
+                    DuplicateBarcodeFilterCount = DuplicateBarcodeFilterCount,
+                    FilterOutputType = FilterOutputType,
+                    MergeTimeout = MergeTimeout,
+                    MultiBarcodeDelimiter = MultiBarcodeDelimiter
                 })
             });
             base.MessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("Save") ?? string.Empty}{(insertOrUpdate ?
@@ -197,6 +220,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     ScanInterval = settingsDto.ScanInterval;
                     RegularExpression = settingsDto.RegularExpression;
                     DuplicateBarcodeFilterCount = settingsDto.DuplicateBarcodeFilterCount;
+                    FilterOutputType = settingsDto.FilterOutputType;
+                    MergeTimeout = settingsDto.MergeTimeout;
+                    MultiBarcodeDelimiter = settingsDto.MultiBarcodeDelimiter;
                 });
             }
         }
@@ -220,6 +246,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     strings.ForEach(f => {
                         regularChars.Add($"(?=.*{f})");
                     });
+                }
+                //包含任意
+                if (!string.IsNullOrWhiteSpace(AnyCharacters)) {
+                    var strings = AnyCharacters.Replace(";", "|");
+
+                    regularChars.Add($"(?=.*(?:{strings}))");
                 }
                 //开头字符
                 switch (StartCharacterType) {

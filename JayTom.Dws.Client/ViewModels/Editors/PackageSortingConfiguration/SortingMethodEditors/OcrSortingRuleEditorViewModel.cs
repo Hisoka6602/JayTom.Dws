@@ -151,9 +151,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
 
         #endregion 条件
 
-        public ICommand DeleteRegexCommand {
-            get => new DelegateCommand<OcrRuleItemInfoModel>(DeleteRegexDelegate);
-        }
+        public ICommand DeleteRegexCommand => new DelegateCommand<OcrRuleItemInfoModel>(DeleteRegexDelegate);
 
         private async void DeleteRegexDelegate(OcrRuleItemInfoModel obj) {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
@@ -167,9 +165,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
             });
         }
 
-        public ICommand AddRegexCommand {
-            get => new DelegateCommand<object>(AddRegexDelegate);
-        }
+        public ICommand AddRegexCommand => new DelegateCommand<object>(AddRegexDelegate);
 
         private async void AddRegexDelegate(object obj) {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
@@ -205,9 +201,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
             });
         }
 
-        public ICommand ClearConditionsCommand {
-            get => new DelegateCommand<object>(ClearConditionsDelegate);
-        }
+        public ICommand ClearConditionsCommand => new DelegateCommand<object>(ClearConditionsDelegate);
 
         private async void ClearConditionsDelegate(object obj) {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
@@ -222,9 +216,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
             });
         }
 
-        public ICommand SaveCommand {
-            get => new DelegateCommand(SaveDelegate);
-        }
+        public ICommand SaveCommand => new DelegateCommand(SaveDelegate);
 
         private async void SaveDelegate() {
             try {
@@ -251,9 +243,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
             }
         }
 
-        public ICommand CancelCommand {
-            get => new DelegateCommand(CancelDelegate);
-        }
+        public ICommand CancelCommand => new DelegateCommand(CancelDelegate);
 
         private void CancelDelegate() {
             IsOk = false;
@@ -262,9 +252,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
             }
         }
 
-        public ICommand LoadedCommand {
-            get => new DelegateCommand<object>(LoadedDelegate);
-        }
+        public ICommand LoadedCommand => new DelegateCommand<object>(LoadedDelegate);
 
         private async void LoadedDelegate(object obj) {
             var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0,
@@ -293,9 +281,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
             });
         }
 
-        public ICommand StartPositionChangedCommand {
-            get => new DelegateCommand<object>(StartPositionChangedDelegate);
-        }
+        public ICommand StartPositionChangedCommand => new DelegateCommand<object>(StartPositionChangedDelegate);
 
         private async void StartPositionChangedDelegate(object obj) {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
@@ -303,9 +289,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
             });
         }
 
-        public ICommand ContentChangedCommand {
-            get => new DelegateCommand<object>(ContentChangedDelegate);
-        }
+        public ICommand ContentChangedCommand => new DelegateCommand<object>(ContentChangedDelegate);
 
         private async void ContentChangedDelegate(object obj) {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {

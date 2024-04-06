@@ -193,11 +193,11 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
                         BarCode = string.IsNullOrWhiteSpace(codeInfo.Code) ? "NoRead" : codeInfo.Code,
                         ScanTime = scanTime
                     });
-                    if (validateData) {
+                    if (validateData || !string.IsNullOrWhiteSpace(_barCodeFilterContainer.FilterOutContent)) {
                         //返回条码
                         OnBarcodeReadTriggered(new BarcodeTriggeredEventArgs() {
                             Timestamp = timestamp,
-                            Barcode = string.IsNullOrWhiteSpace(codeInfo.Code) ? "NoRead" : codeInfo.Code,
+                            Barcode = validateData ? codeInfo.Code : _barCodeFilterContainer.FilterOutContent,
                             Image = bitmap,
                             ThumbImage = (Bitmap?)thumbnailImage,
                             CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
@@ -368,6 +368,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
             _barCodeFilterContainer.Pattern = @params.RegularExpression;
             _barCodeFilterContainer.MaxSize = @params.DuplicateBarcodeFilterCount;
             _barCodeFilterContainer.ExpirationTime = TimeSpan.FromMilliseconds(@params.ScanInterval);
+            _barCodeFilterContainer.FilterOutContent = @params.FilterOutContent;
         }
 
         protected virtual async void OnCameraExceptionOccurred(CameraExceptionEventArgs e) {
