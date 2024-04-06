@@ -22,38 +22,28 @@ using JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration;
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration {
 
     //分拣指令绑定页面
-    public class SortingInstructionBindingViewModel : BindableBase {
+    public class SortingInstructionBindingViewModel : BulkOperationsTemplateViewModel<SortingInstructionBindingItemInfoModel> {
         private readonly ISortingInstructionBindingRepository _sortingInstructionBindingRepository;
         private readonly ISortingInstructionRepository _sortingInstructionRepository;
         private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
-        private readonly IExcel _excel;
 
         private readonly ISortingConnectionService _sortingConnectionService;
-        // private readonly IInventoryManagementService _inventoryManagementService;
 
         private ObservableCollection<SortingInstructionBindingItemInfoModel> _sortingInstructionBindingItems = new();
-
-        private SnackbarMessageQueue _sortingInstructionBindingMessageQueue = new(TimeSpan.FromSeconds(2));
-        private bool _isLoaded;
 
         public SortingInstructionBindingViewModel(ISortingInstructionBindingRepository sortingInstructionBindingRepository,
             ISortingInstructionRepository sortingInstructionRepository,
             IPackageExitDefinitionRepository packageExitDefinitionRepository,
-            IExcel excel, ISortingConnectionService ISortingConnectionService) {
+            IExcel excel, ISortingConnectionService sortingConnectionService) : base(excel) {
             _sortingInstructionBindingRepository = sortingInstructionBindingRepository;
             _sortingInstructionRepository = sortingInstructionRepository;
             _packageExitDefinitionRepository = packageExitDefinitionRepository;
-            _excel = excel;
-            _sortingConnectionService = ISortingConnectionService;
+
+            _sortingConnectionService = sortingConnectionService;
 
             _sortingConnectionService.SendError += delegate (object? sender, ExceptionEventArgs args) {
-                SortingInstructionBindingMessageQueue.Enqueue(args.ExceptionMessage);
+                MessageQueue.Enqueue(args.ExceptionMessage);
             };
-        }
-
-        public SnackbarMessageQueue SortingInstructionBindingMessageQueue {
-            get => _sortingInstructionBindingMessageQueue;
-            set => SetProperty(ref _sortingInstructionBindingMessageQueue, value);
         }
 
         public ObservableCollection<SortingInstructionBindingItemInfoModel> SortingInstructionBindingItems {
@@ -61,19 +51,15 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             set => SetProperty(ref _sortingInstructionBindingItems, value);
         }
 
-        public ICommand AddCommand {
-            get => new DelegateCommand<object>(AddDelegate);
-        }
-
-        private async void AddDelegate(object obj) {
+        protected override async void AddDelegate(object obj) {
             await Application.Current.Dispatcher.InvokeAsync(async () => {
                 var bindingEditor = new SortingInstructionBindingEditor();
 
                 if (bindingEditor.DataContext is SortingInstructionBindingEditorViewModel model) {
-                    model.Identifier = "SortingInstructionBindingDialog";
+                    model.Identifier = Identifier;
                     await DialogHost.Show(bindingEditor, model.Identifier);
                     if (!string.IsNullOrEmpty(model.ExceptionContent)) {
-                        SortingInstructionBindingMessageQueue.Enqueue(model.ExceptionContent);
+                        MessageQueue.Enqueue(model.ExceptionContent);
                         return;
                     }
                     if (model.IsOk) {
@@ -104,11 +90,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                             })?.ToList()
                         });
                         if (insertOrUpdate) {
-                            SortingInstructionBindingMessageQueue.Enqueue("保存成功");
+                            MessageQueue.Enqueue("保存成功");
                             RefreshData();
                         }
                         else {
-                            SortingInstructionBindingMessageQueue.Enqueue("保存失败");
+                            MessageQueue.Enqueue("保存失败");
                         }
 
                         //添加到指令列表对应内容
@@ -117,105 +103,87 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             });
         }
 
-        public ICommand LoadedCommand {
-            get => new DelegateCommand<object>(LoadedDelegate);
-        }
+        public override string Identifier => "PackageSortingSettingsDialog";
+        public override string ExcelTitle => "指令绑定列表";
+        public override string SheetName => "指令绑定列表";
 
-        private void LoadedDelegate(object obj) {
-            /*if (!_isLoaded) {
-                _isLoaded = true;
-                RefreshData();
-            }*/
+        public override void LoadedDelegate(object obj) {
             RefreshData();
         }
 
-        /// <summary>
-        /// 修改
-        /// </summary>
-        public ICommand ModifyCommand {
-            get => new DelegateCommand<SortingInstructionBindingItemInfoModel>(ModifyDelegate);
-        }
-
-        private async void ModifyDelegate(SortingInstructionBindingItemInfoModel obj) {
-            await Application.Current.Dispatcher.InvokeAsync(async () => {
-                var bindingEditor = new SortingInstructionBindingEditor();
-
-                if (bindingEditor.DataContext is SortingInstructionBindingEditorViewModel model) {
-                    model.Identifier = "SortingInstructionBindingDialog";
-                    model.SortingInstructionBindingItemInfo = obj;
-                    model.SortingInstructionItems = obj.SortingInstructionItems;
-                    await DialogHost.Show(bindingEditor, model.Identifier);
-                    if (!string.IsNullOrEmpty(model.ExceptionContent)) {
-                        SortingInstructionBindingMessageQueue.Enqueue(model.ExceptionContent);
-                        return;
-                    }
-                    if (model.IsOk) {
-                        bool canActive = true;
-                        if (model.SortingInstructionBindingItemInfo.IsActive) {
-                            var orDefault = await _sortingInstructionBindingRepository.FirstOrDefault(f =>
-                                f.ExitId.Equals(model.SelectExitDefinitionInfo.Id) &&
-                                f.IsActive);
-                            canActive = orDefault is null;
-                        }
-
-                        //添加到数据库
-                        var insertOrUpdate = await _sortingInstructionBindingRepository.UpdateDetailAsync(new SortingInstructionBindingInfoModel() {
-                            CreateTime = DateTime.Now,
-                            DelaySendMilliseconds = model.SortingInstructionBindingItemInfo.DelaySendMilliseconds,
-                            ExitId = model.SelectExitDefinitionInfo.Id,
-                            SendIntervalMilliseconds =
-                                model.SortingInstructionBindingItemInfo.SendIntervalMilliseconds,
-                            IsActive = canActive && model.SortingInstructionBindingItemInfo.IsActive,
-                            ModifyTime = DateTime.Now,
-                            Remarks = model.SortingInstructionBindingItemInfo.Remarks,
-                            Id = model.SortingInstructionBindingItemInfo.Id,
-                            InstructionItems = model.SortingInstructionItems.Select(s => new SortingInstructionInfoModel {
-                                CreateTime = s.CreateTime,
-                                Remarks = s.Remarks,
-                                Instruction = s.Instruction,
-                                ReplyContent = s.ReplyContent,
-                                ModifyTime = s.ModifyTime,
-                            })?.ToList()
-                        });
-                        if (insertOrUpdate) {
-                            SortingInstructionBindingMessageQueue.Enqueue("保存成功");
-                            RefreshData();
-                        }
-                        else {
-                            SortingInstructionBindingMessageQueue.Enqueue("保存失败");
-                        }
-
-                        //添加到指令列表对应内容
-                    }
+        protected override async Task<bool> DeleteProcess(object obj) {
+            if (obj is SortingInstructionBindingItemInfoModel item) {
+                var sortingInstructionBindingInfoModel = await _sortingInstructionBindingRepository.
+                    FirstOrDefault(f => f.Id.Equals(item.Id));
+                if (sortingInstructionBindingInfoModel is not null) {
+                    return await _sortingInstructionBindingRepository.Delete(sortingInstructionBindingInfoModel);
                 }
-            });
+            }
+
+            return false;
         }
 
-        /// <summary>
-        /// 删除
-        /// </summary>
-        public ICommand DeleteCommand {
-            get => new DelegateCommand<SortingInstructionBindingItemInfoModel>(DeleteDelegate);
-        }
+        protected override async void ModifyDelegate(object obj) {
+            if (obj is SortingInstructionBindingItemInfoModel item) {
+                await Application.Current.Dispatcher.InvokeAsync(async () => {
+                    var bindingEditor = new SortingInstructionBindingEditor();
 
-        private async void DeleteDelegate(SortingInstructionBindingItemInfoModel obj) {
-            var sortingInstructionBindingInfoModel = await _sortingInstructionBindingRepository.
-                FirstOrDefault(f => f.Id.Equals(obj.Id));
-            if (sortingInstructionBindingInfoModel is not null) {
-                var delete = await _sortingInstructionBindingRepository.Delete(sortingInstructionBindingInfoModel);
-                if (delete) {
-                    //刷新列表
-                    RefreshData();
-                }
+                    if (bindingEditor.DataContext is SortingInstructionBindingEditorViewModel model) {
+                        model.Identifier = Identifier;
+                        model.SortingInstructionBindingItemInfo = item;
+                        model.SortingInstructionItems = item.SortingInstructionItems;
+                        await DialogHost.Show(bindingEditor, model.Identifier);
+                        if (!string.IsNullOrEmpty(model.ExceptionContent)) {
+                            MessageQueue.Enqueue(model.ExceptionContent);
+                            return;
+                        }
+                        if (model.IsOk) {
+                            bool canActive = true;
+                            if (model.SortingInstructionBindingItemInfo.IsActive) {
+                                var orDefault = await _sortingInstructionBindingRepository.FirstOrDefault(f =>
+                                    f.ExitId.Equals(model.SelectExitDefinitionInfo.Id) &&
+                                    f.IsActive);
+                                canActive = orDefault is null;
+                            }
+
+                            //添加到数据库
+                            var insertOrUpdate = await _sortingInstructionBindingRepository.UpdateDetailAsync(new SortingInstructionBindingInfoModel() {
+                                CreateTime = DateTime.Now,
+                                DelaySendMilliseconds = model.SortingInstructionBindingItemInfo.DelaySendMilliseconds,
+                                ExitId = model.SelectExitDefinitionInfo.Id,
+                                SendIntervalMilliseconds =
+                                    model.SortingInstructionBindingItemInfo.SendIntervalMilliseconds,
+                                IsActive = canActive && model.SortingInstructionBindingItemInfo.IsActive,
+                                ModifyTime = DateTime.Now,
+                                Remarks = model.SortingInstructionBindingItemInfo.Remarks,
+                                Id = model.SortingInstructionBindingItemInfo.Id,
+                                InstructionItems = model.SortingInstructionItems.Select(s => new SortingInstructionInfoModel {
+                                    CreateTime = s.CreateTime,
+                                    Remarks = s.Remarks,
+                                    Instruction = s.Instruction,
+                                    ReplyContent = s.ReplyContent,
+                                    ModifyTime = s.ModifyTime,
+                                })?.ToList()
+                            });
+                            if (insertOrUpdate) {
+                                MessageQueue.Enqueue("保存成功");
+                                RefreshData();
+                            }
+                            else {
+                                MessageQueue.Enqueue("保存失败");
+                            }
+
+                            //添加到指令列表对应内容
+                        }
+                    }
+                });
             }
         }
 
         /// <summary>
         /// 发送指令
         /// </summary>
-        public ICommand SendInstructionCommand {
-            get => new DelegateCommand<SortingInstructionBindingItemInfoModel>(SendInstructionDelegate);
-        }
+        public ICommand SendInstructionCommand => new DelegateCommand<SortingInstructionBindingItemInfoModel>(SendInstructionDelegate);
 
         private void SendInstructionDelegate(SortingInstructionBindingItemInfoModel obj) {
             _sortingConnectionService.SendInstructions(new object(), obj.ExitId ?? 0,
@@ -230,9 +198,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         /// <summary>
         /// 是否激活
         /// </summary>
-        public ICommand ActiveCommand {
-            get => new DelegateCommand<SortingInstructionBindingItemInfoModel>(ActiveDelegate);
-        }
+        public ICommand ActiveCommand => new DelegateCommand<SortingInstructionBindingItemInfoModel>(ActiveDelegate);
 
         private async void ActiveDelegate(SortingInstructionBindingItemInfoModel obj) {
             var model = await _sortingInstructionBindingRepository.FirstOrDefault(f => f.Id.Equals(obj.Id));
@@ -240,214 +206,122 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                 model.IsActive = obj.IsActive;
                 var update = await _sortingInstructionBindingRepository.Update(model);
                 if (!update) {
-                    SortingInstructionBindingMessageQueue.Enqueue("保存失败");
+                    MessageQueue.Enqueue("保存失败");
                 }
                 return;
             }
             obj.IsActive = !obj.IsActive;
         }
 
-        private async void RefreshData() {
-            var loadingDialog = new LoadingDialog();
-            if (loadingDialog.DataContext is not LoadingDialogViewModel model) return;
-            await Application.Current.Dispatcher.InvokeAsync(() => {
-                model.Identifier = "SortingInstructionBindingDialog";
-                DialogHost.Show(loadingDialog, model.Identifier).ConfigureAwait(false);
-            });
+        protected override async Task ClearProcess() {
+            var sortingInstructionBindingInfoModels = await _sortingInstructionBindingRepository.Select(s => s.Id > 0,
+                o => o.Id);
+            await _sortingInstructionBindingRepository.DeleteRange(sortingInstructionBindingInfoModels);
+        }
+
+        protected override async Task RefreshDataProcess() {
             var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0, o => o.CreateTime);
             var models = await _sortingInstructionBindingRepository.
                 InstructionBindings(s => s.Id > 0);
-            await Application.Current.Dispatcher.InvokeAsync(() => {
-                SortingInstructionBindingItems.Clear();
-                var infoModels = models?.Select((s, i) => new SortingInstructionBindingItemInfoModel {
-                    CreateTime = s.CreateTime,
-                    Id = s.Id,
-                    ModifyTime = s.ModifyTime,
-                    Num = i + 1,
-                    Remarks = s.Remarks,
-                    ExitId = s.ExitId,
-                    ExitName = packageExitDefinitionInfoModels?.FirstOrDefault(f => f.Id.Equals(s.ExitId))?.ExitName ?? string.Empty,
-                    DelaySendMilliseconds = s.DelaySendMilliseconds,
-                    SendIntervalMilliseconds = s.SendIntervalMilliseconds,
-                    IsActive = s.IsActive,
+            SortingInstructionBindingItems.Clear();
+            var infoModels = models?.Select((s, i) => new SortingInstructionBindingItemInfoModel {
+                CreateTime = s.CreateTime,
+                Id = s.Id,
+                ModifyTime = s.ModifyTime,
+                Num = i + 1,
+                Remarks = s.Remarks,
+                ExitId = s.ExitId,
+                ExitName = packageExitDefinitionInfoModels?.FirstOrDefault(f => f.Id.Equals(s.ExitId))?.ExitName ?? string.Empty,
+                DelaySendMilliseconds = s.DelaySendMilliseconds,
+                SendIntervalMilliseconds = s.SendIntervalMilliseconds,
+                IsActive = s.IsActive,
 
-                    SortingInstructionItems = new ObservableCollection<SortingInstructionItemInfoModel>(s.InstructionItems?.Select((s1, i1) => new SortingInstructionItemInfoModel {
-                        CreateTime = s1.CreateTime,
-                        Id = s1.Id,
-                        InstructionBindingId = s1.InstructionBindingId,
-                        ModifyTime = s1.ModifyTime,
-                        Num = i1 + 1,
-                        Remarks = s1.Remarks,
-                        Instruction = s1.Instruction
-                    }).ToList() ?? new List<SortingInstructionItemInfoModel>()),
-                    SortingInstructionGroup = string.Join("\n", s.InstructionItems?.Select(s2 => s2.Instruction) ?? Array.Empty<string>())
-                })?.ToList();
-                SortingInstructionBindingItems.AddRange(infoModels);
-                if (DialogHost.IsDialogOpen(model.Identifier)) {
-                    DialogHost.Close(model.Identifier);
-                }
-            });
+                SortingInstructionItems = new ObservableCollection<SortingInstructionItemInfoModel>(s.InstructionItems?.Select((s1, i1) => new SortingInstructionItemInfoModel {
+                    CreateTime = s1.CreateTime,
+                    Id = s1.Id,
+                    InstructionBindingId = s1.InstructionBindingId,
+                    ModifyTime = s1.ModifyTime,
+                    Num = i1 + 1,
+                    Remarks = s1.Remarks,
+                    Instruction = s1.Instruction
+                }).ToList() ?? new List<SortingInstructionItemInfoModel>()),
+                SortingInstructionGroup = string.Join("\n", s.InstructionItems?.Select(s2 => s2.Instruction) ?? Array.Empty<string>())
+            })?.ToList();
+            SortingInstructionBindingItems.AddRange(infoModels);
         }
 
-        /// <summary>
-        /// 导出
-        /// </summary>
-        public ICommand ExportCommand {
-            get => new DelegateCommand<PackageExitDefinitionItemInfoModel>(ExportDelegate);
+        protected override bool IsSelectAnyItem() => SortingInstructionBindingItems.Any(a => a.IsSelect);
+
+        protected override async Task BulkDeleteProcess() {
+            var selectIds = SortingInstructionBindingItems.Where(w => w.IsSelect)
+                .Select(s => s.Id).ToList();
+            var sortingInstructionBindingInfoModels = await _sortingInstructionBindingRepository
+                .Select(s => selectIds.Contains(s.Id),
+                o => o.Id);
+            await _sortingInstructionBindingRepository.DeleteRange(sortingInstructionBindingInfoModels);
         }
 
-        private async void ExportDelegate(PackageExitDefinitionItemInfoModel obj) {
-            //导出
-            if (SortingInstructionBindingItems?.Any() != true) {
-                SortingInstructionBindingMessageQueue?.Enqueue(Languages.Language.ResourceManager.GetString("列表中没有数据") ?? string.Empty);
-                return;
-            }
-
-            //导出
-
-            var saveFileDialog = new Microsoft.Win32.SaveFileDialog() {
-                Title = "Please select the location to save the file.",
-                Filter = $"{Languages.Language.ResourceManager.GetString("Excel文件") ?? string.Empty}(xlsx)|*.xlsx",
-                DefaultExt = "xlsx",
-                InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
-            };
-            if (saveFileDialog.ShowDialog() == true) {
-                var exportDialog = new ExportDialog();
-                if (exportDialog.DataContext is ExportDialogViewModel model) {
-                    model.FilePath = saveFileDialog.FileName;
-                    model.Identifier = "MainDialog";
-                    model.Message = "Retrieving data...";
-                    DialogHost.Show(exportDialog, model.Identifier);
-                    var result = SortingInstructionBindingItems
-                        ?.SelectMany(s => s.SortingInstructionGroup.Split("\n")
-                            .Select(item => new SortingInstructionBindingItemInfoModel {
-                                CreateTime = s.CreateTime,
-                                DelaySendMilliseconds = s.DelaySendMilliseconds,
-                                ExitId = s.ExitId,
-                                SendIntervalMilliseconds = s.SendIntervalMilliseconds,
-                                IsActive = s.IsActive,
-                                ModifyTime = s.ModifyTime,
-                                Remarks = s.Remarks,
-                                ExitName = s.ExitName,
-                                Num = s.Num,
-                                Id = s.Id,
-                                SortingInstructionGroup = item,
-                            }))
-                        ?.ToList();
-                    var export = await _excel.Export(saveFileDialog.FileName,
-                        $"指令绑定列表",
-                        "指令列表", result ?? new List<SortingInstructionBindingItemInfoModel>(),
-                        new List<string>(), async p => {
-                            model.Progress = p;
-                            model.ProgressText = $"{p}%";
-                            if (p == 100) {
-                                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                                    if (DialogHost.IsDialogOpen(model.Identifier)) {
-                                        DialogHost.Close(model.Identifier);
-                                    }
-                                });
-                            }
-                        }, e => {
-                            SortingInstructionBindingMessageQueue?.Enqueue(e.Message);
-                        });
-                    if (!export) {
-                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                            if (DialogHost.IsDialogOpen(model.Identifier)) {
-                                DialogHost.Close(model.Identifier);
-                            }
-                        });
-                    }
-                }
-            }
+        protected override List<SortingInstructionBindingItemInfoModel> ExportProcess() {
+            return SortingInstructionBindingItems
+                ?.SelectMany(s => s.SortingInstructionGroup.Split("\n")
+                    .Select(item => new SortingInstructionBindingItemInfoModel {
+                        CreateTime = s.CreateTime,
+                        DelaySendMilliseconds = s.DelaySendMilliseconds,
+                        ExitId = s.ExitId,
+                        SendIntervalMilliseconds = s.SendIntervalMilliseconds,
+                        IsActive = s.IsActive,
+                        ModifyTime = s.ModifyTime,
+                        Remarks = s.Remarks,
+                        ExitName = s.ExitName,
+                        Num = s.Num,
+                        Id = s.Id,
+                        SortingInstructionGroup = item,
+                    }))
+                ?.ToList() ?? new List<SortingInstructionBindingItemInfoModel>();
         }
 
-        public ICommand ImportCommand {
-            get => new DelegateCommand<object>(ImportDelegate);
-        }
-
-        private async void ImportDelegate(object obj) {
-            //导入
-            var openFileDialog = new Microsoft.Win32.OpenFileDialog() {
-                Title = "Please select the file to import.",
-                Filter = $"{Languages.Language.ResourceManager.GetString("Excel文件") ?? string.Empty}(xlsx)|*.xlsx",
-                DefaultExt = "xlsx",
-                InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
-            };
-            if (openFileDialog.ShowDialog() == true) {
-                var exportDialog = new ExportDialog();
-                if (exportDialog.DataContext is ExportDialogViewModel model) {
-                    model.FilePath = openFileDialog.FileName;
-                    model.Identifier = "MainDialog";
-                    model.Message = "Retrieving data...";
-                    DialogHost.Show(exportDialog, model.Identifier);
-
-                    var models = await _excel.ReadExcel<SortingInstructionBindingItemInfoModel>(openFileDialog.FileName, async p => {
-                        model.Progress = p;
-                        model.ProgressText = $"{p}%";
-                        if (p == 100) {
-                            await Application.Current.Dispatcher.InvokeAsync(() => {
-                                if (DialogHost.IsDialogOpen(model.Identifier)) {
-                                    DialogHost.Close(model.Identifier);
-                                }
-                            });
-                        }
-                    }, async e => {
-                        await Application.Current.Dispatcher.InvokeAsync(() => {
-                            if (DialogHost.IsDialogOpen(model.Identifier)) {
-                                DialogHost.Close(model.Identifier);
-                            }
-                        });
-                        SortingInstructionBindingMessageQueue?.Enqueue(e.Message);
-                    });
-                    await Task.Delay(500);
-                    if (models?.Any() == true) {
-                        var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0,
-                            o => o.CreateTime);
-                        var dateTime = DateTime.Now;
-                        var sortingInstructionBindingInfoModels = models
-                            .Select(s => new SortingInstructionBindingInfoModel {
-                                CreateTime = dateTime,
-                                DelaySendMilliseconds = s.DelaySendMilliseconds,
-                                ExitId = packageExitDefinitionInfoModels.FirstOrDefault(f => f.ExitName.Equals(s.ExitName))?.Id ?? 0,
-                                SendIntervalMilliseconds = s.SendIntervalMilliseconds,
-                                IsActive = s.IsActive,
-                                ModifyTime = dateTime,
-                                Remarks = s.Remarks,
-                                InstructionItems = new List<SortingInstructionInfoModel>
-                                {
+        protected override async Task<bool> ImportProcess(List<SortingInstructionBindingItemInfoModel> items) {
+            if (items?.Any() == true) {
+                var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0,
+                    o => o.CreateTime);
+                var dateTime = DateTime.Now;
+                var sortingInstructionBindingInfoModels = items
+                    .Select(s => new SortingInstructionBindingInfoModel {
+                        CreateTime = dateTime,
+                        DelaySendMilliseconds = s.DelaySendMilliseconds,
+                        ExitId = packageExitDefinitionInfoModels.FirstOrDefault(f => f.ExitName.Equals(s.ExitName))?.Id ?? 0,
+                        SendIntervalMilliseconds = s.SendIntervalMilliseconds,
+                        IsActive = s.IsActive,
+                        ModifyTime = dateTime,
+                        Remarks = s.Remarks,
+                        InstructionItems = new List<SortingInstructionInfoModel>
+                        {
                                     new()
                                     {
                                         CreateTime = dateTime,
                                         ModifyTime = dateTime,
                                         Instruction = s.SortingInstructionGroup,
                                     }
-                                }
-                            })
-                            .GroupBy(s => s.ExitId)
-                            .Select(group => new SortingInstructionBindingInfoModel {
-                                CreateTime = group.First().CreateTime,
-                                DelaySendMilliseconds = group.First().DelaySendMilliseconds,
-                                ExitId = group.Key,
-                                SendIntervalMilliseconds = group.First().SendIntervalMilliseconds,
-                                IsActive = group.First().IsActive,
-                                ModifyTime = group.First().ModifyTime,
-                                Remarks = group.First().Remarks,
-                                InstructionItems = group.SelectMany(item => item.InstructionItems).ToList()
-                            })
-                            .ToList();
+                        }
+                    })
+                    .GroupBy(s => s.ExitId)
+                    .Select(group => new SortingInstructionBindingInfoModel {
+                        CreateTime = group.First().CreateTime,
+                        DelaySendMilliseconds = group.First().DelaySendMilliseconds,
+                        ExitId = group.Key,
+                        SendIntervalMilliseconds = group.First().SendIntervalMilliseconds,
+                        IsActive = group.First().IsActive,
+                        ModifyTime = group.First().ModifyTime,
+                        Remarks = group.First().Remarks,
+                        InstructionItems = group.SelectMany(item => item.InstructionItems).ToList()
+                    })
+                    .ToList();
 
-                        //批量添加
-                        var range = await _sortingInstructionBindingRepository.InsertRangeDetailAsync(sortingInstructionBindingInfoModels);
-                        if (range) {
-                            SortingInstructionBindingMessageQueue.Enqueue("保存成功");
-                            RefreshData();
-                        }
-                        else {
-                            SortingInstructionBindingMessageQueue.Enqueue("保存失败");
-                        }
-                    }
-                }
+                //批量添加
+                return await _sortingInstructionBindingRepository.InsertRangeDetailAsync(sortingInstructionBindingInfoModels);
             }
+
+            return false;
         }
     }
 }

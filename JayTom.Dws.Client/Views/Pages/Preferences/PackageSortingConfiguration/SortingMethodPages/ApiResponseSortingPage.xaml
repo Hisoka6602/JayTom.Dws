@@ -98,8 +98,8 @@
 
             <!--  规则  -->
             <DataGridTextColumn
-                Width="500"
-                MinWidth="500"
+                Width="550"
+                MinWidth="550"
                 Binding="{Binding SortingRuleGroup, UpdateSourceTrigger=PropertyChanged}"
                 CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                 EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
@@ -109,8 +109,8 @@
             </DataGridTextColumn>
             <!--  备注  -->
             <DataGridTextColumn
-                Width="180"
-                MinWidth="180"
+                Width="140"
+                MinWidth="140"
                 Binding="{Binding Remarks, UpdateSourceTrigger=PropertyChanged}"
                 CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                 EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">

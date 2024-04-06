@@ -1,5 +1,8 @@
 ﻿using System.Windows.Media;
+using System.ComponentModel;
 using System.Collections.ObjectModel;
+using System.Diagnostics.CodeAnalysis;
+using JayTom.Dws.Plugin.Excel.Attributes;
 using JayTom.Dws.Client.Models.PackageSorting.Rule;
 
 namespace JayTom.Dws.Client.Models.PackageSorting {
@@ -17,6 +20,7 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 物流代码
         /// </summary>
+        [DisplayName("物流代码"), MemberNotNull, ExcelInfo(Width = 5000)]
         public string LogisticsCode {
             get => _logisticsCode;
             set => SetProperty(ref _logisticsCode, value);
@@ -25,6 +29,7 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 物流名称
         /// </summary>
+        [DisplayName("物流名称"), MemberNotNull, ExcelInfo(Width = 5000)]
         public string LogisticsName {
             get => _logisticsName;
             set => SetProperty(ref _logisticsName, value);
@@ -41,6 +46,7 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 声音文件名
         /// </summary>
+        [DisplayName("声音文件名"), MemberNotNull, ExcelInfo(Width = 5000)]
         public string? SoundName {
             get => _soundName;
             set => SetProperty(ref _soundName, value);
@@ -57,6 +63,7 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 图标名称
         /// </summary>
+        [DisplayName("图标名称"), MemberNotNull, ExcelInfo(Width = 5000)]
         public string IconName {
             get => _iconName;
             set => SetProperty(ref _iconName, value);
@@ -65,6 +72,7 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 正则表达式
         /// </summary>
+        [DisplayName("正则表达式"), MemberNotNull, ExcelInfo(Width = 8000)]
         public string RegexPattern {
             get => _regexPattern;
             set => SetProperty(ref _regexPattern, value);

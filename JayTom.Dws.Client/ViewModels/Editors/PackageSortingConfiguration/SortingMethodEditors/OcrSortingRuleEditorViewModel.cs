@@ -13,6 +13,7 @@ using JayTom.Dws.Client.Models.PackageSorting.Rule;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
 
 namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.SortingMethodEditors {
+
     public class OcrSortingRuleEditorViewModel : BindableBase {
         private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
         private string _identifier = string.Empty;
@@ -198,6 +199,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
                         JsonContent = serializeObject,
                         ModifyTime = DateTime.Now,
                         Num = OcrRuleItems.Count + 1,
+                        FormatJsonContent = FormatRule(serializeObject)
                     });
                 }
             });
@@ -309,6 +311,33 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
                 /*EndPosition = StartPosition + Content.Length;*/
             });
+        }
+
+        public string FormatRule(string jsonContent) {
+            var content = string.Empty;
+            try {
+                var ocrRuleJsonDto = JsonConvert.DeserializeObject<OcrRuleJsonDto>(jsonContent);
+                if (ocrRuleJsonDto is not null) {
+                    if (ocrRuleJsonDto.IsUseThreeSegmentCodeValidation) {
+                        content += $"三段码包含:[{ocrRuleJsonDto.ThreeSegmentCodeContainsChars}]  ";
+                    }
+                    if (ocrRuleJsonDto.IsUseRecipientAddressValidation) {
+                        content += $"收件人地址包含:[{ocrRuleJsonDto.RecipientAddressContainsChars}]  ";
+                    }
+                    if (ocrRuleJsonDto.IsUseSenderAddressValidation) {
+                        content += $"发件人地址包含:[{ocrRuleJsonDto.SenderAddressContainsChars}]  ";
+                    }
+                    if (ocrRuleJsonDto.IsUseSenderPhoneNumberValidation) {
+                        content += $"发件人手机尾号包含:[{ocrRuleJsonDto.SenderPhoneNumberEndsWith}]  ";
+                    }
+
+                    return content;
+                }
+            }
+            catch (Exception e) {
+                return "解析错误";
+            }
+            return "解析错误";
         }
     }
 }

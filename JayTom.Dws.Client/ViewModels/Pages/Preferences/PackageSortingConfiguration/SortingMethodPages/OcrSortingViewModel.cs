@@ -233,7 +233,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                     ModifyTime = s1.ModifyTime,
                     Num = i1 + 1,
                     Remarks = s1.Remarks,
-                    JsonContent = s1.JsonContent
+                    JsonContent = s1.JsonContent,
+                    FormatJsonContent = FormatRule(s1.JsonContent)
                 }).ToList() ?? new List<OcrRuleItemInfoModel>()),
                 SortingRuleGroup = string.Join("\n", s.OcrRuleItems?.Select(s2 => FormatRule(s2.JsonContent)) ?? Array.Empty<string>())
             })?.ToList();

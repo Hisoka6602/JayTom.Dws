@@ -23,18 +23,17 @@ using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig.ConnectionPara
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration {
 
     //包裹出口定义页面
-    public class PackageExitDefinitionViewModel : BindableBase {
+    public class PackageExitDefinitionViewModel : BulkOperationsTemplateViewModel<PackageExitDefinitionItemInfoModel> {
         private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
-        private readonly IExcel _excel;
+
         private readonly ICommunicationConnectionConfigRepository _communicationConnectionConfigRepository;
         private ObservableCollection<PackageExitDefinitionItemInfoModel> _packageExitDefinitionItems = new();
-        private SnackbarMessageQueue _packageExitDefinitionMessageQueue = new(TimeSpan.FromSeconds(2));
-        private bool _isLoaded;
 
         public PackageExitDefinitionViewModel(IPackageExitDefinitionRepository packageExitDefinitionRepository,
-            IExcel excel, ICommunicationConnectionConfigRepository communicationConnectionConfigRepository) {
+            IExcel excel,
+            ICommunicationConnectionConfigRepository communicationConnectionConfigRepository) : base(excel) {
             _packageExitDefinitionRepository = packageExitDefinitionRepository;
-            _excel = excel;
+
             _communicationConnectionConfigRepository = communicationConnectionConfigRepository;
         }
 
@@ -43,26 +42,17 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             set => SetProperty(ref _packageExitDefinitionItems, value);
         }
 
-        public SnackbarMessageQueue PackageExitDefinitionMessageQueue {
-            get => _packageExitDefinitionMessageQueue;
-            set => SetProperty(ref _packageExitDefinitionMessageQueue, value);
-        }
-
-        public ICommand AddCommand {
-            get => new DelegateCommand<object>(AddDelegate);
-        }
-
-        private async void AddDelegate(object obj) {
+        protected override async void AddDelegate(object obj) {
             await Application.Current.Dispatcher.InvokeAsync(async () => {
                 var packageExitDefinitionEditor = new PackageExitDefinitionEditor();
                 if (packageExitDefinitionEditor.DataContext is PackageExitDefinitionEditorViewModel model) {
-                    model.Identifier = "PackageExitDefinitionDialog";
+                    model.Identifier = Identifier;
                     model.PackageExitDefinitionItems = new ObservableCollection<PackageExitDefinitionItemInfoModel>(PackageExitDefinitionItems.
                         Where(w => w.Type == ExitType.PackageExit)
                         ?.ToList() ?? new List<PackageExitDefinitionItemInfoModel>());
                     await DialogHost.Show(packageExitDefinitionEditor, model.Identifier);
                     if (!string.IsNullOrEmpty(model.ExceptionContent)) {
-                        PackageExitDefinitionMessageQueue.Enqueue(model.ExceptionContent);
+                        MessageQueue.Enqueue(model.ExceptionContent);
                         return;
                     }
                     if (model.IsOk) {
@@ -80,90 +70,143 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         var insertOrUpdate = await _packageExitDefinitionRepository.Insert(packageExitDefinitionInfoModel);
                         if (insertOrUpdate) {
                             EventAggregator.Instance.Publish(packageExitDefinitionInfoModel);
-                            PackageExitDefinitionMessageQueue.Enqueue("保存成功");
+                            MessageQueue.Enqueue("保存成功");
                             //刷新列表
                             RefreshData();
                         }
                         else {
-                            PackageExitDefinitionMessageQueue.Enqueue("保存失败");
+                            MessageQueue.Enqueue("保存失败");
                         }
                     }
                 }
             }, DispatcherPriority.Background);
         }
 
-        public ICommand ModifyCommand {
-            get => new DelegateCommand<PackageExitDefinitionItemInfoModel>(ModifyDelegate);
+        protected override async Task<bool> DeleteProcess(object obj) {
+            if (obj is PackageExitDefinitionItemInfoModel item) {
+                var model = await _packageExitDefinitionRepository.FirstOrDefault(f => f.Id.Equals(item.Id));
+                if (model is not null) {
+                    return await _packageExitDefinitionRepository.Delete(model);
+                }
+            }
+
+            return false;
         }
 
-        private async void ModifyDelegate(PackageExitDefinitionItemInfoModel obj) {
-            await Application.Current.Dispatcher.InvokeAsync(async () => {
-                var packageExitDefinitionEditor = new PackageExitDefinitionEditor();
-                if (packageExitDefinitionEditor.DataContext is PackageExitDefinitionEditorViewModel model) {
-                    model.PackageExitDefinitionItems = new ObservableCollection<PackageExitDefinitionItemInfoModel>(PackageExitDefinitionItems.
-                        Where(w => w.Type == ExitType.PackageExit &&
-                                   !w.Id.Equals(obj.Id))
-                        ?.ToList() ?? new List<PackageExitDefinitionItemInfoModel>());
-                    model.Identifier = "PackageExitDefinitionDialog";
-                    model.Type = obj.Type;
-                    model.ExitName = obj.ExitName;
-                    model.IsActive = obj.IsActive;
-                    model.Id = obj.Id;
-                    model.Remarks = obj.Remarks;
-                    model.CommunicationConnectionId = obj.CommunicationConnectionId;
-                    model.SelectExitDefinitionInfo =
-                        PackageExitDefinitionItems.FirstOrDefault(f =>
-                            f.Id.Equals(obj.Pid)) ??
-                        new PackageExitDefinitionItemInfoModel();
-                    await DialogHost.Show(packageExitDefinitionEditor, model.Identifier);
-                    if (!string.IsNullOrEmpty(model.ExceptionContent)) {
-                        PackageExitDefinitionMessageQueue.Enqueue(model.ExceptionContent);
-                        return;
-                    }
-                    if (model.IsOk) {
-                        //保存到数据库
-                        var insertOrUpdate = await _packageExitDefinitionRepository.Update(new PackageExitDefinitionInfoModel() {
-                            CreateTime = obj.CreateTime,
-                            ExitName = model.ExitName,
-                            IsActive = model.IsActive,
-                            ModifyTime = DateTime.Now,
-                            Remarks = model.Remarks,
-                            Type = model.Type,
-                            Id = model.Id,
-                            CommunicationConnectionId = model.CommunicationConnectionId,
-                            Pid = model.SelectExitDefinitionInfo.Id
-                        });
-                        if (insertOrUpdate) {
-                            PackageExitDefinitionMessageQueue.Enqueue("保存成功");
-                            //刷新列表
-                            RefreshData();
+        protected override async Task BulkDeleteProcess() {
+            var selectIds = PackageExitDefinitionItems.Where(w => w.IsSelect)
+                .Select(s => s.Id).ToList();
+            var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository
+                .Select(s => selectIds.Contains(s.Id),
+                o => o.Id);
+            await _packageExitDefinitionRepository.DeleteRange(packageExitDefinitionInfoModels);
+        }
+
+        protected override List<PackageExitDefinitionItemInfoModel> ExportProcess() => PackageExitDefinitionItems.ToList();
+
+        protected override async Task<bool> ImportProcess(List<PackageExitDefinitionItemInfoModel> items) {
+            if (items?.Any() == true) {
+                //批量添加到数据库
+                var configInfoModels = await _communicationConnectionConfigRepository.Select(s =>
+                    s.Id > 0, o => o.Id);
+
+                var infoModels = items.Select(s => new PackageExitDefinitionInfoModel {
+                    CreateTime = DateTime.Now,
+                    ExitName = s.ExitName,
+                    IsActive = s.IsActive,
+                    ModifyTime = DateTime.Now,
+                    Remarks = s.Remarks,
+                    Type = s.Type,
+                    CommunicationConnectionId = configInfoModels.FirstOrDefault(f => f.ConnectionName.Equals(s.CommunicationConnectionName))?.Id ?? 0,
+                    CommunicationConnectionConfigInfo = configInfoModels.FirstOrDefault(f => f.ConnectionName.Equals(s.CommunicationConnectionName))
+                }).Where(w => w.CommunicationConnectionConfigInfo != null).ToList();
+
+                var insertOrUpdate = await _packageExitDefinitionRepository.InsertRange(infoModels);
+                if (insertOrUpdate) {
+                    //如果存在Pid则更新Pid
+                    var itemInfoModels = items?.Where(w => !string.IsNullOrEmpty(w.MainExitName))?.ToList();
+                    if (itemInfoModels?.Any() == true) {
+                        var list = itemInfoModels.Select(s => s.MainExitName).ToList();
+                        var upDataList = itemInfoModels.Select(s => s.ExitName).ToList();
+                        //取出主Id
+                        var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => list.Contains(s.ExitName),
+                            o => o.Id);
+                        var exitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => upDataList.Contains(s.ExitName),
+                            o => o.Id);
+                        foreach (var packageExitDefinitionInfoModel in exitDefinitionInfoModels) {
+                            var infoModel = itemInfoModels.FirstOrDefault(f =>
+                                f.ExitName.Equals(packageExitDefinitionInfoModel.ExitName));
+                            var definitionInfoModel = packageExitDefinitionInfoModels.FirstOrDefault(f =>
+                                f.ExitName.Equals(infoModel?.MainExitName));
+                            packageExitDefinitionInfoModel.Pid = definitionInfoModel?.Id ?? 0;
                         }
-                        else {
-                            PackageExitDefinitionMessageQueue.Enqueue("保存失败");
+
+                        var updateRange = await _packageExitDefinitionRepository.UpdateRange(exitDefinitionInfoModels);
+                        if (!updateRange) {
+                            return false;
                         }
                     }
                 }
-            }, DispatcherPriority.Background);
+
+                return insertOrUpdate;
+            }
+
+            return false;
         }
 
-        public ICommand DeleteCommand {
-            get => new DelegateCommand<PackageExitDefinitionItemInfoModel>(DeleteDelegate);
-        }
-
-        private async void DeleteDelegate(PackageExitDefinitionItemInfoModel obj) {
-            var model = await _packageExitDefinitionRepository.FirstOrDefault(f => f.Id.Equals(obj.Id));
-            if (model is not null) {
-                var delete = await _packageExitDefinitionRepository.Delete(model);
-                if (delete) {
-                    //刷新列表
-                    RefreshData();
-                }
+        protected override async void ModifyDelegate(object obj) {
+            if (obj is PackageExitDefinitionItemInfoModel item) {
+                await Application.Current.Dispatcher.InvokeAsync(async () => {
+                    var packageExitDefinitionEditor = new PackageExitDefinitionEditor();
+                    if (packageExitDefinitionEditor.DataContext is PackageExitDefinitionEditorViewModel model) {
+                        model.PackageExitDefinitionItems = new ObservableCollection<PackageExitDefinitionItemInfoModel>(PackageExitDefinitionItems.
+                            Where(w => w.Type == ExitType.PackageExit &&
+                                       !w.Id.Equals(item.Id))
+                            ?.ToList() ?? new List<PackageExitDefinitionItemInfoModel>());
+                        model.Identifier = Identifier;
+                        model.Type = item.Type;
+                        model.ExitName = item.ExitName;
+                        model.IsActive = item.IsActive;
+                        model.Id = item.Id;
+                        model.Remarks = item.Remarks;
+                        model.CommunicationConnectionId = item.CommunicationConnectionId;
+                        model.SelectExitDefinitionInfo =
+                            PackageExitDefinitionItems.FirstOrDefault(f =>
+                                f.Id.Equals(item.Pid)) ??
+                            new PackageExitDefinitionItemInfoModel();
+                        await DialogHost.Show(packageExitDefinitionEditor, model.Identifier);
+                        if (!string.IsNullOrEmpty(model.ExceptionContent)) {
+                            MessageQueue.Enqueue(model.ExceptionContent);
+                            return;
+                        }
+                        if (model.IsOk) {
+                            //保存到数据库
+                            var insertOrUpdate = await _packageExitDefinitionRepository.Update(new PackageExitDefinitionInfoModel() {
+                                CreateTime = item.CreateTime,
+                                ExitName = model.ExitName,
+                                IsActive = model.IsActive,
+                                ModifyTime = DateTime.Now,
+                                Remarks = model.Remarks,
+                                Type = model.Type,
+                                Id = model.Id,
+                                CommunicationConnectionId = model.CommunicationConnectionId,
+                                Pid = model.SelectExitDefinitionInfo.Id
+                            });
+                            if (insertOrUpdate) {
+                                MessageQueue.Enqueue("保存成功");
+                                //刷新列表
+                                RefreshData();
+                            }
+                            else {
+                                MessageQueue.Enqueue("保存失败");
+                            }
+                        }
+                    }
+                }, DispatcherPriority.Background);
             }
         }
 
-        public ICommand ActiveCommand {
-            get => new DelegateCommand<PackageExitDefinitionItemInfoModel>(ActiveDelegate);
-        }
+        public ICommand ActiveCommand => new DelegateCommand<PackageExitDefinitionItemInfoModel>(ActiveDelegate);
 
         private async void ActiveDelegate(PackageExitDefinitionItemInfoModel obj) {
             var model = await _packageExitDefinitionRepository.FirstOrDefault(f => f.Id.Equals(obj.Id));
@@ -171,209 +214,52 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                 model.IsActive = obj.IsActive;
                 var update = await _packageExitDefinitionRepository.Update(model);
                 if (!update) {
-                    PackageExitDefinitionMessageQueue.Enqueue("保存失败");
+                    MessageQueue.Enqueue("保存失败");
                 }
                 return;
             }
             obj.IsActive = !obj.IsActive;
         }
 
-        public ICommand LoadedCommand {
-            get => new DelegateCommand<object>(LoadedDelegate);
-        }
+        public override string Identifier => "PackageSortingSettingsDialog";
+        public override string ExcelTitle => "定义格口列表";
+        public override string SheetName => "定义格口列表";
 
-        private void LoadedDelegate(object obj) {
-            /*if (!_isLoaded) {
-                _isLoaded = true;
-                RefreshData();
-            }*/
+        public override void LoadedDelegate(object obj) {
             RefreshData();
         }
 
-        private async void RefreshData() {
-            var loadingDialog = new LoadingDialog();
-            if (loadingDialog.DataContext is not LoadingDialogViewModel model) return;
-            await Application.Current.Dispatcher.InvokeAsync(() => {
-                model.Identifier = "PackageExitDefinitionDialog";
-                DialogHost.Show(loadingDialog, model.Identifier).ConfigureAwait(false);
-            });
+        protected override async Task ClearProcess() {
+            var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0,
+                o => o.Id);
+            await _packageExitDefinitionRepository.DeleteRange(packageExitDefinitionInfoModels);
+        }
+
+        protected override async Task RefreshDataProcess() {
+            await Task.Delay(300);
             var configInfoModels = await _communicationConnectionConfigRepository.CommunicationConnectionConfigItems(s => s.Id > 0);
             var models = await _packageExitDefinitionRepository.
                 Select(s => s.Id > 0,
                     o => o.ModifyTime);
 
-            await Application.Current.Dispatcher.InvokeAsync(() => {
-                PackageExitDefinitionItems.Clear();
-                var infoModels = models?.Select((s, i) => new PackageExitDefinitionItemInfoModel {
-                    Pid = s.Pid,
-                    CreateTime = s.CreateTime,
-                    ExitName = s.ExitName,
-                    Id = s.Id,
-                    IsActive = s.IsActive,
-                    ModifyTime = s.ModifyTime,
-                    Num = i + 1,
-                    Remarks = s.Remarks,
-                    Type = s.Type,
-                    MainExitName = models?.FirstOrDefault(f => f.Id.Equals(s.Pid))?.ExitName ?? string.Empty,
-                    CommunicationConnectionId = configInfoModels?.FirstOrDefault(f => f.Id.Equals(s.CommunicationConnectionId))?.Id ?? 0,
-                    CommunicationConnectionName = configInfoModels?.FirstOrDefault(f => f.Id.Equals(s.CommunicationConnectionId))?.ConnectionName ?? string.Empty
-                })?.ToList();
-                PackageExitDefinitionItems.AddRange(infoModels);
-                if (DialogHost.IsDialogOpen(model.Identifier)) {
-                    DialogHost.Close(model.Identifier);
-                }
-            });
+            PackageExitDefinitionItems.Clear();
+            var infoModels = models?.Select((s, i) => new PackageExitDefinitionItemInfoModel {
+                Pid = s.Pid,
+                CreateTime = s.CreateTime,
+                ExitName = s.ExitName,
+                Id = s.Id,
+                IsActive = s.IsActive,
+                ModifyTime = s.ModifyTime,
+                Num = i + 1,
+                Remarks = s.Remarks,
+                Type = s.Type,
+                MainExitName = models?.FirstOrDefault(f => f.Id.Equals(s.Pid))?.ExitName ?? string.Empty,
+                CommunicationConnectionId = configInfoModels?.FirstOrDefault(f => f.Id.Equals(s.CommunicationConnectionId))?.Id ?? 0,
+                CommunicationConnectionName = configInfoModels?.FirstOrDefault(f => f.Id.Equals(s.CommunicationConnectionId))?.ConnectionName ?? string.Empty
+            })?.ToList();
+            PackageExitDefinitionItems.AddRange(infoModels);
         }
 
-        /// <summary>
-        /// 导出
-        /// </summary>
-        public ICommand ExportCommand {
-            get => new DelegateCommand<PackageExitDefinitionItemInfoModel>(ExportDelegate);
-        }
-
-        private async void ExportDelegate(PackageExitDefinitionItemInfoModel obj) {
-            //导出
-            if (PackageExitDefinitionItems?.Any() != true) {
-                PackageExitDefinitionMessageQueue?.Enqueue(Languages.Language.ResourceManager.GetString("列表中没有数据") ?? string.Empty);
-                return;
-            }
-
-            //导出
-
-            var saveFileDialog = new Microsoft.Win32.SaveFileDialog() {
-                Title = "Please select the location to save the file.",
-                Filter = $"{Languages.Language.ResourceManager.GetString("Excel文件") ?? string.Empty}(xlsx)|*.xlsx",
-                DefaultExt = "xlsx",
-                InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
-            };
-            if (saveFileDialog.ShowDialog() == true) {
-                var exportDialog = new ExportDialog();
-                if (exportDialog.DataContext is ExportDialogViewModel model) {
-                    model.FilePath = saveFileDialog.FileName;
-                    model.Identifier = "MainDialog";
-                    model.Message = "Retrieving data...";
-                    DialogHost.Show(exportDialog, model.Identifier);
-                    var export = await _excel.Export(saveFileDialog.FileName,
-                        $"定义格口列表",
-                        "格口列表", PackageExitDefinitionItems?.ToList() ?? new List<PackageExitDefinitionItemInfoModel>(),
-                        new List<string>(), async p => {
-                            model.Progress = p;
-                            model.ProgressText = $"{p}%";
-                            if (p == 100) {
-                                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                                    if (DialogHost.IsDialogOpen(model.Identifier)) {
-                                        DialogHost.Close(model.Identifier);
-                                    }
-                                });
-                            }
-                        }, e => {
-                            PackageExitDefinitionMessageQueue?.Enqueue(e.Message);
-                        });
-                    if (!export) {
-                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                            if (DialogHost.IsDialogOpen(model.Identifier)) {
-                                DialogHost.Close(model.Identifier);
-                            }
-                        });
-                    }
-                }
-            }
-        }
-
-        public ICommand ImportCommand {
-            get => new DelegateCommand<PackageExitDefinitionItemInfoModel>(ImportDelegate);
-        }
-
-        private async void ImportDelegate(PackageExitDefinitionItemInfoModel obj) {
-            //导入
-            var openFileDialog = new Microsoft.Win32.OpenFileDialog() {
-                Title = "Please select the file to import.",
-                Filter = $"{Languages.Language.ResourceManager.GetString("Excel文件") ?? string.Empty}(xlsx)|*.xlsx",
-                DefaultExt = "xlsx",
-                InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
-            };
-            if (openFileDialog.ShowDialog() == true) {
-                var exportDialog = new ExportDialog();
-                if (exportDialog.DataContext is ExportDialogViewModel model) {
-                    model.FilePath = openFileDialog.FileName;
-                    model.Identifier = "MainDialog";
-                    model.Message = "Retrieving data...";
-                    DialogHost.Show(exportDialog, model.Identifier);
-
-                    var models = await _excel.ReadExcel<PackageExitDefinitionItemInfoModel>(openFileDialog.FileName, async p => {
-                        model.Progress = p;
-                        model.ProgressText = $"{p}%";
-                        if (p == 100) {
-                            await Application.Current.Dispatcher.InvokeAsync(() => {
-                                if (DialogHost.IsDialogOpen(model.Identifier)) {
-                                    DialogHost.Close(model.Identifier);
-                                }
-                            });
-                        }
-                    }, async e => {
-                        await Application.Current.Dispatcher.InvokeAsync(() => {
-                            if (DialogHost.IsDialogOpen(model.Identifier)) {
-                                DialogHost.Close(model.Identifier);
-                            }
-                        });
-                        PackageExitDefinitionMessageQueue?.Enqueue(e.Message);
-                    });
-                    await Task.Delay(500);
-                    if (models?.Any() == true) {
-                        //批量添加到数据库
-                        var configInfoModels = await _communicationConnectionConfigRepository.Select(s =>
-                            s.Id > 0, o => o.Id);
-
-                        var infoModels = models.Select(s => new PackageExitDefinitionInfoModel {
-                            CreateTime = DateTime.Now,
-                            ExitName = s.ExitName,
-                            IsActive = s.IsActive,
-                            ModifyTime = DateTime.Now,
-                            Remarks = s.Remarks,
-                            Type = s.Type,
-                            CommunicationConnectionId = configInfoModels.FirstOrDefault(f => f.ConnectionName.Equals(s.CommunicationConnectionName))?.Id ?? 0,
-                            CommunicationConnectionConfigInfo = configInfoModels.FirstOrDefault(f => f.ConnectionName.Equals(s.CommunicationConnectionName))
-                        }).Where(w => w.CommunicationConnectionConfigInfo != null).ToList();
-
-                        var insertOrUpdate = await _packageExitDefinitionRepository.InsertRange(infoModels);
-                        if (insertOrUpdate) {
-                            //如果存在Pid则更新Pid
-                            var itemInfoModels = models?.Where(w => !string.IsNullOrEmpty(w.MainExitName))?.ToList();
-                            if (itemInfoModels?.Any() == true) {
-                                var list = itemInfoModels.Select(s => s.MainExitName).ToList();
-                                var upDataList = itemInfoModels.Select(s => s.ExitName).ToList();
-                                //取出主Id
-                                var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => list.Contains(s.ExitName),
-                                    o => o.Id);
-                                var exitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => upDataList.Contains(s.ExitName),
-                                    o => o.Id);
-                                foreach (var packageExitDefinitionInfoModel in exitDefinitionInfoModels) {
-                                    var infoModel = itemInfoModels.FirstOrDefault(f =>
-                                        f.ExitName.Equals(packageExitDefinitionInfoModel.ExitName));
-                                    var definitionInfoModel = packageExitDefinitionInfoModels.FirstOrDefault(f =>
-                                        f.ExitName.Equals(infoModel?.MainExitName));
-                                    packageExitDefinitionInfoModel.Pid = definitionInfoModel?.Id ?? 0;
-                                }
-
-                                var updateRange = await _packageExitDefinitionRepository.UpdateRange(exitDefinitionInfoModels);
-                                if (!updateRange) {
-                                    PackageExitDefinitionMessageQueue.Enqueue("保存失败");
-                                    return;
-                                }
-                            }
-
-                            EventAggregator.Instance.Publish(infoModels.FirstOrDefault());
-                            PackageExitDefinitionMessageQueue.Enqueue("保存成功");
-                            //刷新列表
-                            RefreshData();
-                        }
-                        else {
-                            PackageExitDefinitionMessageQueue.Enqueue("保存失败");
-                        }
-                    }
-                }
-            }
-        }
+        protected override bool IsSelectAnyItem() => PackageExitDefinitionItems.Any(a => a.IsSelect);
     }
 }

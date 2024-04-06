@@ -29,7 +29,6 @@ using JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration.SortingMethodE
 using JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.SortingMethodEditors;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration.SortingMethodPages {
-
     public class ApiResponseSortingViewModel : BulkOperationsTemplateViewModel<ExcelApiSortingItemInfoModel> {
         private readonly IApiSortingRepository _apiSortingRepository;
         private readonly IApiRuleRepository _apiRuleRepository;
@@ -190,7 +189,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         ModifyTime = s1.ModifyTime,
                         Num = i1 + 1,
                         Remarks = s1.Remarks,
-                        JsonContent = s1.JsonContent
+                        JsonContent = s1.JsonContent,
+                        FormatJsonContent = FormatRule(s1.JsonContent)
                     }).ToList() ?? new List<ApiRuleItemInfoModel>()),
                 SortingRuleGroup = string.Join("\n",
                     s.ApiRuleItems?.Select(s2 => FormatRule(s2.JsonContent)) ?? Array.Empty<string>())
@@ -203,9 +203,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                 var apiRuleJsonDto = JsonConvert.DeserializeObject<ApiRuleJsonDto>(jsonContent);
                 if (apiRuleJsonDto is not null) {
                     var status = apiRuleJsonDto.ResponseStatus switch {
-                        UploadStatus.Failed => "上传失败",
+                        UploadStatus.Failed => "失败",
                         UploadStatus.NotUploaded => "未上传",
-                        UploadStatus.Succeeded => "上传成功",
+                        UploadStatus.Succeeded => "成功",
                         _ => "未知"
                     };
                     var content = string.Empty;

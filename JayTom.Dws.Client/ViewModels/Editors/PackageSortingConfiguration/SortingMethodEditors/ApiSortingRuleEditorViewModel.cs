@@ -5,15 +5,14 @@ using Prism.Commands;
 using Newtonsoft.Json;
 using System.Windows.Input;
 using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Data.Package;
 using MaterialDesignThemes.Wpf;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Models.PackageSorting;
 using JayTom.Dws.Client.Models.PackageSorting.Rule;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
-using JayTom.Dws.Data.Package;
 
-namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.SortingMethodEditors
-{
+namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.SortingMethodEditors {
     public class ApiSortingRuleEditorViewModel : BindableBase {
         private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
         private string _identifier = string.Empty;
@@ -183,6 +182,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
                         JsonContent = serializeObject,
                         ModifyTime = DateTime.Now,
                         Num = ApiRuleItems.Count + 1,
+                        FormatJsonContent = FormatRule(serializeObject)
                     });
                 }
             });
@@ -271,6 +271,33 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
                         packageExitDefinitionItemInfoModel ?? new PackageExitDefinitionItemInfoModel();
                 }
             });
+        }
+
+        public string FormatRule(string jsonContent) {
+            try {
+                var apiRuleJsonDto = JsonConvert.DeserializeObject<ApiRuleJsonDto>(jsonContent);
+                if (apiRuleJsonDto is not null) {
+                    var status = apiRuleJsonDto.ResponseStatus switch {
+                        UploadStatus.Failed => "失败",
+                        UploadStatus.NotUploaded => "未上传",
+                        UploadStatus.Succeeded => "成功",
+                        _ => "未知"
+                    };
+                    var content = string.Empty;
+                    if (!apiRuleJsonDto.IsUseStringComparison) return $"响应状态:{status} {content}";
+                    if (apiRuleJsonDto.IsUseStringSearch) {
+                        content += $"字符串查找:[{apiRuleJsonDto.SearchStringContent}]";
+                    }
+                    else if (apiRuleJsonDto.IsUseJsonField) {
+                        content += $"Json字段:[{apiRuleJsonDto.JsonField}]  值:[{apiRuleJsonDto.JsonFieldValue}]";
+                    }
+                    return $"响应状态:{status} {content}";
+                }
+            }
+            catch (Exception) {
+                return "解析错误";
+            }
+            return "解析错误";
         }
     }
 }

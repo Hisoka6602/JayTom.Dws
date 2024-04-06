@@ -5,6 +5,7 @@ namespace JayTom.Dws.Client.Models.PackageSorting.Rule {
     public class OcrRuleItemInfoModel : BasePackageSortingItemInfoModel {
         private long _ocrSortingId;
         private string _jsonContent = string.Empty;
+        private string _formatJsonContent = string.Empty;
 
         /// <summary>
         /// OcrId
@@ -20,6 +21,11 @@ namespace JayTom.Dws.Client.Models.PackageSorting.Rule {
         public string JsonContent {
             get => _jsonContent;
             set => SetProperty(ref _jsonContent, value);
+        }
+
+        public string FormatJsonContent {
+            get => _formatJsonContent;
+            set => SetProperty(ref _formatJsonContent, value);
         }
     }
 }

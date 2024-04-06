@@ -24,28 +24,20 @@ using JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.SortingMe
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration.SortingMethodPages {
 
-    public class WeightSortingViewModel : BindableBase {
+    public class WeightSortingViewModel : BulkOperationsTemplateViewModel<WeightSortingItemInfoModel> {
         private readonly IWeightSortingRepository _weightSortingRepository;
         private readonly IWeightRuleRepository _weightRuleRepository;
         private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
-        private readonly IExcel _excel;
-        private SnackbarMessageQueue _weightSortingMessageQueue = new(TimeSpan.FromSeconds(2));
         private bool _isLoaded;
         private ObservableCollection<WeightSortingItemInfoModel> _weightSortingItems = new();
 
         public WeightSortingViewModel(IWeightSortingRepository weightSortingRepository,
             IWeightRuleRepository weightRuleRepository,
             IPackageExitDefinitionRepository packageExitDefinitionRepository,
-            IExcel excel) {
+            IExcel excel) : base(excel) {
             _weightSortingRepository = weightSortingRepository;
             _weightRuleRepository = weightRuleRepository;
             _packageExitDefinitionRepository = packageExitDefinitionRepository;
-            _excel = excel;
-        }
-
-        public SnackbarMessageQueue WeightSortingMessageQueue {
-            get => _weightSortingMessageQueue;
-            set => SetProperty(ref _weightSortingMessageQueue, value);
         }
 
         public ObservableCollection<WeightSortingItemInfoModel> WeightSortingItems {
@@ -53,18 +45,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             set => SetProperty(ref _weightSortingItems, value);
         }
 
-        public ICommand AddCommand {
-            get => new DelegateCommand<object>(AddDelegate);
-        }
-
-        private async void AddDelegate(object obj) {
+        protected override async void AddDelegate(object obj) {
             await Application.Current.Dispatcher.InvokeAsync(async () => {
                 var weightSortingRuleEditor = new WeightSortingRuleEditor();
                 if (weightSortingRuleEditor.DataContext is WeightSortingRuleEditorViewModel model) {
-                    model.Identifier = "WeightSortingDialog";
+                    model.Identifier = Identifier;
                     await DialogHost.Show(weightSortingRuleEditor, model.Identifier);
                     if (!string.IsNullOrEmpty(model.ExceptionContent)) {
-                        WeightSortingMessageQueue.Enqueue(model.ExceptionContent);
+                        MessageQueue.Enqueue(model.ExceptionContent);
                         return;
                     }
                     if (model.IsOk) {
@@ -85,10 +73,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         var insert = await _weightSortingRepository.InsertDetailAsync(weightSortingInfoModel);
                         if (insert) {
                             EventAggregator.Instance.Publish(weightSortingInfoModel);
-                            WeightSortingMessageQueue.Enqueue("保存成功");
+                            MessageQueue.Enqueue("保存成功");
                         }
                         else {
-                            WeightSortingMessageQueue.Enqueue("保存失败");
+                            MessageQueue.Enqueue("保存失败");
                         }
                     }
                     RefreshData();
@@ -96,274 +84,177 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             });
         }
 
-        public ICommand LoadedCommand {
-            get => new DelegateCommand<object>(LoadedDelegate);
-        }
+        public override string Identifier => "SortingMethodDialog";
+        public override string ExcelTitle => "重量分拣列表";
+        public override string SheetName => "重量分拣列表";
 
-        private void LoadedDelegate(object obj) {
+        public override void LoadedDelegate(object obj) {
             if (!_isLoaded) {
                 _isLoaded = true;
                 RefreshData();
             }
         }
 
-        public ICommand ModifyCommand {
-            get => new DelegateCommand<WeightSortingItemInfoModel>(ModifyDelegate);
+        protected override async Task<bool> DeleteProcess(object obj) {
+            if (obj is WeightSortingItemInfoModel item) {
+                var weightSortingInfoModel = await _weightSortingRepository.
+                    FirstOrDefault(f => f.Id.Equals(item.Id));
+                if (weightSortingInfoModel is not null) {
+                    return await _weightSortingRepository.Delete(weightSortingInfoModel);
+                }
+            }
+
+            return false;
         }
 
-        private async void ModifyDelegate(WeightSortingItemInfoModel obj) {
-            await Application.Current.Dispatcher.InvokeAsync(async () => {
-                var weightSortingRuleEditor = new WeightSortingRuleEditor();
-                if (weightSortingRuleEditor.DataContext is WeightSortingRuleEditorViewModel model) {
-                    model.Identifier = "WeightSortingDialog";
-                    model.WeightSortingItemInfo = obj;
-                    model.WeightRuleItems = obj.WeightRuleItems;
-                    await DialogHost.Show(weightSortingRuleEditor, model.Identifier);
-                    if (!string.IsNullOrEmpty(model.ExceptionContent)) {
-                        WeightSortingMessageQueue.Enqueue(model.ExceptionContent);
+        protected override async void ModifyDelegate(object obj) {
+            if (obj is WeightSortingItemInfoModel item) {
+                await Application.Current.Dispatcher.InvokeAsync(async () => {
+                    var weightSortingRuleEditor = new WeightSortingRuleEditor();
+                    if (weightSortingRuleEditor.DataContext is WeightSortingRuleEditorViewModel model) {
+                        model.Identifier = Identifier;
+                        model.WeightSortingItemInfo = item;
+                        model.WeightRuleItems = item.WeightRuleItems;
+                        await DialogHost.Show(weightSortingRuleEditor, model.Identifier);
+                        if (!string.IsNullOrEmpty(model.ExceptionContent)) {
+                            MessageQueue.Enqueue(model.ExceptionContent);
+                            RefreshData();
+                            return;
+                        }
+                        if (model.IsOk) {
+                            //添加到数据库
+                            var weightSortingInfoModel = new WeightSortingInfoModel() {
+                                CreateTime = model.WeightSortingItemInfo.CreateTime,
+                                ExitId = model.SelectPackageExitDefinitionInfo.Id,
+                                ModifyTime = model.WeightSortingItemInfo.ModifyTime,
+                                Remarks = model.WeightSortingItemInfo.Remarks,
+                                SortingName = model.WeightSortingItemInfo.SortingName,
+                                Id = model.WeightSortingItemInfo.Id,
+                                WeightRuleItems = model.WeightRuleItems.Select(s => new WeightRuleInfoModel {
+                                    CreateTime = s.CreateTime,
+                                    Formula = s.Formula,
+                                    ModifyTime = s.ModifyTime,
+                                    Remarks = s.Remarks,
+                                    WeightSortingId = model.WeightSortingItemInfo.Id,
+                                })?.ToList()
+                            };
+                            var insert = await _weightSortingRepository.UpdateDetailAsync(weightSortingInfoModel);
+                            if (insert) {
+                                EventAggregator.Instance.Publish(weightSortingInfoModel);
+                                MessageQueue.Enqueue("保存成功");
+                            }
+                            else {
+                                MessageQueue.Enqueue("保存失败");
+                            }
+                        }
                         RefreshData();
-                        return;
                     }
-                    if (model.IsOk) {
-                        //添加到数据库
-                        var weightSortingInfoModel = new WeightSortingInfoModel() {
-                            CreateTime = model.WeightSortingItemInfo.CreateTime,
-                            ExitId = model.SelectPackageExitDefinitionInfo.Id,
-                            ModifyTime = model.WeightSortingItemInfo.ModifyTime,
-                            Remarks = model.WeightSortingItemInfo.Remarks,
-                            SortingName = model.WeightSortingItemInfo.SortingName,
-                            Id = model.WeightSortingItemInfo.Id,
-                            WeightRuleItems = model.WeightRuleItems.Select(s => new WeightRuleInfoModel {
-                                CreateTime = s.CreateTime,
-                                Formula = s.Formula,
-                                ModifyTime = s.ModifyTime,
-                                Remarks = s.Remarks,
-                                WeightSortingId = model.WeightSortingItemInfo.Id,
-                            })?.ToList()
-                        };
-                        var insert = await _weightSortingRepository.UpdateDetailAsync(weightSortingInfoModel);
-                        if (insert) {
-                            EventAggregator.Instance.Publish(weightSortingInfoModel);
-                            WeightSortingMessageQueue.Enqueue("保存成功");
-                        }
-                        else {
-                            WeightSortingMessageQueue.Enqueue("保存失败");
-                        }
-                    }
-                    RefreshData();
-                }
-            });
-        }
-
-        public ICommand DeleteCommand {
-            get => new DelegateCommand<WeightSortingItemInfoModel>(DeleteDelegate);
-        }
-
-        private async void DeleteDelegate(WeightSortingItemInfoModel obj) {
-            var weightSortingInfoModel = await _weightSortingRepository.
-                FirstOrDefault(f => f.Id.Equals(obj.Id));
-            if (weightSortingInfoModel is not null) {
-                var delete = await _weightSortingRepository.Delete(weightSortingInfoModel);
-                if (delete) {
-                    //刷新列表
-                    RefreshData();
-                }
+                });
             }
         }
 
-        private async void RefreshData() {
-            var loadingDialog = new LoadingDialog();
-            if (loadingDialog.DataContext is not LoadingDialogViewModel model) return;
-            await Application.Current.Dispatcher.InvokeAsync(() => {
-                model.Identifier = "WeightSortingDialog";
-                DialogHost.Show(loadingDialog, model.Identifier).ConfigureAwait(false);
-            });
+        protected override async Task ClearProcess() {
+            var weightSortingInfoModels = await _weightSortingRepository.Select(s => s.Id > 0,
+                o => o.Id);
+            await _weightSortingRepository.DeleteRange(weightSortingInfoModels);
+        }
+
+        protected override async Task RefreshDataProcess() {
+            await Task.Delay(300);
             var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0, o => o.CreateTime);
             var models = await _weightSortingRepository
                 .WeightSortingItems(s => s.Id > 0);
-
-            await Application.Current.Dispatcher.InvokeAsync(() => {
-                WeightSortingItems.Clear();
-                var infoModels = models?.Select((s, i) => new WeightSortingItemInfoModel() {
-                    CreateTime = s.CreateTime,
-                    Id = s.Id,
-                    ModifyTime = s.ModifyTime,
-                    Num = i + 1,
-                    Remarks = s.Remarks,
-                    ExitId = s.ExitId,
-                    SortingName = s.SortingName,
-                    ExitName = packageExitDefinitionInfoModels?.FirstOrDefault(f => f.Id.Equals(s.ExitId))?.ExitName ?? string.Empty,
-                    WeightRuleItems = new ObservableCollection<WeightRuleItemInfoModel>(s.WeightRuleItems?.Select((s1, i1) => new WeightRuleItemInfoModel() {
-                        CreateTime = s1.CreateTime,
-                        Id = s1.Id,
-                        WeightSortingId = s1.WeightSortingId,
-                        ModifyTime = s1.ModifyTime,
-                        Num = i1 + 1,
-                        Remarks = s1.Remarks,
-                        Formula = s1.Formula
-                    }).ToList() ?? new List<WeightRuleItemInfoModel>()),
-                    SortingRuleGroup = string.Join("\n", s.WeightRuleItems?.Select(s2 => s2.Formula) ?? Array.Empty<string>())
-                })?.ToList();
-                WeightSortingItems.AddRange(infoModels);
-                if (DialogHost.IsDialogOpen(model.Identifier)) {
-                    DialogHost.Close(model.Identifier);
-                }
-            });
+            WeightSortingItems.Clear();
+            var infoModels = models?.Select((s, i) => new WeightSortingItemInfoModel() {
+                CreateTime = s.CreateTime,
+                Id = s.Id,
+                ModifyTime = s.ModifyTime,
+                Num = i + 1,
+                Remarks = s.Remarks,
+                ExitId = s.ExitId,
+                SortingName = s.SortingName,
+                ExitName = packageExitDefinitionInfoModels?.FirstOrDefault(f => f.Id.Equals(s.ExitId))?.ExitName ?? string.Empty,
+                WeightRuleItems = new ObservableCollection<WeightRuleItemInfoModel>(s.WeightRuleItems?.Select((s1, i1) => new WeightRuleItemInfoModel() {
+                    CreateTime = s1.CreateTime,
+                    Id = s1.Id,
+                    WeightSortingId = s1.WeightSortingId,
+                    ModifyTime = s1.ModifyTime,
+                    Num = i1 + 1,
+                    Remarks = s1.Remarks,
+                    Formula = s1.Formula
+                }).ToList() ?? new List<WeightRuleItemInfoModel>()),
+                SortingRuleGroup = string.Join("\n", s.WeightRuleItems?.Select(s2 => s2.Formula) ?? Array.Empty<string>())
+            })?.ToList();
+            WeightSortingItems.AddRange(infoModels);
         }
 
-        /// <summary>
-        /// 导出
-        /// </summary>
-        public ICommand ExportCommand {
-            get => new DelegateCommand<object>(ExportDelegate);
+        protected override bool IsSelectAnyItem() => WeightSortingItems.Any(a => a.IsSelect);
+
+        protected override async Task BulkDeleteProcess() {
+            var selectIds = WeightSortingItems.Where(w => w.IsSelect)
+                .Select(s => s.Id)
+                .ToList();
+            var weightSortingInfoModels = await _weightSortingRepository.Select(s => selectIds.Contains(s.Id),
+                o => o.Id);
+
+            await _weightSortingRepository.DeleteRange(weightSortingInfoModels);
         }
 
-        private async void ExportDelegate(object obj) {
-            //导出
-            if (WeightSortingItems?.Any() != true) {
-                WeightSortingMessageQueue?.Enqueue(Languages.Language.ResourceManager.GetString("列表中没有数据") ?? string.Empty);
-                return;
-            }
-
-            //导出
-
-            var saveFileDialog = new Microsoft.Win32.SaveFileDialog() {
-                Title = "Please select the location to save the file.",
-                Filter = $"{Languages.Language.ResourceManager.GetString("Excel文件") ?? string.Empty}(xlsx)|*.xlsx",
-                DefaultExt = "xlsx",
-                InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
-            };
-            if (saveFileDialog.ShowDialog() == true) {
-                var exportDialog = new ExportDialog();
-                if (exportDialog.DataContext is ExportDialogViewModel model) {
-                    model.FilePath = saveFileDialog.FileName;
-                    model.Identifier = "MainDialog";
-                    model.Message = "Retrieving data...";
-                    DialogHost.Show(exportDialog, model.Identifier);
-                    var result = WeightSortingItems
-                        ?.SelectMany(s => s.SortingRuleGroup.Split("\n")
-                            .Select(item => new WeightSortingItemInfoModel {
-                                CreateTime = s.CreateTime,
-                                ExitId = s.ExitId,
-                                ModifyTime = s.ModifyTime,
-                                Remarks = s.Remarks,
-                                ExitName = s.ExitName,
-                                SortingName = s.SortingName,
-                                Num = s.Num,
-                                Id = s.Id,
-                                SortingRuleGroup = item,
-                            }))
-                        ?.ToList();
-                    var export = await _excel.Export(saveFileDialog.FileName,
-                        $"重量分拣列表",
-                        "重量分拣列表", result ?? new List<WeightSortingItemInfoModel>(),
-                        new List<string>(), async p => {
-                            model.Progress = p;
-                            model.ProgressText = $"{p}%";
-                            if (p == 100) {
-                                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                                    if (DialogHost.IsDialogOpen(model.Identifier)) {
-                                        DialogHost.Close(model.Identifier);
-                                    }
-                                });
-                            }
-                        }, e => {
-                            WeightSortingMessageQueue?.Enqueue(e.Message);
-                        });
-                    if (!export) {
-                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                            if (DialogHost.IsDialogOpen(model.Identifier)) {
-                                DialogHost.Close(model.Identifier);
-                            }
-                        });
-                    }
-                }
-            }
+        protected override List<WeightSortingItemInfoModel> ExportProcess() {
+            return WeightSortingItems
+                ?.SelectMany(s => s.SortingRuleGroup.Split("\n")
+                    .Select(item => new WeightSortingItemInfoModel {
+                        CreateTime = s.CreateTime,
+                        ExitId = s.ExitId,
+                        ModifyTime = s.ModifyTime,
+                        Remarks = s.Remarks,
+                        ExitName = s.ExitName,
+                        SortingName = s.SortingName,
+                        Num = s.Num,
+                        Id = s.Id,
+                        SortingRuleGroup = item,
+                    }))
+                ?.ToList() ?? new List<WeightSortingItemInfoModel>();
         }
 
-        public ICommand ImportCommand {
-            get => new DelegateCommand<object>(ImportDelegate);
-        }
-
-        private async void ImportDelegate(object obj) {
-            //导入
-            var openFileDialog = new Microsoft.Win32.OpenFileDialog() {
-                Title = "Please select the file to import.",
-                Filter = $"{Languages.Language.ResourceManager.GetString("Excel文件") ?? string.Empty}(xlsx)|*.xlsx",
-                DefaultExt = "xlsx",
-                InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
-            };
-            if (openFileDialog.ShowDialog() == true) {
-                var exportDialog = new ExportDialog();
-                if (exportDialog.DataContext is ExportDialogViewModel model) {
-                    model.FilePath = openFileDialog.FileName;
-                    model.Identifier = "MainDialog";
-                    model.Message = "Retrieving data...";
-                    DialogHost.Show(exportDialog, model.Identifier);
-
-                    var models = await _excel.ReadExcel<WeightSortingItemInfoModel>(openFileDialog.FileName, async p => {
-                        model.Progress = p;
-                        model.ProgressText = $"{p}%";
-                        if (p == 100) {
-                            await Application.Current.Dispatcher.InvokeAsync(() => {
-                                if (DialogHost.IsDialogOpen(model.Identifier)) {
-                                    DialogHost.Close(model.Identifier);
-                                }
-                            });
-                        }
-                    }, async e => {
-                        await Application.Current.Dispatcher.InvokeAsync(() => {
-                            if (DialogHost.IsDialogOpen(model.Identifier)) {
-                                DialogHost.Close(model.Identifier);
-                            }
-                        });
-                        WeightSortingMessageQueue?.Enqueue(e.Message);
-                    });
-                    await Task.Delay(500);
-                    if (models?.Any() == true) {
-                        var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0,
-                            o => o.CreateTime);
-                        var dateTime = DateTime.Now;
-                        var weightSortingInfoModels = models
-                            .Select(s => new WeightSortingInfoModel() {
+        protected override async Task<bool> ImportProcess(List<WeightSortingItemInfoModel> items) {
+            if (items?.Any() == true) {
+                var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0,
+                    o => o.CreateTime);
+                var dateTime = DateTime.Now;
+                var weightSortingInfoModels = items
+                    .Select(s => new WeightSortingInfoModel() {
+                        CreateTime = dateTime,
+                        ExitId = packageExitDefinitionInfoModels.FirstOrDefault(f => f.ExitName.Equals(s.ExitName))?.Id ?? 0,
+                        ModifyTime = dateTime,
+                        SortingName = s.SortingName,
+                        Remarks = s.Remarks,
+                        WeightRuleItems = new List<WeightRuleInfoModel>
+                        {
+                            new()
+                            {
                                 CreateTime = dateTime,
-                                ExitId = packageExitDefinitionInfoModels.FirstOrDefault(f => f.ExitName.Equals(s.ExitName))?.Id ?? 0,
                                 ModifyTime = dateTime,
-                                SortingName = s.SortingName,
-                                Remarks = s.Remarks,
-                                WeightRuleItems = new List<WeightRuleInfoModel>
-                                {
-                                    new()
-                                    {
-                                        CreateTime = dateTime,
-                                        ModifyTime = dateTime,
-                                        Formula = s.SortingRuleGroup
-                                    }
-                                }
-                            })
-                            .GroupBy(s => s.SortingName)
-                            .Select(group => new WeightSortingInfoModel {
-                                CreateTime = group.First().CreateTime,
-                                ExitId = group.First().ExitId,
-                                SortingName = group.Key,
-                                ModifyTime = group.First().ModifyTime,
-                                Remarks = group.First().Remarks,
-                                WeightRuleItems = group.SelectMany(item => item.WeightRuleItems).ToList()
-                            })
-                            .ToList();
+                                Formula = s.SortingRuleGroup
+                            }
+                        }
+                    })
+                    .GroupBy(s => s.SortingName)
+                    .Select(group => new WeightSortingInfoModel {
+                        CreateTime = group.First().CreateTime,
+                        ExitId = group.First().ExitId,
+                        SortingName = group.Key,
+                        ModifyTime = group.First().ModifyTime,
+                        Remarks = group.First().Remarks,
+                        WeightRuleItems = group.SelectMany(item => item.WeightRuleItems).ToList()
+                    })
+                    .ToList();
 
-                        //批量添加
-                        var range = await _weightSortingRepository.InsertRangeDetailAsync(weightSortingInfoModels);
-                        if (range) {
-                            WeightSortingMessageQueue.Enqueue("保存成功");
-                            RefreshData();
-                        }
-                        else {
-                            WeightSortingMessageQueue.Enqueue("保存失败");
-                        }
-                    }
-                }
+                //批量添加
+                return await _weightSortingRepository.InsertRangeDetailAsync(weightSortingInfoModels);
             }
+
+            return false;
         }
     }
 }
