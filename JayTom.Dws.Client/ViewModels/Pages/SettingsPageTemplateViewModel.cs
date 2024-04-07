@@ -71,8 +71,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             }
         }
 
-        protected virtual Task<bool> SaveSettingsProcess() {
-            return Task.FromResult(false);
-        }
+        protected abstract Task<bool> SaveSettingsProcess();
     }
 }

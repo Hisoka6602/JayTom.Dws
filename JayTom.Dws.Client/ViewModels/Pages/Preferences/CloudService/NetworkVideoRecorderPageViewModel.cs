@@ -161,29 +161,22 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService {
                     base.MessageQueue.Enqueue($"{e.Message}");
                 }
 
-                var vnrClientSettingsDto = await _configRepository.FirstOrDefaultEntity<NvrClientSettingsDto>(SettingsName);
-                if (vnrClientSettingsDto is not null) {
-                    NvrClientSettingsInfo = new NvrClientSettingsModel() {
-                        Ip = vnrClientSettingsDto.Ip,
-                        Port = vnrClientSettingsDto.Port,
-                        IsUseBarcodeWatermark = vnrClientSettingsDto.IsUseBarcodeWatermark,
-                        MaxWatermarkTime = vnrClientSettingsDto.MaxWatermarkTime,
-                        Password = vnrClientSettingsDto.Password,
-                        Username = vnrClientSettingsDto.Username
-                    };
-                }
-                else {
-                    base.MessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("加载设置失败") ?? string.Empty}");
-                }
+                var vnrClientSettingsDto = await _configRepository.FirstOrDefaultEntity<NvrClientSettingsDto>(SettingsName) ?? new NvrClientSettingsDto();
+                NvrClientSettingsInfo = new NvrClientSettingsModel() {
+                    Ip = vnrClientSettingsDto.Ip,
+                    Port = vnrClientSettingsDto.Port,
+                    IsUseBarcodeWatermark = vnrClientSettingsDto.IsUseBarcodeWatermark,
+                    MaxWatermarkTime = vnrClientSettingsDto.MaxWatermarkTime,
+                    Password = vnrClientSettingsDto.Password,
+                    Username = vnrClientSettingsDto.Username
+                };
             }
         }
 
         /// <summary>
         /// 通道选择
         /// </summary>
-        public ICommand ChannelSelectionChangedCommand {
-            get => new DelegateCommand<SelectionChangedEventArgs>(ChannelSelectionChangedDelegate);
-        }
+        public ICommand ChannelSelectionChangedCommand => new DelegateCommand<SelectionChangedEventArgs>(ChannelSelectionChangedDelegate);
 
         private async void ChannelSelectionChangedDelegate(SelectionChangedEventArgs obj) {
             try {
@@ -201,9 +194,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService {
             }
         }
 
-        public ICommand PlayCommand {
-            get => new DelegateCommand<SelectionChangedEventArgs>(PlayDelegate);
-        }
+        public ICommand PlayCommand => new DelegateCommand<SelectionChangedEventArgs>(PlayDelegate);
 
         private async void PlayDelegate(SelectionChangedEventArgs obj) {
             //播放
@@ -234,9 +225,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService {
         /// 登录事件
         /// </summary>
 
-        public ICommand LogInCommand {
-            get => new DelegateCommand<object>(LogInDelegate);
-        }
+        public ICommand LogInCommand => new DelegateCommand<object>(LogInDelegate);
 
         private void LogInDelegate(object obj) {
             if (!IsLogInProgress) {

@@ -115,29 +115,22 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService {
         public override async void LoadedDelegate(object obj) {
             if (!_isLoaded) {
                 _isLoaded = true;
-                var cloudVideoSettingsDto = await _configRepository.FirstOrDefaultEntity<CloudVideoSettingsDto>(SettingsName);
-                if (cloudVideoSettingsDto is not null) {
-                    CloudVideoSettings = new CloudVideoSettingsModel() {
-                        Concurrency = cloudVideoSettingsDto.Concurrency,
-                        IsAutoUploadUnsyncedData = cloudVideoSettingsDto.IsAutoUploadUnsyncedData,
-                        IsUseCloudVideoUpload = cloudVideoSettingsDto.IsUseCloudVideoUpload,
-                        LoginName = cloudVideoSettingsDto.LoginName,
-                        NodeName = cloudVideoSettingsDto.NodeName,
-                        RequestTimeout = cloudVideoSettingsDto.RequestTimeout,
-                        RetryAttempts = cloudVideoSettingsDto.RetryAttempts,
-                        WebDoMain = cloudVideoSettingsDto.WebDoMain,
-                        UploadIntervalInSeconds = cloudVideoSettingsDto.UploadIntervalInSeconds
-                    };
-                }
-                else {
-                    base.MessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("加载设置失败") ?? string.Empty}");
-                }
+                var cloudVideoSettingsDto = await _configRepository.FirstOrDefaultEntity<CloudVideoSettingsDto>(SettingsName) ?? new CloudVideoSettingsDto();
+                CloudVideoSettings = new CloudVideoSettingsModel() {
+                    Concurrency = cloudVideoSettingsDto.Concurrency,
+                    IsAutoUploadUnsyncedData = cloudVideoSettingsDto.IsAutoUploadUnsyncedData,
+                    IsUseCloudVideoUpload = cloudVideoSettingsDto.IsUseCloudVideoUpload,
+                    LoginName = cloudVideoSettingsDto.LoginName,
+                    NodeName = cloudVideoSettingsDto.NodeName,
+                    RequestTimeout = cloudVideoSettingsDto.RequestTimeout,
+                    RetryAttempts = cloudVideoSettingsDto.RetryAttempts,
+                    WebDoMain = cloudVideoSettingsDto.WebDoMain,
+                    UploadIntervalInSeconds = cloudVideoSettingsDto.UploadIntervalInSeconds
+                };
             }
         }
 
-        public ICommand ClearLogCommand {
-            get => new DelegateCommand<object>(ClearLogDelegate);
-        }
+        public ICommand ClearLogCommand => new DelegateCommand<object>(ClearLogDelegate);
 
         private async void ClearLogDelegate(object obj) {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {

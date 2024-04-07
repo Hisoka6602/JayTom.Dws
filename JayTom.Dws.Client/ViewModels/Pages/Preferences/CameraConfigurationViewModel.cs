@@ -10,6 +10,7 @@ using System.Windows.Threading;
 using System.Collections.ObjectModel;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
+
     public class CameraConfigurationViewModel : BindableBase {
         private readonly IRegionManager _regionManager;
         private static bool _isLoaded;
@@ -81,8 +82,21 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     IconCode = "\xe867",
                     IconSize = 25
                 },
-                Description ="Usb相机和算法设置",
+                Description ="Usb相机设置",
                 PageClassName = "UsbCameraSettingsPage",
+                ClickCommand = ClickCommand,
+            },
+            new MenuItemInfoModel()
+            {
+                Title = "算法配置",
+                IconFont = new IconInfoModel()
+                {
+                    IconFont = "pack://application:,,,/Fonts/#iconfont",
+                    IconCode = "\xe97c",
+                    IconSize = 25
+                },
+                Description ="扫码算法配置",
+                PageClassName = "AlgorithmSettingsPage",
                 ClickCommand = ClickCommand,
             },
         };

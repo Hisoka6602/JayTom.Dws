@@ -171,6 +171,8 @@ namespace JayTom.Dws.Client {
                 containerRegistry.RegisterForNavigation<PanoramaCameraConfigPage>();
                 containerRegistry.RegisterForNavigation<VolumeCameraConfigPage>();
                 containerRegistry.RegisterForNavigation<UsbCameraSettingsPage>();
+                containerRegistry.RegisterForNavigation<AlgorithmSettingsPage>();
+
                 //分拣设置
                 containerRegistry.RegisterForNavigation<LogisticsCodeRecognitionPage>();
                 containerRegistry.RegisterForNavigation<PackageExitDefinitionPage>();
@@ -519,6 +521,7 @@ namespace JayTom.Dws.Client {
             ViewModelLocationProvider.Register<VolumeCameraConfigPage, VolumeCameraConfigViewModel>();
             ViewModelLocationProvider.Register<CameraFinderPage, CameraFinderViewModel>();
             ViewModelLocationProvider.Register<UsbCameraSettingsPage, UsbCameraSettingsViewModel>();
+            ViewModelLocationProvider.Register<AlgorithmSettingsPage, AlgorithmSettingsViewModel>();
 
             ViewModelLocationProvider.Register<APISettingsPage, ApiSettingsPageViewModel>();
             ViewModelLocationProvider.Register<SaveImageSettingsPage, SaveImageSettingsPageViewModel>();
