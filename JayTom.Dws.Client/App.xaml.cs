@@ -389,7 +389,7 @@ namespace JayTom.Dws.Client {
                 NotifyExistingInstance();
                 Environment.Exit(0);
             }
-            ThreadPool.SetMinThreads(500, 500);
+            ThreadPool.SetMinThreads(300, 300);
 
             this.DispatcherUnhandledException += delegate (object sender, DispatcherUnhandledExceptionEventArgs args) {
                 //异常触发
@@ -602,7 +602,8 @@ namespace JayTom.Dws.Client {
             }
         }
 
-        protected override void OnInitialized() {
+        protected override async void OnInitialized() {
+            await Task.Yield();
             base.OnInitialized();
             // 获取 IServiceProvider
             var serviceProvider = Container.Resolve<IServiceProvider>();
@@ -610,13 +611,14 @@ namespace JayTom.Dws.Client {
             // 启动 PackageAggregationService
             var hostedServices = serviceProvider.GetServices<IHostedService>();
 
+            /*
             Parallel.ForEach(hostedServices, async service => {
                 await service.StartAsync(default);
-            });
+            });*/
 
-            /*foreach (var service in hostedServices) {
+            foreach (var service in hostedServices) {
                 await service.StartAsync(default);
-            }*/
+            }
         }
     }
 }
