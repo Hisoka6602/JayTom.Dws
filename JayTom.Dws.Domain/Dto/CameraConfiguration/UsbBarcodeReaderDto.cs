@@ -7,8 +7,7 @@ using System.Collections.Generic;
 namespace JayTom.Dws.Domain.Dto.CameraConfiguration {
 
     public class UsbBarcodeReaderDto {
-
-        /// <summary>
+        /*/// <summary>
         /// 是否使用OrCode码
         /// </summary>
         public bool IsUseOrCode { get; set; }
@@ -51,7 +50,7 @@ namespace JayTom.Dws.Domain.Dto.CameraConfiguration {
         /// <summary>
         /// 是否使用
         /// </summary>
-        public bool IsUseEan8 { get; set; }
+        public bool IsUseEan8 { get; set; }*/
 
         /// <summary>
         /// 本地化模式
@@ -122,5 +121,64 @@ namespace JayTom.Dws.Domain.Dto.CameraConfiguration {
         /// 图片缩放百分比
         /// </summary>
         public int ScalePercentage { get; set; }
+
+        /// <summary>
+        /// 条码类型
+        /// </summary>
+        public BarcodeType BarcodeType { get; set; } = BarcodeType.Code39;
+    }
+
+    [Flags]
+    public enum BarcodeType {
+
+        /// <summary>
+        /// 未知类型的条码。
+        /// </summary>
+        None = 0,
+
+        /// <summary>
+        /// QR Code 条码。
+        /// </summary>
+        QRCode = 1 << 0,
+
+        /// <summary>
+        /// 微型 QR Code 条码。
+        /// </summary>
+        MicroQR = 1 << 1,
+
+        /// <summary>
+        /// Code 39 条码。
+        /// </summary>
+        Code39 = 1 << 2,
+
+        /// <summary>
+        /// Code 93 条码。
+        /// </summary>
+        Code93 = 1 << 3,
+
+        /// <summary>
+        /// Code 128 条码。
+        /// </summary>
+        Code128 = 1 << 4,
+
+        /// <summary>
+        /// CodeBar 条码。
+        /// </summary>
+        CodeBar = 1 << 5,
+
+        /// <summary>
+        /// Interleaved 2 of 5 (ITF) 条码。
+        /// </summary>
+        ITF = 1 << 6,
+
+        /// <summary>
+        /// EAN-13 条码。
+        /// </summary>
+        EAN13 = 1 << 7,
+
+        /// <summary>
+        /// EAN-8 条码。
+        /// </summary>
+        EAN8 = 1 << 8
     }
 }

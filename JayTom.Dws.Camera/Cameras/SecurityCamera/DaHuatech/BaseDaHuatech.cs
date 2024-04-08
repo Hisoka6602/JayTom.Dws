@@ -143,7 +143,6 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                     NETClient.SetSnapRevCallBack(_mSnapRevCallBack, IntPtr.Zero);
                 }
             }
-
             return _instance;
         }
 

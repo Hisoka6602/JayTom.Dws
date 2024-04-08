@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Linq;
 using System.Text;
+using Newtonsoft.Json;
 using System.Threading.Tasks;
+using JayTom.Dws.Data.LocalConf;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Models.Cameras;
@@ -41,15 +43,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
             var usbBarcodeReaderDto = await _configRepository.FirstOrDefaultEntity<UsbBarcodeReaderDto>(SettingsName) ??
                                       new UsbBarcodeReaderDto();
             BarcodeReaderSettingsInfo = new BarcodeReaderSettingsInfoModel() {
-                IsUseOrCode = usbBarcodeReaderDto.IsUseOrCode,
-                IsUseMicroQr = usbBarcodeReaderDto.IsUseMicroQr,
-                IsUseCode39 = usbBarcodeReaderDto.IsUseCode39,
-                IsUseCode93 = usbBarcodeReaderDto.IsUseCode93,
-                IsUseCode128 = usbBarcodeReaderDto.IsUseCode128,
-                IsUseCodeBar = usbBarcodeReaderDto.IsUseCodeBar,
-                IsUseItf = usbBarcodeReaderDto.IsUseItf,
-                IsUseEan13 = usbBarcodeReaderDto.IsUseEan13,
-                IsUseEan8 = usbBarcodeReaderDto.IsUseEan8,
                 LocalizationMode = usbBarcodeReaderDto.LocalizationMode,
                 DeblurLevel = usbBarcodeReaderDto.DeblurLevel,
                 ExpectedBarcodesCount = usbBarcodeReaderDto.ExpectedBarcodesCount,
@@ -64,15 +57,56 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                 RecognitionMode = usbBarcodeReaderDto.RecognitionMode,
                 RecognitionSkipFrames = usbBarcodeReaderDto.RecognitionSkipFrames,
                 ScalePercentage = usbBarcodeReaderDto.ScalePercentage,
+                BarcodeType = usbBarcodeReaderDto.BarcodeType,
             };
-
-            base.LoadedDelegate(obj);
+            var includedEnums = Enum.GetValues(typeof(BarcodeType))
+                .Cast<BarcodeType>()
+                .Where(e => usbBarcodeReaderDto.BarcodeType.HasFlag(e))
+                .ToList();
+            foreach (var infoModel in includedEnums.Select(methodsEnum => BarcodeReaderSettingsInfo.BarcodeTypeItems.FirstOrDefault(f =>
+                         f.EnumValue.Equals(methodsEnum))).OfType<BarcodeTypeItemInfoModel>()) {
+                infoModel.IsChecked = true;
+            }
         }
 
         protected override async Task<bool> SaveSettingsProcess() {
-            return false;
+            BarcodeReaderSettingsInfo.BarcodeType = BarcodeType.None;
+            foreach (var item in BarcodeReaderSettingsInfo.BarcodeTypeItems.Where(w => w.IsChecked).ToList()) {
+                BarcodeReaderSettingsInfo.BarcodeType |= item.EnumValue;
+            }
+            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
+                ConfigName = SettingsName,
+                Value = JsonConvert.SerializeObject(new UsbBarcodeReaderDto {
+                    /*IsUseOrCode = BarcodeReaderSettingsInfo.IsUseOrCode,
+                    IsUseMicroQr = BarcodeReaderSettingsInfo.IsUseMicroQr,
+                    IsUseCode39 = BarcodeReaderSettingsInfo.IsUseCode39,
+                    IsUseCode93 = BarcodeReaderSettingsInfo.IsUseCode93,
+                    IsUseCode128 = BarcodeReaderSettingsInfo.IsUseCode128,
+                    IsUseCodeBar = BarcodeReaderSettingsInfo.IsUseCodeBar,
+                    IsUseItf = BarcodeReaderSettingsInfo.IsUseItf,
+                    IsUseEan13 = BarcodeReaderSettingsInfo.IsUseEan13,
+                    IsUseEan8 = BarcodeReaderSettingsInfo.IsUseEan8,*/
+                    LocalizationMode = BarcodeReaderSettingsInfo.LocalizationMode,
+                    DeblurLevel = BarcodeReaderSettingsInfo.DeblurLevel,
+                    ExpectedBarcodesCount = BarcodeReaderSettingsInfo.ExpectedBarcodesCount,
+                    ScaleDownThreshold = BarcodeReaderSettingsInfo.ScaleDownThreshold,
+                    IsUseTextFilterMode = BarcodeReaderSettingsInfo.IsUseTextFilterMode,
+                    IsUseRegionPredetectionMode = BarcodeReaderSettingsInfo.IsUseRegionPredetectionMode,
+                    GrayscaleTransformationMode = BarcodeReaderSettingsInfo.GrayscaleTransformationMode,
+                    ImagePreprocessingMode = BarcodeReaderSettingsInfo.ImagePreprocessingMode,
+                    MinResultConfidence = BarcodeReaderSettingsInfo.MinResultConfidence,
+                    TextureDetectionSensitivity = BarcodeReaderSettingsInfo.TextureDetectionSensitivity,
+                    BinarizationBlockSize = BarcodeReaderSettingsInfo.BinarizationBlockSize,
+                    RecognitionMode = BarcodeReaderSettingsInfo.RecognitionMode,
+                    RecognitionSkipFrames = BarcodeReaderSettingsInfo.RecognitionSkipFrames,
+                    ScalePercentage = BarcodeReaderSettingsInfo.ScalePercentage,
+                    BarcodeType = BarcodeReaderSettingsInfo.BarcodeType
+                })
+            });
+            base.MessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
+                Languages.Language.ResourceManager.GetString("SaveFailed"))}");
+            base.MessageQueue.Enqueue("请重启程序");
+            return insertOrUpdate;
         }
-
-        //BarcodeReaderSettingsInfoModel
     }
 }

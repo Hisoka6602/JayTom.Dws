@@ -403,8 +403,8 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.UsbCamera {
                 var thumbnailData = thumbnail.LockBits(new Rectangle(0, 0, thumbnailWidth, thumbnailHeight), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
 
                 try {
-                    byte* sourcePtr = (byte*)sourceData.Scan0;
-                    byte* thumbnailPtr = (byte*)thumbnailData.Scan0;
+                    var sourcePtr = (byte*)sourceData.Scan0;
+                    var thumbnailPtr = (byte*)thumbnailData.Scan0;
 
                     var sourceBytesPerPixel = 4;
                     var thumbnailBytesPerPixel = 4;
@@ -415,8 +415,8 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.UsbCamera {
                     var sourceWidth = sourceImage.Width;
                     var sourceHeight = sourceImage.Height;
 
-                    for (int y = 0; y < thumbnailHeight; y++) {
-                        for (int x = 0; x < thumbnailWidth; x++) {
+                    for (var y = 0; y < thumbnailHeight; y++) {
+                        for (var x = 0; x < thumbnailWidth; x++) {
                             var sourceX = (int)(x / scaleX);
                             var sourceY = (int)(y / scaleY);
 

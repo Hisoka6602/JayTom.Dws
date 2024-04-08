@@ -17,6 +17,11 @@
     FontFamily="{StaticResource CustomFontFamily}"
     Template="{StaticResource SettingsPageTemplate}"
     mc:Ignorable="d">
+    <b:Interaction.Triggers>
+        <b:EventTrigger EventName="Loaded" SourceName="{Binding Name, RelativeSource={RelativeSource AncestorType={x:Type Page}}}">
+            <b:InvokeCommandAction Command="{Binding LoadedCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Page}}}" />
+        </b:EventTrigger>
+    </b:Interaction.Triggers>
     <!--  算法配置页面  -->
     <Grid>
         <StackPanel Orientation="Vertical">
@@ -36,241 +41,33 @@
                             FontSize="14"
                             FontWeight="Bold"
                             Foreground="DarkGray"
-                            Header="条码类型">
-                            <!--  ORCode(二维码)  -->
-                            <TreeViewItem Margin="-40,0,0,0" Background="Transparent">
-                                <TreeViewItem.Header>
-                                    <StackPanel Orientation="Horizontal">
-                                        <Border
-                                            HorizontalAlignment="Center"
-                                            VerticalAlignment="Center"
-                                            Background="#1A696969"
-                                            CornerRadius="5">
-                                            <CheckBox
-                                                BorderBrush="DodgerBlue"
-                                                BorderThickness="2"
-                                                IsChecked="{Binding BarcodeReaderSettingsInfo.IsUseOrCode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                                Style="{StaticResource CustomCheckBoxStyle}" />
-                                        </Border>
+                            Header="条码类型"
+                            ItemsSource="{Binding BarcodeReaderSettingsInfo.BarcodeTypeItems}">
+                            <TreeViewItem.Resources>
+                                <Style BasedOn="{StaticResource MaterialDesignTreeViewItem}" TargetType="TreeViewItem">
+                                    <Setter Property="materialDesign:TreeViewAssist.ExpanderSize" Value="32" />
+                                    <Setter Property="materialDesign:TreeViewAssist.ShowSelection" Value="False" />
+                                </Style>
+                            </TreeViewItem.Resources>
+                            <TreeViewItem.ItemTemplate>
+                                <HierarchicalDataTemplate>
+                                    <StackPanel Margin="0,0" Orientation="Horizontal">
                                         <TextBlock
                                             Margin="5,0"
                                             VerticalAlignment="Center"
-                                            FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
-                                            FontSize="14"
+                                            FontSize="13"
                                             FontWeight="Bold"
                                             Foreground="DarkGray"
-                                            Text="ORCode(二维码)" />
+                                            Text="{Binding DisplayName}" />
+                                        <CheckBox
+                                            BorderBrush="DodgerBlue"
+                                            BorderThickness="2"
+                                            Focusable="False"
+                                            IsChecked="{Binding IsChecked, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                            Style="{StaticResource CustomCheckBoxStyle}" />
                                     </StackPanel>
-                                </TreeViewItem.Header>
-                            </TreeViewItem>
-                            <!--  MicroQR(二维码)  -->
-                            <TreeViewItem Margin="-40,0,0,0" Background="Transparent">
-                                <TreeViewItem.Header>
-                                    <StackPanel Orientation="Horizontal">
-                                        <Border
-                                            HorizontalAlignment="Center"
-                                            VerticalAlignment="Center"
-                                            Background="#1A696969"
-                                            CornerRadius="5">
-                                            <CheckBox
-                                                BorderBrush="DodgerBlue"
-                                                BorderThickness="2"
-                                                IsChecked="{Binding BarcodeReaderSettingsInfo.IsUseMicroQr, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                                Style="{StaticResource CustomCheckBoxStyle}" />
-                                        </Border>
-                                        <TextBlock
-                                            Margin="5,0"
-                                            VerticalAlignment="Center"
-                                            FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
-                                            FontSize="14"
-                                            FontWeight="Bold"
-                                            Foreground="DarkGray"
-                                            Text="MicroQR(二维码)" />
-                                    </StackPanel>
-                                </TreeViewItem.Header>
-                            </TreeViewItem>
-                            <!--  Code39(一维码)  -->
-                            <TreeViewItem Margin="-40,0,0,0" Background="Transparent">
-                                <TreeViewItem.Header>
-                                    <StackPanel Orientation="Horizontal">
-                                        <Border
-                                            HorizontalAlignment="Center"
-                                            VerticalAlignment="Center"
-                                            Background="#1A696969"
-                                            CornerRadius="5">
-                                            <CheckBox
-                                                BorderBrush="DodgerBlue"
-                                                BorderThickness="2"
-                                                IsChecked="{Binding BarcodeReaderSettingsInfo.IsUseCode39, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                                Style="{StaticResource CustomCheckBoxStyle}" />
-                                        </Border>
-                                        <TextBlock
-                                            Margin="5,0"
-                                            VerticalAlignment="Center"
-                                            FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
-                                            FontSize="14"
-                                            FontWeight="Bold"
-                                            Foreground="DarkGray"
-                                            Text="Code39(一维码)" />
-                                    </StackPanel>
-                                </TreeViewItem.Header>
-                            </TreeViewItem>
-                            <!--  Code93(一维码)  -->
-                            <TreeViewItem Margin="-40,0,0,0" Background="Transparent">
-                                <TreeViewItem.Header>
-                                    <StackPanel Orientation="Horizontal">
-                                        <Border
-                                            HorizontalAlignment="Center"
-                                            VerticalAlignment="Center"
-                                            Background="#1A696969"
-                                            CornerRadius="5">
-                                            <CheckBox
-                                                BorderBrush="DodgerBlue"
-                                                BorderThickness="2"
-                                                IsChecked="{Binding BarcodeReaderSettingsInfo.IsUseCode93, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                                Style="{StaticResource CustomCheckBoxStyle}" />
-                                        </Border>
-                                        <TextBlock
-                                            Margin="5,0"
-                                            VerticalAlignment="Center"
-                                            FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
-                                            FontSize="14"
-                                            FontWeight="Bold"
-                                            Foreground="DarkGray"
-                                            Text="Code93(一维码)" />
-                                    </StackPanel>
-                                </TreeViewItem.Header>
-                            </TreeViewItem>
-                            <!--  Code128(一维码)  -->
-                            <TreeViewItem Margin="-40,0,0,0" Background="Transparent">
-                                <TreeViewItem.Header>
-                                    <StackPanel Orientation="Horizontal">
-                                        <Border
-                                            HorizontalAlignment="Center"
-                                            VerticalAlignment="Center"
-                                            Background="#1A696969"
-                                            CornerRadius="5">
-                                            <CheckBox
-                                                BorderBrush="DodgerBlue"
-                                                BorderThickness="2"
-                                                IsChecked="{Binding BarcodeReaderSettingsInfo.IsUseCode128, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                                Style="{StaticResource CustomCheckBoxStyle}" />
-                                        </Border>
-                                        <TextBlock
-                                            Margin="5,0"
-                                            VerticalAlignment="Center"
-                                            FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
-                                            FontSize="14"
-                                            FontWeight="Bold"
-                                            Foreground="DarkGray"
-                                            Text="Code128(一维码)" />
-                                    </StackPanel>
-                                </TreeViewItem.Header>
-                            </TreeViewItem>
-                            <!--  CodeBar(一维码)  -->
-                            <TreeViewItem Margin="-40,0,0,0" Background="Transparent">
-                                <TreeViewItem.Header>
-                                    <StackPanel Orientation="Horizontal">
-                                        <Border
-                                            HorizontalAlignment="Center"
-                                            VerticalAlignment="Center"
-                                            Background="#1A696969"
-                                            CornerRadius="5">
-                                            <CheckBox
-                                                BorderBrush="DodgerBlue"
-                                                BorderThickness="2"
-                                                IsChecked="{Binding BarcodeReaderSettingsInfo.IsUseCodeBar, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                                Style="{StaticResource CustomCheckBoxStyle}" />
-                                        </Border>
-                                        <TextBlock
-                                            Margin="5,0"
-                                            VerticalAlignment="Center"
-                                            FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
-                                            FontSize="14"
-                                            FontWeight="Bold"
-                                            Foreground="DarkGray"
-                                            Text="CodeBar(一维码)" />
-                                    </StackPanel>
-                                </TreeViewItem.Header>
-                            </TreeViewItem>
-                            <!--  ITF(一维码)  -->
-                            <TreeViewItem Margin="-40,0,0,0" Background="Transparent">
-                                <TreeViewItem.Header>
-                                    <StackPanel Orientation="Horizontal">
-                                        <Border
-                                            HorizontalAlignment="Center"
-                                            VerticalAlignment="Center"
-                                            Background="#1A696969"
-                                            CornerRadius="5">
-                                            <CheckBox
-                                                BorderBrush="DodgerBlue"
-                                                BorderThickness="2"
-                                                IsChecked="{Binding BarcodeReaderSettingsInfo.IsUseItf, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                                Style="{StaticResource CustomCheckBoxStyle}" />
-                                        </Border>
-                                        <TextBlock
-                                            Margin="5,0"
-                                            VerticalAlignment="Center"
-                                            FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
-                                            FontSize="14"
-                                            FontWeight="Bold"
-                                            Foreground="DarkGray"
-                                            Text="ITF(一维码)" />
-                                    </StackPanel>
-                                </TreeViewItem.Header>
-                            </TreeViewItem>
-                            <!--  Ean13(一维码)  -->
-                            <TreeViewItem Margin="-40,0,0,0" Background="Transparent">
-                                <TreeViewItem.Header>
-                                    <StackPanel Orientation="Horizontal">
-                                        <Border
-                                            HorizontalAlignment="Center"
-                                            VerticalAlignment="Center"
-                                            Background="#1A696969"
-                                            CornerRadius="5">
-                                            <CheckBox
-                                                BorderBrush="DodgerBlue"
-                                                BorderThickness="2"
-                                                IsChecked="{Binding BarcodeReaderSettingsInfo.IsUseEan13, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                                Style="{StaticResource CustomCheckBoxStyle}" />
-                                        </Border>
-                                        <TextBlock
-                                            Margin="5,0"
-                                            VerticalAlignment="Center"
-                                            FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
-                                            FontSize="14"
-                                            FontWeight="Bold"
-                                            Foreground="DarkGray"
-                                            Text="Ean13(一维码)" />
-                                    </StackPanel>
-                                </TreeViewItem.Header>
-                            </TreeViewItem>
-                            <!--  Ean8(一维码)  -->
-                            <TreeViewItem Margin="-40,0,0,0" Background="Transparent">
-                                <TreeViewItem.Header>
-                                    <StackPanel Orientation="Horizontal">
-                                        <Border
-                                            HorizontalAlignment="Center"
-                                            VerticalAlignment="Center"
-                                            Background="#1A696969"
-                                            CornerRadius="5">
-                                            <CheckBox
-                                                BorderBrush="DodgerBlue"
-                                                BorderThickness="2"
-                                                IsChecked="{Binding BarcodeReaderSettingsInfo.IsUseEan8, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                                Style="{StaticResource CustomCheckBoxStyle}" />
-                                        </Border>
-                                        <TextBlock
-                                            Margin="5,0"
-                                            VerticalAlignment="Center"
-                                            FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
-                                            FontSize="14"
-                                            FontWeight="Bold"
-                                            Foreground="DarkGray"
-                                            Text="Ean8(一维码)" />
-                                    </StackPanel>
-                                </TreeViewItem.Header>
-                            </TreeViewItem>
+                                </HierarchicalDataTemplate>
+                            </TreeViewItem.ItemTemplate>
                         </TreeViewItem>
                     </TreeView>
                 </StackPanel>

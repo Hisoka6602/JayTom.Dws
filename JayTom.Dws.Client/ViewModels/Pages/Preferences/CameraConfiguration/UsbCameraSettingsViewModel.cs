@@ -45,7 +45,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
         private readonly IDeviceService _deviceService;
         private readonly IUsbCameraConfigRepository _usbCameraConfigRepository;
 
-        private BarcodeReaderSettingsInfoModel _barcodeReaderSettingsInfo = new();
         private UsbCameraSettingsInfoModel _usbCameraSettingsInfo = new();
         private ObservableCollection<int> _deblurLevelItems = new(Enumerable.Range(0, 10).ToList());
         private ObservableCollection<int> _textureDetectionSensitivityItems = new(Enumerable.Range(0, 10).ToList());
@@ -65,6 +64,55 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
             IConfigRepository configRepository) : base(configRepository) {
             _deviceService = deviceService;
             _usbCameraConfigRepository = usbCameraConfigRepository;
+
+            EventAggregator.Instance.Subscribe<SettingsChangedEvent>(item => {
+                if (item is SettingsChangedEvent { SettingsName: "AlgorithmSettings" } model) {
+                    Task.Run(async () => {
+                        var usbBarcodeReaderDto = await _configRepository.FirstOrDefaultEntity<UsbBarcodeReaderDto>(SettingsName) ??
+                                                  new UsbBarcodeReaderDto();
+
+                        var barcodeMapping = new Dictionary<BarcodeType, EnumBarcodeFormat>
+                        {
+                            { BarcodeType.QRCode, EnumBarcodeFormat.BF_QR_CODE },
+                            { BarcodeType.MicroQR, EnumBarcodeFormat.BF_MICRO_QR },
+                            { BarcodeType.Code128, EnumBarcodeFormat.BF_CODE_128 },
+                            { BarcodeType.Code39, EnumBarcodeFormat.BF_CODE_39 },
+                            { BarcodeType.Code93, EnumBarcodeFormat.BF_CODE_93 },
+                            { BarcodeType.CodeBar, EnumBarcodeFormat.BF_CODABAR },
+                            { BarcodeType.EAN13, EnumBarcodeFormat.BF_EAN_13 },
+                            { BarcodeType.EAN8, EnumBarcodeFormat.BF_EAN_8 },
+                        };
+                        var barcodeFormat = barcodeMapping.Where(kvp => (usbBarcodeReaderDto.BarcodeType & kvp.Key) == kvp.Key).Aggregate<KeyValuePair<BarcodeType, EnumBarcodeFormat>, EnumBarcodeFormat>(0, (current, kvp) => current | kvp.Value);
+
+                        var dictionary = new Dictionary<BarcodeReaderParameter, object>()
+                        {
+                    { BarcodeReaderParameter.EnumBarcodeFormat,barcodeFormat },
+                    { BarcodeReaderParameter.RecognitionMode,(ScanMode)usbBarcodeReaderDto.RecognitionMode },
+                    { BarcodeReaderParameter.TextureDetectionSensitivity,usbBarcodeReaderDto.TextureDetectionSensitivity },
+                    { BarcodeReaderParameter.BinarizationBlockSize,usbBarcodeReaderDto.BinarizationBlockSize },
+                    { BarcodeReaderParameter.ExpectedBarcodesCount,usbBarcodeReaderDto.ExpectedBarcodesCount },
+                    { BarcodeReaderParameter.DeblurLevel,usbBarcodeReaderDto.DeblurLevel },
+                    { BarcodeReaderParameter.LocalizationMode,usbBarcodeReaderDto.LocalizationMode },
+                    { BarcodeReaderParameter.IsUseTextFilterMode,usbBarcodeReaderDto.IsUseTextFilterMode },
+                    { BarcodeReaderParameter.IsUseRegionPredetectionMode,usbBarcodeReaderDto.IsUseRegionPredetectionMode },
+                    { BarcodeReaderParameter.ScaleDownThreshold,usbBarcodeReaderDto.ScaleDownThreshold },
+                    { BarcodeReaderParameter.GrayscaleTransformationMode,usbBarcodeReaderDto.GrayscaleTransformationMode },
+                    { BarcodeReaderParameter.ImagePreprocessingMode,usbBarcodeReaderDto.ImagePreprocessingMode },
+                    { BarcodeReaderParameter.MinResultConfidence,usbBarcodeReaderDto.MinResultConfidence },
+                    { BarcodeReaderParameter.RecognitionSkipFrames,usbBarcodeReaderDto.RecognitionSkipFrames },
+                    { BarcodeReaderParameter.ScalePercentage,usbBarcodeReaderDto.ScalePercentage },
+                };
+                        if (_usbBarCodeReader is not null) {
+                            var (key, value) = await _usbBarCodeReader.SetBarcodeReaderParameter(dictionary);
+                            if (!key) {
+                                await Application.Current.Dispatcher.InvokeAsync(() => {
+                                    base.MessageQueue.Enqueue(value);
+                                });
+                            }
+                        }
+                    });
+                }
+            });
         }
 
         public WriteableBitmap? Image {
@@ -76,11 +124,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
         /// 图片队列
         /// </summary>
         public ConcurrentQueue<Bitmap> BitmapQueue { get; init; } = new();
-
-        public BarcodeReaderSettingsInfoModel BarcodeReaderSettingsInfo {
-            get => _barcodeReaderSettingsInfo;
-            set => SetProperty(ref _barcodeReaderSettingsInfo, value);
-        }
 
         public UsbCameraSettingsInfoModel UsbCameraSettingsInfo {
             get => _usbCameraSettingsInfo;
@@ -160,41 +203,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                 ResolutionHeight = CameraResolution.Size.Height,
                 ResolutionWidth = CameraResolution.Size.Width,
             });
-
-            //保存算法参数
-            //UsbBarcodeReaderDto
-            var orUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
-                ConfigName = SettingsName,
-                Value = JsonConvert.SerializeObject(new UsbBarcodeReaderDto {
-                    IsUseOrCode = BarcodeReaderSettingsInfo.IsUseOrCode,
-                    IsUseMicroQr = BarcodeReaderSettingsInfo.IsUseMicroQr,
-                    IsUseCode39 = BarcodeReaderSettingsInfo.IsUseCode39,
-                    IsUseCode93 = BarcodeReaderSettingsInfo.IsUseCode93,
-                    IsUseCode128 = BarcodeReaderSettingsInfo.IsUseCode128,
-                    IsUseCodeBar = BarcodeReaderSettingsInfo.IsUseCodeBar,
-                    IsUseItf = BarcodeReaderSettingsInfo.IsUseItf,
-                    IsUseEan13 = BarcodeReaderSettingsInfo.IsUseEan13,
-                    IsUseEan8 = BarcodeReaderSettingsInfo.IsUseEan8,
-                    LocalizationMode = BarcodeReaderSettingsInfo.LocalizationMode,
-                    DeblurLevel = BarcodeReaderSettingsInfo.DeblurLevel,
-                    ExpectedBarcodesCount = BarcodeReaderSettingsInfo.ExpectedBarcodesCount,
-                    ScaleDownThreshold = BarcodeReaderSettingsInfo.ScaleDownThreshold,
-                    IsUseTextFilterMode = BarcodeReaderSettingsInfo.IsUseTextFilterMode,
-                    IsUseRegionPredetectionMode = BarcodeReaderSettingsInfo.IsUseRegionPredetectionMode,
-                    GrayscaleTransformationMode = BarcodeReaderSettingsInfo.GrayscaleTransformationMode,
-                    ImagePreprocessingMode = BarcodeReaderSettingsInfo.ImagePreprocessingMode,
-                    MinResultConfidence = BarcodeReaderSettingsInfo.MinResultConfidence,
-                    TextureDetectionSensitivity = BarcodeReaderSettingsInfo.TextureDetectionSensitivity,
-                    BinarizationBlockSize = BarcodeReaderSettingsInfo.BinarizationBlockSize,
-                    RecognitionMode = BarcodeReaderSettingsInfo.RecognitionMode,
-                    RecognitionSkipFrames = BarcodeReaderSettingsInfo.RecognitionSkipFrames,
-                    ScalePercentage = BarcodeReaderSettingsInfo.ScalePercentage,
-                })
-            });
             base.MessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
                 Languages.Language.ResourceManager.GetString("SaveFailed"))}");
             base.MessageQueue.Enqueue("请重启程序");
-            return insertOrUpdate && orUpdate;
+            return insertOrUpdate;
         }
 
         public override async void LoadedDelegate(object obj) {
@@ -219,40 +231,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                         Debug.WriteLine($"{e}");
                     }
                 }, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
-                //加载设置
-                var usbBarcodeReaderDto = await _configRepository.FirstOrDefaultEntity<UsbBarcodeReaderDto>(SettingsName) ??
-                                          new UsbBarcodeReaderDto();
-                BarcodeReaderSettingsInfo = new BarcodeReaderSettingsInfoModel() {
-                    IsUseOrCode = usbBarcodeReaderDto.IsUseOrCode,
-                    IsUseMicroQr = usbBarcodeReaderDto.IsUseMicroQr,
-                    IsUseCode39 = usbBarcodeReaderDto.IsUseCode39,
-                    IsUseCode93 = usbBarcodeReaderDto.IsUseCode93,
-                    IsUseCode128 = usbBarcodeReaderDto.IsUseCode128,
-                    IsUseCodeBar = usbBarcodeReaderDto.IsUseCodeBar,
-                    IsUseItf = usbBarcodeReaderDto.IsUseItf,
-                    IsUseEan13 = usbBarcodeReaderDto.IsUseEan13,
-                    IsUseEan8 = usbBarcodeReaderDto.IsUseEan8,
-                    LocalizationMode = usbBarcodeReaderDto.LocalizationMode,
-                    DeblurLevel = usbBarcodeReaderDto.DeblurLevel,
-                    ExpectedBarcodesCount = usbBarcodeReaderDto.ExpectedBarcodesCount,
-                    ScaleDownThreshold = usbBarcodeReaderDto.ScaleDownThreshold,
-                    IsUseTextFilterMode = usbBarcodeReaderDto.IsUseTextFilterMode,
-                    IsUseRegionPredetectionMode = usbBarcodeReaderDto.IsUseRegionPredetectionMode,
-                    GrayscaleTransformationMode = usbBarcodeReaderDto.GrayscaleTransformationMode,
-                    ImagePreprocessingMode = usbBarcodeReaderDto.ImagePreprocessingMode,
-                    MinResultConfidence = usbBarcodeReaderDto.MinResultConfidence,
-                    TextureDetectionSensitivity = usbBarcodeReaderDto.TextureDetectionSensitivity,
-                    BinarizationBlockSize = usbBarcodeReaderDto.BinarizationBlockSize,
-                    RecognitionMode = usbBarcodeReaderDto.RecognitionMode,
-                    RecognitionSkipFrames = usbBarcodeReaderDto.RecognitionSkipFrames,
-                    ScalePercentage = usbBarcodeReaderDto.ScalePercentage,
-                };
             }
         }
 
-        public ICommand CameraUpdateCommand {
-            get => new DelegateCommand<object>(CameraUpdateDelegate);
-        }
+        public ICommand CameraUpdateCommand => new DelegateCommand<object>(CameraUpdateDelegate);
 
         private void CameraUpdateDelegate(object obj) {
             if (_deviceService.RunningStatus) {
@@ -293,71 +275,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
             //定义接收图片事件
 
             //读码设置每个设置被改变时都需要重置设置，并使用改变后的设置(需要一个Command)
-        }
-
-        public ICommand UpdateBarcodeReaderCommand => new DelegateCommand<object>(UpdateBarcodeReaderCommandDelegate);
-
-        private void UpdateBarcodeReaderCommandDelegate(object obj) {
-            //设置读码参数
-            if (_deviceService.RunningStatus) {
-                base.MessageQueue.Enqueue("请先停止识别再调试摄像头!");
-                return;
-            }
-
-            Task.Run(async () => {
-                EnumBarcodeFormat barcodeFormat = 0;
-                if (BarcodeReaderSettingsInfo.IsUseOrCode) {
-                    barcodeFormat |= EnumBarcodeFormat.BF_QR_CODE;
-                }
-                if (BarcodeReaderSettingsInfo.IsUseMicroQr) {
-                    barcodeFormat |= EnumBarcodeFormat.BF_MICRO_QR;
-                }
-                if (BarcodeReaderSettingsInfo.IsUseCode128) {
-                    barcodeFormat |= EnumBarcodeFormat.BF_CODE_128;
-                }
-                if (BarcodeReaderSettingsInfo.IsUseCode39) {
-                    barcodeFormat |= EnumBarcodeFormat.BF_CODE_39;
-                }
-                if (BarcodeReaderSettingsInfo.IsUseCode93) {
-                    barcodeFormat |= EnumBarcodeFormat.BF_CODE_93;
-                }
-                if (BarcodeReaderSettingsInfo.IsUseCodeBar) {
-                    barcodeFormat |= EnumBarcodeFormat.BF_CODABAR;
-                }
-                if (BarcodeReaderSettingsInfo.IsUseEan13) {
-                    barcodeFormat |= EnumBarcodeFormat.BF_EAN_13;
-                }
-                if (BarcodeReaderSettingsInfo.IsUseEan13) {
-                    barcodeFormat |= EnumBarcodeFormat.BF_EAN_8;
-                }
-
-                var dictionary = new Dictionary<BarcodeReaderParameter, object>()
-                {
-                    { BarcodeReaderParameter.EnumBarcodeFormat,barcodeFormat },
-                    { BarcodeReaderParameter.RecognitionMode,(ScanMode)BarcodeReaderSettingsInfo.RecognitionMode },
-                    { BarcodeReaderParameter.TextureDetectionSensitivity,BarcodeReaderSettingsInfo.TextureDetectionSensitivity },
-                    { BarcodeReaderParameter.BinarizationBlockSize,BarcodeReaderSettingsInfo.BinarizationBlockSize },
-                    { BarcodeReaderParameter.ExpectedBarcodesCount,BarcodeReaderSettingsInfo.ExpectedBarcodesCount },
-                    { BarcodeReaderParameter.DeblurLevel,BarcodeReaderSettingsInfo.DeblurLevel },
-                    { BarcodeReaderParameter.LocalizationMode,BarcodeReaderSettingsInfo.LocalizationMode },
-                    { BarcodeReaderParameter.IsUseTextFilterMode,BarcodeReaderSettingsInfo.IsUseTextFilterMode },
-                    { BarcodeReaderParameter.IsUseRegionPredetectionMode,BarcodeReaderSettingsInfo.IsUseRegionPredetectionMode },
-                    { BarcodeReaderParameter.ScaleDownThreshold,BarcodeReaderSettingsInfo.ScaleDownThreshold },
-                    { BarcodeReaderParameter.GrayscaleTransformationMode,BarcodeReaderSettingsInfo.GrayscaleTransformationMode },
-                    { BarcodeReaderParameter.ImagePreprocessingMode,BarcodeReaderSettingsInfo.ImagePreprocessingMode },
-                    { BarcodeReaderParameter.MinResultConfidence,BarcodeReaderSettingsInfo.MinResultConfidence },
-                    { BarcodeReaderParameter.RecognitionSkipFrames,BarcodeReaderSettingsInfo.RecognitionSkipFrames },
-                    { BarcodeReaderParameter.ScalePercentage,BarcodeReaderSettingsInfo.ScalePercentage },
-                };
-                if (_usbBarCodeReader is not null) {
-                    var (key, value) = await _usbBarCodeReader.SetBarcodeReaderParameter(dictionary);
-                    if (!key) {
-                        await Application.Current.Dispatcher.InvokeAsync(() => {
-                            base.MessageQueue.Enqueue(value);
-                        });
-                    }
-                }
-            });
         }
 
         /// <summary>
@@ -457,7 +374,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
             await Task.Delay(500);
             _usbBarCodeReader = null;
             BitmapQueue.Clear();
-            if (CameraResolution.Size is { Width: > 0, Height: > 0 }) {
+
+            if (CameraResolution?.Size is { Width: > 0, Height: > 0 }) {
                 _usbBarCodeReader = new UsbBarCodeReader();
 
                 _usbBarCodeReader.BarcodeScanned += delegate (object? sender, BarcodeScannedEventArgs args) {
@@ -503,7 +421,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                         });
 
                         UpdateCameraParametersDelegate(this);
-                        UpdateBarcodeReaderCommandDelegate(this);
                     }
                 }
             }
@@ -512,9 +429,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
         /// <summary>
         /// 修改相机参数
         /// </summary>
-        public ICommand UpdateCameraParametersCommand {
-            get => new DelegateCommand<object>(UpdateCameraParametersDelegate);
-        }
+        public ICommand UpdateCameraParametersCommand => new DelegateCommand<object>(UpdateCameraParametersDelegate);
 
         private async void UpdateCameraParametersDelegate(object obj) {
             //实时设置相机参数

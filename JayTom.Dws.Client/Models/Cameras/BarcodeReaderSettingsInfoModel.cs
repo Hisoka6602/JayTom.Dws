@@ -2,13 +2,17 @@
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
+using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using JayTom.Dws.Client.Models.PackageSorting;
+using JayTom.Dws.Domain.Dto.CameraConfiguration;
 
 namespace JayTom.Dws.Client.Models.Cameras {
 
     public class BarcodeReaderSettingsInfoModel : BindableBase {
-        private bool _isUseOrCode = true;
+        /*private bool _isUseOrCode = true;
         private bool _isUseMicroQr = true;
         private bool _isUseCode39 = true;
         private bool _isUseCode93 = true;
@@ -16,7 +20,7 @@ namespace JayTom.Dws.Client.Models.Cameras {
         private bool _isUseCodeBar = true;
         private bool _isUseItf = false;
         private bool _isUseEan13 = false;
-        private bool _isUseEan8 = false;
+        private bool _isUseEan8 = false;*/
         private int _localizationMode;
         private int _deblurLevel;
         private int _expectedBarcodesCount;
@@ -32,7 +36,22 @@ namespace JayTom.Dws.Client.Models.Cameras {
         private int _recognitionSkipFrames;
         private int _scalePercentage = 6;
 
-        /// <summary>
+        private ObservableCollection<BarcodeTypeItemInfoModel> _barcodeTypeItems = new()
+        {
+            new BarcodeTypeItemInfoModel(){DisplayName ="二维码",EnumValue = BarcodeType.QRCode},
+            new BarcodeTypeItemInfoModel(){DisplayName ="微型二维码",EnumValue = BarcodeType.MicroQR},
+            new BarcodeTypeItemInfoModel(){DisplayName ="Code 39",EnumValue = BarcodeType.Code39},
+            new BarcodeTypeItemInfoModel(){DisplayName ="Code 93",EnumValue = BarcodeType.Code93},
+            new BarcodeTypeItemInfoModel(){DisplayName ="Code 128",EnumValue = BarcodeType.Code128},
+            new BarcodeTypeItemInfoModel(){DisplayName ="CodeBar",EnumValue = BarcodeType.CodeBar},
+            new BarcodeTypeItemInfoModel(){DisplayName ="ITF",EnumValue = BarcodeType.ITF},
+            new BarcodeTypeItemInfoModel(){DisplayName ="EAN13",EnumValue = BarcodeType.EAN13},
+            new BarcodeTypeItemInfoModel(){DisplayName ="EAN8",EnumValue = BarcodeType.EAN8},
+        };
+
+        private BarcodeType _barcodeType = BarcodeType.None;
+
+        /*/// <summary>
         /// 是否使用OrCode码
         /// </summary>
         public bool IsUseOrCode {
@@ -103,6 +122,7 @@ namespace JayTom.Dws.Client.Models.Cameras {
             get => _isUseEan8;
             set => SetProperty(ref _isUseEan8, value);
         }
+        */
 
         /// <summary>
         /// 本地化模式
@@ -215,5 +235,27 @@ namespace JayTom.Dws.Client.Models.Cameras {
             get => _scalePercentage;
             set => SetProperty(ref _scalePercentage, value);
         }
+
+        /// <summary>
+        /// 条码类型
+        /// </summary>
+        public BarcodeType BarcodeType {
+            get => _barcodeType;
+            set => SetProperty(ref _barcodeType, value);
+        }
+
+        /// <summary>
+        /// 条码类型列表
+        /// </summary>
+        public ObservableCollection<BarcodeTypeItemInfoModel> BarcodeTypeItems {
+            get => _barcodeTypeItems;
+            set => SetProperty(ref _barcodeTypeItems, value);
+        }
+    }
+
+    public class BarcodeTypeItemInfoModel {
+        public string DisplayName { get; set; } = string.Empty;
+        public BarcodeType EnumValue { get; set; }
+        public bool IsChecked { get; set; }
     }
 }
