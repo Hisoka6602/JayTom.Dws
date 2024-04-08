@@ -12,6 +12,7 @@ using System.Drawing.Drawing2D;
 using System.Collections.Generic;
 using Point = System.Drawing.Point;
 using System.Collections.Concurrent;
+using JayTom.Dws.Camera.BarCodeReader;
 using JayTom.Dws.Camera.FilterContainer;
 using static MVIDCodeReaderNet.MVIDCodeReader;
 

@@ -28,6 +28,7 @@ using Point = System.Drawing.Point;
 using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
 using MathNet.Numerics.Distributions;
+using JayTom.Dws.Camera.BarCodeReader;
 using JayTom.Dws.Client.Models.Cameras;
 using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Client.EventMediators;

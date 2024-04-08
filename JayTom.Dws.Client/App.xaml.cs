@@ -42,6 +42,7 @@ using JayTom.Dws.Client.Views.Dialog;
 using JayTom.Dws.Client.Views.Editors;
 using JayTom.Dws.Plugin.Tcp.TcpClient;
 using JayTom.Dws.Plugin.Tcp.TcpServer;
+using JayTom.Dws.Camera.BarCodeReader;
 using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Service.Sorting;
@@ -336,6 +337,8 @@ namespace JayTom.Dws.Client {
                 services.AddSingleton<ICamera, HikvisionSmartCamera>();
                 //Ocr
                 services.AddSingleton<IOcr, ExpressBillOcr>();
+                //读码器
+                //services.AddSingleton<IBarCodeReader, DynamsoftBarCodeReader>();
                 //磅秤
                 services.AddSingleton<IDynamicScale, DefaultDynamicScale>();
                 services.AddSingleton<IStaticScale, DefaultStaticScale>();
@@ -381,7 +384,6 @@ namespace JayTom.Dws.Client {
 
         protected override void OnStartup(StartupEventArgs e) {
             _singleInstanceMutex = new Mutex(true, "Dws.Client", out var createdNew);
-
             if (!createdNew) {
                 // 另一个实例已经在运行，尝试激活它的窗口
                 NotifyExistingInstance();
@@ -458,14 +460,13 @@ namespace JayTom.Dws.Client {
             var hostedServices = Container.GetContainer().GetServices<IHostedService>();
 
             Parallel.ForEach(hostedServices, service => {
-                service.StopAsync(default).Wait();
-                Debug.WriteLine(service.GetType().Name);
+                service.StopAsync(default);
             });
             /*foreach (var service in hostedServices) {
                 service.StopAsync(default).Wait();
             }*/
 
-            await Task.Delay(500);
+            await Task.Delay(1000);
 
             GC.Collect();
             base.OnExit(e);

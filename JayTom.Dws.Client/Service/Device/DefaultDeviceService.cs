@@ -14,6 +14,7 @@ using JayTom.Dws.Client.Models;
 using System.Collections.Generic;
 using System.Windows.Media.Media3D;
 using System.Collections.Concurrent;
+using JayTom.Dws.Camera.BarCodeReader;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Models.Cameras;
 using JayTom.Dws.Plugin.Scale.StaticScale;
