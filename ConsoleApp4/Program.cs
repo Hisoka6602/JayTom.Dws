@@ -9,7 +9,8 @@ internal class Program {
 
     private static void Main(string[] args) {
         //var totalMinutes = DateTime.Now.AddMinutes(20).Subtract(DateTime.Now).TotalMinutes;
-
+        var totalMilliseconds = DateTime.Now.Subtract(DateTime.Now.AddSeconds(-10)).TotalMilliseconds;
+        return;
         string hexString1 = "FC 12 00 25 00 00 01 36";
         string hexString2 = "F9 11 00 0A 00 02 01 18";
 

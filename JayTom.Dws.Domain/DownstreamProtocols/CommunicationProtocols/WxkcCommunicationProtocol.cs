@@ -92,8 +92,8 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
 
                     case 0x22:
                         /*type = FunctionType.None;*/
-                        type = FunctionType.RemovePackage;
-                        description = $"移除包裹";
+                        type = FunctionType.PackageException;
+                        description = $"分拣异常";
                         hexString = BitConverter.ToString(new[] { bytes[2], bytes[3] })
                             .Replace("-", string.Empty).Replace(" ", string.Empty);
                         if (int.TryParse(hexString, System.Globalization.NumberStyles.HexNumber, null, out number)) {

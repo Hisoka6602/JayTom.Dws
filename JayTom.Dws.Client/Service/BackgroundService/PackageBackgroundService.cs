@@ -29,6 +29,7 @@ using JayTom.Dws.Data.LocalConf.CameraConfig;
 using JayTom.Dws.Client.Service.ExternalDataService;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 using JayTom.Dws.Infrastructure.Repository.LocalConf.CameraConfig;
+using JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols;
 
 namespace JayTom.Dws.Client.Service.BackgroundService {
 
@@ -584,11 +585,14 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                         }
                                     }
                                 });
+                                //是否延迟包
+                                var isDelayPacket = IsDelayPacket(args.Instruction);
                                 EventAggregator.Instance.Publish(new CallBackPackageInfo {
                                     CallBackTime = DateTime.Now,
                                     PackageCreateTime = keyValuePair.Value.CreateTime,
                                     PackageInfo = keyValuePair.Value,
-                                    InstructionContent = args.Instruction
+                                    InstructionContent = args.Instruction,
+                                    ExitNum = isDelayPacket.Value
                                 });
                                 _packageInfos.TryRemove(keyValuePair);
                             }
@@ -601,7 +605,38 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
                 //其他协议
             };
-
+            //下位机(包裹异常)
+            _sortingService.PackageException += async (sender, args) => {
+                try {
+                    await _createPackageSlim.WaitAsync();
+                    var tryParse = int.TryParse(args.Keyword, out var num);
+                    if (tryParse) {
+                        var keyValuePair = _packageInfos.OrderBy(o => o.Key).FirstOrDefault(f => f.Value.Guid.Equals(num));
+                        if (keyValuePair.Value is not null) {
+                            EventAggregator.Instance.Publish(new InstructionReceived() {
+                                Timestamp = new DateTimeOffset(keyValuePair.Value.CreateTime).ToUnixTimeMilliseconds(),
+                                IsCreatedByLowerMachine = true,
+                                SortingCode = num.ToString(),
+                                InstructionInfos = new List<InstructionInfoModel>()
+                                {
+                                    new()
+                                    {
+                                        InstructionContent = args.Instruction,
+                                        InstructionGeneratedTime = DateTime.Now,
+                                        InstructionType = InstructionType.PackageException
+                                    }
+                                }
+                            });
+                            var (key, value) = GetExceptionStatus(keyValuePair.Value.BarCodeInfo?.Barcode ?? string.Empty, args.Instruction);
+                            keyValuePair.Value.PackageExceptionMsg = value;
+                            keyValuePair.Value.PackageExceptionStatus = key;
+                        }
+                    }
+                }
+                finally {
+                    _createPackageSlim.Release();
+                }
+            };
             //下位机(清空异常)
             _sortingService.ClearExceptionEvent += async delegate (object? sender, string o) {
                 try {
@@ -1157,6 +1192,45 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 await Task.Delay(10, stoppingToken);
             }
         }
+
+        //判断是否延迟包
+        private KeyValuePair<bool, int> IsDelayPacket(string instruction) {
+            var bytes = WxkcCommunicationProtocol.HexStringToByteArray(instruction);
+            if (bytes.Length > 5) {
+                var hexString = BitConverter.ToString(new[] { bytes[4], bytes[5] })
+                    .Replace("-", string.Empty).Replace(" ", string.Empty);
+                int.TryParse(hexString, System.Globalization.NumberStyles.HexNumber, null,
+                    out var outExitNum);
+                return new KeyValuePair<bool, int>(outExitNum is 999 or 998, outExitNum);
+            }
+
+            return new KeyValuePair<bool, int>(false, 0);
+        }
+
+        //判断包裹异常信息
+        private KeyValuePair<int, string> GetExceptionStatus(string barcode, string instructionContent) {
+            var hexStringToByteArray = WxkcCommunicationProtocol.HexStringToByteArray(instructionContent);
+            if (hexStringToByteArray.Length > 5) {
+                var hexString = BitConverter.ToString(new[] { hexStringToByteArray[4], hexStringToByteArray[5] })
+                    .Replace("-", string.Empty).Replace(" ", string.Empty);
+                int.TryParse(hexString, System.Globalization.NumberStyles.HexNumber, null,
+                    out var outExitNum);
+                switch (outExitNum) {
+                    case 999:
+                        //锁格
+                        return new KeyValuePair<int, string>(3, "目的格口锁格");
+
+                    case 998:
+                        //间隔太近
+                        return new KeyValuePair<int, string>(6, "包裹间隔太近");
+                }
+            }
+            if (string.IsNullOrEmpty(barcode) || barcode.Equals("noread")) {
+                return new KeyValuePair<int, string>(1, "无条码");
+            }
+
+            return new KeyValuePair<int, string>(0, "分拣成功");
+        }
     }
 
     public class PackageInfo {
@@ -1245,6 +1319,16 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         /// 包裹时间戳
         /// </summary>
         public long Timestamp { get; set; }
+
+        /// <summary>
+        /// 包裹异常信息
+        /// </summary>
+        public string PackageExceptionMsg { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 包裹异常状态
+        /// </summary>
+        public int PackageExceptionStatus { get; set; } = 0;
     }
 
     public class CameraImageInfo {
@@ -1444,6 +1528,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         /// 指令
         /// </summary>
         public string InstructionContent { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 格口
+        /// </summary>
+        public int ExitNum { get; set; }
     }
 
     public class BarCodeFrameInfo {

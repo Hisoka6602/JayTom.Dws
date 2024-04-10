@@ -65,6 +65,11 @@ namespace JayTom.Dws.Data.Package {
         DeviceOperation,
 
         /// <summary>
+        /// 包裹异常
+        /// </summary>
+        PackageException,
+
+        /// <summary>
         /// 其他
         /// </summary>
         Other

@@ -575,7 +575,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 var callBackDequeue = _callBackItems.TryDequeue(out var callBackModel);
                 if (callBackDequeue && callBackModel is not null) {
                     Task.Factory.StartNew(async () => {
-                        if (callBackModel.PackageInfo is { } packageInfo) {
+                        if (callBackModel.PackageInfo is { } packageInfo &&
+                            DateTime.Now.Subtract(callBackModel.CallBackTime).TotalMilliseconds >= 0) {
                             //获取返回的格口
 
                             var (l, sortingExitReceived) = _sortingExitItems.FirstOrDefault(f =>
@@ -591,8 +592,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                         return;
 
                                     case ApiType.CaiNiaoApi:
-                                        var (status, errorReson) = GetExceptionStatus(packageInfo.BarCodeInfo?.Barcode ?? string.Empty,
-                                            callBackModel.InstructionContent);
+
                                         uploader = new CaiNiaoApi(_httpClientFactory);
                                         var (key, value) = await uploader.SetParameters(_caiNiaoApiParam);
                                         if (key) {
@@ -602,10 +602,10 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                                     CameraName = packageInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
                                                     CameraSerialNumber = packageInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
                                                 }, other: new ReportChuteInfo {
-                                                    ChuteCode = sortingExitReceived.ExitName ?? string.Empty,
+                                                    ChuteCode = callBackModel.ExitNum.ToString(),
                                                     ChuteCodePhysical = sortingExitReceived.ExitName ?? string.Empty,
-                                                    ErrorReson = errorReson,
-                                                    Status = status,
+                                                    ErrorReson = packageInfo.PackageExceptionMsg,
+                                                    Status = packageInfo.PackageExceptionStatus,
                                                 }, token: stoppingToken);
                                         }
                                         else {
@@ -699,30 +699,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 }
                 await Task.Delay(10, stoppingToken);
             }
-        }
-
-        private KeyValuePair<int, string> GetExceptionStatus(string barcode, string instructionContent) {
-            var hexStringToByteArray = WxkcCommunicationProtocol.HexStringToByteArray(instructionContent);
-            if (hexStringToByteArray.Length > 5) {
-                var hexString = BitConverter.ToString(new[] { hexStringToByteArray[4], hexStringToByteArray[5] })
-                    .Replace("-", string.Empty).Replace(" ", string.Empty);
-                int.TryParse(hexString, System.Globalization.NumberStyles.HexNumber, null,
-                    out var outExitNum);
-                switch (outExitNum) {
-                    case 999:
-                        //锁格
-                        return new KeyValuePair<int, string>(3, "目的格口锁格");
-
-                    case 998:
-                        //间隔太近
-                        return new KeyValuePair<int, string>(6, "包裹间隔太近");
-                }
-            }
-            if (string.IsNullOrEmpty(barcode) || barcode.Equals("noread")) {
-                return new KeyValuePair<int, string>(1, "无条码");
-            }
-
-            return new KeyValuePair<int, string>(0, "分拣成功");
         }
 
         private async Task ReadDefaultConfig() {

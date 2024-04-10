@@ -106,6 +106,11 @@ namespace JayTom.Dws.Domain.DownstreamProtocols {
         RemovePackage,
 
         /// <summary>
+        /// 包裹异常
+        /// </summary>
+        PackageException,
+
+        /// <summary>
         /// 开始运行
         /// </summary>
         StartRunning,

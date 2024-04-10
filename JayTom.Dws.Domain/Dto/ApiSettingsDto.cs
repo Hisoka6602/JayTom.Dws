@@ -71,5 +71,10 @@ namespace JayTom.Dws.Domain.Dto {
         /// 菜鸟Api
         /// </summary>
         CaiNiaoApi = 11,
+
+        /// <summary>
+        /// 菜鸟Api
+        /// </summary>
+        EshippingitApi = 12,
     }
 }

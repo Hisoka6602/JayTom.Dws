@@ -45,6 +45,11 @@ namespace JayTom.Dws.Client.Service.Sorting {
         event EventHandler<PackageInstructionEventArgs> RemovePackageEvent;
 
         /// <summary>
+        /// 包裹异常
+        /// </summary>
+        event EventHandler<PackageInstructionEventArgs> PackageException;
+
+        /// <summary>
         /// 解除异常
         /// </summary>
         event EventHandler<string> ClearExceptionEvent;

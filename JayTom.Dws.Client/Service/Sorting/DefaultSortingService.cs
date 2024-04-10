@@ -101,6 +101,8 @@ namespace JayTom.Dws.Client.Service.Sorting {
 
         public event EventHandler<PackageInstructionEventArgs>? RemovePackageEvent;
 
+        public event EventHandler<PackageInstructionEventArgs>? PackageException;
+
         public event EventHandler<PackageInstructionEventArgs>? SendInstruction;
 
         public event EventHandler<string>? ClearExceptionEvent;
@@ -176,6 +178,14 @@ namespace JayTom.Dws.Client.Service.Sorting {
                 else if (result.Type == FunctionType.RemovePackage) {
                     //移除包裹
                     OnRemovePackageEvent(new PackageInstructionEventArgs() {
+                        Keyword = result.Keyword,
+                        Instruction = result.RawContent,
+                        InstructionTime = result.Time,
+                    });
+                }
+                else if (result.Type == FunctionType.PackageException) {
+                    //包裹异常
+                    OnPackageException(new PackageInstructionEventArgs() {
                         Keyword = result.Keyword,
                         Instruction = result.RawContent,
                         InstructionTime = result.Time,
@@ -1042,6 +1052,11 @@ namespace JayTom.Dws.Client.Service.Sorting {
         protected virtual async void OnSendInstruction(PackageInstructionEventArgs e) {
             await Task.Yield();
             SendInstruction?.Invoke(this, e);
+        }
+
+        protected virtual async void OnPackageException(PackageInstructionEventArgs e) {
+            await Task.Yield();
+            PackageException?.Invoke(this, e);
         }
     }
 }
