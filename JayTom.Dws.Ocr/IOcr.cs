@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Windows.Media.Imaging;
 
 namespace JayTom.Dws.Ocr {
+
     public interface IOcr : IDisposable {
 
         /// <summary>
@@ -85,18 +86,27 @@ namespace JayTom.Dws.Ocr {
         /// <param name="confidenceThreshold"></param>
         /// <returns></returns>
         Task<KeyValuePair<bool, string>> SetConfidenceThreshold(float confidenceThreshold);
+
         /// <summary>
         /// 设置区域扩展
         /// </summary>
         /// <param name="rectangleScale"></param>
         /// <returns></returns>
         Task<KeyValuePair<bool, string>> SetRectangleScale(float rectangleScale);
+
         /// <summary>
         /// 设置解析超时时间
         /// </summary>
         /// <param name="timeout"></param>
         /// <returns></returns>
         Task<KeyValuePair<bool, string>> SetRecognitionTimeout(TimeSpan timeout);
+
+        /// <summary>
+        /// 是否使用二次确认
+        /// </summary>
+        /// <param name="isUse"></param>
+        /// <returns></returns>
+        Task<KeyValuePair<bool, string>> SetIsSecondConfirmationEnabled(bool isUse);
 
         /// <summary>
         /// 初始化

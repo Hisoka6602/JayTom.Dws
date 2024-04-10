@@ -495,5 +495,10 @@ namespace JayTom.Dws.Camera {
         /// 过滤输出内容(为空则不输出)
         /// </summary>
         public string FilterOutContent { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 是否条码二次确认
+        /// </summary>
+        public bool IsSecondConfirmationEnabled { get; set; }
     }
 }

@@ -483,6 +483,7 @@ namespace JayTom.Dws.Client.Service.Device {
                         await _ocr.SetOnnxModelPath(modelFilePath);
                         await _ocr.SetConfidenceThreshold(ocrSettingsDto.ConfidenceThreshold);
                         await _ocr.SetRectangleScale(ocrSettingsDto.RectangleScale);
+                        await _ocr.SetIsSecondConfirmationEnabled(ocrSettingsDto.IsSecondConfirmationEnabled);
                     }
                     catch (Exception e) {
                         OnDeviceException(new DeviceExceptionEventArgs() {

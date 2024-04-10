@@ -587,7 +587,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 EventAggregator.Instance.Publish(new CallBackPackageInfo {
                                     CallBackTime = DateTime.Now,
                                     PackageCreateTime = keyValuePair.Value.CreateTime,
-                                    PackageInfo = keyValuePair.Value
+                                    PackageInfo = keyValuePair.Value,
+                                    InstructionContent = args.Instruction
                                 });
                                 _packageInfos.TryRemove(keyValuePair);
                             }
@@ -1438,6 +1439,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         /// 包裹完结时间
         /// </summary>
         public DateTime CallBackTime { get; set; } = DateTime.Now;
+
+        /// <summary>
+        /// 指令
+        /// </summary>
+        public string InstructionContent { get; set; } = string.Empty;
     }
 
     public class BarCodeFrameInfo {

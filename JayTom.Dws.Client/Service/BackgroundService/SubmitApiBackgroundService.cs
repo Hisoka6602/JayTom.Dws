@@ -1,5 +1,6 @@
 ﻿using System;
 using ImTools;
+using System.Net;
 using System.Linq;
 using System.Drawing;
 using Newtonsoft.Json;
@@ -29,6 +30,7 @@ using JayTom.Dws.Client.Service.ImageStorage;
 using JayTom.Dws.Domain.Repository.LocalData;
 using static JayTom.Dws.Interface.CaiNiao.CaiNiaoApi;
 using UploadResponse = JayTom.Dws.Interface.UploadResponse;
+using JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols;
 
 namespace JayTom.Dws.Client.Service.BackgroundService {
 
@@ -574,6 +576,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 if (callBackDequeue && callBackModel is not null) {
                     Task.Factory.StartNew(async () => {
                         if (callBackModel.PackageInfo is { } packageInfo) {
+                            //获取返回的格口
+
                             var (l, sortingExitReceived) = _sortingExitItems.FirstOrDefault(f =>
                                 packageInfo.BarCodeInfo != null &&
                                 f.Value.ScanTime.Equals(packageInfo.BarCodeInfo.ScanTime));
@@ -587,7 +591,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                         return;
 
                                     case ApiType.CaiNiaoApi:
-
+                                        var (status, errorReson) = GetExceptionStatus(packageInfo.BarCodeInfo?.Barcode ?? string.Empty,
+                                            callBackModel.InstructionContent);
                                         uploader = new CaiNiaoApi(_httpClientFactory);
                                         var (key, value) = await uploader.SetParameters(_caiNiaoApiParam);
                                         if (key) {
@@ -599,10 +604,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                                 }, other: new ReportChuteInfo {
                                                     ChuteCode = sortingExitReceived.ExitName ?? string.Empty,
                                                     ChuteCodePhysical = sortingExitReceived.ExitName ?? string.Empty,
-                                                    ErrorReson = (string.IsNullOrEmpty(packageInfo.BarCodeInfo?.Barcode) || packageInfo.BarCodeInfo?.Barcode.ToLower().Equals("noread") == true) ?
-                                                        "无条码" : "分拣成功 ",
-                                                    Status = (string.IsNullOrEmpty(packageInfo.BarCodeInfo?.Barcode) || packageInfo.BarCodeInfo?.Barcode.ToLower().Equals("noread") == true) ?
-                                                        1 : 0,
+                                                    ErrorReson = errorReson,
+                                                    Status = status,
                                                 }, token: stoppingToken);
                                         }
                                         else {
@@ -696,6 +699,30 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 }
                 await Task.Delay(10, stoppingToken);
             }
+        }
+
+        private KeyValuePair<int, string> GetExceptionStatus(string barcode, string instructionContent) {
+            var hexStringToByteArray = WxkcCommunicationProtocol.HexStringToByteArray(instructionContent);
+            if (hexStringToByteArray.Length > 5) {
+                var hexString = BitConverter.ToString(new[] { hexStringToByteArray[4], hexStringToByteArray[5] })
+                    .Replace("-", string.Empty).Replace(" ", string.Empty);
+                int.TryParse(hexString, System.Globalization.NumberStyles.HexNumber, null,
+                    out var outExitNum);
+                switch (outExitNum) {
+                    case 999:
+                        //锁格
+                        return new KeyValuePair<int, string>(3, "目的格口锁格");
+
+                    case 998:
+                        //间隔太近
+                        return new KeyValuePair<int, string>(6, "包裹间隔太近");
+                }
+            }
+            if (string.IsNullOrEmpty(barcode) || barcode.Equals("noread")) {
+                return new KeyValuePair<int, string>(1, "无条码");
+            }
+
+            return new KeyValuePair<int, string>(0, "分拣成功");
         }
 
         private async Task ReadDefaultConfig() {

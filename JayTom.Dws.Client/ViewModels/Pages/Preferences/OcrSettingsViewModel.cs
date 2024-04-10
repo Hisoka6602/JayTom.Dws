@@ -386,7 +386,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     ConfidenceThreshold = OcrSettingsInfo.ConfidenceThreshold,
                     IsSaveCropImage = OcrSettingsInfo.IsSaveCropImage,
                     ModelFilePath = SelectModelFile,
-                    RectangleScale = OcrSettingsInfo.RectangleScale
+                    RectangleScale = OcrSettingsInfo.RectangleScale,
+                    IsSecondConfirmationEnabled = OcrSettingsInfo.IsSecondConfirmationEnabled,
                 })
             });
             base.MessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
@@ -416,6 +417,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                         IsSaveCropImage = ocrSettingsDto.IsSaveCropImage,
                         ModelFilePath = ocrSettingsDto.ModelFilePath,
                         RectangleScale = ocrSettingsDto.RectangleScale,
+                        IsSecondConfirmationEnabled = ocrSettingsDto.IsSecondConfirmationEnabled
                     };
                     SelectModelFile = ocrSettingsDto.ModelFilePath;
                 }

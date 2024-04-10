@@ -455,6 +455,32 @@
                     IsChecked="{Binding OcrSettingsInfo.IsSaveCropImage, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                     Style="{StaticResource MaterialDesignSwitchToggleButton}" />
             </StackPanel>
+            <!--  置信度  -->
+            <StackPanel
+                Margin="0,5"
+                VerticalAlignment="Center"
+                Orientation="Horizontal">
+                <TextBlock
+                    Margin="0,0,0,1"
+                    VerticalAlignment="Center"
+                    FontFamily="{StaticResource IconFontFamily}"
+                    FontSize="23"
+                    Foreground="DarkGray"
+                    Text="&#xe97a;" />
+                <TextBlock
+                    Margin="5,0"
+                    VerticalAlignment="Center"
+                    FontSize="13"
+                    FontWeight="Bold"
+                    Foreground="DarkGray"
+                    Text="是否开启条码二次确认:" />
+                <ToggleButton
+                    materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
+                    materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
+                    Focusable="False"
+                    IsChecked="{Binding OcrSettingsInfo.IsSecondConfirmationEnabled, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                    Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+            </StackPanel>
         </StackPanel>
         <!--  图片框  -->
         <StackPanel

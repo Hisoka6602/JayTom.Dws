@@ -17,6 +17,8 @@ namespace JayTom.Dws.Ocr.ExpressBill {
 
         private static float _confidenceThreshold = 0.5F;
         private static float _rectangleScale = 1;
+        private static bool _isSecondConfirmationEnabled;
+        private static string _lastBarCode = string.Empty;
 
         public ExpressBillOcr() {
             //释放文件
@@ -105,7 +107,14 @@ namespace JayTom.Dws.Ocr.ExpressBill {
                         if (string.IsNullOrEmpty(expressBill.OnnxModel)) {
                             expressBill.OnnxModel = _onnxModel;
                         }
-                        return await expressBill.ParseOcrResultAsync(imageBytes);
+
+                        var ocrResultAsync = await expressBill.ParseOcrResultAsync(imageBytes);
+                        if (_isSecondConfirmationEnabled &&
+                            ocrResultAsync?.BarCode.Equals(_lastBarCode) != true) {
+                            _lastBarCode = ocrResultAsync?.BarCode ?? string.Empty;
+                            return null;
+                        }
+                        return ocrResultAsync;
                     }
                 }
             }
@@ -122,9 +131,16 @@ namespace JayTom.Dws.Ocr.ExpressBill {
                     if (expressBill.OcrStatus is not OcrStatus.Uninitialized) {
                         if (string.IsNullOrEmpty(expressBill.OnnxModel)) {
                             expressBill.OnnxModel = _onnxModel;
-                            NLog.LogManager.GetCurrentClassLogger().Error($"{expressBill.OnnxModel}");
                         }
-                        return expressBill.ParseOcrResult(imageBytes, _confidenceThreshold, _rectangleScale);
+
+                        var ocrResult = expressBill.ParseOcrResult(imageBytes, _confidenceThreshold, _rectangleScale);
+                        if (_isSecondConfirmationEnabled &&
+                            ocrResult?.BarCode.Equals(_lastBarCode) != true) {
+                            _lastBarCode = ocrResult?.BarCode ?? string.Empty;
+                            return null;
+                        }
+
+                        return ocrResult;
                     }
                 }
             }
@@ -202,6 +218,11 @@ namespace JayTom.Dws.Ocr.ExpressBill {
 
         public async Task<KeyValuePair<bool, string>> SetRecognitionTimeout(TimeSpan timeout) {
             return new KeyValuePair<bool, string>(false, "暂不支持设置超时");
+        }
+
+        public Task<KeyValuePair<bool, string>> SetIsSecondConfirmationEnabled(bool isUse) {
+            _isSecondConfirmationEnabled = isUse;
+            return Task.FromResult(new KeyValuePair<bool, string>(true, string.Empty));
         }
 
         public async Task<KeyValuePair<bool, string>> Initialize() {

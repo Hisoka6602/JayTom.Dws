@@ -10,6 +10,25 @@ internal class Program {
     private static void Main(string[] args) {
         //var totalMinutes = DateTime.Now.AddMinutes(20).Subtract(DateTime.Now).TotalMinutes;
 
+        string hexString1 = "FC 12 00 25 00 00 01 36";
+        string hexString2 = "F9 11 00 0A 00 02 01 18";
+
+        // 将十六进制字符串转换为字节数组
+        byte[] bytes1 = HexStringToByteArray(hexString1);
+        byte[] bytes2 = HexStringToByteArray(hexString2);
+        if (bytes2.Length > 5) {
+            var hexString = BitConverter.ToString(new[] { bytes2[4], bytes2[5] })
+                 .Replace("-", string.Empty).Replace(" ", string.Empty);
+            if (int.TryParse(hexString, System.Globalization.NumberStyles.HexNumber, null, out var number)) {
+                var key = number.ToString();
+            }
+        }
+        int value1 = bytes1[bytes1.Length - 4] << 8 | bytes1[bytes1.Length - 3];
+        int value2 = bytes2[bytes2.Length - 4] << 8 | bytes2[bytes2.Length - 3];
+
+        Console.WriteLine("第一个字符串的倒数第三第四位十进制值: " + value1);
+        Console.WriteLine("第二个字符串的倒数第三第四位十进制值: " + value2);
+
         var totalMinutes = DateTime.Now.Subtract(DateTime.Now.AddMinutes(20)).TotalMinutes;
         Console.WriteLine(totalMinutes);
 
@@ -32,6 +51,22 @@ internal class Program {
             Console.WriteLine(e);
         }
         Console.ReadLine();
+    }
+
+    public static byte[] HexStringToByteArray(string hexString) {
+        try {
+            hexString = hexString.Replace(" ", ""); // 移除空格
+
+            var bytes = new byte[hexString.Length / 2];
+            for (var i = 0; i < hexString.Length; i += 2) {
+                bytes[i / 2] = Convert.ToByte(hexString.Substring(i, 2), 16);
+            }
+
+            return bytes;
+        }
+        catch (Exception e) {
+            return new byte[] { 0x00 };
+        }
     }
 
     private static JsonElement? FindFieldValue(JsonElement root, string fieldName) {

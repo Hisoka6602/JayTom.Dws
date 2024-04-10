@@ -126,7 +126,7 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
 
         public int DataLen => 8;
 
-        private static byte[] HexStringToByteArray(string hexString) {
+        public static byte[] HexStringToByteArray(string hexString) {
             try {
                 hexString = hexString.Replace(" ", ""); // 移除空格
 

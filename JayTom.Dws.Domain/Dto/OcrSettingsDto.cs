@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 
 namespace JayTom.Dws.Domain.Dto {
-
     public class OcrSettingsDto {
 
         /// <summary>
@@ -62,5 +61,9 @@ namespace JayTom.Dws.Domain.Dto {
         /// 是否开启截图保存
         /// </summary>
         public bool IsSaveCropImage { get; set; }
+        /// <summary>
+        /// 是否开启条码二次确认
+        /// </summary>
+        public bool IsSecondConfirmationEnabled { get; set; }
     }
 }

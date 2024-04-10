@@ -13,6 +13,7 @@ namespace JayTom.Dws.Client.Models.OcrSettingsModel {
         private float _rectangleScale;
         private string _cropImagePath = string.Empty;
         private bool _isSaveCropImage;
+        private bool _isSecondConfirmationEnabled;
 
         /// <summary>
         /// 是否使用 OCR 识别
@@ -100,6 +101,14 @@ namespace JayTom.Dws.Client.Models.OcrSettingsModel {
         public bool IsSaveCropImage {
             get => _isSaveCropImage;
             set => SetProperty(ref _isSaveCropImage, value);
+        }
+
+        /// <summary>
+        /// 是否开启条码二次确认
+        /// </summary>
+        public bool IsSecondConfirmationEnabled {
+            get => _isSecondConfirmationEnabled;
+            set => SetProperty(ref _isSecondConfirmationEnabled, value);
         }
     }
 }
