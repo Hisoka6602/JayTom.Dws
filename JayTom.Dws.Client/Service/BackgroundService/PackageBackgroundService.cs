@@ -585,6 +585,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                         }
                                     }
                                 });
+                                if (keyValuePair.Value.PackageExceptionStatus == 0) {
+                                    var (key, value) = GetExceptionStatus(keyValuePair.Value.BarCodeInfo?.Barcode ?? string.Empty, args.Instruction);
+                                    keyValuePair.Value.PackageExceptionMsg = value;
+                                    keyValuePair.Value.PackageExceptionStatus = key;
+                                }
                                 //是否延迟包
                                 var isDelayPacket = IsDelayPacket(args.Instruction);
                                 EventAggregator.Instance.Publish(new CallBackPackageInfo {
@@ -1225,7 +1230,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         return new KeyValuePair<int, string>(6, "包裹间隔太近");
                 }
             }
-            if (string.IsNullOrEmpty(barcode) || barcode.Equals("noread")) {
+            if (string.IsNullOrEmpty(barcode) || barcode.ToLower().Equals("noread")) {
                 return new KeyValuePair<int, string>(1, "无条码");
             }
 
@@ -1323,7 +1328,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         /// <summary>
         /// 包裹异常信息
         /// </summary>
-        public string PackageExceptionMsg { get; set; } = string.Empty;
+        public string PackageExceptionMsg { get; set; } = "分拣成功";
 
         /// <summary>
         /// 包裹异常状态

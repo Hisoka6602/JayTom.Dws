@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Linq;
 using System.Text;
+using Newtonsoft.Json;
 using System.Threading.Tasks;
+using JayTom.Dws.Data.LocalConf;
 using System.Collections.Generic;
 using JayTom.Dws.Domain.Dto.ApiDto;
 using JayTom.Dws.Domain.Repository.LocalConf;
@@ -23,8 +25,22 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
         public override string Identifier => "EshippingitApiParametersDialogHost";
         public override string SettingsName => "EshippingitApiParameters";
 
-        protected override Task<bool> SaveSettingsProcess() {
-            return Task.FromResult(true);
+        protected override async Task<bool> SaveSettingsProcess() {
+            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
+                ConfigName = SettingsName,
+                Value = JsonConvert.SerializeObject(new EshippingitApiDto() {
+                    Domain = EshippingitApiInfo.Domain,
+                    TimeOut = EshippingitApiInfo.TimeOut,
+                    Authorization = EshippingitApiInfo.Authorization,
+                    Endpoint = EshippingitApiInfo.Endpoint,
+                    BucketName = EshippingitApiInfo.BucketName,
+                    RetryCount = EshippingitApiInfo.RetryCount,
+                    RetryInterval = EshippingitApiInfo.RetryInterval
+                })
+            });
+            base.MessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
+                Languages.Language.ResourceManager.GetString("SaveFailed"))}");
+            return insertOrUpdate;
         }
 
         public override async void LoadedDelegate(object obj) {
@@ -36,6 +52,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
                     Authorization = settingsDto.Authorization,
                     Endpoint = settingsDto.Endpoint,
                     BucketName = settingsDto.BucketName,
+                    RetryCount = settingsDto.RetryCount,
+                    RetryInterval = settingsDto.RetryInterval
                 };
             });
         }

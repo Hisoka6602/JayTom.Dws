@@ -231,7 +231,7 @@ namespace JayTom.Dws.Interface.CaiNiao {
                 return Task.FromResult(new KeyValuePair<bool, string>(true, string.Empty));
             }
             else {
-                return Task.FromResult(new KeyValuePair<bool, string>(true, "参数类型不匹配"));
+                return Task.FromResult(new KeyValuePair<bool, string>(false, "参数类型不匹配"));
             }
         }
 

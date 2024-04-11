@@ -47,7 +47,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
         protected override async Task<bool> SaveSettingsProcess() {
             var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
                 ConfigName = SettingsName,
-                Value = JsonConvert.SerializeObject(new CaiNiaoApiModel() {
+                Value = JsonConvert.SerializeObject(new CaiNiaoApiDto() {
                     BcrCode = CaiNiaoApiInfo.BcrCode,
                     BcrName = CaiNiaoApiInfo.BcrName,
                     Source = CaiNiaoApiInfo.Source,

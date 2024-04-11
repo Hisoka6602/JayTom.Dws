@@ -13,6 +13,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         private string _authorization = string.Empty;
         private string _endpoint = string.Empty;
         private string _bucketName = string.Empty;
+        private int _retryCount = 2;
+        private int _retryInterval = 1;
 
         /// <summary>
         /// 域名
@@ -43,6 +45,22 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         public string BucketName {
             get => _bucketName;
             set => SetProperty(ref _bucketName, value);
+        }
+
+        /// <summary>
+        /// 重试次数
+        /// </summary>
+        public int RetryCount {
+            get => _retryCount;
+            set => SetProperty(ref _retryCount, value);
+        }
+
+        /// <summary>
+        /// 重试间隔(秒)
+        /// </summary>
+        public int RetryInterval {
+            get => _retryInterval;
+            set => SetProperty(ref _retryInterval, value);
         }
     }
 }

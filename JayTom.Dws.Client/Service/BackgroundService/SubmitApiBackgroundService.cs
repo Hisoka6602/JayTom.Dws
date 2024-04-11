@@ -24,6 +24,7 @@ using System.Collections.Concurrent;
 using JayTom.Dws.Interface.Routdata;
 using JayTom.Dws.Interface.Jtexpress;
 using JayTom.Dws.Client.EventMediators;
+using JayTom.Dws.Interface.Eshippingit;
 using JayTom.Dws.Client.Service.Sorting;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Client.Service.ImageStorage;
@@ -51,6 +52,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private static JtExpressApi.ApiParameter _jtExpressApiParam = new();
         private static RoutDataApi.ApiParameters _rstDataApiParam = new();
         private static CaiNiaoApi.ApiParameters _caiNiaoApiParam = new();
+        private static EshippingitApi.ApiParameters _eshippingitApiParam = new();
         private ConcurrentQueue<SavedImageInfo> _savedImageItems = new();
         private ConcurrentQueue<CallBackPackageInfo> _callBackItems = new();
         private ConcurrentDictionary<long, SortingExitReceived> _sortingExitItems = new();
@@ -94,191 +96,117 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async item => {
                 if (item is SettingsChangedEvent model) {
                     if (model.SettingsName.Equals("ApiSettings")) {
-                        var configInfoModel = await _configRepository.FirstOrDefault(f => f.ConfigName.Equals("ApiSettings"));
-                        if (configInfoModel is not null) {
-                            try {
-                                _apiSettingsDto = JsonConvert.DeserializeObject<ApiSettingsDto>(configInfoModel.Value);
-                            }
-                            catch (Exception e) {
-                                //抛出异常事件
-                                Console.WriteLine(e);
-                            }
-                        }
+                        _apiSettingsDto = await _configRepository.FirstOrDefaultEntity<ApiSettingsDto>(model.SettingsName) ?? new ApiSettingsDto();
                     }
                     else if (model.SettingsName.Equals("DefaultApiParameters")) {
                         //默认上传接口改参数
-                        var configInfoModel = await _configRepository.FirstOrDefault(f => f.ConfigName.Equals("DefaultApiParameters"));
-                        if (configInfoModel is not null) {
-                            try {
-                                var defaultApiDto = JsonConvert.DeserializeObject<DefaultApiDto>(configInfoModel.Value);
-                                if (defaultApiDto != null) {
-                                    _defaultApiParameters = new DefaultApi.DefaultApiParameters() {
-                                        CompleteMatch = defaultApiDto.CompleteMatch,
-                                        IsUseJsonUpload = defaultApiDto.IsUseJsonUpload,
-                                        JsonTemplate = defaultApiDto.JsonTemplate,
-                                        RegularExpression = defaultApiDto.RegularExpression,
-                                        StringContains = defaultApiDto.StringContains,
-                                        Timeout = defaultApiDto.Timeout,
-                                        StringTemplate = defaultApiDto.StringTemplate,
-                                        Url = defaultApiDto.Url,
-                                        ValidationMode = (int)defaultApiDto.ValidationMode,
-                                    };
-                                }
-                            }
-                            catch (Exception e) {
-                                //抛出异常事件
-                                Console.WriteLine(e);
-                            }
-                        }
+                        var entity = await _configRepository.FirstOrDefaultEntity<DefaultApiDto>(model.SettingsName) ?? new DefaultApiDto();
+                        _defaultApiParameters = new DefaultApi.DefaultApiParameters() {
+                            CompleteMatch = entity.CompleteMatch,
+                            IsUseJsonUpload = entity.IsUseJsonUpload,
+                            JsonTemplate = entity.JsonTemplate,
+                            RegularExpression = entity.RegularExpression,
+                            StringContains = entity.StringContains,
+                            Timeout = entity.Timeout,
+                            StringTemplate = entity.StringTemplate,
+                            Url = entity.Url,
+                            ValidationMode = (int)entity.ValidationMode,
+                        };
                     }
                     else if (model.SettingsName.Equals("SzjyApiParameters")) {
                         //默认上传接口改参数
-                        var configInfoModel = await _configRepository.FirstOrDefault(f => f.ConfigName.Equals("SzjyApiParameters"));
-                        if (configInfoModel is not null) {
-                            try {
-                                var szjyApiDto = JsonConvert.DeserializeObject<SzjyApiDto>(configInfoModel.Value);
-                                if (szjyApiDto != null) {
-                                    _szjyApiParam = new SzjyApi.ApiParameter() {
-                                        Machine = szjyApiDto.Machine,
-                                        Password = szjyApiDto.Password,
-                                        TimeOut = szjyApiDto.TimeOut,
-                                        UserName = szjyApiDto.UserName,
-                                        Url = szjyApiDto.Url,
-                                    };
-                                }
-                            }
-                            catch (Exception e) {
-                                //抛出异常事件
-                                Console.WriteLine(e);
-                            }
-                        }
+                        var entity = await _configRepository.FirstOrDefaultEntity<SzjyApiDto>(model.SettingsName) ?? new SzjyApiDto();
+                        _szjyApiParam = new SzjyApi.ApiParameter() {
+                            Machine = entity.Machine,
+                            Password = entity.Password,
+                            TimeOut = entity.TimeOut,
+                            UserName = entity.UserName,
+                            Url = entity.Url,
+                        };
                     }
                     else if (model.SettingsName.Equals("WdtWmsApiParameters")) {
                         //默认上传接口改参数
-                        var configInfoModel = await _configRepository.FirstOrDefault(f => f.ConfigName.Equals("WdtWmsApiParameters"));
-                        if (configInfoModel is not null) {
-                            try {
-                                var wdtWmsApiDto = JsonConvert.DeserializeObject<WdtWmsApiDto>(configInfoModel.Value);
-                                if (wdtWmsApiDto != null) {
-                                    _wdtWmsApiParameter = new WdtWmsApi.ApiParameter {
-                                        AppKey = wdtWmsApiDto.AppKey,
-                                        AppSecret = wdtWmsApiDto.AppSecret,
-                                        TimeOut = wdtWmsApiDto.TimeOut,
-                                        Method = wdtWmsApiDto.Method,
-                                        Url = wdtWmsApiDto.Url,
-                                        Sid = wdtWmsApiDto.Sid
-                                    };
-                                }
-                            }
-                            catch (Exception e) {
-                                //抛出异常事件
-                                Console.WriteLine(e);
-                            }
-                        }
+                        var entity = await _configRepository.FirstOrDefaultEntity<WdtWmsApiDto>(model.SettingsName) ?? new WdtWmsApiDto();
+                        _wdtWmsApiParameter = new WdtWmsApi.ApiParameter {
+                            AppKey = entity.AppKey,
+                            AppSecret = entity.AppSecret,
+                            TimeOut = entity.TimeOut,
+                            Method = entity.Method,
+                            Url = entity.Url,
+                            Sid = entity.Sid
+                        };
                     }
                     else if (model.SettingsName.Equals("WdtFlagshipApiParameters")) {
                         //默认上传接口改参数
-                        var configInfoModel = await _configRepository.FirstOrDefault(f => f.ConfigName.Equals("WdtFlagshipApiParameters"));
-                        if (configInfoModel is not null) {
-                            try {
-                                var wdtFlagshipApiDto = JsonConvert.DeserializeObject<WdtFlagshipApiDto>(configInfoModel.Value);
-                                if (wdtFlagshipApiDto != null) {
-                                    _wdtFlagshipApiParameter = new WdtFlagshipApi.ApiParameter {
-                                        TimeOut = wdtFlagshipApiDto.TimeOut,
-                                        Method = wdtFlagshipApiDto.Method,
-                                        Url = wdtFlagshipApiDto.Url,
-                                        Sid = wdtFlagshipApiDto.Sid,
-                                        Appsecret = wdtFlagshipApiDto.Appsecret,
-                                        Force = wdtFlagshipApiDto.Force,
-                                        Key = wdtFlagshipApiDto.Key,
-                                        OperateTableName = wdtFlagshipApiDto.OperateTableName,
-                                        PackagerId = wdtFlagshipApiDto.PackagerId,
-                                        Salt = wdtFlagshipApiDto.Salt,
-                                        V = wdtFlagshipApiDto.V
-                                    };
-                                }
-                            }
-                            catch (Exception e) {
-                                //抛出异常事件
-                                Console.WriteLine(e);
-                            }
-                        }
+                        var entity = await _configRepository.FirstOrDefaultEntity<WdtFlagshipApiDto>(model.SettingsName) ?? new WdtFlagshipApiDto();
+                        _wdtFlagshipApiParameter = new WdtFlagshipApi.ApiParameter {
+                            TimeOut = entity.TimeOut,
+                            Method = entity.Method,
+                            Url = entity.Url,
+                            Sid = entity.Sid,
+                            Appsecret = entity.Appsecret,
+                            Force = entity.Force,
+                            Key = entity.Key,
+                            OperateTableName = entity.OperateTableName,
+                            PackagerId = entity.PackagerId,
+                            Salt = entity.Salt,
+                            V = entity.V
+                        };
                     }
                     else if (model.SettingsName.Equals("JtExpressApiParameters")) {
                         //默认上传接口改参数
-                        var configInfoModel = await _configRepository.FirstOrDefault(f => f.ConfigName.Equals("JtExpressApiParameters"));
-                        if (configInfoModel is not null) {
-                            try {
-                                var jtExpressDto = JsonConvert.DeserializeObject<JtExpressDto>(configInfoModel.Value);
-                                if (jtExpressDto != null) {
-                                    _jtExpressApiParam = new JtExpressApi.ApiParameter {
-                                        AppSecret = jtExpressDto.AppSecret,
-                                        AppKey = jtExpressDto.AppKey,
-                                        BusinessType = (JtExpressApi.BusinessType)jtExpressDto.BusinessType,
-                                        Password = jtExpressDto.Password,
-                                        ScanPda = jtExpressDto.ScanPda,
-                                        ScanType = jtExpressDto.ScanType,
-                                        ScanTypeCode = jtExpressDto.ScanTypeCode,
-                                        SegmentCodeTimeOut = jtExpressDto.SegmentCodeTimeOut,
-                                        SegmentCodeUrl = jtExpressDto.SegmentCodeUrl,
-                                        TimeOut = jtExpressDto.TimeOut,
-                                        TransportTypeCode = jtExpressDto.TransportTypeCode,
-                                        Url = jtExpressDto.Url,
-                                        UserName = jtExpressDto.UserName,
-                                        WeightFlag = jtExpressDto.WeightFlag,
-                                    };
-                                }
-                            }
-                            catch (Exception e) {
-                                //抛出异常事件
-                                Console.WriteLine(e);
-                            }
-                        }
+                        var entity = await _configRepository.FirstOrDefaultEntity<JtExpressDto>(model.SettingsName) ?? new JtExpressDto();
+                        _jtExpressApiParam = new JtExpressApi.ApiParameter {
+                            AppSecret = entity.AppSecret,
+                            AppKey = entity.AppKey,
+                            BusinessType = (JtExpressApi.BusinessType)entity.BusinessType,
+                            Password = entity.Password,
+                            ScanPda = entity.ScanPda,
+                            ScanType = entity.ScanType,
+                            ScanTypeCode = entity.ScanTypeCode,
+                            SegmentCodeTimeOut = entity.SegmentCodeTimeOut,
+                            SegmentCodeUrl = entity.SegmentCodeUrl,
+                            TimeOut = entity.TimeOut,
+                            TransportTypeCode = entity.TransportTypeCode,
+                            Url = entity.Url,
+                            UserName = entity.UserName,
+                            WeightFlag = entity.WeightFlag,
+                        };
                     }
                     else if (model.SettingsName.Equals("RoutDataApiParameters")) {
-                        var configInfoModel = await _configRepository.FirstOrDefault(f => f.ConfigName.Equals("RoutDataApiParameters"));
-                        if (configInfoModel is not null) {
-                            try {
-                                var routDataApiDto = JsonConvert.DeserializeObject<RoutDataApiDto>(configInfoModel.Value);
-                                if (routDataApiDto != null) {
-                                    _rstDataApiParam = new RoutDataApi.ApiParameters() {
-                                        Url = routDataApiDto.Url,
-                                        TimeOut = routDataApiDto.TimeOut,
-                                        DeviceCode = routDataApiDto.DeviceCode,
-                                        RetryCount = routDataApiDto.RetryCount,
-                                        RetryInterval = routDataApiDto.RetryInterval,
-                                        SignKey = routDataApiDto.SignKey,
-                                        OrgCode = routDataApiDto.OrgCode
-                                    };
-                                }
-                            }
-                            catch (Exception e) {
-                                //抛出异常事件
-                                Console.WriteLine(e);
-                            }
-                        }
+                        var entity = await _configRepository.FirstOrDefaultEntity<RoutDataApiDto>(model.SettingsName) ?? new RoutDataApiDto();
+                        _rstDataApiParam = new RoutDataApi.ApiParameters() {
+                            Url = entity.Url,
+                            TimeOut = entity.TimeOut,
+                            DeviceCode = entity.DeviceCode,
+                            RetryCount = entity.RetryCount,
+                            RetryInterval = entity.RetryInterval,
+                            SignKey = entity.SignKey,
+                            OrgCode = entity.OrgCode
+                        };
                     }
                     else if (model.SettingsName.Equals("CaiNiaoApiParameters")) {
-                        var configInfoModel = await _configRepository.FirstOrDefault(f => f.ConfigName.Equals("CaiNiaoApiParameters"));
-                        if (configInfoModel is not null) {
-                            try {
-                                var caiNiaoApiDto = JsonConvert.DeserializeObject<CaiNiaoApiDto>(configInfoModel.Value);
-                                if (caiNiaoApiDto != null) {
-                                    _caiNiaoApiParam = new CaiNiaoApi.ApiParameters() {
-                                        BcrName = caiNiaoApiDto.BcrName,
-                                        BcrCode = caiNiaoApiDto.BcrCode,
-                                        Source = caiNiaoApiDto.Source,
-                                        TimeOut = caiNiaoApiDto.TimeOut,
-                                        Url = caiNiaoApiDto.Url,
-                                        Version = caiNiaoApiDto.Version
-                                    };
-                                }
-                            }
-                            catch (Exception e) {
-                                //抛出异常事件
-                                Console.WriteLine(e);
-                            }
-                        }
+                        var entity = await _configRepository.FirstOrDefaultEntity<CaiNiaoApiDto>(model.SettingsName) ?? new CaiNiaoApiDto();
+                        _caiNiaoApiParam = new CaiNiaoApi.ApiParameters() {
+                            BcrName = entity.BcrName,
+                            BcrCode = entity.BcrCode,
+                            Source = entity.Source,
+                            TimeOut = entity.TimeOut,
+                            Url = entity.Url,
+                            Version = entity.Version
+                        };
+                    }
+                    else if (model.SettingsName.Equals("EshippingitApiParameters")) {
+                        var entity = await _configRepository.FirstOrDefaultEntity<EshippingitApiDto>(model.SettingsName) ?? new EshippingitApiDto();
+                        _eshippingitApiParam = new EshippingitApi.ApiParameters() {
+                            Authorization = entity.Authorization,
+                            BucketName = entity.BucketName,
+                            Domain = entity.Domain,
+                            Endpoint = entity.Endpoint,
+                            RetryCount = entity.RetryCount,
+                            RetryInterval = entity.RetryInterval,
+                            TimeOut = entity.TimeOut
+                        };
                     }
                     //其他接口
                 }
@@ -522,6 +450,25 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                     }
                                     break;
                                 }
+                            case ApiType.EshippingitApi: {
+                                    uploader = new EshippingitApi(_httpClientFactory);
+                                    var (key, value) = await uploader.SetParameters(_eshippingitApiParam);
+                                    if (key) {
+                                        uploadResponse = await uploader.UploadData(info.Barcode ?? string.Empty,
+                                            info.Weight, info.ScanTime,
+                                            info.Length, info.Width,
+                                            info.Height, info.Volume,
+                                            null, null,
+                                            info.IsStackedPackage, stoppingToken);
+                                    }
+                                    else {
+                                        uploadResponse = new UploadResponse() {
+                                            ExceptionMsg = value
+                                        };
+                                        Console.WriteLine("设置参数失败!");
+                                    }
+                                    break;
+                                }
                         }
                         if (_apiSettingsDto?.Type is not null &&
                             _apiSettingsDto.Type != ApiType.None) {
@@ -559,6 +506,18 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             case ApiType.GeekPlusApi:
 
                                 uploader = new GeekPlusApi(_httpClientFactory);
+                                uploader.UploadInBackground(model.BarCode ?? string.Empty, 0,
+                                    model.ScanTime, imageInfo: new UploadImageInfo() {
+                                        CameraCustomName = model.CameraSerialNumber,
+                                        CameraName = model.CameraSerialNumber,
+                                        CameraSerialNumber = model.CameraSerialNumber,
+                                        Image = Image.FromFile(model.FilePath ?? string.Empty)
+                                    }, token: stoppingToken);
+                                break;
+
+                            case ApiType.EshippingitApi:
+
+                                uploader = new EshippingitApi(_httpClientFactory);
                                 uploader.UploadInBackground(model.BarCode ?? string.Empty, 0,
                                     model.ScanTime, imageInfo: new UploadImageInfo() {
                                         CameraCustomName = model.CameraSerialNumber,
@@ -703,179 +662,109 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
         private async Task ReadDefaultConfig() {
             //上传类型
-            var configInfoModel = await _configRepository.FirstOrDefault(f => f.ConfigName.Equals("ApiSettings"));
-            if (configInfoModel is not null) {
-                try {
-                    _apiSettingsDto = JsonConvert.DeserializeObject<ApiSettingsDto>(configInfoModel.Value);
-                }
-                catch (Exception e) {
-                    //抛出异常事件
-                    Console.WriteLine(e);
-                }
-            }
+            _apiSettingsDto = await _configRepository.FirstOrDefaultEntity<ApiSettingsDto>("ApiSettings") ?? new ApiSettingsDto();
+
             //默认接口
-            configInfoModel = await _configRepository.FirstOrDefault(f => f.ConfigName.Equals("DefaultApiParameters"));
-            if (configInfoModel is not null) {
-                try {
-                    var defaultApiDto = JsonConvert.DeserializeObject<DefaultApiDto>(configInfoModel.Value);
-                    if (defaultApiDto != null) {
-                        _defaultApiParameters = new DefaultApi.DefaultApiParameters() {
-                            CompleteMatch = defaultApiDto.CompleteMatch,
-                            IsUseJsonUpload = defaultApiDto.IsUseJsonUpload,
-                            JsonTemplate = defaultApiDto.JsonTemplate,
-                            RegularExpression = defaultApiDto.RegularExpression,
-                            StringContains = defaultApiDto.StringContains,
-                            Timeout = defaultApiDto.Timeout,
-                            StringTemplate = defaultApiDto.StringTemplate,
-                            Url = defaultApiDto.Url,
-                            ValidationMode = (int)defaultApiDto.ValidationMode,
-                        };
-                    }
-                }
-                catch (Exception e) {
-                    //抛出异常事件
-                    Console.WriteLine(e);
-                }
-            }
+            var defaultentity = await _configRepository.FirstOrDefaultEntity<DefaultApiDto>("DefaultApiParameters") ?? new DefaultApiDto();
+            _defaultApiParameters = new DefaultApi.DefaultApiParameters() {
+                CompleteMatch = defaultentity.CompleteMatch,
+                IsUseJsonUpload = defaultentity.IsUseJsonUpload,
+                JsonTemplate = defaultentity.JsonTemplate,
+                RegularExpression = defaultentity.RegularExpression,
+                StringContains = defaultentity.StringContains,
+                Timeout = defaultentity.Timeout,
+                StringTemplate = defaultentity.StringTemplate,
+                Url = defaultentity.Url,
+                ValidationMode = (int)defaultentity.ValidationMode,
+            };
             //神州
-            configInfoModel = await _configRepository.FirstOrDefault(f => f.ConfigName.Equals("SzjyApiParameters"));
-            if (configInfoModel is not null) {
-                try {
-                    var szjyApiDto = JsonConvert.DeserializeObject<SzjyApiDto>(configInfoModel.Value);
-                    if (szjyApiDto != null) {
-                        _szjyApiParam = new SzjyApi.ApiParameter() {
-                            Machine = szjyApiDto.Machine,
-                            Password = szjyApiDto.Password,
-                            TimeOut = szjyApiDto.TimeOut,
-                            UserName = szjyApiDto.UserName,
-                            Url = szjyApiDto.Url,
-                        };
-                    }
-                }
-                catch (Exception e) {
-                    //抛出异常事件
-                    Console.WriteLine(e);
-                }
-            }
+            var szjyEntity = await _configRepository.FirstOrDefaultEntity<SzjyApiDto>("SzjyApiParameters") ?? new SzjyApiDto();
+            _szjyApiParam = new SzjyApi.ApiParameter() {
+                Machine = szjyEntity.Machine,
+                Password = szjyEntity.Password,
+                TimeOut = szjyEntity.TimeOut,
+                UserName = szjyEntity.UserName,
+                Url = szjyEntity.Url,
+            };
+
             //旺店通Wms
-            configInfoModel = await _configRepository.FirstOrDefault(f => f.ConfigName.Equals("WdtWmsApiParameters"));
-            if (configInfoModel is not null) {
-                try {
-                    var wdtWmsApiDto = JsonConvert.DeserializeObject<WdtWmsApiDto>(configInfoModel.Value);
-                    if (wdtWmsApiDto != null) {
-                        _wdtWmsApiParameter = new WdtWmsApi.ApiParameter {
-                            AppKey = wdtWmsApiDto.AppKey,
-                            AppSecret = wdtWmsApiDto.AppSecret,
-                            TimeOut = wdtWmsApiDto.TimeOut,
-                            Method = wdtWmsApiDto.Method,
-                            Url = wdtWmsApiDto.Url,
-                            Sid = wdtWmsApiDto.Sid
-                        };
-                    }
-                }
-                catch (Exception e) {
-                    //抛出异常事件
-                    Console.WriteLine(e);
-                }
-            }
+            var wdtWmsApiDto = await _configRepository.FirstOrDefaultEntity<WdtWmsApiDto>("WdtWmsApiParameters") ?? new WdtWmsApiDto();
+
+            _wdtWmsApiParameter = new WdtWmsApi.ApiParameter {
+                AppKey = wdtWmsApiDto.AppKey,
+                AppSecret = wdtWmsApiDto.AppSecret,
+                TimeOut = wdtWmsApiDto.TimeOut,
+                Method = wdtWmsApiDto.Method,
+                Url = wdtWmsApiDto.Url,
+                Sid = wdtWmsApiDto.Sid
+            };
             //旺店通旗舰版
-            configInfoModel = await _configRepository.FirstOrDefault(f => f.ConfigName.Equals("WdtFlagshipApiParameters"));
-            if (configInfoModel is not null) {
-                try {
-                    var wdtFlagshipApiDto = JsonConvert.DeserializeObject<WdtFlagshipApiDto>(configInfoModel.Value);
-                    if (wdtFlagshipApiDto != null) {
-                        _wdtFlagshipApiParameter = new WdtFlagshipApi.ApiParameter {
-                            TimeOut = wdtFlagshipApiDto.TimeOut,
-                            Method = wdtFlagshipApiDto.Method,
-                            Url = wdtFlagshipApiDto.Url,
-                            Sid = wdtFlagshipApiDto.Sid,
-                            Appsecret = wdtFlagshipApiDto.Appsecret,
-                            Force = wdtFlagshipApiDto.Force,
-                            Key = wdtFlagshipApiDto.Key,
-                            OperateTableName = wdtFlagshipApiDto.OperateTableName,
-                            PackagerId = wdtFlagshipApiDto.PackagerId,
-                            Salt = wdtFlagshipApiDto.Salt,
-                            V = wdtFlagshipApiDto.V
-                        };
-                    }
-                }
-                catch (Exception e) {
-                    //抛出异常事件
-                    Console.WriteLine(e);
-                }
-            }
+            var wdtFlagshipApiDto = await _configRepository.FirstOrDefaultEntity<WdtFlagshipApiDto>("WdtFlagshipApiParameters") ?? new WdtFlagshipApiDto();
+
+            _wdtFlagshipApiParameter = new WdtFlagshipApi.ApiParameter {
+                TimeOut = wdtFlagshipApiDto.TimeOut,
+                Method = wdtFlagshipApiDto.Method,
+                Url = wdtFlagshipApiDto.Url,
+                Sid = wdtFlagshipApiDto.Sid,
+                Appsecret = wdtFlagshipApiDto.Appsecret,
+                Force = wdtFlagshipApiDto.Force,
+                Key = wdtFlagshipApiDto.Key,
+                OperateTableName = wdtFlagshipApiDto.OperateTableName,
+                PackagerId = wdtFlagshipApiDto.PackagerId,
+                Salt = wdtFlagshipApiDto.Salt,
+                V = wdtFlagshipApiDto.V
+            };
             //极兔
-            configInfoModel = await _configRepository.FirstOrDefault(f => f.ConfigName.Equals("JtExpressApiParameters"));
-            if (configInfoModel is not null) {
-                try {
-                    var jtExpressDto = JsonConvert.DeserializeObject<JtExpressDto>(configInfoModel.Value);
-                    if (jtExpressDto != null) {
-                        _jtExpressApiParam = new JtExpressApi.ApiParameter {
-                            AppSecret = jtExpressDto.AppSecret,
-                            AppKey = jtExpressDto.AppKey,
-                            BusinessType = (JtExpressApi.BusinessType)jtExpressDto.BusinessType,
-                            Password = jtExpressDto.Password,
-                            ScanPda = jtExpressDto.ScanPda,
-                            ScanType = jtExpressDto.ScanType,
-                            ScanTypeCode = jtExpressDto.ScanTypeCode,
-                            SegmentCodeTimeOut = jtExpressDto.SegmentCodeTimeOut,
-                            SegmentCodeUrl = jtExpressDto.SegmentCodeUrl,
-                            TimeOut = jtExpressDto.TimeOut,
-                            TransportTypeCode = jtExpressDto.TransportTypeCode,
-                            Url = jtExpressDto.Url,
-                            UserName = jtExpressDto.UserName,
-                            WeightFlag = jtExpressDto.WeightFlag,
-                        };
-                    }
-                }
-                catch (Exception e) {
-                    //抛出异常事件
-                    Console.WriteLine(e);
-                }
-            }
+            var jtExpressDto = await _configRepository.FirstOrDefaultEntity<JtExpressDto>("JtExpressApiParameters") ?? new JtExpressDto();
+            _jtExpressApiParam = new JtExpressApi.ApiParameter {
+                AppSecret = jtExpressDto.AppSecret,
+                AppKey = jtExpressDto.AppKey,
+                BusinessType = (JtExpressApi.BusinessType)jtExpressDto.BusinessType,
+                Password = jtExpressDto.Password,
+                ScanPda = jtExpressDto.ScanPda,
+                ScanType = jtExpressDto.ScanType,
+                ScanTypeCode = jtExpressDto.ScanTypeCode,
+                SegmentCodeTimeOut = jtExpressDto.SegmentCodeTimeOut,
+                SegmentCodeUrl = jtExpressDto.SegmentCodeUrl,
+                TimeOut = jtExpressDto.TimeOut,
+                TransportTypeCode = jtExpressDto.TransportTypeCode,
+                Url = jtExpressDto.Url,
+                UserName = jtExpressDto.UserName,
+                WeightFlag = jtExpressDto.WeightFlag,
+            };
             //络道科技Api
-            configInfoModel = await _configRepository.FirstOrDefault(f => f.ConfigName.Equals("RoutDataApiParameters"));
-            if (configInfoModel is not null) {
-                try {
-                    var routDataApiDto = JsonConvert.DeserializeObject<RoutDataApiDto>(configInfoModel.Value);
-                    if (routDataApiDto != null) {
-                        _rstDataApiParam = new RoutDataApi.ApiParameters() {
-                            Url = routDataApiDto.Url,
-                            TimeOut = routDataApiDto.TimeOut,
-                            DeviceCode = routDataApiDto.DeviceCode,
-                            RetryCount = routDataApiDto.RetryCount,
-                            RetryInterval = routDataApiDto.RetryInterval,
-                            SignKey = routDataApiDto.SignKey,
-                            OrgCode = routDataApiDto.OrgCode
-                        };
-                    }
-                }
-                catch (Exception e) {
-                    //抛出异常事件
-                    Console.WriteLine(e);
-                }
-            }
+            var routDataApiDto = await _configRepository.FirstOrDefaultEntity<RoutDataApiDto>("RoutDataApiParameters") ?? new RoutDataApiDto();
+            _rstDataApiParam = new RoutDataApi.ApiParameters() {
+                Url = routDataApiDto.Url,
+                TimeOut = routDataApiDto.TimeOut,
+                DeviceCode = routDataApiDto.DeviceCode,
+                RetryCount = routDataApiDto.RetryCount,
+                RetryInterval = routDataApiDto.RetryInterval,
+                SignKey = routDataApiDto.SignKey,
+                OrgCode = routDataApiDto.OrgCode
+            };
             //菜鸟Api
-            configInfoModel = await _configRepository.FirstOrDefault(f => f.ConfigName.Equals("CaiNiaoApiParameters"));
-            if (configInfoModel is not null) {
-                try {
-                    var caiNiaoApiDto = JsonConvert.DeserializeObject<CaiNiaoApiDto>(configInfoModel.Value);
-                    if (caiNiaoApiDto != null) {
-                        _caiNiaoApiParam = new CaiNiaoApi.ApiParameters() {
-                            BcrName = caiNiaoApiDto.BcrName,
-                            BcrCode = caiNiaoApiDto.BcrCode,
-                            Source = caiNiaoApiDto.Source,
-                            TimeOut = caiNiaoApiDto.TimeOut,
-                            Url = caiNiaoApiDto.Url,
-                            Version = caiNiaoApiDto.Version
-                        };
-                    }
-                }
-                catch (Exception e) {
-                    //抛出异常事件
-                    Console.WriteLine(e);
-                }
-            }
+            var caiNiaoApiDto = await _configRepository.FirstOrDefaultEntity<CaiNiaoApiDto>("CaiNiaoApiParameters") ?? new CaiNiaoApiDto();
+
+            _caiNiaoApiParam = new CaiNiaoApi.ApiParameters() {
+                BcrName = caiNiaoApiDto.BcrName,
+                BcrCode = caiNiaoApiDto.BcrCode,
+                Source = caiNiaoApiDto.Source,
+                TimeOut = caiNiaoApiDto.TimeOut,
+                Url = caiNiaoApiDto.Url,
+                Version = caiNiaoApiDto.Version
+            };
+            //海通智运Api
+            var eshippingitApiDto = await _configRepository.FirstOrDefaultEntity<EshippingitApiDto>("EshippingitApiParameters") ?? new EshippingitApiDto();
+            _eshippingitApiParam = new EshippingitApi.ApiParameters() {
+                Authorization = eshippingitApiDto.Authorization,
+                BucketName = eshippingitApiDto.BucketName,
+                Domain = eshippingitApiDto.Domain,
+                Endpoint = eshippingitApiDto.Endpoint,
+                RetryCount = eshippingitApiDto.RetryCount,
+                RetryInterval = eshippingitApiDto.RetryInterval,
+                TimeOut = eshippingitApiDto.TimeOut
+            };
         }
 
         public class SubmitItemInfo {

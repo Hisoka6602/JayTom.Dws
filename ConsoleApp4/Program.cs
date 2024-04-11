@@ -1,17 +1,29 @@
 ﻿using System.Text;
+using System.Drawing;
 using Newtonsoft.Json;
 using System.Text.Json;
 using JayTom.Dws.Plugin.Speech;
 using System.Text.RegularExpressions;
+using JayTom.Dws.Interface.Eshippingit;
 using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech;
 
 internal class Program {
 
-    private static void Main(string[] args) {
+    private static async Task Main(string[] args) {
         //var totalMinutes = DateTime.Now.AddMinutes(20).Subtract(DateTime.Now).TotalMinutes;
+
+        var eshippingitApi = new EshippingitApi(null);
+
+        var keyValuePair = await eshippingitApi.SetParameters(new EshippingitApi.ApiParameters());
+
+        var uploadResponse = await eshippingitApi.UploadData("Test123456", 0.1, 0.2, 0.3, 0.4);
+
+        await eshippingitApi.PolicyPush("Test123456", DateTime.Now,
+           Image.FromFile("C:\\Users\\77051\\Desktop\\3d0db60b584eecbc97badd57fa61e8d.jpg"));
+
         var totalMilliseconds = DateTime.Now.Subtract(DateTime.Now.AddSeconds(-10)).TotalMilliseconds;
         return;
-        string hexString1 = "FC 12 00 25 00 00 01 36";
+        /*string hexString1 = "FC 12 00 25 00 00 01 36";
         string hexString2 = "F9 11 00 0A 00 02 01 18";
 
         // 将十六进制字符串转换为字节数组
@@ -51,7 +63,7 @@ internal class Program {
         catch (Exception e) {
             Console.WriteLine(e);
         }
-        Console.ReadLine();
+        Console.ReadLine();*/
     }
 
     public static byte[] HexStringToByteArray(string hexString) {
