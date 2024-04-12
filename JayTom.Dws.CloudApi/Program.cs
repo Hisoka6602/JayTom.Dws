@@ -21,6 +21,7 @@ using JayTom.Dws.Infrastructure.Repository.CloudApi;
 using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 using JayTom.Dws.Infrastructure.Repository.VideoApiData;
 using JayTom.Dws.Infrastructure.SignalR.VideoApi.SignalRMessageHub;
+using JayTom.Dws.Infrastructure.SignalR.CloudApi.SignalRMessageHub;
 
 internal class Program {
 
@@ -164,7 +165,12 @@ internal class Program {
         app.UseAuthorization();
 
         app.MapControllers();
-
+        //SignalR
+        app.MapHub<CloudApiMessageHub>("/Message", a => {
+            a.TransportMaxBufferSize = 0;
+            a.ApplicationMaxBufferSize = 0;
+            a.WebSockets.CloseTimeout = TimeSpan.FromSeconds(10);
+        });
         app.Run();
     }
 }

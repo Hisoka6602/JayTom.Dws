@@ -666,7 +666,7 @@
     <comment>8-加载图片</comment>
   </data>
   <data name="LogDataDaysAgo" xml:space="preserve">
-    <value>天之前的日志图片</value>
+    <value>天之前的日志</value>
     <comment>10-多少天之前的日志图片</comment>
   </data>
   <data name="LogInformation" xml:space="preserve">

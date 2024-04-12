@@ -120,28 +120,34 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings {
                         await Task.Delay(500);
                         Task.Run(async () => {
                             await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
-                                MachineCode = LicenseManager.GenerateMachineCode();
-                                var licenseDirectory = Path.Combine(AppContext.BaseDirectory, "License");
-                                var firstOrDefault = Directory.GetFiles(licenseDirectory, "*.key").FirstOrDefault();
-                                if (firstOrDefault is not null) {
-                                    //解密授权
-                                    var (key, value) =
-                                        LicenseManager.DecryptAuthorizationFile(firstOrDefault, out var data);
-                                    if (data is not null) {
-                                        LicenseCode = data.LicenseCode;
-                                        CustomerName = data.UserName;
-                                        FailureReason = value;
-                                        Remarks = data.Remarks;
+                                try {
+                                    MachineCode = LicenseManager.GenerateMachineCode();
+                                    var licenseDirectory = Path.Combine(AppContext.BaseDirectory, "License");
+                                    var firstOrDefault = Directory.GetFiles(licenseDirectory, "*.key").FirstOrDefault();
+                                    if (firstOrDefault is not null) {
+                                        //解密授权
+                                        var (key, value) =
+                                            LicenseManager.DecryptAuthorizationFile(firstOrDefault, out var data);
+                                        if (data is not null) {
+                                            LicenseCode = data.LicenseCode;
+                                            CustomerName = data.UserName;
+                                            FailureReason = value;
+                                            Remarks = data.Remarks;
+                                        }
+
+                                        LicenseStatus = key;
                                     }
-
-                                    LicenseStatus = key;
+                                    else {
+                                        FailureReason = "未检测到授权文件";
+                                    }
                                 }
-                                else {
-                                    FailureReason = "未检测到授权文件";
+                                catch (Exception e) {
+                                    NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
                                 }
-
-                                if (DialogHost.IsDialogOpen(model.Identifier)) {
-                                    DialogHost.Close(model.Identifier);
+                                finally {
+                                    if (DialogHost.IsDialogOpen(model.Identifier)) {
+                                        DialogHost.Close(model.Identifier);
+                                    }
                                 }
                             }, DispatcherPriority.Background);
                         });

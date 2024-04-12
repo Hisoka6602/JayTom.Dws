@@ -61,6 +61,7 @@ using JayTom.Dws.Client.Service.ResultOutput;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Repository.LocalData;
 using JayTom.Dws.Domain.Service.CacheCleanup;
+using JayTom.Dws.Client.Service.SyncSettings;
 using Microsoft.Extensions.DependencyInjection;
 using JayTom.Dws.Client.Views.Pages.Preferences;
 using JayTom.Dws.Client.Service.BackgroundService;
@@ -90,6 +91,7 @@ using JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Infrastructure.Repository.LocalConf.CameraConfig;
 using JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService;
+using JayTom.Dws.Infrastructure.SignalR.CloudApi.ClientMessageHub;
 using JayTom.Dws.Client.Service.ResultOutput.Communication.TcpComm;
 using JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel;
 using JayTom.Dws.Client.Views.Pages.Preferences.CameraConfiguration;
@@ -361,6 +363,10 @@ namespace JayTom.Dws.Client {
                 services.AddSingleton<INvrManager, DaHuaNvr>();
                 //授权接口
                 services.AddSingleton<IClientLicenseApi, DefaultClientLicenseApi>();
+                //SignalR
+                services.AddSingleton<ICloudApiClientMessageHub, CloudApiClientMessageHub>();
+                //同步配置
+                services.AddSingleton<ISyncSettingsService, SyncSettingsService>();
 
                 //把后台注册服务写在这里
 

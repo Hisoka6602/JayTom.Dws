@@ -28,6 +28,7 @@ using System.Runtime.InteropServices;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.ViewModels.Dialog;
 using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Client.Service.SyncSettings;
 using JayTom.Dws.Client.Models.AppSettingModel;
 using JayTom.Dws.Infrastructure.Repository.LocalConf;
 
@@ -37,6 +38,7 @@ namespace JayTom.Dws.Client.ViewModels {
         private readonly IRegionManager _regionManager;
         private readonly IDialogService _dialogService;
         private readonly IConfigRepository _configRepository;
+        private readonly ISyncSettingsService _syncSettingsService;
         private double _uniformCornerRadius = 5;
         private string _maxBtnIcon = "\xe600";
         private string _maxBtnToolTip = "Maximize";
@@ -62,10 +64,12 @@ namespace JayTom.Dws.Client.ViewModels {
 
         public MainWindowViewModel(IRegionManager regionManager,
             IDialogService dialogService,
-            IConfigRepository configRepository) {
+            IConfigRepository configRepository,
+            ISyncSettingsService syncSettingsService) {
             _regionManager = regionManager;
             _dialogService = dialogService;
             _configRepository = configRepository;
+            _syncSettingsService = syncSettingsService;
             HomeToolItems = new ObservableCollection<HomeToolInfoModel>()
             {
                 new()
@@ -148,33 +152,21 @@ namespace JayTom.Dws.Client.ViewModels {
             set => SetProperty(ref _mainMessageQueue, value);
         }
 
-        public ICommand LoadedCommand {
-            get => new DelegateCommand<object>(LoadedDelegate);
-        }
+        public ICommand LoadedCommand => new DelegateCommand<object>(LoadedDelegate);
 
-        public ICommand MinWinCommand {
-            get => new DelegateCommand<object>(MinWinDelegate);
-        }
+        public ICommand MinWinCommand => new DelegateCommand<object>(MinWinDelegate);
 
-        public ICommand MaxWinCommand {
-            get => new DelegateCommand<object>(MaxWinDelegate);
-        }
+        public ICommand MaxWinCommand => new DelegateCommand<object>(MaxWinDelegate);
 
-        public ICommand CloseWinCommand {
-            get => new DelegateCommand<object>(CloseWinDelegate);
-        }
+        public ICommand CloseWinCommand => new DelegateCommand<object>(CloseWinDelegate);
 
-        public ICommand HomeToolSelectionChangedCommand {
-            get => new DelegateCommand<ComboBox>(HomeToolSelectionChangedDelegate);
-        }
+        public ICommand HomeToolSelectionChangedCommand => new DelegateCommand<ComboBox>(HomeToolSelectionChangedDelegate);
 
         private void HomeToolSelectionChangedDelegate(ComboBox obj) {
             obj.SelectedIndex = 0;
         }
 
-        public ICommand OpenHomeToolCommand {
-            get => new DelegateCommand<HomeToolInfoModel>(OpenHomeToolDelegate);
-        }
+        public ICommand OpenHomeToolCommand => new DelegateCommand<HomeToolInfoModel>(OpenHomeToolDelegate);
 
         private void OpenHomeToolDelegate(HomeToolInfoModel obj) {
             //判断是否模态窗口
@@ -316,7 +308,21 @@ namespace JayTom.Dws.Client.ViewModels {
                 }
 
                 IsLoaded = true;
+
+                //连接同步配置
+
+                var syncSettingsDto = await _configRepository.FirstOrDefaultEntity<SyncSettingsDto>("SyncSettingsSettings") ??
+                                           new SyncSettingsDto();
+                if (syncSettingsDto.IsUseSyncSettings && !string.IsNullOrEmpty(syncSettingsDto.Url)) {
+                    //连接
+                    if (!_syncSettingsService.IsConnected) {
+                        var (key, value) = await _syncSettingsService.Connect(syncSettingsDto.Url);
+                        MainMessageQueue.Enqueue($"同步配置连接{(key ? "成功" : "失败")}");
+                    }
+                }
             });
+
+            //连接同步配置
         }
 
         private void SizeChangeDelegate(object sender, SizeChangedEventArgs e) {
@@ -365,9 +371,7 @@ namespace JayTom.Dws.Client.ViewModels {
             }
         }
 
-        public ICommand LanguageSwitchCommand {
-            get => new DelegateCommand<object>(LanguageSwitchDelegate);
-        }
+        public ICommand LanguageSwitchCommand => new DelegateCommand<object>(LanguageSwitchDelegate);
 
         private async void LanguageSwitchDelegate(object obj) {
             CultureInfo? culture = null;

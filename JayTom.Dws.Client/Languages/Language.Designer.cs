@@ -1294,7 +1294,7 @@ namespace JayTom.Dws.Client.Languages {
         }
         
         /// <summary>
-        ///   查找类似 天之前的日志图片 的本地化字符串。
+        ///   查找类似 天之前的日志 的本地化字符串。
         /// </summary>
         public static string LogDataDaysAgo {
             get {

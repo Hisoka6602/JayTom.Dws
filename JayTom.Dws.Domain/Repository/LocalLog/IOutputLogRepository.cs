@@ -9,5 +9,18 @@ using System.Collections.Generic;
 namespace JayTom.Dws.Domain.Repository.LocalLog {
 
     public interface IOutputLogRepository : IRepository<OutputLogInfoModel> {
+
+        /// <summary>
+        /// 删除N天前的数据
+        /// </summary>
+        /// <param name="days"></param>
+        /// <returns></returns>
+        Task<KeyValuePair<bool, string>> DeleteDataThanDays(int days);
+
+        /// <summary>
+        /// 删除最早的一天的数据
+        /// </summary>
+        /// <returns></returns>
+        Task<KeyValuePair<bool, string>> DeleteEarliestData();
     }
 }

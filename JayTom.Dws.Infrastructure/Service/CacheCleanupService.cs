@@ -7,6 +7,7 @@ using JayTom.Dws.Domain.Dto;
 using JayTom.Dws.Plugin.Ftp;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using JayTom.Dws.Domain.Repository.LocalLog;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Service.CacheCleanup;
 using JayTom.Dws.Domain.Repository.LocalData;
@@ -17,6 +18,17 @@ namespace JayTom.Dws.Infrastructure.Service {
         private readonly IBarCodeRepository _barCodeRepository;
         private readonly IConfigRepository _configRepository;
         private readonly IFtp _ftp;
+        private readonly IApiLogRepository _apiLogRepository;
+        private readonly IAppLogRepository _appLogRepository;
+        private readonly ICameraLogRepository _cameraLogRepository;
+        private readonly IExceptionLogRepository _exceptionLogRepository;
+        private readonly IFtpLogRepository _ftpLogRepository;
+        private readonly IInputLogRepository _inputLogRepository;
+        private readonly IOcrLogRepository _ocrLogRepository;
+        private readonly IOutputLogRepository _outputLogRepository;
+        private readonly ISortingLogRepository _sortingLogRepository;
+        private readonly IVolumeLogRepository _volumeLogRepository;
+        private readonly IWeighingLogRepository _weighingLogRepository;
         private static SemaphoreSlim _deleteBarcodeSlim = new(1, 1);
         private static SemaphoreSlim _deleteScanImagesSlim = new(1, 1);
         private static SemaphoreSlim _deletePanoramaImagesSlim = new(1, 1);
@@ -24,10 +36,32 @@ namespace JayTom.Dws.Infrastructure.Service {
 
         //DeleteFtpImages
         public CacheCleanupService(IBarCodeRepository barCodeRepository,
-            IConfigRepository configRepository, IFtp ftp) {
+            IConfigRepository configRepository, IFtp ftp,
+            IApiLogRepository apiLogRepository,
+            IAppLogRepository appLogRepository,
+            ICameraLogRepository cameraLogRepository,
+            IExceptionLogRepository exceptionLogRepository,
+            IFtpLogRepository ftpLogRepository,
+            IInputLogRepository inputLogRepository,
+            IOcrLogRepository ocrLogRepository,
+            IOutputLogRepository outputLogRepository,
+            ISortingLogRepository sortingLogRepository,
+            IVolumeLogRepository volumeLogRepository,
+            IWeighingLogRepository weighingLogRepository) {
             _barCodeRepository = barCodeRepository;
             _configRepository = configRepository;
             _ftp = ftp;
+            _apiLogRepository = apiLogRepository;
+            _appLogRepository = appLogRepository;
+            _cameraLogRepository = cameraLogRepository;
+            _exceptionLogRepository = exceptionLogRepository;
+            _ftpLogRepository = ftpLogRepository;
+            _inputLogRepository = inputLogRepository;
+            _ocrLogRepository = ocrLogRepository;
+            _outputLogRepository = outputLogRepository;
+            _sortingLogRepository = sortingLogRepository;
+            _volumeLogRepository = volumeLogRepository;
+            _weighingLogRepository = weighingLogRepository;
         }
 
         public async Task<KeyValuePair<bool, string>> DeleteBarcodeDataOlderThanDays(int days) {
@@ -195,9 +229,21 @@ namespace JayTom.Dws.Infrastructure.Service {
             return new KeyValuePair<bool, string>(true, string.Empty);
         }
 
-        public Task<KeyValuePair<bool, string>> DeleteLogDataOlderThanDays(int days) {
+        public async Task<KeyValuePair<bool, string>> DeleteLogDataOlderThanDays(int days) {
             //暂时没有日志写
-            return Task.FromResult(new KeyValuePair<bool, string>(false, "未实现日志删除"));
+            await _apiLogRepository.DeleteDataThanDays(days);
+            await _appLogRepository.DeleteDataThanDays(days);
+            await _cameraLogRepository.DeleteDataThanDays(days);
+            await _exceptionLogRepository.DeleteDataThanDays(days);
+            await _ftpLogRepository.DeleteDataThanDays(days);
+            await _inputLogRepository.DeleteDataThanDays(days);
+            await _ocrLogRepository.DeleteDataThanDays(days);
+
+            await _outputLogRepository.DeleteDataThanDays(days);
+            await _sortingLogRepository.DeleteDataThanDays(days);
+            await _volumeLogRepository.DeleteDataThanDays(days);
+            await _weighingLogRepository.DeleteDataThanDays(days);
+            return new KeyValuePair<bool, string>(true, string.Empty);
         }
 
         public async Task<KeyValuePair<bool, string>> DeleteEarliestBarcodeData() {
@@ -334,9 +380,21 @@ namespace JayTom.Dws.Infrastructure.Service {
             }
         }
 
-        public Task<KeyValuePair<bool, string>> DeleteEarliestLogData() {
+        public async Task<KeyValuePair<bool, string>> DeleteEarliestLogData() {
             //暂时没有日志写
-            return Task.FromResult(new KeyValuePair<bool, string>(false, "未实现日志删除"));
+            await _apiLogRepository.DeleteEarliestData();
+            await _appLogRepository.DeleteEarliestData();
+            await _cameraLogRepository.DeleteEarliestData();
+            await _exceptionLogRepository.DeleteEarliestData();
+            await _ftpLogRepository.DeleteEarliestData();
+            await _inputLogRepository.DeleteEarliestData();
+            await _ocrLogRepository.DeleteEarliestData();
+            await _outputLogRepository.DeleteEarliestData();
+            await _sortingLogRepository.DeleteEarliestData();
+            await _volumeLogRepository.DeleteEarliestData();
+            await _weighingLogRepository.DeleteEarliestData();
+
+            return new KeyValuePair<bool, string>(true, string.Empty);
         }
     }
 }

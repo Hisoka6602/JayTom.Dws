@@ -6,6 +6,7 @@
     xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="clr-namespace:JayTom.Dws.Client.Views.Pages.Preferences.AppSettings"
+    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:mvvm="http://prismlibrary.com/"
     xmlns:pages="clr-namespace:JayTom.Dws.Client.Views.Pages"
@@ -24,10 +25,682 @@
         </b:EventTrigger>
     </b:Interaction.Triggers>
     <Grid>
+        <StackPanel VerticalAlignment="Top" Orientation="Horizontal">
+            <TextBlock
+                Margin="0,0,0,1"
+                VerticalAlignment="Center"
+                FontFamily="{StaticResource IconFontFamily}"
+                FontSize="20"
+                Foreground="DarkGray"
+                Text="&#xe958;" />
+            <TextBlock
+                Margin="5,0"
+                VerticalAlignment="Center"
+                FontSize="16"
+                FontWeight="Bold"
+                Foreground="DarkGray"
+                Text="是否开启设置同步:" />
+            <ToggleButton
+                Name="IsUseSyncSettingsToggleButton"
+                materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
+                materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
+                Focusable="False"
+                IsChecked="{Binding SyncSettingsInfo.IsUseSyncSettings, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+        </StackPanel>
         <!--  在这里放置 SyncSettingsPage 的内容  -->
-        <TextBlock
-            FontSize="50"
-            Foreground="White"
-            Text="这是内容" />
+        <StackPanel
+            Margin="20,20,0,0"
+            Orientation="Vertical"
+            Visibility="{Binding ElementName=IsUseSyncSettingsToggleButton, Path=IsChecked, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <!--  Url  -->
+            <StackPanel Orientation="Horizontal">
+                <!--  图标  -->
+                <TextBlock
+                    Margin="5,0"
+                    VerticalAlignment="Center"
+                    FontSize="13"
+                    FontWeight="Bold"
+                    Foreground="DarkGray"
+                    Text="服务器连接:" />
+                <Border
+                    Margin="5"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Background="#1A696969"
+                    CornerRadius="5">
+                    <TextBox
+                        Width="360"
+                        Height="30"
+                        Margin="5,0"
+                        materialDesign:TextFieldAssist.HasClearButton="False"
+                        materialDesign:TextFieldAssist.HasFilledTextField="True"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="White"
+                        InputMethod.IsInputMethodEnabled="False"
+                        Text="{Binding SyncSettingsInfo.Url, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                </Border>
+                <!--  连接测试  -->
+                <Button
+                    MinHeight="30"
+                    Margin="0,10"
+                    HorizontalAlignment="Left"
+                    materialDesign:ButtonAssist.CornerRadius="5"
+                    Background="#2E2E2E"
+                    BorderThickness="0"
+                    Command="{Binding ConnectCommand}"
+                    FocusVisualStyle="{x:Null}"
+                    Style="{StaticResource MaterialDesignFlatAccentBgButton}">
+
+                    <Grid>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock
+                                Margin="0,0,0,0"
+                                VerticalAlignment="Center"
+                                FontFamily="{StaticResource IconFontFamily}"
+                                FontSize="18"
+                                Foreground="DarkGray"
+                                Text="&#xe89c;" />
+                            <TextBlock
+                                Margin="2,1,0,0"
+                                VerticalAlignment="Center"
+                                FontFamily="{StaticResource CustomFontFamily}"
+                                FontSize="14"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                Text="连接测试" />
+                            <StackPanel.Style>
+                                <Style TargetType="StackPanel">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsConnecting}" Value="True">
+                                            <Setter Property="Visibility" Value="Hidden" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding IsConnecting}" Value="False">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </StackPanel.Style>
+                        </StackPanel>
+                        <ProgressBar
+                            Width="25"
+                            Height="25"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            IsIndeterminate="True"
+                            Value="0">
+                            <ProgressBar.Style>
+                                <Style BasedOn="{StaticResource MaterialDesignCircularProgressBar}" TargetType="ProgressBar">
+                                    <Setter Property="Visibility" Value="Hidden" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsConnecting}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding IsConnecting}" Value="False">
+                                            <Setter Property="Visibility" Value="Hidden" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ProgressBar.Style>
+                        </ProgressBar>
+                    </Grid>
+                </Button>
+            </StackPanel>
+            <!--  相机配置  -->
+            <StackPanel Margin="20,5,0,0" Orientation="Vertical">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock
+                        Margin="0,0,0,1"
+                        VerticalAlignment="Center"
+                        FontFamily="{StaticResource IconFontFamily}"
+                        FontSize="20"
+                        Foreground="DarkGray"
+                        Text="&#xe63a;" />
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="16"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="相机配置:" />
+                </StackPanel>
+                <StackPanel Margin="50,5,0,0" Orientation="Horizontal">
+                    <TextBlock
+                        Margin="0,0,0,1"
+                        VerticalAlignment="Center"
+                        FontFamily="{StaticResource IconFontFamily}"
+                        FontSize="20"
+                        Foreground="DarkGray"
+                        Text="&#xe97c;" />
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="算法配置同步:" />
+                    <CheckBox
+                        BorderBrush="DodgerBlue"
+                        BorderThickness="2"
+                        Foreground="#2E2E2E"
+                        IsChecked="{Binding SyncSettingsInfo.IsUseAlgorithmSync, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                        Style="{StaticResource CustomCheckBoxStyle}" />
+                </StackPanel>
+            </StackPanel>
+            <!--  Api配置  -->
+            <StackPanel Margin="20,5,0,0" Orientation="Vertical">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock
+                        Margin="0,0,0,1"
+                        VerticalAlignment="Center"
+                        FontFamily="{StaticResource IconFontFamily}"
+                        FontSize="20"
+                        Foreground="DarkGray"
+                        Text="&#xe664;" />
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="16"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="Api接口配置:" />
+                </StackPanel>
+                <StackPanel Margin="50,5,0,0" Orientation="Horizontal">
+                    <TextBlock
+                        Margin="0,0,0,1"
+                        VerticalAlignment="Center"
+                        FontFamily="{StaticResource IconFontFamily}"
+                        FontSize="20"
+                        Foreground="DarkGray"
+                        Text="&#xe664;" />
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="Api接口配置同步:" />
+                    <CheckBox
+                        BorderBrush="DodgerBlue"
+                        BorderThickness="2"
+                        Foreground="#2E2E2E"
+                        IsChecked="{Binding SyncSettingsInfo.IsUseApiSync, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                        Style="{StaticResource CustomCheckBoxStyle}" />
+                </StackPanel>
+            </StackPanel>
+            <!--  存图配置  -->
+            <StackPanel Margin="20,5,0,0" Orientation="Vertical">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock
+                        Margin="0,0,0,1"
+                        VerticalAlignment="Center"
+                        FontFamily="{StaticResource IconFontFamily}"
+                        FontSize="20"
+                        Foreground="DarkGray"
+                        Text="&#xe6b1;" />
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="16"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="存图配置:" />
+                </StackPanel>
+                <StackPanel Margin="50,5,0,0" Orientation="Horizontal">
+                    <TextBlock
+                        Margin="0,0,0,1"
+                        VerticalAlignment="Center"
+                        FontFamily="{StaticResource IconFontFamily}"
+                        FontSize="20"
+                        Foreground="DarkGray"
+                        Text="&#xe6b1;" />
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="存图配置同步:" />
+                    <CheckBox
+                        BorderBrush="DodgerBlue"
+                        BorderThickness="2"
+                        Foreground="#2E2E2E"
+                        IsChecked="{Binding SyncSettingsInfo.IsUseImageStorageSync, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                        Style="{StaticResource CustomCheckBoxStyle}" />
+                </StackPanel>
+            </StackPanel>
+            <!--  过滤配置  -->
+            <StackPanel Margin="20,5,0,0" Orientation="Vertical">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock
+                        Margin="0,0,0,1"
+                        VerticalAlignment="Center"
+                        FontFamily="{StaticResource IconFontFamily}"
+                        FontSize="20"
+                        Foreground="DarkGray"
+                        Text="&#xe6af;" />
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="16"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="过滤配置:" />
+                </StackPanel>
+                <StackPanel Margin="50,5,0,0" Orientation="Horizontal">
+                    <TextBlock
+                        Margin="0,0,0,1"
+                        VerticalAlignment="Center"
+                        FontFamily="{StaticResource IconFontFamily}"
+                        FontSize="20"
+                        Foreground="DarkGray"
+                        Text="&#xe6af;" />
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="过滤配置同步:" />
+                    <CheckBox
+                        BorderBrush="DodgerBlue"
+                        BorderThickness="2"
+                        Foreground="#2E2E2E"
+                        IsChecked="{Binding SyncSettingsInfo.IsUseFilterSync, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                        Style="{StaticResource CustomCheckBoxStyle}" />
+                </StackPanel>
+            </StackPanel>
+            <!--  内容输入配置  -->
+            <StackPanel Margin="20,5,0,0" Orientation="Vertical">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock
+                        Margin="0,0,0,1"
+                        VerticalAlignment="Center"
+                        FontFamily="{StaticResource IconFontFamily}"
+                        FontSize="20"
+                        Foreground="DarkGray"
+                        Text="&#xe6b5;" />
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="16"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="内容输入配置:" />
+                </StackPanel>
+                <StackPanel Margin="50,5,0,0" Orientation="Horizontal">
+                    <TextBlock
+                        Margin="0,0,0,1"
+                        VerticalAlignment="Center"
+                        FontFamily="{StaticResource IconFontFamily}"
+                        FontSize="20"
+                        Foreground="DarkGray"
+                        Text="&#xe6b5;" />
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="内容输入配置同步:" />
+                    <CheckBox
+                        BorderBrush="DodgerBlue"
+                        BorderThickness="2"
+                        Foreground="#2E2E2E"
+                        IsChecked="{Binding SyncSettingsInfo.IsUseContentInputSync, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                        Style="{StaticResource CustomCheckBoxStyle}" />
+                </StackPanel>
+            </StackPanel>
+            <!--  分拣配置  -->
+            <StackPanel Margin="20,5,0,0" Orientation="Vertical">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock
+                        Margin="0,0,0,1"
+                        VerticalAlignment="Center"
+                        FontFamily="{StaticResource IconFontFamily}"
+                        FontSize="20"
+                        Foreground="DarkGray"
+                        Text="&#xe79f;" />
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="16"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="分拣配置:" />
+                </StackPanel>
+                <StackPanel Margin="50,5,0,0" Orientation="Horizontal">
+                    <!--  连接配置  -->
+                    <StackPanel Margin="5,0" Orientation="Horizontal">
+                        <TextBlock
+                            Margin="0,0,0,1"
+                            VerticalAlignment="Center"
+                            FontFamily="{StaticResource IconFontFamily}"
+                            FontSize="20"
+                            Foreground="DarkGray"
+                            Text="&#xe7ce;" />
+                        <TextBlock
+                            Margin="5,0"
+                            VerticalAlignment="Center"
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="DarkGray"
+                            Text="连接配置同步:" />
+                        <CheckBox
+                            BorderBrush="DodgerBlue"
+                            BorderThickness="2"
+                            Foreground="#2E2E2E"
+                            IsChecked="{Binding SyncSettingsInfo.IsUseConnectionSync, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                            Style="{StaticResource CustomCheckBoxStyle}" />
+                    </StackPanel>
+                    <!--  格口配置  -->
+                    <StackPanel Margin="5,0" Orientation="Horizontal">
+                        <TextBlock
+                            Margin="0,0,0,1"
+                            VerticalAlignment="Center"
+                            FontFamily="{StaticResource IconFontFamily}"
+                            FontSize="20"
+                            Foreground="DarkGray"
+                            Text="&#xe7c0;" />
+                        <TextBlock
+                            Margin="5,0"
+                            VerticalAlignment="Center"
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="DarkGray"
+                            Text="格口配置同步:" />
+                        <CheckBox
+                            BorderBrush="DodgerBlue"
+                            BorderThickness="2"
+                            Foreground="#2E2E2E"
+                            IsChecked="{Binding SyncSettingsInfo.IsUseExitSync, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                            Style="{StaticResource CustomCheckBoxStyle}" />
+                    </StackPanel>
+                    <!--  指令配置  -->
+                    <StackPanel Margin="5,0" Orientation="Horizontal">
+                        <TextBlock
+                            Margin="0,0,0,1"
+                            VerticalAlignment="Center"
+                            FontFamily="{StaticResource IconFontFamily}"
+                            FontSize="20"
+                            Foreground="DarkGray"
+                            Text="&#xe7b8;" />
+                        <TextBlock
+                            Margin="5,0"
+                            VerticalAlignment="Center"
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="DarkGray"
+                            Text="指令配置同步:" />
+                        <CheckBox
+                            BorderBrush="DodgerBlue"
+                            BorderThickness="2"
+                            Foreground="#2E2E2E"
+                            IsChecked="{Binding SyncSettingsInfo.IsUseInstructionSync, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                            Style="{StaticResource CustomCheckBoxStyle}" />
+                    </StackPanel>
+                    <!--  物流配置  -->
+                    <StackPanel Margin="5,0" Orientation="Horizontal">
+                        <TextBlock
+                            Margin="0,0,0,1"
+                            VerticalAlignment="Center"
+                            FontFamily="{StaticResource IconFontFamily}"
+                            FontSize="20"
+                            Foreground="DarkGray"
+                            Text="&#xe7a8;" />
+                        <TextBlock
+                            Margin="5,0"
+                            VerticalAlignment="Center"
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="DarkGray"
+                            Text="物流配置同步:" />
+                        <CheckBox
+                            BorderBrush="DodgerBlue"
+                            BorderThickness="2"
+                            Foreground="#2E2E2E"
+                            IsChecked="{Binding SyncSettingsInfo.IsUseLogisticsSync, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                            Style="{StaticResource CustomCheckBoxStyle}" />
+                    </StackPanel>
+                    <!--  分拣模式配置  -->
+                    <StackPanel Margin="5,0" Orientation="Horizontal">
+                        <TextBlock
+                            Margin="0,0,0,1"
+                            VerticalAlignment="Center"
+                            FontFamily="{StaticResource IconFontFamily}"
+                            FontSize="20"
+                            Foreground="DarkGray"
+                            Text="&#xe7b9;" />
+                        <TextBlock
+                            Margin="5,0"
+                            VerticalAlignment="Center"
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="DarkGray"
+                            Text="分拣模式配置同步:" />
+                        <CheckBox
+                            BorderBrush="DodgerBlue"
+                            BorderThickness="2"
+                            Foreground="#2E2E2E"
+                            IsChecked="{Binding SyncSettingsInfo.IsUseSortingModeSync, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                            Style="{StaticResource CustomCheckBoxStyle}" />
+                    </StackPanel>
+                    <!--  锁格配置  -->
+                    <StackPanel Margin="5,0" Orientation="Horizontal">
+                        <TextBlock
+                            Margin="0,0,0,1"
+                            VerticalAlignment="Center"
+                            FontFamily="{StaticResource IconFontFamily}"
+                            FontSize="20"
+                            Foreground="DarkGray"
+                            Text="&#xe92e;" />
+                        <TextBlock
+                            Margin="5,0"
+                            VerticalAlignment="Center"
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="DarkGray"
+                            Text="锁格配置同步:" />
+                        <CheckBox
+                            BorderBrush="DodgerBlue"
+                            BorderThickness="2"
+                            Foreground="#2E2E2E"
+                            IsChecked="{Binding SyncSettingsInfo.IsUseLockerExitSync, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                            Style="{StaticResource CustomCheckBoxStyle}" />
+                    </StackPanel>
+                    <!--  叠包配置  -->
+                    <StackPanel Margin="5,0" Orientation="Horizontal">
+                        <TextBlock
+                            Margin="0,0,0,1"
+                            VerticalAlignment="Center"
+                            FontFamily="{StaticResource IconFontFamily}"
+                            FontSize="20"
+                            Foreground="DarkGray"
+                            Text="&#xe942;" />
+                        <TextBlock
+                            Margin="5,0"
+                            VerticalAlignment="Center"
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="DarkGray"
+                            Text="叠包配置同步:" />
+                        <CheckBox
+                            BorderBrush="DodgerBlue"
+                            BorderThickness="2"
+                            Foreground="#2E2E2E"
+                            IsChecked="{Binding SyncSettingsInfo.IsUseStackingSync, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                            Style="{StaticResource CustomCheckBoxStyle}" />
+                    </StackPanel>
+                </StackPanel>
+            </StackPanel>
+            <!--  组包配置  -->
+            <StackPanel Margin="20,5,0,0" Orientation="Vertical">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock
+                        Margin="0,0,0,1"
+                        VerticalAlignment="Center"
+                        FontFamily="{StaticResource IconFontFamily}"
+                        FontSize="20"
+                        Foreground="DarkGray"
+                        Text="&#xe91e;" />
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="16"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="组包配置:" />
+                </StackPanel>
+                <StackPanel Margin="50,5,0,0" Orientation="Horizontal">
+                    <TextBlock
+                        Margin="0,0,0,1"
+                        VerticalAlignment="Center"
+                        FontFamily="{StaticResource IconFontFamily}"
+                        FontSize="20"
+                        Foreground="DarkGray"
+                        Text="&#xe91e;" />
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="组包配置同步:" />
+                    <CheckBox
+                        BorderBrush="DodgerBlue"
+                        BorderThickness="2"
+                        Foreground="#2E2E2E"
+                        IsChecked="{Binding SyncSettingsInfo.IsUsePackagingSync, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                        Style="{StaticResource CustomCheckBoxStyle}" />
+                </StackPanel>
+            </StackPanel>
+            <!--  Ocr配置  -->
+            <StackPanel Margin="20,5,0,0" Orientation="Vertical">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock
+                        Margin="0,0,0,1"
+                        VerticalAlignment="Center"
+                        FontFamily="{StaticResource IconFontFamily}"
+                        FontSize="20"
+                        Foreground="DarkGray"
+                        Text="&#xe7a0;" />
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="16"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="Ocr配置:" />
+                </StackPanel>
+                <StackPanel Margin="50,5,0,0" Orientation="Horizontal">
+                    <TextBlock
+                        Margin="0,0,0,1"
+                        VerticalAlignment="Center"
+                        FontFamily="{StaticResource IconFontFamily}"
+                        FontSize="20"
+                        Foreground="DarkGray"
+                        Text="&#xe7a0;" />
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="Ocr配置同步:" />
+                    <CheckBox
+                        BorderBrush="DodgerBlue"
+                        BorderThickness="2"
+                        Foreground="#2E2E2E"
+                        IsChecked="{Binding SyncSettingsInfo.IsUseOcrSync, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                        Style="{StaticResource CustomCheckBoxStyle}" />
+                </StackPanel>
+            </StackPanel>
+            <!--  云端配置  -->
+            <StackPanel Margin="20,5,0,0" Orientation="Vertical">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock
+                        Margin="0,0,0,1"
+                        VerticalAlignment="Center"
+                        FontFamily="{StaticResource IconFontFamily}"
+                        FontSize="20"
+                        Foreground="DarkGray"
+                        Text="&#xe944;" />
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="16"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="云端配置:" />
+                </StackPanel>
+                <StackPanel Margin="50,5,0,0" Orientation="Horizontal">
+                    <TextBlock
+                        Margin="0,0,0,1"
+                        VerticalAlignment="Center"
+                        FontFamily="{StaticResource IconFontFamily}"
+                        FontSize="20"
+                        Foreground="DarkGray"
+                        Text="&#xe944;" />
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="云端配置同步:" />
+                    <CheckBox
+                        BorderBrush="DodgerBlue"
+                        BorderThickness="2"
+                        Foreground="#2E2E2E"
+                        IsChecked="{Binding SyncSettingsInfo.IsUseCloudSync, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                        Style="{StaticResource CustomCheckBoxStyle}" />
+                </StackPanel>
+            </StackPanel>
+            <!--  空间清理配置  -->
+            <StackPanel Margin="20,5,0,0" Orientation="Vertical">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock
+                        Margin="0,0,0,1"
+                        VerticalAlignment="Center"
+                        FontFamily="{StaticResource IconFontFamily}"
+                        FontSize="20"
+                        Foreground="DarkGray"
+                        Text="&#xeaad;" />
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="16"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="空间清理配置:" />
+                </StackPanel>
+                <StackPanel Margin="50,5,0,0" Orientation="Horizontal">
+                    <TextBlock
+                        Margin="0,0,0,1"
+                        VerticalAlignment="Center"
+                        FontFamily="{StaticResource IconFontFamily}"
+                        FontSize="20"
+                        Foreground="DarkGray"
+                        Text="&#xeaad;" />
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="空间清理配置同步:" />
+                    <CheckBox
+                        BorderBrush="DodgerBlue"
+                        BorderThickness="2"
+                        Foreground="#2E2E2E"
+                        IsChecked="{Binding SyncSettingsInfo.IsUseSpaceCleaningSync, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                        Style="{StaticResource CustomCheckBoxStyle}" />
+                </StackPanel>
+            </StackPanel>
+        </StackPanel>
     </Grid>
 </Page>
