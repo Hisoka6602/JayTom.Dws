@@ -854,11 +854,14 @@ namespace JayTom.Dws.Infrastructure.Repository {
                         return true;*/
                         // 1. 获取数据库中的所有实体
                         var existingEntities = await concardContext.Set<T>().ToListAsync(token);
-
+                        // 4. 找到需要删除的实体
+                        var entitiesToDelete = existingEntities.Except(entities).ToList();
+                        concardContext.RemoveRange(entitiesToDelete);
+                        await concardContext.SaveChangesAsync(token);
                         // 2. 找到需要插入的实体
                         var entitiesToAdd = entities.Except(existingEntities).ToList();
                         concardContext.AddRange(entitiesToAdd);
-
+                        await concardContext.SaveChangesAsync(token);
                         // 3. 找到需要更新的实体
                         var entitiesToUpdate = entities.Intersect(existingEntities).ToList();
                         foreach (var entity in entitiesToUpdate) {
@@ -867,10 +870,6 @@ namespace JayTom.Dws.Infrastructure.Repository {
                                 concardContext.Entry(entity).Property(property).IsModified = false;
                             }
                         }
-
-                        // 4. 找到需要删除的实体
-                        var entitiesToDelete = existingEntities.Except(entities).ToList();
-                        concardContext.RemoveRange(entitiesToDelete);
 
                         // 5. 提交事务
                         await concardContext.SaveChangesAsync(token);

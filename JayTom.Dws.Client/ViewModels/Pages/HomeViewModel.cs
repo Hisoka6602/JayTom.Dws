@@ -807,7 +807,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     try {
                         await _runningSemaphoreSlim.WaitAsync();
                         IsSwitchingState = true;
-                        if (!RunningStatus || command == RemoteCommand.Start) {
+                        if (!RunningStatus && (obj is null || command == RemoteCommand.Start)) {
                             //效验
                             /*
                             var machineCode = await _computer.GenerateMachineCode();

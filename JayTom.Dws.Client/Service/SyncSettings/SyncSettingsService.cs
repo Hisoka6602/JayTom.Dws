@@ -15,7 +15,7 @@ namespace JayTom.Dws.Client.Service.SyncSettings {
         public SyncSettingsService(ICloudApiClientMessageHub cloudApiClientMessageHub) {
             _cloudApiClientMessageHub = cloudApiClientMessageHub;
             _cloudApiClientMessageHub.ReceiveMessage += async info => {
-                if (info.MethodName.Equals("UpdateSettingsInfo")) {
+                if (info.MethodName.Equals("SyncSettingsInfo")) {
                     try {
                         await Task.Yield();
                         var syncSettingsInfo =

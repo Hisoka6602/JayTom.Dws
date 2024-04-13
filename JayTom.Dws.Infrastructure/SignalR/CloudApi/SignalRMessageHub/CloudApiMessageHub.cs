@@ -11,9 +11,9 @@ using JayTom.Dws.Infrastructure.SignalR.VideoApi.SignalRMessageHub;
 namespace JayTom.Dws.Infrastructure.SignalR.CloudApi.SignalRMessageHub {
 
     public class CloudApiMessageHub : Hub, ICloudApiMessageHub {
-        private readonly IHubContext<MessageHub> _hubContext;
+        private readonly IHubContext<CloudApiMessageHub> _hubContext;
 
-        public CloudApiMessageHub(IHubContext<MessageHub> hubContext) {
+        public CloudApiMessageHub(IHubContext<CloudApiMessageHub> hubContext) {
             _hubContext = hubContext;
         }
 
@@ -39,7 +39,7 @@ namespace JayTom.Dws.Infrastructure.SignalR.CloudApi.SignalRMessageHub {
         }
 
         public async void SyncSettingsInfo(string excludedClient, string settingsName, object message) {
-            await _hubContext.Clients.AllExcept(excludedClient).SendCoreAsync("UpdateSettingsInfo", new object?[]
+            await _hubContext.Clients.AllExcept(excludedClient).SendCoreAsync("SyncSettingsInfo", new object?[]
             {
                 new SyncSettingsInfo
                 {

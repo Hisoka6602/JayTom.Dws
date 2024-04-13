@@ -587,80 +587,126 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings(
                             break;
 
                         case "ApiSortingItemsSettings" when _syncSettingsDto is { IsUseSyncSettings: true, IsUseSortingModeSync: true }: {
-                                if (info.SettingsInfo is List<ApiSortingInfoModel> models) {
-                                    await _apiSortingRepository.SyncEntities(models);
+                                try {
+                                    var models = JsonConvert.DeserializeObject<List<ApiSortingInfoModel>>(info.SettingsInfo?.ToString() ?? string.Empty);
+                                    if (models is not null) {
+                                        await _apiSortingRepository.SyncEntities(models);
+                                    }
+                                }
+                                catch (Exception e) {
                                 }
 
                                 break;
                             }
                         case "BarcodeSortingItemsSettings" when _syncSettingsDto is { IsUseSyncSettings: true, IsUseSortingModeSync: true }: {
-                                if (info.SettingsInfo is List<BarCodeSortingInfoModel> models) {
-                                    await _barCodeSortingRepository.SyncEntities(models);
+                                try {
+                                    var models = JsonConvert.DeserializeObject<List<BarCodeSortingInfoModel>>(info.SettingsInfo?.ToString() ?? string.Empty);
+                                    if (models is not null) {
+                                        await _barCodeSortingRepository.SyncEntities(models);
+                                    }
+                                }
+                                catch (Exception e) {
                                 }
 
                                 break;
                             }
                         case "LogisticsSortingItemsSettings" when _syncSettingsDto is { IsUseSyncSettings: true, IsUseSortingModeSync: true }: {
-                                if (info.SettingsInfo is List<LogisticsSortingInfoModel> models) {
-                                    await _logisticsSortingRepository.SyncEntities(models);
+                                try {
+                                    var models = JsonConvert.DeserializeObject<List<LogisticsSortingInfoModel>>(info.SettingsInfo?.ToString() ?? string.Empty);
+                                    if (models is not null) {
+                                        await _logisticsSortingRepository.SyncEntities(models);
+                                    }
                                 }
-
+                                catch (Exception e) {
+                                }
                                 break;
                             }
                         case "OcrSortingInfoModel" when _syncSettingsDto is { IsUseSyncSettings: true, IsUseSortingModeSync: true }: {
-                                if (info.SettingsInfo is List<OcrSortingInfoModel> models) {
-                                    await _ocrSortingRepository.SyncEntities(models);
+                                try {
+                                    var models = JsonConvert.DeserializeObject<List<OcrSortingInfoModel>>(info.SettingsInfo?.ToString() ?? string.Empty);
+                                    if (models is not null) {
+                                        await _ocrSortingRepository.SyncEntities(models);
+                                    }
                                 }
-
+                                catch (Exception e) {
+                                }
                                 break;
                             }
                         case "VolumeSortingItemsSettings" when _syncSettingsDto is { IsUseSyncSettings: true, IsUseSortingModeSync: true }: {
-                                if (info.SettingsInfo is List<VolumeSortingInfoModel> models) {
-                                    await _volumeSortingRepository.SyncEntities(models);
+                                try {
+                                    var models = JsonConvert.DeserializeObject<List<VolumeSortingInfoModel>>(info.SettingsInfo?.ToString() ?? string.Empty);
+                                    if (models is not null) {
+                                        await _volumeSortingRepository.SyncEntities(models);
+                                    }
                                 }
-
+                                catch (Exception e) {
+                                }
                                 break;
                             }
                         case "WeightSortingItemsSettings" when _syncSettingsDto is { IsUseSyncSettings: true, IsUseSortingModeSync: true }: {
-                                if (info.SettingsInfo is List<WeightSortingInfoModel> models) {
-                                    await _weightSortingRepository.SyncEntities(models);
+                                try {
+                                    var models = JsonConvert.DeserializeObject<List<WeightSortingInfoModel>>(info.SettingsInfo?.ToString() ?? string.Empty);
+                                    if (models is not null) {
+                                        await _weightSortingRepository.SyncEntities(models);
+                                    }
                                 }
-
+                                catch (Exception e) {
+                                }
                                 break;
                             }
                         case "CommunicationsItemsSettings" when _syncSettingsDto is { IsUseSyncSettings: true, IsUseConnectionSync: true }: {
-                                if (info.SettingsInfo is List<CommunicationConnectionConfigInfoModel> models) {
-                                    await _communicationConnectionConfigRepository.SyncEntities(models);
+                                try {
+                                    var models = JsonConvert.DeserializeObject<List<CommunicationConnectionConfigInfoModel>>(info.SettingsInfo?.ToString() ?? string.Empty);
+                                    if (models is not null) {
+                                        await _communicationConnectionConfigRepository.SyncEntities(models);
+                                    }
                                 }
-
+                                catch (Exception e) {
+                                }
                                 break;
                             }
                         case "LogisticsCodeRecognitionItemSettings" when _syncSettingsDto is { IsUseSyncSettings: true, IsUseLogisticsSync: true }: {
-                                if (info.SettingsInfo is List<LogisticsCodeRecognitionInfoModel> models) {
-                                    await _logisticsCodeRecognitionRepository.SyncEntities(models);
+                                try {
+                                    var models = JsonConvert.DeserializeObject<List<LogisticsCodeRecognitionInfoModel>>(info.SettingsInfo?.ToString() ?? string.Empty);
+                                    if (models is not null) {
+                                        await _logisticsCodeRecognitionRepository.SyncEntities(models);
+                                    }
                                 }
-
+                                catch (Exception e) {
+                                }
                                 break;
                             }
                         case "PackageExitDefinitionItemSettings" when _syncSettingsDto is { IsUseSyncSettings: true, IsUseExitSync: true }: {
-                                if (info.SettingsInfo is List<PackageExitDefinitionInfoModel> models) {
-                                    await _packageExitDefinitionRepository.SyncEntities(models);
+                                try {
+                                    var models = JsonConvert.DeserializeObject<List<PackageExitDefinitionInfoModel>>(info.SettingsInfo?.ToString() ?? string.Empty);
+                                    if (models is not null) {
+                                        await _packageExitDefinitionRepository.SyncEntities(models);
+                                    }
                                 }
-
+                                catch (Exception e) {
+                                }
                                 break;
                             }
                         case "PackageExitLockBindingItemSettings" when _syncSettingsDto is { IsUseSyncSettings: true, IsUseLockerExitSync: true }: {
-                                if (info.SettingsInfo is List<PackageExitLockBindingInfoModel> models) {
-                                    await _packageExitLockBindingRepository.SyncEntities(models);
+                                try {
+                                    var models = JsonConvert.DeserializeObject<List<PackageExitLockBindingInfoModel>>(info.SettingsInfo?.ToString() ?? string.Empty);
+                                    if (models is not null) {
+                                        await _packageExitLockBindingRepository.SyncEntities(models);
+                                    }
                                 }
-
+                                catch (Exception e) {
+                                }
                                 break;
                             }
                         case "SortingInstructionBindingItemSettings" when _syncSettingsDto is { IsUseSyncSettings: true, IsUseInstructionSync: true }: {
-                                if (info.SettingsInfo is List<SortingInstructionBindingInfoModel> models) {
-                                    await _sortingInstructionBindingRepository.SyncEntities(models);
+                                try {
+                                    var models = JsonConvert.DeserializeObject<List<SortingInstructionBindingInfoModel>>(info.SettingsInfo?.ToString() ?? string.Empty);
+                                    if (models is not null) {
+                                        await _sortingInstructionBindingRepository.SyncEntities(models);
+                                    }
                                 }
-
+                                catch (Exception e) {
+                                }
                                 break;
                             }
                     }

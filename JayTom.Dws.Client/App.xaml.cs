@@ -376,7 +376,7 @@ namespace JayTom.Dws.Client {
                 services.AddHostedService<DataProcessingBackgroundService>();//数据处理
                 services.AddHostedService<CleanupService>();//清理
                 services.AddHostedService<ComputerInfoBackgroundService>(); // 注册后台服务
-                //services.AddHostedService<SingleInstanceBackgroundService>(); // 注册单开激活服务
+                services.AddHostedService<SingleInstanceBackgroundService>(); // 注册单开激活服务
                 services.AddHostedService<LogProcessingService>();//日志管理器
                 services.AddHostedService<TimerBackgroundService>();//计时
                 services.AddHostedService<CloudBackgroundService>();//上传云端
@@ -389,12 +389,12 @@ namespace JayTom.Dws.Client {
         }
 
         protected override void OnStartup(StartupEventArgs e) {
-            /*_singleInstanceMutex = new Mutex(true, "Dws.Client", out var createdNew);
+            _singleInstanceMutex = new Mutex(true, "Dws.Client", out var createdNew);
             if (!createdNew) {
                 // 另一个实例已经在运行，尝试激活它的窗口
                 NotifyExistingInstance();
                 Environment.Exit(0);
-            }*/
+            }
             ThreadPool.SetMinThreads(300, 300);
 
             this.DispatcherUnhandledException += delegate (object sender, DispatcherUnhandledExceptionEventArgs args) {

@@ -58,7 +58,7 @@ namespace JayTom.Dws.Infrastructure.SignalR.CloudApi.ClientMessageHub {
                 RegisterMethod(_hubConnection, "Stop");
                 RegisterMethod(_hubConnection, "Start");
                 RegisterMethod(_hubConnection, "Exit");
-                RegisterMethod(_hubConnection, "UpdateSettingsInfo");
+                RegisterMethod(_hubConnection, "SyncSettingsInfo");
                 await _hubConnection?.StartAsync(token)!;
                 ConnectionId = _hubConnection?.ConnectionId ?? string.Empty;
                 IsConnected = true;
@@ -217,7 +217,7 @@ namespace JayTom.Dws.Infrastructure.SignalR.CloudApi.ClientMessageHub {
             ReceiveMessage?.Invoke(arg);
         }
 
-        protected virtual async Task OnClosed(Exception arg) {
+        protected virtual async Task OnClosed(Exception? arg) {
             await Task.Yield();
             IsConnected = false;
             Closed?.Invoke(arg ?? new Exception());
@@ -233,7 +233,7 @@ namespace JayTom.Dws.Infrastructure.SignalR.CloudApi.ClientMessageHub {
             }
         }
 
-        protected virtual async Task OnReconnected(string arg) {
+        protected virtual async Task OnReconnected(string? arg) {
             await Task.Yield();
             NLog.LogManager.GetCurrentClassLogger().Error($"重连成功:id={_hubConnection.ConnectionId}");
             IsConnected = true;
