@@ -4,6 +4,8 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:dataTemplateSelectors="clr-namespace:JayTom.Dws.Client.DataTemplateSelectors"
+    xmlns:imageSettingModels="clr-namespace:JayTom.Dws.Client.Models.ImageSettingModels"
     xmlns:languages="clr-namespace:JayTom.Dws.Client.Languages"
     xmlns:local="clr-namespace:JayTom.Dws.Client.Views.Pages.Preferences"
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
@@ -22,6 +24,44 @@
     mc:Ignorable="d">
     <Page.Resources>
         <settingsConverter:TcpConnectionModeToBooleanConverter x:Key="TcpConnectionModeToBooleanConverter" />
+        <settingsConverter:ShortcutMacroConverter x:Key="ShortcutMacroConverter" />
+        <DataTemplate x:Key="ImageSettingButtonTemplate" DataType="{x:Type imageSettingModels:ItemBaseTemplateModel}">
+            <Button
+                Height="25"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                VerticalContentAlignment="Center"
+                materialDesign:ButtonAssist.CornerRadius="12"
+                Background="DodgerBlue"
+                BorderThickness="0"
+                Command="{Binding DataContext.RemoveTemplateItemCommand, ElementName=ContentInputSettingsView}"
+                CommandParameter="{Binding}"
+                Focusable="False"
+                Style="{StaticResource MaterialDesignRaisedDarkButton}">
+                <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{Binding Content, Converter={StaticResource ShortcutMacroConverter}}" />
+            </Button>
+        </DataTemplate>
+        <DataTemplate x:Key="SeparatorTemplate" DataType="{x:Type imageSettingModels:ItemBaseTemplateModel}">
+            <Button
+                Height="25"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                VerticalContentAlignment="Center"
+                materialDesign:ButtonAssist.CornerRadius="12"
+                Background="BlueViolet"
+                BorderThickness="0"
+                Command="{Binding DataContext.RemoveTemplateItemCommand, ElementName=ContentInputSettingsView}"
+                CommandParameter="{Binding}"
+                Focusable="False"
+                Foreground="White"
+                Style="{StaticResource MaterialDesignRaisedDarkButton}">
+                <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{Binding Content}" />
+            </Button>
+        </DataTemplate>
+        <dataTemplateSelectors:ImageSettingItemDataTemplateSelectors
+            x:Key="ContentInputDataTemplateSelectors"
+            ButtonTemplate="{StaticResource ImageSettingButtonTemplate}"
+            SeparatorTemplate="{StaticResource SeparatorTemplate}" />
     </Page.Resources>
     <b:Interaction.Triggers>
         <b:EventTrigger EventName="Loaded" SourceName="{Binding Name, RelativeSource={RelativeSource AncestorType={x:Type Page}}}">
@@ -229,7 +269,7 @@
                         </StackPanel>
                     </StackPanel>
                     <!--  支持的内容格式  -->
-                    <TextBlock
+                    <!--<TextBlock
                         Margin="5,0"
                         VerticalAlignment="Center"
                         FontSize="13"
@@ -261,7 +301,235 @@
                             Text="{Binding ExampleJson, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
                             TextWrapping="Wrap"
                             VerticalScrollBarVisibility="Auto" />
-                    </Border>
+                    </Border>-->
+
+                    <!--  输入模板  -->
+                    <StackPanel
+                        Margin="5,0"
+                        VerticalAlignment="Top"
+                        Orientation="Vertical">
+                        <!--  输入模板  -->
+                        <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
+                            <TextBlock
+                                Margin="0,0,0,1"
+                                VerticalAlignment="Center"
+                                FontFamily="{StaticResource IconFontFamily}"
+                                FontSize="20"
+                                Foreground="DarkGray"
+                                Text="&#xe6cd;" />
+                            <TextBlock
+                                Margin="5,0"
+                                VerticalAlignment="Center"
+                                FontSize="16"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                Text="{x:Static languages:Language.InputTemplate}" />
+                        </StackPanel>
+                        <StackPanel Margin="50,10,0,0" Orientation="Horizontal">
+                            <TextBlock
+                                Margin="5,0"
+                                VerticalAlignment="Center"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                Text="{x:Static languages:Language.InputData}" />
+                            <StackPanel Orientation="Horizontal">
+                                <Button
+                                    Height="30"
+                                    Margin="5,0"
+                                    materialDesign:ButtonAssist.CornerRadius="15"
+                                    Background="DarkGray"
+                                    BorderThickness="0"
+                                    Command="{Binding AddInputItemCommand}"
+                                    CommandParameter="'{BarCode}'"
+                                    Focusable="False"
+                                    Style="{StaticResource MaterialDesignRaisedDarkButton}">
+                                    <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.TableHeaderBarCode}" />
+                                </Button>
+                                <Button
+                                    Height="30"
+                                    Margin="5,0"
+                                    materialDesign:ButtonAssist.CornerRadius="15"
+                                    Background="DarkGray"
+                                    BorderThickness="0"
+                                    Command="{Binding AddInputItemCommand}"
+                                    CommandParameter="'{Weight}'"
+                                    Focusable="False"
+                                    Style="{StaticResource MaterialDesignRaisedDarkButton}">
+                                    <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.TableHeaderWeight}" />
+                                </Button>
+                                <Button
+                                    Height="30"
+                                    Margin="5,0"
+                                    materialDesign:ButtonAssist.CornerRadius="15"
+                                    Background="DarkGray"
+                                    BorderThickness="0"
+                                    Command="{Binding AddInputItemCommand}"
+                                    CommandParameter="'{Length}'"
+                                    Focusable="False"
+                                    Style="{StaticResource MaterialDesignRaisedDarkButton}">
+                                    <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.TableHeaderLength}" />
+                                </Button>
+                                <Button
+                                    Height="30"
+                                    Margin="5,0"
+                                    materialDesign:ButtonAssist.CornerRadius="15"
+                                    Background="DarkGray"
+                                    BorderThickness="0"
+                                    Command="{Binding AddInputItemCommand}"
+                                    CommandParameter="'{Width}'"
+                                    Focusable="False"
+                                    Style="{StaticResource MaterialDesignRaisedDarkButton}">
+                                    <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.TableHeaderWidth}" />
+                                </Button>
+                                <Button
+                                    Height="30"
+                                    Margin="5,0"
+                                    materialDesign:ButtonAssist.CornerRadius="15"
+                                    Background="DarkGray"
+                                    BorderThickness="0"
+                                    Command="{Binding AddInputItemCommand}"
+                                    CommandParameter="'{Height}'"
+                                    Focusable="False"
+                                    Style="{StaticResource MaterialDesignRaisedDarkButton}">
+                                    <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.TableHeaderHeight}" />
+                                </Button>
+                                <Button
+                                    Height="30"
+                                    Margin="5,0"
+                                    materialDesign:ButtonAssist.CornerRadius="15"
+                                    Background="DarkGray"
+                                    BorderThickness="0"
+                                    Command="{Binding AddInputItemCommand}"
+                                    CommandParameter="'{Volume}'"
+                                    Focusable="False"
+                                    Style="{StaticResource MaterialDesignRaisedDarkButton}">
+                                    <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.TableHeaderVolume}" />
+                                </Button>
+                                <Border Background="BlueViolet" CornerRadius="15">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBox
+                                            Width="40"
+                                            Height="30"
+                                            MaxWidth="40"
+                                            Margin="15,0,0,0"
+                                            materialDesign:TextFieldAssist.HasClearButton="False"
+                                            materialDesign:TextFieldAssist.HasFilledTextField="True"
+                                            Background="Transparent"
+                                            BorderThickness="0"
+                                            FontSize="13"
+                                            FontWeight="Bold"
+                                            Foreground="White"
+                                            InputMethod.IsInputMethodEnabled="False"
+                                            Text="{Binding Separator, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                            TextAlignment="Center" />
+                                        <Border
+                                            Width="1"
+                                            Height="20"
+                                            BorderBrush="White"
+                                            BorderThickness="1" />
+                                        <Button
+                                            Width="70"
+                                            Height="30"
+                                            Margin="0,0"
+                                            Padding="4,0"
+                                            materialDesign:ButtonAssist.CornerRadius="0,15,15,0"
+                                            Background="Transparent"
+                                            BorderThickness="0"
+                                            Command="{Binding AddSeparatorItemCommand}"
+                                            CommandParameter="{Binding Separator}"
+                                            Focusable="False"
+                                            Foreground="White"
+                                            Style="{StaticResource MaterialDesignRaisedDarkButton}">
+                                            <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.Separator}" />
+                                        </Button>
+                                    </StackPanel>
+                                </Border>
+                                <Button
+                                    Height="30"
+                                    Margin="5,0"
+                                    materialDesign:ButtonAssist.CornerRadius="15"
+                                    Background="DarkGray"
+                                    BorderThickness="0"
+                                    Command="{Binding AddInputItemCommand}"
+                                    CommandParameter="'{null}'"
+                                    Focusable="False"
+                                    Style="{StaticResource MaterialDesignRaisedDarkButton}">
+                                    <TextBlock FontFamily="{StaticResource CustomFontFamily}" Text="{x:Static languages:Language.PaddingVariable}" />
+                                </Button>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <Border
+                            Margin="50,10,0,5"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Background="#1A696969"
+                            CornerRadius="5">
+                            <Grid>
+                                <Border
+                                    Width="50"
+                                    Margin="2"
+                                    HorizontalAlignment="Left"
+                                    Background="DarkGray"
+                                    CornerRadius="5">
+                                    <TextBlock
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        FontFamily="{StaticResource CustomFontFamily}"
+                                        FontSize="12"
+                                        FontWeight="Bold"
+                                        Foreground="#2E2E2E"
+                                        Text="{x:Static languages:Language.Content}" />
+                                </Border>
+                                <ListView
+                                    Width="710"
+                                    Height="30"
+                                    MaxWidth="900"
+                                    Margin="60,0,0,0"
+                                    Focusable="False"
+                                    ItemTemplateSelector="{StaticResource ContentInputDataTemplateSelectors}"
+                                    ItemsSource="{Binding DataTemplate, UpdateSourceTrigger=PropertyChanged}"
+                                    ScrollViewer.HorizontalScrollBarVisibility="Hidden"
+                                    ScrollViewer.VerticalScrollBarVisibility="Hidden"
+                                    SelectionMode="Extended">
+                                    <ListView.ItemContainerStyle>
+                                        <Style TargetType="ListViewItem">
+                                            <Setter Property="Background" Value="Transparent" />
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="ListViewItem">
+                                                        <Border
+                                                            x:Name="Border"
+                                                            Background="{TemplateBinding Background}"
+                                                            BorderBrush="{TemplateBinding BorderBrush}"
+                                                            BorderThickness="1"
+                                                            SnapsToDevicePixels="True">
+                                                            <ContentPresenter
+                                                                HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                                VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                                                SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                                                        </Border>
+                                                        <ControlTemplate.Triggers>
+                                                            <Trigger Property="IsSelected" Value="True">
+                                                                <Setter TargetName="Border" Property="Background" Value="Transparent" />
+                                                                <Setter TargetName="Border" Property="BorderBrush" Value="Transparent" />
+                                                            </Trigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </ListView.ItemContainerStyle>
+                                    <ListView.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel Background="Transparent" Orientation="Horizontal" />
+                                        </ItemsPanelTemplate>
+                                    </ListView.ItemsPanel>
+                                </ListView>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
                 </StackPanel>
             </StackPanel>
         </StackPanel>

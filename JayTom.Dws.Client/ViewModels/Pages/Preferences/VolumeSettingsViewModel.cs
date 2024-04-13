@@ -23,7 +23,6 @@ using JayTom.Dws.Client.Models.SettingsCommomModels;
 using JayTom.Dws.Infrastructure.Repository.LocalConf;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
-
     public class VolumeSettingsViewModel : SettingsPageTemplateViewModel {
         private VolumeSettingsInfoModel _volumeSettingsInfo = new();
         private ParityInfoModel _selectParity = new();
@@ -261,9 +260,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 串口刷新
         /// </summary>
-        public ICommand PortUpdateCommand {
-            get => new DelegateCommand(PortUpdateDelegate);
-        }
+        public ICommand PortUpdateCommand => new DelegateCommand(PortUpdateDelegate);
 
         private async void PortUpdateDelegate() {
             //重新枚举串口
@@ -276,9 +273,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 移除标记
         /// </summary>
-        public ICommand RemoveTemplateItemCommand {
-            get => new DelegateCommand<ItemBaseTemplateModel>(RemoveTemplateItemDelegate);
-        }
+        public ICommand RemoveTemplateItemCommand => new DelegateCommand<ItemBaseTemplateModel>(RemoveTemplateItemDelegate);
 
         private async void RemoveTemplateItemDelegate(ItemBaseTemplateModel model) {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
@@ -297,9 +292,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 添加数据模板
         /// </summary>
-        public ICommand AddOutputItemCommand {
-            get => new DelegateCommand<string>(AddOutputItemDelegate);
-        }
+        public ICommand AddOutputItemCommand => new DelegateCommand<string>(AddOutputItemDelegate);
 
         private async void AddOutputItemDelegate(string obj) {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
@@ -316,9 +309,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 添加数据模板
         /// </summary>
-        public ICommand AddSeparatorItemCommand {
-            get => new DelegateCommand<string>(AddSeparatorItemDelegate);
-        }
+        public ICommand AddSeparatorItemCommand => new DelegateCommand<string>(AddSeparatorItemDelegate);
 
         private async void AddSeparatorItemDelegate(string obj) {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {

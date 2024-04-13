@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 
 namespace JayTom.Dws.Domain.Dto.BaseInfoModels {
-
     public class ItemTemplateInfo {
 
         /// <summary>
@@ -59,6 +58,10 @@ namespace JayTom.Dws.Domain.Dto.BaseInfoModels {
         /// <summary>
         /// 逻辑公式
         /// </summary>
-        Formula = 6
+        Formula = 6,
+        /// <summary>
+        /// 数据输入
+        /// </summary>
+        DataInput,
     }
 }

@@ -62,6 +62,7 @@ namespace JayTom.Dws.Client.Service.ExternalDataService {
                 var sendCount = _volumeSettingsDto.VolumeInformationRequesterInfo.SendCount < 0
                     ? 0
                     : _volumeSettingsDto.VolumeInformationRequesterInfo.SendCount;
+
                 for (int i = 0; i < sendCount; i++) {
                     var sendMessage = await _tcpVolumeInput.SendMessage(_volumeSettingsDto.VolumeInformationRequesterInfo.SendContent, token);
                     if (!sendMessage) {
@@ -190,10 +191,10 @@ namespace JayTom.Dws.Client.Service.ExternalDataService {
                 var inputEventArgs = new ExternalContentInputEventArgs {
                     SourceContent = e.Content
                 };
-                const string separator = "|";
-                var strings = e.Content.Split(separator);
+                /*const string separator = "|";
+                var strings = e.Content.Split(separator);*/
                 //条码、重量、长度、宽度、高度、体积
-                if (strings.Length > 0) {
+                /*if (strings.Length > 0) {
                     inputEventArgs.Barcode = strings[0];
                 }
                 if (strings.Length > 1) {
@@ -215,11 +216,54 @@ namespace JayTom.Dws.Client.Service.ExternalDataService {
                 if (strings.Length > 5) {
                     float.TryParse(strings[5], out var volume);
                     inputEventArgs.Volume = volume;
+                }*/
+                try {
+                    float length = 0, width = 0, height = 0, volume = 0, weight = 0;
+                    var split = e.Content.Split(_contentInputSettingsDto.Separator);
+                    if (split.Length == _contentInputSettingsDto.DataTemplate.Count(c => c.Type != 2)) {
+                        var templateInfos = _contentInputSettingsDto.DataTemplate.Where(w => w.Type != 2).ToList();
+                        for (int i = 0; i < split.Length; i++) {
+                            if (templateInfos[i].Content.ToLower().Contains("length")) {
+                                float.TryParse(split[i], out length);
+                                inputEventArgs.Length = length;
+                            }
+                            else if (templateInfos[i].Content.ToLower().Contains("width")) {
+                                float.TryParse(split[i], out width);
+                                inputEventArgs.Width = width;
+                            }
+                            else if (templateInfos[i].Content.ToLower().Contains("height")) {
+                                float.TryParse(split[i], out height);
+                                inputEventArgs.Height = height;
+                            }
+                            else if (templateInfos[i].Content.ToLower().Contains("volume")) {
+                                float.TryParse(split[i], out volume);
+                                inputEventArgs.Volume = volume;
+                            }
+                            else if (templateInfos[i].Content.ToLower().Contains("weight")) {
+                                float.TryParse(split[i], out weight);
+                                inputEventArgs.Weight = weight;
+                            }
+                            else if (templateInfos[i].Content.ToLower().Contains("barcode")) {
+                                inputEventArgs.Barcode = split[i];
+                            }
+                        }
+                    }
+                    else {
+                        OnExternalDataException(new Exception($"split.Length:{split.Length} DataTemplate:{_contentInputSettingsDto.DataTemplate.Count(c => c.Type != 2)},判断不相等"));
+                    }
+                    OnContentInputReceived(inputEventArgs);
                 }
-                OnContentInputReceived(inputEventArgs);
+                catch (Exception exception) {
+                    NLog.LogManager.GetCurrentClassLogger().Error($"{exception}");
+                }
             }
         }
 
+        /// <summary>
+        /// 体积输入
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void TcpCommunicationOnCommunication(object? sender, CommunicationInfo e) {
             if (!string.IsNullOrEmpty(e.Content) && e.Type == CommunicationType.Receive) {
                 float length = 0, width = 0, height = 0, volume = 0;

@@ -28,6 +28,16 @@ namespace JayTom.Dws.Domain.Dto {
         /// 控件输入设置
         /// </summary>
         public ControlInputInfo ControlInputInfo { get; set; } = new();
+
+        /// <summary>
+        /// 数据模板
+        /// </summary>
+        public List<ItemTemplateInfo> DataTemplate { get; set; } = new();
+
+        /// <summary>
+        /// 分隔符
+        /// </summary>
+        public string Separator { get; set; } = string.Empty;
     }
 
     public class ControlInputInfo {

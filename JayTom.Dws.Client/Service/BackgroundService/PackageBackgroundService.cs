@@ -1043,10 +1043,10 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             }
                             else {
                                 //填充体积信息
-                                if ((_cameras.All(a => a.BindingType != CameraBindingType.VolumeCamera)
-                                    && !_externalDataSource.IsVolumeInput) ||
-                                    (_volumeSettingsDto.IsUseFusionTimeout &&
-                                     DateTime.Now.Subtract(packageInfo.CreateTime).TotalMilliseconds > _volumeSettingsDto.FusionTimeout)) {
+                                if (packageInfo.VolumeInfo == null && ((_cameras.All(a => a.BindingType != CameraBindingType.VolumeCamera)
+                                                            && !_externalDataSource.IsVolumeInput) ||
+                                                           (_volumeSettingsDto.IsUseFusionTimeout &&
+                                                            DateTime.Now.Subtract(packageInfo.CreateTime).TotalMilliseconds > _volumeSettingsDto.FusionTimeout))) {
                                     //判断是否开启Tcp体积输入
                                     packageInfo.VolumeInfo = new VolumeInfoModel() {
                                         CreateTime = DateTime.Now,
@@ -1054,10 +1054,10 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                     };
                                 }
                                 //填充重量信息
-                                if (_deviceService.ScaleType == ScaleType.None ||
-                                    (_weightSettingsDto.AdditionalWeight.IsUseMergedWeightTimeout &&
-                                     DateTime.Now.Subtract(packageInfo.CreateTime).TotalMilliseconds >
-                                     _weightSettingsDto.AdditionalWeight.MergedWeightTimeout)) {
+                                if (packageInfo.WeightInfo == null && (_deviceService.ScaleType == ScaleType.None ||
+                                                           (_weightSettingsDto.AdditionalWeight.IsUseMergedWeightTimeout &&
+                                                            DateTime.Now.Subtract(packageInfo.CreateTime).TotalMilliseconds >
+                                                            _weightSettingsDto.AdditionalWeight.MergedWeightTimeout))) {
                                     packageInfo.WeightInfo = new WeightInfoModel() {
                                         CreateTime = DateTime.Now,
                                         SourceType = SourceType.None
