@@ -77,6 +77,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         var insert = await _logisticsSortingRepository.InsertDetailAsync(logisticsSortingInfoModel);
                         if (insert) {
                             EventAggregator.Instance.Publish(logisticsSortingInfoModel);
+                            EventAggregator.Instance.Publish(new SettingsChangedEvent {
+                                SettingsName = SettingsName,
+                                IsLocallySaved = true
+                            });
                             MessageQueue.Enqueue("保存成功");
                         }
                         else {
@@ -91,6 +95,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         public override string Identifier => "SortingMethodDialog";
         public override string ExcelTitle => "物流分拣规则列表";
         public override string SheetName => "物流分拣规则列表";
+
+        public override string SettingsName => "LogisticsSortingItemsSettings";
 
         public override void LoadedDelegate(object obj) {
             if (!_isLoaded) {
@@ -144,6 +150,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                             var update = await _logisticsSortingRepository.UpdateDetailAsync(logisticsSortingInfoModel);
                             if (update) {
                                 EventAggregator.Instance.Publish(logisticsSortingInfoModel);
+                                EventAggregator.Instance.Publish(new SettingsChangedEvent {
+                                    SettingsName = SettingsName,
+                                    IsLocallySaved = true
+                                });
                                 MessageQueue.Enqueue("保存成功");
                             }
                             else {

@@ -76,6 +76,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         var insertOrUpdate = await _logisticsCodeRecognitionRepository.InsertDetailAsync(infoModel);
                         if (insertOrUpdate) {
                             EventAggregator.Instance.Publish(infoModel);
+                            EventAggregator.Instance.Publish(new SettingsChangedEvent {
+                                SettingsName = SettingsName,
+                                IsLocallySaved = true
+                            });
+
                             MessageQueue.Enqueue("保存成功");
                             RefreshData();
                         }
@@ -90,6 +95,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         public override string Identifier => "PackageSortingSettingsDialog";
         public override string ExcelTitle => "物流识别列表";
         public override string SheetName => "物流识别列表";
+
+        public override string SettingsName => "LogisticsCodeRecognitionItemSettings";
 
         public override void LoadedDelegate(object obj) {
             RefreshData();
@@ -206,6 +213,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                             if (insertOrUpdate) {
                                 MessageQueue.Enqueue("保存成功");
                                 RefreshData();
+                                EventAggregator.Instance.Publish(new SettingsChangedEvent {
+                                    SettingsName = SettingsName,
+                                    IsLocallySaved = true
+                                });
                             }
                             else {
                                 MessageQueue.Enqueue("保存失败");

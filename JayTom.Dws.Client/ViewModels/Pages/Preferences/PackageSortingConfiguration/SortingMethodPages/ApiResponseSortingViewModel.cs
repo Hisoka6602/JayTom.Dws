@@ -29,6 +29,7 @@ using JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration.SortingMethodE
 using JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.SortingMethodEditors;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration.SortingMethodPages {
+
     public class ApiResponseSortingViewModel : BulkOperationsTemplateViewModel<ExcelApiSortingItemInfoModel> {
         private readonly IApiSortingRepository _apiSortingRepository;
         private readonly IApiRuleRepository _apiRuleRepository;
@@ -77,6 +78,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         var insert = await _apiSortingRepository.InsertDetailAsync(apiSortingInfoModel);
                         if (insert) {
                             EventAggregator.Instance.Publish(apiSortingInfoModel);
+                            EventAggregator.Instance.Publish(new SettingsChangedEvent {
+                                SettingsName = SettingsName,
+                                IsLocallySaved = true
+                            });
                             base.MessageQueue.Enqueue("保存成功");
                         }
                         else {
@@ -92,6 +97,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
         public override string ExcelTitle => "Api分拣列表";
         public override string SheetName => "Api分拣列表";
+
+        public override string SettingsName => "ApiSortingItemsSettings";
 
         public override void LoadedDelegate(object obj) {
             if (!_isLoaded) {
@@ -134,6 +141,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                             var insert = await _apiSortingRepository.UpdateDetailAsync(apiSortingInfoModel);
                             if (insert) {
                                 EventAggregator.Instance.Publish(apiSortingInfoModel);
+                                EventAggregator.Instance.Publish(new SettingsChangedEvent {
+                                    SettingsName = SettingsName,
+                                    IsLocallySaved = true
+                                });
                                 base.MessageQueue.Enqueue("保存成功");
                             }
                             else {

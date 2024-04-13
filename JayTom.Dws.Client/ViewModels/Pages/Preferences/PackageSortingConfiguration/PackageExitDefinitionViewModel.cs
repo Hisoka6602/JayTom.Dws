@@ -70,6 +70,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         var insertOrUpdate = await _packageExitDefinitionRepository.Insert(packageExitDefinitionInfoModel);
                         if (insertOrUpdate) {
                             EventAggregator.Instance.Publish(packageExitDefinitionInfoModel);
+                            EventAggregator.Instance.Publish(new SettingsChangedEvent {
+                                SettingsName = SettingsName,
+                                IsLocallySaved = true
+                            });
+
                             MessageQueue.Enqueue("保存成功");
                             //刷新列表
                             RefreshData();
@@ -196,6 +201,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                                 MessageQueue.Enqueue("保存成功");
                                 //刷新列表
                                 RefreshData();
+                                EventAggregator.Instance.Publish(new SettingsChangedEvent {
+                                    SettingsName = SettingsName,
+                                    IsLocallySaved = true
+                                });
                             }
                             else {
                                 MessageQueue.Enqueue("保存失败");
@@ -224,6 +233,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         public override string Identifier => "PackageSortingSettingsDialog";
         public override string ExcelTitle => "定义格口列表";
         public override string SheetName => "定义格口列表";
+
+        public override string SettingsName => "PackageExitDefinitionItemSettings";
 
         public override void LoadedDelegate(object obj) {
             RefreshData();

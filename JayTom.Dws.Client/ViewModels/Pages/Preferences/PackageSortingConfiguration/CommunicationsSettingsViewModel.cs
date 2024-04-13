@@ -226,6 +226,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             };
         }
 
+        public string SettingsName => "CommunicationsItemsSettings";
+
         public SnackbarMessageQueue CommunicationsSettingsMessageQueue {
             get => _communicationsSettingsMessageQueue;
             set => SetProperty(ref _communicationsSettingsMessageQueue, value);
@@ -454,6 +456,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         if (insertDetailAsync) {
                             CommunicationsSettingsMessageQueue.Enqueue("保存成功");
                             RefreshData();
+                            EventAggregator.Instance.Publish(new SettingsChangedEvent {
+                                SettingsName = SettingsName,
+                                IsLocallySaved = true
+                            });
                         }
                         else {
                             CommunicationsSettingsMessageQueue.Enqueue("保存失败");
@@ -563,6 +569,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                             });
                         CommunicationsSettingsMessageQueue.Enqueue(insertDetailAsync ? "保存成功" : "保存失败");
                         RefreshData();
+                        EventAggregator.Instance.Publish(new SettingsChangedEvent {
+                            SettingsName = SettingsName,
+                            IsLocallySaved = true
+                        });
                     }
                 }
             });
@@ -584,6 +594,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                 if (delete) {
                     //刷新列表
                     RefreshData();
+                    EventAggregator.Instance.Publish(new SettingsChangedEvent {
+                        SettingsName = SettingsName,
+                        IsLocallySaved = true
+                    });
                 }
             }
         }

@@ -72,6 +72,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         var insertOrUpdate = await _barCodeSortingRepository.InsertDetailAsync(infoModel);
                         if (insertOrUpdate) {
                             EventAggregator.Instance.Publish(infoModel);
+                            EventAggregator.Instance.Publish(new SettingsChangedEvent {
+                                SettingsName = SettingsName,
+                                IsLocallySaved = true
+                            });
                             MessageQueue.Enqueue("保存成功");
                         }
                         else {
@@ -86,6 +90,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         public override string Identifier => "SortingMethodDialog";
         public override string ExcelTitle => "条码分拣列表";
         public override string SheetName => "条码分拣列表";
+
+        public override string SettingsName => "BarcodeSortingItemsSettings";
 
         public override void LoadedDelegate(object obj) {
             if (!_isLoaded) {
@@ -139,6 +145,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                             var insertOrUpdate = await _barCodeSortingRepository.UpdateDetailAsync(infoModel);
                             if (insertOrUpdate) {
                                 EventAggregator.Instance.Publish(infoModel);
+                                EventAggregator.Instance.Publish(new SettingsChangedEvent {
+                                    SettingsName = SettingsName,
+                                    IsLocallySaved = true
+                                });
                                 MessageQueue.Enqueue("保存成功");
                             }
                             else {

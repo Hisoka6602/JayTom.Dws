@@ -15,12 +15,14 @@ using System.Collections.Generic;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
+using JayTom.Dws.Client.Service.SyncSettings;
 using JayTom.Dws.Domain.Repository.LocalConf;
 
 namespace JayTom.Dws.Client.ViewModels.Pages {
 
     public abstract class SettingsPageTemplateViewModel : BindableBase {
         protected readonly IConfigRepository _configRepository;
+
         private bool _isSavingInProgress;
         private SnackbarMessageQueue _messageQueue = new(TimeSpan.FromSeconds(2));
 
@@ -63,7 +65,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     if (settingsProcess) {
                         //通知事件
                         EventAggregator.Instance.Publish(new SettingsChangedEvent {
-                            SettingsName = SettingsName
+                            SettingsName = SettingsName,
+                            IsLocallySaved = true
                         });
                     }
                     IsSavingInProgress = false;

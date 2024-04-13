@@ -76,6 +76,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         var insert = await _ocrSortingRepository.InsertDetailAsync(ocrSortingInfoModel);
                         if (insert) {
                             EventAggregator.Instance.Publish(ocrSortingInfoModel);
+                            EventAggregator.Instance.Publish(new SettingsChangedEvent {
+                                SettingsName = SettingsName,
+                                IsLocallySaved = true
+                            });
                             MessageQueue.Enqueue("保存成功");
                         }
                         else {
@@ -90,6 +94,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         public override string Identifier => "SortingMethodDialog";
         public override string ExcelTitle => "Ocr分拣规则列表";
         public override string SheetName => "Ocr分拣规则列表";
+
+        public override string SettingsName => "OcrSortingItemsSettings";
 
         public override void LoadedDelegate(object obj) {
             if (!_isLoaded) {
@@ -144,6 +150,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                             var insert = await _ocrSortingRepository.UpdateDetailAsync(ocrSortingInfoModel);
                             if (insert) {
                                 EventAggregator.Instance.Publish(ocrSortingInfoModel);
+                                EventAggregator.Instance.Publish(new SettingsChangedEvent {
+                                    SettingsName = SettingsName,
+                                    IsLocallySaved = true
+                                });
                                 MessageQueue.Enqueue("保存成功");
                             }
                             else {

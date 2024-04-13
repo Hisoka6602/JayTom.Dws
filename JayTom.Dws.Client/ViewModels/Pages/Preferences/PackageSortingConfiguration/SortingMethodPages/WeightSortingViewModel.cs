@@ -73,6 +73,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         var insert = await _weightSortingRepository.InsertDetailAsync(weightSortingInfoModel);
                         if (insert) {
                             EventAggregator.Instance.Publish(weightSortingInfoModel);
+                            EventAggregator.Instance.Publish(new SettingsChangedEvent {
+                                SettingsName = SettingsName,
+                                IsLocallySaved = true
+                            });
                             MessageQueue.Enqueue("保存成功");
                         }
                         else {
@@ -87,6 +91,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         public override string Identifier => "SortingMethodDialog";
         public override string ExcelTitle => "重量分拣列表";
         public override string SheetName => "重量分拣列表";
+
+        public override string SettingsName => "WeightSortingItemsSettings";
 
         public override void LoadedDelegate(object obj) {
             if (!_isLoaded) {
@@ -141,6 +147,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                             var insert = await _weightSortingRepository.UpdateDetailAsync(weightSortingInfoModel);
                             if (insert) {
                                 EventAggregator.Instance.Publish(weightSortingInfoModel);
+                                EventAggregator.Instance.Publish(new SettingsChangedEvent {
+                                    SettingsName = SettingsName,
+                                    IsLocallySaved = true
+                                });
                                 MessageQueue.Enqueue("保存成功");
                             }
                             else {

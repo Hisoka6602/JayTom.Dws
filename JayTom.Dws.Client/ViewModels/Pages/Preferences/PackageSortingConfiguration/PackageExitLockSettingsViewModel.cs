@@ -152,6 +152,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         var insert = await _packageExitLockBindingRepository.Insert(packageExitLockBindingInfoModel);
                         if (insert) {
                             EventAggregator.Instance.Publish(packageExitLockBindingInfoModel);
+                            EventAggregator.Instance.Publish(new SettingsChangedEvent {
+                                SettingsName = "PackageExitLockBindingItemSettings",
+                                IsLocallySaved = true
+                            });
                             base.MessageQueue.Enqueue("保存成功");
                             //刷新列表
                             RefreshData();
@@ -234,6 +238,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                             base.MessageQueue.Enqueue("保存成功");
                             //刷新列表
                             RefreshData();
+                            EventAggregator.Instance.Publish(new SettingsChangedEvent {
+                                SettingsName = "PackageExitLockBindingItemSettings",
+                                IsLocallySaved = true
+                            });
                         }
                         else {
                             base.MessageQueue.Enqueue("保存失败");
@@ -331,6 +339,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                             base.MessageQueue.Enqueue("保存成功");
                             //刷新列表
                             RefreshData();
+                            EventAggregator.Instance.Publish(new SettingsChangedEvent {
+                                SettingsName = "PackageExitLockBindingItemSettings",
+                                IsLocallySaved = true
+                            });
                         }
                         else {
                             base.MessageQueue.Enqueue("保存失败");
@@ -353,6 +365,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                     var delete = await _packageExitLockBindingRepository.Delete(model);
                     if (delete) {
                         RefreshData();
+                        EventAggregator.Instance.Publish(new SettingsChangedEvent {
+                            SettingsName = "PackageExitLockBindingItemSettings",
+                            IsLocallySaved = true
+                        });
                     }
                 }
             });

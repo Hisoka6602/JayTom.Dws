@@ -139,13 +139,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                 _isLoaded = true;
 
                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
-                    var configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("ApiSettings"));
-                    if (configInfoModel is not null) {
-                        var settingsDto = JsonConvert.DeserializeObject<ApiSettingsDto>(configInfoModel.Value);
-                        if (settingsDto is not null) {
-                            SelectApiType = ApiTypeItems.FirstOrDefault(f => f.Value == settingsDto.Type);
-                        }
-                    }
+                    var settingsDto = await _configRepository.FirstOrDefaultEntity<ApiSettingsDto>("ApiSettings") ?? new ApiSettingsDto();
+                    SelectApiType = ApiTypeItems.FirstOrDefault(f => f.Value == settingsDto.Type);
                 });
             }
         }

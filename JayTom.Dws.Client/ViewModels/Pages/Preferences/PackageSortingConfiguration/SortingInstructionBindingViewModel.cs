@@ -10,6 +10,7 @@ using MaterialDesignThemes.Wpf;
 using System.Collections.Generic;
 using JayTom.Dws.Client.Views.Dialog;
 using System.Collections.ObjectModel;
+using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Service.Sorting;
 using JayTom.Dws.Client.ViewModels.Dialog;
 using JayTom.Dws.Domain.DownstreamProtocols;
@@ -92,6 +93,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         if (insertOrUpdate) {
                             MessageQueue.Enqueue("保存成功");
                             RefreshData();
+                            EventAggregator.Instance.Publish(new SettingsChangedEvent {
+                                SettingsName = SettingsName,
+                                IsLocallySaved = true
+                            });
                         }
                         else {
                             MessageQueue.Enqueue("保存失败");
@@ -106,6 +111,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         public override string Identifier => "PackageSortingSettingsDialog";
         public override string ExcelTitle => "指令绑定列表";
         public override string SheetName => "指令绑定列表";
+
+        public override string SettingsName => "SortingInstructionBindingItemSettings";
 
         public override void LoadedDelegate(object obj) {
             RefreshData();
@@ -168,6 +175,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                             if (insertOrUpdate) {
                                 MessageQueue.Enqueue("保存成功");
                                 RefreshData();
+                                EventAggregator.Instance.Publish(new SettingsChangedEvent {
+                                    SettingsName = SettingsName,
+                                    IsLocallySaved = true
+                                });
                             }
                             else {
                                 MessageQueue.Enqueue("保存失败");

@@ -75,6 +75,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         var insert = await _volumeSortingRepository.InsertDetailAsync(volumeSortingInfoModel);
                         if (insert) {
                             EventAggregator.Instance.Publish(volumeSortingInfoModel);
+                            EventAggregator.Instance.Publish(new SettingsChangedEvent {
+                                SettingsName = SettingsName,
+                                IsLocallySaved = true
+                            });
+
                             MessageQueue.Enqueue("保存成功");
                         }
                         else {
@@ -89,6 +94,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         public override string Identifier => "SortingMethodDialog";
         public override string ExcelTitle => "体积分拣列表";
         public override string SheetName => "体积分拣列表";
+
+        public override string SettingsName => "VolumeSortingItemsSettings";
 
         public override void LoadedDelegate(object obj) {
             if (!_isLoaded) {
@@ -143,6 +150,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                             var insert = await _volumeSortingRepository.UpdateDetailAsync(volumeSortingInfoModel);
                             if (insert) {
                                 EventAggregator.Instance.Publish(volumeSortingInfoModel);
+                                EventAggregator.Instance.Publish(new SettingsChangedEvent {
+                                    SettingsName = SettingsName,
+                                    IsLocallySaved = true
+                                });
+
                                 MessageQueue.Enqueue("保存成功");
                             }
                             else {

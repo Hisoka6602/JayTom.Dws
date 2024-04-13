@@ -43,7 +43,16 @@ namespace JayTom.Dws.Client.EventMediators {
     }
 
     public class SettingsChangedEvent {
+
+        /// <summary>
+        /// 配置名称
+        /// </summary>
         public string SettingsName { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 是否本地保存
+        /// </summary>
+        public bool IsLocallySaved { get; set; }
     }
 
     public class TriggerPositionEvent {
@@ -108,6 +117,22 @@ namespace JayTom.Dws.Client.EventMediators {
         public WindowsActionType Type { get; set; }
     }
 
+    /// <summary>
+    /// 远程操作
+    /// </summary>
+    public class RemoteAction {
+
+        /// <summary>
+        /// 消息
+        /// </summary>
+        public object? Message { get; set; }
+
+        /// <summary>
+        /// 指令
+        /// </summary>
+        public RemoteCommand Command { get; set; }
+    }
+
     public enum WindowsActionType {
 
         /// <summary>
@@ -153,5 +178,32 @@ namespace JayTom.Dws.Client.EventMediators {
     public enum ApplicationStatus {
         Start,
         Stop
+    }
+
+    /// <summary>
+    /// 远程指令
+    /// </summary>
+    public enum RemoteCommand {
+        None,
+
+        /// <summary>
+        /// 停止
+        /// </summary>
+        Stop,
+
+        /// <summary>
+        /// 启动
+        /// </summary>
+        Start,
+
+        /// <summary>
+        /// 退出
+        /// </summary>
+        Exit,
+
+        /// <summary>
+        /// 重启
+        /// </summary>
+        Restart
     }
 }

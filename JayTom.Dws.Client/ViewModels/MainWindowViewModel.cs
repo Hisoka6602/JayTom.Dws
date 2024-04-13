@@ -48,6 +48,7 @@ namespace JayTom.Dws.Client.ViewModels {
         private Point _buttonTranslateTransform = new(0, 0);
         private Size _menuButtonSizeize = new(0, 0);
         private bool _isLoaded;
+        private SyncSettingsDto _syncSettingsDto = new();
         private ObservableCollection<HomeToolInfoModel> _homeToolItems = new();
 
         private LanguageInfoModel? _selectedLanguage = new() {
@@ -88,6 +89,30 @@ namespace JayTom.Dws.Client.ViewModels {
                     OpenCommand = OpenHomeToolCommand
                 }
             };
+            EventAggregator.Instance.Subscribe<RemoteAction>(async item => {
+                if (item is RemoteAction remoteAction) {
+                    switch (remoteAction.Command) {
+                        case RemoteCommand.Exit:
+                            CloseWinDelegate(null);
+                            break;
+                    }
+                }
+            });
+            EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async item => {
+                if (item is SettingsChangedEvent { SettingsName: "SyncSettingsSettings" } syncSettingsSettings) {
+                    _syncSettingsDto = await _configRepository.FirstOrDefaultEntity<SyncSettingsDto>(syncSettingsSettings.SettingsName) ?? new SyncSettingsDto();
+                    if (_syncSettingsDto.IsUseSyncSettings && !string.IsNullOrEmpty(_syncSettingsDto.Url)) {
+                        //连接
+                        if (!_syncSettingsService.IsConnected) {
+                            var (key, value) = await _syncSettingsService.Connect(_syncSettingsDto.Url);
+                            MainMessageQueue.Enqueue($"同步配置连接{(key ? "成功" : "失败")}");
+                        }
+                    }
+                    else {
+                        _syncSettingsService.Disconnect();
+                    }
+                }
+            });
         }
 
         public ObservableCollection<HomeToolInfoModel> HomeToolItems {
@@ -311,12 +336,12 @@ namespace JayTom.Dws.Client.ViewModels {
 
                 //连接同步配置
 
-                var syncSettingsDto = await _configRepository.FirstOrDefaultEntity<SyncSettingsDto>("SyncSettingsSettings") ??
-                                           new SyncSettingsDto();
-                if (syncSettingsDto.IsUseSyncSettings && !string.IsNullOrEmpty(syncSettingsDto.Url)) {
+                _syncSettingsDto = await _configRepository.FirstOrDefaultEntity<SyncSettingsDto>("SyncSettingsSettings") ??
+                                   new SyncSettingsDto();
+                if (_syncSettingsDto.IsUseSyncSettings && !string.IsNullOrEmpty(_syncSettingsDto.Url)) {
                     //连接
                     if (!_syncSettingsService.IsConnected) {
-                        var (key, value) = await _syncSettingsService.Connect(syncSettingsDto.Url);
+                        var (key, value) = await _syncSettingsService.Connect(_syncSettingsDto.Url);
                         MainMessageQueue.Enqueue($"同步配置连接{(key ? "成功" : "失败")}");
                     }
                 }

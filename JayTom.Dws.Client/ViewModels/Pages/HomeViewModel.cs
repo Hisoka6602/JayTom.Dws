@@ -557,6 +557,17 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     }
                 }, TaskCreationOptions.LongRunning);
             }
+            //远程指令
+            EventAggregator.Instance.Subscribe<RemoteAction>(async item => {
+                if (item is RemoteAction remoteAction) {
+                    switch (remoteAction.Command) {
+                        case RemoteCommand.Start:
+                        case RemoteCommand.Stop:
+                            StartDelegate(remoteAction.Command);
+                            break;
+                    }
+                }
+            });
         }
 
         /// <summary>
@@ -671,17 +682,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         /// <summary>
         /// 图像点击事件
         /// </summary>
-        public ICommand ImageClickCommand {
-            get => new DelegateCommand<CameraItemInfoModel>(ImageClickDelegate);
-        }
+        public ICommand ImageClickCommand => new DelegateCommand<CameraItemInfoModel>(ImageClickDelegate);
 
-        public ICommand UploadStatusCommand {
-            get => new DelegateCommand<PackageItemModel>(UploadStatusDelegate);
-        }
+        public ICommand UploadStatusCommand => new DelegateCommand<PackageItemModel>(UploadStatusDelegate);
 
-        public ICommand LoadedCommand {
-            get => new DelegateCommand<Page>(LoadedDelegate);
-        }
+        public ICommand LoadedCommand => new DelegateCommand<Page>(LoadedDelegate);
 
         private async void LoadedDelegate(Page obj) {
             await Application.Current.Dispatcher.BeginInvoke(async () => {
@@ -734,9 +739,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         /// <summary>
         /// 开关实时图像
         /// </summary>
-        public ICommand? SwitchRealtimeImageCommand {
-            get => new DelegateCommand<CameraItemInfoModel>(SwitchRealtimeImageDelegate);
-        }
+        public ICommand? SwitchRealtimeImageCommand => new DelegateCommand<CameraItemInfoModel>(SwitchRealtimeImageDelegate);
 
         private async void SwitchRealtimeImageDelegate(CameraItemInfoModel obj) {
             if (obj.Camera is { } camera) {
@@ -763,9 +766,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         /// <summary>
         /// 拍照
         /// </summary>
-        public ICommand? TakePhotoCommand {
-            get => new DelegateCommand<CameraItemInfoModel>(TakePhotoDelegate);
-        }
+        public ICommand? TakePhotoCommand => new DelegateCommand<CameraItemInfoModel>(TakePhotoDelegate);
 
         private async void TakePhotoDelegate(CameraItemInfoModel obj) {
             if (obj.Camera is { } camera) {
@@ -778,9 +779,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         /// <summary>
         /// 状态点击事件
         /// </summary>
-        public ICommand? StatusClickCommand {
-            get => new DelegateCommand<CameraItemInfoModel>(StatusClickDelegate);
-        }
+        public ICommand? StatusClickCommand => new DelegateCommand<CameraItemInfoModel>(StatusClickDelegate);
 
         private async void StatusClickDelegate(CameraItemInfoModel obj) {
             //先加载进度条
@@ -796,17 +795,19 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         /// <summary>
         /// 开始按钮点击
         /// </summary>
-        public ICommand StartCommand {
-            get => new DelegateCommand<object>(StartDelegate);
-        }
+        public ICommand StartCommand => new DelegateCommand<object>(StartDelegate);
 
         private async void StartDelegate(object obj) {
             await Task.Run(async () => {
+                var command = RemoteCommand.None;
+                if (obj is RemoteCommand remoteCommand) {
+                    command = remoteCommand;
+                }
                 if (!IsSwitchingState) {
                     try {
                         await _runningSemaphoreSlim.WaitAsync();
                         IsSwitchingState = true;
-                        if (!RunningStatus) {
+                        if (!RunningStatus || command == RemoteCommand.Start) {
                             //效验
                             /*
                             var machineCode = await _computer.GenerateMachineCode();

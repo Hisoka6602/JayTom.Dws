@@ -42,6 +42,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         public abstract string Identifier { get; }
         public abstract string ExcelTitle { get; }
         public abstract string SheetName { get; }
+        public abstract string SettingsName { get; }
         public ICommand LoadedCommand => new DelegateCommand<object>(LoadedDelegate);
 
         public virtual void LoadedDelegate(object obj) {
@@ -65,6 +66,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             var deleteProcess = await DeleteProcess(obj);
             if (deleteProcess) {
                 RefreshData();
+                EventAggregator.Instance.Publish(new SettingsChangedEvent {
+                    SettingsName = SettingsName,
+                    IsLocallySaved = true
+                });
             }
         }
 
@@ -102,6 +107,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     if (model.IsOk) {
                         await BulkDeleteProcess();
                         RefreshData();
+                        EventAggregator.Instance.Publish(new SettingsChangedEvent {
+                            SettingsName = SettingsName,
+                            IsLocallySaved = true
+                        });
                     }
                 }
             }
@@ -213,6 +222,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                         if (importProcess) {
                             MessageQueue.Enqueue("保存成功");
                             RefreshData();
+                            EventAggregator.Instance.Publish(new SettingsChangedEvent {
+                                SettingsName = SettingsName,
+                                IsLocallySaved = true
+                            });
                         }
                         else {
                             MessageQueue.Enqueue("保存失败");
@@ -238,6 +251,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                 if (model.IsOk) {
                     await ClearProcess();
                     RefreshData();
+                    EventAggregator.Instance.Publish(new SettingsChangedEvent {
+                        SettingsName = SettingsName,
+                        IsLocallySaved = true
+                    });
                 }
             }
         }
