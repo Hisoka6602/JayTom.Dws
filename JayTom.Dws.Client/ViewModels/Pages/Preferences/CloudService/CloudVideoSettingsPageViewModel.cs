@@ -89,7 +89,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService {
             set => SetProperty(ref _logItems, value);
         }
 
-        public override string Identifier => "CloudVideoSettingsDialogHost";
+        public override string Identifier => "CloudServiceDialogHost";
         public override string SettingsName => "CloudVideoSettings";
 
         protected override async Task<bool> SaveSettingsProcess() {

@@ -162,25 +162,23 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CloudService {
                     if (_deviceService.CameraItems?.Any() == true) {
                         var num = 1;
                         foreach (var barcodeScannerCameraConfigInfoModel in configInfoModels) {
-                            if (configInfoModels.Any(a => a.SerialNumber.Equals(barcodeScannerCameraConfigInfoModel.SerialNumber))) {
-                                //加入
-                                NvrCameraBindingItems.Add(new NvrCameraBindingItemInfoModel() {
-                                    CameraSerialNumber = barcodeScannerCameraConfigInfoModel.SerialNumber,
-                                    CustomCameraName = barcodeScannerCameraConfigInfoModel.CustomName,
-                                    Num = num,
-                                    IsBinding = nvrCameraBindingInfoModels.Any(a => a.BarcodeScannerSerialNumber.Equals(barcodeScannerCameraConfigInfoModel.SerialNumber)),
-                                });
-                                num++;
-                            }
+                            var isExistingSerialNumber = _deviceService.CameraItems.Any(a =>
+                                a.SerialNumber.Equals(barcodeScannerCameraConfigInfoModel.SerialNumber));
+
+                            NvrCameraBindingItems.Add(new NvrCameraBindingItemInfoModel() {
+                                CameraSerialNumber = barcodeScannerCameraConfigInfoModel.SerialNumber,
+                                CustomCameraName = isExistingSerialNumber ? barcodeScannerCameraConfigInfoModel.CustomName : $"{barcodeScannerCameraConfigInfoModel.CustomName}(无效)",
+                                Num = num,
+                                IsBinding = nvrCameraBindingInfoModels.Any(a => a.BarcodeScannerSerialNumber.Equals(barcodeScannerCameraConfigInfoModel.SerialNumber)),
+                            });
+                            num++;
                         }
                     }
                 }
             });
         }
 
-        public ICommand SaveCommand {
-            get => new DelegateCommand(SaveDelegate);
-        }
+        public ICommand SaveCommand => new DelegateCommand(SaveDelegate);
 
         private async void SaveDelegate() {
             //保存到表

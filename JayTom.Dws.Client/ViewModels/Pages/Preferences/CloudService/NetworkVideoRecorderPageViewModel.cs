@@ -123,7 +123,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService {
             set => SetProperty(ref _isLogInProgress, value);
         }
 
-        public override string Identifier => "NetworkVideoRecorderSettingsDialogHost";
+        public override string Identifier => "CloudServiceDialogHost";
         public override string SettingsName => "NetworkVideoRecorderSettings";
 
         protected override async Task<bool> SaveSettingsProcess() {
@@ -261,14 +261,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService {
         /// <summary>
         /// 绑定事件
         /// </summary>
-        public ICommand BindingCommand {
-            get => new DelegateCommand<object>(BindingDelegate);
-        }
+        public ICommand BindingCommand => new DelegateCommand<object>(BindingDelegate);
 
         private async void BindingDelegate(object obj) {
             var nvrCameraBindingEditor = new NvrCameraBindingEditor();
             if (nvrCameraBindingEditor.DataContext is NvrCameraBindingEditorViewModel model) {
-                model.Identifier = "NetworkVideoRecorderDialog";
+                model.Identifier = Identifier;
                 model.Channel = SelectChannel;
                 model.IpAddress = NvrClientSettingsInfo.Ip;
                 model.Port = NvrClientSettingsInfo.Port;

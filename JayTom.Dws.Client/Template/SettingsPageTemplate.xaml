@@ -8,7 +8,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         x:Key="SettingsPageTemplate"
         TargetType="Page">
-        <materialDesign:DialogHost
+        <!--<materialDesign:DialogHost
             Background="Transparent"
             DialogBackground="Transparent"
             DialogMargin="5"
@@ -16,94 +16,94 @@
             Focusable="False"
             Identifier="{Binding DataContext.Identifier, RelativeSource={RelativeSource AncestorType={x:Type Page}}}"
             Style="{StaticResource MaterialDesignEmbeddedDialogHost}">
-            <Grid Margin="20,0">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="*" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
-                <!--  内容  -->
-                <ContentControl Grid.Row="0" Content="{TemplateBinding Content}" />
+        </materialDesign:DialogHost>-->
+        <Grid Margin="20,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <!--  内容  -->
+            <ContentControl Grid.Row="0" Content="{TemplateBinding Content}" />
 
-                <!--  保存设置  -->
-                <Button
-                    Grid.Row="1"
-                    MinHeight="30"
-                    Margin="30,10"
-                    HorizontalAlignment="Left"
-                    VerticalAlignment="Bottom"
-                    materialDesign:ButtonAssist.CornerRadius="5"
-                    Background="#2E2E2E"
-                    BorderThickness="0"
-                    Command="{Binding DataContext.SaveSettingsCommand, RelativeSource={RelativeSource AncestorType={x:Type Page}}}"
-                    FocusVisualStyle="{x:Null}"
-                    Style="{StaticResource MaterialDesignFlatAccentBgButton}">
+            <!--  保存设置  -->
+            <Button
+                Grid.Row="1"
+                MinHeight="30"
+                Margin="30,10"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Bottom"
+                materialDesign:ButtonAssist.CornerRadius="5"
+                Background="#2E2E2E"
+                BorderThickness="0"
+                Command="{Binding DataContext.SaveSettingsCommand, RelativeSource={RelativeSource AncestorType={x:Type Page}}}"
+                FocusVisualStyle="{x:Null}"
+                Style="{StaticResource MaterialDesignFlatAccentBgButton}">
 
-                    <Grid>
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock
-                                Margin="0,0,0,0"
-                                VerticalAlignment="Center"
-                                FontFamily="{StaticResource IconFontFamily}"
-                                FontSize="18"
-                                Foreground="DarkGray"
-                                Text="&#xe66e;" />
-                            <TextBlock
-                                Margin="2,1,0,0"
-                                VerticalAlignment="Center"
-                                FontFamily="{StaticResource CustomFontFamily}"
-                                FontSize="14"
-                                FontWeight="Bold"
-                                Foreground="DarkGray"
-                                Text="{x:Static languages:Language.SaveSettings}" />
-                            <StackPanel.Style>
-                                <Style TargetType="StackPanel">
-                                    <Setter Property="Visibility" Value="Visible" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding DataContext.IsSavingInProgress, RelativeSource={RelativeSource AncestorType={x:Type Page}}}" Value="True">
-                                            <Setter Property="Visibility" Value="Hidden" />
-                                        </DataTrigger>
-                                        <DataTrigger Binding="{Binding DataContext.IsSavingInProgress, RelativeSource={RelativeSource AncestorType={x:Type Page}}}" Value="False">
-                                            <Setter Property="Visibility" Value="Visible" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </StackPanel.Style>
-                        </StackPanel>
-                        <ProgressBar
-                            Name="StatusProgressBar"
-                            Width="25"
-                            Height="25"
-                            HorizontalAlignment="Center"
+                <Grid>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Margin="0,0,0,0"
                             VerticalAlignment="Center"
-                            IsIndeterminate="True"
-                            Value="0">
-                            <ProgressBar.Style>
-                                <Style BasedOn="{StaticResource MaterialDesignCircularProgressBar}" TargetType="ProgressBar">
-                                    <Setter Property="Visibility" Value="Hidden" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding DataContext.IsSavingInProgress, RelativeSource={RelativeSource AncestorType={x:Type Page}}}" Value="True">
-                                            <Setter Property="Visibility" Value="Visible" />
-                                        </DataTrigger>
-                                        <DataTrigger Binding="{Binding DataContext.IsSavingInProgress, RelativeSource={RelativeSource AncestorType={x:Type Page}}}" Value="False">
-                                            <Setter Property="Visibility" Value="Hidden" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </ProgressBar.Style>
-                        </ProgressBar>
-                    </Grid>
-                </Button>
-                <materialDesign:Snackbar
-                    Grid.Row="1"
-                    Width="Auto"
-                    Height="Auto"
-                    VerticalAlignment="Bottom"
-                    Background="BlueViolet"
-                    Cursor=""
-                    FontFamily="LoadFiraCode"
-                    FontWeight="Bold"
-                    MessageQueue="{Binding DataContext.MessageQueue, RelativeSource={RelativeSource AncestorType={x:Type Page}}}" />
-            </Grid>
-        </materialDesign:DialogHost>
+                            FontFamily="{StaticResource IconFontFamily}"
+                            FontSize="18"
+                            Foreground="DarkGray"
+                            Text="&#xe66e;" />
+                        <TextBlock
+                            Margin="2,1,0,0"
+                            VerticalAlignment="Center"
+                            FontFamily="{StaticResource CustomFontFamily}"
+                            FontSize="14"
+                            FontWeight="Bold"
+                            Foreground="DarkGray"
+                            Text="{x:Static languages:Language.SaveSettings}" />
+                        <StackPanel.Style>
+                            <Style TargetType="StackPanel">
+                                <Setter Property="Visibility" Value="Visible" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding DataContext.IsSavingInProgress, RelativeSource={RelativeSource AncestorType={x:Type Page}}}" Value="True">
+                                        <Setter Property="Visibility" Value="Hidden" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding DataContext.IsSavingInProgress, RelativeSource={RelativeSource AncestorType={x:Type Page}}}" Value="False">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </StackPanel.Style>
+                    </StackPanel>
+                    <ProgressBar
+                        Name="StatusProgressBar"
+                        Width="25"
+                        Height="25"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        IsIndeterminate="True"
+                        Value="0">
+                        <ProgressBar.Style>
+                            <Style BasedOn="{StaticResource MaterialDesignCircularProgressBar}" TargetType="ProgressBar">
+                                <Setter Property="Visibility" Value="Hidden" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding DataContext.IsSavingInProgress, RelativeSource={RelativeSource AncestorType={x:Type Page}}}" Value="True">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding DataContext.IsSavingInProgress, RelativeSource={RelativeSource AncestorType={x:Type Page}}}" Value="False">
+                                        <Setter Property="Visibility" Value="Hidden" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ProgressBar.Style>
+                    </ProgressBar>
+                </Grid>
+            </Button>
+            <materialDesign:Snackbar
+                Grid.Row="1"
+                Width="Auto"
+                Height="Auto"
+                VerticalAlignment="Bottom"
+                Background="BlueViolet"
+                Cursor=""
+                FontFamily="LoadFiraCode"
+                FontWeight="Bold"
+                MessageQueue="{Binding DataContext.MessageQueue, RelativeSource={RelativeSource AncestorType={x:Type Page}}}" />
+        </Grid>
     </ControlTemplate>
 </ResourceDictionary>

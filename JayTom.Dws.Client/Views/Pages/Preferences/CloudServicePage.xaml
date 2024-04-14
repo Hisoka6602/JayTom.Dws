@@ -5,6 +5,7 @@
     xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="clr-namespace:JayTom.Dws.Client.Views.Pages.Preferences"
+    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:mvvm="http://prismlibrary.com/"
     Name="CloudServiceView"
@@ -20,57 +21,66 @@
             <b:InvokeCommandAction Command="{Binding LoadedCommand}" CommandParameter="{Binding ElementName=CloudServiceRegionFrame}" />
         </b:EventTrigger>
     </b:Interaction.Triggers>
-    <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="220" />
-            <ColumnDefinition Width="1" />
-            <ColumnDefinition Width="*" />
-        </Grid.ColumnDefinitions>
-        <!--  列表  -->
-        <ListBox
-            Grid.Row="0"
-            Grid.Column="0"
-            MinHeight="100"
-            ItemTemplate="{StaticResource CameraMenuTemplate}"
-            ItemsSource="{Binding CloudServiceMenuItems, UpdateSourceTrigger=PropertyChanged}">
-            <ListBox.ItemContainerStyle>
-                <Style TargetType="ListBoxItem">
-                    <Setter Property="Height" Value="Auto" />
-                    <Setter Property="Margin" Value="0" />
-                    <Setter Property="Padding" Value="0" />
-                    <Setter Property="Focusable" Value="False" />
-                    <Setter Property="IsSelected" Value="False" />
-                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                    <Setter Property="Background" Value="Transparent" />
-                    <Setter Property="Foreground" Value="Transparent" />
-                    <Setter Property="SnapsToDevicePixels" Value="True" />
-                    <!--  去掉焦点框  -->
-                    <Setter Property="Template">
-                        <Setter.Value>
-                            <ControlTemplate TargetType="{x:Type ListBoxItem}">
-                                <ContentPresenter
-                                    Content="{TemplateBinding Content}"
-                                    ContentStringFormat="{TemplateBinding ContentStringFormat}"
-                                    ContentTemplate="{TemplateBinding ContentTemplate}" />
-                            </ControlTemplate>
-                        </Setter.Value>
-                    </Setter>
-                </Style>
-            </ListBox.ItemContainerStyle>
-        </ListBox>
-        <!--  竖线  -->
-        <Border
-            Grid.Column="1"
-            Width="1"
-            Margin="0,50"
-            Background="DimGray"
-            Opacity="0.4" />
-        <!--  区域  -->
-        <Frame
-            Name="CloudServiceRegionFrame"
-            Grid.Column="2"
-            mvvm:RegionManager.RegionName="CloudServiceRegion"
-            Focusable="False"
-            NavigationUIVisibility="Hidden" />
-    </Grid>
+    <materialDesign:DialogHost
+        Background="Transparent"
+        DialogBackground="Transparent"
+        DialogMargin="5"
+        FocusVisualStyle="{x:Null}"
+        Focusable="False"
+        Identifier="CloudServiceDialogHost"
+        Style="{StaticResource MaterialDesignEmbeddedDialogHost}">
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="220" />
+                <ColumnDefinition Width="1" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <!--  列表  -->
+            <ListBox
+                Grid.Row="0"
+                Grid.Column="0"
+                MinHeight="100"
+                ItemTemplate="{StaticResource CameraMenuTemplate}"
+                ItemsSource="{Binding CloudServiceMenuItems, UpdateSourceTrigger=PropertyChanged}">
+                <ListBox.ItemContainerStyle>
+                    <Style TargetType="ListBoxItem">
+                        <Setter Property="Height" Value="Auto" />
+                        <Setter Property="Margin" Value="0" />
+                        <Setter Property="Padding" Value="0" />
+                        <Setter Property="Focusable" Value="False" />
+                        <Setter Property="IsSelected" Value="False" />
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                        <Setter Property="Background" Value="Transparent" />
+                        <Setter Property="Foreground" Value="Transparent" />
+                        <Setter Property="SnapsToDevicePixels" Value="True" />
+                        <!--  去掉焦点框  -->
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="{x:Type ListBoxItem}">
+                                    <ContentPresenter
+                                        Content="{TemplateBinding Content}"
+                                        ContentStringFormat="{TemplateBinding ContentStringFormat}"
+                                        ContentTemplate="{TemplateBinding ContentTemplate}" />
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </ListBox.ItemContainerStyle>
+            </ListBox>
+            <!--  竖线  -->
+            <Border
+                Grid.Column="1"
+                Width="1"
+                Margin="0,50"
+                Background="DimGray"
+                Opacity="0.4" />
+            <!--  区域  -->
+            <Frame
+                Name="CloudServiceRegionFrame"
+                Grid.Column="2"
+                mvvm:RegionManager.RegionName="CloudServiceRegion"
+                Focusable="False"
+                NavigationUIVisibility="Hidden" />
+        </Grid>
+    </materialDesign:DialogHost>
 </Page>
