@@ -869,7 +869,7 @@ namespace JayTom.Dws.Client.Service.Device {
         private CameraType ConvertCameraType(string brand, string modelName) {
             switch (brand) {
                 case not null when (brand.Contains("Hikrobot") || brand.Contains("Hikvision")):
-                    if (modelName.Contains("MV-DL")) {
+                    if (modelName.Contains("MV-D")) {
                         return CameraType.VolumeCamera;
                     }
                     if (modelName.Contains("MV-ID"))
@@ -912,7 +912,7 @@ namespace JayTom.Dws.Client.Service.Device {
         private ICamera? ConvertCamera(CameraInfo info) {
             switch (info.Brand) {
                 case not null when (info.Brand.Contains("Hikrobot") || info.Brand.Contains("Hikvision")):
-                    if (info.Model.Contains("MV-DL")) {
+                    if (info.Model.Contains("MV-D")) {
                         return new HikvisionVolumeCamera(info);
                     }
                     if (info.Model.Contains("MV-ID"))

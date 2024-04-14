@@ -106,7 +106,8 @@
     private async void Confirm() {
         var itemInfoModel = SelectAppTemplateItems?.FirstOrDefault() ?? new AppTemplateItemInfoModel();
         AuthCodeInfo.TemplateInfoId = itemInfoModel.Id;
-        AuthCodeInfo.UserCode = SelectTenantItems?.FirstOrDefault()?.UserCode;
+        AuthCodeInfo.UserCode ??= SelectTenantItems?.FirstOrDefault()?.UserCode;
+
         await OnConfirm.InvokeAsync(AuthCodeInfo);
     }
 

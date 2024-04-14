@@ -5,13 +5,26 @@ using System.Text.Json;
 using JayTom.Dws.Plugin.Speech;
 using System.Text.RegularExpressions;
 using JayTom.Dws.Interface.Eshippingit;
+using JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision;
 using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech;
+using JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision;
 
 internal class Program {
 
     private static async Task Main(string[] args) {
         //var totalMinutes = DateTime.Now.AddMinutes(20).Subtract(DateTime.Now).TotalMinutes;
+        var hikvisionVolumeCamera = new HikvisionVolumeCamera();
+        var enumerateCameras = await hikvisionVolumeCamera.EnumerateCameras();
+        var serializeObject = JsonConvert.SerializeObject(enumerateCameras);
+        Console.WriteLine($"体积相机-数量:{enumerateCameras?.Count}:{serializeObject}");
 
+        //HikvisionIndustrialCamera
+        var hikvisionIndustrialCamera = new HikvisionIndustrialCamera();
+        var cameraInfos = await hikvisionIndustrialCamera.EnumerateCameras();
+        var o = JsonConvert.SerializeObject(cameraInfos);
+        Console.WriteLine($"工业相机-数量:{cameraInfos?.Count}:{o}");
+        Console.ReadLine();
+        return;
         var eshippingitApi = new EshippingitApi(null);
 
         var keyValuePair = await eshippingitApi.SetParameters(new EshippingitApi.ApiParameters());

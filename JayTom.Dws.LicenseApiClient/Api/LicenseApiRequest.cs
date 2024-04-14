@@ -1048,7 +1048,7 @@ namespace JayTom.Dws.LicenseApiClient.Api {
             }
         }
 
-        public async Task<KeyValuePair<bool, object>> UpdateLicenseCode(long templateInfoId, string licenseCode, int maxClientCount,
+        public async Task<KeyValuePair<bool, object>> UpdateLicenseCode(long templateInfoId, string userCode, string licenseCode, int maxClientCount,
             DateTime expirationDate, string clientName, CancellationToken token) {
             var invokeAsync = await _jsRuntime.InvokeAsync<string>("sessionStorage.getItem", token, "token");
             if (!string.IsNullOrEmpty(invokeAsync)) {
@@ -1061,6 +1061,7 @@ namespace JayTom.Dws.LicenseApiClient.Api {
                         expirationDate = expirationDate,
                         clientName = clientName,
                         licenseCode = licenseCode,
+                        userCode = userCode
                     });
 
                     using (var httpClient = _httpClientFactory.CreateClient("INSURANCE")) {

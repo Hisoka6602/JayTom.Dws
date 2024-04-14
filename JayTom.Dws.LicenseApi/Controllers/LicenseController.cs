@@ -67,8 +67,16 @@ namespace JayTom.Dws.LicenseApi.Controllers {
         public async Task<JsonResult> UpdateLicenseCode([FromBody] CreateLicenseCodeDo param,
             CancellationToken cancellationToken) {
             var code = HttpContext.Response.HttpContext.User.Identity?.Name;
+
+            param.UserCode = !string.IsNullOrEmpty(param.UserCode)
+                ? await _licenseUserAppService.Info(code ?? string.Empty, cancellationToken) switch {
+                    (_, LicenseUserInfo { Role: UserRole.SuperAdmin }) => param.UserCode,
+                    _ => code ?? string.Empty
+                }
+                : code ?? string.Empty;
+
             var (key, value) = await _licenseCodeAppService.UpdateLicenseCode(param.TemplateInfoId,
-                code ?? string.Empty, param.LicenseCode, param.MaxClientCount, param.ExpirationDate,
+                param.UserCode ?? string.Empty, param.LicenseCode, param.MaxClientCount, param.ExpirationDate,
                 param.ClientName, cancellationToken);
             return key ? JsonResultVo.Success(value.ToString() ?? string.Empty) : JsonResultVo.Fail(value.ToString() ?? string.Empty);
         }

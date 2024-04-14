@@ -1,7 +1,6 @@
 ﻿using JayTom.Dws.LicenseApiClient.Data.Models;
 
 namespace JayTom.Dws.LicenseApiClient.Api {
-
     public interface ILicenseApiRequest {
 
         /// <summary>
@@ -195,6 +194,7 @@ namespace JayTom.Dws.LicenseApiClient.Api {
         /// <param name="token"></param>
         /// <returns></returns>
         Task<KeyValuePair<bool, object>> UpdateLicenseCode(long templateInfoId,
+            string userCode,
            string licenseCode,
            int maxClientCount,
            DateTime expirationDate,

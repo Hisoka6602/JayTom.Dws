@@ -82,6 +82,7 @@
                          <MudButton Style="border-radius: 15px; margin-left:3px; background-color:dodgerblue;color:white" Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Surface" OnClick="@(e => { AuthCodeEditorIsVisible = true; AuthCodeIsEdit = true; AuthCodeInfo = new AuthCodeInfoModel() {
                                                                                                                                                                                                            ClientName = context.Item.ClientName,
                                                                                                                                                                                                            ExpirationDate = context.Item.ExpirationDate,
+                                                                                                                                                                                                           UserCode=context.Item.UserCode,
                                                                                                                                                                                                            TemplateInfoId=AppTemplateItemItems.FirstOrDefault(f=>f.TemplateName.Equals(context.Item.TemplateName))?.Id??0,
                                                                                                                                                                                                            MaxClientCount = context.Item.MaxClientCount }; SelectInfoModel = context.Item; })">编辑</MudButton>
                          <MudButton Style="border-radius: 15px; margin-left:3px;" Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Tertiary" OnClick="() => {SelectInfoModel = context.Item; MachineCodeEditorsIsVisible = true; }">详细信息</MudButton>
@@ -191,7 +192,7 @@
                 info.ExpirationDate.Value, info.ClientName, info.UserCode);
         }
         else {
-            keyValuePair = await LicenseApiRequest.UpdateLicenseCode(info.TemplateInfoId, SelectInfoModel.LicenseCode, info.MaxClientCount,
+            keyValuePair = await LicenseApiRequest.UpdateLicenseCode(info.TemplateInfoId, info.UserCode ?? string.Empty, SelectInfoModel.LicenseCode, info.MaxClientCount,
                 info.ExpirationDate.Value, info.ClientName);
         }
 

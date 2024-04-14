@@ -45,7 +45,7 @@
       <HintPath>Cameras\SmartCamera\Irayple\Dll\ThridLibray.dll</HintPath>
     </Reference>
     <Reference Include="VolMeasure.Net">
-      <HintPath>Cameras\VolumeCamera\Hikvision\Dll\VolMeasure.Net.dll</HintPath>
+      <HintPath>..\..\..\..\海康\V2.6.0_240227_实例分割版本stable\V2.6.0_240227_实例分割版本stable\MvVolMeasureSDK\Samples\C#\Demo C#-回调函数获取体积\VolMeasure\bin\AnyCPU\VolMeasure.Net.dll</HintPath>
     </Reference>
   </ItemGroup>
 

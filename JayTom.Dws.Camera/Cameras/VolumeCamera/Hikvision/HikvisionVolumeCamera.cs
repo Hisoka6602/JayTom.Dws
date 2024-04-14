@@ -3,6 +3,7 @@ using System.Net;
 using System.Linq;
 using System.Text;
 using System.Drawing;
+using Newtonsoft.Json;
 using MvVolmeasure.NET;
 using MvCodeReaderSDKNet;
 using System.Threading.Tasks;
@@ -18,7 +19,7 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision {
         private MvVolmeasure.NET.MvVolmeasure? _mCsVolMeasure;
         private static Task? _volumeThread;
         private static CancellationTokenSource? _cancellationTokenSource;
-        private byte[] _bufForDriver = new byte[1024 * 1024 * 20];
+        private byte[] _bufForDriver = new byte[1024 * 1024 * 10];
 
         /// <summary>
         /// 设备列表
@@ -135,7 +136,6 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision {
                         return new KeyValuePair<bool, string>(false, "Id不存在或已断开!");
                     }
                     var deviceInfo = _mStDeviceList.pDeviceInfo[devInfo.Id];
-
                     //初始化对象
                     var strSerial = string.Empty;
                     var device = (MvVolmeasure.NET.MvVolmeasure.VOLM_DEVICE_INFO)(Marshal.PtrToStructure(deviceInfo, typeof(MvVolmeasure.NET.MvVolmeasure.VOLM_DEVICE_INFO)) ?? new MvVolmeasure.NET.MvVolmeasure.VOLM_DEVICE_INFO());
@@ -238,7 +238,8 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision {
                     break;
             }*/
 
-            var nRet = _mCsVolMeasure?.SetAlgorithmType((int)CAMERATYPE_DEFINE.CAMERA_TYPE_LSL_MEASURE_349) ?? -1;
+            //var nRet = _mCsVolMeasure?.SetAlgorithmType((int)CAMERATYPE_DEFINE.CAMERA_TYPE_LSL_MEASURE_349) ?? -1;
+            var nRet = _mCsVolMeasure?.SetAlgorithmType((int)CAMERATYPE_DEFINE.CAMERA_TYPE_BINOSTEREO_RGBD) ?? -1;
             if (ERROR_DEFINE.MV_VOLM_OK != (ERROR_DEFINE)nRet) {
                 OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
                     Exception = new Exception($"设置获取模式失败:{nRet:X}")
@@ -334,8 +335,9 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision {
                 var localTime = DateTimeOffset.Now.ToLocalTime();
                 var timestamp = localTime.ToUnixTimeMilliseconds();
                 var nRet = _mCsVolMeasure?.GetResult(ref stResultInfo) ?? -1;
+
                 if (ERROR_DEFINE.MV_VOLM_OK == (ERROR_DEFINE)nRet) {
-                    //检测图像标记位
+                    /*//检测图像标记位
                     if (1 == stResultInfo.nImgFlag) {
                         //实时画面
                         //用户自定义，处理图像信息，图像位于结构体stResultInfo.stImage
@@ -343,6 +345,9 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision {
                         bitmap = await GetBitmapAsync(volmFrameInfo.pData, _bufForDriver, volmFrameInfo);
                         thumbnailImage = GenerateThumbnail(bitmap);
                     }
+                    OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
+                        Exception = new Exception($"stResultInfo.nVolumeFlag:{stResultInfo.nVolumeFlag}")
+                    });*/
                     //判断体积标记位，是否有体积信息
                     if (1 == stResultInfo.nVolumeFlag) {
                         //在界面显示体积信息
@@ -383,13 +388,9 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision {
             await Task.Yield();
             Bitmap? bmp = null;
             // 绘制图像
-            OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
-                Exception = new Exception($"volmFrameInfo.enPixelType:{volmFrameInfo.enPixelType}")
-            });
+
             Marshal.Copy(pData, imageBuffBytes, 0, (int)volmFrameInfo.nFrameLen);
-            OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
-                Exception = new Exception($"图像赋值完成")
-            });
+
             switch ((MvVolmeasure.NET.CAMERATYPE_DEFINE)volmFrameInfo.enPixelType) {
                 case MvVolmeasure.NET.CAMERATYPE_DEFINE.CAMERA_TYPE_BINOSTEREO_MONO8_VOLUME: {
                         var pImage = Marshal.UnsafeAddrOfPinnedArrayElement(imageBuffBytes, 0);
