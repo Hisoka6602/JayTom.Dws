@@ -149,6 +149,21 @@ namespace JayTom.Dws.Domain.DownstreamProtocols {
         /// 锁格
         /// </summary>
         LockExit,
+
+        /// <summary>
+        /// 发送前置动作
+        /// </summary>
+        SendPreSignal,
+
+        /// <summary>
+        /// 接收前置动作回复
+        /// </summary>
+        ReceivePreSignalReply,
+
+        /// <summary>
+        /// 体积赋值完成
+        /// </summary>
+        VolumeAssignmentComplete
     }
 
     public class InstructionsAttach {

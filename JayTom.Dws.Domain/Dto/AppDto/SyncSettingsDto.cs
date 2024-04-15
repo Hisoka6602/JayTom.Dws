@@ -79,6 +79,11 @@ namespace JayTom.Dws.Domain.Dto.AppDto {
         public bool IsUseStackingSync { get; set; }
 
         /// <summary>
+        /// 是否使用供包台配置同步
+        /// </summary>
+        public bool IsUseSupplyCounterSync { get; set; }
+
+        /// <summary>
         /// 是否组包配置同步。
         /// </summary>
         public bool IsUsePackagingSync { get; set; }

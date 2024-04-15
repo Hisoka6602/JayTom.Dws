@@ -6,6 +6,7 @@ using System.Drawing;
 using Newtonsoft.Json;
 using MvVolmeasure.NET;
 using MvCodeReaderSDKNet;
+using Newtonsoft.Json.Linq;
 using System.Threading.Tasks;
 using System.Drawing.Imaging;
 using System.Collections.Generic;
@@ -20,6 +21,7 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision {
         private static Task? _volumeThread;
         private static CancellationTokenSource? _cancellationTokenSource;
         private byte[] _bufForDriver = new byte[1024 * 1024 * 10];
+        private static MeasurementTriggerMode _measurementTriggerMode = MeasurementTriggerMode.Single;
 
         /// <summary>
         /// 设备列表
@@ -259,10 +261,12 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision {
                 return new KeyValuePair<bool, string>(false, $"开始工作失败:{nRet:X}");
             }
             //开启体积线程
-            _cancellationTokenSource = new CancellationTokenSource();
-            _volumeThread = Task.Factory.StartNew(async () => {
-                await VolumeThread(_cancellationTokenSource.Token);
-            }, _cancellationTokenSource.Token);
+            if (MeasurementTriggerMode == MeasurementTriggerMode.Continuous) {
+                _cancellationTokenSource = new CancellationTokenSource();
+                _volumeThread = Task.Factory.StartNew(async () => {
+                    await VolumeThread(_cancellationTokenSource.Token);
+                }, _cancellationTokenSource.Token);
+            }
             OnCameraStarted(new CameraStartedEventArgs() {
                 CameraInfo = this.Info
             });
@@ -316,10 +320,73 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision {
 
         public int TakePhotoDelay { get; set; }
 
+        public MeasurementTriggerMode MeasurementTriggerMode {
+            get => _measurementTriggerMode;
+            set => _measurementTriggerMode = value;
+        }
+
         public event EventHandler<VolumeCapturedEventArgs>? VolumeCaptured;
 
-        public Task TriggerMeasurementPhotoAsync(string barcode, long barcodeTimestamp, int delay, CancellationToken cancellation = default) {
-            return Task.CompletedTask;
+        public async Task TriggerMeasurementPhotoAsync(string barcode, long barcodeTimestamp, int delay, CancellationToken cancellation = default) {
+            if (MeasurementTriggerMode == MeasurementTriggerMode.Continuous) {
+                return;
+            }
+            //触发一次测量
+            await Task.Delay(TimeSpan.FromMilliseconds(delay), cancellation);
+            await GetSingleVolumeInfo();
+        }
+
+        //定义一个触发一次测量的方法
+
+        public async Task GetSingleVolumeInfo() {
+            var stResultInfo = new MvVolmeasure.NET.VOLM_RESULT_INFO();
+
+            stResultInfo.stImage.pData = (IntPtr)Marshal.AllocHGlobal(_bufForDriver.Length);
+            stResultInfo.nVolumeFlag = 0;
+            stResultInfo.nImgFlag = 0;
+            var dateTime = DateTime.Now;
+            var timeOut = 1000;
+            var isResult = false;
+            while (DateTime.Now.Subtract(dateTime).TotalMilliseconds < timeOut &&
+                   !isResult) {
+                Bitmap? bitmap = null;
+                Bitmap? thumbnailImage = null;
+                var localTime = DateTimeOffset.Now.ToLocalTime();
+                var timestamp = localTime.ToUnixTimeMilliseconds();
+                var nRet = _mCsVolMeasure?.GetResult(ref stResultInfo) ?? -1;
+
+                if (ERROR_DEFINE.MV_VOLM_OK == (ERROR_DEFINE)nRet) {
+                    /*//检测图像标记位
+                    if (1 == stResultInfo.nImgFlag) {
+                        //实时画面
+                        //用户自定义，处理图像信息，图像位于结构体stResultInfo.stImage
+                        var volmFrameInfo = stResultInfo.stImage;
+                        bitmap = await GetBitmapAsync(volmFrameInfo.pData, _bufForDriver, volmFrameInfo);
+                        thumbnailImage = GenerateThumbnail(bitmap);
+                    }
+                    OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
+                        Exception = new Exception($"stResultInfo.nVolumeFlag:{stResultInfo.nVolumeFlag}")
+                    });*/
+                    //判断体积标记位，是否有体积信息
+                    if (1 == stResultInfo.nVolumeFlag) {
+                        //在界面显示体积信息
+                        var volumeCapturedEventArgs = new VolumeCapturedEventArgs() {
+                            Length = Math.Round(stResultInfo.stVolumeInfo.length, 2),
+                            Width = Math.Round(stResultInfo.stVolumeInfo.width, 2),
+                            Height = Math.Round(stResultInfo.stVolumeInfo.height, 2),
+                            Volume = Math.Round(stResultInfo.stVolumeInfo.volume, 2),
+                            Image = bitmap,
+                            Thumbnail = thumbnailImage,
+                            Timestamp = DateTime.Now
+                        };
+                        OnVolumeCaptured(volumeCapturedEventArgs);
+                        isResult = true;
+                    }
+                }
+
+                await Task.Delay(50);
+            }
+            Marshal.FreeHGlobal(stResultInfo.stImage.pData);
         }
 
         public async Task VolumeThread(CancellationToken token) {

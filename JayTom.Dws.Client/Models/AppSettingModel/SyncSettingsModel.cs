@@ -2,8 +2,10 @@
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
+using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 
 namespace JayTom.Dws.Client.Models.AppSettingModel {
 
@@ -14,18 +16,23 @@ namespace JayTom.Dws.Client.Models.AppSettingModel {
         private bool _isUseImageStorageSync;
         private bool _isUseFilterSync;
         private bool _isUseContentInputSync;
-        private bool _isUseConnectionSync;
-        private bool _isUseExitSync;
-        private bool _isUseInstructionSync;
-        private bool _isUseLogisticsSync;
-        private bool _isUseSortingModeSync;
-        private bool _isUseLockerExitSync;
-        private bool _isUseStackingSync;
         private bool _isUsePackagingSync;
         private bool _isUseOcrSync;
         private bool _isUseCloudSync;
         private bool _isUseSpaceCleaningSync;
         private bool _isUseSyncSettings;
+
+        private ObservableCollection<SettingsSyncItemInfoModel> _packageSortingSyncItems = new()
+        {
+            new SettingsSyncItemInfoModel {DisplayName ="连接配置同步:",Value = "IsUseConnectionSync"},
+            new SettingsSyncItemInfoModel {DisplayName ="出口配置同步:",Value = "IsUseExitSync"},
+            new SettingsSyncItemInfoModel {DisplayName ="指令配置同步:",Value = "IsUseInstructionSync"},
+            new SettingsSyncItemInfoModel {DisplayName ="物流配置同步:",Value = "IsUseLogisticsSync"},
+            new SettingsSyncItemInfoModel {DisplayName ="分拣模式配置同步:",Value = "IsUseSortingModeSync"},
+            new SettingsSyncItemInfoModel {DisplayName ="锁格配置同步:",Value = "IsUseLockerExitSync"},
+            new SettingsSyncItemInfoModel {DisplayName ="叠包配置同步:",Value = "IsUseStackingSync"},
+            new SettingsSyncItemInfoModel {DisplayName ="供包台模式配置同步:",Value = "IsUseSupplyCounterSync"},
+        };
 
         public bool IsUseSyncSettings {
             get => _isUseSyncSettings;
@@ -81,62 +88,6 @@ namespace JayTom.Dws.Client.Models.AppSettingModel {
         }
 
         /// <summary>
-        /// 是否使用连接配置同步。
-        /// </summary>
-        public bool IsUseConnectionSync {
-            get => _isUseConnectionSync;
-            set => SetProperty(ref _isUseConnectionSync, value);
-        }
-
-        /// <summary>
-        /// 是否使用出口配置同步。
-        /// </summary>
-        public bool IsUseExitSync {
-            get => _isUseExitSync;
-            set => SetProperty(ref _isUseExitSync, value);
-        }
-
-        /// <summary>
-        /// 是否使用指令配置同步。
-        /// </summary>
-        public bool IsUseInstructionSync {
-            get => _isUseInstructionSync;
-            set => SetProperty(ref _isUseInstructionSync, value);
-        }
-
-        /// <summary>
-        /// 是否使用物流配置同步。
-        /// </summary>
-        public bool IsUseLogisticsSync {
-            get => _isUseLogisticsSync;
-            set => SetProperty(ref _isUseLogisticsSync, value);
-        }
-
-        /// <summary>
-        /// 是否使用分拣模式配置同步。
-        /// </summary>
-        public bool IsUseSortingModeSync {
-            get => _isUseSortingModeSync;
-            set => SetProperty(ref _isUseSortingModeSync, value);
-        }
-
-        /// <summary>
-        /// 是否使用锁格配置同步。
-        /// </summary>
-        public bool IsUseLockerExitSync {
-            get => _isUseLockerExitSync;
-            set => SetProperty(ref _isUseLockerExitSync, value);
-        }
-
-        /// <summary>
-        /// 是否使用叠包配置同步。
-        /// </summary>
-        public bool IsUseStackingSync {
-            get => _isUseStackingSync;
-            set => SetProperty(ref _isUseStackingSync, value);
-        }
-
-        /// <summary>
         /// 是否组包配置同步。
         /// </summary>
         public bool IsUsePackagingSync {
@@ -166,6 +117,17 @@ namespace JayTom.Dws.Client.Models.AppSettingModel {
         public bool IsUseSpaceCleaningSync {
             get => _isUseSpaceCleaningSync;
             set => SetProperty(ref _isUseSpaceCleaningSync, value);
+        }
+
+        public ObservableCollection<SettingsSyncItemInfoModel> PackageSortingSyncItems {
+            get => _packageSortingSyncItems;
+            set => SetProperty(ref _packageSortingSyncItems, value);
+        }
+
+        public class SettingsSyncItemInfoModel {
+            public string DisplayName { get; set; } = string.Empty;
+            public string Value { get; set; } = string.Empty;
+            public bool IsChecked { get; set; }
         }
     }
 }

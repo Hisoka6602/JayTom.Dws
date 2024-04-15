@@ -28,6 +28,13 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
                         }
                         break;
 
+                    case FunctionType.SendPreSignal:
+                        //前置信号
+                        startData = "F9";
+                        functionData = "13";
+                        interaction = "01";
+                        break;
+
                     case FunctionType.Heartbeat:
                         startData = "95";
                         functionData = "01";
@@ -94,6 +101,18 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
                         /*type = FunctionType.None;*/
                         type = FunctionType.PackageException;
                         description = $"分拣异常";
+                        hexString = BitConverter.ToString(new[] { bytes[2], bytes[3] })
+                            .Replace("-", string.Empty).Replace(" ", string.Empty);
+                        if (int.TryParse(hexString, System.Globalization.NumberStyles.HexNumber, null, out number)) {
+                            key = number.ToString();
+                        }
+                        keywordPosition = 2;
+                        break;
+
+                    case 0x14:
+                        //前置信号回复
+                        type = FunctionType.ReceivePreSignalReply;
+                        description = $"前置信号";
                         hexString = BitConverter.ToString(new[] { bytes[2], bytes[3] })
                             .Replace("-", string.Empty).Replace(" ", string.Empty);
                         if (int.TryParse(hexString, System.Globalization.NumberStyles.HexNumber, null, out number)) {

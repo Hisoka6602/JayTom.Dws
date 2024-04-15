@@ -510,10 +510,24 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings(
                     case SettingsChangedEvent { SettingsName: "StackedPackageDetectionSettings", IsLocallySaved: true } stackedPackageDetectionSettings: {
                             //同步
                             if (_syncSettingsService.IsConnected &&
-                                _syncSettingsDto is { IsUseSyncSettings: true, IsUseInstructionSync: true }) {
+                                _syncSettingsDto is { IsUseSyncSettings: true, IsUseStackingSync: true }) {
                                 var stackedPackageDetectionSettingsDto = await _configRepository.FirstOrDefaultEntity<StackedPackageDetectionSettingsDto>(stackedPackageDetectionSettings.SettingsName) ?? new StackedPackageDetectionSettingsDto();
 
                                 var (key, value) = await _syncSettingsService.SubmitSyncContent(stackedPackageDetectionSettings.SettingsName, stackedPackageDetectionSettingsDto);
+                                if (!key) {
+                                    NLog.LogManager.GetCurrentClassLogger().Error($"提交同步失败!");
+                                }
+                            }
+
+                            break;
+                        }
+                    case SettingsChangedEvent { SettingsName: "SupplyCounterSettings", IsLocallySaved: true } supplyCounterSettings: {
+                            //同步
+                            if (_syncSettingsService.IsConnected &&
+                                _syncSettingsDto is { IsUseSyncSettings: true, IsUseSupplyCounterSync: true }) {
+                                var supplyCounterSettingsDto = await _configRepository.FirstOrDefaultEntity<SupplyCounterSettingsDto>(supplyCounterSettings.SettingsName) ?? new SupplyCounterSettingsDto();
+
+                                var (key, value) = await _syncSettingsService.SubmitSyncContent(supplyCounterSettings.SettingsName, supplyCounterSettingsDto);
                                 if (!key) {
                                     NLog.LogManager.GetCurrentClassLogger().Error($"提交同步失败!");
                                 }
@@ -537,7 +551,7 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings(
                     case SettingsChangedEvent { SettingsName: "AlgorithmSettings", IsLocallySaved: true } algorithmSettings: {
                             //同步
                             if (_syncSettingsService.IsConnected &&
-                                _syncSettingsDto is { IsUseSyncSettings: true, IsUseSortingModeSync: true }) {
+                                _syncSettingsDto is { IsUseSyncSettings: true, IsUseAlgorithmSync: true }) {
                                 var barcodeReaderDto = await _configRepository.FirstOrDefaultEntity<UsbBarcodeReaderDto>(algorithmSettings.SettingsName) ?? new UsbBarcodeReaderDto();
                                 var (key, value) = await _syncSettingsService.SubmitSyncContent(algorithmSettings.SettingsName, barcodeReaderDto);
                                 if (!key) {
@@ -579,6 +593,7 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings(
                         case "PackageExitLockSettings" when _syncSettingsDto is { IsUseSyncSettings: true, IsUseLockerExitSync: true }:
                         case "StackedPackageDetectionSettings" when _syncSettingsDto is { IsUseSyncSettings: true, IsUseStackingSync: true }:
                         case "SortingMethodSettings" when _syncSettingsDto is { IsUseSyncSettings: true, IsUseSortingModeSync: true }:
+                        case "SyncSettingsSettings" when _syncSettingsDto is { IsUseSyncSettings: true, IsUseSupplyCounterSync: true }:
                         case "AlgorithmSettings" when _syncSettingsDto is { IsUseSyncSettings: true, IsUseAlgorithmSync: true }:
                             await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
                                 ConfigName = info.SettingsName,
@@ -621,7 +636,7 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings(
                                 }
                                 break;
                             }
-                        case "OcrSortingInfoModel" when _syncSettingsDto is { IsUseSyncSettings: true, IsUseSortingModeSync: true }: {
+                        case "OcrSortingItemsSettings" when _syncSettingsDto is { IsUseSyncSettings: true, IsUseSortingModeSync: true }: {
                                 try {
                                     var models = JsonConvert.DeserializeObject<List<OcrSortingInfoModel>>(info.SettingsInfo?.ToString() ?? string.Empty);
                                     if (models is not null) {

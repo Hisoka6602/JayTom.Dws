@@ -185,7 +185,9 @@
                             FontWeight="Bold"
                             Foreground="White"
                             Text="{Binding BarCode, UpdateSourceTrigger=PropertyChanged}"
-                            TextAlignment="Center" />
+                            TextAlignment="Center"
+                            TextTrimming="CharacterEllipsis"
+                            TextWrapping="Wrap" />
                         <!--  物流公司  -->
                         <StackPanel
                             Grid.Row="1"
@@ -901,10 +903,14 @@
                         <ListView.View>
                             <GridView ColumnHeaderContainerStyle="{StaticResource ModernGridViewColumnHeaderStyle}">
                                 <!--  这里定义每列的标题和绑定的数据  -->
-                                <GridViewColumn Width="45" Header="No.">
+                                <GridViewColumn Width="42" Header="No.">
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
-                                            <TextBlock Style="{StaticResource CustomGridViewTextBlockCellStyle}" Text="{Binding Num}" />
+                                            <TextBlock
+                                                Width="42"
+                                                Style="{StaticResource CustomGridViewTextBlockCellStyle}"
+                                                Text="{Binding Num}"
+                                                TextTrimming="CharacterEllipsis" />
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
@@ -915,7 +921,8 @@
                                                 Width="150"
                                                 MinWidth="150"
                                                 Style="{StaticResource CustomGridViewTextBlockCellStyle}"
-                                                Text="{Binding Barcode}" />
+                                                Text="{Binding Barcode}"
+                                                TextTrimming="CharacterEllipsis" />
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
@@ -1019,7 +1026,8 @@
                                                 Width="80"
                                                 MinWidth="80"
                                                 Style="{StaticResource CustomGridViewTextBlockCellStyle}"
-                                                Text="{Binding ExitName}" />
+                                                Text="{Binding ExitName}"
+                                                TextTrimming="CharacterEllipsis" />
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>

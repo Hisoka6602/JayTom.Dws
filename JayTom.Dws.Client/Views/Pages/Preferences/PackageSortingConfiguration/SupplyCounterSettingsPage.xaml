@@ -1,0 +1,97 @@
+﻿<Page
+    x:Class="JayTom.Dws.Client.Views.Pages.Preferences.PackageSortingConfiguration.SupplyCounterSettingsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="clr-namespace:JayTom.Dws.Client.Views.Pages.Preferences.PackageSortingConfiguration"
+    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:mvvm="http://prismlibrary.com/"
+    Title="SupplyCounterSettingsPage"
+    d:DesignHeight="450"
+    d:DesignWidth="800"
+    mvvm:ViewModelLocator.AutoWireViewModel="True"
+    Focusable="False"
+    FontFamily="{StaticResource CustomFontFamily}"
+    Template="{StaticResource SettingsPageTemplate}"
+    mc:Ignorable="d">
+    <b:Interaction.Triggers>
+        <b:EventTrigger EventName="Loaded" SourceName="{Binding Name, RelativeSource={RelativeSource AncestorType={x:Type Page}}}">
+            <b:InvokeCommandAction Command="{Binding LoadedCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Page}}}" />
+        </b:EventTrigger>
+    </b:Interaction.Triggers>
+    <Grid>
+        <Grid.RowDefinitions>
+
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <StackPanel
+            Grid.Row="0"
+            VerticalAlignment="Center"
+            Orientation="Horizontal">
+            <TextBlock
+                Margin="0,0,0,1"
+                VerticalAlignment="Center"
+                FontFamily="{StaticResource IconFontFamily}"
+                FontSize="20"
+                Foreground="DarkGray"
+                Text="&#xe981;" />
+            <TextBlock
+                Margin="5,0"
+                VerticalAlignment="Center"
+                FontSize="16"
+                FontWeight="Bold"
+                Foreground="DarkGray"
+                Text="是否使用供包台模式:" />
+            <ToggleButton
+                Name="IsUseSupplyCounterModeToggleButton"
+                materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
+                materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
+                Focusable="False"
+                IsChecked="{Binding SupplyCounterInfo.IsUseSupplyCounterMode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+        </StackPanel>
+        <Border
+            Grid.Row="1"
+            Margin="20,5,0,0"
+            Visibility="{Binding ElementName=IsUseSupplyCounterModeToggleButton, Path=IsChecked, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}">
+
+            <StackPanel Margin="20,5,0,0" Orientation="Vertical">
+                <StackPanel Margin="0,5" Orientation="Horizontal">
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="是否发送前置序号:" />
+                    <CheckBox
+                        BorderBrush="DodgerBlue"
+                        BorderThickness="2"
+                        Foreground="#2E2E2E"
+                        IsChecked="{Binding SupplyCounterInfo.SendPreSequenceNumber, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                        Style="{StaticResource CustomCheckBoxStyle}" />
+                </StackPanel>
+                <StackPanel Margin="0,5" Orientation="Horizontal">
+
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="是否等待体积信息:" />
+                    <CheckBox
+                        BorderBrush="DodgerBlue"
+                        BorderThickness="2"
+                        Foreground="#2E2E2E"
+                        IsChecked="{Binding SupplyCounterInfo.WaitForVolumeInformation, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                        Style="{StaticResource CustomCheckBoxStyle}" />
+                </StackPanel>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Page>

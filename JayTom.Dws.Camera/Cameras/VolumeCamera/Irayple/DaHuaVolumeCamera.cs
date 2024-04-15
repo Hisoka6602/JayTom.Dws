@@ -12,6 +12,7 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Irayple {
         private static IntPtr? _handle;
 
         private static Volume3DSdk.VslbVolumeResultCB _resultCb;
+        private static MeasurementTriggerMode _measurementTriggerMode = MeasurementTriggerMode.Continuous;
 
         public async void Dispose() {
             await Stop();
@@ -209,6 +210,11 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Irayple {
         }
 
         public int TakePhotoDelay { get; set; }
+
+        public MeasurementTriggerMode MeasurementTriggerMode {
+            get => _measurementTriggerMode;
+            set => _measurementTriggerMode = value;
+        }
 
         public event EventHandler<VolumeCapturedEventArgs>? VolumeCaptured;
 

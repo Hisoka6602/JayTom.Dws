@@ -48,6 +48,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private VolumeSettingsDto _volumeSettingsDto = new();
 
         private BarcodeFilterSettingsDto _barcodeFilterSettingsDto = new();
+        private SupplyCounterSettingsDto _supplyCounterSettingsDto = new();
         private WeightSettingsDto _weightSettingsDto = new();
         private CreatePackageSettingsDto _createPackageSettingsDto = new();
         private StackedPackageDetectionSettingsDto _stackedPackageDetectionSettingsDto = new();
@@ -793,6 +794,10 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             _barcodeFilterSettingsDto = await _configRepository.FirstOrDefaultEntity<BarcodeFilterSettingsDto>(model.SettingsName) ??
                                                         new BarcodeFilterSettingsDto();
                             break;
+
+                        case "SupplyCounterSettings":
+                            _supplyCounterSettingsDto = await _configRepository.FirstOrDefaultEntity<SupplyCounterSettingsDto>(model.SettingsName) ?? new SupplyCounterSettingsDto();
+                            break;
                     }
                     //其他设置
                 }
@@ -850,12 +855,28 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 if (volumeCameras?.Any() == true) {
                                     foreach (var volumeCamera in volumeCameras) {
                                         if (volumeCamera is IVolumeCamera vCamera) {
-                                            await vCamera.TriggerMeasurementPhotoAsync(packageInfo.BarCodeInfo.Barcode, packageInfo.Guid, 100);
+                                            await vCamera.TriggerMeasurementPhotoAsync(packageInfo.BarCodeInfo.Barcode, packageInfo.Guid, _volumeSettingsDto.TriggerDelayMilliseconds);
                                         }
                                     }
                                 }
                             }
                         }
+
+                        //供包台模式
+                        if (_supplyCounterSettingsDto is { IsUseSupplyCounterMode: true, SendPreSequenceNumber: true }) {
+                            //发送前置信号
+                            _sortingService.SendPreSignal();
+                        }
+                    }
+                }
+            });
+            //包裹组合完成后触发
+            EventAggregator.Instance.Subscribe<PackageInfo>(async item => {
+                if (item is PackageInfo info) {
+                    //供包台模式
+                    if (_supplyCounterSettingsDto is { IsUseSupplyCounterMode: true, SendPreSequenceNumber: true }) {
+                        //发送信息组合完成信号
+                        _sortingService.SendPackageInfoCompletedSignal();
                     }
                 }
             });
@@ -907,6 +928,10 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 configInfoModel = _configInfoModels?.FirstOrDefault(f => f.ConfigName.Equals("BarcodeFilterSettings"));
                 if (configInfoModel is not null) {
                     _barcodeFilterSettingsDto = JsonConvert.DeserializeObject<BarcodeFilterSettingsDto>(configInfoModel.Value) ?? new BarcodeFilterSettingsDto();
+                }
+                configInfoModel = _configInfoModels?.FirstOrDefault(f => f.ConfigName.Equals("SupplyCounterSettings"));
+                if (configInfoModel is not null) {
+                    _supplyCounterSettingsDto = JsonConvert.DeserializeObject<SupplyCounterSettingsDto>(configInfoModel.Value) ?? new SupplyCounterSettingsDto();
                 }
             }
             catch (Exception e) {

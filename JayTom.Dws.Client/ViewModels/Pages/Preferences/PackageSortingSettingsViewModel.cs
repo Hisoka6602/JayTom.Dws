@@ -113,6 +113,19 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     PageClassName = "StackedPackageDetectionSettingsPage",
                     ClickCommand = ClickCommand
                 },
+                new()
+                {
+                    Title = "供包台模式",
+                    IconFont = new IconInfoModel()
+                    {
+                        IconFont = "pack://application:,,,/Fonts/#iconfont",
+                        IconCode = "\xe981",
+                        IconSize = 25
+                    },
+                    Description = "供包台模式相关设置",
+                    PageClassName = "SupplyCounterSettingsPage",
+                    ClickCommand = ClickCommand
+                },
             };
         }
 

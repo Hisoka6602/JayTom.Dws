@@ -206,7 +206,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             });
         }
 
-        public override string Identifier => "StackedPackageDetectionSettingsDialogHost";
+        public override string Identifier => "PackageSortingSettingsDialog";
         public override string SettingsName => "StackedPackageDetectionSettings";
 
         protected override async Task<bool> SaveSettingsProcess() {

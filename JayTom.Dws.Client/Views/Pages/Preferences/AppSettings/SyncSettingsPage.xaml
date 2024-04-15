@@ -374,7 +374,7 @@
                         Text="分拣配置:" />
                 </StackPanel>
                 <StackPanel Margin="50,5,0,0" Orientation="Horizontal">
-                    <!--  连接配置  -->
+                    <!--~1~  连接配置  @1@
                     <StackPanel Margin="5,0" Orientation="Horizontal">
                         <TextBlock
                             Margin="0,0,0,1"
@@ -397,7 +397,7 @@
                             IsChecked="{Binding SyncSettingsInfo.IsUseConnectionSync, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                             Style="{StaticResource CustomCheckBoxStyle}" />
                     </StackPanel>
-                    <!--  格口配置  -->
+                    ~1~  格口配置  @1@
                     <StackPanel Margin="5,0" Orientation="Horizontal">
                         <TextBlock
                             Margin="0,0,0,1"
@@ -420,7 +420,7 @@
                             IsChecked="{Binding SyncSettingsInfo.IsUseExitSync, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                             Style="{StaticResource CustomCheckBoxStyle}" />
                     </StackPanel>
-                    <!--  指令配置  -->
+                    ~1~  指令配置  @1@
                     <StackPanel Margin="5,0" Orientation="Horizontal">
                         <TextBlock
                             Margin="0,0,0,1"
@@ -443,7 +443,7 @@
                             IsChecked="{Binding SyncSettingsInfo.IsUseInstructionSync, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                             Style="{StaticResource CustomCheckBoxStyle}" />
                     </StackPanel>
-                    <!--  物流配置  -->
+                    ~1~  物流配置  @1@
                     <StackPanel Margin="5,0" Orientation="Horizontal">
                         <TextBlock
                             Margin="0,0,0,1"
@@ -466,7 +466,7 @@
                             IsChecked="{Binding SyncSettingsInfo.IsUseLogisticsSync, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                             Style="{StaticResource CustomCheckBoxStyle}" />
                     </StackPanel>
-                    <!--  分拣模式配置  -->
+                    ~1~  分拣模式配置  @1@
                     <StackPanel Margin="5,0" Orientation="Horizontal">
                         <TextBlock
                             Margin="0,0,0,1"
@@ -489,7 +489,7 @@
                             IsChecked="{Binding SyncSettingsInfo.IsUseSortingModeSync, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                             Style="{StaticResource CustomCheckBoxStyle}" />
                     </StackPanel>
-                    <!--  锁格配置  -->
+                    ~1~  锁格配置  @1@
                     <StackPanel Margin="5,0" Orientation="Horizontal">
                         <TextBlock
                             Margin="0,0,0,1"
@@ -512,7 +512,7 @@
                             IsChecked="{Binding SyncSettingsInfo.IsUseLockerExitSync, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                             Style="{StaticResource CustomCheckBoxStyle}" />
                     </StackPanel>
-                    <!--  叠包配置  -->
+                    ~1~  叠包配置  @1@
                     <StackPanel Margin="5,0" Orientation="Horizontal">
                         <TextBlock
                             Margin="0,0,0,1"
@@ -534,7 +534,46 @@
                             Foreground="#2E2E2E"
                             IsChecked="{Binding SyncSettingsInfo.IsUseStackingSync, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                             Style="{StaticResource CustomCheckBoxStyle}" />
-                    </StackPanel>
+                    </StackPanel>-->
+                    <ListBox
+                        Width="1000"
+                        ItemsSource="{Binding SyncSettingsInfo.PackageSortingSyncItems}"
+                        Style="{StaticResource CustomListBoxStyle}">
+                        <ListBox.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                        </ListBox.ItemsPanel>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Margin="10,5" Orientation="Horizontal">
+                                    <TextBlock
+                                        Margin="5,0"
+                                        VerticalAlignment="Center"
+                                        FontSize="13"
+                                        FontWeight="Bold"
+                                        Foreground="DarkGray"
+                                        Text="{Binding DisplayName}" />
+                                    <CheckBox
+                                        BorderBrush="DodgerBlue"
+                                        BorderThickness="2"
+                                        Focusable="False"
+                                        IsChecked="{Binding IsChecked, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                        Style="{StaticResource CustomCheckBoxStyle}" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                        <ListBox.Template>
+                            <ControlTemplate TargetType="{x:Type ListBox}">
+                                <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+                                    <WrapPanel
+                                        IsItemsHost="True"
+                                        Orientation="Horizontal"
+                                        ScrollViewer.CanContentScroll="True" />
+                                </ScrollViewer>
+                            </ControlTemplate>
+                        </ListBox.Template>
+                    </ListBox>
                 </StackPanel>
             </StackPanel>
             <!--  组包配置  -->

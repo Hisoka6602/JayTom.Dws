@@ -47,19 +47,26 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings {
                     IsUseImageStorageSync = syncSettingsDto.IsUseImageStorageSync,
                     IsUseFilterSync = syncSettingsDto.IsUseFilterSync,
                     IsUseContentInputSync = syncSettingsDto.IsUseContentInputSync,
-                    IsUseConnectionSync = syncSettingsDto.IsUseConnectionSync,
-                    IsUseExitSync = syncSettingsDto.IsUseExitSync,
-                    IsUseInstructionSync = syncSettingsDto.IsUseInstructionSync,
-                    IsUseLogisticsSync = syncSettingsDto.IsUseLogisticsSync,
-                    IsUseSortingModeSync = syncSettingsDto.IsUseSortingModeSync,
-                    IsUseLockerExitSync = syncSettingsDto.IsUseLockerExitSync,
-                    IsUseStackingSync = syncSettingsDto.IsUseStackingSync,
                     IsUsePackagingSync = syncSettingsDto.IsUsePackagingSync,
                     IsUseOcrSync = syncSettingsDto.IsUseOcrSync,
                     IsUseCloudSync = syncSettingsDto.IsUseCloudSync,
                     IsUseSpaceCleaningSync = syncSettingsDto.IsUseSpaceCleaningSync,
                     IsUseSyncSettings = syncSettingsDto.IsUseSyncSettings
                 };
+                foreach (var model in SyncSettingsInfo.PackageSortingSyncItems) {
+                    switch (model.Value) {
+                        case "IsUseConnectionSync" when syncSettingsDto.IsUseConnectionSync:
+                        case "IsUseExitSync" when syncSettingsDto.IsUseExitSync:
+                        case "IsUseInstructionSync" when syncSettingsDto.IsUseInstructionSync:
+                        case "IsUseLogisticsSync" when syncSettingsDto.IsUseLogisticsSync:
+                        case "IsUseSortingModeSync" when syncSettingsDto.IsUseSortingModeSync:
+                        case "IsUseLockerExitSync" when syncSettingsDto.IsUseLockerExitSync:
+                        case "IsUseStackingSync" when syncSettingsDto.IsUseStackingSync:
+                        case "IsUseSupplyCounterSync" when syncSettingsDto.IsUseSupplyCounterSync:
+                            model.IsChecked = true;
+                            break;
+                    }
+                }
             });
         }
 
@@ -68,28 +75,57 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings {
         public override string SettingsName => "SyncSettingsSettings";
 
         protected override async Task<bool> SaveSettingsProcess() {
+            var syncSettingsDto = new SyncSettingsDto() {
+                Url = SyncSettingsInfo.Url,
+                IsUseAlgorithmSync = SyncSettingsInfo.IsUseAlgorithmSync,
+                IsUseApiSync = SyncSettingsInfo.IsUseApiSync,
+                IsUseImageStorageSync = SyncSettingsInfo.IsUseImageStorageSync,
+                IsUseFilterSync = SyncSettingsInfo.IsUseFilterSync,
+                IsUseContentInputSync = SyncSettingsInfo.IsUseContentInputSync,
+                IsUsePackagingSync = SyncSettingsInfo.IsUsePackagingSync,
+                IsUseOcrSync = SyncSettingsInfo.IsUseOcrSync,
+                IsUseCloudSync = SyncSettingsInfo.IsUseCloudSync,
+                IsUseSpaceCleaningSync = SyncSettingsInfo.IsUseSpaceCleaningSync,
+                IsUseSyncSettings = SyncSettingsInfo.IsUseSyncSettings
+            };
+            foreach (var model in SyncSettingsInfo.PackageSortingSyncItems) {
+                switch (model.Value) {
+                    case "IsUseConnectionSync":
+                        syncSettingsDto.IsUseConnectionSync = model.IsChecked;
+                        break;
+
+                    case "IsUseExitSync":
+                        syncSettingsDto.IsUseExitSync = model.IsChecked;
+                        break;
+
+                    case "IsUseInstructionSync":
+                        syncSettingsDto.IsUseInstructionSync = model.IsChecked;
+                        break;
+
+                    case "IsUseLogisticsSync":
+                        syncSettingsDto.IsUseLogisticsSync = model.IsChecked;
+                        break;
+
+                    case "IsUseSortingModeSync":
+                        syncSettingsDto.IsUseSortingModeSync = model.IsChecked;
+                        break;
+
+                    case "IsUseLockerExitSync":
+                        syncSettingsDto.IsUseLockerExitSync = model.IsChecked;
+                        break;
+
+                    case "IsUseStackingSync":
+                        syncSettingsDto.IsUseStackingSync = model.IsChecked;
+                        break;
+
+                    case "IsUseSupplyCounterSync":
+                        syncSettingsDto.IsUseSupplyCounterSync = model.IsChecked;
+                        break;
+                }
+            }
             var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
                 ConfigName = SettingsName,
-                Value = JsonConvert.SerializeObject(new SyncSettingsDto() {
-                    Url = SyncSettingsInfo.Url,
-                    IsUseAlgorithmSync = SyncSettingsInfo.IsUseAlgorithmSync,
-                    IsUseApiSync = SyncSettingsInfo.IsUseApiSync,
-                    IsUseImageStorageSync = SyncSettingsInfo.IsUseImageStorageSync,
-                    IsUseFilterSync = SyncSettingsInfo.IsUseFilterSync,
-                    IsUseContentInputSync = SyncSettingsInfo.IsUseContentInputSync,
-                    IsUseConnectionSync = SyncSettingsInfo.IsUseConnectionSync,
-                    IsUseExitSync = SyncSettingsInfo.IsUseExitSync,
-                    IsUseInstructionSync = SyncSettingsInfo.IsUseInstructionSync,
-                    IsUseLogisticsSync = SyncSettingsInfo.IsUseLogisticsSync,
-                    IsUseSortingModeSync = SyncSettingsInfo.IsUseSortingModeSync,
-                    IsUseLockerExitSync = SyncSettingsInfo.IsUseLockerExitSync,
-                    IsUseStackingSync = SyncSettingsInfo.IsUseStackingSync,
-                    IsUsePackagingSync = SyncSettingsInfo.IsUsePackagingSync,
-                    IsUseOcrSync = SyncSettingsInfo.IsUseOcrSync,
-                    IsUseCloudSync = SyncSettingsInfo.IsUseCloudSync,
-                    IsUseSpaceCleaningSync = SyncSettingsInfo.IsUseSpaceCleaningSync,
-                    IsUseSyncSettings = SyncSettingsInfo.IsUseSyncSettings
-                })
+                Value = JsonConvert.SerializeObject(syncSettingsDto)
             });
             base.MessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
                 Languages.Language.ResourceManager.GetString("SaveFailed"))}");

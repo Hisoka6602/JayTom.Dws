@@ -23,6 +23,7 @@ using JayTom.Dws.Client.Models.SettingsCommomModels;
 using JayTom.Dws.Infrastructure.Repository.LocalConf;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
+
     public class VolumeSettingsViewModel : SettingsPageTemplateViewModel {
         private VolumeSettingsInfoModel _volumeSettingsInfo = new();
         private ParityInfoModel _selectParity = new();
@@ -366,7 +367,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                             PortName = VolumeSettingsInfo.VolumeInformationRequesterInfo.SerialPortSettingsInfo.PortName,
                             StopBits = SelectStopBits.Value,
                         }
-                    }
+                    },
+                    TriggerDelayMilliseconds = VolumeSettingsInfo.TriggerDelayMilliseconds,
                 })
             });
             base.MessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
@@ -432,7 +434,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                                 StopBits = settingsDto.VolumeInformationRequesterInfo.SerialPortSettingsInfo
                                     .StopBits,
                             }
-                        }
+                        },
+                        TriggerDelayMilliseconds = settingsDto.TriggerDelayMilliseconds,
                     };
                     SelectTriggerPosition = VolumeTriggerPositionItems.FirstOrDefault(f =>
                         f.Value.Equals(settingsDto.VolumeInformationRequesterInfo.VolumeTriggerPosition)) ?? new VolumeTriggerPositionModel();

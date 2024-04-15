@@ -50,6 +50,11 @@ namespace JayTom.Dws.Client.Service.Sorting {
         event EventHandler<PackageInstructionEventArgs> PackageException;
 
         /// <summary>
+        /// 接收前置信号回复事件
+        /// </summary>
+        event EventHandler<PackageInstructionEventArgs> PreSignalReplyReceived;
+
+        /// <summary>
         /// 解除异常
         /// </summary>
         event EventHandler<string> ClearExceptionEvent;
@@ -147,6 +152,16 @@ namespace JayTom.Dws.Client.Service.Sorting {
         /// <param name="token"></param>
         /// <returns></returns>
         void CombinedWorkflowSorting(SortingParam param, CancellationToken token = default);
+
+        /// <summary>
+        /// 发送前置信号
+        /// </summary>
+        void SendPreSignal(CancellationToken token = default);
+
+        /// <summary>
+        /// 发送信息组合完成信号
+        /// </summary>
+        void SendPackageInfoCompletedSignal(CancellationToken token = default);
     }
 
     public class ExceptionEventArgs : EventArgs {

@@ -13,6 +13,11 @@ namespace JayTom.Dws.Camera {
     public interface IVolumeCamera : ICamera {
 
         /// <summary>
+        /// 触发模式
+        /// </summary>
+        public MeasurementTriggerMode MeasurementTriggerMode { get; set; }
+
+        /// <summary>
         /// 当相机捕获到体积信息时触发的事件
         /// </summary>
         event EventHandler<VolumeCapturedEventArgs> VolumeCaptured;
@@ -74,5 +79,18 @@ namespace JayTom.Dws.Camera {
         /// 相机序列号
         /// </summary>
         public string CameraSerialNumber { get; set; } = string.Empty;
+    }
+
+    public enum MeasurementTriggerMode {
+
+        /// <summary>
+        /// 连续触发
+        /// </summary>
+        Continuous,
+
+        /// <summary>
+        /// 单次触发
+        /// </summary>
+        Single
     }
 }

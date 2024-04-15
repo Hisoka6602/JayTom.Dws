@@ -374,7 +374,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             });
         }
 
-        public override string Identifier => "PackageExitLockSettingsDialogHost";
+        public override string Identifier => "PackageSortingSettingsDialog";
         public override string SettingsName => "PackageExitLockSettings";
 
         protected override async Task<bool> SaveSettingsProcess() {

@@ -14,6 +14,7 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Dimension {
     public class DimensionVolumeCamera : IVolumeCamera {
         private DimensionVolumeSdk? _dimensionVolumeSdk = null;
         private SemaphoreSlim _volumelim = new(1);
+        private static MeasurementTriggerMode _measurementTriggerMode = MeasurementTriggerMode.Continuous;
 
         /// <summary>
         /// 设备列表
@@ -161,7 +162,6 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Dimension {
         }
 
         public void SetParameters(Dictionary<string, object> parameters) {
-            throw new NotImplementedException();
         }
 
         public bool IsRealtimeImageEnabled => false;
@@ -184,12 +184,19 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Dimension {
 
         public int TakePhotoDelay { get; set; }
 
+        public MeasurementTriggerMode MeasurementTriggerMode {
+            get => _measurementTriggerMode;
+            set => _measurementTriggerMode = value;
+        }
+
         public event EventHandler<VolumeCapturedEventArgs>? VolumeCaptured;
 
         public async Task TriggerMeasurementPhotoAsync(string barcode, long barcodeTimestamp, int delay, CancellationToken cancellation = default) {
             if (_dimensionVolumeSdk is not null) {
-                await Task.Delay(TimeSpan.FromMilliseconds(delay), cancellation);
-                await _dimensionVolumeSdk.TriggerMeasurementPhotoAsync(cancellation);
+                if (MeasurementTriggerMode == MeasurementTriggerMode.Single) {
+                    await Task.Delay(TimeSpan.FromMilliseconds(delay), cancellation);
+                    await _dimensionVolumeSdk.TriggerMeasurementPhotoAsync(cancellation);
+                }
             }
         }
 

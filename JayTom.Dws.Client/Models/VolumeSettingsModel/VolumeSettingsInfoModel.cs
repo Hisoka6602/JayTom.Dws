@@ -1,10 +1,11 @@
-﻿using JayTom.Dws.Client.Models.ImageSettingModels;
-using JayTom.Dws.Client.Models.SettingsCommomModels;
+﻿using Prism.Mvvm;
 using JayTom.Dws.Domain.Converters;
-using Prism.Mvvm;
 using System.Collections.ObjectModel;
+using JayTom.Dws.Client.Models.ImageSettingModels;
+using JayTom.Dws.Client.Models.SettingsCommomModels;
 
 namespace JayTom.Dws.Client.Models.VolumeSettingsModel {
+
     public class VolumeSettingsInfoModel : BindableBase {
         private ObservableCollection<ItemBaseTemplateModel> _dataTemplate = new();
         private bool _isUseExternalVolumeInput;
@@ -15,6 +16,7 @@ namespace JayTom.Dws.Client.Models.VolumeSettingsModel {
         private VolumeUnit _unit = VolumeUnit.Millimeter;
         private bool _isUseFusionTimeout;
         private int _fusionTimeout;
+        private int _triggerDelayMilliseconds;
 
         /// <summary>
         /// 体积单位
@@ -78,6 +80,14 @@ namespace JayTom.Dws.Client.Models.VolumeSettingsModel {
         public VolumeInformationRequesterInfoModel VolumeInformationRequesterInfo {
             get => _volumeInformationRequesterInfo;
             set => SetProperty(ref _volumeInformationRequesterInfo, value);
+        }
+
+        /// <summary>
+        /// 触发延迟(毫秒)
+        /// </summary>
+        public int TriggerDelayMilliseconds {
+            get => _triggerDelayMilliseconds;
+            set => SetProperty(ref _triggerDelayMilliseconds, value);
         }
     }
 }
