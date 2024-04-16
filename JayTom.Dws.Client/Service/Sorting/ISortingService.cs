@@ -7,6 +7,7 @@ using JayTom.Dws.Data.LocalLog;
 using System.Collections.Generic;
 using System.Diagnostics.Tracing;
 using JayTom.Dws.Interface.Cloud;
+using JayTom.Dws.Domain.DownstreamProtocols;
 using JayTom.Dws.Client.Service.BackgroundService;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 
@@ -53,6 +54,11 @@ namespace JayTom.Dws.Client.Service.Sorting {
         /// 接收前置信号回复事件
         /// </summary>
         event EventHandler<PackageInstructionEventArgs> PreSignalReplyReceived;
+
+        /// <summary>
+        /// 车号(序号)绑定回复
+        /// </summary>
+        public event EventHandler<PackageInstructionEventArgs>? SequenceBinding;
 
         /// <summary>
         /// 解除异常
@@ -156,12 +162,12 @@ namespace JayTom.Dws.Client.Service.Sorting {
         /// <summary>
         /// 发送前置信号
         /// </summary>
-        void SendPreSignal(CancellationToken token = default);
+        void SendPreSignal(int num, InstructionsAttach attach, CancellationToken token = default);
 
         /// <summary>
         /// 发送信息组合完成信号
         /// </summary>
-        void SendPackageInfoCompletedSignal(CancellationToken token = default);
+        void SendPackageInfoCompletedSignal(int num, InstructionsAttach attach, CancellationToken token = default);
     }
 
     public class ExceptionEventArgs : EventArgs {

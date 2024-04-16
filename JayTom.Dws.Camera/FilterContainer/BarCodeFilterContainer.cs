@@ -78,9 +78,13 @@ namespace JayTom.Dws.Camera.FilterContainer {
                     return false;
                 }
             }
-
+            //后面加的
+            var codeFilterInfo = Get(barCodeFilterInfo.BarCode);
+            if (codeFilterInfo != null) {
+                return false;
+            }
+            //----------
             barCodeFilterInfo.ExpirationTime ??= ExpirationTime;
-
             return Container.TryAdd(barCodeFilterInfo.BarCode, barCodeFilterInfo);
         }
 

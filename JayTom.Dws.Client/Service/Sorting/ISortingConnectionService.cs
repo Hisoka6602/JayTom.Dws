@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using JayTom.Dws.Plugin.Tcp;
 using System.Threading.Tasks;
 using JayTom.Dws.Data.Package;
@@ -89,6 +90,16 @@ namespace JayTom.Dws.Client.Service.Sorting {
         /// <param name="interval"></param>
         /// <param name="attach"></param>
         void SendInstructions(object tag, long exitId, List<SortingInstructionInfoModel> instructions, TimeSpan interval, InstructionsAttach attach);
+
+        /// <summary>
+        /// 发送前置信号
+        /// </summary>
+        void SendPreSignal(int num, InstructionsAttach attach, CancellationToken token = default);
+
+        /// <summary>
+        /// 发送信息组合完成信号
+        /// </summary>
+        void SendPackageInfoCompletedSignal(int num, InstructionsAttach attach, CancellationToken token = default);
     }
 
     public class ConnectionCommunicationMessageInfo : CommunicationInfo {

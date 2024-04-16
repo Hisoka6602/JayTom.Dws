@@ -314,14 +314,14 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 });
             };
             _deviceService.WeightStabilized += delegate (object? sender, WeightChangedEventArgs args) {
-                EventAggregator.Instance.Publish(new WeighingLogInfoModel() {
+                /*EventAggregator.Instance.Publish(new WeighingLogInfoModel() {
                     Type = LogType.Information,
                     FormatWeight = args.FormattedWeight,
                     Source = args.OriginalContent,
                     Message = $"获取到重量,原内容[{args.OriginalContent}],格式化后重量:{args.FormattedWeight:F3}",
                     DataSourceType = DataSourceType.DeviceInput,
                     CommunicationType = CommunicationType.Receive,
-                });
+                });*/
             };
             _externalDataService.ContentInputReceived += (sender, args) => {
                 //外部输入输入
@@ -358,6 +358,22 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
                         case InstructionType.PackageException:
                             NLog.LogManager.GetCurrentClassLogger().Info($"{instructionInfoModel?.InstructionGeneratedTime:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[格口号:{model.ExitName}]-[序号:{model.SortingCode}]-[包裹异常]{instructionInfoModel?.InstructionContent}");
+                            break;
+
+                        case InstructionType.SendPreSignal:
+                            NLog.LogManager.GetCurrentClassLogger().Info($"{instructionInfoModel?.InstructionGeneratedTime:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[格口号:{model.ExitName}]-[序号:{model.SortingCode}]-[前置信号发送]{instructionInfoModel?.InstructionContent}");
+                            break;
+
+                        case InstructionType.ReceivePreSignalReply:
+                            NLog.LogManager.GetCurrentClassLogger().Info($"{instructionInfoModel?.InstructionGeneratedTime:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[格口号:{model.ExitName}]-[序号:{model.SortingCode}]-[前置信号回复]{instructionInfoModel?.InstructionContent}");
+                            break;
+
+                        case InstructionType.PackageInfoCompletedSignal:
+                            NLog.LogManager.GetCurrentClassLogger().Info($"{instructionInfoModel?.InstructionGeneratedTime:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[格口号:{model.ExitName}]-[序号:{model.SortingCode}]-[包裹信息赋值完成]{instructionInfoModel?.InstructionContent}");
+                            break;
+
+                        case InstructionType.SequenceBindingReply:
+                            NLog.LogManager.GetCurrentClassLogger().Info($"{instructionInfoModel?.InstructionGeneratedTime:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[格口号:{model.ExitName}]-[序号:{model.SortingCode}]-[序号绑定回复]{instructionInfoModel?.InstructionContent}");
                             break;
                     }
                 }

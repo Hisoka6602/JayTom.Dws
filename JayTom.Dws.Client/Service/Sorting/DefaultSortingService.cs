@@ -103,7 +103,11 @@ namespace JayTom.Dws.Client.Service.Sorting {
 
         public event EventHandler<PackageInstructionEventArgs>? PackageException;
 
+        public event EventHandler<PackageInstructionEventArgs>? PreSignalReplyReceived;
+
         public event EventHandler<PackageInstructionEventArgs>? SendInstruction;
+
+        public event EventHandler<PackageInstructionEventArgs>? SequenceBinding;
 
         public event EventHandler<string>? ClearExceptionEvent;
 
@@ -198,6 +202,22 @@ namespace JayTom.Dws.Client.Service.Sorting {
                 }
                 else if (result.Type == FunctionType.ClearException) {
                     //清空异常
+                }
+                else if (result.Type == FunctionType.ReceivePreSignalReply) {
+                    //前置信号回复
+                    OnPreSignalReplyReceived(new PackageInstructionEventArgs() {
+                        Keyword = result.Keyword,
+                        Instruction = result.RawContent,
+                        InstructionTime = result.Time,
+                    });
+                }
+                else if (result.Type == FunctionType.SequenceBindingReply) {
+                    //车号绑定回复
+                    OnSequenceBinding(new PackageInstructionEventArgs() {
+                        Keyword = result.Keyword,
+                        Instruction = result.RawContent,
+                        InstructionTime = result.Time,
+                    });
                 }
             };
             //格口更改
@@ -753,6 +773,14 @@ namespace JayTom.Dws.Client.Service.Sorting {
         public void CombinedWorkflowSorting(SortingParam param, CancellationToken token = default) {
         }
 
+        public void SendPreSignal(int num, InstructionsAttach attach, CancellationToken token = default) {
+            _sortingConnectionService.SendPreSignal(num, attach, token);
+        }
+
+        public void SendPackageInfoCompletedSignal(int num, InstructionsAttach attach, CancellationToken token = default) {
+            _sortingConnectionService.SendPackageInfoCompletedSignal(num, attach, token);
+        }
+
         protected virtual async void OnExceptionOccurred(ExceptionEventArgs e) {
             await Task.Yield();
             ExceptionOccurred?.Invoke(this, e);
@@ -1057,6 +1085,16 @@ namespace JayTom.Dws.Client.Service.Sorting {
         protected virtual async void OnPackageException(PackageInstructionEventArgs e) {
             await Task.Yield();
             PackageException?.Invoke(this, e);
+        }
+
+        protected virtual async void OnPreSignalReplyReceived(PackageInstructionEventArgs e) {
+            await Task.Yield();
+            PreSignalReplyReceived?.Invoke(this, e);
+        }
+
+        protected virtual async void OnSequenceBinding(PackageInstructionEventArgs e) {
+            await Task.Yield();
+            SequenceBinding?.Invoke(this, e);
         }
     }
 }

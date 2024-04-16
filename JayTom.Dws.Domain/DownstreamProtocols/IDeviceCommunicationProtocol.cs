@@ -161,9 +161,14 @@ namespace JayTom.Dws.Domain.DownstreamProtocols {
         ReceivePreSignalReply,
 
         /// <summary>
-        /// 体积赋值完成
+        /// 包裹信息赋值完成
         /// </summary>
-        VolumeAssignmentComplete
+        PackageInfoCompletedSignal,
+
+        /// <summary>
+        /// 序号绑定回复
+        /// </summary>
+        SequenceBindingReply
     }
 
     public class InstructionsAttach {

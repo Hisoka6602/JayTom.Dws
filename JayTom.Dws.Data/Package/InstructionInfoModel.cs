@@ -72,6 +72,26 @@ namespace JayTom.Dws.Data.Package {
         /// <summary>
         /// 其他
         /// </summary>
-        Other
+        Other,
+
+        /// <summary>
+        /// 发送前置信号
+        /// </summary>
+        SendPreSignal,
+
+        /// <summary>
+        /// 接收前置信号回复
+        /// </summary>
+        ReceivePreSignalReply,
+
+        /// <summary>
+        /// 包裹信息赋值完成
+        /// </summary>
+        PackageInfoCompletedSignal,
+
+        /// <summary>
+        /// 序号绑定回复
+        /// </summary>
+        SequenceBindingReply
     }
 }

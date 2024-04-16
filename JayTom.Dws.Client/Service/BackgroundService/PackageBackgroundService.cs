@@ -58,10 +58,13 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private ConcurrentQueue<CameraImageInfo> _volumeCameraImageItems = new();
         private ConcurrentDictionary<DateTime, PackageInfo> _packageInfos = new();
         private ConcurrentDictionary<string, BarCodeFrameInfo> _barCodeFrameInfoItem = new();
+        private ConcurrentQueue<InstructionsAttach> _instructionsAttachItems = new();
+
         private static bool _isWindowsClose;
         private SemaphoreSlim _createPackageSlim = new(1);
         private SemaphoreSlim _takePackageSlim = new(1);
         private DateTime _lastNoReadTime = DateTime.Now;
+        private int _preSignal = 1;
 
         public PackageBackgroundService(IDeviceService deviceService,
             IResultOutputService resultOutputService,
@@ -653,6 +656,71 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     _createPackageSlim.Release();
                 }
             };
+            //前置信号回复
+            _sortingService.PreSignalReplyReceived += async (sender, args) => {
+                if (_supplyCounterSettingsDto is { IsUseSupplyCounterMode: true, SendPreSequenceNumber: true }) {
+                    //发送信息组合完成信号
+                    _sortingService.SendPackageInfoCompletedSignal(0, new InstructionsAttach() {
+                        BarCode = string.Empty,
+                        Guid = _preSignal,
+                        Timestamp = 0
+                    });
+                    if (_preSignal < 100) {
+                        _preSignal++;
+                    }
+                    else {
+                        _preSignal = 1;
+                    }
+                    EventAggregator.Instance.Publish(new InstructionReceived() {
+                        Timestamp = new DateTimeOffset(args.InstructionTime).ToUnixTimeMilliseconds(),
+                        IsCreatedByLowerMachine = false,
+                        SortingCode = args.Keyword,
+                        InstructionInfos = new List<InstructionInfoModel>()
+                        {
+                            new()
+                            {
+                                InstructionContent = args.Instruction,
+                                InstructionGeneratedTime = args.InstructionTime,
+                                InstructionType = InstructionType.ReceivePreSignalReply
+                            }
+                        }
+                    });
+                }
+            };
+            //车号(序号绑定回复)
+            _sortingService.SequenceBinding += async (sender, args) => {
+                //修改赋值
+                var tryDequeue = _instructionsAttachItems.TryDequeue(out var info);
+                if (tryDequeue && info is not null) {
+                    try {
+                        await _createPackageSlim.WaitAsync();
+                        var (dateTime, value) = _packageInfos.FirstOrDefault(f => f.Value.BarCodeInfo != null &&
+                            f.Value.BarCodeInfo.Barcode.Equals(info.BarCode) &&
+                            f.Value.Timestamp.Equals(info.Timestamp));
+                        if (value is not null) {
+                            value.IsSupplyStationReplyReceived = true;
+                            value.Guid = Convert.ToInt64(args.Keyword);
+                        }
+                    }
+                    finally {
+                        _createPackageSlim.Release();
+                    }
+                }
+                EventAggregator.Instance.Publish(new InstructionReceived() {
+                    Timestamp = new DateTimeOffset(args.InstructionTime).ToUnixTimeMilliseconds(),
+                    IsCreatedByLowerMachine = false,
+                    SortingCode = args.Keyword,
+                    InstructionInfos = new List<InstructionInfoModel>()
+                    {
+                        new()
+                        {
+                            InstructionContent = args.Instruction,
+                            InstructionGeneratedTime = args.InstructionTime,
+                            InstructionType = InstructionType.SequenceBindingReply
+                        }
+                    }
+                });
+            };
             //Ocr算法
             _deviceService.OcrContentRecognized += async delegate (object? sender, OcrResult args) {
                 try {
@@ -861,24 +929,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 }
                             }
                         }
-
-                        //供包台模式
-                        if (_supplyCounterSettingsDto is { IsUseSupplyCounterMode: true, SendPreSequenceNumber: true }) {
-                            //发送前置信号
-                            _sortingService.SendPreSignal();
-                        }
                     }
                 }
             });
             //包裹组合完成后触发
             EventAggregator.Instance.Subscribe<PackageInfo>(async item => {
-                if (item is PackageInfo info) {
-                    //供包台模式
-                    if (_supplyCounterSettingsDto is { IsUseSupplyCounterMode: true, SendPreSequenceNumber: true }) {
-                        //发送信息组合完成信号
-                        _sortingService.SendPackageInfoCompletedSignal();
-                    }
-                }
             });
             EventAggregator.Instance.Subscribe<WindowsAction>(async item => {
                 if (item is WindowsAction { Type: WindowsActionType.Close }) {
@@ -891,6 +946,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         _createPackageSettingsDto.ClearPackageQueueOnStop) {
                         _packageInfos.Clear();
                     }
+                    _instructionsAttachItems.Clear();
                 }
             });
             //叠包事件
@@ -1043,6 +1099,24 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 _createPackageSlim.Release();
                             }
                         }
+                        //供包台信号赋值(增加一个过期时间)
+                        if (!_supplyCounterSettingsDto.IsUseSupplyCounterMode) {
+                            try {
+                                await _createPackageSlim.WaitAsync(stoppingToken);
+
+                                var keyValuePairs = _packageInfos.Where(w => w.Value.IsSupplyStationReplyReceived == false)
+                                    ?.ToList();
+                                if (keyValuePairs?.Any() == true) {
+                                    keyValuePairs.ForEach(key => {
+                                        key.Value.IsSupplyStationReplyReceived = true;
+                                        key.Value.SendPreSignal = true;
+                                    });
+                                }
+                            }
+                            finally {
+                                _createPackageSlim.Release();
+                            }
+                        }
                         //取出一个未完成包裹
                         var value = _packageInfos.Any(a => a.Value is { IsCompleted: false, BarCodeInfo: not null })
                             ? _packageInfos.Where(f => f.Value is { IsCompleted: false, BarCodeInfo: not null }).OrderBy(o => o.Key)
@@ -1050,7 +1124,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 .Value
                             : null;
 
-                        if (value is { IsCompleted: false, BarCodeInfo: not null } packageInfo) {
+                        if (value is { IsCompleted: false, BarCodeInfo: not null, IsSupplyStationReplyReceived: true } packageInfo) {
                             //判断填充包裹信息
                             if (packageInfo.VolumeInfo is not null &&
                                 packageInfo.WeightInfo is not null &&
@@ -1097,6 +1171,32 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                          _stackedPackageDetectionSettingsDto.Timeout) {
                                     packageInfo.IsStackedPackage = false;
                                 }
+                            }
+                        }
+                        //判断发送前置信号
+                        if (_supplyCounterSettingsDto is { IsUseSupplyCounterMode: true, SendPreSequenceNumber: true }) {
+                            try {
+                                await _createPackageSlim.WaitAsync(stoppingToken);
+                                var info = _packageInfos.Any(a => a.Value is { BarCodeInfo: not null, VolumeInfo: not null, WeightInfo: not null, SendPreSignal: false })
+                                    ? _packageInfos.Where(f => f.Value is { BarCodeInfo: not null, VolumeInfo: not null, WeightInfo: not null, SendPreSignal: false }).OrderBy(o => o.Key)
+                                        ?.FirstOrDefault()
+                                        .Value
+                                    : null;
+                                if (info is not null) {
+                                    //发送前置信号
+                                    var instructionsAttach = new InstructionsAttach() {
+                                        BarCode = info.BarCodeInfo?.Barcode ?? string.Empty,
+                                        Guid = _preSignal,
+                                        Timestamp = info.Timestamp
+                                    };
+                                    _sortingService.SendPreSignal(_preSignal, instructionsAttach, stoppingToken);
+                                    info.SendPreSignal = true;
+                                    //添加到队列
+                                    _instructionsAttachItems.Enqueue(instructionsAttach);
+                                }
+                            }
+                            finally {
+                                _createPackageSlim.Release();
                             }
                         }
                         //匹配全景
@@ -1359,6 +1459,16 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         /// 包裹异常状态
         /// </summary>
         public int PackageExceptionStatus { get; set; } = 0;
+
+        /// <summary>
+        /// 供包台信号是否已回复
+        /// </summary>
+        public bool IsSupplyStationReplyReceived { get; set; }
+
+        /// <summary>
+        /// 是否已发送前置信号
+        /// </summary>
+        public bool SendPreSignal { get; set; }
     }
 
     public class CameraImageInfo {

@@ -13,6 +13,9 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
             if (other is InstructionsAttach attach) {
                 //判断是否8个字节
                 //起始码
+                if (string.IsNullOrEmpty(data)) {
+                    data = "00 00";
+                }
                 var startData = "00";
                 var functionData = "00";
                 var interaction = "00";
@@ -32,6 +35,13 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
                         //前置信号
                         startData = "F9";
                         functionData = "13";
+                        interaction = "01";
+                        break;
+
+                    case FunctionType.PackageInfoCompletedSignal:
+                        //包裹信息赋值完成
+                        startData = "F9";
+                        functionData = "15";
                         interaction = "01";
                         break;
 
@@ -120,6 +130,17 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
                         }
                         keywordPosition = 2;
                         break;
+
+                    case 0x16:
+                        type = FunctionType.SequenceBindingReply;
+                        description = $"前置信号";
+                        hexString = BitConverter.ToString(new[] { bytes[2], bytes[3] })
+                            .Replace("-", string.Empty).Replace(" ", string.Empty);
+                        if (int.TryParse(hexString, System.Globalization.NumberStyles.HexNumber, null, out number)) {
+                            key = number.ToString();
+                        }
+                        keywordPosition = 2;
+                        break;
                 }
 
                 return new DeviceDecodeResult() {
@@ -133,6 +154,10 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
             }
 
             return null;
+        }
+
+        public int GetLastFourDigits(long value) {
+            return (int)(value % 10000);
         }
 
         public string ConvertSortingCode(object tag) {
