@@ -12,6 +12,11 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         private bool _isUseSupplyCounterMode;
         private bool _sendPreSequenceNumber;
         private bool _waitForVolumeInformation;
+        private int _startPrecedingNumber;
+        private int _precedingSignalMaxValue;
+        private bool _isWaitForPrecedingSignalReplyBeforeCreatingNewPackage;
+        private bool _isWaitForBindingCarSignalToCompletePackage;
+        private int _precedingReplySignalTimeout;
 
         /// <summary>
         /// 是否使用供包台模式
@@ -35,6 +40,46 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         public bool WaitForVolumeInformation {
             get => _waitForVolumeInformation;
             set => SetProperty(ref _waitForVolumeInformation, value);
+        }
+
+        /// <summary>
+        /// 起始前置序号
+        /// </summary>
+        public int StartPrecedingNumber {
+            get => _startPrecedingNumber;
+            set => SetProperty(ref _startPrecedingNumber, value);
+        }
+
+        /// <summary>
+        /// 前置信号极限值
+        /// </summary>
+        public int PrecedingSignalMaxValue {
+            get => _precedingSignalMaxValue;
+            set => SetProperty(ref _precedingSignalMaxValue, value);
+        }
+
+        /// <summary>
+        /// 是否等待前置信号回复再创建新包裹
+        /// </summary>
+        public bool IsWaitForPrecedingSignalReplyBeforeCreatingNewPackage {
+            get => _isWaitForPrecedingSignalReplyBeforeCreatingNewPackage;
+            set => SetProperty(ref _isWaitForPrecedingSignalReplyBeforeCreatingNewPackage, value);
+        }
+
+        /// <summary>
+        /// 是否等待绑定车号信号再完成包裹
+        /// </summary>
+        public bool IsWaitForBindingCarSignalToCompletePackage {
+            get => _isWaitForBindingCarSignalToCompletePackage;
+            set => SetProperty(ref _isWaitForBindingCarSignalToCompletePackage, value);
+        }
+
+        /// <summary>
+        /// 前置回复信号超时时间
+        /// </summary>
+        public int PrecedingReplySignalTimeout {
+            get => _precedingReplySignalTimeout;
+            set => SetProperty(ref _precedingReplySignalTimeout, value);
         }
     }
 }

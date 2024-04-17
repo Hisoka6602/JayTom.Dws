@@ -73,24 +73,22 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             _imageStorageService = imageStorageService;
             _packageRepository = packageRepository;
             EventAggregator.Instance.Subscribe<PackageInfo>(item => {
-                if (item is PackageInfo model) {
-                    if (model.BarCodeInfo != null) {
-                        _submitItems.Enqueue(new SubmitItemInfo() {
-                            Barcode = model?.BarCodeInfo?.Barcode ?? string.Empty,
-                            Height = (float)(model?.VolumeInfo?.FormattedHeight ?? 0),
-                            ScanTime = model?.BarCodeInfo?.ScanTime ?? DateTime.Now,
-                            Weight = (float)(model?.WeightInfo?.FormattedWeight ?? 0),
-                            Length = (float)(model?.VolumeInfo?.FormattedLength ?? 0),
-                            Width = (float)(model?.VolumeInfo?.FormattedWidth ?? 0),
-                            Volume = (float)(model?.VolumeInfo?.FormattedVolume ?? 0),
-                            Guid = model?.Guid ?? 0,
-                            IsCreatedByLowerMachine = (bool)model?.IsCreatedByLowerMachine,
-                            PackageCreationInstruction = model?.PackageCreationInstruction ?? string.Empty,
-                            IsStackedPackage = model?.IsStackedPackage,
-                            Timestamp = model?.Timestamp ?? 0
-                            //图片暂时不写
-                        });
-                    }
+                if (item is PackageInfo { BarCodeInfo: not null } model) {
+                    _submitItems.Enqueue(new SubmitItemInfo() {
+                        Barcode = model?.BarCodeInfo?.Barcode ?? string.Empty,
+                        Height = (float)(model?.VolumeInfo?.FormattedHeight ?? 0),
+                        ScanTime = model?.BarCodeInfo?.ScanTime ?? DateTime.Now,
+                        Weight = (float)(model?.WeightInfo?.FormattedWeight ?? 0),
+                        Length = (float)(model?.VolumeInfo?.FormattedLength ?? 0),
+                        Width = (float)(model?.VolumeInfo?.FormattedWidth ?? 0),
+                        Volume = (float)(model?.VolumeInfo?.FormattedVolume ?? 0),
+                        Guid = model?.Guid ?? 0,
+                        IsCreatedByLowerMachine = (bool)model?.IsCreatedByLowerMachine,
+                        PackageCreationInstruction = model?.PackageCreationInstruction ?? string.Empty,
+                        IsStackedPackage = model?.IsStackedPackage,
+                        Timestamp = model?.Timestamp ?? 0
+                        //图片暂时不写
+                    });
                 }
             });
             EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async item => {

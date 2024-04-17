@@ -91,6 +91,131 @@
                         IsChecked="{Binding SupplyCounterInfo.WaitForVolumeInformation, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                         Style="{StaticResource CustomCheckBoxStyle}" />
                 </StackPanel>
+                <StackPanel Margin="0,5" Orientation="Horizontal">
+
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="是否等待前置信号回复再创建新包裹:" />
+                    <CheckBox
+                        BorderBrush="DodgerBlue"
+                        BorderThickness="2"
+                        Foreground="#2E2E2E"
+                        IsChecked="{Binding SupplyCounterInfo.IsWaitForPrecedingSignalReplyBeforeCreatingNewPackage, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                        Style="{StaticResource CustomCheckBoxStyle}" />
+                </StackPanel>
+                <StackPanel Margin="0,5" Orientation="Horizontal">
+
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="是否等待绑定车号信号再完成包裹:" />
+                    <CheckBox
+                        BorderBrush="DodgerBlue"
+                        BorderThickness="2"
+                        Foreground="#2E2E2E"
+                        IsChecked="{Binding SupplyCounterInfo.IsWaitForBindingCarSignalToCompletePackage, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                        Style="{StaticResource CustomCheckBoxStyle}" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <!--  图标  -->
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="前置回复信号超时时间(ms):" />
+                    <Border
+                        Margin="5"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Background="#1A696969"
+                        CornerRadius="5">
+                        <TextBox
+                            Width="90"
+                            Height="30"
+                            MaxWidth="500"
+                            Margin="5,0"
+                            materialDesign:TextFieldAssist.HasClearButton="False"
+                            materialDesign:TextFieldAssist.HasFilledTextField="True"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="White"
+                            InputMethod.IsInputMethodEnabled="False"
+                            Text="{Binding SupplyCounterInfo.PrecedingReplySignalTimeout, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    </Border>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <!--  图标  -->
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="起始前置序号:" />
+                    <Border
+                        Margin="5"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Background="#1A696969"
+                        CornerRadius="5">
+                        <TextBox
+                            Width="100"
+                            Height="30"
+                            MaxWidth="500"
+                            Margin="5,0"
+                            materialDesign:TextFieldAssist.HasClearButton="False"
+                            materialDesign:TextFieldAssist.HasFilledTextField="True"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="White"
+                            InputMethod.IsInputMethodEnabled="False"
+                            Text="{Binding SupplyCounterInfo.StartPrecedingNumber, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    </Border>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <!--  图标  -->
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="前置信号极限值:" />
+                    <Border
+                        Margin="5"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Background="#1A696969"
+                        CornerRadius="5">
+                        <TextBox
+                            Width="88"
+                            Height="30"
+                            MaxWidth="500"
+                            Margin="5,0"
+                            materialDesign:TextFieldAssist.HasClearButton="False"
+                            materialDesign:TextFieldAssist.HasFilledTextField="True"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="White"
+                            InputMethod.IsInputMethodEnabled="False"
+                            Text="{Binding SupplyCounterInfo.PrecedingSignalMaxValue, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    </Border>
+                </StackPanel>
             </StackPanel>
         </Border>
     </Grid>

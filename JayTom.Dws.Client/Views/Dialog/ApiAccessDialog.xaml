@@ -102,6 +102,7 @@
                         IsEnabled="False"
                         Text="{x:Static languages:Language.BarcodeCondition}" />
                     <TextBlock
+                        MaxWidth="280"
                         Margin="5,0,20,0"
                         HorizontalAlignment="Left"
                         VerticalAlignment="Center"
@@ -110,7 +111,8 @@
                         FontWeight="Bold"
                         Foreground="White"
                         IsEnabled="False"
-                        Text="{Binding Barcode, UpdateSourceTrigger=PropertyChanged}" />
+                        Text="{Binding Barcode, UpdateSourceTrigger=PropertyChanged}"
+                        TextTrimming="CharacterEllipsis" />
                     <TextBlock
                         Margin="10,0"
                         HorizontalAlignment="Left"

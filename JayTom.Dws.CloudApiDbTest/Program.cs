@@ -26,8 +26,8 @@ internal class Program {
         public CloudApiContext1 CreateDbContext(string[] args) {
             var optionsBuilder = new DbContextOptionsBuilder<CloudApiContext1>();
             //f6vQDiiWpXLDUCxR
-            optionsBuilder.UseMySql("Server=localhost;Port=3306;Password=Wqo8Ztqa16u7kEB9;Database=CloudApi;User=root;",
-                ServerVersion.AutoDetect("Server=localhost;Port=3306;Password=Wqo8Ztqa16u7kEB9;Database=CloudApi;User=root;"),
+            optionsBuilder.UseMySql("Server=localhost;Port=3306;Password=f6vQDiiWpXLDUCxR;Database=CloudApi;User=root;",
+                ServerVersion.AutoDetect("Server=localhost;Port=3306;Password=f6vQDiiWpXLDUCxR;Database=CloudApi;User=root;"),
             builder => {
                 builder.SchemaBehavior(MySqlSchemaBehavior.Ignore);
             });

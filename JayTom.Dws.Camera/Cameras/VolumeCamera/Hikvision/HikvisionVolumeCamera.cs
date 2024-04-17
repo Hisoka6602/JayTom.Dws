@@ -345,8 +345,9 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision {
             stResultInfo.nVolumeFlag = 0;
             stResultInfo.nImgFlag = 0;
             var dateTime = DateTime.Now;
-            var timeOut = 1000;
+            var timeOut = 600;
             var isResult = false;
+            VolumeCapturedEventArgs? volumeCapturedEventArgs = null;
             while (DateTime.Now.Subtract(dateTime).TotalMilliseconds < timeOut &&
                    !isResult) {
                 Bitmap? bitmap = null;
@@ -354,7 +355,6 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision {
                 var localTime = DateTimeOffset.Now.ToLocalTime();
                 var timestamp = localTime.ToUnixTimeMilliseconds();
                 var nRet = _mCsVolMeasure?.GetResult(ref stResultInfo) ?? -1;
-
                 if (ERROR_DEFINE.MV_VOLM_OK == (ERROR_DEFINE)nRet) {
                     /*//检测图像标记位
                     if (1 == stResultInfo.nImgFlag) {
@@ -370,7 +370,7 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision {
                     //判断体积标记位，是否有体积信息
                     if (1 == stResultInfo.nVolumeFlag) {
                         //在界面显示体积信息
-                        var volumeCapturedEventArgs = new VolumeCapturedEventArgs() {
+                        volumeCapturedEventArgs = new VolumeCapturedEventArgs() {
                             Length = Math.Round(stResultInfo.stVolumeInfo.length, 2),
                             Width = Math.Round(stResultInfo.stVolumeInfo.width, 2),
                             Height = Math.Round(stResultInfo.stVolumeInfo.height, 2),
@@ -385,6 +385,16 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision {
                 }
 
                 await Task.Delay(50);
+            }
+
+            if (volumeCapturedEventArgs is null) {
+                OnVolumeCaptured(new VolumeCapturedEventArgs() {
+                    Length = 0,
+                    Width = 0,
+                    Height = 0,
+                    Volume = 0,
+                    Timestamp = DateTime.Now,
+                });
             }
             Marshal.FreeHGlobal(stResultInfo.stImage.pData);
         }

@@ -39,7 +39,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                 Value = JsonConvert.SerializeObject(new SupplyCounterSettingsDto {
                     SendPreSequenceNumber = SupplyCounterInfo.SendPreSequenceNumber,
                     IsUseSupplyCounterMode = SupplyCounterInfo.IsUseSupplyCounterMode,
-                    WaitForVolumeInformation = SupplyCounterInfo.WaitForVolumeInformation
+                    WaitForVolumeInformation = SupplyCounterInfo.WaitForVolumeInformation,
+                    StartPrecedingNumber = SupplyCounterInfo.StartPrecedingNumber,
+                    PrecedingSignalMaxValue = SupplyCounterInfo.PrecedingSignalMaxValue,
+                    IsWaitForPrecedingSignalReplyBeforeCreatingNewPackage = SupplyCounterInfo.IsWaitForPrecedingSignalReplyBeforeCreatingNewPackage,
+                    IsWaitForBindingCarSignalToCompletePackage = SupplyCounterInfo.IsWaitForBindingCarSignalToCompletePackage,
+                    PrecedingReplySignalTimeout = SupplyCounterInfo.PrecedingReplySignalTimeout,
                 })
             });
             base.MessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("Save") ?? string.Empty}{(insertOrUpdate ?
@@ -55,7 +60,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                 SupplyCounterInfo = new SupplyCounterInfoModel() {
                     SendPreSequenceNumber = settingsDto.SendPreSequenceNumber,
                     IsUseSupplyCounterMode = settingsDto.IsUseSupplyCounterMode,
-                    WaitForVolumeInformation = settingsDto.WaitForVolumeInformation
+                    WaitForVolumeInformation = settingsDto.WaitForVolumeInformation,
+                    StartPrecedingNumber = settingsDto.StartPrecedingNumber,
+                    PrecedingSignalMaxValue = settingsDto.PrecedingSignalMaxValue,
+                    IsWaitForPrecedingSignalReplyBeforeCreatingNewPackage = settingsDto.IsWaitForPrecedingSignalReplyBeforeCreatingNewPackage,
+                    IsWaitForBindingCarSignalToCompletePackage = settingsDto.IsWaitForBindingCarSignalToCompletePackage,
+                    PrecedingReplySignalTimeout = settingsDto.PrecedingReplySignalTimeout,
                 };
             });
         }
