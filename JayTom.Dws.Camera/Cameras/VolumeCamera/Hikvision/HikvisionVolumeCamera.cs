@@ -345,7 +345,7 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision {
             stResultInfo.nVolumeFlag = 0;
             stResultInfo.nImgFlag = 0;
             var dateTime = DateTime.Now;
-            var timeOut = 600;
+            var timeOut = 1000;
             var isResult = false;
             VolumeCapturedEventArgs? volumeCapturedEventArgs = null;
             while (DateTime.Now.Subtract(dateTime).TotalMilliseconds < timeOut &&

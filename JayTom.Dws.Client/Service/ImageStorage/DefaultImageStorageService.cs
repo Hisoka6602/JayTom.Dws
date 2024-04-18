@@ -10,6 +10,7 @@ using JayTom.Dws.Plugin.Ftp;
 using System.Threading.Tasks;
 using JayTom.Dws.Data.LocalLog;
 using JayTom.Dws.Plugin.SaveImage;
+using System.Text.RegularExpressions;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
 using JayTom.Dws.Domain.Repository.LocalConf;
@@ -209,7 +210,7 @@ namespace JayTom.Dws.Client.Service.ImageStorage {
         public string ParseTemplate(string source, SaveImageType type, string barCode, float weight, DateTime scanTime, float length,
             float width, float height, float volume, string cameraSerialNumber, bool isWatermark = false) {
             return source switch {
-                "{BarCode}" => $"{(isWatermark ? "BarCode:" : string.Empty)}{barCode}",
+                "{BarCode}" => $"{(isWatermark ? "BarCode:" : string.Empty)}{Regex.Replace(barCode, @"[\u0000-\u001f\b]", "")}",
                 "{Weight}" => $"{(isWatermark ? "Weight:" : string.Empty)}{weight.ToString(CultureInfo.InvariantCulture)}",
                 "{Volume}" => $"{(isWatermark ? "Volume:" : string.Empty)}{volume.ToString(CultureInfo.InvariantCulture)}",
                 "{Length}" => $"{(isWatermark ? "Length:" : string.Empty)}{length.ToString(CultureInfo.InvariantCulture)}",
@@ -232,7 +233,7 @@ namespace JayTom.Dws.Client.Service.ImageStorage {
             float width, float height, float volume, string cameraSerialNumber, bool isWatermark = false, string? language = default) {
             //默认中文
             return source switch {
-                "{BarCode}" => $"{(isWatermark ? "条码:" : string.Empty)}{barCode}",
+                "{BarCode}" => $"{(isWatermark ? "条码:" : string.Empty)}{Regex.Replace(barCode, @"[\u0000-\u001f\b]", "")}",
                 "{Weight}" => $"{(isWatermark ? "重量:" : string.Empty)}{weight.ToString(CultureInfo.InvariantCulture)}",
                 "{Volume}" => $"{(isWatermark ? "体积:" : string.Empty)}{volume.ToString(CultureInfo.InvariantCulture)}",
                 "{Length}" => $"{(isWatermark ? "长度:" : string.Empty)}{length.ToString(CultureInfo.InvariantCulture)}",

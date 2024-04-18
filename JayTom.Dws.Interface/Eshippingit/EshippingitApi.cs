@@ -37,11 +37,11 @@ namespace JayTom.Dws.Interface.Eshippingit {
             var isSuccess = false;
             var requestTime = DateTime.Now;
             var data = new {
-                orderNo = barcode,
+                orderNo = Regex.Replace(barcode, @"[\u0000-\u001f\b]", ""),
                 inboundWeight = Math.Round(Convert.ToDecimal(weight), 3),
-                inboundLength = Math.Round(Convert.ToDecimal(length), 3),
-                inboundWidth = Math.Round(Convert.ToDecimal(width), 3),
-                inboundHeight = Math.Round(Convert.ToDecimal(height), 3),
+                inboundLength = Math.Round(Convert.ToDecimal(length / 10), 3),
+                inboundWidth = Math.Round(Convert.ToDecimal(width / 10), 3),
+                inboundHeight = Math.Round(Convert.ToDecimal(height / 10), 3),
             };
 
             var stopwatch = new Stopwatch();
@@ -119,11 +119,11 @@ namespace JayTom.Dws.Interface.Eshippingit {
             var isSuccess = false;
             var requestTime = DateTime.Now;
             var data = new {
-                orderNo = barcode,
+                orderNo = Regex.Replace(barcode, @"[\u0000-\u001f\b]", ""),
                 inboundWeight = Math.Round(Convert.ToDecimal(weight), 3),
-                inboundLength = Math.Round(Convert.ToDecimal(length), 3),
-                inboundWidth = Math.Round(Convert.ToDecimal(width), 3),
-                inboundHeight = Math.Round(Convert.ToDecimal(height), 3),
+                inboundLength = Math.Round(Convert.ToDecimal(length / 10), 3),
+                inboundWidth = Math.Round(Convert.ToDecimal(width / 10), 3),
+                inboundHeight = Math.Round(Convert.ToDecimal(height / 10), 3),
             };
 
             var stopwatch = new Stopwatch();
