@@ -43,7 +43,6 @@ namespace JayTom.Dws.Interface.Eshippingit {
                 inboundWidth = Math.Round(Convert.ToDecimal(width / 10), 3),
                 inboundHeight = Math.Round(Convert.ToDecimal(height / 10), 3),
             };
-
             var stopwatch = new Stopwatch();
             stopwatch.Start();
             try {
@@ -211,9 +210,9 @@ namespace JayTom.Dws.Interface.Eshippingit {
         public async void UploadInBackground(string barcode, double weight, DateTime scanTime, double length = default,
             double width = default, double height = default, double volume = default, UploadImageInfo? imageInfo = default,
             List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
-            if (_ossClient is not null &&
-                imageInfo?.Image is not null) {
+            if (imageInfo?.Image is not null) {
                 await PolicyPush(barcode, scanTime, imageInfo.Image, token);
+                imageInfo?.Image?.Dispose();
             }
         }
 
@@ -222,6 +221,7 @@ namespace JayTom.Dws.Interface.Eshippingit {
         }
 
         public async Task PolicyPush(string barcode, DateTime scanTime, Image image, CancellationToken token = default) {
+            barcode = Regex.Replace(barcode, @"[\u0000-\u001f\b]", "");
             var waitAndRetryAsync = Policy.HandleResult<bool>(result => !result)
                 .Or<Exception>().WaitAndRetryAsync(Parameters.RetryCount, retryCount => TimeSpan.FromSeconds(Parameters.RetryInterval), // 重试间隔时间
                     (ex, timespan, retryCount, context) => {
@@ -236,6 +236,7 @@ namespace JayTom.Dws.Interface.Eshippingit {
                             return false;
                         }
                     }
+
                     _ossClient ??= new OssClient(Parameters.Endpoint, OssParam.AccessKeyId, OssParam.AccessKeySecret,
                         OssParam.SecurityToken);
 
@@ -247,7 +248,10 @@ namespace JayTom.Dws.Interface.Eshippingit {
                     var putObjectResult = _ossClient.PutObject(Parameters.BucketName, $"ilwParcelImages/{scanTime:yyyy-MM-dd}/{barcode}.png",
                         memoryStream);
                     if (putObjectResult.HttpStatusCode == HttpStatusCode.OK) {
-                        return true;
+                        return await UploadWeightImage(barcode, $"ilwParcelImages/{scanTime:yyyy-MM-dd}/{barcode}.png", token);
+                    }
+                    else {
+                        NLog.LogManager.GetCurrentClassLogger().Error($"Oss上传失败");
                     }
                 }
                 catch (Exception e) {
@@ -279,6 +283,47 @@ namespace JayTom.Dws.Interface.Eshippingit {
             }
 
             return null;
+        }
+
+        public async Task<bool> UploadWeightImage(string barcode, string cloudFileName, CancellationToken token = default) {
+            var isSuccess = false;
+            var data = new {
+                orderNo = barcode,
+                cloudFileName = cloudFileName
+            };
+            try {
+                using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+                httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut);
+                httpClient.DefaultRequestHeaders.Add("Authorization", Parameters.Authorization);
+                HttpResponseMessage message;
+                await using (Stream dataStream =
+                             new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data)))) {
+                    using HttpContent content = new StreamContent(dataStream);
+                    content.Headers.Add("Content-Type", "application/json; charset=UTF-8");
+                    message = await httpClient.PostAsync($"{Parameters.Domain}/api/ilw-service/ilw/parcel/weightImage", content, token)
+                        .ConfigureAwait(false);
+                }
+
+                var resultContent = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                resultContent = Regex.Unescape(resultContent);
+                if (!string.IsNullOrWhiteSpace(resultContent)) {
+                    //判断
+                    var jObject = JObject.Parse(resultContent);
+
+                    if (jObject["ok"] is not null) {
+                        isSuccess = Convert.ToBoolean(jObject["ok"]?.ToString() ?? "false");
+                    }
+
+                    if (!isSuccess) {
+                        NLog.LogManager.GetCurrentClassLogger().Error($"OssParam申请失败:{resultContent}");
+                    }
+                }
+                //判断是否成功条件
+            }
+            catch (Exception e) {
+                isSuccess = false;
+            }
+            return isSuccess;
         }
 
         public class ApiParameters {

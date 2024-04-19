@@ -493,7 +493,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 var dequeue = _savedImageItems.TryDequeue(out var model);
                 if (dequeue && model is not null && !string.IsNullOrEmpty(model.FilePath) &&
                     model.ImageType == SaveImageType.BarcodeImage) {
-                    Task.Factory.StartNew(() => {
+                    Task.Factory.StartNew(async () => {
                         //后续上传
                         IDataUploader uploader;
                         UploadResponse? uploadResponse = null;
@@ -514,15 +514,24 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 break;
 
                             case ApiType.EshippingitApi:
-
                                 uploader = new EshippingitApi(_httpClientFactory);
-                                uploader.UploadInBackground(model.BarCode ?? string.Empty, 0,
-                                    model.ScanTime, imageInfo: new UploadImageInfo() {
-                                        CameraCustomName = model.CameraSerialNumber,
-                                        CameraName = model.CameraSerialNumber,
-                                        CameraSerialNumber = model.CameraSerialNumber,
-                                        Image = Image.FromFile(model.FilePath ?? string.Empty)
-                                    }, token: stoppingToken);
+                                var (key, value) = await uploader.SetParameters(_eshippingitApiParam);
+                                if (key) {
+                                    uploader.UploadInBackground(model.BarCode ?? string.Empty, 0,
+                                        model.ScanTime, imageInfo: new UploadImageInfo() {
+                                            CameraCustomName = model.CameraSerialNumber,
+                                            CameraName = model.CameraSerialNumber,
+                                            CameraSerialNumber = model.CameraSerialNumber,
+                                            Image = Image.FromFile(model.FilePath ?? string.Empty)
+                                        }, token: stoppingToken);
+                                }
+                                else {
+                                    uploadResponse = new UploadResponse() {
+                                        ExceptionMsg = value
+                                    };
+                                    NLog.LogManager.GetCurrentClassLogger().Error("设置参数失败!");
+                                }
+
                                 break;
                         }
                     });

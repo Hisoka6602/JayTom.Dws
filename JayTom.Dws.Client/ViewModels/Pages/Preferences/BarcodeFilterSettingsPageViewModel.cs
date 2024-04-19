@@ -194,7 +194,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     DuplicateBarcodeFilterCount = DuplicateBarcodeFilterCount,
                     FilterOutputType = FilterOutputType,
                     MergeTimeout = MergeTimeout,
-                    MultiBarcodeDelimiter = MultiBarcodeDelimiter
+                    MultiBarcodeDelimiter = MultiBarcodeDelimiter,
+                    AnyCharacters = AnyCharacters
                 })
             });
             base.MessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("Save") ?? string.Empty}{(insertOrUpdate ?
@@ -212,11 +213,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     MinimumLength = settingsDto.MinimumLength;
                     MaximumLength = settingsDto.MaximumLength;
                     StartCharacterType = settingsDto.StartCharacterType;
-
                     EndCharacterType = settingsDto.EndCharacterType;
                     DisallowedCharacters = settingsDto.DisallowedCharacters;
                     RequiredCharacters = settingsDto.RequiredCharacters;
-
+                    AnyCharacters = settingsDto.AnyCharacters;
                     ScanInterval = settingsDto.ScanInterval;
                     RegularExpression = settingsDto.RegularExpression;
                     DuplicateBarcodeFilterCount = settingsDto.DuplicateBarcodeFilterCount;

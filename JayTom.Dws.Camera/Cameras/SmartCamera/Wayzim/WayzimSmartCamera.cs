@@ -26,7 +26,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
         private static ConcurrentDictionary<string, CameraInfo> _devInfo = new();
 
         //过滤器
-        private readonly BarCodeFilterContainer _barCodeFilterContainer = new();
+        private BarCodeFilterContainer _barCodeFilterContainer = new();
 
         //相机对象
         private CameraDataService? _cameraDataService;
@@ -365,10 +365,13 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
         public event EventHandler<OcrResult>? OcrContentRecognized;
 
         public void SetScanCodeFilterParams(ScanCodeFilterParams @params) {
-            _barCodeFilterContainer.Pattern = @params.RegularExpression;
-            _barCodeFilterContainer.MaxSize = @params.DuplicateBarcodeFilterCount;
-            _barCodeFilterContainer.ExpirationTime = TimeSpan.FromMilliseconds(@params.ScanInterval);
-            _barCodeFilterContainer.FilterOutContent = @params.FilterOutContent;
+            _barCodeFilterContainer = new BarCodeFilterContainer {
+                Pattern = @params.RegularExpression,
+                MaxSize = @params.DuplicateBarcodeFilterCount,
+                ExpirationTime = TimeSpan.FromMilliseconds(@params.ScanInterval),
+                FilterOutContent = @params.FilterOutContent
+            };
+            _barCodeFilterContainer.CleanupContainer();
         }
 
         protected virtual async void OnCameraExceptionOccurred(CameraExceptionEventArgs e) {

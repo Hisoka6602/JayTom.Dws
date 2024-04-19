@@ -22,7 +22,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim {
         private long _frameNo = 0;
 
         //过滤器
-        private readonly BarCodeFilterContainer _barCodeFilterContainer = new();
+        private BarCodeFilterContainer _barCodeFilterContainer = new();
 
         /// <summary>
         /// 设备列表
@@ -363,10 +363,13 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim {
         public event EventHandler<OcrResult>? OcrContentRecognized;
 
         public void SetScanCodeFilterParams(ScanCodeFilterParams @params) {
-            _barCodeFilterContainer.Pattern = @params.RegularExpression;
-            _barCodeFilterContainer.MaxSize = @params.DuplicateBarcodeFilterCount;
-            _barCodeFilterContainer.ExpirationTime = TimeSpan.FromMilliseconds(@params.ScanInterval);
-            _barCodeFilterContainer.FilterOutContent = @params.FilterOutContent;
+            _barCodeFilterContainer = new BarCodeFilterContainer {
+                Pattern = @params.RegularExpression,
+                MaxSize = @params.DuplicateBarcodeFilterCount,
+                ExpirationTime = TimeSpan.FromMilliseconds(@params.ScanInterval),
+                FilterOutContent = @params.FilterOutContent
+            };
+            _barCodeFilterContainer.CleanupContainer();
         }
 
         protected virtual async void OnCameraExceptionOccurred(CameraExceptionEventArgs e) {

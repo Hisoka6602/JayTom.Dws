@@ -39,6 +39,11 @@ namespace JayTom.Dws.Domain.Dto {
         public string RequiredCharacters { get; set; } = string.Empty;
 
         /// <summary>
+        /// 任意字符
+        /// </summary>
+        public string AnyCharacters { get; set; } = string.Empty;
+
+        /// <summary>
         /// 扫码时间间隔
         /// </summary>
         public int ScanInterval { get; set; }

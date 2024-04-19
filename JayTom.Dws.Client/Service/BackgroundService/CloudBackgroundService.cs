@@ -252,7 +252,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             if (_syncSettingsService.IsConnected &&
                                 _syncSettingsDto is { IsUseSyncSettings: true, IsUseImageStorageSync: true }) {
                                 var settingsDto = await _configRepository.FirstOrDefaultEntity<ImageSettingsDto>(saveImageSettings.SettingsName) ?? new ImageSettingsDto();
-                                var (key, value) = await _syncSettingsService.SubmitSyncContent(saveImageSettings.SettingsName, settingsDto);
+
+                                var (key, value) = await _syncSettingsService.SubmitSyncContent(saveImageSettings.SettingsName, JsonConvert.SerializeObject(settingsDto));
                                 if (!key) {
                                     NLog.LogManager.GetCurrentClassLogger().Error($"提交同步失败!");
                                 }
@@ -584,7 +585,6 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings(
                         case "SzjyApiParameters" when _syncSettingsDto is { IsUseSyncSettings: true, IsUseApiSync: true }:
                         case "WdtFlagshipApiParameters" when _syncSettingsDto is { IsUseSyncSettings: true, IsUseApiSync: true }:
                         case "WdtWmsApiParameters" when _syncSettingsDto is { IsUseSyncSettings: true, IsUseApiSync: true }:
-                        case "SaveImageSettings" when _syncSettingsDto is { IsUseSyncSettings: true, IsUseImageStorageSync: true }:
                         case "BarcodeFilterSettings" when _syncSettingsDto is { IsUseSyncSettings: true, IsUseFilterSync: true }:
                         case "ContentInputSettings" when _syncSettingsDto is { IsUseSyncSettings: true, IsUseContentInputSync: true }:
                         case "CreatePackageSettings" when _syncSettingsDto is { IsUseSyncSettings: true, IsUsePackagingSync: true }:
@@ -719,6 +719,18 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings(
                                     if (models is not null) {
                                         await _sortingInstructionBindingRepository.SyncEntities(models);
                                     }
+                                }
+                                catch (Exception e) {
+                                }
+                                break;
+                            }
+
+                        case "SaveImageSettings" when _syncSettingsDto is { IsUseSyncSettings: true, IsUseImageStorageSync: true }: {
+                                try {
+                                    await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
+                                        ConfigName = info.SettingsName,
+                                        Value = info.SettingsInfo?.ToString() ?? string.Empty
+                                    });
                                 }
                                 catch (Exception e) {
                                 }

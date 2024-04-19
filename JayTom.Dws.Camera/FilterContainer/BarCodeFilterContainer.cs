@@ -88,7 +88,7 @@ namespace JayTom.Dws.Camera.FilterContainer {
             return Container.TryAdd(barCodeFilterInfo.BarCode, barCodeFilterInfo);
         }
 
-        private void CleanupContainer() {
+        public void CleanupContainer() {
             if (MaxSize > 0) {
                 if (Container.Count <= _maxSize) {
                     return;

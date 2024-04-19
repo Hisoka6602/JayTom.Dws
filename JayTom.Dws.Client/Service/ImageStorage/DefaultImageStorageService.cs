@@ -10,6 +10,7 @@ using JayTom.Dws.Plugin.Ftp;
 using System.Threading.Tasks;
 using JayTom.Dws.Data.LocalLog;
 using JayTom.Dws.Plugin.SaveImage;
+using JayTom.Dws.Domain.Converters;
 using System.Text.RegularExpressions;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
@@ -24,6 +25,7 @@ namespace JayTom.Dws.Client.Service.ImageStorage {
         private readonly IFtp _ftp;
         private SemaphoreSlim _semaphore = new(1);
         private SemaphoreSlim _saveSemaphore = new(10);
+        private VolumeSettingsDto? _volumeSettingsDto = new();
 
         public DefaultImageStorageService(ISaveImage saveImage, IConfigRepository configRepository,
             IFtp ftp) {
@@ -31,26 +33,25 @@ namespace JayTom.Dws.Client.Service.ImageStorage {
             _configRepository = configRepository;
             _ftp = ftp;
             EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async settings => {
-                if (settings is SettingsChangedEvent { SettingsName: "SaveImageSettings" }) {
-                    await _semaphore.WaitAsync();
-                    var configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("SaveImageSettings"));
-                    try {
-                        ImageSettingsDto = JsonConvert.DeserializeObject<ImageSettingsDto>(configInfoModel.Value);
-                    }
-                    catch (Exception e) {
-                        OnImageSaveFailed(e);
-                    }
-                    ImageSettingsDto ??= new ImageSettingsDto();
-                    if (ImageSettingsDto.IsFtpUploadEnabled) {
-                        var (key, value) = await _ftp.Connect(ImageSettingsDto.FtpInfo.IpAddress,
-                            ImageSettingsDto.FtpInfo.Port,
-                            ImageSettingsDto.FtpInfo.Username,
-                            ImageSettingsDto.FtpInfo.Password);
-                        if (!key) {
-                            OnImageSaveFailed(new Exception(value));
+                switch (settings) {
+                    case SettingsChangedEvent { SettingsName: "SaveImageSettings" } model: {
+                            await _semaphore.WaitAsync();
+                            ImageSettingsDto = await _configRepository.FirstOrDefaultEntity<ImageSettingsDto>(model.SettingsName) ?? new ImageSettingsDto();
+                            if (ImageSettingsDto.IsFtpUploadEnabled) {
+                                var (key, value) = await _ftp.Connect(ImageSettingsDto.FtpInfo.IpAddress,
+                                    ImageSettingsDto.FtpInfo.Port,
+                                    ImageSettingsDto.FtpInfo.Username,
+                                    ImageSettingsDto.FtpInfo.Password);
+                                if (!key) {
+                                    OnImageSaveFailed(new Exception(value));
+                                }
+                            }
+                            _semaphore.Release();
+                            break;
                         }
-                    }
-                    _semaphore.Release();
+                    case SettingsChangedEvent { SettingsName: "VolumeSettings" } volumeSettings:
+                        _volumeSettingsDto = await _configRepository.FirstOrDefaultEntity<VolumeSettingsDto>(volumeSettings.SettingsName) ?? new VolumeSettingsDto();
+                        break;
                 }
             });
         }
@@ -64,16 +65,9 @@ namespace JayTom.Dws.Client.Service.ImageStorage {
         public async Task SaveImage(Image? image, SaveImageType type, string barCode, float weight, DateTime scanTime, float length,
             float width, float height, float volume, string cameraSerialNumber, CancellationToken cancellationToken = default) {
             if (image is null) return;
-            if (ImageSettingsDto is null) {
+            ImageSettingsDto ??= await _configRepository.FirstOrDefaultEntity<ImageSettingsDto>("SaveImageSettings", cancellationToken) ?? new ImageSettingsDto();
+            try {
                 await _semaphore.WaitAsync(cancellationToken);
-                var configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("SaveImageSettings"), cancellationToken);
-                try {
-                    ImageSettingsDto = JsonConvert.DeserializeObject<ImageSettingsDto>(configInfoModel.Value);
-                }
-                catch (Exception e) {
-                    OnImageSaveFailed(e);
-                }
-                ImageSettingsDto ??= new ImageSettingsDto();
                 if (ImageSettingsDto.IsFtpUploadEnabled) {
                     var (key, value) = await _ftp.Connect(ImageSettingsDto.FtpInfo.IpAddress,
                         ImageSettingsDto.FtpInfo.Port,
@@ -83,6 +77,9 @@ namespace JayTom.Dws.Client.Service.ImageStorage {
                         OnImageSaveFailed(new Exception(value));
                     }
                 }
+                _volumeSettingsDto ??= await _configRepository.FirstOrDefaultEntity<VolumeSettingsDto>("VolumeSettings", cancellationToken) ?? new VolumeSettingsDto();
+            }
+            finally {
                 _semaphore.Release();
             }
 
@@ -212,10 +209,34 @@ namespace JayTom.Dws.Client.Service.ImageStorage {
             return source switch {
                 "{BarCode}" => $"{(isWatermark ? "BarCode:" : string.Empty)}{Regex.Replace(barCode, @"[\u0000-\u001f\b]", "")}",
                 "{Weight}" => $"{(isWatermark ? "Weight:" : string.Empty)}{weight.ToString(CultureInfo.InvariantCulture)}",
-                "{Volume}" => $"{(isWatermark ? "Volume:" : string.Empty)}{volume.ToString(CultureInfo.InvariantCulture)}",
-                "{Length}" => $"{(isWatermark ? "Length:" : string.Empty)}{length.ToString(CultureInfo.InvariantCulture)}",
-                "{Width}" => $"{(isWatermark ? "Width:" : string.Empty)}{width.ToString(CultureInfo.InvariantCulture)}",
-                "{Height}" => $"{(isWatermark ? "Height:" : string.Empty)}{height.ToString(CultureInfo.InvariantCulture)}",
+                "{Volume}" => $"{(isWatermark ? "Volume:" : string.Empty)}{(volume / _volumeSettingsDto?.Unit switch {
+                    VolumeUnit.Millimeter => 1,
+                    VolumeUnit.Centimeter => 10,
+                    VolumeUnit.Meter => 100,
+                    _ => 1
+                })
+                    .ToString(CultureInfo.InvariantCulture)}",
+                "{Length}" => $"{(isWatermark ? "Length:" : string.Empty)}{(length / _volumeSettingsDto?.Unit switch {
+                    VolumeUnit.Millimeter => 1,
+                    VolumeUnit.Centimeter => 10,
+                    VolumeUnit.Meter => 100,
+                    _ => 1
+                })
+                    .ToString(CultureInfo.InvariantCulture)}",
+                "{Width}" => $"{(isWatermark ? "Width:" : string.Empty)}{(width / _volumeSettingsDto?.Unit switch {
+                    VolumeUnit.Millimeter => 1,
+                    VolumeUnit.Centimeter => 10,
+                    VolumeUnit.Meter => 100,
+                    _ => 1
+                })
+                    .ToString(CultureInfo.InvariantCulture)}",
+                "{Height}" => $"{(isWatermark ? "Height:" : string.Empty)}{(height / _volumeSettingsDto?.Unit switch {
+                    VolumeUnit.Millimeter => 1,
+                    VolumeUnit.Centimeter => 10,
+                    VolumeUnit.Meter => 100,
+                    _ => 1
+                })
+                    .ToString(CultureInfo.InvariantCulture)}",
                 "{ScanTime}" => $"{(isWatermark ? "ScanTime:" : string.Empty)}{(isWatermark ? $"{scanTime:yyyy-MM-dd HH:mm:ss.fff}" : $"{scanTime:yyyyMMddHHmmssfff}")}",
                 "{TimestampedGuid}" => $"{(isWatermark ? "TimestampedGuid:" : string.Empty)}{new DateTimeOffset(scanTime).ToUnixTimeMilliseconds().ToString()}",
                 "{CameraSerialNumber}" => $"{(isWatermark ? "CameraSerialNumber:" : string.Empty)}{cameraSerialNumber}",
@@ -232,13 +253,43 @@ namespace JayTom.Dws.Client.Service.ImageStorage {
             DateTime scanTime, float length,
             float width, float height, float volume, string cameraSerialNumber, bool isWatermark = false, string? language = default) {
             //默认中文
+            var vUnit = _volumeSettingsDto?.Unit switch {
+                VolumeUnit.Millimeter => "mm",
+                VolumeUnit.Centimeter => "cm",
+                VolumeUnit.Meter => "m",
+                _ => "mm"
+            };
             return source switch {
                 "{BarCode}" => $"{(isWatermark ? "条码:" : string.Empty)}{Regex.Replace(barCode, @"[\u0000-\u001f\b]", "")}",
-                "{Weight}" => $"{(isWatermark ? "重量:" : string.Empty)}{weight.ToString(CultureInfo.InvariantCulture)}",
-                "{Volume}" => $"{(isWatermark ? "体积:" : string.Empty)}{volume.ToString(CultureInfo.InvariantCulture)}",
-                "{Length}" => $"{(isWatermark ? "长度:" : string.Empty)}{length.ToString(CultureInfo.InvariantCulture)}",
-                "{Width}" => $"{(isWatermark ? "宽度:" : string.Empty)}{width.ToString(CultureInfo.InvariantCulture)}",
-                "{Height}" => $"{(isWatermark ? "高度:" : string.Empty)}{height.ToString(CultureInfo.InvariantCulture)}",
+                "{Weight}" => $"{(isWatermark ? "重量:" : string.Empty)}{weight.ToString(CultureInfo.InvariantCulture)} kg",
+                "{Volume}" => $"{(isWatermark ? "体积:" : string.Empty)}{(volume / _volumeSettingsDto?.Unit switch {
+                    VolumeUnit.Millimeter => 1,
+                    VolumeUnit.Centimeter => 10,
+                    VolumeUnit.Meter => 100,
+                    _ => 1
+                })
+                    .ToString(CultureInfo.InvariantCulture)} {vUnit}",
+                "{Length}" => $"{(isWatermark ? "长度:" : string.Empty)}{(length / _volumeSettingsDto?.Unit switch {
+                    VolumeUnit.Millimeter => 1,
+                    VolumeUnit.Centimeter => 10,
+                    VolumeUnit.Meter => 100,
+                    _ => 1
+                })
+                    .ToString(CultureInfo.InvariantCulture)} {vUnit}",
+                "{Width}" => $"{(isWatermark ? "宽度:" : string.Empty)}{(width / _volumeSettingsDto?.Unit switch {
+                    VolumeUnit.Millimeter => 1,
+                    VolumeUnit.Centimeter => 10,
+                    VolumeUnit.Meter => 100,
+                    _ => 1
+                })
+                    .ToString(CultureInfo.InvariantCulture)} {vUnit}",
+                "{Height}" => $"{(isWatermark ? "高度:" : string.Empty)}{(height / _volumeSettingsDto?.Unit switch {
+                    VolumeUnit.Millimeter => 1,
+                    VolumeUnit.Centimeter => 10,
+                    VolumeUnit.Meter => 100,
+                    _ => 1
+                })
+                    .ToString(CultureInfo.InvariantCulture)} {vUnit}",
                 "{ScanTime}" => $"{(isWatermark ? "扫码时间:" : string.Empty)}{(isWatermark ? $"{scanTime:yyyy-MM-dd HH:mm:ss.fff}" : $"{scanTime:yyyyMMddHHmmssfff}")}",
                 "{TimestampedGuid}" => $"{(isWatermark ? "时间戳:" : string.Empty)}{new DateTimeOffset(scanTime).ToUnixTimeMilliseconds().ToString()}",
                 "{CameraSerialNumber}" => $"{(isWatermark ? "相机序列号:" : string.Empty)}{cameraSerialNumber}",
