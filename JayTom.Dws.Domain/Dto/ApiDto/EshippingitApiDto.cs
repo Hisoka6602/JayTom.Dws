@@ -23,5 +23,10 @@ namespace JayTom.Dws.Domain.Dto.ApiDto {
         public string BucketName { get; set; } = "esit-open-qa";
         public int RetryCount { get; set; } = 2;
         public int RetryInterval { get; set; } = 1;
+
+        /// <summary>
+        /// 设备名称
+        /// </summary>
+        public string Machine { get; set; } = string.Empty;
     }
 }

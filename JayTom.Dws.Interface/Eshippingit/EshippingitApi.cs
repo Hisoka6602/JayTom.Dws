@@ -42,6 +42,7 @@ namespace JayTom.Dws.Interface.Eshippingit {
                 inboundLength = Math.Round(Convert.ToDecimal(length / 10), 3),
                 inboundWidth = Math.Round(Convert.ToDecimal(width / 10), 3),
                 inboundHeight = Math.Round(Convert.ToDecimal(height / 10), 3),
+                machine = Parameters.Machine,
             };
             var stopwatch = new Stopwatch();
             stopwatch.Start();
@@ -123,6 +124,7 @@ namespace JayTom.Dws.Interface.Eshippingit {
                 inboundLength = Math.Round(Convert.ToDecimal(length / 10), 3),
                 inboundWidth = Math.Round(Convert.ToDecimal(width / 10), 3),
                 inboundHeight = Math.Round(Convert.ToDecimal(height / 10), 3),
+                machine = Parameters.Machine,
             };
 
             var stopwatch = new Stopwatch();
@@ -200,7 +202,8 @@ namespace JayTom.Dws.Interface.Eshippingit {
                     Endpoint = param.Endpoint,
                     RetryCount = param.RetryCount,
                     RetryInterval = param.RetryInterval,
-                    TimeOut = param.TimeOut
+                    TimeOut = param.TimeOut,
+                    Machine = param.Machine,
                 };
                 return Task.FromResult(new KeyValuePair<bool, string>(true, "设置成功"));
             }
@@ -343,6 +346,7 @@ namespace JayTom.Dws.Interface.Eshippingit {
             public string BucketName { get; set; } = "esit-open-qa";
             public int RetryCount { get; set; } = 2;
             public int RetryInterval { get; set; } = 1;
+            public string Machine { get; set; } = string.Empty;
         }
 
         public class OssParameters {

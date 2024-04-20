@@ -15,6 +15,7 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         private string _bucketName = string.Empty;
         private int _retryCount = 2;
         private int _retryInterval = 1;
+        private string _machine = string.Empty;
 
         /// <summary>
         /// 域名
@@ -61,6 +62,14 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         public int RetryInterval {
             get => _retryInterval;
             set => SetProperty(ref _retryInterval, value);
+        }
+
+        /// <summary>
+        /// 设备名称
+        /// </summary>
+        public string Machine {
+            get => _machine;
+            set => SetProperty(ref _machine, value);
         }
     }
 }

@@ -203,7 +203,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             Endpoint = entity.Endpoint,
                             RetryCount = entity.RetryCount,
                             RetryInterval = entity.RetryInterval,
-                            TimeOut = entity.TimeOut
+                            TimeOut = entity.TimeOut,
+                            Machine = entity.Machine
                         };
                     }
                     //其他接口
@@ -770,7 +771,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 Endpoint = eshippingitApiDto.Endpoint,
                 RetryCount = eshippingitApiDto.RetryCount,
                 RetryInterval = eshippingitApiDto.RetryInterval,
-                TimeOut = eshippingitApiDto.TimeOut
+                TimeOut = eshippingitApiDto.TimeOut,
+                Machine = eshippingitApiDto.Machine
             };
         }
 

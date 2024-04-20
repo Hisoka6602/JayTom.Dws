@@ -35,7 +35,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
                     Endpoint = EshippingitApiInfo.Endpoint,
                     BucketName = EshippingitApiInfo.BucketName,
                     RetryCount = EshippingitApiInfo.RetryCount,
-                    RetryInterval = EshippingitApiInfo.RetryInterval
+                    RetryInterval = EshippingitApiInfo.RetryInterval,
+                    Machine = EshippingitApiInfo.Machine
                 })
             });
             base.MessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
@@ -53,7 +54,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
                     Endpoint = settingsDto.Endpoint,
                     BucketName = settingsDto.BucketName,
                     RetryCount = settingsDto.RetryCount,
-                    RetryInterval = settingsDto.RetryInterval
+                    RetryInterval = settingsDto.RetryInterval,
+                    Machine = settingsDto.Machine
                 };
             });
         }
