@@ -296,8 +296,14 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
                 Pattern = @params.RegularExpression,
                 MaxSize = @params.DuplicateBarcodeFilterCount,
                 ExpirationTime = TimeSpan.FromMilliseconds(@params.ScanInterval),
-                FilterOutContent = @params.FilterOutContent
+                FilterOutContent = @params.FilterOutContent,
+                BarCodeFilterMode = @params.BarCodeFilterMode,
+                CustomRegularExpressionItems = @params.CustomRegularExpressionItems,
+                IsUseCustomRegexReplacement = @params.IsUseCustomRegexReplacement,
+                IsUseFilteredBarcodeTypes = @params.IsUseFilteredBarcodeTypes,
+                CustomRegexReplacementItems = @params.CustomRegexReplacementItems
             };
+
             _barCodeFilterContainer.CleanupContainer();
         }
 
@@ -425,7 +431,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
                         if (barcodeInfo.TryDequeue(out var barcode)) {
                             OnBarcodeReadTriggered(new BarcodeTriggeredEventArgs() {
                                 Timestamp = timestamp,
-                                Barcode = string.IsNullOrWhiteSpace(barcode.BarCode) ? "NoRead" : barcode.BarCode,
+                                Barcode = _barCodeFilterContainer.RegexReplace(string.IsNullOrWhiteSpace(barcode.BarCode) ? "NoRead" : barcode.BarCode),
                                 Image = bitmap,
                                 ThumbImage = (Bitmap?)thumbnailImage,
                                 CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,

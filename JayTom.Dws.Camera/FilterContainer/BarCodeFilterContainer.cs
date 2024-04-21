@@ -42,6 +42,31 @@ namespace JayTom.Dws.Camera.FilterContainer {
         /// </summary>
         public string FilterOutContent { get; set; } = string.Empty;
 
+        /// <summary>
+        /// 过滤方式
+        /// </summary>
+        public BarCodeFilterMode BarCodeFilterMode { get; set; } = BarCodeFilterMode.None;
+
+        /// <summary>
+        /// 自定义正则表达式
+        /// </summary>
+        public List<string> CustomRegularExpressionItems { get; set; } = new();
+
+        /// <summary>
+        /// 是否使用正则替换
+        /// </summary>
+        public bool IsUseCustomRegexReplacement { get; set; }
+
+        /// <summary>
+        /// 是否使用过滤条码码种类
+        /// </summary>
+        public bool IsUseFilteredBarcodeTypes { get; set; }
+
+        /// <summary>
+        /// 正则替换项
+        /// </summary>
+        public List<CustomRegexReplacementItemInfo> CustomRegexReplacementItems { get; set; } = new();
+
         public bool InsertOrUpdate(BarCodeFilterInfo data) {
             if (!string.IsNullOrEmpty(Pattern)) {
                 try {
@@ -68,16 +93,30 @@ namespace JayTom.Dws.Camera.FilterContainer {
 
         public bool ValidateData(BarCodeFilterInfo barCodeFilterInfo) {
             CleanupContainer();
-            if (!string.IsNullOrEmpty(Pattern)) {
-                try {
-                    if (!Regex.IsMatch(barCodeFilterInfo.BarCode, Pattern)) {
+            if (BarCodeFilterMode == BarCodeFilterMode.BasicFilter) {
+                if (!string.IsNullOrEmpty(Pattern)) {
+                    try {
+                        if (!Regex.IsMatch(barCodeFilterInfo.BarCode, Pattern)) {
+                            return false;
+                        }
+                    }
+                    catch {
                         return false;
                     }
                 }
-                catch {
-                    return false;
+            }
+            else if (BarCodeFilterMode == BarCodeFilterMode.BasicFilter) {
+                if (CustomRegularExpressionItems.Any()) {
+                    try {
+                        var isMatch = CustomRegularExpressionItems.Any(a =>
+                            Regex.IsMatch(barCodeFilterInfo.BarCode, a));
+                    }
+                    catch (Exception e) {
+                        return false;
+                    }
                 }
             }
+
             //后面加的
             var codeFilterInfo = Get(barCodeFilterInfo.BarCode);
             if (codeFilterInfo != null) {
@@ -113,6 +152,25 @@ namespace JayTom.Dws.Camera.FilterContainer {
             CleanupContainer();
             Container.TryGetValue(barCode, out var value);
             return value;
+        }
+
+        /// <summary>
+        /// 替换
+        /// </summary>
+        /// <param name="barCode"></param>
+        /// <returns></returns>
+        public string RegexReplace(string barCode) {
+            if (IsUseCustomRegexReplacement && CustomRegexReplacementItems.Any()) {
+                var replacedBarcode = barCode;
+                try {
+                    replacedBarcode = CustomRegexReplacementItems.Aggregate(replacedBarcode, (current, customRegexReplacementItemInfoModel) => Regex.Replace(current, customRegexReplacementItemInfoModel.RegexPattern, customRegexReplacementItemInfoModel.ReplaceContent));
+                    return replacedBarcode;
+                }
+                catch (Exception e) {
+                    NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
+                }
+            }
+            return barCode;
         }
     }
 

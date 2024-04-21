@@ -23,6 +23,7 @@
     <Page.Resources>
         <settingsConverter:CharacterTypeToBooleanConverter x:Key="CharacterTypeToBooleanConverter" />
         <settingsConverter:FilterOutputTypeToBooleanConverter x:Key="FilterOutputTypeToBooleanConverter" />
+        <settingsConverter:BarCodeFilterOptionsToBooleanConverter x:Key="BarCodeFilterOptionsToBooleanConverter" />
     </Page.Resources>
     <b:Interaction.Triggers>
         <b:EventTrigger EventName="Loaded" SourceName="{Binding Name, RelativeSource={RelativeSource AncestorType={x:Type Page}}}">
@@ -48,365 +49,1293 @@
          AutoPlay="True"
          RepeatCount="-1"
          ResourcePath="pack://application:,,,/Lotties/TextLoading.json" />-->
-        <!--  条码限制  -->
-        <StackPanel
+        <TabControl
             Grid.Row="0"
-            Margin="5,0"
-            VerticalAlignment="Center"
-            Orientation="Vertical">
-            <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
-                <TextBlock
-                    Margin="0,0,0,1"
-                    VerticalAlignment="Center"
-                    FontFamily="{StaticResource IconFontFamily}"
-                    FontSize="20"
-                    Foreground="DarkGray"
-                    Text="&#xe6cc;" />
-                <TextBlock
-                    Margin="5,0"
-                    VerticalAlignment="Center"
-                    FontSize="16"
-                    FontWeight="Bold"
-                    Foreground="DarkGray"
-                    Text="{x:Static languages:Language.BarcodeLength}" />
-            </StackPanel>
-            <StackPanel Margin="50,5,0,0" Orientation="Horizontal">
-                <StackPanel Orientation="Horizontal">
-                    <StackPanel Orientation="Horizontal">
-                        <!--  图标  -->
-                        <TextBlock
-                            Margin="5,0"
+            Height="570"
+            HorizontalContentAlignment="Left"
+            materialDesign:ColorZoneAssist.Foreground="DarkGray"
+            materialDesign:ColorZoneAssist.Mode="Custom"
+            materialDesign:TabAssist.HasFilledTab="True"
+            materialDesign:TabAssist.HasUniformTabWidth="True"
+            Focusable="False"
+            FontFamily="{StaticResource CustomFontFamily}"
+            FontSize="25"
+            ScrollViewer.HorizontalScrollBarVisibility="Auto"
+            ScrollViewer.VerticalScrollBarVisibility="Auto"
+            SelectedIndex="{Binding FilterTypeSelectedIndex}"
+            Style="{StaticResource MaterialDesignUniformTabControl}"
+            TabStripPlacement="Top">
+            <!--  常规过滤  -->
+            <TabItem
+                FocusVisualStyle="{x:Null}"
+                FontFamily="{StaticResource CustomFontFamily}"
+                FontSize="13"
+                FontWeight="Bold"
+                Foreground="DarkGray"
+                Header="常规过滤">
+                <ScrollViewer
+                    MaxWidth="900"
+                    MaxHeight="550"
+                    Margin="0,15"
+                    HorizontalAlignment="Left"
+                    VerticalScrollBarVisibility="Auto">
+                    <StackPanel Orientation="Vertical">
+                        <!--  是否使用常规过滤  -->
+                        <StackPanel
+                            Margin="0,10"
+                            HorizontalAlignment="Left"
                             VerticalAlignment="Center"
-                            FontSize="13"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            Text="{x:Static languages:Language.MinBarcodeLength}" />
-                        <Border
-                            Margin="5"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Background="#1A696969"
-                            CornerRadius="5">
-                            <TextBox
-                                Width="80"
-                                Height="30"
-                                MaxWidth="500"
+                            Orientation="Horizontal">
+                            <TextBlock
                                 Margin="5,0"
-                                materialDesign:TextFieldAssist.HasClearButton="False"
-                                materialDesign:TextFieldAssist.HasFilledTextField="True"
-                                Background="Transparent"
-                                BorderThickness="0"
-                                FontSize="13"
+                                VerticalAlignment="Center"
+                                FontSize="15"
                                 FontWeight="Bold"
-                                Foreground="White"
-                                InputMethod.IsInputMethodEnabled="False"
-                                Text="{Binding MinimumLength, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
-                                <b:Interaction.Triggers>
-                                    <b:EventTrigger EventName="TextChanged">
-                                        <mvvm:InvokeCommandAction Command="{Binding MinimumLengthChangedCommand}" />
-                                    </b:EventTrigger>
-                                </b:Interaction.Triggers>
-                            </TextBox>
-                        </Border>
+                                Foreground="DarkGray"
+                                Text="是否使用常规过滤:" />
+                            <ToggleButton
+                                Name="IsUseBasicFilterToggleButton"
+                                materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
+                                materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
+                                Focusable="False"
+                                IsChecked="{Binding BarcodeFilterSettingsInfo.BarCodeFilterOptions, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, Converter={StaticResource BarCodeFilterOptionsToBooleanConverter}, ConverterParameter=BasicFilter}"
+                                Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+                        </StackPanel>
+                        <StackPanel
+                            Margin="20,0"
+                            Orientation="Vertical"
+                            Visibility="{Binding ElementName=IsUseBasicFilterToggleButton, Path=IsChecked, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <!--  条码长度限制  -->
+                            <StackPanel
+                                Margin="5,0"
+                                VerticalAlignment="Center"
+                                Orientation="Vertical">
+                                <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
+                                    <TextBlock
+                                        Margin="0,0,0,1"
+                                        VerticalAlignment="Center"
+                                        FontFamily="{StaticResource IconFontFamily}"
+                                        FontSize="20"
+                                        FontWeight="Bold"
+                                        Foreground="DarkGray"
+                                        Text="&#xe6cc;" />
+                                    <TextBlock
+                                        Margin="5,0"
+                                        VerticalAlignment="Center"
+                                        FontSize="16"
+                                        FontWeight="Bold"
+                                        Foreground="DarkGray"
+                                        Text="{x:Static languages:Language.BarcodeLength}" />
+                                </StackPanel>
+                                <StackPanel Margin="50,5,0,0" Orientation="Horizontal">
+                                    <StackPanel Orientation="Horizontal">
+                                        <StackPanel Orientation="Horizontal">
+                                            <!--  图标  -->
+                                            <TextBlock
+                                                Margin="5,0"
+                                                VerticalAlignment="Center"
+                                                FontSize="13"
+                                                FontWeight="Bold"
+                                                Foreground="DarkGray"
+                                                Text="{x:Static languages:Language.MinBarcodeLength}" />
+                                            <Border
+                                                Margin="5"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"
+                                                Background="#1A696969"
+                                                CornerRadius="5">
+                                                <TextBox
+                                                    Width="80"
+                                                    Height="30"
+                                                    MaxWidth="500"
+                                                    Margin="5,0"
+                                                    materialDesign:TextFieldAssist.HasClearButton="False"
+                                                    materialDesign:TextFieldAssist.HasFilledTextField="True"
+                                                    Background="Transparent"
+                                                    BorderThickness="0"
+                                                    FontSize="13"
+                                                    FontWeight="Bold"
+                                                    Foreground="White"
+                                                    InputMethod.IsInputMethodEnabled="False"
+                                                    Text="{Binding BarcodeFilterSettingsInfo.BasicFilterInfo.MinimumLength, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                                                    <b:Interaction.Triggers>
+                                                        <b:EventTrigger EventName="TextChanged">
+                                                            <mvvm:InvokeCommandAction Command="{Binding MinimumLengthChangedCommand}" />
+                                                        </b:EventTrigger>
+                                                    </b:Interaction.Triggers>
+                                                </TextBox>
+                                            </Border>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal">
+                                            <!--  图标  -->
+                                            <TextBlock
+                                                Margin="5,0"
+                                                VerticalAlignment="Center"
+                                                FontSize="13"
+                                                FontWeight="Bold"
+                                                Foreground="DarkGray"
+                                                Text="{x:Static languages:Language.MaxBarcodeLength}" />
+                                            <Border
+                                                Margin="5"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"
+                                                Background="#1A696969"
+                                                CornerRadius="5">
+                                                <TextBox
+                                                    Width="80"
+                                                    Height="30"
+                                                    MaxWidth="500"
+                                                    Margin="5,0"
+                                                    materialDesign:TextFieldAssist.HasClearButton="False"
+                                                    materialDesign:TextFieldAssist.HasFilledTextField="True"
+                                                    Background="Transparent"
+                                                    BorderThickness="0"
+                                                    FontSize="13"
+                                                    FontWeight="Bold"
+                                                    Foreground="White"
+                                                    InputMethod.IsInputMethodEnabled="False"
+                                                    Text="{Binding BarcodeFilterSettingsInfo.BasicFilterInfo.MaximumLength, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                                                    <b:Interaction.Triggers>
+                                                        <b:EventTrigger EventName="TextChanged">
+                                                            <mvvm:InvokeCommandAction Command="{Binding MaximumLengthChangedCommand}" />
+                                                        </b:EventTrigger>
+                                                    </b:Interaction.Triggers>
+                                                </TextBox>
+                                            </Border>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </StackPanel>
+                            </StackPanel>
+                            <!--  字符限制  -->
+                            <StackPanel
+                                Margin="5,0"
+                                VerticalAlignment="Center"
+                                Orientation="Vertical">
+                                <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
+                                    <TextBlock
+                                        Margin="0,0,0,1"
+                                        VerticalAlignment="Center"
+                                        FontFamily="{StaticResource IconFontFamily}"
+                                        FontSize="20"
+                                        Foreground="DarkGray"
+                                        Text="&#xeaed;" />
+                                    <TextBlock
+                                        Margin="5,0"
+                                        VerticalAlignment="Center"
+                                        FontSize="16"
+                                        FontWeight="Bold"
+                                        Foreground="DarkGray"
+                                        Text="{x:Static languages:Language.CharacterLimitation}" />
+                                </StackPanel>
+                                <StackPanel Margin="50,5,0,0" Orientation="Horizontal">
+                                    <StackPanel Orientation="Vertical">
+                                        <!--  开头字符  -->
+                                        <StackPanel Orientation="Horizontal">
+                                            <!--  图标  -->
+                                            <TextBlock
+                                                Margin="5,0"
+                                                VerticalAlignment="Center"
+                                                FontSize="13"
+                                                FontWeight="Bold"
+                                                Foreground="DarkGray"
+                                                Text="{x:Static languages:Language.StartCharacter}" />
+                                            <Border
+                                                MinWidth="200"
+                                                MinHeight="30"
+                                                Margin="5"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"
+                                                Background="#1A696969"
+                                                CornerRadius="5">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <RadioButton
+                                                        Margin="10,0"
+                                                        Command="{Binding StartCharacterTypeChangedCommand}"
+                                                        Content="{x:Static languages:Language.LettersOrNumbers}"
+                                                        Focusable="False"
+                                                        FontWeight="Bold"
+                                                        Foreground="White"
+                                                        IsChecked="{Binding BarcodeFilterSettingsInfo.BasicFilterInfo.StartCharacterType, Converter={StaticResource CharacterTypeToBooleanConverter}, ConverterParameter=Alphanumeric}"
+                                                        Template="{StaticResource CustomRadioButtonTemplate}" />
+                                                    <RadioButton
+                                                        Margin="10,0"
+                                                        Command="{Binding StartCharacterTypeChangedCommand}"
+                                                        Content="{x:Static languages:Language.Letters}"
+                                                        Focusable="False"
+                                                        FontWeight="Bold"
+                                                        Foreground="White"
+                                                        IsChecked="{Binding BarcodeFilterSettingsInfo.BasicFilterInfo.StartCharacterType, Converter={StaticResource CharacterTypeToBooleanConverter}, ConverterParameter=Letter}"
+                                                        Template="{StaticResource CustomRadioButtonTemplate}" />
+                                                    <RadioButton
+                                                        Margin="10,0"
+                                                        Command="{Binding StartCharacterTypeChangedCommand}"
+                                                        Content="{x:Static languages:Language.Numbers}"
+                                                        Focusable="False"
+                                                        FontWeight="Bold"
+                                                        Foreground="White"
+                                                        IsChecked="{Binding BarcodeFilterSettingsInfo.BasicFilterInfo.StartCharacterType, Converter={StaticResource CharacterTypeToBooleanConverter}, ConverterParameter=Number}"
+                                                        Template="{StaticResource CustomRadioButtonTemplate}" />
+                                                    <RadioButton
+                                                        Margin="10,0"
+                                                        Command="{Binding StartCharacterTypeChangedCommand}"
+                                                        Content="任意"
+                                                        Focusable="False"
+                                                        FontWeight="Bold"
+                                                        Foreground="White"
+                                                        IsChecked="{Binding BarcodeFilterSettingsInfo.BasicFilterInfo.StartCharacterType, Converter={StaticResource CharacterTypeToBooleanConverter}, ConverterParameter=Any}"
+                                                        Template="{StaticResource CustomRadioButtonTemplate}" />
+                                                </StackPanel>
+                                            </Border>
+                                        </StackPanel>
+                                        <!--  结尾字符  -->
+                                        <StackPanel Orientation="Horizontal">
+                                            <!--  图标  -->
+                                            <TextBlock
+                                                Margin="5,0"
+                                                VerticalAlignment="Center"
+                                                FontSize="13"
+                                                FontWeight="Bold"
+                                                Foreground="DarkGray"
+                                                Text="{x:Static languages:Language.EndCharacter}" />
+                                            <Border
+                                                MinWidth="200"
+                                                MinHeight="30"
+                                                Margin="5"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"
+                                                Background="#1A696969"
+                                                CornerRadius="5">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <RadioButton
+                                                        Margin="10,0"
+                                                        Command="{Binding EndCharacterTypeChangedCommand}"
+                                                        Content="{x:Static languages:Language.LettersOrNumbers}"
+                                                        Focusable="False"
+                                                        FontWeight="Bold"
+                                                        Foreground="White"
+                                                        IsChecked="{Binding BarcodeFilterSettingsInfo.BasicFilterInfo.EndCharacterType, Converter={StaticResource CharacterTypeToBooleanConverter}, ConverterParameter=Alphanumeric}"
+                                                        Template="{StaticResource CustomRadioButtonTemplate}" />
+                                                    <RadioButton
+                                                        Margin="10,0"
+                                                        Command="{Binding EndCharacterTypeChangedCommand}"
+                                                        Content="{x:Static languages:Language.Letters}"
+                                                        Focusable="False"
+                                                        FontWeight="Bold"
+                                                        Foreground="White"
+                                                        IsChecked="{Binding BarcodeFilterSettingsInfo.BasicFilterInfo.EndCharacterType, Converter={StaticResource CharacterTypeToBooleanConverter}, ConverterParameter=Letter}"
+                                                        Template="{StaticResource CustomRadioButtonTemplate}" />
+                                                    <RadioButton
+                                                        Margin="10,0"
+                                                        Command="{Binding EndCharacterTypeChangedCommand}"
+                                                        Content="{x:Static languages:Language.Numbers}"
+                                                        Focusable="False"
+                                                        FontWeight="Bold"
+                                                        Foreground="White"
+                                                        IsChecked="{Binding BarcodeFilterSettingsInfo.BasicFilterInfo.EndCharacterType, Converter={StaticResource CharacterTypeToBooleanConverter}, ConverterParameter=Number}"
+                                                        Template="{StaticResource CustomRadioButtonTemplate}" />
+                                                    <RadioButton
+                                                        Margin="10,0"
+                                                        Command="{Binding EndCharacterTypeChangedCommand}"
+                                                        Content="任意"
+                                                        Focusable="False"
+                                                        FontWeight="Bold"
+                                                        Foreground="White"
+                                                        IsChecked="{Binding BarcodeFilterSettingsInfo.BasicFilterInfo.EndCharacterType, Converter={StaticResource CharacterTypeToBooleanConverter}, ConverterParameter=Any}"
+                                                        Template="{StaticResource CustomRadioButtonTemplate}" />
+                                                </StackPanel>
+                                            </Border>
+                                        </StackPanel>
+                                        <!--  不能包含  -->
+                                        <StackPanel Orientation="Horizontal">
+                                            <!--  图标  -->
+                                            <TextBlock
+                                                Margin="5,0"
+                                                VerticalAlignment="Center"
+                                                FontSize="13"
+                                                FontWeight="Bold"
+                                                Foreground="DarkGray"
+                                                Text="{x:Static languages:Language.CannotContain}" />
+                                            <Border
+                                                Width="310"
+                                                Margin="5"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"
+                                                Background="#1A696969"
+                                                CornerRadius="5">
+                                                <TextBox
+                                                    Width="310"
+                                                    Height="30"
+                                                    MaxWidth="500"
+                                                    Margin="5,0"
+                                                    materialDesign:HintAssist.Hint="{x:Static languages:Language.ConditionSeparationInstruction}"
+                                                    materialDesign:TextFieldAssist.HasClearButton="False"
+                                                    materialDesign:TextFieldAssist.HasFilledTextField="True"
+                                                    Background="Transparent"
+                                                    BorderThickness="0"
+                                                    FontSize="13"
+                                                    FontWeight="Bold"
+                                                    Foreground="White"
+                                                    InputMethod.IsInputMethodEnabled="False"
+                                                    Text="{Binding BarcodeFilterSettingsInfo.BasicFilterInfo.DisallowedCharacters, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                                                    <b:Interaction.Triggers>
+                                                        <b:EventTrigger EventName="TextChanged">
+                                                            <mvvm:InvokeCommandAction Command="{Binding DisallowedCharactersChangedCommand}" />
+                                                        </b:EventTrigger>
+                                                    </b:Interaction.Triggers>
+                                                </TextBox>
+                                            </Border>
+                                        </StackPanel>
+                                        <!--  必须包含  -->
+                                        <StackPanel Orientation="Horizontal">
+                                            <!--  图标  -->
+                                            <TextBlock
+                                                Margin="5,0"
+                                                VerticalAlignment="Center"
+                                                FontSize="13"
+                                                FontWeight="Bold"
+                                                Foreground="DarkGray"
+                                                Text="{x:Static languages:Language.MustContain}" />
+                                            <Border
+                                                Width="310"
+                                                Margin="5"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"
+                                                Background="#1A696969"
+                                                CornerRadius="5">
+                                                <TextBox
+                                                    Width="310"
+                                                    Height="30"
+                                                    MaxWidth="500"
+                                                    Margin="5,0"
+                                                    materialDesign:HintAssist.Hint="{x:Static languages:Language.ConditionSeparationInstruction}"
+                                                    materialDesign:TextFieldAssist.HasClearButton="False"
+                                                    materialDesign:TextFieldAssist.HasFilledTextField="True"
+                                                    Background="Transparent"
+                                                    BorderThickness="0"
+                                                    FontSize="13"
+                                                    FontWeight="Bold"
+                                                    Foreground="White"
+                                                    InputMethod.IsInputMethodEnabled="False"
+                                                    Text="{Binding BarcodeFilterSettingsInfo.BasicFilterInfo.RequiredCharacters, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                                                    <b:Interaction.Triggers>
+                                                        <b:EventTrigger EventName="TextChanged">
+                                                            <mvvm:InvokeCommandAction Command="{Binding RequiredCharactersChangedCommand}" />
+                                                        </b:EventTrigger>
+                                                    </b:Interaction.Triggers>
+                                                </TextBox>
+                                            </Border>
+                                        </StackPanel>
+                                        <!--  包含任意  -->
+                                        <StackPanel Orientation="Horizontal">
+                                            <!--  图标  -->
+                                            <TextBlock
+                                                Margin="5,0"
+                                                VerticalAlignment="Center"
+                                                FontSize="13"
+                                                FontWeight="Bold"
+                                                Foreground="DarkGray"
+                                                Text="包含任意:" />
+                                            <Border
+                                                Width="310"
+                                                Margin="5"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"
+                                                Background="#1A696969"
+                                                CornerRadius="5">
+                                                <TextBox
+                                                    Width="310"
+                                                    Height="30"
+                                                    MaxWidth="500"
+                                                    Margin="5,0"
+                                                    materialDesign:HintAssist.Hint="{x:Static languages:Language.ConditionSeparationInstruction}"
+                                                    materialDesign:TextFieldAssist.HasClearButton="False"
+                                                    materialDesign:TextFieldAssist.HasFilledTextField="True"
+                                                    Background="Transparent"
+                                                    BorderThickness="0"
+                                                    FontSize="13"
+                                                    FontWeight="Bold"
+                                                    Foreground="White"
+                                                    InputMethod.IsInputMethodEnabled="False"
+                                                    Text="{Binding BarcodeFilterSettingsInfo.BasicFilterInfo.AnyCharacters, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                                                    <b:Interaction.Triggers>
+                                                        <b:EventTrigger EventName="TextChanged">
+                                                            <mvvm:InvokeCommandAction Command="{Binding AnyCharactersChangedCommand}" />
+                                                        </b:EventTrigger>
+                                                    </b:Interaction.Triggers>
+                                                </TextBox>
+                                            </Border>
+                                        </StackPanel>
+                                        <!--  条码开头  -->
+                                        <StackPanel Orientation="Horizontal">
+                                            <!--  图标  -->
+                                            <TextBlock
+                                                Margin="5,0"
+                                                VerticalAlignment="Center"
+                                                FontSize="13"
+                                                FontWeight="Bold"
+                                                Foreground="DarkGray"
+                                                Text="条码开头:" />
+                                            <Border
+                                                Width="310"
+                                                Margin="5"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"
+                                                Background="#1A696969"
+                                                CornerRadius="5">
+                                                <TextBox
+                                                    Width="310"
+                                                    Height="30"
+                                                    MaxWidth="500"
+                                                    Margin="5,0"
+                                                    materialDesign:HintAssist.Hint="{x:Static languages:Language.ConditionSeparationInstruction}"
+                                                    materialDesign:TextFieldAssist.HasClearButton="False"
+                                                    materialDesign:TextFieldAssist.HasFilledTextField="True"
+                                                    Background="Transparent"
+                                                    BorderThickness="0"
+                                                    FontSize="13"
+                                                    FontWeight="Bold"
+                                                    Foreground="White"
+                                                    InputMethod.IsInputMethodEnabled="False"
+                                                    Text="{Binding BarcodeFilterSettingsInfo.BasicFilterInfo.AnyStartCodes, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                                                    <b:Interaction.Triggers>
+                                                        <b:EventTrigger EventName="TextChanged">
+                                                            <mvvm:InvokeCommandAction Command="{Binding AnyStartCodesChangedCommand}" />
+                                                        </b:EventTrigger>
+                                                    </b:Interaction.Triggers>
+                                                </TextBox>
+                                            </Border>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </StackPanel>
+                            </StackPanel>
+                            <!--  正则表达式  -->
+                            <StackPanel
+                                Margin="5,0"
+                                VerticalAlignment="Center"
+                                Orientation="Vertical">
+                                <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
+                                    <TextBlock
+                                        Margin="0,0,0,1"
+                                        VerticalAlignment="Center"
+                                        FontFamily="{StaticResource IconFontFamily}"
+                                        FontSize="20"
+                                        Foreground="DarkGray"
+                                        Text="&#xe758;" />
+                                    <TextBlock
+                                        Margin="5,0"
+                                        VerticalAlignment="Center"
+                                        FontSize="16"
+                                        FontWeight="Bold"
+                                        Foreground="DarkGray"
+                                        Text="{x:Static languages:Language.RegularExpression}" />
+                                </StackPanel>
+                                <StackPanel Margin="50,5,0,0" Orientation="Horizontal">
+                                    <StackPanel Orientation="Horizontal">
+                                        <StackPanel Orientation="Horizontal">
+                                            <!--  图标  -->
+                                            <TextBlock
+                                                Margin="5,0"
+                                                VerticalAlignment="Center"
+                                                FontSize="13"
+                                                FontWeight="Bold"
+                                                Foreground="DarkGray"
+                                                Text="{x:Static languages:Language.RegularExpression}" />
+                                            <Border
+                                                MinHeight="80"
+                                                MaxHeight="200"
+                                                Margin="5"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"
+                                                Background="#1A696969"
+                                                CornerRadius="5">
+                                                <TextBox
+                                                    Width="310"
+                                                    MinHeight="80"
+                                                    MaxWidth="310"
+                                                    Margin="5,0"
+                                                    Background="Transparent"
+                                                    BorderThickness="0"
+                                                    FontSize="13"
+                                                    FontWeight="Bold"
+                                                    Foreground="White"
+                                                    IsReadOnly="True"
+                                                    Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                                    Text="{Binding BarcodeFilterSettingsInfo.BasicFilterInfo.RegularExpression, UpdateSourceTrigger=PropertyChanged}"
+                                                    TextWrapping="Wrap"
+                                                    VerticalScrollBarVisibility="Auto" />
+                                            </Border>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </StackPanel>
+                                <!--  添加到自定义正则列表  -->
+                                <Button
+                                    MinHeight="30"
+                                    Margin="50,5"
+                                    HorizontalAlignment="Left"
+                                    materialDesign:ButtonAssist.CornerRadius="5"
+                                    Background="#2E2E2E"
+                                    BorderThickness="0"
+                                    Command="{Binding AddToRegexFilterListCommand}"
+                                    FocusVisualStyle="{x:Null}"
+                                    Style="{StaticResource MaterialDesignFlatAccentBgButton}">
+
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock
+                                            Margin="0,0,0,0"
+                                            VerticalAlignment="Center"
+                                            FontFamily="{StaticResource IconFontFamily}"
+                                            FontSize="18"
+                                            Foreground="DarkGray"
+                                            Text="&#xe7de;" />
+                                        <TextBlock
+                                            Margin="2,1,0,0"
+                                            VerticalAlignment="Center"
+                                            FontFamily="{StaticResource CustomFontFamily}"
+                                            FontSize="14"
+                                            FontWeight="Bold"
+                                            Foreground="DarkGray"
+                                            Text="添加到正则过滤列表" />
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                            <!--  验证字符  -->
+                            <StackPanel
+                                Margin="5,0"
+                                VerticalAlignment="Center"
+                                Orientation="Vertical">
+                                <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
+                                    <TextBlock
+                                        Margin="0,0,0,1"
+                                        VerticalAlignment="Center"
+                                        FontFamily="{StaticResource IconFontFamily}"
+                                        FontSize="20"
+                                        Foreground="DarkGray"
+                                        Text="&#xe715;" />
+                                    <TextBlock
+                                        Margin="5,0"
+                                        VerticalAlignment="Center"
+                                        FontSize="16"
+                                        FontWeight="Bold"
+                                        Foreground="DarkGray"
+                                        Text="{x:Static languages:Language.BarcodeValidation}" />
+                                </StackPanel>
+                                <StackPanel Margin="50,5,0,0" Orientation="Horizontal">
+                                    <StackPanel Orientation="Horizontal">
+                                        <StackPanel Orientation="Horizontal">
+                                            <!--  图标  -->
+                                            <TextBlock
+                                                Margin="5,0"
+                                                VerticalAlignment="Center"
+                                                FontSize="13"
+                                                FontWeight="Bold"
+                                                Foreground="DarkGray"
+                                                Text="{x:Static languages:Language.BarCode}" />
+                                            <Border
+                                                Margin="5"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"
+                                                Background="#1A696969"
+                                                CornerRadius="5">
+                                                <TextBox
+                                                    Width="235"
+                                                    Height="30"
+                                                    MaxWidth="500"
+                                                    Margin="5,0"
+                                                    materialDesign:TextFieldAssist.HasClearButton="False"
+                                                    materialDesign:TextFieldAssist.HasFilledTextField="True"
+                                                    Background="Transparent"
+                                                    BorderThickness="0"
+                                                    FontSize="13"
+                                                    FontWeight="Bold"
+                                                    Foreground="White"
+                                                    InputMethod.IsInputMethodEnabled="False"
+                                                    Text="{Binding TestBarcode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                                            </Border>
+                                            <Button
+                                                MinHeight="30"
+                                                Margin="5,0"
+                                                HorizontalAlignment="Left"
+                                                materialDesign:ButtonAssist.CornerRadius="5"
+                                                Background="#2E2E2E"
+                                                BorderThickness="0"
+                                                Command="{Binding TestCommand}"
+                                                FocusVisualStyle="{x:Null}"
+                                                Style="{StaticResource MaterialDesignFlatAccentBgButton}">
+
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock
+                                                        Margin="0,0,0,0"
+                                                        VerticalAlignment="Center"
+                                                        FontFamily="{StaticResource IconFontFamily}"
+                                                        FontSize="18"
+                                                        Foreground="DarkGray"
+                                                        Text="&#xe70b;" />
+                                                    <TextBlock
+                                                        Margin="2,1,0,0"
+                                                        VerticalAlignment="Center"
+                                                        FontFamily="{StaticResource CustomFontFamily}"
+                                                        FontSize="14"
+                                                        FontWeight="Bold"
+                                                        Foreground="DarkGray"
+                                                        Text="{x:Static languages:Language.Validate}" />
+                                                </StackPanel>
+                                            </Button>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </StackPanel>
+                            </StackPanel>
+                        </StackPanel>
                     </StackPanel>
-                    <StackPanel Orientation="Horizontal">
-                        <!--  图标  -->
+                </ScrollViewer>
+            </TabItem>
+            <!--  正则过滤  -->
+            <TabItem
+                FocusVisualStyle="{x:Null}"
+                FontFamily="{StaticResource CustomFontFamily}"
+                FontSize="13"
+                FontWeight="Bold"
+                Foreground="DarkGray"
+                Header="自定义正则过滤">
+                <StackPanel Margin="0,15" Orientation="Vertical">
+                    <!--  是否使用自定义正则过滤  -->
+                    <StackPanel
+                        Margin="0,10"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        Orientation="Horizontal">
                         <TextBlock
                             Margin="5,0"
                             VerticalAlignment="Center"
-                            FontSize="13"
+                            FontSize="15"
                             FontWeight="Bold"
                             Foreground="DarkGray"
-                            Text="{x:Static languages:Language.MaxBarcodeLength}" />
-                        <Border
-                            Margin="5"
+                            Text="是否使用自定义正则过滤:" />
+                        <ToggleButton
+                            Name="IsUseCustomRegexFilterToggleButton"
+                            materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
+                            materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
+                            Focusable="False"
+                            IsChecked="{Binding BarcodeFilterSettingsInfo.BarCodeFilterOptions, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, Converter={StaticResource BarCodeFilterOptionsToBooleanConverter}, ConverterParameter=CustomRegexFilter}"
+                            Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+                    </StackPanel>
+                    <StackPanel
+                        Margin="0,0"
+                        Orientation="Vertical"
+                        Visibility="{Binding ElementName=IsUseCustomRegexFilterToggleButton, Path=IsChecked, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <!--  自定义正则过滤  -->
+                        <!--  表格  -->
+                        <DataGrid
+                            Width="650"
+                            Height="300"
+                            MinWidth="500"
+                            MinHeight="200"
+                            Margin="0,5"
+                            Padding="10,0"
+                            HorizontalAlignment="Left"
+                            CellStyle="{StaticResource CustomDataGridTextCellStyle}"
+                            ColumnHeaderStyle="{StaticResource CustomDataGridTextColumnStyle}"
+                            Focusable="False"
+                            ItemsSource="{Binding BarcodeFilterSettingsInfo.CustomRegexFilterItems, UpdateSourceTrigger=PropertyChanged}"
+                            Style="{StaticResource VirtualizingDataGridStyle}">
+                            <DataGrid.RowStyle>
+                                <Style BasedOn="{StaticResource MaterialDesignDataGridRow}" TargetType="DataGridRow">
+                                    <Setter Property="Height" Value="35" />
+                                </Style>
+                            </DataGrid.RowStyle>
+                            <DataGrid.Columns>
+                                <DataGridTextColumn
+                                    Width="45"
+                                    MinWidth="45"
+                                    Binding="{Binding Num, UpdateSourceTrigger=PropertyChanged}"
+                                    CellStyle="{StaticResource CustomDataGridTextCellStyle}"
+                                    IsReadOnly="True">
+                                    <DataGridTextColumn.Header>
+                                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="No." />
+                                    </DataGridTextColumn.Header>
+                                </DataGridTextColumn>
+                                <!--  是否生效  -->
+                                <DataGridTemplateColumn Width="80" MinWidth="80">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <ToggleButton
+                                                materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
+                                                materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
+                                                IsChecked="{Binding IsActive, UpdateSourceTrigger=PropertyChanged}"
+                                                Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                    <DataGridTemplateColumn.Header>
+                                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="是否生效" />
+                                    </DataGridTemplateColumn.Header>
+                                </DataGridTemplateColumn>
+                                <!--  正则表达式  -->
+                                <DataGridTextColumn
+                                    Width="400"
+                                    MinWidth="100"
+                                    Binding="{Binding RegexPattern, UpdateSourceTrigger=PropertyChanged}"
+                                    CellStyle="{StaticResource CustomDataGridTextCellStyle}"
+                                    EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
+                                    <DataGridTextColumn.Header>
+                                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="正则表达式" />
+                                    </DataGridTextColumn.Header>
+                                </DataGridTextColumn>
+                                <!--  操作  -->
+                                <DataGridTemplateColumn
+                                    Width="90"
+                                    MinWidth="90"
+                                    CellStyle="{StaticResource CustomDataGridTextCellStyle}">
+                                    <DataGridTemplateColumn.Header>
+                                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="{x:Static languages:Language.TableHeaderOperation}" />
+                                    </DataGridTemplateColumn.Header>
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+
+                                            <StackPanel Orientation="Horizontal">
+                                                <Button
+                                                    Width="80"
+                                                    Height="30"
+                                                    MinWidth="60"
+                                                    Margin="5,0"
+                                                    materialDesign:ButtonAssist.CornerRadius="5"
+                                                    Background="DarkRed"
+                                                    Command="{Binding ElementName=BarcodeFilterSettingsView, Path=DataContext.CustomRegexFilterDeleteCommand}"
+                                                    CommandParameter="{Binding}"
+                                                    Focusable="False"
+                                                    Foreground="Red"
+                                                    Style="{StaticResource MaterialDesignFlatLightButton}">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBlock
+                                                            HorizontalAlignment="Center"
+                                                            VerticalAlignment="Center"
+                                                            FontFamily="{StaticResource IconFontFamily}"
+                                                            FontSize="10"
+                                                            Foreground="White"
+                                                            Text="&#xe601;" />
+                                                        <TextBlock
+                                                            Margin="5,0"
+                                                            HorizontalAlignment="Center"
+                                                            VerticalAlignment="Center"
+                                                            Background="Transparent"
+                                                            FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                                                            FontSize="13"
+                                                            FontWeight="Light"
+                                                            Foreground="White"
+                                                            IsEnabled="True"
+                                                            Text="{x:Static languages:Language.Delete}"
+                                                            TextAlignment="Justify" />
+                                                    </StackPanel>
+                                                </Button>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                        <!--  操作按钮  -->
+                        <StackPanel
+                            Width="1100"
                             HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Background="#1A696969"
-                            CornerRadius="5">
-                            <TextBox
-                                Width="80"
-                                Height="30"
-                                MaxWidth="500"
-                                Margin="5,0"
-                                materialDesign:TextFieldAssist.HasClearButton="False"
-                                materialDesign:TextFieldAssist.HasFilledTextField="True"
-                                Background="Transparent"
-                                BorderThickness="0"
-                                FontSize="13"
-                                FontWeight="Bold"
-                                Foreground="White"
-                                InputMethod.IsInputMethodEnabled="False"
-                                Text="{Binding MaximumLength, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
-                                <b:Interaction.Triggers>
-                                    <b:EventTrigger EventName="TextChanged">
-                                        <mvvm:InvokeCommandAction Command="{Binding MaximumLengthChangedCommand}" />
-                                    </b:EventTrigger>
-                                </b:Interaction.Triggers>
-                            </TextBox>
-                        </Border>
+                            Orientation="Horizontal">
+                            <!--  添加按钮  -->
+                            <Button
+                                Command="{Binding CustomRegexFilterAddCommand}"
+                                Style="{StaticResource BulkOperationsButtonStyle}"
+                                ToolTip="添加数据">
+                                <TextBlock
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    FontFamily="{StaticResource IconFontFamily}"
+                                    FontSize="26"
+                                    FontWeight="Light"
+                                    Foreground="White"
+                                    Text="&#xe820;" />
+                            </Button>
+                            <!--  批量导入  -->
+                            <Button
+                                Command="{Binding CustomRegexFilterImportCommand}"
+                                Style="{StaticResource BulkOperationsButtonStyle}"
+                                ToolTip="批量导入">
+                                <TextBlock
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    FontFamily="{StaticResource IconFontFamily}"
+                                    FontSize="26"
+                                    FontWeight="Light"
+                                    Foreground="White"
+                                    Text="&#xe81b;" />
+                            </Button>
+                            <!--  批量导出  -->
+                            <Button
+                                Command="{Binding CustomRegexFilterExportCommand}"
+                                Style="{StaticResource BulkOperationsButtonStyle}"
+                                ToolTip="批量导出">
+                                <TextBlock
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    FontFamily="{StaticResource IconFontFamily}"
+                                    FontSize="26"
+                                    FontWeight="Light"
+                                    Foreground="White"
+                                    Text="&#xe81a;" />
+                            </Button>
+                            <!--  全部删除  -->
+                            <Button
+                                Margin="8,20"
+                                Command="{Binding CustomRegexFilterClearCommand}"
+                                Style="{StaticResource BulkOperationsButtonStyle}"
+                                ToolTip="全部删除">
+                                <TextBlock
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    FontFamily="{StaticResource IconFontFamily}"
+                                    FontSize="26"
+                                    FontWeight="Light"
+                                    Foreground="White"
+                                    Text="&#xe960;" />
+                            </Button>
+                        </StackPanel>
+                    </StackPanel>
+                    <!--  验证字符  -->
+                    <StackPanel
+                        Margin="50,5,0,0"
+                        Orientation="Horizontal"
+                        Visibility="{Binding ElementName=IsUseCustomRegexFilterToggleButton, Path=IsChecked, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <StackPanel Orientation="Horizontal">
+                            <StackPanel Orientation="Horizontal">
+                                <!--  图标  -->
+                                <TextBlock
+                                    Margin="5,0"
+                                    VerticalAlignment="Center"
+                                    FontSize="13"
+                                    FontWeight="Bold"
+                                    Foreground="DarkGray"
+                                    Text="{x:Static languages:Language.BarCode}" />
+                                <Border
+                                    Margin="5"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Background="#1A696969"
+                                    CornerRadius="5">
+                                    <TextBox
+                                        Width="235"
+                                        Height="30"
+                                        MaxWidth="500"
+                                        Margin="5,0"
+                                        materialDesign:TextFieldAssist.HasClearButton="False"
+                                        materialDesign:TextFieldAssist.HasFilledTextField="True"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        FontSize="13"
+                                        FontWeight="Bold"
+                                        Foreground="White"
+                                        InputMethod.IsInputMethodEnabled="False"
+                                        Text="{Binding CustomRegexFilterTestBarcode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                                </Border>
+                                <Button
+                                    MinHeight="30"
+                                    Margin="5,0"
+                                    HorizontalAlignment="Left"
+                                    materialDesign:ButtonAssist.CornerRadius="5"
+                                    Background="#2E2E2E"
+                                    BorderThickness="0"
+                                    Command="{Binding CustomRegexFilterCommand}"
+                                    FocusVisualStyle="{x:Null}"
+                                    Style="{StaticResource MaterialDesignFlatAccentBgButton}">
+
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock
+                                            Margin="0,0,0,0"
+                                            VerticalAlignment="Center"
+                                            FontFamily="{StaticResource IconFontFamily}"
+                                            FontSize="18"
+                                            Foreground="DarkGray"
+                                            Text="&#xe70b;" />
+                                        <TextBlock
+                                            Margin="2,1,0,0"
+                                            VerticalAlignment="Center"
+                                            FontFamily="{StaticResource CustomFontFamily}"
+                                            FontSize="14"
+                                            FontWeight="Bold"
+                                            Foreground="DarkGray"
+                                            Text="{x:Static languages:Language.Validate}" />
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </StackPanel>
                     </StackPanel>
                 </StackPanel>
-            </StackPanel>
-        </StackPanel>
-        <!--  字符限制  -->
-        <StackPanel
-            Grid.Row="1"
-            Margin="5,0"
-            VerticalAlignment="Center"
-            Orientation="Vertical">
-            <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
-                <TextBlock
-                    Margin="0,0,0,1"
-                    VerticalAlignment="Center"
-                    FontFamily="{StaticResource IconFontFamily}"
-                    FontSize="20"
-                    Foreground="DarkGray"
-                    Text="&#xeaed;" />
-                <TextBlock
-                    Margin="5,0"
-                    VerticalAlignment="Center"
-                    FontSize="16"
-                    FontWeight="Bold"
-                    Foreground="DarkGray"
-                    Text="{x:Static languages:Language.CharacterLimitation}" />
-            </StackPanel>
-            <StackPanel Margin="50,5,0,0" Orientation="Horizontal">
-                <StackPanel Orientation="Vertical">
-                    <StackPanel Orientation="Horizontal">
-                        <!--  图标  -->
+            </TabItem>
+            <!--  正则替换  -->
+            <TabItem
+                FocusVisualStyle="{x:Null}"
+                FontFamily="{StaticResource CustomFontFamily}"
+                FontSize="13"
+                FontWeight="Bold"
+                Foreground="DarkGray"
+                Header="自定义正则替换">
+                <StackPanel Margin="0,15" Orientation="Vertical">
+                    <!--  是否使用自定义正则替换  -->
+                    <StackPanel
+                        Margin="0,10"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        Orientation="Horizontal">
                         <TextBlock
                             Margin="5,0"
                             VerticalAlignment="Center"
-                            FontSize="13"
+                            FontSize="15"
                             FontWeight="Bold"
                             Foreground="DarkGray"
-                            Text="{x:Static languages:Language.StartCharacter}" />
-                        <Border
-                            MinWidth="200"
-                            MinHeight="30"
-                            Margin="5"
+                            Text="是否使用自定义正则替换:" />
+                        <ToggleButton
+                            Name="IsUseCustomRegexReplacementToggleButton"
+                            materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
+                            materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
+                            Focusable="False"
+                            IsChecked="{Binding BarcodeFilterSettingsInfo.IsUseCustomRegexReplacement, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                            Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+                        <StackPanel
+                            Margin="20,0"
+                            Orientation="Vertical"
+                            Visibility="{Binding ElementName=IsUseCustomRegexReplacementToggleButton, Path=IsChecked, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <!--  自定义正则替换  -->
+                        </StackPanel>
+                    </StackPanel>
+                    <!--  正则替换内容  -->
+                    <StackPanel
+                        Margin="0,0"
+                        Orientation="Vertical"
+                        Visibility="{Binding ElementName=IsUseCustomRegexReplacementToggleButton, Path=IsChecked, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <!--  自定义正则过滤  -->
+                        <!--  表格  -->
+                        <DataGrid
+                            Width="850"
+                            Height="260"
+                            MinWidth="500"
+                            MinHeight="200"
+                            Margin="0,5"
+                            Padding="10,0"
+                            HorizontalAlignment="Left"
+                            CellStyle="{StaticResource CustomDataGridTextCellStyle}"
+                            ColumnHeaderStyle="{StaticResource CustomDataGridTextColumnStyle}"
+                            Focusable="False"
+                            ItemsSource="{Binding BarcodeFilterSettingsInfo.CustomRegexReplacementItems, UpdateSourceTrigger=PropertyChanged}"
+                            Style="{StaticResource VirtualizingDataGridStyle}">
+                            <DataGrid.RowStyle>
+                                <Style BasedOn="{StaticResource MaterialDesignDataGridRow}" TargetType="DataGridRow">
+                                    <Setter Property="Height" Value="35" />
+                                </Style>
+                            </DataGrid.RowStyle>
+                            <DataGrid.Columns>
+                                <DataGridTextColumn
+                                    Width="45"
+                                    MinWidth="45"
+                                    Binding="{Binding Num, UpdateSourceTrigger=PropertyChanged}"
+                                    CellStyle="{StaticResource CustomDataGridTextCellStyle}"
+                                    IsReadOnly="True">
+                                    <DataGridTextColumn.Header>
+                                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="No." />
+                                    </DataGridTextColumn.Header>
+                                </DataGridTextColumn>
+                                <!--  是否生效  -->
+                                <DataGridTemplateColumn Width="80" MinWidth="80">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <ToggleButton
+                                                materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
+                                                materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
+                                                IsChecked="{Binding IsActive, UpdateSourceTrigger=PropertyChanged}"
+                                                Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                    <DataGridTemplateColumn.Header>
+                                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="是否生效" />
+                                    </DataGridTemplateColumn.Header>
+                                </DataGridTemplateColumn>
+                                <!--  正则表达式  -->
+                                <DataGridTextColumn
+                                    Width="400"
+                                    MinWidth="100"
+                                    Binding="{Binding RegexPattern, UpdateSourceTrigger=PropertyChanged}"
+                                    CellStyle="{StaticResource CustomDataGridTextCellStyle}"
+                                    EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
+                                    <DataGridTextColumn.Header>
+                                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="正则表达式" />
+                                    </DataGridTextColumn.Header>
+                                </DataGridTextColumn>
+                                <!--  替换内容  -->
+                                <DataGridTextColumn
+                                    Width="200"
+                                    MinWidth="100"
+                                    Binding="{Binding ReplaceContent, UpdateSourceTrigger=PropertyChanged}"
+                                    CellStyle="{StaticResource CustomDataGridTextCellStyle}"
+                                    EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
+                                    <DataGridTextColumn.Header>
+                                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="替换内容" />
+                                    </DataGridTextColumn.Header>
+                                </DataGridTextColumn>
+                                <!--  操作  -->
+                                <DataGridTemplateColumn
+                                    Width="90"
+                                    MinWidth="90"
+                                    CellStyle="{StaticResource CustomDataGridTextCellStyle}">
+                                    <DataGridTemplateColumn.Header>
+                                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="{x:Static languages:Language.TableHeaderOperation}" />
+                                    </DataGridTemplateColumn.Header>
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+
+                                            <StackPanel Orientation="Horizontal">
+                                                <Button
+                                                    Width="80"
+                                                    Height="30"
+                                                    MinWidth="60"
+                                                    Margin="5,0"
+                                                    materialDesign:ButtonAssist.CornerRadius="5"
+                                                    Background="DarkRed"
+                                                    Command="{Binding ElementName=BarcodeFilterSettingsView, Path=DataContext.CustomRegexReplacementDeleteCommand}"
+                                                    CommandParameter="{Binding}"
+                                                    Focusable="False"
+                                                    Foreground="Red"
+                                                    Style="{StaticResource MaterialDesignFlatLightButton}">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBlock
+                                                            HorizontalAlignment="Center"
+                                                            VerticalAlignment="Center"
+                                                            FontFamily="{StaticResource IconFontFamily}"
+                                                            FontSize="10"
+                                                            Foreground="White"
+                                                            Text="&#xe601;" />
+                                                        <TextBlock
+                                                            Margin="5,0"
+                                                            HorizontalAlignment="Center"
+                                                            VerticalAlignment="Center"
+                                                            Background="Transparent"
+                                                            FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                                                            FontSize="13"
+                                                            FontWeight="Light"
+                                                            Foreground="White"
+                                                            IsEnabled="True"
+                                                            Text="{x:Static languages:Language.Delete}"
+                                                            TextAlignment="Justify" />
+                                                    </StackPanel>
+                                                </Button>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                        <!--  操作按钮  -->
+                        <StackPanel
+                            Width="1100"
                             HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Background="#1A696969"
-                            CornerRadius="5">
+                            Orientation="Horizontal">
+                            <!--  添加按钮  -->
+                            <Button
+                                Command="{Binding CustomRegexReplacementAddCommand}"
+                                Style="{StaticResource BulkOperationsButtonStyle}"
+                                ToolTip="添加数据">
+                                <TextBlock
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    FontFamily="{StaticResource IconFontFamily}"
+                                    FontSize="26"
+                                    FontWeight="Light"
+                                    Foreground="White"
+                                    Text="&#xe820;" />
+                            </Button>
+                            <!--  批量导入  -->
+                            <Button
+                                Command="{Binding CustomRegexReplacementImportCommand}"
+                                Style="{StaticResource BulkOperationsButtonStyle}"
+                                ToolTip="批量导入">
+                                <TextBlock
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    FontFamily="{StaticResource IconFontFamily}"
+                                    FontSize="26"
+                                    FontWeight="Light"
+                                    Foreground="White"
+                                    Text="&#xe81b;" />
+                            </Button>
+                            <!--  批量导出  -->
+                            <Button
+                                Command="{Binding CustomRegexReplacementExportCommand}"
+                                Style="{StaticResource BulkOperationsButtonStyle}"
+                                ToolTip="批量导出">
+                                <TextBlock
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    FontFamily="{StaticResource IconFontFamily}"
+                                    FontSize="26"
+                                    FontWeight="Light"
+                                    Foreground="White"
+                                    Text="&#xe81a;" />
+                            </Button>
+                            <!--  全部删除  -->
+                            <Button
+                                Margin="8,20"
+                                Command="{Binding CustomRegexReplacementClearCommand}"
+                                Style="{StaticResource BulkOperationsButtonStyle}"
+                                ToolTip="全部删除">
+                                <TextBlock
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    FontFamily="{StaticResource IconFontFamily}"
+                                    FontSize="26"
+                                    FontWeight="Light"
+                                    Foreground="White"
+                                    Text="&#xe960;" />
+                            </Button>
+                        </StackPanel>
+                    </StackPanel>
+                    <!--  验证字符  -->
+                    <StackPanel
+                        Margin="50,5,0,0"
+                        Orientation="Horizontal"
+                        Visibility="{Binding ElementName=IsUseCustomRegexReplacementToggleButton, Path=IsChecked, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <StackPanel Orientation="Vertical">
+                            <!--  包裹条码  -->
                             <StackPanel Orientation="Horizontal">
-                                <RadioButton
-                                    Margin="10,0"
-                                    Command="{Binding StartCharacterTypeChangedCommand}"
-                                    Content="{x:Static languages:Language.LettersOrNumbers}"
-                                    Focusable="False"
-                                    FontWeight="Bold"
-                                    Foreground="White"
-                                    IsChecked="{Binding StartCharacterType, Converter={StaticResource CharacterTypeToBooleanConverter}, ConverterParameter=Alphanumeric}"
-                                    Template="{StaticResource CustomRadioButtonTemplate}" />
-                                <RadioButton
-                                    Margin="10,0"
-                                    Command="{Binding StartCharacterTypeChangedCommand}"
-                                    Content="{x:Static languages:Language.Letters}"
-                                    Focusable="False"
-                                    FontWeight="Bold"
-                                    Foreground="White"
-                                    IsChecked="{Binding StartCharacterType, Converter={StaticResource CharacterTypeToBooleanConverter}, ConverterParameter=Letter}"
-                                    Template="{StaticResource CustomRadioButtonTemplate}" />
-                                <RadioButton
-                                    Margin="10,0"
-                                    Command="{Binding StartCharacterTypeChangedCommand}"
-                                    Content="{x:Static languages:Language.Numbers}"
-                                    Focusable="False"
-                                    FontWeight="Bold"
-                                    Foreground="White"
-                                    IsChecked="{Binding StartCharacterType, Converter={StaticResource CharacterTypeToBooleanConverter}, ConverterParameter=Number}"
-                                    Template="{StaticResource CustomRadioButtonTemplate}" />
-                                <RadioButton
-                                    Margin="10,0"
-                                    Command="{Binding StartCharacterTypeChangedCommand}"
-                                    Content="任意"
-                                    Focusable="False"
-                                    FontWeight="Bold"
-                                    Foreground="White"
-                                    IsChecked="{Binding StartCharacterType, Converter={StaticResource CharacterTypeToBooleanConverter}, ConverterParameter=Any}"
-                                    Template="{StaticResource CustomRadioButtonTemplate}" />
+                                <StackPanel Orientation="Horizontal">
+                                    <!--  图标  -->
+                                    <TextBlock
+                                        Margin="5,0"
+                                        VerticalAlignment="Center"
+                                        FontSize="13"
+                                        FontWeight="Bold"
+                                        Foreground="DarkGray"
+                                        Text="{x:Static languages:Language.BarCode}" />
+                                    <Border
+                                        Margin="5"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        Background="#1A696969"
+                                        CornerRadius="5">
+                                        <TextBox
+                                            Width="235"
+                                            Height="30"
+                                            MaxWidth="500"
+                                            Margin="5,0"
+                                            materialDesign:TextFieldAssist.HasClearButton="False"
+                                            materialDesign:TextFieldAssist.HasFilledTextField="True"
+                                            Background="Transparent"
+                                            BorderThickness="0"
+                                            FontSize="13"
+                                            FontWeight="Bold"
+                                            Foreground="White"
+                                            InputMethod.IsInputMethodEnabled="False"
+                                            Text="{Binding CustomRegexReplacementTestBarcode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                                    </Border>
+                                    <Button
+                                        MinHeight="30"
+                                        Margin="5,0"
+                                        HorizontalAlignment="Left"
+                                        materialDesign:ButtonAssist.CornerRadius="5"
+                                        Background="#2E2E2E"
+                                        BorderThickness="0"
+                                        Command="{Binding CustomRegexReplacementTestCommand}"
+                                        FocusVisualStyle="{x:Null}"
+                                        Style="{StaticResource MaterialDesignFlatAccentBgButton}">
+
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock
+                                                Margin="0,0,0,0"
+                                                VerticalAlignment="Center"
+                                                FontFamily="{StaticResource IconFontFamily}"
+                                                FontSize="18"
+                                                Foreground="DarkGray"
+                                                Text="&#xe70b;" />
+                                            <TextBlock
+                                                Margin="2,1,0,0"
+                                                VerticalAlignment="Center"
+                                                FontFamily="{StaticResource CustomFontFamily}"
+                                                FontSize="14"
+                                                FontWeight="Bold"
+                                                Foreground="DarkGray"
+                                                Text="{x:Static languages:Language.Validate}" />
+                                        </StackPanel>
+                                    </Button>
+                                </StackPanel>
                             </StackPanel>
-                        </Border>
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal">
-                        <!--  图标  -->
-                        <TextBlock
-                            Margin="5,0"
-                            VerticalAlignment="Center"
-                            FontSize="13"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            Text="{x:Static languages:Language.EndCharacter}" />
-                        <Border
-                            MinWidth="200"
-                            MinHeight="30"
-                            Margin="5"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Background="#1A696969"
-                            CornerRadius="5">
+                            <!--  返回条码  -->
                             <StackPanel Orientation="Horizontal">
-                                <RadioButton
-                                    Margin="10,0"
-                                    Command="{Binding EndCharacterTypeChangedCommand}"
-                                    Content="{x:Static languages:Language.LettersOrNumbers}"
-                                    Focusable="False"
-                                    FontWeight="Bold"
-                                    Foreground="White"
-                                    IsChecked="{Binding EndCharacterType, Converter={StaticResource CharacterTypeToBooleanConverter}, ConverterParameter=Alphanumeric}"
-                                    Template="{StaticResource CustomRadioButtonTemplate}" />
-                                <RadioButton
-                                    Margin="10,0"
-                                    Command="{Binding EndCharacterTypeChangedCommand}"
-                                    Content="{x:Static languages:Language.Letters}"
-                                    Focusable="False"
-                                    FontWeight="Bold"
-                                    Foreground="White"
-                                    IsChecked="{Binding EndCharacterType, Converter={StaticResource CharacterTypeToBooleanConverter}, ConverterParameter=Letter}"
-                                    Template="{StaticResource CustomRadioButtonTemplate}" />
-                                <RadioButton
-                                    Margin="10,0"
-                                    Command="{Binding EndCharacterTypeChangedCommand}"
-                                    Content="{x:Static languages:Language.Numbers}"
-                                    Focusable="False"
-                                    FontWeight="Bold"
-                                    Foreground="White"
-                                    IsChecked="{Binding EndCharacterType, Converter={StaticResource CharacterTypeToBooleanConverter}, ConverterParameter=Number}"
-                                    Template="{StaticResource CustomRadioButtonTemplate}" />
-                                <RadioButton
-                                    Margin="10,0"
-                                    Command="{Binding EndCharacterTypeChangedCommand}"
-                                    Content="任意"
-                                    Focusable="False"
-                                    FontWeight="Bold"
-                                    Foreground="White"
-                                    IsChecked="{Binding EndCharacterType, Converter={StaticResource CharacterTypeToBooleanConverter}, ConverterParameter=Any}"
-                                    Template="{StaticResource CustomRadioButtonTemplate}" />
+                                <StackPanel Orientation="Horizontal">
+                                    <!--  图标  -->
+                                    <TextBlock
+                                        Margin="5,0"
+                                        VerticalAlignment="Center"
+                                        FontSize="13"
+                                        FontWeight="Bold"
+                                        Foreground="DarkGray"
+                                        Text="替换后条码" />
+                                    <Border
+                                        Margin="5"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        Background="#1A696969"
+                                        CornerRadius="5">
+                                        <TextBox
+                                            Width="310"
+                                            Height="30"
+                                            MaxWidth="500"
+                                            Margin="5,0"
+                                            materialDesign:TextFieldAssist.HasClearButton="False"
+                                            materialDesign:TextFieldAssist.HasFilledTextField="True"
+                                            Background="Transparent"
+                                            BorderThickness="0"
+                                            FontSize="13"
+                                            FontWeight="Bold"
+                                            Foreground="White"
+                                            IsReadOnly="True"
+                                            Text="{Binding ReplacedBarcode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                                    </Border>
+                                </StackPanel>
                             </StackPanel>
-                        </Border>
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal">
-                        <!--  图标  -->
-                        <TextBlock
-                            Margin="5,0"
-                            VerticalAlignment="Center"
-                            FontSize="13"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            Text="{x:Static languages:Language.CannotContain}" />
-                        <Border
-                            Width="310"
-                            Margin="5"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Background="#1A696969"
-                            CornerRadius="5">
-                            <TextBox
-                                Width="310"
-                                Height="30"
-                                MaxWidth="500"
-                                Margin="5,0"
-                                materialDesign:HintAssist.Hint="{x:Static languages:Language.ConditionSeparationInstruction}"
-                                materialDesign:TextFieldAssist.HasClearButton="False"
-                                materialDesign:TextFieldAssist.HasFilledTextField="True"
-                                Background="Transparent"
-                                BorderThickness="0"
-                                FontSize="13"
-                                FontWeight="Bold"
-                                Foreground="White"
-                                InputMethod.IsInputMethodEnabled="False"
-                                Text="{Binding DisallowedCharacters, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
-                                <b:Interaction.Triggers>
-                                    <b:EventTrigger EventName="TextChanged">
-                                        <mvvm:InvokeCommandAction Command="{Binding DisallowedCharactersChangedCommand}" />
-                                    </b:EventTrigger>
-                                </b:Interaction.Triggers>
-                            </TextBox>
-                        </Border>
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal">
-                        <!--  图标  -->
-                        <TextBlock
-                            Margin="5,0"
-                            VerticalAlignment="Center"
-                            FontSize="13"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            Text="{x:Static languages:Language.MustContain}" />
-                        <Border
-                            Width="310"
-                            Margin="5"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Background="#1A696969"
-                            CornerRadius="5">
-                            <TextBox
-                                Width="310"
-                                Height="30"
-                                MaxWidth="500"
-                                Margin="5,0"
-                                materialDesign:HintAssist.Hint="{x:Static languages:Language.ConditionSeparationInstruction}"
-                                materialDesign:TextFieldAssist.HasClearButton="False"
-                                materialDesign:TextFieldAssist.HasFilledTextField="True"
-                                Background="Transparent"
-                                BorderThickness="0"
-                                FontSize="13"
-                                FontWeight="Bold"
-                                Foreground="White"
-                                InputMethod.IsInputMethodEnabled="False"
-                                Text="{Binding RequiredCharacters, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
-                                <b:Interaction.Triggers>
-                                    <b:EventTrigger EventName="TextChanged">
-                                        <mvvm:InvokeCommandAction Command="{Binding RequiredCharactersChangedCommand}" />
-                                    </b:EventTrigger>
-                                </b:Interaction.Triggers>
-                            </TextBox>
-                        </Border>
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal">
-                        <!--  图标  -->
-                        <TextBlock
-                            Margin="5,0"
-                            VerticalAlignment="Center"
-                            FontSize="13"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            Text="包含任意:" />
-                        <Border
-                            Width="310"
-                            Margin="5"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Background="#1A696969"
-                            CornerRadius="5">
-                            <TextBox
-                                Width="310"
-                                Height="30"
-                                MaxWidth="500"
-                                Margin="5,0"
-                                materialDesign:HintAssist.Hint="{x:Static languages:Language.ConditionSeparationInstruction}"
-                                materialDesign:TextFieldAssist.HasClearButton="False"
-                                materialDesign:TextFieldAssist.HasFilledTextField="True"
-                                Background="Transparent"
-                                BorderThickness="0"
-                                FontSize="13"
-                                FontWeight="Bold"
-                                Foreground="White"
-                                InputMethod.IsInputMethodEnabled="False"
-                                Text="{Binding AnyCharacters, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
-                                <b:Interaction.Triggers>
-                                    <b:EventTrigger EventName="TextChanged">
-                                        <mvvm:InvokeCommandAction Command="{Binding AnyCharactersChangedCommand}" />
-                                    </b:EventTrigger>
-                                </b:Interaction.Triggers>
-                            </TextBox>
-                        </Border>
+                        </StackPanel>
                     </StackPanel>
                 </StackPanel>
-            </StackPanel>
-        </StackPanel>
+            </TabItem>
+            <!--  过滤码种  -->
+            <TabItem
+                FocusVisualStyle="{x:Null}"
+                FontFamily="{StaticResource CustomFontFamily}"
+                FontSize="13"
+                FontWeight="Bold"
+                Foreground="DarkGray"
+                Header="过滤码种">
+                <StackPanel Margin="0,15" Orientation="Vertical">
+                    <!--  是否使用过滤码种  -->
+                    <StackPanel
+                        Margin="0,10"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        Orientation="Horizontal">
+                        <TextBlock
+                            Margin="5,0"
+                            VerticalAlignment="Center"
+                            FontSize="15"
+                            FontWeight="Bold"
+                            Foreground="DarkGray"
+                            Text="是否使用过滤码种:" />
+                        <ToggleButton
+                            Name="IsUseCodeTypeToggleButton"
+                            materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
+                            materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
+                            Focusable="False"
+                            IsChecked="{Binding BarcodeFilterSettingsInfo.IsUseFilteredBarcodeTypes, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                            Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+                        <StackPanel
+                            Margin="20,0"
+                            Orientation="Vertical"
+                            Visibility="{Binding ElementName=IsUseCodeTypeToggleButton, Path=IsChecked, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <!--  自定义正则替换  -->
+                        </StackPanel>
+                    </StackPanel>
+                </StackPanel>
+            </TabItem>
+        </TabControl>
         <!--  扫描时间间隔  -->
         <StackPanel
             Grid.Row="2"
@@ -459,7 +1388,7 @@
                                 FontWeight="Bold"
                                 Foreground="White"
                                 InputMethod.IsInputMethodEnabled="False"
-                                Text="{Binding ScanInterval, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                                Text="{Binding BarcodeFilterSettingsInfo.ScanInterval, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                         </Border>
                         <TextBlock
                             Margin="5,0"
@@ -497,68 +1426,7 @@
                                 FontWeight="Bold"
                                 Foreground="White"
                                 InputMethod.IsInputMethodEnabled="False"
-                                Text="{Binding DuplicateBarcodeFilterCount, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-                        </Border>
-                    </StackPanel>
-                </StackPanel>
-            </StackPanel>
-        </StackPanel>
-        <!--  正则表达式  -->
-        <StackPanel
-            Grid.Row="3"
-            Margin="5,0"
-            VerticalAlignment="Center"
-            Orientation="Vertical">
-            <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
-                <TextBlock
-                    Margin="0,0,0,1"
-                    VerticalAlignment="Center"
-                    FontFamily="{StaticResource IconFontFamily}"
-                    FontSize="20"
-                    Foreground="DarkGray"
-                    Text="&#xe758;" />
-                <TextBlock
-                    Margin="5,0"
-                    VerticalAlignment="Center"
-                    FontSize="16"
-                    FontWeight="Bold"
-                    Foreground="DarkGray"
-                    Text="{x:Static languages:Language.RegularExpression}" />
-            </StackPanel>
-            <StackPanel Margin="50,5,0,0" Orientation="Horizontal">
-                <StackPanel Orientation="Horizontal">
-                    <StackPanel Orientation="Horizontal">
-                        <!--  图标  -->
-                        <TextBlock
-                            Margin="5,0"
-                            VerticalAlignment="Center"
-                            FontSize="13"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            Text="{x:Static languages:Language.RegularExpression}" />
-                        <Border
-                            MinHeight="80"
-                            MaxHeight="200"
-                            Margin="5"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Background="#1A696969"
-                            CornerRadius="5">
-                            <TextBox
-                                Width="310"
-                                MinHeight="80"
-                                MaxWidth="310"
-                                Margin="5,0"
-                                Background="Transparent"
-                                BorderThickness="0"
-                                FontSize="13"
-                                FontWeight="Bold"
-                                Foreground="White"
-                                IsReadOnly="True"
-                                Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                                Text="{Binding RegularExpression, UpdateSourceTrigger=PropertyChanged}"
-                                TextWrapping="Wrap"
-                                VerticalScrollBarVisibility="Auto" />
+                                Text="{Binding BarcodeFilterSettingsInfo.DuplicateBarcodeFilterCount, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                         </Border>
                     </StackPanel>
                 </StackPanel>
@@ -612,7 +1480,7 @@
                                     Focusable="False"
                                     FontWeight="Bold"
                                     Foreground="White"
-                                    IsChecked="{Binding FilterOutputType, Converter={StaticResource FilterOutputTypeToBooleanConverter}, ConverterParameter=NotOutput}"
+                                    IsChecked="{Binding BarcodeFilterSettingsInfo.FilterOutputType, Converter={StaticResource FilterOutputTypeToBooleanConverter}, ConverterParameter=NotOutput}"
                                     Template="{StaticResource CustomRadioButtonTemplate}" />
                                 <RadioButton
                                     Margin="10,0"
@@ -621,7 +1489,7 @@
                                     Focusable="False"
                                     FontWeight="Bold"
                                     Foreground="White"
-                                    IsChecked="{Binding FilterOutputType, Converter={StaticResource FilterOutputTypeToBooleanConverter}, ConverterParameter=Filtered}"
+                                    IsChecked="{Binding BarcodeFilterSettingsInfo.FilterOutputType, Converter={StaticResource FilterOutputTypeToBooleanConverter}, ConverterParameter=Filtered}"
                                     Template="{StaticResource CustomRadioButtonTemplate}" />
                                 <RadioButton
                                     Margin="10,0"
@@ -630,7 +1498,7 @@
                                     Focusable="False"
                                     FontWeight="Bold"
                                     Foreground="White"
-                                    IsChecked="{Binding FilterOutputType, Converter={StaticResource FilterOutputTypeToBooleanConverter}, ConverterParameter=NoRead}"
+                                    IsChecked="{Binding BarcodeFilterSettingsInfo.FilterOutputType, Converter={StaticResource FilterOutputTypeToBooleanConverter}, ConverterParameter=NoRead}"
                                     Template="{StaticResource CustomRadioButtonTemplate}" />
                             </StackPanel>
                         </Border>
@@ -690,7 +1558,7 @@
                                 FontWeight="Bold"
                                 Foreground="White"
                                 InputMethod.IsInputMethodEnabled="False"
-                                Text="{Binding MergeTimeout, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                                Text="{Binding BarcodeFilterSettingsInfo.MergeTimeout, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                         </Border>
                         <TextBlock
                             Margin="5,0"
@@ -728,95 +1596,8 @@
                                 FontWeight="Bold"
                                 Foreground="White"
                                 InputMethod.IsInputMethodEnabled="False"
-                                Text="{Binding MultiBarcodeDelimiter, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                                Text="{Binding BarcodeFilterSettingsInfo.MultiBarcodeDelimiter, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                         </Border>
-                    </StackPanel>
-                </StackPanel>
-            </StackPanel>
-        </StackPanel>
-        <!--  验证字符  -->
-        <StackPanel
-            Grid.Row="6"
-            Margin="5,0"
-            VerticalAlignment="Center"
-            Orientation="Vertical">
-            <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
-                <TextBlock
-                    Margin="0,0,0,1"
-                    VerticalAlignment="Center"
-                    FontFamily="{StaticResource IconFontFamily}"
-                    FontSize="20"
-                    Foreground="DarkGray"
-                    Text="&#xe715;" />
-                <TextBlock
-                    Margin="5,0"
-                    VerticalAlignment="Center"
-                    FontSize="16"
-                    FontWeight="Bold"
-                    Foreground="DarkGray"
-                    Text="{x:Static languages:Language.BarcodeValidation}" />
-            </StackPanel>
-            <StackPanel Margin="50,5,0,0" Orientation="Horizontal">
-                <StackPanel Orientation="Horizontal">
-                    <StackPanel Orientation="Horizontal">
-                        <!--  图标  -->
-                        <TextBlock
-                            Margin="5,0"
-                            VerticalAlignment="Center"
-                            FontSize="13"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            Text="{x:Static languages:Language.BarCode}" />
-                        <Border
-                            Margin="5"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Background="#1A696969"
-                            CornerRadius="5">
-                            <TextBox
-                                Width="235"
-                                Height="30"
-                                MaxWidth="500"
-                                Margin="5,0"
-                                materialDesign:TextFieldAssist.HasClearButton="False"
-                                materialDesign:TextFieldAssist.HasFilledTextField="True"
-                                Background="Transparent"
-                                BorderThickness="0"
-                                FontSize="13"
-                                FontWeight="Bold"
-                                Foreground="White"
-                                InputMethod.IsInputMethodEnabled="False"
-                                Text="{Binding TestBarcode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-                        </Border>
-                        <Button
-                            MinHeight="30"
-                            Margin="5,0"
-                            HorizontalAlignment="Left"
-                            materialDesign:ButtonAssist.CornerRadius="5"
-                            Background="#2E2E2E"
-                            BorderThickness="0"
-                            Command="{Binding TestCommand}"
-                            FocusVisualStyle="{x:Null}"
-                            Style="{StaticResource MaterialDesignFlatAccentBgButton}">
-
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock
-                                    Margin="0,0,0,0"
-                                    VerticalAlignment="Center"
-                                    FontFamily="{StaticResource IconFontFamily}"
-                                    FontSize="18"
-                                    Foreground="DarkGray"
-                                    Text="&#xe70b;" />
-                                <TextBlock
-                                    Margin="2,1,0,0"
-                                    VerticalAlignment="Center"
-                                    FontFamily="{StaticResource CustomFontFamily}"
-                                    FontSize="14"
-                                    FontWeight="Bold"
-                                    Foreground="DarkGray"
-                                    Text="{x:Static languages:Language.Validate}" />
-                            </StackPanel>
-                        </Button>
                     </StackPanel>
                 </StackPanel>
             </StackPanel>

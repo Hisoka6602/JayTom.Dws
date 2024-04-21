@@ -215,9 +215,10 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim {
                                                         });
                                                         if (validateData || !string.IsNullOrWhiteSpace(_barCodeFilterContainer.FilterOutContent)) {
                                                             //返回条码
+
                                                             OnBarcodeRead(new BarcodeTriggeredEventArgs() {
                                                                 Timestamp = timestamp,
-                                                                Barcode = validateData ? barCode : _barCodeFilterContainer.FilterOutContent,
+                                                                Barcode = _barCodeFilterContainer.RegexReplace(validateData ? barCode : _barCodeFilterContainer.FilterOutContent),
                                                                 Image = bitmap,
                                                                 ThumbImage = (Bitmap?)thumbnailImage,
                                                                 CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
@@ -367,7 +368,12 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim {
                 Pattern = @params.RegularExpression,
                 MaxSize = @params.DuplicateBarcodeFilterCount,
                 ExpirationTime = TimeSpan.FromMilliseconds(@params.ScanInterval),
-                FilterOutContent = @params.FilterOutContent
+                FilterOutContent = @params.FilterOutContent,
+                BarCodeFilterMode = @params.BarCodeFilterMode,
+                CustomRegularExpressionItems = @params.CustomRegularExpressionItems,
+                IsUseCustomRegexReplacement = @params.IsUseCustomRegexReplacement,
+                IsUseFilteredBarcodeTypes = @params.IsUseFilteredBarcodeTypes,
+                CustomRegexReplacementItems = @params.CustomRegexReplacementItems
             };
             _barCodeFilterContainer.CleanupContainer();
         }

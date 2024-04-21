@@ -138,19 +138,7 @@ namespace JayTom.Dws.Client.Service.DefaultConfiguration {
                         }
                     })
                 });
-                //过滤
-                var task3 = _configRepository.InsertOrUpdate(new ConfigInfoModel() {
-                    ConfigName = "BarcodeFilterSettings",
-                    Value = JsonConvert.SerializeObject(new BarcodeFilterSettingsDto {
-                        MinimumLength = 10,
-                        MaximumLength = 22,
-                        StartCharacterType = CharacterType.Alphanumeric,
-                        EndCharacterType = CharacterType.Number,
-                        ScanInterval = 1000,
-                        RegularExpression = "(?=^([0-9a-zA-Z]).*)(?=.*([0-9])$)(^.{10,22}$)",
-                        DuplicateBarcodeFilterCount = 0
-                    })
-                });
+
                 //体积
                 var task4 = _configRepository.InsertOrUpdate(new ConfigInfoModel() {
                     ConfigName = "VolumeSettings",
@@ -239,7 +227,6 @@ namespace JayTom.Dws.Client.Service.DefaultConfiguration {
                 });
                 await Task.WhenAll(task1,
                     task2,
-                    task3,
                     task4,
                     task5,
                     task6,

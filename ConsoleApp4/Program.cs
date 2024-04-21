@@ -2,16 +2,27 @@
 using System.Drawing;
 using Newtonsoft.Json;
 using System.Text.Json;
+using System.Configuration;
 using JayTom.Dws.Plugin.Speech;
 using System.Text.RegularExpressions;
 using JayTom.Dws.Interface.Eshippingit;
 using JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision;
+using Microsoft.Extensions.FileSystemGlobbing.Internal;
 using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech;
 using JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision;
 
 internal class Program {
 
     private static async Task Main(string[] args) {
+        string inputStr = @"\*"; // 假设这是要检查的字符串
+
+        if (IsValidRegexPattern(inputStr)) {
+            Console.WriteLine("字符串是一个有效的正则表达式。");
+        }
+        else {
+            Console.WriteLine("字符串不是一个有效的正则表达式。");
+        }
+        return;
         //var totalMinutes = DateTime.Now.AddMinutes(20).Subtract(DateTime.Now).TotalMinutes;
         var hikvisionVolumeCamera = new HikvisionVolumeCamera();
         var enumerateCameras = await hikvisionVolumeCamera.EnumerateCameras();
@@ -77,6 +88,17 @@ internal class Program {
             Console.WriteLine(e);
         }
         Console.ReadLine();*/
+    }
+
+    private static bool IsValidRegexPattern(string pattern) {
+        try {
+            Regex.Match("在", pattern);
+            var isMatch = Regex.IsMatch("在", pattern);
+            return true;
+        }
+        catch (ArgumentException) {
+            return false;
+        }
     }
 
     public static byte[] HexStringToByteArray(string hexString) {

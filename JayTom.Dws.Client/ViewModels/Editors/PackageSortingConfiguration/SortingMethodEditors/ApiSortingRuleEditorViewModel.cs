@@ -13,6 +13,7 @@ using JayTom.Dws.Client.Models.PackageSorting.Rule;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
 
 namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.SortingMethodEditors {
+
     public class ApiSortingRuleEditorViewModel : BindableBase {
         private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
         private string _identifier = string.Empty;
@@ -143,9 +144,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
             set => SetProperty(ref _jsonFieldValue, value);
         }
 
-        public ICommand DeleteJsonCommand {
-            get => new DelegateCommand<ApiRuleItemInfoModel>(DeleteJsonDelegate);
-        }
+        public ICommand DeleteJsonCommand => new DelegateCommand<ApiRuleItemInfoModel>(DeleteJsonDelegate);
 
         private async void DeleteJsonDelegate(ApiRuleItemInfoModel obj) {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
@@ -159,9 +158,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
             });
         }
 
-        public ICommand AddJsonCommand {
-            get => new DelegateCommand<object>(AddJsonDelegate);
-        }
+        public ICommand AddJsonCommand => new DelegateCommand<object>(AddJsonDelegate);
 
         private async void AddJsonDelegate(object obj) {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
@@ -188,9 +185,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
             });
         }
 
-        public ICommand ClearConditionsCommand {
-            get => new DelegateCommand<object>(ClearConditionsDelegate);
-        }
+        public ICommand ClearConditionsCommand => new DelegateCommand<object>(ClearConditionsDelegate);
 
         private async void ClearConditionsDelegate(object obj) {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
@@ -202,9 +197,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
             });
         }
 
-        public ICommand SaveCommand {
-            get => new DelegateCommand(SaveDelegate);
-        }
+        public ICommand SaveCommand => new DelegateCommand(SaveDelegate);
 
         private async void SaveDelegate() {
             try {
@@ -231,9 +224,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
             }
         }
 
-        public ICommand CancelCommand {
-            get => new DelegateCommand(CancelDelegate);
-        }
+        public ICommand CancelCommand => new DelegateCommand(CancelDelegate);
 
         private void CancelDelegate() {
             IsOk = false;
@@ -242,9 +233,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
             }
         }
 
-        public ICommand LoadedCommand {
-            get => new DelegateCommand<object>(LoadedDelegate);
-        }
+        public ICommand LoadedCommand => new DelegateCommand<object>(LoadedDelegate);
 
         private async void LoadedDelegate(object obj) {
             var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0,

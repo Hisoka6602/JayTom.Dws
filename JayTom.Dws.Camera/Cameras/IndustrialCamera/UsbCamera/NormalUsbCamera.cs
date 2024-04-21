@@ -179,7 +179,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.UsbCamera {
                                                                 where validateData || !string.IsNullOrWhiteSpace(_barCodeFilterContainer.FilterOutContent)
                                                                 select new { BarcodeInfo = barcodeInfo, IsValid = validateData }) {
                                         OnBarcodeRead(new BarcodeReadEventArgs() {
-                                            Barcode = (barcodeInfo.IsValid ? barcodeInfo.BarcodeInfo.Barcode : _barCodeFilterContainer.FilterOutContent) ?? "NoRead",
+                                            Barcode = _barCodeFilterContainer.RegexReplace((barcodeInfo.IsValid ? barcodeInfo.BarcodeInfo.Barcode : _barCodeFilterContainer.FilterOutContent) ?? "NoRead"),
                                             CameraSerialNumber = args?.CameraSerialNumber ?? this.Info.SerialNumber,
                                             Image = args?.Image,
                                             ScanTime = scanTime,
@@ -350,8 +350,14 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.UsbCamera {
                 Pattern = @params.RegularExpression,
                 MaxSize = @params.DuplicateBarcodeFilterCount,
                 ExpirationTime = TimeSpan.FromMilliseconds(@params.ScanInterval),
-                FilterOutContent = @params.FilterOutContent
+                FilterOutContent = @params.FilterOutContent,
+                BarCodeFilterMode = @params.BarCodeFilterMode,
+                CustomRegularExpressionItems = @params.CustomRegularExpressionItems,
+                IsUseCustomRegexReplacement = @params.IsUseCustomRegexReplacement,
+                IsUseFilteredBarcodeTypes = @params.IsUseFilteredBarcodeTypes,
+                CustomRegexReplacementItems = @params.CustomRegexReplacementItems
             };
+
             _barCodeFilterContainer.CleanupContainer();
         }
 

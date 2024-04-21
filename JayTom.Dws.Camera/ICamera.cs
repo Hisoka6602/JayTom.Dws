@@ -497,8 +497,62 @@ namespace JayTom.Dws.Camera {
         public string FilterOutContent { get; set; } = string.Empty;
 
         /// <summary>
-        /// 是否条码二次确认
+        /// 过滤方式
         /// </summary>
-        public bool IsSecondConfirmationEnabled { get; set; }
+        public BarCodeFilterMode BarCodeFilterMode { get; set; } = BarCodeFilterMode.None;
+
+        /// <summary>
+        /// 自定义正则表达式
+        /// </summary>
+        public List<string> CustomRegularExpressionItems { get; set; } = new();
+
+        /// <summary>
+        /// 是否使用正则替换
+        /// </summary>
+        public bool IsUseCustomRegexReplacement { get; set; }
+
+        /// <summary>
+        /// 是否使用过滤条码码种类
+        /// </summary>
+        public bool IsUseFilteredBarcodeTypes { get; set; }
+
+        /// <summary>
+        /// 正则替换项
+        /// </summary>
+        public List<CustomRegexReplacementItemInfo> CustomRegexReplacementItems { get; set; } = new();
+    }
+
+    public class CustomRegexReplacementItemInfo {
+
+        /// <summary>
+        /// 正则表达式
+        /// </summary>
+        public string RegexPattern { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 替换的内容
+        /// </summary>
+        public string ReplaceContent { get; set; } = string.Empty;
+    }
+
+    /// <summary>
+    /// 过滤类别
+    /// </summary>
+    public enum BarCodeFilterMode {
+
+        /// <summary>
+        /// 不过滤
+        /// </summary>
+        None = 0,
+
+        /// <summary>
+        /// 常规过滤
+        /// </summary>
+        BasicFilter = 1,
+
+        /// <summary>
+        /// 自定义正则过滤
+        /// </summary>
+        CustomRegexFilter = 2,
     }
 }

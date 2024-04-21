@@ -337,6 +337,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                                             thumbnail = await DrawIndicator(thumbnail, new Size(bitmap.Width, bitmap.Height), result);
                                         }
                                         result.Thumbnail = thumbnail;
+                                        result.BarCode = _barCodeFilterContainer.RegexReplace(result.BarCode);
                                         OnOcrContentRecognized(result);
                                     }
                                     else {
@@ -610,7 +611,12 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                 Pattern = @params.RegularExpression,
                 MaxSize = @params.DuplicateBarcodeFilterCount,
                 ExpirationTime = TimeSpan.FromMilliseconds(@params.ScanInterval),
-                FilterOutContent = @params.FilterOutContent
+                FilterOutContent = @params.FilterOutContent,
+                BarCodeFilterMode = @params.BarCodeFilterMode,
+                CustomRegularExpressionItems = @params.CustomRegularExpressionItems,
+                IsUseCustomRegexReplacement = @params.IsUseCustomRegexReplacement,
+                IsUseFilteredBarcodeTypes = @params.IsUseFilteredBarcodeTypes,
+                CustomRegexReplacementItems = @params.CustomRegexReplacementItems
             };
             _barCodeFilterContainer.CleanupContainer();
         }
@@ -775,7 +781,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                                 //发处理条形码，提高处理速度
                                 await Task.Factory.StartNew(() => {
                                     OnBarcodeRead(new BarcodeReadEventArgs() {
-                                        Barcode = validateData ? mvidCodeInfo.strCode : _barCodeFilterContainer.FilterOutContent,
+                                        Barcode = _barCodeFilterContainer.RegexReplace(validateData ? mvidCodeInfo.strCode : _barCodeFilterContainer.FilterOutContent),
                                         Timestamp = timestamp,
                                         CameraSerialNumber = this.Structure.chSerialNumber,
                                         ScanTime = scanTime,

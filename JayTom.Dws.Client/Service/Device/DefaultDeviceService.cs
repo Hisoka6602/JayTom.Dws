@@ -369,25 +369,43 @@ namespace JayTom.Dws.Client.Service.Device {
                     if (camera is IIndustrialCamera industrialCamera) {
                         industrialCamera.SetScanCodeFilterParams(new ScanCodeFilterParams() {
                             DuplicateBarcodeFilterCount = _barcodeFilterSettingsDto?.DuplicateBarcodeFilterCount ?? 0,
-                            RegularExpression = _barcodeFilterSettingsDto?.RegularExpression ?? string.Empty,
+                            RegularExpression = _barcodeFilterSettingsDto?.BasicFilterInfo?.RegularExpression ?? string.Empty,
                             ScanInterval = _barcodeFilterSettingsDto?.ScanInterval ?? 1000,
                             FilterOutContent = _barcodeFilterSettingsDto?.FilterOutputType switch {
                                 FilterOutputType.NoRead => "NoRead",
                                 FilterOutputType.Filtered => "Filtered",
                                 _ => string.Empty
-                            }
+                            },
+                            BarCodeFilterMode = (BarCodeFilterMode)(_barcodeFilterSettingsDto?.BarCodeFilterOptions ?? BarCodeFilterOptions.None),
+                            IsUseCustomRegexReplacement = _barcodeFilterSettingsDto?.IsUseCustomRegexReplacement ?? false,
+                            CustomRegexReplacementItems = _barcodeFilterSettingsDto?.CustomRegexReplacementItems?.Where(w => w.IsActive)?.Select(s =>
+                                new CustomRegexReplacementItemInfo {
+                                    RegexPattern = s.RegexPattern,
+                                    ReplaceContent = s.ReplaceContent
+                                })?.ToList() ?? new List<CustomRegexReplacementItemInfo>(),
+                            CustomRegularExpressionItems = _barcodeFilterSettingsDto?.CustomRegexFilterItems?.Where(w => w.IsActive)?
+                                .Select(s => s.RegexPattern)?.ToList() ?? new List<string>()
                         });
                     }
                     else if (camera is ISmartCamera smartCamera) {
                         smartCamera.SetScanCodeFilterParams(new ScanCodeFilterParams() {
                             DuplicateBarcodeFilterCount = _barcodeFilterSettingsDto?.DuplicateBarcodeFilterCount ?? 0,
-                            RegularExpression = _barcodeFilterSettingsDto?.RegularExpression ?? string.Empty,
+                            RegularExpression = _barcodeFilterSettingsDto?.BasicFilterInfo?.RegularExpression ?? string.Empty,
                             ScanInterval = _barcodeFilterSettingsDto?.ScanInterval ?? 1000,
                             FilterOutContent = _barcodeFilterSettingsDto?.FilterOutputType switch {
                                 FilterOutputType.NoRead => "NoRead",
                                 FilterOutputType.Filtered => "Filtered",
                                 _ => string.Empty
-                            }
+                            },
+                            BarCodeFilterMode = (BarCodeFilterMode)(_barcodeFilterSettingsDto?.BarCodeFilterOptions ?? BarCodeFilterOptions.None),
+                            IsUseCustomRegexReplacement = _barcodeFilterSettingsDto?.IsUseCustomRegexReplacement ?? false,
+                            CustomRegexReplacementItems = _barcodeFilterSettingsDto?.CustomRegexReplacementItems?.Where(w => w.IsActive)?.Select(s =>
+                                new CustomRegexReplacementItemInfo {
+                                    RegexPattern = s.RegexPattern,
+                                    ReplaceContent = s.ReplaceContent
+                                })?.ToList() ?? new List<CustomRegexReplacementItemInfo>(),
+                            CustomRegularExpressionItems = _barcodeFilterSettingsDto?.CustomRegexFilterItems?.Where(w => w.IsActive)?
+                                .Select(s => s.RegexPattern)?.ToList() ?? new List<string>()
                         });
                     }
                 }

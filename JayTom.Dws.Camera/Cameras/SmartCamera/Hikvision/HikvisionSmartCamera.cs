@@ -340,7 +340,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                             thumbnail = await DrawIndicator(thumbnail, new Size(e.Image.Width, e.Image.Height), e);
                         }*/
                         e.Thumbnail = thumbnail;
-                        NLog.LogManager.GetCurrentClassLogger().Error($"BarCode：{e.BarCode}");
+                        e.BarCode = _barCodeFilterContainer.RegexReplace(e.BarCode);
                         OnOcrContentRecognized(e);
                     }
                     else {
@@ -495,7 +495,12 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                 Pattern = @params.RegularExpression,
                 MaxSize = @params.DuplicateBarcodeFilterCount,
                 ExpirationTime = TimeSpan.FromMilliseconds(@params.ScanInterval),
-                FilterOutContent = @params.FilterOutContent
+                FilterOutContent = @params.FilterOutContent,
+                BarCodeFilterMode = @params.BarCodeFilterMode,
+                CustomRegularExpressionItems = @params.CustomRegularExpressionItems,
+                IsUseCustomRegexReplacement = @params.IsUseCustomRegexReplacement,
+                IsUseFilteredBarcodeTypes = @params.IsUseFilteredBarcodeTypes,
+                CustomRegexReplacementItems = @params.CustomRegexReplacementItems
             };
             _barCodeFilterContainer.CleanupContainer();
         }
@@ -636,7 +641,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                                                             (MvCodeReader.MV_CODEREADER_CODE_TYPE)stBcrResultEx2
                                                                 .stBcrInfoEx2[i]
                                                                 .nBarType),
-                                                        Barcode = (validateData ? barcode : _barCodeFilterContainer.FilterOutContent) ?? "NoRead",
+                                                        Barcode = _barCodeFilterContainer.RegexReplace((validateData ? barcode : _barCodeFilterContainer.FilterOutContent) ?? "NoRead"),
                                                         Image = bmp,
                                                         ThumbImage = (Bitmap?)thumbnailImage,
                                                         AppearCount = stBcrResultEx2.stBcrInfoEx2[i].sAppearCount,
@@ -785,6 +790,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                                         thumbnail = await DrawIndicator(thumbnail, new Size(bitmap.Width, bitmap.Height), result);
                                     }
                                     result.Thumbnail = thumbnail;
+                                    result.BarCode = _barCodeFilterContainer.RegexReplace(result.BarCode);
                                     OnOcrContentRecognized(result);
                                 }
                                 else {
