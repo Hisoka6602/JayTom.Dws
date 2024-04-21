@@ -105,11 +105,14 @@ namespace JayTom.Dws.Camera.FilterContainer {
                     }
                 }
             }
-            else if (BarCodeFilterMode == BarCodeFilterMode.BasicFilter) {
+            else if (BarCodeFilterMode == BarCodeFilterMode.CustomRegexFilter) {
                 if (CustomRegularExpressionItems.Any()) {
                     try {
-                        var isMatch = CustomRegularExpressionItems.Any(a =>
+                        var any = CustomRegularExpressionItems.Any(a =>
                             Regex.IsMatch(barCodeFilterInfo.BarCode, a));
+                        if (!any) {
+                            return false;
+                        }
                     }
                     catch (Exception e) {
                         return false;
