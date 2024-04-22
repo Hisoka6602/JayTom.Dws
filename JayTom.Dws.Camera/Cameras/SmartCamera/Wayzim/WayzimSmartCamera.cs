@@ -193,12 +193,12 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
                         BarCode = string.IsNullOrWhiteSpace(codeInfo.Code) ? "NoRead" : codeInfo.Code,
                         ScanTime = scanTime
                     });
-                    if (validateData || !string.IsNullOrWhiteSpace(_barCodeFilterContainer.FilterOutContent)) {
+                    if (validateData.IsValidationPassed || !string.IsNullOrWhiteSpace(_barCodeFilterContainer.FilterOutContent)) {
                         //返回条码
 
                         OnBarcodeReadTriggered(new BarcodeTriggeredEventArgs() {
                             Timestamp = timestamp,
-                            Barcode = _barCodeFilterContainer.RegexReplace(validateData ? codeInfo.Code : _barCodeFilterContainer.FilterOutContent),
+                            Barcode = _barCodeFilterContainer.RegexReplace(validateData.IsValidationPassed ? codeInfo.Code : _barCodeFilterContainer.FilterOutContent),
                             Image = bitmap,
                             ThumbImage = (Bitmap?)thumbnailImage,
                             CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
@@ -360,6 +360,8 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
         }
 
         public event EventHandler<BarcodeTriggeredEventArgs>? BarcodeReadTriggered;
+
+        public event EventHandler<BarcodeReadEventArgs>? FilteredBarcodeReturned;
 
         public event EventHandler<BarcodeReadEventArgs>? NotBarcodeHitEvent;
 

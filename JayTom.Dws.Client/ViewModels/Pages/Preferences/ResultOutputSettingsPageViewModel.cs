@@ -161,6 +161,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                 TriggerPositionName = "包裹触发后",
                 TriggerPositionValue = TriggerPositionEnum.PackageTrigger,
             },
+            new TriggerPositionModel()
+            {
+                TriggerPositionName = "包裹信息赋值完成后",
+                TriggerPositionValue = TriggerPositionEnum.PackageInfoAssigned,
+            },
         };
 
         private TriggerPositionModel _selectedTriggerPosition = new();
@@ -459,9 +464,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             set => SetProperty(ref _soundFilePath, value);
         }
 
-        public ICommand BarCodeKeyDownCommand {
-            get => new DelegateCommand<System.Windows.Input.KeyEventArgs>(BarCodeKeyDownDelegate);
-        }
+        public ICommand BarCodeKeyDownCommand => new DelegateCommand<System.Windows.Input.KeyEventArgs>(BarCodeKeyDownDelegate);
 
         private async void BarCodeKeyDownDelegate(System.Windows.Input.KeyEventArgs obj) {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
@@ -469,9 +472,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             });
         }
 
-        public ICommand WeightKeyDownCommand {
-            get => new DelegateCommand<System.Windows.Input.KeyEventArgs>(WeightKeyDownDelegate);
-        }
+        public ICommand WeightKeyDownCommand => new DelegateCommand<System.Windows.Input.KeyEventArgs>(WeightKeyDownDelegate);
 
         private async void WeightKeyDownDelegate(System.Windows.Input.KeyEventArgs obj) {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
@@ -479,9 +480,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             });
         }
 
-        public ICommand BrowseSoundFileCommand {
-            get => new DelegateCommand<object>(BrowseSoundFileDelegate);
-        }
+        public ICommand BrowseSoundFileCommand => new DelegateCommand<object>(BrowseSoundFileDelegate);
 
         private async void BrowseSoundFileDelegate(object obj) {
             var openFileDialog = new OpenFileDialog() {
@@ -496,9 +495,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             }
         }
 
-        public ICommand AddSoundFileCommand {
-            get => new DelegateCommand<object>(AddSoundFileDelegate);
-        }
+        public ICommand AddSoundFileCommand => new DelegateCommand<object>(AddSoundFileDelegate);
 
         private async void AddSoundFileDelegate(object obj) {
             if (!string.IsNullOrWhiteSpace(SoundFilePath) &&

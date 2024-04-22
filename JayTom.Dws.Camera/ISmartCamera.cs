@@ -59,6 +59,11 @@ namespace JayTom.Dws.Camera {
         event EventHandler<BarcodeTriggeredEventArgs> BarcodeReadTriggered;
 
         /// <summary>
+        /// 过滤的条码返回事件
+        /// </summary>
+        event EventHandler<BarcodeReadEventArgs> FilteredBarcodeReturned;
+
+        /// <summary>
         /// 包裹触发但未识别到条码
         /// </summary>
 

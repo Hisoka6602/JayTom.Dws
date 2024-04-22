@@ -340,7 +340,6 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision {
 
         public async Task GetSingleVolumeInfo() {
             var stResultInfo = new MvVolmeasure.NET.VOLM_RESULT_INFO();
-
             stResultInfo.stImage.pData = (IntPtr)Marshal.AllocHGlobal(_bufForDriver.Length);
             stResultInfo.nVolumeFlag = 0;
             stResultInfo.nImgFlag = 0;

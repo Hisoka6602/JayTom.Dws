@@ -325,8 +325,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel {
                     SortingLogItems.Clear();
                     Details = string.Empty;
                     var total = await _sortingLogRepository.Total(s =>
-                        (StartTime == null || s.CreateTime.CompareTo(StartTime) >= 0) &&
-                        (EndTime == null || s.CreateTime.CompareTo(EndTime) <= 0) &&
+                        (StartTime == null || s.CreateTime >= StartTime.Value) &&
+                        (EndTime == null || s.CreateTime <= EndTime.Value) &&
                         (SelectLogType == null || s.Type == SelectLogType) &&
                         (SelectCommunicationType == null || s.CommunicationType == SelectCommunicationType) &&
                         (string.IsNullOrEmpty(Message) || s.Message.Contains(Message)));

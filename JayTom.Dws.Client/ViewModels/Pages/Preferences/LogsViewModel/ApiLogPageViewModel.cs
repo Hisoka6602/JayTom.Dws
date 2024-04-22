@@ -19,6 +19,7 @@ using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Client.Models.LogsItemModels;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel {
+
     public class ApiLogPageViewModel : BindableBase {
         private readonly IApiLogRepository _apiLogRepository;
         private string _details = string.Empty;
@@ -309,15 +310,15 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel {
                     ApiLogItems.Clear();
                     Details = string.Empty;
                     var total = await _apiLogRepository.Total(s =>
-                        (StartTime == null || s.CreateTime.CompareTo(StartTime) >= 0) &&
-                        (EndTime == null || s.CreateTime.CompareTo(EndTime) <= 0) &&
+                        (StartTime == null || s.CreateTime >= StartTime.Value) &&
+                        (EndTime == null || s.CreateTime <= EndTime.Value) &&
                         (SelectLogType == null || s.Type == SelectLogType) &&
                         (string.IsNullOrEmpty(ResponseContent) || s.ResponseContent.Contains(ResponseContent)));
                     if (total > 0) {
                         PageCount = total / pageSize + (total % pageSize > 0 ? 1 : 0);
                         var selectOrderByDescending = await _apiLogRepository.SelectOrderByDescending(s =>
-                                (StartTime == null || s.CreateTime.CompareTo(StartTime) >= 0) &&
-                                (EndTime == null || s.CreateTime.CompareTo(EndTime) <= 0) &&
+                                (StartTime == null || s.CreateTime >= StartTime.Value) &&
+                                (EndTime == null || s.CreateTime <= EndTime.Value) &&
                                 (SelectLogType == null || s.Type == SelectLogType) &&
                                 (string.IsNullOrEmpty(ResponseContent) || s.ResponseContent.Contains(ResponseContent)), o => o.CreateTime,
                             pageIndex - 1, pageSize);

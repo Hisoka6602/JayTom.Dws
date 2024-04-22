@@ -329,7 +329,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                                         BarCode = result.BarCode,
                                         ScanTime = DateTime.Now
                                     });
-                                    if (validateData) {
+                                    if (validateData.IsValidationPassed) {
                                         result.CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty;
                                         //画框
                                         if (IsShowBarcodeBorder && thumbnail is not null && thumbnail.PixelFormat != PixelFormat.Format8bppIndexed) {
@@ -545,6 +545,8 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
 
         public event EventHandler<OcrResult>? OcrContentRecognized;
 
+        public event EventHandler<BarcodeReadEventArgs>? FilteredBarcodeReturned;
+
         public event EventHandler<RealtimeImageEventArgs>? RealtimeImage;
 
         public void StartRealTimeImage() {
@@ -743,10 +745,18 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
             var timestamp = new DateTimeOffset(scanTime).ToUnixTimeMilliseconds();
             if (MVIDCodeReader.MVID_IMAGE_TYPE.MVID_IMAGE_BMP != stOutput.stImage.enImageType) {
                 var bitmap = await GetBitmapAsync(stOutput, ptr);
-                //1024*768
-                //面单图
-                //var bitmapWaybillAsync = await GetBitmapWaybillAsync(stOutput);
+
                 var thumbnailImage = GenerateThumbnail(bitmap);
+                List<ValidationResult> validationResults = new();
+                for (var i = 0; i < stOutput.stCodeList.nCodeNum; ++i) {
+                    if (stOutput.stCodeList.stCodeInfo == null) continue;
+                    var mvidCodeInfo = stOutput.stCodeList.stCodeInfo[i];
+                    var validateData = _barCodeFilterContainer.ValidateData(new BarCodeFilterInfo() {
+                        BarCode = mvidCodeInfo.strCode,
+                        ScanTime = scanTime
+                    });
+                    validationResults.Add(validateData);
+                }
                 if (0 != stOutput.stCodeList.nCodeNum && BindingType != CameraBindingType.PanoramaCamera) {
                     if (IsShowBarcodeBorder && thumbnailImage is not null && thumbnailImage.PixelFormat != PixelFormat.Format8bppIndexed &&
                         stOutput.stCodeList.stCodeInfo?.Any() == true) {
@@ -755,7 +765,17 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
 
                         //画框
                         for (var i = 0; i < stOutput.stCodeList.nCodeNum; ++i) {
-                            // ch:绘制矩形框 | en:Draw ractangle frame
+                            if (stOutput.stCodeList.stCodeInfo?[i].strCode == null ||
+                                stOutput.stCodeList.stCodeInfo?[i].stCornerPt == null) continue;
+                            var borderColor = BarcodeBorderColor;
+                            var result = validationResults.FirstOrDefault(f =>
+                                f.BarCode.Equals(stOutput.stCodeList.stCodeInfo[i].strCode ?? string.Empty));
+                            borderColor = result?.FilteredCategory switch {
+                                FilteredCategory.RuleFiltered => Color.Red,
+                                FilteredCategory.TimeFiltered => Color.DarkOrange,
+                                _ => BarcodeBorderColor
+                            };
+
                             var stPointList = new Point[4];
                             for (var j = 0; j < 4; ++j) {
                                 stPointList[j].X =
@@ -766,17 +786,14 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                                           (float)(thumbnailImage.Size.Height) /
                                           stOutput.stImage.nHeight);
                             }
-                            g.DrawPolygon(new System.Drawing.Pen(BarcodeBorderColor, BarcodeBorderSize), stPointList);
+                            g.DrawPolygon(new System.Drawing.Pen(borderColor, BarcodeBorderSize), stPointList);
                         }
                     }
 
                     for (var i = 0; i < stOutput.stCodeList.nCodeNum; ++i) {
                         if (stOutput.stCodeList.stCodeInfo != null) {
                             var mvidCodeInfo = stOutput.stCodeList.stCodeInfo[i];
-                            var validateData = _barCodeFilterContainer.ValidateData(new BarCodeFilterInfo() {
-                                BarCode = mvidCodeInfo.strCode,
-                                ScanTime = scanTime
-                            });
+                            var validateData = validationResults.Any(a => a.IsValidationPassed && a.BarCode.Equals(mvidCodeInfo.strCode));
                             if (validateData || !string.IsNullOrWhiteSpace(_barCodeFilterContainer.FilterOutContent)) {
                                 //发处理条形码，提高处理速度
                                 await Task.Factory.StartNew(() => {
@@ -802,6 +819,29 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                                     });
                                 });
                             }
+                            /*if (!validateData) {
+                                //被过滤的
+                                await Task.Factory.StartNew(() => {
+                                    OnFilteredBarcodeReturned(new BarcodeReadEventArgs() {
+                                        Barcode = _barCodeFilterContainer.RegexReplace(validateData ? mvidCodeInfo.strCode : _barCodeFilterContainer.FilterOutContent),
+                                        Timestamp = timestamp,
+                                        CameraSerialNumber = this.Structure.chSerialNumber,
+                                        ScanTime = scanTime,
+                                        AreaCoords = Enumerable.Range(0, 4).Select(s => {
+                                            if (bitmap != null)
+                                                return new System.Drawing.Point {
+                                                    X = (int)(stOutput.stCodeList.stCodeInfo[i].stCornerPt[s].nX *
+                                                        (float)(bitmap.Size.Width) / stOutput.stImage.nWidth),
+                                                    Y = (int)(stOutput.stCodeList.stCodeInfo[i].stCornerPt[s].nY *
+                                                              (float)(bitmap.Size.Height) /
+                                                              stOutput.stImage.nHeight)
+                                                };
+                                            return default;
+                                        })?.ToList(),
+                                        FrameNo = _frameNo,
+                                    });
+                                });
+                            }*/
                         }
 
                         await Task.Delay(1);
@@ -1148,6 +1188,11 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
         protected virtual async void OnOcrContentRecognized(OcrResult e) {
             await Task.Yield();
             OcrContentRecognized?.Invoke(this, e);
+        }
+
+        protected virtual async void OnFilteredBarcodeReturned(BarcodeReadEventArgs e) {
+            await Task.Yield();
+            FilteredBarcodeReturned?.Invoke(this, e);
         }
     }
 }

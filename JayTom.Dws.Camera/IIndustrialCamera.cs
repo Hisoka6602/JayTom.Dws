@@ -47,6 +47,11 @@ namespace JayTom.Dws.Camera {
         event EventHandler<OcrResult> OcrContentRecognized;
 
         /// <summary>
+        /// 过滤的条码返回事件
+        /// </summary>
+        event EventHandler<BarcodeReadEventArgs> FilteredBarcodeReturned;
+
+        /// <summary>
         /// 设置扫码过滤参数
         /// </summary>
         /// <param name="params"></param>

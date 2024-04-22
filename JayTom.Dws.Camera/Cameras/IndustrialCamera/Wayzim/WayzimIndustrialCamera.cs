@@ -213,12 +213,12 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim {
                                                             BarCode = string.IsNullOrWhiteSpace(barCode) ? "NoRead" : barCode,
                                                             ScanTime = scanTime
                                                         });
-                                                        if (validateData || !string.IsNullOrWhiteSpace(_barCodeFilterContainer.FilterOutContent)) {
+                                                        if (validateData.IsValidationPassed || !string.IsNullOrWhiteSpace(_barCodeFilterContainer.FilterOutContent)) {
                                                             //返回条码
 
                                                             OnBarcodeRead(new BarcodeTriggeredEventArgs() {
                                                                 Timestamp = timestamp,
-                                                                Barcode = _barCodeFilterContainer.RegexReplace(validateData ? barCode : _barCodeFilterContainer.FilterOutContent),
+                                                                Barcode = _barCodeFilterContainer.RegexReplace(validateData.IsValidationPassed ? barCode : _barCodeFilterContainer.FilterOutContent),
                                                                 Image = bitmap,
                                                                 ThumbImage = (Bitmap?)thumbnailImage,
                                                                 CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
@@ -362,6 +362,8 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim {
         public event EventHandler<BarcodeReadEventArgs>? BarcodeRead;
 
         public event EventHandler<OcrResult>? OcrContentRecognized;
+
+        public event EventHandler<BarcodeReadEventArgs>? FilteredBarcodeReturned;
 
         public void SetScanCodeFilterParams(ScanCodeFilterParams @params) {
             _barCodeFilterContainer = new BarCodeFilterContainer {

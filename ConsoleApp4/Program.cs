@@ -2,6 +2,7 @@
 using System.Drawing;
 using Newtonsoft.Json;
 using System.Text.Json;
+using FluentFTP.Helpers;
 using System.Configuration;
 using JayTom.Dws.Plugin.Speech;
 using System.Text.RegularExpressions;
@@ -14,6 +15,14 @@ using JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision;
 internal class Program {
 
     private static async Task Main(string[] args) {
+        var ab = new[] { "AB.123", "AC.123", "AD.123" };
+
+        for (var i = 0; i < ab.Length; i++) {
+            ab[i] = $"替换的{ab[i].Substring(3, 3)}";
+        }
+
+        Console.WriteLine("aaa");
+
         string inputStr = @"\*"; // 假设这是要检查的字符串
 
         if (IsValidRegexPattern(inputStr)) {

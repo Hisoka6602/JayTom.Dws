@@ -17,6 +17,7 @@ using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Repository.LocalData;
+using JayTom.Dws.Client.Service.BackgroundService;
 using JayTom.Dws.Client.Service.ResultOutput.Communication.TcpComm;
 
 namespace JayTom.Dws.Client.Service.ResultOutput {
@@ -47,7 +48,7 @@ namespace JayTom.Dws.Client.Service.ResultOutput {
             };
             _soundRepository = soundRepository;
 
-            //定义事件
+            //扫到包裹
             EventAggregator.Instance.Subscribe<TriggerPositionEvent>(async position => {
                 //播放声音事件
                 if (position is TriggerPositionEvent trigger) {
@@ -55,6 +56,15 @@ namespace JayTom.Dws.Client.Service.ResultOutput {
                         if (_outputSettingsDto?.AudioOutputSettingsInfo?.TriggerPosition == trigger.TriggerPosition) {
                             SoundOutput(trigger.IsSuccess);
                         }
+                    }
+                }
+            });
+            //包裹信息组合完成
+            EventAggregator.Instance.Subscribe<PackageInfo>(async position => {
+                //播放声音事件
+                if (position is PackageInfo packageInfo) {
+                    if (_outputSettingsDto is { IsUseAudioOutput: true, AudioOutputSettingsInfo.TriggerPosition: TriggerPositionEnum.PackageInfoAssigned }) {
+                        SoundOutput(true);
                     }
                 }
             });

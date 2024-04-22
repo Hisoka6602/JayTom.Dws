@@ -330,7 +330,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                         BarCode = e.BarCode,
                         ScanTime = DateTime.Now
                     });
-                    if (validateData) {
+                    if (validateData.IsValidationPassed) {
                         e.CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty;
                         //画框
                         /*if (IsShowBarcodeBorder && thumbnail is not null &&
@@ -486,6 +486,8 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
 
         public event EventHandler<BarcodeTriggeredEventArgs>? BarcodeReadTriggered;
 
+        public event EventHandler<BarcodeReadEventArgs>? FilteredBarcodeReturned;
+
         public event EventHandler<BarcodeReadEventArgs>? NotBarcodeHitEvent;
 
         public event EventHandler<OcrResult>? OcrContentRecognized;
@@ -627,7 +629,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                                                 BarCode = string.IsNullOrWhiteSpace(barcode) ? "NoRead" : barcode,
                                                 ScanTime = scanTime
                                             });
-                                            if (validateData || !string.IsNullOrWhiteSpace(_barCodeFilterContainer.FilterOutContent)) {
+                                            if (validateData.IsValidationPassed || !string.IsNullOrWhiteSpace(_barCodeFilterContainer.FilterOutContent)) {
                                                 if (stBcrResultEx2.stBcrInfoEx2 is not null &&
                                                     bmp is { Size: { Width: > 0, Height: > 0 } } &&
                                                     stFrameInfoEx2 is { nWidth: > 0, nHeight: > 0 }) {
@@ -641,7 +643,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                                                             (MvCodeReader.MV_CODEREADER_CODE_TYPE)stBcrResultEx2
                                                                 .stBcrInfoEx2[i]
                                                                 .nBarType),
-                                                        Barcode = _barCodeFilterContainer.RegexReplace((validateData ? barcode : _barCodeFilterContainer.FilterOutContent) ?? "NoRead"),
+                                                        Barcode = _barCodeFilterContainer.RegexReplace((validateData.IsValidationPassed ? barcode : _barCodeFilterContainer.FilterOutContent) ?? "NoRead"),
                                                         Image = bmp,
                                                         ThumbImage = (Bitmap?)thumbnailImage,
                                                         AppearCount = stBcrResultEx2.stBcrInfoEx2[i].sAppearCount,
@@ -782,7 +784,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                                     BarCode = result.BarCode,
                                     ScanTime = DateTime.Now
                                 });
-                                if (validateData) {
+                                if (validateData.IsValidationPassed) {
                                     result.CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty;
                                     //画框
                                     if (IsShowBarcodeBorder && thumbnail is not null && thumbnail.PixelFormat != PixelFormat.Format8bppIndexed) {

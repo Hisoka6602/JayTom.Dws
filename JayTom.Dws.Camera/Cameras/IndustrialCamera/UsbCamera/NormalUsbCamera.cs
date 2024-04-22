@@ -176,8 +176,8 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.UsbCamera {
                                                                     BarCode = barcodeInfo.Barcode ?? "NoRead",
                                                                     ScanTime = DateTime.Now
                                                                 })
-                                                                where validateData || !string.IsNullOrWhiteSpace(_barCodeFilterContainer.FilterOutContent)
-                                                                select new { BarcodeInfo = barcodeInfo, IsValid = validateData }) {
+                                                                where validateData.IsValidationPassed || !string.IsNullOrWhiteSpace(_barCodeFilterContainer.FilterOutContent)
+                                                                select new { BarcodeInfo = barcodeInfo, IsValid = validateData.IsValidationPassed }) {
                                         OnBarcodeRead(new BarcodeReadEventArgs() {
                                             Barcode = _barCodeFilterContainer.RegexReplace((barcodeInfo.IsValid ? barcodeInfo.BarcodeInfo.Barcode : _barCodeFilterContainer.FilterOutContent) ?? "NoRead"),
                                             CameraSerialNumber = args?.CameraSerialNumber ?? this.Info.SerialNumber,
@@ -344,6 +344,8 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.UsbCamera {
         public event EventHandler<BarcodeReadEventArgs>? BarcodeRead;
 
         public event EventHandler<OcrResult>? OcrContentRecognized;
+
+        public event EventHandler<BarcodeReadEventArgs>? FilteredBarcodeReturned;
 
         public void SetScanCodeFilterParams(ScanCodeFilterParams @params) {
             _barCodeFilterContainer = new BarCodeFilterContainer {

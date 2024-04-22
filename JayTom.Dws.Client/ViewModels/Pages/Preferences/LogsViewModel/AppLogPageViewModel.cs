@@ -222,15 +222,15 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel {
                     Details = string.Empty;
 
                     var total = await _appLogRepository.Total(s =>
-                        (StartTime == null || s.CreateTime.CompareTo(StartTime) >= 0) &&
-                        (EndTime == null || s.CreateTime.CompareTo(EndTime) <= 0) &&
+                        (StartTime == null || s.CreateTime >= StartTime.Value) &&
+                        (EndTime == null || s.CreateTime <= EndTime.Value) &&
                         (SelectLogType == null || s.Type == SelectLogType) &&
                         (string.IsNullOrEmpty(Message) || s.Message.Contains(Message)));
                     if (total > 0) {
                         PageCount = total / pageSize + (total % pageSize > 0 ? 1 : 0);
                         var selectOrderByDescending = await _appLogRepository.SelectOrderByDescending(s =>
-                                (StartTime == null || s.CreateTime.CompareTo(StartTime) >= 0) &&
-                                (EndTime == null || s.CreateTime.CompareTo(EndTime) <= 0) &&
+                                (StartTime == null || s.CreateTime >= StartTime.Value) &&
+                                (EndTime == null || s.CreateTime <= EndTime.Value) &&
                                 (SelectLogType == null || s.Type == SelectLogType) &&
                                 (string.IsNullOrEmpty(Message) || s.Message.Contains(Message)), o => o.CreateTime,
                             pageIndex - 1, pageSize);

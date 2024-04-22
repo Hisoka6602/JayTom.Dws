@@ -18,6 +18,7 @@ using JayTom.Dws.Domain.Repository.LocalLog;
 using JayTom.Dws.Client.Models.LogsItemModels;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel {
+
     public class VolumeLogPageViewModel : BindableBase {
         private readonly IVolumeLogRepository _volumeLogRepository;
         private string _details = string.Empty;
@@ -302,15 +303,15 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel {
                     VolumeLogItems.Clear();
                     Details = string.Empty;
                     var total = await _volumeLogRepository.Total(s =>
-                        (StartTime == null || s.CreateTime.CompareTo(StartTime) >= 0) &&
-                        (EndTime == null || s.CreateTime.CompareTo(EndTime) <= 0) &&
+                        (StartTime == null || s.CreateTime >= StartTime.Value) &&
+                        (EndTime == null || s.CreateTime <= EndTime.Value) &&
                         (SelectLogType == null || s.Type == SelectLogType) &&
                         (string.IsNullOrEmpty(Message) || s.Message.Contains(Message)));
                     if (total > 0) {
                         PageCount = total / pageSize + (total % pageSize > 0 ? 1 : 0);
                         var selectOrderByDescending = await _volumeLogRepository.SelectOrderByDescending(s =>
-                                (StartTime == null || s.CreateTime.CompareTo(StartTime) >= 0) &&
-                                (EndTime == null || s.CreateTime.CompareTo(EndTime) <= 0) &&
+                                (StartTime == null || s.CreateTime >= StartTime.Value) &&
+                                (EndTime == null || s.CreateTime <= EndTime.Value) &&
                                 (SelectLogType == null || s.Type == SelectLogType) &&
                                 (string.IsNullOrEmpty(Message) || s.Message.Contains(Message)), o => o.CreateTime,
                             pageIndex - 1, pageSize);

@@ -91,17 +91,25 @@ namespace JayTom.Dws.Camera.FilterContainer {
             return insertedOrUpdated;
         }
 
-        public bool ValidateData(BarCodeFilterInfo barCodeFilterInfo) {
+        public ValidationResult ValidateData(BarCodeFilterInfo barCodeFilterInfo) {
             CleanupContainer();
             if (BarCodeFilterMode == BarCodeFilterMode.BasicFilter) {
                 if (!string.IsNullOrEmpty(Pattern)) {
                     try {
                         if (!Regex.IsMatch(barCodeFilterInfo.BarCode, Pattern)) {
-                            return false;
+                            return new ValidationResult {
+                                IsValidationPassed = false,
+                                FilteredCategory = FilteredCategory.RuleFiltered,
+                                BarCode = barCodeFilterInfo.BarCode
+                            };
                         }
                     }
                     catch {
-                        return false;
+                        return new ValidationResult {
+                            IsValidationPassed = false,
+                            FilteredCategory = FilteredCategory.RuleFiltered,
+                            BarCode = barCodeFilterInfo.BarCode
+                        };
                     }
                 }
             }
@@ -111,11 +119,19 @@ namespace JayTom.Dws.Camera.FilterContainer {
                         var any = CustomRegularExpressionItems.Any(a =>
                             Regex.IsMatch(barCodeFilterInfo.BarCode, a));
                         if (!any) {
-                            return false;
+                            return new ValidationResult {
+                                IsValidationPassed = false,
+                                FilteredCategory = FilteredCategory.RuleFiltered,
+                                BarCode = barCodeFilterInfo.BarCode
+                            };
                         }
                     }
                     catch (Exception e) {
-                        return false;
+                        return new ValidationResult {
+                            IsValidationPassed = false,
+                            FilteredCategory = FilteredCategory.RuleFiltered,
+                            BarCode = barCodeFilterInfo.BarCode
+                        };
                     }
                 }
             }
@@ -123,11 +139,20 @@ namespace JayTom.Dws.Camera.FilterContainer {
             //后面加的
             var codeFilterInfo = Get(barCodeFilterInfo.BarCode);
             if (codeFilterInfo != null) {
-                return false;
+                return new ValidationResult {
+                    IsValidationPassed = false,
+                    FilteredCategory = FilteredCategory.TimeFiltered,
+                    BarCode = barCodeFilterInfo.BarCode
+                };
             }
             //----------
             barCodeFilterInfo.ExpirationTime ??= ExpirationTime;
-            return Container.TryAdd(barCodeFilterInfo.BarCode, barCodeFilterInfo);
+            var tryAdd = Container.TryAdd(barCodeFilterInfo.BarCode, barCodeFilterInfo);
+            return new ValidationResult {
+                IsValidationPassed = tryAdd,
+                FilteredCategory = tryAdd ? FilteredCategory.None : FilteredCategory.TimeFiltered,
+                BarCode = barCodeFilterInfo.BarCode
+            };
         }
 
         public void CleanupContainer() {
@@ -175,6 +200,26 @@ namespace JayTom.Dws.Camera.FilterContainer {
             }
             return barCode;
         }
+    }
+
+    public class ValidationResult {
+        public bool IsValidationPassed { get; set; }
+        public FilteredCategory FilteredCategory { get; set; }
+        public string BarCode { get; set; } = string.Empty;
+    }
+
+    public enum FilteredCategory {
+        None,
+
+        /// <summary>
+        /// 被规则过滤
+        /// </summary>
+        RuleFiltered,
+
+        /// <summary>
+        /// 被时间过滤
+        /// </summary>
+        TimeFiltered
     }
 
     public class BarCodeFilterInfo {

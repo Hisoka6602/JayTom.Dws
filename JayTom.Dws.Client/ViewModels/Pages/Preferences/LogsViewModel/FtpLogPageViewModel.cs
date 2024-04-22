@@ -18,6 +18,7 @@ using JayTom.Dws.Domain.Repository.LocalLog;
 using JayTom.Dws.Client.Models.LogsItemModels;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel {
+
     public class FtpLogPageViewModel : BindableBase {
         private readonly IFtpLogRepository _ftpLogRepository;
         private string _details = string.Empty;
@@ -303,15 +304,15 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel {
                     FtpLogItems.Clear();
                     Details = string.Empty;
                     var total = await _ftpLogRepository.Total(s =>
-                        (StartTime == null || s.CreateTime.CompareTo(StartTime) >= 0) &&
-                        (EndTime == null || s.CreateTime.CompareTo(EndTime) <= 0) &&
+                        (StartTime == null || s.CreateTime >= StartTime.Value) &&
+                        (EndTime == null || s.CreateTime <= EndTime.Value) &&
                         (SelectLogType == null || s.Type == SelectLogType) &&
                         (string.IsNullOrEmpty(Message) || s.Message.Contains(Message)));
                     if (total > 0) {
                         PageCount = total / pageSize + (total % pageSize > 0 ? 1 : 0);
                         var selectOrderByDescending = await _ftpLogRepository.SelectOrderByDescending(s =>
-                                (StartTime == null || s.CreateTime.CompareTo(StartTime) >= 0) &&
-                                (EndTime == null || s.CreateTime.CompareTo(EndTime) <= 0) &&
+                                (StartTime == null || s.CreateTime >= StartTime.Value) &&
+                                (EndTime == null || s.CreateTime <= EndTime.Value) &&
                                 (SelectLogType == null || s.Type == SelectLogType) &&
                                 (string.IsNullOrEmpty(Message) || s.Message.Contains(Message)), o => o.CreateTime,
                             pageIndex - 1, pageSize);

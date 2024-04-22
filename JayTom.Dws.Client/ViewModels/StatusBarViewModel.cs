@@ -22,6 +22,7 @@ using JayTom.Dws.Client.Service.Sorting;
 using JayTom.Dws.Plugin.Scale.StaticScale;
 using JayTom.Dws.Plugin.Scale.DynamicScale;
 using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Domain.Repository.LocalData;
 using JayTom.Dws.Client.Models.StatusBarModels;
 using JayTom.Dws.Domain.Dto.PackageExitLockDto;
 using CameraType = JayTom.Dws.Client.Models.CameraType;
@@ -45,6 +46,7 @@ namespace JayTom.Dws.Client.ViewModels {
         private readonly IExitMonitor _exitMonitor;
         private readonly IStackedPackageService _stackedPackageService;
         private readonly ISortingConnectionService _sortingConnectionService;
+        private readonly ISoundRepository _soundRepository;
         private static readonly SemaphoreSlim UpdateSlim = new(1, 1);
 
         private ObservableCollection<string> _exceptionItems = new()
@@ -125,7 +127,8 @@ namespace JayTom.Dws.Client.ViewModels {
             ITcpContentInput tcpContentInput, ITcpContentOutput tcpContentOutput,
             IExitMonitor exitMonitor,
             IStackedPackageService stackedPackageService,
-            ISortingConnectionService sortingConnectionService) {
+            ISortingConnectionService sortingConnectionService,
+            ISoundRepository soundRepository) {
             _computerInfoReporter = computerInfoReporter;
             _deviceService = deviceService;
             _ftp = ftp;
@@ -137,6 +140,7 @@ namespace JayTom.Dws.Client.ViewModels {
             _exitMonitor = exitMonitor;
             _stackedPackageService = stackedPackageService;
             _sortingConnectionService = sortingConnectionService;
+            _soundRepository = soundRepository;
             _computerInfoReporter.ComputerInfoReceived += async delegate (object? sender, ComputerInfoModel model) {
                 await Task.Run(async () => {
                     try {
@@ -354,9 +358,11 @@ namespace JayTom.Dws.Client.ViewModels {
                         }
                         //音频输出
                         if (resultOutputSettingsDto.IsUseAudioOutput) {
+                            //检测文件是否存在
+                            var total = await _soundRepository.Total(t => t.Id > 0);
                             ConnectionItems.Add(new ConnectionItemInfoModel() {
                                 ConnectionName = "音频输出",
-                                ConnectionState = ConnectionState.Disconnected,
+                                ConnectionState = total > 0 ? ConnectionState.Connected : ConnectionState.ConnectionFailed,
                                 ConnectionType = Models.StatusBarModels.ConnectionType.Audio,
                             });
                         }

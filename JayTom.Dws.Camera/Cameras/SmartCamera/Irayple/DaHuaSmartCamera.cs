@@ -287,6 +287,8 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
 
         public event EventHandler<BarcodeTriggeredEventArgs>? BarcodeReadTriggered;
 
+        public event EventHandler<BarcodeReadEventArgs>? FilteredBarcodeReturned;
+
         public event EventHandler<BarcodeReadEventArgs>? NotBarcodeHitEvent;
 
         public event EventHandler<OcrResult>? OcrContentRecognized;
@@ -381,8 +383,8 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
                                     : daHuaBarcodeInfo.BarCode,
                                 ScanTime = scanTime
                             });
-                            if (validateData || !string.IsNullOrWhiteSpace(_barCodeFilterContainer.FilterOutContent)) {
-                                daHuaBarcodeInfo.BarCode = validateData
+                            if (validateData.IsValidationPassed || !string.IsNullOrWhiteSpace(_barCodeFilterContainer.FilterOutContent)) {
+                                daHuaBarcodeInfo.BarCode = validateData.IsValidationPassed
                                     ? daHuaBarcodeInfo.BarCode
                                     : _barCodeFilterContainer.FilterOutContent;
                                 barcodeInfo.Enqueue(daHuaBarcodeInfo);

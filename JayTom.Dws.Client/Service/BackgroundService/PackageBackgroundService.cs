@@ -63,7 +63,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         /// <summary>
         /// 前置信号是否已回复
         /// </summary>
-        private static bool _isSignalReceived;
+        //private static bool _isSignalReceived;
 
         private static bool _isWindowsClose;
         private SemaphoreSlim _createPackageSlim = new(1);
@@ -129,6 +129,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             (key, oldValue) => barCodeFrameInfo);
                     }
                     else {
+                        //多条码判断------
                         var info = _packageInfos.OrderBy(o => o.Key).
                             FirstOrDefault(f => f.Value.BarCodeInfo != null &&
                   f.Value.BarCodeInfo.ScanTime.Equals(
@@ -141,6 +142,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             }
                             return;
                         }
+                        //----------
                         var packageInfo =
                             _createPackageSettingsDto.BarcodeQueueOrder == BarcodeQueueOrderEnum.TimeAscending ?
                                 _packageInfos.OrderBy(o => o.Key)?.FirstOrDefault(f => f.Value.BarCodeInfo == null).Value :
@@ -677,7 +679,19 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         _preSignal = _supplyCounterSettingsDto.StartPrecedingNumber;
                     }
 
-                    _isSignalReceived = true;
+                    try {
+                        await _takePackageSlim.WaitAsync();
+                        var info = _packageInfos.OrderBy(o => o.Key)?.LastOrDefault()
+                            .Value;
+
+                        if (info is not null && _supplyCounterSettingsDto is { IsUseSupplyCounterMode: true, IsWaitForPrecedingSignalReplyBeforeCreatingNewPackage: true } &&
+                            !info.IsSignalReceived) {
+                            info.IsSignalReceived = true;
+                        }
+                    }
+                    finally {
+                        _takePackageSlim.Release();
+                    }
                     //匹配包裹
                     EventAggregator.Instance.Publish(new InstructionReceived() {
                         Timestamp = new DateTimeOffset(args.InstructionTime).ToUnixTimeMilliseconds(),
@@ -894,7 +908,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         }
 
                         if (info is not null && _supplyCounterSettingsDto is { IsUseSupplyCounterMode: true, IsWaitForPrecedingSignalReplyBeforeCreatingNewPackage: true } &&
-                            !_isSignalReceived) {
+                            !info.IsSignalReceived) {
                             return;
                         }
                     }
@@ -960,8 +974,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         _createPackageSettingsDto.ClearPackageQueueOnStop) {
                         _packageInfos.Clear();
                     }
-
-                    _isSignalReceived = true;
                     _instructionsAttachItems.Clear();
                 }
             });
@@ -979,8 +991,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 //读配置
                 _configInfoModels = await _configRepository.Select(s => s.Id > 0,
                     o => o.Id, stoppingToken);
-                var configInfoModel = _configInfoModels?.FirstOrDefault(f => f.ConfigName.Equals("CommunicationsSettings"));
-                configInfoModel = _configInfoModels?.FirstOrDefault(f => f.ConfigName.Equals("VolumeSettings"));
+                // var configInfoModel = _configInfoModels?.FirstOrDefault(f => f.ConfigName.Equals("CommunicationsSettings"));
+                var configInfoModel = _configInfoModels?.FirstOrDefault(f => f.ConfigName.Equals("VolumeSettings"));
                 if (configInfoModel is not null) {
                     _volumeSettingsDto = JsonConvert.DeserializeObject<VolumeSettingsDto>(configInfoModel.Value) ?? new VolumeSettingsDto();
                 }
@@ -1010,7 +1022,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             catch (Exception e) {
                 Console.WriteLine(e);
             }
-
             while (!stoppingToken.IsCancellationRequested && !_isWindowsClose) {
                 try {
                     //多相机组码
@@ -1123,14 +1134,15 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
                                 var keyValuePairs = _packageInfos
                                     .Where(w => ((!_supplyCounterSettingsDto.IsUseSupplyCounterMode && !w.Value.IsSupplyStationReplyReceived) ||
-                                                (_supplyCounterSettingsDto.IsUseSupplyCounterMode && DateTime.Now.Subtract(w.Value.CreateTime).TotalMilliseconds > _supplyCounterSettingsDto.PrecedingReplySignalTimeout))
-                                    && w.Value.BarCodeInfo != null && w.Value.VolumeInfo != null && w.Value.WeightInfo != null)
+                                                 (_supplyCounterSettingsDto.IsUseSupplyCounterMode && DateTime.Now.Subtract(w.Value.CreateTime).TotalMilliseconds > _supplyCounterSettingsDto.PrecedingReplySignalTimeout))
+                                                && w.Value.BarCodeInfo != null && w.Value is { VolumeInfo: not null, WeightInfo: not null })
                                     .ToList();
 
                                 if (keyValuePairs?.Any() == true) {
                                     keyValuePairs?.ForEach(key => {
                                         key.Value.IsSupplyStationReplyReceived = true;
                                         key.Value.SendPreSignal = true;
+                                        key.Value.IsSignalReceived = true;
                                         if (_supplyCounterSettingsDto.IsUseSupplyCounterMode &&
                                             key.Value.Guid > _supplyCounterSettingsDto.PrecedingSignalMaxValue) {
                                             key.Value.Guid = 0;
@@ -1225,7 +1237,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                     _sortingService.SendPreSignal(_preSignal, instructionsAttach, stoppingToken);
                                     info.Guid = _preSignal;
                                     info.SendPreSignal = true;
-                                    _isSignalReceived = false;
                                     //添加到队列
                                     _instructionsAttachItems.Enqueue(instructionsAttach);
                                 }
@@ -1504,6 +1515,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         /// 是否已发送前置信号
         /// </summary>
         public bool SendPreSignal { get; set; }
+
+        /// <summary>
+        /// 前置信号是否已回复
+        /// </summary>
+        public bool IsSignalReceived { get; set; }
     }
 
     public class CameraImageInfo {

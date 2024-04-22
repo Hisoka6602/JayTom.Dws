@@ -88,6 +88,8 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.DaHua {
 
         public event EventHandler<OcrResult>? OcrContentRecognized;
 
+        public event EventHandler<BarcodeReadEventArgs>? FilteredBarcodeReturned;
+
         public void SetScanCodeFilterParams(ScanCodeFilterParams @params) {
             throw new NotImplementedException();
         }
