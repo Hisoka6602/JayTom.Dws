@@ -129,9 +129,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             }
         }
 
-        public ICommand RefreshCommand {
-            get => new DelegateCommand<object>(RefreshDelegate);
-        }
+        public ICommand RefreshCommand => new DelegateCommand<object>(RefreshDelegate);
 
         private async void RefreshDelegate(object obj) {
             //判断图片不为空
@@ -170,9 +168,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             });
         }
 
-        public ICommand SaveCropImageCommand {
-            get => new DelegateCommand<object>(SaveCropImageDelegate);
-        }
+        public ICommand SaveCropImageCommand => new DelegateCommand<object>(SaveCropImageDelegate);
 
         private async void SaveCropImageDelegate(object obj) {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
@@ -199,11 +195,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         //画出矩形区域
         public Bitmap DrawRectangleOnImage(Image image, Rectangle drawArea, Color color, int thickness) {
             var markedImage = new Bitmap(image);
-            using (var graphics = Graphics.FromImage(markedImage)) {
-                using (var pen = new Pen(color, (int)(thickness / 5))) {
-                    graphics.DrawRectangle(pen, drawArea);
-                }
-            }
+            using var graphics = Graphics.FromImage(markedImage);
+            using var pen = new Pen(color, (int)(thickness / 5));
+            graphics.DrawRectangle(pen, drawArea);
+
             return markedImage;
         }
 

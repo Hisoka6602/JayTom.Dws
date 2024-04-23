@@ -332,7 +332,7 @@ namespace JayTom.Dws.Interface.Jtexpress {
                             StringEscapeHandling = StringEscapeHandling.EscapeHtml
                         });
                         isSuccess = result?.Succ ?? false;
-                        if (isSuccess) {
+                        /*if (isSuccess) {
                             var segmentCodeInfo = JsonConvert.DeserializeObject<List<SegmentCodeInfo>>(result?.Data?.ToString() ?? string.Empty, new JsonSerializerSettings {
                                 StringEscapeHandling = StringEscapeHandling.EscapeHtml
                             });
@@ -341,7 +341,7 @@ namespace JayTom.Dws.Interface.Jtexpress {
                                 isSuccess = false;
                                 exceptionMsg = "服务器返回的三段码不在对应分拣路由表里";
                             }
-                        }
+                        }*/
                     }
                 }
             }
