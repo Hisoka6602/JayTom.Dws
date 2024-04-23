@@ -108,9 +108,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             }
         }
 
-        public ICommand LoadImageCommand {
-            get => new DelegateCommand<object>(LoadImageDelegate);
-        }
+        public ICommand LoadImageCommand => new DelegateCommand<object>(LoadImageDelegate);
 
         private async void LoadImageDelegate(object obj) {
             var openFileDialog = new OpenFileDialog() {
