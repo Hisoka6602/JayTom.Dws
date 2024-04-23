@@ -2,11 +2,11 @@
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.Collections.Generic;
 using JayTom.Dws.Data.Package;
+using System.Collections.Generic;
 
-namespace JayTom.Dws.Domain.Dto
-{
+namespace JayTom.Dws.Domain.Dto {
+
     public class ApiRuleJsonDto {
 
         /// <summary>
@@ -43,5 +43,23 @@ namespace JayTom.Dws.Domain.Dto
         /// Json字段值
         /// </summary>
         public string JsonFieldValue { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 查找方向
+        /// </summary>
+        public SearchDirection SearchDirection { get; set; } = SearchDirection.Forward;
+    }
+
+    public enum SearchDirection {
+
+        /// <summary>
+        /// 正向
+        /// </summary>
+        Forward,
+
+        /// <summary>
+        /// 反向
+        /// </summary>
+        Backward
     }
 }

@@ -3,5 +3,6 @@
         <Setter Property="IsReadOnly" Value="True" />
         <Setter Property="Focusable" Value="False" />
         <Setter Property="BorderThickness" Value="0" />
+
     </Style>
 </ResourceDictionary>

@@ -22,6 +22,7 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         private string _segmentCodeUrl = "https://opa.jtexpress.com.cn";
         private int _segmentCodeTimeOut = 1000;
         private IntegerItemModel _businessType = new();
+        private bool _isUploadAfterReturn;
 
         /// <summary>
         /// Url
@@ -133,6 +134,14 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         public IntegerItemModel BusinessType {
             get => _businessType;
             set => SetProperty(ref _businessType, value);
+        }
+
+        /// <summary>
+        /// 是否三段码返回后上传
+        /// </summary>
+        public bool IsUploadAfterReturn {
+            get => _isUploadAfterReturn;
+            set => SetProperty(ref _isUploadAfterReturn, value);
         }
     }
 }

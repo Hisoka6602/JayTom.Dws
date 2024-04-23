@@ -1,10 +1,10 @@
 ﻿using System.ComponentModel;
+using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Data.Package;
 using System.Diagnostics.CodeAnalysis;
 using JayTom.Dws.Plugin.Excel.Attributes;
-using JayTom.Dws.Data.Package;
 
-namespace JayTom.Dws.Client.Models.PackageSorting.Excel
-{
+namespace JayTom.Dws.Client.Models.PackageSorting.Excel {
 
     public class ExcelApiSortingItemInfoModel : BasePackageSortingItemInfoModel {
         private long? _exitId;
@@ -16,6 +16,7 @@ namespace JayTom.Dws.Client.Models.PackageSorting.Excel
         private bool _isUseJsonField;
         private string _jsonField = string.Empty;
         private string _jsonFieldValue = string.Empty;
+        private SearchDirection _searchDirection;
 
         /// <summary>
         /// 出口代码
@@ -95,6 +96,12 @@ namespace JayTom.Dws.Client.Models.PackageSorting.Excel
         public string JsonFieldValue {
             get => _jsonFieldValue;
             set => SetProperty(ref _jsonFieldValue, value);
+        }
+
+        [DisplayName("查找方向(0=正、1=反)"), MemberNotNull, ExcelInfo(Width = 8000, IsEnumToInt = true)]
+        public SearchDirection SearchDirection {
+            get => _searchDirection;
+            set => SetProperty(ref _searchDirection, value);
         }
     }
 }

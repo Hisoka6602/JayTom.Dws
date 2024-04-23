@@ -77,6 +77,11 @@ namespace JayTom.Dws.Domain.Dto.ApiDto {
         /// 业务类型
         /// </summary>
         public BusinessType BusinessType { get; set; }
+
+        /// <summary>
+        /// 是否三段码返回后上传
+        /// </summary>
+        public bool IsUploadAfterReturn { get; set; }
     }
 
     /// <summary>

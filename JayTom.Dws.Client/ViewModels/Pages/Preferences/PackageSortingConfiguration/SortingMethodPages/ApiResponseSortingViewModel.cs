@@ -222,10 +222,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                     var content = string.Empty;
                     if (!apiRuleJsonDto.IsUseStringComparison) return $"响应状态:{status} {content}";
                     if (apiRuleJsonDto.IsUseStringSearch) {
-                        content += $"字符串查找:[{apiRuleJsonDto.SearchStringContent}]";
+                        content += $"字符串查找:[{apiRuleJsonDto.SearchStringContent}] ";
                     }
                     else if (apiRuleJsonDto.IsUseJsonField) {
-                        content += $"Json字段:[{apiRuleJsonDto.JsonField}]  值:[{apiRuleJsonDto.JsonFieldValue}]";
+                        content += $"Json字段:[{apiRuleJsonDto.JsonField}]  值:[{apiRuleJsonDto.JsonFieldValue}] ";
+                    }
+                    if (apiRuleJsonDto.IsUseStringComparison) {
+                        content += $"方向:[{(apiRuleJsonDto.SearchDirection == SearchDirection.Forward ? "正向" : "反向")}]";
                     }
                     return $"响应状态:{status} {content}";
                 }
@@ -257,7 +260,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         IsUseStringComparison = ruleDto?.IsUseStringComparison ?? false,
                         SearchStringContent = ruleDto?.SearchStringContent ?? string.Empty,
                         JsonField = ruleDto?.JsonField ?? string.Empty,
-                        JsonFieldValue = ruleDto?.JsonFieldValue ?? string.Empty
+                        JsonFieldValue = ruleDto?.JsonFieldValue ?? string.Empty,
+                        SearchDirection = ruleDto?.SearchDirection ?? SearchDirection.Forward
                     };
                 }) ?? Array.Empty<ExcelApiSortingItemInfoModel>())
                 ?.ToList() ?? new List<ExcelApiSortingItemInfoModel>();
@@ -290,7 +294,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                                                 JsonField = s.JsonField,
                                                 JsonFieldValue = s.JsonFieldValue,
                                                 ResponseStatus = s.ResponseStatus,
-                                                SearchStringContent = s.SearchStringContent
+                                                SearchStringContent = s.SearchStringContent,
+                                                SearchDirection = s.SearchDirection
                                             })
                                         }
                             }

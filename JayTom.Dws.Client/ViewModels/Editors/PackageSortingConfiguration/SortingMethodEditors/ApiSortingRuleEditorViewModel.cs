@@ -31,6 +31,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
         private string _jsonFieldValue = string.Empty;
         private ObservableCollection<UploadStatus> _uploadStatusItems = new(Enum.GetValues(typeof(UploadStatus)).Cast<UploadStatus>());
         private ApiSortingItemInfoModel _apiSortingItemInfo = new();
+        private SearchDirection _searchDirection = SearchDirection.Forward;
 
         public ApiSortingRuleEditorViewModel(IPackageExitDefinitionRepository packageExitDefinitionRepository) {
             _packageExitDefinitionRepository = packageExitDefinitionRepository;
@@ -144,6 +145,14 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
             set => SetProperty(ref _jsonFieldValue, value);
         }
 
+        /// <summary>
+        /// 查找方向
+        /// </summary>
+        public SearchDirection SearchDirection {
+            get => _searchDirection;
+            set => SetProperty(ref _searchDirection, value);
+        }
+
         public ICommand DeleteJsonCommand => new DelegateCommand<ApiRuleItemInfoModel>(DeleteJsonDelegate);
 
         private async void DeleteJsonDelegate(ApiRuleItemInfoModel obj) {
@@ -169,7 +178,8 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
                     SearchStringContent = SearchStringContent,
                     IsUseJsonField = IsUseJsonField,
                     IsUseStringComparison = IsUseStringComparison,
-                    IsUseStringSearch = IsUseStringSearch
+                    IsUseStringSearch = IsUseStringSearch,
+                    SearchDirection = SearchDirection
                 };
                 var serializeObject = JsonConvert.SerializeObject(apiRuleJsonDto);
                 if (ApiRuleItems.Any(a => a.JsonContent.Equals(serializeObject)) != true) {
@@ -275,10 +285,14 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
                     var content = string.Empty;
                     if (!apiRuleJsonDto.IsUseStringComparison) return $"响应状态:{status} {content}";
                     if (apiRuleJsonDto.IsUseStringSearch) {
-                        content += $"字符串查找:[{apiRuleJsonDto.SearchStringContent}]";
+                        content += $"字符串查找:[{apiRuleJsonDto.SearchStringContent}] ";
                     }
                     else if (apiRuleJsonDto.IsUseJsonField) {
-                        content += $"Json字段:[{apiRuleJsonDto.JsonField}]  值:[{apiRuleJsonDto.JsonFieldValue}]";
+                        content += $"Json字段:[{apiRuleJsonDto.JsonField}]  值:[{apiRuleJsonDto.JsonFieldValue}] ";
+                    }
+
+                    if (apiRuleJsonDto.IsUseStringComparison) {
+                        content += $"方向:[{(apiRuleJsonDto.SearchDirection == SearchDirection.Forward ? "正向" : "反向")}]";
                     }
                     return $"响应状态:{status} {content}";
                 }

@@ -196,9 +196,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
             set => SetProperty(ref _isLoggingIn, value);
         }
 
-        public ICommand LogInCommand {
-            get => new DelegateCommand<object>(LogInDelegate);
-        }
+        public ICommand LogInCommand => new DelegateCommand<object>(LogInDelegate);
 
         private async void LogInDelegate(object obj) {
             if (!IsLoggingIn) {
@@ -271,6 +269,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
                         TransportTypeCode =
                             TransportTypeCodeItems.FirstOrDefault(f =>
                                 f.Value.Equals(settingsDto.TransportTypeCode)) ?? new StringItemModel(),
+                        IsUploadAfterReturn = settingsDto.IsUploadAfterReturn,
                     };
                 });
             }
@@ -297,6 +296,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
                     WeightFlag = JtExpressApiInfo.WeightFlag.Value,
                     TimeOut = JtExpressApiInfo.TimeOut,
                     TransportTypeCode = JtExpressApiInfo.TransportTypeCode.Value,
+                    IsUploadAfterReturn = JtExpressApiInfo.IsUploadAfterReturn
                 })
             });
             base.MessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :

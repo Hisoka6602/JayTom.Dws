@@ -16,6 +16,7 @@ using JayTom.Dws.Data.LocalLog;
 using System.Collections.Generic;
 using JayTom.Dws.PluginInterface;
 using JayTom.Dws.Interface.Cloud;
+using MathNet.Numerics.RootFinding;
 using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
 using JayTom.Dws.Client.EventMediators;
@@ -910,7 +911,9 @@ namespace JayTom.Dws.Client.Service.Sorting {
                         }
                         else {
                             if (apiRuleJsonDto.IsUseStringSearch) {
-                                return apiResponse.ResponseContent.Contains(apiRuleJsonDto.SearchStringContent);
+                                return apiRuleJsonDto.SearchDirection == SearchDirection.Forward
+                                    ? apiResponse.ResponseContent.IndexOf(apiRuleJsonDto.SearchStringContent, StringComparison.Ordinal) >= 0
+                                    : apiResponse.ResponseContent.LastIndexOf(apiRuleJsonDto.SearchStringContent, StringComparison.Ordinal) >= 0;
                             }
                             else if (apiRuleJsonDto.IsUseJsonField) {
                                 var resultContent = Regex.Unescape(apiResponse.ResponseContent);
@@ -918,7 +921,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                                 var reader = new Utf8JsonReader(Encoding.UTF8.GetBytes(replace));
                                 var tryParseValue = JsonDocument.TryParseValue(ref reader, out var document);
                                 if (tryParseValue && document is not null) {
-                                    var fieldValue = FindFieldValue(document.RootElement, apiRuleJsonDto.JsonField);
+                                    var fieldValue = FindFieldValue(document.RootElement, apiRuleJsonDto.JsonField, apiRuleJsonDto.SearchDirection);
                                     if (fieldValue.HasValue) {
                                         return fieldValue.Value.ToString()?.Equals(apiRuleJsonDto.JsonFieldValue) == true;
                                     }
@@ -1025,27 +1028,39 @@ namespace JayTom.Dws.Client.Service.Sorting {
             }
         }
 
-        private JsonElement? FindFieldValue(JsonElement root, string fieldName) {
+        private static JsonElement? FindFieldValue(JsonElement root, string fieldName, SearchDirection direction = SearchDirection.Forward) {
             try {
                 var stack = new Stack<JsonElement>();
                 stack.Push(root);
+
+                JsonElement? lastMatch = null;
 
                 while (stack.Count > 0) {
                     var element = stack.Pop();
 
                     switch (element.ValueKind) {
                         case JsonValueKind.Object when element.TryGetProperty(fieldName, out var field):
-                            return field;
+                            lastMatch = field;
+                            if (direction == SearchDirection.Forward) {
+                                continue;
+                            }
+                            break;
 
                         case JsonValueKind.Object: {
                                 foreach (var property in element.EnumerateObject()) {
-                                    stack.Push(property.Value);
+                                    stack.Push(direction == SearchDirection.Forward
+                                        ? property.Value
+                                        : property.Value.Clone());
                                 }
 
                                 break;
                             }
                         case JsonValueKind.Array: {
-                                foreach (var arrayElement in element.EnumerateArray()) {
+                                var array = element.EnumerateArray().ToList();
+                                if (direction == SearchDirection.Backward) {
+                                    array.Reverse();
+                                }
+                                foreach (var arrayElement in array) {
                                     stack.Push(arrayElement);
                                 }
 
@@ -1053,6 +1068,8 @@ namespace JayTom.Dws.Client.Service.Sorting {
                             }
                     }
                 }
+
+                return lastMatch;
             }
             catch (Exception e) {
                 Console.WriteLine(e.ToString());
