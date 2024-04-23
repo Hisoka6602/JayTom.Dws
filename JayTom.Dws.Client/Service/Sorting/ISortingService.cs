@@ -101,7 +101,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
         /// <summary>
         /// 异常口分拣
         /// </summary>
-        void ExceptionSorting(SortingParam param, CancellationToken token = default);
+        void ExceptionSorting(SortingParam param, PackageCloudAbnormalSortingType abnormalSortingType, CancellationToken token = default);
 
         /// <summary>
         /// 条码分拣
@@ -456,9 +456,19 @@ namespace JayTom.Dws.Client.Service.Sorting {
         public string ExitName { get; set; } = string.Empty;
 
         /// <summary>
-        /// 格口类型
+        /// 类型
+        /// </summary>
+        public ExitType Type { get; set; }
+
+        /// <summary>
+        /// 格口类型(物理/理论)
         /// </summary>
         public SortingExitType ExitType { get; set; }
+
+        /// <summary>
+        /// 分拣参数
+        /// </summary>
+        public SortingParam? SortingParam { get; set; }
     }
 
     public enum SortingExitType {

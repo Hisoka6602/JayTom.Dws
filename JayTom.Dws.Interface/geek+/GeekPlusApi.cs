@@ -23,10 +23,11 @@ namespace JayTom.Dws.Interface.geek_ {
     public class GeekPlusApi : IDataUploader {
         private readonly IHttpClientFactory _httpClientFactory;
         public ApiParameters? Parameters { get; private set; }
+        public object SettingLock { get; private set; } = new();
 
         public GeekPlusApi(IHttpClientFactory httpClientFactory) {
             _httpClientFactory = httpClientFactory;
-            lock (httpClientFactory) {
+            lock (SettingLock) {
                 try {
                     if (Parameters is null) {
                         IConfiguration configuration = new ConfigurationBuilder()
@@ -78,31 +79,28 @@ namespace JayTom.Dws.Interface.geek_ {
 
             stopwatch.Start();
             try {
-                //var httpClient = _httpClientFactory.CreateClient("INSURANCE")
-                using (var httpClient = new HttpClient()) {
-                    httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut);
-                    httpClient.DefaultRequestHeaders.Add("Authorization", hashString);
-                    HttpResponseMessage message;
-                    using (Stream dataStream =
-                           new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data)))) {
-                        using (HttpContent content = new StreamContent(dataStream)) {
-                            content.Headers.Add("Content-Type", "application/json");
-                            message = await httpClient.PostAsync($"{Parameters.BaseUrl}{method}", content, token)
-                                .ConfigureAwait(false);
-                        }
-                    }
-
-                    resultContent = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
-                    resultContent = Regex.Unescape(resultContent);
-                    if (!string.IsNullOrWhiteSpace(resultContent)) {
-                        //判断
-                        var jObject = JObject.Parse(resultContent);
-                        if (jObject["result"]?.ToString()?.ToLower()?.Equals("true") == true) {
-                            isSuccess = true;
-                        }
-                    }
-                    //判断是否成功条件
+                using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+                httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut);
+                httpClient.DefaultRequestHeaders.Add("Authorization", hashString);
+                HttpResponseMessage message;
+                await using (Stream dataStream =
+                             new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data)))) {
+                    using HttpContent content = new StreamContent(dataStream);
+                    content.Headers.Add("Content-Type", "application/json");
+                    message = await httpClient.PostAsync($"{Parameters.BaseUrl}{method}", content, token)
+                        .ConfigureAwait(false);
                 }
+
+                resultContent = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                resultContent = Regex.Unescape(resultContent);
+                if (!string.IsNullOrWhiteSpace(resultContent)) {
+                    //判断
+                    var jObject = JObject.Parse(resultContent);
+                    if (jObject["result"]?.ToString()?.ToLower()?.Equals("true") == true) {
+                        isSuccess = true;
+                    }
+                }
+                //判断是否成功条件
             }
             catch (HttpRequestException e) {
                 isSuccess = false;
@@ -172,32 +170,28 @@ namespace JayTom.Dws.Interface.geek_ {
 
             stopwatch.Start();
             try {
-                //var httpClient = _httpClientFactory.CreateClient("INSURANCE")
-
-                using (var httpClient = new HttpClient()) {
-                    httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters?.TimeOut ?? 3000);
-                    httpClient.DefaultRequestHeaders.Add("Authorization", hashString);
-                    HttpResponseMessage message;
-                    using (Stream dataStream =
-                           new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data)))) {
-                        using (HttpContent content = new StreamContent(dataStream)) {
-                            content.Headers.Add("Content-Type", "application/json");
-                            message = await httpClient.PostAsync($"{Parameters?.BaseUrl}{method}", content, token)
-                                .ConfigureAwait(false);
-                        }
-                    }
-
-                    resultContent = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
-                    resultContent = Regex.Unescape(resultContent);
-                    if (!string.IsNullOrWhiteSpace(resultContent)) {
-                        //判断
-                        var jObject = JObject.Parse(resultContent);
-                        if (jObject["result"]?.ToString()?.ToLower()?.Equals("true") == true) {
-                            isSuccess = true;
-                        }
-                    }
-                    //判断是否成功条件
+                using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+                httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters?.TimeOut ?? 3000);
+                httpClient.DefaultRequestHeaders.Add("Authorization", hashString);
+                HttpResponseMessage message;
+                await using (Stream dataStream =
+                             new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data)))) {
+                    using HttpContent content = new StreamContent(dataStream);
+                    content.Headers.Add("Content-Type", "application/json");
+                    message = await httpClient.PostAsync($"{Parameters?.BaseUrl}{method}", content, token)
+                        .ConfigureAwait(false);
                 }
+
+                resultContent = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                resultContent = Regex.Unescape(resultContent);
+                if (!string.IsNullOrWhiteSpace(resultContent)) {
+                    //判断
+                    var jObject = JObject.Parse(resultContent);
+                    if (jObject["result"]?.ToString()?.ToLower()?.Equals("true") == true) {
+                        isSuccess = true;
+                    }
+                }
+                //判断是否成功条件
             }
             catch (HttpRequestException e) {
                 isSuccess = false;
@@ -243,7 +237,6 @@ namespace JayTom.Dws.Interface.geek_ {
         public async void UploadInBackground(string barcode, double weight, DateTime scanTime, double length = default,
             double width = default, double height = default, double volume = default, UploadImageInfo? imageInfo = default,
             List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
-            UploadResponse response;
             var resultContent = string.Empty;
             var exceptionMsg = string.Empty;
             var isSuccess = false;
@@ -292,8 +285,8 @@ namespace JayTom.Dws.Interface.geek_ {
                     hashString = BitConverter.ToString(hashBytes).Replace("-", "").ToLower();
                 }
 
-                using var httpClient = new HttpClient();
-                //using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+                //using var httpClient = new HttpClient();
+                using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
                 httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters?.TimeOut ?? 3000);
                 httpClient.DefaultRequestHeaders.Add("Authorization", hashString);
                 var message = await httpClient.PostAsync($"{Parameters?.BaseUrl}{method}", formData, token);
@@ -323,7 +316,7 @@ namespace JayTom.Dws.Interface.geek_ {
             }
             finally {
                 stopwatch.Stop();
-                response = new UploadResponse() {
+                var response = new UploadResponse() {
                     ExceptionMsg = exceptionMsg,
                     ApiParameters = JsonConvert.SerializeObject(this),
                     IsSuccess = isSuccess,
@@ -374,7 +367,7 @@ namespace JayTom.Dws.Interface.geek_ {
             public string Key { get; set; } = "12345";
 
             public int SellerId { get; set; } = 1000;
-            public int TimeOut { get; set; } = 5000;
+            public int TimeOut { get; set; } = 10000;
         }
     }
 }

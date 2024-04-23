@@ -69,6 +69,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
 
         #region 配置
 
+        private ApiSettingsDto _apiSettingsDto = new();
         private List<LogisticsRegexInfoModel> _logisticsRegexInfos = new();
         private List<LogisticsCodeRecognitionInfoModel> _logisticsCodeRecognitionInfos = new();
         private List<PackageExitDefinitionInfoModel> _packageExitDefinitionInfos = new();
@@ -314,36 +315,34 @@ namespace JayTom.Dws.Client.Service.Sorting {
         }
 
         public void ExecuteSorting(SortingParam param, CancellationToken token = default) {
-            if (_sortingMethodDto is not null) {
-                switch (_sortingMethodDto.SortMode) {
-                    case SortMode.BarcodeSorting:
-                        BarcodeSorting(param, token);
-                        break;
+            switch (_sortingMethodDto.SortMode) {
+                case SortMode.BarcodeSorting:
+                    BarcodeSorting(param, token);
+                    break;
 
-                    case SortMode.WeightSorting:
-                        WeightSorting(param, token);
-                        break;
+                case SortMode.WeightSorting:
+                    WeightSorting(param, token);
+                    break;
 
-                    case SortMode.VolumeSorting:
-                        VolumeSorting(param, token);
-                        break;
+                case SortMode.VolumeSorting:
+                    VolumeSorting(param, token);
+                    break;
 
-                    case SortMode.LogisticsSorting:
-                        LogisticsSorting(param, token);
-                        break;
+                case SortMode.LogisticsSorting:
+                    LogisticsSorting(param, token);
+                    break;
 
-                    case SortMode.OcrSorting:
-                        OcrSorting(param, token);
-                        break;
+                case SortMode.OcrSorting:
+                    OcrSorting(param, token);
+                    break;
 
-                    case SortMode.ApiResponseSorting:
-                        ApiResponseSorting(param, token);
-                        break;
+                case SortMode.ApiResponseSorting:
+                    ApiResponseSorting(param, token);
+                    break;
 
-                    case SortMode.CombinedWorkflowSorting:
-                        CombinedWorkflowSorting(param, token);
-                        break;
-                }
+                case SortMode.CombinedWorkflowSorting:
+                    CombinedWorkflowSorting(param, token);
+                    break;
             }
         }
 
@@ -394,16 +393,9 @@ namespace JayTom.Dws.Client.Service.Sorting {
                 #region 读取配置信息
 
                 try {
-                    var configInfoModel = await _configRepository.FirstOrDefault(f =>
-                        f.ConfigName.Equals("SortingMethodSettings"), token);
-                    if (configInfoModel is not null) {
-                        _sortingMethodDto = JsonConvert.DeserializeObject<SortingMethodDto>(configInfoModel.Value) ?? new SortingMethodDto();
-                    }
-                    configInfoModel = await _configRepository.FirstOrDefault(f =>
-                       f.ConfigName.Equals("StackedPackageDetectionSettings"), token);
-                    if (configInfoModel is not null) {
-                        _stackedPackageDetectionSettingsDto = JsonConvert.DeserializeObject<StackedPackageDetectionSettingsDto>(configInfoModel.Value) ?? new StackedPackageDetectionSettingsDto();
-                    }
+                    _apiSettingsDto = await _configRepository.FirstOrDefaultEntity<ApiSettingsDto>("ApiSettings", token) ?? new ApiSettingsDto();
+                    _sortingMethodDto = await _configRepository.FirstOrDefaultEntity<SortingMethodDto>("SortingMethodSettings", token) ?? new SortingMethodDto();
+                    _stackedPackageDetectionSettingsDto = await _configRepository.FirstOrDefaultEntity<StackedPackageDetectionSettingsDto>("StackedPackageDetectionSettings", token) ?? new StackedPackageDetectionSettingsDto();
                     _packageExitDefinitionInfos = await _packageExitDefinitionRepository.Select(s => s.Id > 0,
                         o => o.Id, token);
 
@@ -491,7 +483,13 @@ namespace JayTom.Dws.Client.Service.Sorting {
             return new KeyValuePair<bool, string>(true, "已停止");
         }
 
-        public async void ExceptionSorting(SortingParam param, CancellationToken token = default) {
+        public async void ExceptionSorting(SortingParam param, PackageCloudAbnormalSortingType abnormalSortingType, CancellationToken token = default) {
+            EventAggregator.Instance.Publish(new ExceptionSortingReceived {
+                ScanTime = param.ScanTime,
+                BarCode = param.BarCode,
+                Timestamp = param.Timestamp,
+                PackageCloudAbnormalSortingType = abnormalSortingType
+            });
             var packageExitDefinitionInfoModel = _packageExitDefinitionInfos.FirstOrDefault(f =>
                 f is { Type: ExitType.AbnormalExit, IsActive: true });
             if (packageExitDefinitionInfoModel is not null) {
@@ -507,7 +505,9 @@ namespace JayTom.Dws.Client.Service.Sorting {
                         Timestamp = param.Timestamp,
                         ExitName = packageExitDefinitionInfoModel.ExitName,
                         ExitId = packageExitDefinitionInfoModel.Id,
-                        ExitType = SortingExitType.PhysicalExit
+                        ExitType = SortingExitType.PhysicalExit,
+                        Type = packageExitDefinitionInfoModel.Type,
+                        SortingParam = param
                     });
                     var sortingInstructionInfoModels = _sortingInstructionInfoModels.Where(w =>
                             w.InstructionBindingId.Equals(sortingInstructionBindingInfoModel.Id))
@@ -553,12 +553,12 @@ namespace JayTom.Dws.Client.Service.Sorting {
                     }
                     else {
                         //走异常口
-                        ExceptionSorting(param, token);
+                        ExceptionSorting(param, PackageCloudAbnormalSortingType.NoPhysicalMailbox, token);
                     }
                 }
                 else {
                     //走异常口
-                    ExceptionSorting(param, token);
+                    ExceptionSorting(param, PackageCloudAbnormalSortingType.UnmatchedRule, token);
                 }
             }
             catch (Exception e) {
@@ -582,12 +582,12 @@ namespace JayTom.Dws.Client.Service.Sorting {
                     }
                     else {
                         //走异常口
-                        ExceptionSorting(param, token);
+                        ExceptionSorting(param, PackageCloudAbnormalSortingType.NoPhysicalMailbox, token);
                     }
                 }
                 else {
                     //走异常口
-                    ExceptionSorting(param, token);
+                    ExceptionSorting(param, PackageCloudAbnormalSortingType.UnmatchedRule, token);
                 }
             }
             catch (Exception e) {
@@ -608,12 +608,12 @@ namespace JayTom.Dws.Client.Service.Sorting {
                     }
                     else {
                         //走异常口
-                        ExceptionSorting(param, token);
+                        ExceptionSorting(param, PackageCloudAbnormalSortingType.NoPhysicalMailbox, token);
                     }
                 }
                 else {
                     //走异常口
-                    ExceptionSorting(param, token);
+                    ExceptionSorting(param, PackageCloudAbnormalSortingType.UnmatchedRule, token);
                 }
             }
             catch (Exception e) {
@@ -637,17 +637,17 @@ namespace JayTom.Dws.Client.Service.Sorting {
                         }
                         else {
                             //走异常口
-                            ExceptionSorting(param, token);
+                            ExceptionSorting(param, PackageCloudAbnormalSortingType.NoPhysicalMailbox, token);
                         }
                     }
                     else {
                         //走异常口
-                        ExceptionSorting(param, token);
+                        ExceptionSorting(param, PackageCloudAbnormalSortingType.UnmatchedRule, token);
                     }
                 }
                 else {
                     //走异常口
-                    ExceptionSorting(param, token);
+                    ExceptionSorting(param, PackageCloudAbnormalSortingType.UnmatchedRule, token);
                 }
             }
             catch (Exception e) {
@@ -673,12 +673,12 @@ namespace JayTom.Dws.Client.Service.Sorting {
                     }
                     else {
                         //走异常口
-                        ExceptionSorting(param, token);
+                        ExceptionSorting(param, PackageCloudAbnormalSortingType.NoPhysicalMailbox, token);
                     }
                 }
                 else {
                     //走异常口
-                    ExceptionSorting(param, token);
+                    ExceptionSorting(param, PackageCloudAbnormalSortingType.UnmatchedRule, token);
                 }
             }
             catch (Exception e) {
@@ -689,6 +689,26 @@ namespace JayTom.Dws.Client.Service.Sorting {
         }
 
         public void ApiResponseSorting(SortingParam param, CancellationToken token = default) {
+            //先判断返回内容
+            if (param.ApiResponse.ResponseContent.Contains("返回超时")) {
+                ExceptionSorting(param, PackageCloudAbnormalSortingType.NetworkTimeout, token);
+                return;
+            }
+            if (_apiSettingsDto.Type == ApiType.RoutDataApi) {
+
+                #region 邮政额外定制
+
+                if (param.ApiResponse.ResponseContent.Contains("段道")) {
+                    ExceptionSorting(param, PackageCloudAbnormalSortingType.PostSegmentNotFound, token);
+                    return;
+                }
+                else if (param.ApiResponse.ResponseContent.Contains("非本机构")) {
+                    ExceptionSorting(param, PackageCloudAbnormalSortingType.PostNonLocalBarcode, token);
+                    return;
+                }
+
+                #endregion 邮政额外定制
+            }
             var apiRuleInfoModel = _apiRuleInfoModels
                 ?.Select(o => {
                     try {
@@ -707,9 +727,6 @@ namespace JayTom.Dws.Client.Service.Sorting {
                 ?.ToList()
                 ?.FirstOrDefault(f =>
                     ValidateApiRule(param.ApiResponse, f.JsonContent));
-            /*var apiRuleInfoModel = _apiRuleInfoModels.FirstOrDefault(f =>
-                ValidateApiRule(param.ApiResponse, f.JsonContent));*/
-
             if (apiRuleInfoModel != null) {
                 var apiSortingInfoModel = _apiSortingInfoModels.FirstOrDefault(f => f.Id.Equals(apiRuleInfoModel.ApiSortingId));
                 if (apiSortingInfoModel is not null) {
@@ -718,55 +735,12 @@ namespace JayTom.Dws.Client.Service.Sorting {
                 }
                 else {
                     //走异常口
-                    ExceptionSorting(param, token);
-                    //无分拣规则
-                    EventAggregator.Instance.Publish(new ExceptionSortingReceived {
-                        ScanTime = param.ScanTime,
-                        BarCode = param.BarCode,
-                        Timestamp = param.Timestamp,
-                        PackageCloudAbnormalSortingType = PackageCloudAbnormalSortingType.NoPhysicalMailbox
-                    });
+                    ExceptionSorting(param, PackageCloudAbnormalSortingType.NoPhysicalMailbox, token);
                 }
             }
             else {
                 //走异常口
-                ExceptionSorting(param, token);
-                //无分拣规则
-                EventAggregator.Instance.Publish(new ExceptionSortingReceived {
-                    ScanTime = param.ScanTime,
-                    BarCode = param.BarCode,
-                    Timestamp = param.Timestamp,
-                    PackageCloudAbnormalSortingType = PackageCloudAbnormalSortingType.UnmatchedRule
-                });
-
-                #region 邮政额外定制
-
-                if (param.ApiResponse.ResponseContent.Contains("返回超时")) {
-                    EventAggregator.Instance.Publish(new ExceptionSortingReceived {
-                        ScanTime = param.ScanTime,
-                        BarCode = param.BarCode,
-                        Timestamp = param.Timestamp,
-                        PackageCloudAbnormalSortingType = PackageCloudAbnormalSortingType.NetworkTimeout
-                    });
-                }
-                else if (param.ApiResponse.ResponseContent.Contains("段道")) {
-                    EventAggregator.Instance.Publish(new ExceptionSortingReceived {
-                        ScanTime = param.ScanTime,
-                        BarCode = param.BarCode,
-                        Timestamp = param.Timestamp,
-                        PackageCloudAbnormalSortingType = PackageCloudAbnormalSortingType.PostSegmentNotFound
-                    });
-                }
-                else if (param.ApiResponse.ResponseContent.Contains("非本机构")) {
-                    EventAggregator.Instance.Publish(new ExceptionSortingReceived {
-                        ScanTime = param.ScanTime,
-                        BarCode = param.BarCode,
-                        Timestamp = param.Timestamp,
-                        PackageCloudAbnormalSortingType = PackageCloudAbnormalSortingType.PostNonLocalBarcode
-                    });
-                }
-
-                #endregion 邮政额外定制
+                ExceptionSorting(param, PackageCloudAbnormalSortingType.UnmatchedRule, token);
             }
         }
 
@@ -807,8 +781,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
             PackageExitDefinitionInfoModel? exitDefinitionInfoModel = null;
             if (param.IsStackedPackage && _stackedPackageDetectionSettingsDto?.IsAutoExceptionSorting == true) {
                 //走异常口
-                ExceptionSorting(param, token);
-                NLog.LogManager.GetCurrentClassLogger().Error("叠包走异常");
+                ExceptionSorting(param, PackageCloudAbnormalSortingType.StackedPackage, token);
                 return;
             }
             var packageExitDefinitionInfoModel = _packageExitDefinitionInfos.FirstOrDefault(f => f.Id.Equals(param.ExitId) &&
@@ -820,9 +793,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                     exitDefinitionInfoModel = _packageExitDefinitionInfos.FirstOrDefault(f => f is { IsLockExit: false, IsActive: true } &&
                         f.Pid == packageExitDefinitionInfoModel.Id);
                     if (exitDefinitionInfoModel is null) {
-                        //走异常口
-                        NLog.LogManager.GetCurrentClassLogger().Error("锁格走异常");
-                        ExceptionSorting(param, token);
+                        ExceptionSorting(param, PackageCloudAbnormalSortingType.LockExit, token);
                         return;
                     }
                     param.ExitId = exitDefinitionInfoModel.Id;
@@ -838,7 +809,9 @@ namespace JayTom.Dws.Client.Service.Sorting {
                         Timestamp = param.Timestamp,
                         ExitName = exitDefinitionInfoModel != null ? exitDefinitionInfoModel.ExitName : packageExitDefinitionInfoModel.ExitName ?? string.Empty,
                         ExitId = param.ExitId,
-                        ExitType = SortingExitType.PhysicalExit
+                        ExitType = SortingExitType.PhysicalExit,
+                        Type = packageExitDefinitionInfoModel.Type,
+                        SortingParam = param
                     });
 
                     //执行分拣
@@ -853,7 +826,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                         TimeSpan.FromMilliseconds(sortingInstructionBindingInfoModel.SendIntervalMilliseconds),
                         new InstructionsAttach {
                             BarCode = param.BarCode,
-                            ExitName = packageExitDefinitionInfoModel.ExitName,
+                            ExitName = packageExitDefinitionInfoModel.ExitName ?? string.Empty,
                             Guid = param.Guid,
                             Height = param.Height,
                             Length = param.Length,
@@ -874,28 +847,12 @@ namespace JayTom.Dws.Client.Service.Sorting {
                 }
                 else {
                     //走异常口
-                    ExceptionSorting(param, token);
-                    //无分拣指令
-                    EventAggregator.Instance.Publish(new ExceptionSortingReceived {
-                        ScanTime = param.ScanTime,
-                        BarCode = param.BarCode,
-                        Timestamp = param.Timestamp,
-                        PackageCloudAbnormalSortingType = PackageCloudAbnormalSortingType.NoSortingInstruction
-                    });
-                    NLog.LogManager.GetCurrentClassLogger().Error($"无指令走异常：{JsonConvert.SerializeObject(param)}");
+                    ExceptionSorting(param, PackageCloudAbnormalSortingType.NoSortingInstruction, token);
                 }
             }
             else {
                 //走异常口
-                ExceptionSorting(param, token);
-                //无分拣指令
-                EventAggregator.Instance.Publish(new ExceptionSortingReceived {
-                    ScanTime = param.ScanTime,
-                    BarCode = param.BarCode,
-                    Timestamp = param.Timestamp,
-                    PackageCloudAbnormalSortingType = PackageCloudAbnormalSortingType.LockExit
-                });
-                NLog.LogManager.GetCurrentClassLogger().Error("无绑定走异常");
+                ExceptionSorting(param, PackageCloudAbnormalSortingType.NoPhysicalMailbox, token);
             }
         }
 

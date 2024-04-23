@@ -29,13 +29,11 @@ namespace JayTom.Dws.Interface.Jtexpress {
         public static ApiParameter Parameters { get; set; } = new();
         public static JtExpressUserInfo UserInfo { get; set; } = new();
         private static List<ExcelDeliveryCode> _excelDeliveryCodes = new();
-        private IExcel _excel;
+        private readonly IExcel _excel;
 
         public JtExpressApi(IHttpClientFactory httpClientFactory) {
             _httpClientFactory = httpClientFactory;
-            if (_excel is null) {
-                _excel = new NpoiExport();
-            }
+            _excel ??= new NpoiExport();
             if (_excelDeliveryCodes?.Any() != true) {
                 //判断文件是否存在
                 var path = $"{AppContext.BaseDirectory}ApiSettingJson\\JtThreeSegmentCodeRout";
@@ -71,53 +69,15 @@ namespace JayTom.Dws.Interface.Jtexpress {
         public async Task<UploadResponse> UploadData(string barcode, double weight, double length = default, double width = default, double height = default,
             double volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default,
             object? other = null, CancellationToken token = default) {
-            var deliveryCode = string.Empty;
-            var generateSegmentCode = await GenerateSegmentCode(barcode);
-            try {
-                var jtExpressResponseResult = JsonConvert.DeserializeObject<JtExpressResponseResult>(generateSegmentCode.ResponseContent);
-                if (jtExpressResponseResult?.Data is not null) {
-                    var segmentCodeInfos = JsonConvert.DeserializeObject<List<SegmentCodeInfo>>(jtExpressResponseResult.Data.ToString() ?? string.Empty);
-
-                    if (segmentCodeInfos?.Any() == true) {
-                        var segmentCodeInfo = segmentCodeInfos?.FirstOrDefault();
-                        var excelDeliveryCode = _excelDeliveryCodes?.FirstOrDefault(f =>
-                            f.ThirdlyDispatchCode.Equals(segmentCodeInfo?.ThirdlyDispatchCode));
-                        if (excelDeliveryCode is not null) {
-                            deliveryCode = excelDeliveryCode.DeliveryCode;
-                        }
-                    }
-                }
-            }
-            catch {
-                deliveryCode = string.Empty;
-            }
-
-            if (!generateSegmentCode.ExceptionMsg.Equals("条码为NoRead")) {
-                if (Parameters.BusinessType == BusinessType.ArrivalScan) {
-                    ArrivalScan(barcode, weight, DateTime.Now, length, width, height, Parameters.ScanTypeCode
-                        , Parameters.TransportTypeCode, Parameters.ScanPda, Parameters.ScanType, Parameters.WeightFlag
-                    );
-                }
-                else if (Parameters.BusinessType == BusinessType.DepartureScan) {
-                    DepartureScan(barcode, deliveryCode, Parameters.ScanPda);
-                }
-                else if (Parameters.BusinessType == BusinessType.ArrivalScanAndDepartureScan) {
-                    ArrivalScan(barcode, weight, DateTime.Now, length, width, height, Parameters.ScanTypeCode
-                        , Parameters.TransportTypeCode, Parameters.ScanPda, Parameters.ScanType, Parameters.WeightFlag
-                    );
-                    DepartureScan(barcode, deliveryCode, Parameters.ScanPda);
-                }
-            }
-
-            return generateSegmentCode;
+            return await GenerateSegmentCode(barcode);
         }
 
         public async Task<UploadResponse> UploadData(string barcode, double weight, DateTime scanTime, double length = default, double width = default,
             double height = default, double volume = default, UploadImageInfo? imageInfo = default,
             List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
             var deliveryCode = string.Empty;
-            var generateSegmentCode = await GenerateSegmentCode(barcode);
-            try {
+            return await GenerateSegmentCode(barcode);
+            /*try {
                 var jtExpressResponseResult = JsonConvert.DeserializeObject<JtExpressResponseResult>(generateSegmentCode.ResponseContent);
                 if (jtExpressResponseResult?.Data is not null) {
                     var segmentCodeInfos = JsonConvert.DeserializeObject<List<SegmentCodeInfo>>(jtExpressResponseResult.Data.ToString() ?? string.Empty);
@@ -153,7 +113,7 @@ namespace JayTom.Dws.Interface.Jtexpress {
                 }
             }
 
-            return generateSegmentCode;
+            return generateSegmentCode;*/
         }
 
         public Task<KeyValuePair<bool, string>> SetParameters<T>(T parameters) {
@@ -184,6 +144,43 @@ namespace JayTom.Dws.Interface.Jtexpress {
         public void UploadInBackground(string barcode, double weight, DateTime scanTime, double length = default,
             double width = default, double height = default, double volume = default, UploadImageInfo? imageInfo = default,
             List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
+            var deliveryCode = string.Empty;
+            if (other is UploadResponse uploadResponse) {
+                try {
+                    var jtExpressResponseResult = JsonConvert.DeserializeObject<JtExpressResponseResult>(uploadResponse.ResponseContent);
+                    if (jtExpressResponseResult?.Data is not null) {
+                        var segmentCodeInfos = JsonConvert.DeserializeObject<List<SegmentCodeInfo>>(jtExpressResponseResult.Data.ToString() ?? string.Empty);
+
+                        if (segmentCodeInfos?.Any() == true) {
+                            var segmentCodeInfo = segmentCodeInfos?.FirstOrDefault();
+                            var excelDeliveryCode = _excelDeliveryCodes?.FirstOrDefault(f =>
+                                f.ThirdlyDispatchCode.Equals(segmentCodeInfo?.ThirdlyDispatchCode));
+                            if (excelDeliveryCode is not null) {
+                                deliveryCode = excelDeliveryCode.DeliveryCode;
+                            }
+                        }
+                    }
+                }
+                catch {
+                    deliveryCode = string.Empty;
+                }
+                if (!barcode.ToLower().Equals("noread")) {
+                    if (Parameters.BusinessType == BusinessType.ArrivalScan) {
+                        ArrivalScan(barcode, weight, DateTime.Now, length, width, height, Parameters.ScanTypeCode
+                            , Parameters.TransportTypeCode, Parameters.ScanPda, Parameters.ScanType, Parameters.WeightFlag
+                        );
+                    }
+                    else if (Parameters.BusinessType == BusinessType.DepartureScan) {
+                        DepartureScan(barcode, deliveryCode, Parameters.ScanPda);
+                    }
+                    else if (Parameters.BusinessType == BusinessType.ArrivalScanAndDepartureScan) {
+                        ArrivalScan(barcode, weight, DateTime.Now, length, width, height, Parameters.ScanTypeCode
+                            , Parameters.TransportTypeCode, Parameters.ScanPda, Parameters.ScanType, Parameters.WeightFlag
+                        );
+                        DepartureScan(barcode, deliveryCode, Parameters.ScanPda);
+                    }
+                }
+            }
         }
 
         public void PackageAggregation(string packageExit, string aggregatePackageCode, DateTime packagingTime, List<string> packageItems,
@@ -222,13 +219,12 @@ namespace JayTom.Dws.Interface.Jtexpress {
                 using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
                 httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut);
                 HttpResponseMessage message;
-                using (Stream dataStream =
-                       new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data)))) {
-                    using (HttpContent content = new StreamContent(dataStream)) {
-                        content.Headers.Add("Content-Type", "application/json");
-                        message = await httpClient.PostAsync($"{Parameters.Url}{method}", content, token)
-                            .ConfigureAwait(false);
-                    }
+                await using (Stream dataStream =
+                             new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data)))) {
+                    using HttpContent content = new StreamContent(dataStream);
+                    content.Headers.Add("Content-Type", "application/json");
+                    message = await httpClient.PostAsync($"{Parameters.Url}{method}", content, token)
+                        .ConfigureAwait(false);
                 }
 
                 var resultContent = message.Content.ReadAsStringAsync(token).ConfigureAwait(false).GetAwaiter().GetResult();
@@ -276,7 +272,7 @@ namespace JayTom.Dws.Interface.Jtexpress {
         public async Task<UploadResponse> GenerateSegmentCode(string barcode) {
             var exceptionMsg = string.Empty;
             var isSuccess = false;
-            string resultContent = string.Empty;
+            var resultContent = string.Empty;
             var method = "assSortingSegmented/listByWaybillNo";
             UploadResponse response;
             var requestTime = DateTime.Now;
@@ -302,23 +298,22 @@ namespace JayTom.Dws.Interface.Jtexpress {
                     using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
                     httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.SegmentCodeTimeOut);
                     HttpResponseMessage message;
-                    using (Stream dataStream =
-                           new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data)))) {
-                        using (HttpContent content = new StreamContent(dataStream)) {
-                            content.Headers.Add("Content-Type", "application/json");
+                    await using (Stream dataStream =
+                                 new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data)))) {
+                        using HttpContent content = new StreamContent(dataStream);
+                        content.Headers.Add("Content-Type", "application/json");
 
-                            message = await httpClient.PostAsync($"{Parameters.SegmentCodeUrl}{method}", content)
-                                .ConfigureAwait(false);
-                        }
+                        message = await httpClient.PostAsync($"{Parameters.SegmentCodeUrl}{method}", content)
+                            .ConfigureAwait(false);
                     }
 
                     resultContent = await message.Content.ReadAsStringAsync().ConfigureAwait(false);
                     resultContent = Regex.Unescape(resultContent);
-                    string pattern = "\"extendJson\":\"({(?:[^{}]|(?<open>\\{)|(?<-open>\\}))+(?(open)(?!))})\"";
-                    Match match = Regex.Match(resultContent, pattern);
+                    var pattern = "\"extendJson\":\"({(?:[^{}]|(?<open>\\{)|(?<-open>\\}))+(?(open)(?!))})\"";
+                    var match = Regex.Match(resultContent, pattern);
 
                     if (match.Success) {
-                        string nestedJsonStr = match.Groups[1].Value;
+                        var nestedJsonStr = match.Groups[1].Value;
 
                         // 判断嵌套 JSON 字符串是否为非空
                         if (!string.IsNullOrEmpty(nestedJsonStr)) {
@@ -341,11 +336,8 @@ namespace JayTom.Dws.Interface.Jtexpress {
                             var segmentCodeInfo = JsonConvert.DeserializeObject<List<SegmentCodeInfo>>(result?.Data?.ToString() ?? string.Empty, new JsonSerializerSettings {
                                 StringEscapeHandling = StringEscapeHandling.EscapeHtml
                             });
-                            if (string.IsNullOrEmpty(segmentCodeInfo?.FirstOrDefault()?.ThirdlyDispatchCode)) {
-                                isSuccess = false;
-                                exceptionMsg = "三段码为空";
-                            }
-                            if (isSuccess && _excelDeliveryCodes?.Any(a => a.ThirdlyDispatchCode.Equals(segmentCodeInfo?.FirstOrDefault()?.ThirdlyDispatchCode ?? string.Empty)) != true) {
+                            if (isSuccess && _excelDeliveryCodes?.Any(a => a.ThirdlyDispatchCode.Equals(segmentCodeInfo?.FirstOrDefault()?.ThirdlyDispatchCode ?? string.Empty)) != true &&
+                                Parameters.BusinessType == BusinessType.ArrivalScanAndDepartureScan) {
                                 isSuccess = false;
                                 exceptionMsg = "服务器返回的三段码不在对应分拣路由表里";
                             }
@@ -416,7 +408,7 @@ namespace JayTom.Dws.Interface.Jtexpress {
             }
             var exceptionMsg = string.Empty;
             var isSuccess = false;
-            string resultContent = string.Empty;
+            var resultContent = string.Empty;
             UploadResponse response;
             var requestTime = DateTime.Now;
             var stopwatch = new Stopwatch();
@@ -461,14 +453,13 @@ namespace JayTom.Dws.Interface.Jtexpress {
                 using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
                 httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut);
                 HttpResponseMessage message;
-                using (Stream dataStream =
-                       new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data)))) {
-                    using (HttpContent content = new StreamContent(dataStream)) {
-                        content.Headers.Add("Content-Type", "application/json");
-                        content.Headers.Add("authToken", UserInfo.Token);
-                        message = await httpClient.PostAsync($"{Parameters.Url}{method}", content)
-                            .ConfigureAwait(false);
-                    }
+                await using (Stream dataStream =
+                             new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data)))) {
+                    using HttpContent content = new StreamContent(dataStream);
+                    content.Headers.Add("Content-Type", "application/json");
+                    content.Headers.Add("authToken", UserInfo.Token);
+                    message = await httpClient.PostAsync($"{Parameters.Url}{method}", content)
+                        .ConfigureAwait(false);
                 }
 
                 resultContent = await message.Content.ReadAsStringAsync().ConfigureAwait(false);
@@ -529,7 +520,7 @@ namespace JayTom.Dws.Interface.Jtexpress {
             }
             var exceptionMsg = string.Empty;
             var isSuccess = false;
-            string resultContent = string.Empty;
+            var resultContent = string.Empty;
             var method = "/opa/smart/scan/uploadDeliveryOutStockData";
             UploadResponse response;
             var requestTime = DateTime.Now;
@@ -559,14 +550,13 @@ namespace JayTom.Dws.Interface.Jtexpress {
                 using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
                 httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut);
                 HttpResponseMessage message;
-                using (Stream dataStream =
-                       new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data)))) {
-                    using (HttpContent content = new StreamContent(dataStream)) {
-                        content.Headers.Add("Content-Type", "application/json");
-                        content.Headers.Add("authToken", UserInfo.Token);
-                        message = await httpClient.PostAsync($"{Parameters.Url}{method}", content)
-                            .ConfigureAwait(false);
-                    }
+                await using (Stream dataStream =
+                             new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data)))) {
+                    using HttpContent content = new StreamContent(dataStream);
+                    content.Headers.Add("Content-Type", "application/json");
+                    content.Headers.Add("authToken", UserInfo.Token);
+                    message = await httpClient.PostAsync($"{Parameters.Url}{method}", content)
+                        .ConfigureAwait(false);
                 }
 
                 resultContent = await message.Content.ReadAsStringAsync().ConfigureAwait(false);

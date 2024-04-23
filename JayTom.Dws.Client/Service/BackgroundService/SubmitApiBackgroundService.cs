@@ -29,7 +29,9 @@ using JayTom.Dws.Client.Service.Sorting;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Client.Service.ImageStorage;
 using JayTom.Dws.Domain.Repository.LocalData;
+using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 using static JayTom.Dws.Interface.CaiNiao.CaiNiaoApi;
+using static Aliyun.OSS.Model.ListMultipartUploadsResult;
 using UploadResponse = JayTom.Dws.Interface.UploadResponse;
 using JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols;
 
@@ -57,6 +59,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private ConcurrentQueue<CallBackPackageInfo> _callBackItems = new();
         private ConcurrentDictionary<long, SortingExitReceived> _sortingExitItems = new();
         private ConcurrentQueue<PackageAggregationInfo> _packageAggregationInfoItems = new();
+        private JtExpressDto _jtExpressDto = new();
 
         #region 非通用版本变量(临时)
 
@@ -153,22 +156,22 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     }
                     else if (model.SettingsName.Equals("JtExpressApiParameters")) {
                         //默认上传接口改参数
-                        var entity = await _configRepository.FirstOrDefaultEntity<JtExpressDto>(model.SettingsName) ?? new JtExpressDto();
+                        _jtExpressDto = await _configRepository.FirstOrDefaultEntity<JtExpressDto>(model.SettingsName) ?? new JtExpressDto();
                         _jtExpressApiParam = new JtExpressApi.ApiParameter {
-                            AppSecret = entity.AppSecret,
-                            AppKey = entity.AppKey,
-                            BusinessType = (JtExpressApi.BusinessType)entity.BusinessType,
-                            Password = entity.Password,
-                            ScanPda = entity.ScanPda,
-                            ScanType = entity.ScanType,
-                            ScanTypeCode = entity.ScanTypeCode,
-                            SegmentCodeTimeOut = entity.SegmentCodeTimeOut,
-                            SegmentCodeUrl = entity.SegmentCodeUrl,
-                            TimeOut = entity.TimeOut,
-                            TransportTypeCode = entity.TransportTypeCode,
-                            Url = entity.Url,
-                            UserName = entity.UserName,
-                            WeightFlag = entity.WeightFlag,
+                            AppSecret = _jtExpressDto.AppSecret,
+                            AppKey = _jtExpressDto.AppKey,
+                            BusinessType = (JtExpressApi.BusinessType)_jtExpressDto.BusinessType,
+                            Password = _jtExpressDto.Password,
+                            ScanPda = _jtExpressDto.ScanPda,
+                            ScanType = _jtExpressDto.ScanType,
+                            ScanTypeCode = _jtExpressDto.ScanTypeCode,
+                            SegmentCodeTimeOut = _jtExpressDto.SegmentCodeTimeOut,
+                            SegmentCodeUrl = _jtExpressDto.SegmentCodeUrl,
+                            TimeOut = _jtExpressDto.TimeOut,
+                            TransportTypeCode = _jtExpressDto.TransportTypeCode,
+                            Url = _jtExpressDto.Url,
+                            UserName = _jtExpressDto.UserName,
+                            WeightFlag = _jtExpressDto.WeightFlag,
                         };
                     }
                     else if (model.SettingsName.Equals("RoutDataApiParameters")) {
@@ -590,50 +593,76 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         }
                     });
                 }
-                //判断是否超过60秒,如果超过则强制提交
 
-                var sortingReport = _sortingExitItems
-                    .Where(w => w.Value.ScanTime != null &&
-                                DateTime.Now.Subtract(w.Value.ScanTime.Value).TotalSeconds >= 60)
-                    ?.ToList();
-                if (sortingReport?.Any() == true) {
-                    Parallel.ForEach(sortingReport, sValue => {
-                        _sortingExitItems.TryRemove(sValue.Key, out var sortingValue);
-                        if (sortingValue is not null) {
-                            Task.Factory.StartNew(async () => {
-                                IDataUploader uploader;
-                                UploadResponse? uploadResponse = null;
-                                switch (_apiSettingsDto?.Type) {
-                                    case ApiType.None:
+                //提交的格口列表
+                if (_sortingExitItems.Any()) {
+                    IDataUploader? uploader;
+                    switch (_apiSettingsDto?.Type) {
+                        case ApiType.None:
+                            return;
+
+                        case ApiType.CaiNiaoApi:
+                            //判断是否超过60秒,如果超过则强制提交(菜鸟专用)
+                            var sortingReport = _sortingExitItems
+                                .Where(w => w.Value.ScanTime != null &&
+                                            DateTime.Now.Subtract(w.Value.ScanTime.Value).TotalSeconds >= 60)
+                                ?.ToList();
+                            if (sortingReport?.Any() == true) {
+                                uploader = new CaiNiaoApi(_httpClientFactory);
+                                Parallel.ForEach(sortingReport, sValue => {
+                                    _sortingExitItems.TryRemove(sValue.Key, out var sortingValue);
+                                    if (sortingValue is not null) {
+                                        Task.Factory.StartNew(async () => {
+                                            var (key, value) = await uploader.SetParameters(_caiNiaoApiParam);
+                                            if (key) {
+                                                uploader.UploadInBackground(sortingValue.BarCode ?? string.Empty, 0,
+                                                    sortingValue.ScanTime ?? DateTime.Now, imageInfo: new UploadImageInfo() {
+                                                        CameraCustomName = string.Empty,
+                                                        CameraName = string.Empty,
+                                                        CameraSerialNumber = string.Empty,
+                                                    }, other: new ReportChuteInfo {
+                                                        ChuteCode = sortingValue.ExitName ?? string.Empty,
+                                                        ChuteCodePhysical = sortingValue.ExitName ?? string.Empty,
+                                                        ErrorReson = (string.IsNullOrEmpty(sortingValue.BarCode) || sortingValue.BarCode.ToLower().Equals("noread") == true) ?
+                                                            "无条码" : "分拣成功 ",
+                                                        Status = (string.IsNullOrEmpty(sortingValue.BarCode) || sortingValue.BarCode.ToLower().Equals("noread") == true) ?
+                                                            1 : 0,
+                                                    }, token: stoppingToken);
+                                            }
+                                            else {
+                                                NLog.LogManager.GetCurrentClassLogger().Error("设置Api参数失败");
+                                            }
+                                        }, stoppingToken);
+                                    }
+                                });
+                            }
+                            break;
+
+                        case ApiType.JtExpressApi:
+                            uploader = new JtExpressApi(_httpClientFactory);
+                            var (b, s) = await uploader.SetParameters(_jtExpressApiParam);
+                            Parallel.ForEach(_sortingExitItems, sValue => {
+                                _sortingExitItems.TryRemove(sValue.Key, out var sortingValue);
+                                if (sortingValue is not null) {
+                                    if (_jtExpressDto.IsUploadAfterReturn && sortingValue.Type == ExitType.AbnormalExit) {
                                         return;
+                                    }
 
-                                    case ApiType.CaiNiaoApi:
-
-                                        uploader = new CaiNiaoApi(_httpClientFactory);
-                                        var (key, value) = await uploader.SetParameters(_caiNiaoApiParam);
-                                        if (key) {
-                                            uploader.UploadInBackground(sortingValue.BarCode ?? string.Empty, 0,
-                                                sortingValue.ScanTime ?? DateTime.Now, imageInfo: new UploadImageInfo() {
-                                                    CameraCustomName = string.Empty,
-                                                    CameraName = string.Empty,
-                                                    CameraSerialNumber = string.Empty,
-                                                }, other: new ReportChuteInfo {
-                                                    ChuteCode = sortingValue.ExitName ?? string.Empty,
-                                                    ChuteCodePhysical = sortingValue.ExitName ?? string.Empty,
-                                                    ErrorReson = (string.IsNullOrEmpty(sortingValue.BarCode) || sortingValue.BarCode.ToLower().Equals("noread") == true) ?
-                                                        "无条码" : "分拣成功 ",
-                                                    Status = (string.IsNullOrEmpty(sortingValue.BarCode) || sortingValue.BarCode.ToLower().Equals("noread") == true) ?
-                                                        1 : 0,
-                                                }, token: stoppingToken);
+                                    Task.Factory.StartNew(async () => {
+                                        var keyValuePair = await uploader.SetParameters(_jtExpressApiParam);
+                                        if (keyValuePair.Key) {
+                                            uploader.UploadInBackground(sortingValue.BarCode ?? string.Empty, sortingValue.SortingParam?.Weight ?? 0,
+                                                sortingValue.SortingParam?.ScanTime ?? DateTime.Now, imageInfo: new UploadImageInfo(), other:
+                                                sortingValue.SortingParam?.ApiResponse ?? new UploadResponse(), token: stoppingToken);
                                         }
                                         else {
                                             NLog.LogManager.GetCurrentClassLogger().Error("设置Api参数失败");
                                         }
-                                        break;
+                                    }, stoppingToken);
                                 }
-                            }, stoppingToken);
-                        }
-                    });
+                            });
+                            break;
+                    }
                 }
 
                 var packageAggregationDequeue = _packageAggregationInfoItems.TryDequeue(out var packageAggregationInfo);
@@ -723,22 +752,22 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 V = wdtFlagshipApiDto.V
             };
             //极兔
-            var jtExpressDto = await _configRepository.FirstOrDefaultEntity<JtExpressDto>("JtExpressApiParameters") ?? new JtExpressDto();
+            _jtExpressDto = await _configRepository.FirstOrDefaultEntity<JtExpressDto>("JtExpressApiParameters") ?? new JtExpressDto();
             _jtExpressApiParam = new JtExpressApi.ApiParameter {
-                AppSecret = jtExpressDto.AppSecret,
-                AppKey = jtExpressDto.AppKey,
-                BusinessType = (JtExpressApi.BusinessType)jtExpressDto.BusinessType,
-                Password = jtExpressDto.Password,
-                ScanPda = jtExpressDto.ScanPda,
-                ScanType = jtExpressDto.ScanType,
-                ScanTypeCode = jtExpressDto.ScanTypeCode,
-                SegmentCodeTimeOut = jtExpressDto.SegmentCodeTimeOut,
-                SegmentCodeUrl = jtExpressDto.SegmentCodeUrl,
-                TimeOut = jtExpressDto.TimeOut,
-                TransportTypeCode = jtExpressDto.TransportTypeCode,
-                Url = jtExpressDto.Url,
-                UserName = jtExpressDto.UserName,
-                WeightFlag = jtExpressDto.WeightFlag,
+                AppSecret = _jtExpressDto.AppSecret,
+                AppKey = _jtExpressDto.AppKey,
+                BusinessType = (JtExpressApi.BusinessType)_jtExpressDto.BusinessType,
+                Password = _jtExpressDto.Password,
+                ScanPda = _jtExpressDto.ScanPda,
+                ScanType = _jtExpressDto.ScanType,
+                ScanTypeCode = _jtExpressDto.ScanTypeCode,
+                SegmentCodeTimeOut = _jtExpressDto.SegmentCodeTimeOut,
+                SegmentCodeUrl = _jtExpressDto.SegmentCodeUrl,
+                TimeOut = _jtExpressDto.TimeOut,
+                TransportTypeCode = _jtExpressDto.TransportTypeCode,
+                Url = _jtExpressDto.Url,
+                UserName = _jtExpressDto.UserName,
+                WeightFlag = _jtExpressDto.WeightFlag,
             };
             //络道科技Api
             var routDataApiDto = await _configRepository.FirstOrDefaultEntity<RoutDataApiDto>("RoutDataApiParameters") ?? new RoutDataApiDto();
