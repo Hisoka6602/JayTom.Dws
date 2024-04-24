@@ -18,27 +18,8 @@ internal class Program {
 
     private static void Main(string[] args) {
         try {
-            var geekPlusApi = new GeekPlusApi(null);
-
-            geekPlusApi.UploadInBackground("1008611", 0, DateTime.Now, 0, 0, 0, 0,
-                new UploadImageInfo() {
-                    CameraCustomName = "aa",
-                    CameraName = "aa",
-                    CameraSerialNumber = "aa",
-                    Image = Image.FromFile("C:\\Users\\77051\\Desktop\\3e3534d95fba0130fc86fd84a3a0230.jpg")
-                }, new List<UploadImageInfo>()
-                {
-                    new UploadImageInfo()
-                    {
-                        CameraCustomName = "aa",
-                        CameraName = "aa",
-                        CameraSerialNumber = "aa",
-                        Image = Image.FromFile("C:\\Users\\77051\\Desktop\\3e3534d95fba0130fc86fd84a3a0230.jpg")
-                    }
-                });
-            Console.ReadLine();
-            return;
-            var s = "{\"code\":1,\"msg\":\"请求成功\",\"version\":null,\"data\":[{\"waybillNo\":\"JT5269679310224\",\"terminalDispatchCode\":\"432 K848-00 \",\"firstDispatchCode\":\"432\",\"secondDispatchCode\":\"K848-00\",\"thirdlyDispatchCode\":\"\",\"customerCode\":null,\"interceptor\":2,\"orderType\":3,\"pickNetworkCode\":\"\",\"destinationCode\":\"\",\"extendJson\":\"\",\"codeList\":null},{\"waybillNo\":\"JT5269679310224\",\"terminalDispatchCode\":\"432 K848-00 \",\"firstDispatchCode\":\"432\",\"secondDispatchCode\":\"K848-00\",\"thirdlyDispatchCode\":\"\",\"customerCode\":null,\"interceptor\":2,\"orderType\":3,\"pickNetworkCode\":\"\",\"destinationCode\":\"\",\"extendJson\":\"\",\"codeList\":null},{\"waybillNo\":\"JT5269679310224\",\"terminalDispatchCode\":\"630,C209-20,101\",\"firstDispatchCode\":\"630\",\"secondDispatchCode\":\"C209-20\",\"thirdlyDispatchCode\":\"101\",\"customerCode\":null,\"interceptor\":1,\"orderType\":1,\"pickNetworkCode\":\"4579190\",\"destinationCode\":\"411300\",\"extendJson\":\"{\\\"stationCode\\\":\\\"BB\\\"}\",\"codeList\":null},{\"waybillNo\":\"JT5269679310224\",\"terminalDispatchCode\":\"630,C209-20,101\",\"firstDispatchCode\":\"630\",\"secondDispatchCode\":\"C209-20\",\"thirdlyDispatchCode\":\"101\",\"customerCode\":null,\"interceptor\":1,\"orderType\":1,\"pickNetworkCode\":\"4579190\",\"destinationCode\":\"411300\",\"extendJson\":\"{\\\"stationCode\\\":\\\"BB\\\"}\",\"codeList\":null},{\"waybillNo\":\"JT5269679310224\",\"terminalDispatchCode\":\"630,C209-20,101\",\"firstDispatchCode\":\"630\",\"secondDispatchCode\":\"C209-20\",\"thirdlyDispatchCode\":\"101\",\"customerCode\":null,\"interceptor\":2,\"orderType\":1,\"pickNetworkCode\":\"4579190\",\"destinationCode\":\"411300\",\"extendJson\":\"{\\\"stationCode\\\":\\\"BB\\\"}\",\"codeList\":null}],\"succ\":true,\"fail\":false}";
+            var s =
+                "{\"code\":1,\"msg\":\"请求成功\",\"version\":null,\"data\":[{\"waybillNo\":\"JT2073687636814\",\"terminalDispatchCode\":\"432,K848-00,027\",\"firstDispatchCode\":\"432\",\"secondDispatchCode\":\"K848-00\",\"thirdlyDispatchCode\":\"027\",\"customerCode\":null,\"interceptor\":1,\"orderType\":1,\"pickNetworkCode\":\"2596149\",\"destinationCode\":\"330700\",\"extendJson\":\"{\\\"stationCode\\\":\\\"L6\\\"}\",\"codeList\":null},{\"waybillNo\":\"JT2073687636814\",\"terminalDispatchCode\":\"432,K848-00,027\",\"firstDispatchCode\":\"432\",\"secondDispatchCode\":\"K848-00\",\"thirdlyDispatchCode\":\"027\",\"customerCode\":null,\"interceptor\":1,\"orderType\":1,\"pickNetworkCode\":\"2596149\",\"destinationCode\":\"330700\",\"extendJson\":\"{\\\"stationCode\\\":\\\"L6\\\"}\",\"codeList\":null},{\"waybillNo\":\"JT2073687636814\",\"terminalDispatchCode\":\"432,K848-00,027\",\"firstDispatchCode\":\"432\",\"secondDispatchCode\":\"K848-00\",\"thirdlyDispatchCode\":\"027\",\"customerCode\":null,\"interceptor\":2,\"orderType\":1,\"pickNetworkCode\":\"2596149\",\"destinationCode\":\"330700\",\"extendJson\":\"{\\\"stationCode\\\":\\\"L6\\\"}\",\"codeList\":null}],\"succ\":true,\"fail\":false}";
             var resultContent = Regex.Unescape(s);
 
             var replace = Regex.Replace(s, @"[\u0000-\u001f\b]", "");
@@ -46,9 +27,9 @@ internal class Program {
             var tryParseValue = JsonDocument.TryParseValue(ref reader, out var document);
             if (tryParseValue && document is not null) {
                 var fieldValue = FindFieldValue(document.RootElement,
-                    "terminalDispatchCode", SearchDirection.Backward);
+                    "interceptor", SearchDirection.Forward);
                 if (fieldValue.HasValue) {
-                    var equals = fieldValue.Value.ToString()?.Equals("432 K848-00 ");
+                    var equals = fieldValue.Value.ToString()?.Equals("1");
                     Console.WriteLine(equals);
                 }
             }

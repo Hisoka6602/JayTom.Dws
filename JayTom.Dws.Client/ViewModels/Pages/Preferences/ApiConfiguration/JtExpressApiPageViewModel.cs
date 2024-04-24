@@ -270,6 +270,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
                             TransportTypeCodeItems.FirstOrDefault(f =>
                                 f.Value.Equals(settingsDto.TransportTypeCode)) ?? new StringItemModel(),
                         IsUploadAfterReturn = settingsDto.IsUploadAfterReturn,
+                        InterceptorEnabled = settingsDto.InterceptorEnabled
                     };
                 });
             }
@@ -296,7 +297,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
                     WeightFlag = JtExpressApiInfo.WeightFlag.Value,
                     TimeOut = JtExpressApiInfo.TimeOut,
                     TransportTypeCode = JtExpressApiInfo.TransportTypeCode.Value,
-                    IsUploadAfterReturn = JtExpressApiInfo.IsUploadAfterReturn
+                    IsUploadAfterReturn = JtExpressApiInfo.IsUploadAfterReturn,
+                    InterceptorEnabled = JtExpressApiInfo.InterceptorEnabled
                 })
             });
             base.MessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :

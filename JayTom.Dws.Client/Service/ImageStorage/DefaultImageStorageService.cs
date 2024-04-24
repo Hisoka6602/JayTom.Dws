@@ -211,29 +211,29 @@ namespace JayTom.Dws.Client.Service.ImageStorage {
                 "{Weight}" => $"{(isWatermark ? "Weight:" : string.Empty)}{weight.ToString(CultureInfo.InvariantCulture)}",
                 "{Volume}" => $"{(isWatermark ? "Volume:" : string.Empty)}{(volume / _volumeSettingsDto?.Unit switch {
                     VolumeUnit.Millimeter => 1,
-                    VolumeUnit.Centimeter => 10,
-                    VolumeUnit.Meter => 100,
+                    VolumeUnit.Centimeter => Math.Pow(10, 3),
+                    VolumeUnit.Meter => Math.Pow(1000, 3),
                     _ => 1
                 })
                     .ToString(CultureInfo.InvariantCulture)}",
                 "{Length}" => $"{(isWatermark ? "Length:" : string.Empty)}{(length / _volumeSettingsDto?.Unit switch {
                     VolumeUnit.Millimeter => 1,
                     VolumeUnit.Centimeter => 10,
-                    VolumeUnit.Meter => 100,
+                    VolumeUnit.Meter => 1000,
                     _ => 1
                 })
                     .ToString(CultureInfo.InvariantCulture)}",
                 "{Width}" => $"{(isWatermark ? "Width:" : string.Empty)}{(width / _volumeSettingsDto?.Unit switch {
                     VolumeUnit.Millimeter => 1,
                     VolumeUnit.Centimeter => 10,
-                    VolumeUnit.Meter => 100,
+                    VolumeUnit.Meter => 1000,
                     _ => 1
                 })
                     .ToString(CultureInfo.InvariantCulture)}",
                 "{Height}" => $"{(isWatermark ? "Height:" : string.Empty)}{(height / _volumeSettingsDto?.Unit switch {
                     VolumeUnit.Millimeter => 1,
                     VolumeUnit.Centimeter => 10,
-                    VolumeUnit.Meter => 100,
+                    VolumeUnit.Meter => 1000,
                     _ => 1
                 })
                     .ToString(CultureInfo.InvariantCulture)}",
@@ -264,29 +264,29 @@ namespace JayTom.Dws.Client.Service.ImageStorage {
                 "{Weight}" => $"{(isWatermark ? "重量:" : string.Empty)}{weight.ToString(CultureInfo.InvariantCulture)} kg",
                 "{Volume}" => $"{(isWatermark ? "体积:" : string.Empty)}{(volume / _volumeSettingsDto?.Unit switch {
                     VolumeUnit.Millimeter => 1,
-                    VolumeUnit.Centimeter => 10,
-                    VolumeUnit.Meter => 100,
+                    VolumeUnit.Centimeter => Math.Pow(10, 3),
+                    VolumeUnit.Meter => Math.Pow(1000, 3),
                     _ => 1
                 })
                     .ToString(CultureInfo.InvariantCulture)} {vUnit}",
                 "{Length}" => $"{(isWatermark ? "长度:" : string.Empty)}{(length / _volumeSettingsDto?.Unit switch {
                     VolumeUnit.Millimeter => 1,
                     VolumeUnit.Centimeter => 10,
-                    VolumeUnit.Meter => 100,
+                    VolumeUnit.Meter => 1000,
                     _ => 1
                 })
                     .ToString(CultureInfo.InvariantCulture)} {vUnit}",
                 "{Width}" => $"{(isWatermark ? "宽度:" : string.Empty)}{(width / _volumeSettingsDto?.Unit switch {
                     VolumeUnit.Millimeter => 1,
                     VolumeUnit.Centimeter => 10,
-                    VolumeUnit.Meter => 100,
+                    VolumeUnit.Meter => 1000,
                     _ => 1
                 })
                     .ToString(CultureInfo.InvariantCulture)} {vUnit}",
                 "{Height}" => $"{(isWatermark ? "高度:" : string.Empty)}{(height / _volumeSettingsDto?.Unit switch {
                     VolumeUnit.Millimeter => 1,
                     VolumeUnit.Centimeter => 10,
-                    VolumeUnit.Meter => 100,
+                    VolumeUnit.Meter => 1000,
                     _ => 1
                 })
                     .ToString(CultureInfo.InvariantCulture)} {vUnit}",

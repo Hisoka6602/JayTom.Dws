@@ -586,6 +586,23 @@
                         IsChecked="{Binding JtExpressApiInfo.IsUploadAfterReturn, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                         Style="{StaticResource CustomCheckBoxStyle}" />
                 </StackPanel>
+                <!--  是否启用拦截件  -->
+                <StackPanel Margin="50,5,0,10" Orientation="Horizontal">
+
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="是否启用拦截件:" />
+                    <CheckBox
+                        BorderBrush="DodgerBlue"
+                        BorderThickness="2"
+                        Foreground="#2E2E2E"
+                        IsChecked="{Binding JtExpressApiInfo.InterceptorEnabled, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                        Style="{StaticResource CustomCheckBoxStyle}" />
+                </StackPanel>
             </StackPanel>
         </Border>
         <Border Grid.Row="1">

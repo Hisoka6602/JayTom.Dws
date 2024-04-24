@@ -307,7 +307,10 @@
                                         <Run Text="{x:Static languages:Language.Volume}" />
                                         <Run FontWeight="Bold" Foreground="White">
                                             <Run.Text>
-                                                <MultiBinding Converter="{StaticResource VolumeConverter}" StringFormat="{}{0:0.#}">
+                                                <MultiBinding
+                                                    Converter="{StaticResource VolumeConverter}"
+                                                    ConverterParameter="Volume"
+                                                    StringFormat="{}{0:0.#}">
                                                     <Binding Path="Volume" UpdateSourceTrigger="PropertyChanged" />
                                                     <Binding Mode="OneWay" Path="VolumeUnit" />
                                                 </MultiBinding>

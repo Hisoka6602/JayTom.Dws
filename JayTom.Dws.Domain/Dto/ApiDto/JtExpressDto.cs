@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 
 namespace JayTom.Dws.Domain.Dto.ApiDto {
-
     public class JtExpressDto {
 
         /// <summary>
@@ -82,6 +81,11 @@ namespace JayTom.Dws.Domain.Dto.ApiDto {
         /// 是否三段码返回后上传
         /// </summary>
         public bool IsUploadAfterReturn { get; set; }
+        /// <summary>
+        /// 是否启用拦截件
+        /// </summary>
+
+        public bool InterceptorEnabled { get; set; }
     }
 
     /// <summary>

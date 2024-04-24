@@ -327,6 +327,7 @@ namespace JayTom.Dws.Interface.geek_ {
                     ResponseContent = resultContent,
                     ResponseTime = DateTime.Now
                 };
+                NLog.LogManager.GetCurrentClassLogger().Error($"{JsonConvert.SerializeObject(response)}");
                 Console.WriteLine(response);
             }
         }

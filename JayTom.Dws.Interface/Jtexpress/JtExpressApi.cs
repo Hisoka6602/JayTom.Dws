@@ -133,6 +133,7 @@ namespace JayTom.Dws.Interface.Jtexpress {
                     Url = param.Url,
                     UserName = param.UserName,
                     WeightFlag = param.WeightFlag,
+                    InterceptorEnabled = param.InterceptorEnabled,
                 };
                 return Task.FromResult(new KeyValuePair<bool, string>(true, string.Empty));
             }
@@ -332,16 +333,21 @@ namespace JayTom.Dws.Interface.Jtexpress {
                             StringEscapeHandling = StringEscapeHandling.EscapeHtml
                         });
                         isSuccess = result?.Succ ?? false;
-                        /*if (isSuccess) {
+                        if (isSuccess) {
                             var segmentCodeInfo = JsonConvert.DeserializeObject<List<SegmentCodeInfo>>(result?.Data?.ToString() ?? string.Empty, new JsonSerializerSettings {
                                 StringEscapeHandling = StringEscapeHandling.EscapeHtml
                             });
-                            if (isSuccess && _excelDeliveryCodes?.Any(a => a.ThirdlyDispatchCode.Equals(segmentCodeInfo?.FirstOrDefault()?.ThirdlyDispatchCode ?? string.Empty)) != true &&
+                            /*if (isSuccess && _excelDeliveryCodes?.Any(a => a.ThirdlyDispatchCode.Equals(segmentCodeInfo?.FirstOrDefault()?.ThirdlyDispatchCode ?? string.Empty)) != true &&
                                 Parameters.BusinessType == BusinessType.ArrivalScanAndDepartureScan) {
                                 isSuccess = false;
                                 exceptionMsg = "服务器返回的三段码不在对应分拣路由表里";
+                            }*/
+                            var info = segmentCodeInfo?.FirstOrDefault();
+                            if (info is not null && info.Interceptor == 1 && Parameters.InterceptorEnabled) {
+                                isSuccess = false;
+                                exceptionMsg = "拦截件";
                             }
-                        }*/
+                        }
                     }
                 }
             }
@@ -738,6 +744,11 @@ namespace JayTom.Dws.Interface.Jtexpress {
             /// 业务类型
             /// </summary>
             public BusinessType BusinessType { get; set; }
+
+            /// <summary>
+            /// 是否启用拦截件
+            /// </summary>
+            public bool InterceptorEnabled { get; set; }
         }
 
         public class ExcelDeliveryCode {

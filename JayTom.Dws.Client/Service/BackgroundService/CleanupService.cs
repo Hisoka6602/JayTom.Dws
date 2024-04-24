@@ -5,6 +5,8 @@ using Newtonsoft.Json;
 using System.Threading;
 using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Infrastructure.IComputer;
 using JayTom.Dws.Domain.Repository.LocalConf;
@@ -61,6 +63,23 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             }
 
             _cacheClearSettingsDto = await _configRepository.FirstOrDefaultEntity<CacheClearSettingsDto>("CacheClearSettings", stoppingToken);
+
+            //删除文件日志
+            try {
+                var logsFolderPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs");
+                if (Directory.Exists(logsFolderPath) && _cacheClearSettingsDto?.LogDataAgoDays > 0) {
+                    // 匹配日期命名的.log文件
+                    var regex = new Regex(@"^\d{4}-\d{2}-\d{2}\.log$");
+                    // 调用递归方法来处理logs文件夹及其所有子文件夹
+                    var logFiles = GetLogFiles(logsFolderPath, regex);
+                    foreach (var file in from file in logFiles let creationTime = File.GetCreationTime(file) let difference = DateTime.Now - creationTime where difference.TotalDays > _cacheClearSettingsDto.LogDataAgoDays select file) {
+                        File.Delete(file);
+                    }
+                }
+            }
+            catch (Exception e) {
+                NLog.LogManager.GetCurrentClassLogger().Error($"删除日志文件异常:{e}");
+            }
             while (!stoppingToken.IsCancellationRequested && !_isWindowsClose) {
                 //数据盘
                 if (_cacheClearSettingsDto?.MinimumSpaceRetention > 0) {
@@ -109,6 +128,24 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 }
                 await Task.Delay(TimeSpan.FromSeconds(30), stoppingToken);
             }
+        }
+
+        private IEnumerable<string> GetLogFiles(string folderPath, Regex regex) {
+            // 获取文件夹中的所有文件和子文件夹
+            var files = Directory.GetFiles(folderPath);
+            var subFolders = Directory.GetDirectories(folderPath);
+
+            // 处理文件夹中的文件
+            var logFiles = files?.Where(fileName => regex.IsMatch(Path.GetFileName(fileName)))?.ToList() ?? new List<string>();
+
+            // 递归处理子文件夹
+            foreach (var subFolder in subFolders) {
+                var subFolderLogFiles = GetLogFiles(subFolder, regex);
+                logFiles.AddRange(subFolderLogFiles);
+            }
+
+            // 返回完整路径的日志文件列表
+            return logFiles;
         }
     }
 }

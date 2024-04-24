@@ -172,6 +172,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             Url = _jtExpressDto.Url,
                             UserName = _jtExpressDto.UserName,
                             WeightFlag = _jtExpressDto.WeightFlag,
+                            InterceptorEnabled = _jtExpressDto.InterceptorEnabled
                         };
                     }
                     else if (model.SettingsName.Equals("RoutDataApiParameters")) {
@@ -768,6 +769,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 Url = _jtExpressDto.Url,
                 UserName = _jtExpressDto.UserName,
                 WeightFlag = _jtExpressDto.WeightFlag,
+                InterceptorEnabled = _jtExpressApiParam.InterceptorEnabled
             };
             //络道科技Api
             var routDataApiDto = await _configRepository.FirstOrDefaultEntity<RoutDataApiDto>("RoutDataApiParameters") ?? new RoutDataApiDto();

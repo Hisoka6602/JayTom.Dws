@@ -23,6 +23,7 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         private int _segmentCodeTimeOut = 1000;
         private IntegerItemModel _businessType = new();
         private bool _isUploadAfterReturn;
+        private bool _interceptorEnabled;
 
         /// <summary>
         /// Url
@@ -142,6 +143,14 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         public bool IsUploadAfterReturn {
             get => _isUploadAfterReturn;
             set => SetProperty(ref _isUploadAfterReturn, value);
+        }
+
+        /// <summary>
+        /// 是否启用拦截件
+        /// </summary>
+        public bool InterceptorEnabled {
+            get => _interceptorEnabled;
+            set => SetProperty(ref _interceptorEnabled, value);
         }
     }
 }
