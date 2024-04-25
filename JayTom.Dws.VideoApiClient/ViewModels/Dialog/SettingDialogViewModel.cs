@@ -86,7 +86,7 @@ namespace JayTom.Dws.VideoApiClient.ViewModels.Dialog {
                     configObject["AppSettings"]["SecondsToSubtract"] = SecondsToSubtract;
                 }
                 if (configObject?["AppSettings"]?["NvrIpAddress"] is not null) {
-                    configObject["AppSettings"]["NvrIpAddress"] = SecondsToSubtract;
+                    configObject["AppSettings"]["NvrIpAddress"] = NvrIpAddress;
                 }
                 // 将修改后的配置项保存回文件
                 File.WriteAllText("appsettings.json", JsonConvert.SerializeObject(configObject, Formatting.Indented));

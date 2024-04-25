@@ -881,7 +881,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                         {
                             new()
                             {
-                                InstructionContent = value?.DeviceCommunicationProtocol?.EncodeData(FunctionType.SendPreSignal, new object(),
+                                InstructionContent = value?.DeviceCommunicationProtocol?.EncodeData(FunctionType.PackageInfoCompletedSignal, new object(),
                                     string.Empty, attach) ?? string.Empty,
                                 InstructionGeneratedTime = sendTime,
                                 InstructionType = InstructionType.PackageInfoCompletedSignal
