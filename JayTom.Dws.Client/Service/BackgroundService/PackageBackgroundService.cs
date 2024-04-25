@@ -680,7 +680,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 Timestamp = 0
                             });
                             info.SupplyCounterPackageSignalItem.Add(new SupplyCounterPackageSignal() {
-                                Instruction = args.Instruction,
                                 Time = args.InstructionTime,
                                 Type = SignalType.SendingAssignmentCompleteSignal
                             });
@@ -726,11 +725,12 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             //车号(序号绑定回复)
             _sortingService.SequenceBinding += async (sender, args) => {
                 //修改赋值
-                var tryDequeue = _instructionsAttachItems.TryDequeue(out var info);
-                if (tryDequeue && info is not null) {
-                    NLog.LogManager.GetCurrentClassLogger().Error($"找到绑定车号");
-                    try {
-                        await _createPackageSlim.WaitAsync();
+                try {
+                    await _createPackageSlim.WaitAsync();
+                    var tryDequeue = _instructionsAttachItems.TryDequeue(out var info);
+                    if (tryDequeue && info is not null) {
+                        NLog.LogManager.GetCurrentClassLogger().Error($"找到绑定车号");
+
                         var (dateTime, value) = _packageInfos.FirstOrDefault(f => f.Value.BarCodeInfo != null &&
                             f.Value.BarCodeInfo.Barcode.Equals(info.BarCode) &&
                             f.Value.Timestamp.Equals(info.Timestamp) &&
@@ -744,13 +744,15 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             value.Guid = Convert.ToInt64(args.Keyword);
                         }
                     }
-                    finally {
-                        _createPackageSlim.Release();
+                    else {
+                        NLog.LogManager.GetCurrentClassLogger().Error($"未找到绑定车号:{Convert.ToInt64(args.Keyword)}");
+                        NLog.LogManager.GetCurrentClassLogger().Error($"{JsonConvert.SerializeObject(_packageInfos)}");
                     }
                 }
-                else {
-                    NLog.LogManager.GetCurrentClassLogger().Error($"未找到绑定车号");
+                finally {
+                    _createPackageSlim.Release();
                 }
+
                 EventAggregator.Instance.Publish(new InstructionReceived() {
                     Timestamp = new DateTimeOffset(args.InstructionTime).ToUnixTimeMilliseconds(),
                     IsCreatedByLowerMachine = false,
@@ -1174,21 +1176,19 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             }
                         }
                         //供包台信号赋值(增加一个过期时间)
-                        {
+                        if (_supplyCounterSettingsDto.IsUseSupplyCounterMode) {
                             try {
                                 await _createPackageSlim.WaitAsync(stoppingToken);
+                                //分开判断
 
-                                var keyValuePairs = _packageInfos.Where(w => (w.Value.SupplyCounterPackageSignalItem.All(a => a.Type != SignalType.ReturningBindingSignal)
-                                                                            || w.Value.SupplyCounterPackageSignalItem.All(a => a.Type != SignalType.ReturningPreSignal)) &&
-                                                                             w.Value.SupplyCounterPackageSignalItem.Any(a => a.Type == SignalType.SendingPreSignal))
-
-                                    ?.ToList();
-
-                                //判断是否已发送赋值完成信号
-
-                                if (keyValuePairs?.Any() == true) {
-                                    foreach (var pair in keyValuePairs) {
-                                        //绑定信号
+                                var valuePairs = _packageInfos.Where(w =>
+                                    w.Value.SupplyCounterPackageSignalItem.All(a =>
+                                        a.Type != SignalType.ReturningBindingSignal) &&
+                                    w.Value.SupplyCounterPackageSignalItem.Any(a =>
+                                        a.Type == SignalType.SendingAssignmentCompleteSignal))?.ToList();
+                                if (valuePairs?.Any() == true) {
+                                    //处理绑定信号
+                                    foreach (var pair in valuePairs) {
                                         var supplyCounterPackageSignal = pair.Value.SupplyCounterPackageSignalItem.FirstOrDefault(f =>
                                             f.Type == SignalType.SendingAssignmentCompleteSignal);
                                         if (supplyCounterPackageSignal != null &&
@@ -1198,7 +1198,17 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                                 if (_supplyCounterSettingsDto.ResetFilterAfterRemovingPackage) {
                                                     BarCodeFilterContainer.ResetFilter();
                                                 }
-                                                NLog.LogManager.GetCurrentClassLogger().Error($"移除包裹");
+                                                //移除对应的车号信息
+                                                if (_instructionsAttachItems.Any() && pair.Value.BarCodeInfo is not null) {
+                                                    while (_instructionsAttachItems.TryPeek(out var attachItem) &&
+                                                           attachItem.BarCode != null &&
+                                                           attachItem.Guid == pair.Value.Guid && attachItem.BarCode.Equals(pair.Value.BarCodeInfo.Barcode)) {
+                                                        _instructionsAttachItems.TryDequeue(out _);
+                                                    }
+                                                }
+
+                                                var totalMilliseconds = DateTime.Now.Subtract(supplyCounterPackageSignal.Time).TotalMilliseconds;
+                                                NLog.LogManager.GetCurrentClassLogger().Error($"移除包裹:序号绑定回复超时:{totalMilliseconds},序号:{pair.Value.Guid}");
                                             }
                                             else {
                                                 pair.Value.SupplyCounterPackageSignalItem.Add(new SupplyCounterPackageSignal() {
@@ -1211,9 +1221,18 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                                 }
                                                 //发送赋值信号
                                             }
-                                            continue;
                                         }
-                                        //前置信号
+                                    }
+                                }
+
+                                var pairs = _packageInfos.Where(w =>
+                                    w.Value.SupplyCounterPackageSignalItem.All(a =>
+                                        a.Type != SignalType.ReturningPreSignal) &&
+                                    w.Value.SupplyCounterPackageSignalItem.Any(a =>
+                                        a.Type == SignalType.SendingPreSignal))?.ToList();
+                                if (pairs?.Any() == true) {
+                                    //处理前置信号
+                                    foreach (var pair in pairs) {
                                         var counterPackageSignal = pair.Value.SupplyCounterPackageSignalItem.FirstOrDefault(f =>
                                             f.Type == SignalType.SendingPreSignal);
                                         if (counterPackageSignal != null &&
@@ -1223,7 +1242,17 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                                 if (_supplyCounterSettingsDto.ResetFilterAfterRemovingPackage) {
                                                     BarCodeFilterContainer.ResetFilter();
                                                 }
-                                                NLog.LogManager.GetCurrentClassLogger().Error($"移除包裹");
+                                                //移除对应的车号信息
+                                                if (_instructionsAttachItems.Any() && pair.Value.BarCodeInfo is not null) {
+                                                    while (_instructionsAttachItems.TryPeek(out var attachItem) &&
+                                                           attachItem.BarCode != null &&
+                                                           attachItem.Guid == pair.Value.Guid && attachItem.BarCode.Equals(pair.Value.BarCodeInfo.Barcode)) {
+                                                        _instructionsAttachItems.TryDequeue(out _);
+                                                    }
+                                                }
+
+                                                var totalMilliseconds = DateTime.Now.Subtract(counterPackageSignal.Time).TotalMilliseconds;
+                                                NLog.LogManager.GetCurrentClassLogger().Error($"移除包裹:前置信号回复超时:{totalMilliseconds},序号:{pair.Value.Guid}");
                                             }
                                             else {
                                                 pair.Value.SupplyCounterPackageSignalItem.AddRange(new List<SupplyCounterPackageSignal>()
@@ -1244,12 +1273,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                                 }
                                             }
                                         }
-                                    }
-                                }
-                                if (_supplyCounterSettingsDto.IsUseSupplyCounterMode &&
-                                    _instructionsAttachItems.Any()) {
-                                    while (_instructionsAttachItems.TryPeek(out var attachItem) && attachItem.ScanTime != null && DateTime.Now.Subtract(attachItem.ScanTime.Value).TotalMilliseconds > _supplyCounterSettingsDto.PrecedingReplySignalTimeout) {
-                                        _instructionsAttachItems.TryDequeue(out _);
                                     }
                                 }
                             }
@@ -1474,7 +1497,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 catch (Exception e) {
                     NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
                 }
-
                 await Task.Delay(10, stoppingToken);
             }
         }
