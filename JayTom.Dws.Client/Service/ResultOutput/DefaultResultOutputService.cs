@@ -59,6 +59,15 @@ namespace JayTom.Dws.Client.Service.ResultOutput {
                     }
                 }
             });
+            EventAggregator.Instance.Subscribe<CreateTimePackageAfter>(async position => {
+                //播放声音事件
+                if (position is CreateTimePackageAfter trigger) {
+                    if (_outputSettingsDto is { IsUseAudioOutput: true, AudioOutputSettingsInfo.TriggerPosition: TriggerPositionEnum.CreateTimePackageAfter }) {
+                        SoundOutput(true);
+                    }
+                }
+            });
+            //CreateTimePackageAfter
             //包裹信息组合完成
             EventAggregator.Instance.Subscribe<PackageInfo>(async position => {
                 //播放声音事件

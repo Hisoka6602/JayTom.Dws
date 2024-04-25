@@ -171,7 +171,12 @@ namespace JayTom.Dws.Domain.Dto {
         /// <summary>
         /// 包裹扫描后
         /// </summary>
-        PackageScan
+        PackageScan,
+
+        /// <summary>
+        /// 创建包裹后
+        /// </summary>
+        CreateTimePackageAfter
     }
 
     /// <summary>

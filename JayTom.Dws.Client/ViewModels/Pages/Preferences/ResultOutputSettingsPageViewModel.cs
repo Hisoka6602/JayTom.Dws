@@ -163,6 +163,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             },
             new TriggerPositionModel()
             {
+                TriggerPositionName = "创建包裹后",
+                TriggerPositionValue = TriggerPositionEnum.CreateTimePackageAfter,
+            },
+            new TriggerPositionModel()
+            {
                 TriggerPositionName = "包裹信息赋值完成后",
                 TriggerPositionValue = TriggerPositionEnum.PackageInfoAssigned,
             },
