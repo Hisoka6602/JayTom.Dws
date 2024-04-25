@@ -154,7 +154,7 @@
                     FontSize="15"
                     FontWeight="Bold"
                     Foreground="#AD424242"
-                    Text="无限创科数据中台" />
+                    Text="无限创科视频追溯平台" />
                 <!--  系统按钮  -->
                 <Border
                     Grid.Row="0"

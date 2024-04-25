@@ -24,6 +24,7 @@ namespace JayTom.Dws.VideoApiClient.ViewModels.Dialog {
         private string _webDomain = string.Empty;
         private int _videoLengthInSeconds;
         private int _secondsToSubtract;
+        private string _nvrIpAddress = string.Empty;
 
         public SettingDialogViewModel(IVideoApi videoApi,
             IClientMessageHub clientMessageHub) {
@@ -59,13 +60,14 @@ namespace JayTom.Dws.VideoApiClient.ViewModels.Dialog {
             set => SetProperty(ref _secondsToSubtract, value);
         }
 
-        public ICommand CancelCommand {
-            get => new DelegateCommand(CancelDelegate);
+        public string NvrIpAddress {
+            get => _nvrIpAddress;
+            set => SetProperty(ref _nvrIpAddress, value);
         }
 
-        public ICommand SaveCommand {
-            get => new DelegateCommand(SaveDelegate);
-        }
+        public ICommand CancelCommand => new DelegateCommand(CancelDelegate);
+
+        public ICommand SaveCommand => new DelegateCommand(SaveDelegate);
 
         private async void SaveDelegate() {
             try {
@@ -82,6 +84,9 @@ namespace JayTom.Dws.VideoApiClient.ViewModels.Dialog {
                 }
                 if (configObject?["AppSettings"]?["SecondsToSubtract"] is not null) {
                     configObject["AppSettings"]["SecondsToSubtract"] = SecondsToSubtract;
+                }
+                if (configObject?["AppSettings"]?["NvrIpAddress"] is not null) {
+                    configObject["AppSettings"]["NvrIpAddress"] = SecondsToSubtract;
                 }
                 // 将修改后的配置项保存回文件
                 File.WriteAllText("appsettings.json", JsonConvert.SerializeObject(configObject, Formatting.Indented));
@@ -109,9 +114,7 @@ namespace JayTom.Dws.VideoApiClient.ViewModels.Dialog {
             }
         }
 
-        public ICommand LoadedCommand {
-            get => new DelegateCommand<object>(LoadedDelegate);
-        }
+        public ICommand LoadedCommand => new DelegateCommand<object>(LoadedDelegate);
 
         private async void LoadedDelegate(object obj) {
             var configuration = new ConfigurationBuilder()
@@ -125,6 +128,7 @@ namespace JayTom.Dws.VideoApiClient.ViewModels.Dialog {
                 var secondsToSubtracts = configuration.GetSection("AppSettings:SecondsToSubtract").Value ?? string.Empty;
                 int.TryParse(secondsToSubtracts, out var secondsToSubtract);
                 SecondsToSubtract = secondsToSubtract;
+                NvrIpAddress = configuration.GetSection("AppSettings:NvrIpAddress").Value ?? string.Empty;
             });
         }
     }

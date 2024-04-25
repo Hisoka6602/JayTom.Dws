@@ -673,6 +673,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             .Value;
                         if (info is not null) {
                             //发送信息组合完成信号
+                            NLog.LogManager.GetCurrentClassLogger().Error($"发送组合完成信号");
                             _sortingService.SendPackageInfoCompletedSignal(0, new InstructionsAttach() {
                                 BarCode = string.Empty,
                                 Guid = _preSignal,
@@ -727,6 +728,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 //修改赋值
                 var tryDequeue = _instructionsAttachItems.TryDequeue(out var info);
                 if (tryDequeue && info is not null) {
+                    NLog.LogManager.GetCurrentClassLogger().Error($"找到绑定车号");
                     try {
                         await _createPackageSlim.WaitAsync();
                         var (dateTime, value) = _packageInfos.FirstOrDefault(f => f.Value.BarCodeInfo != null &&
@@ -745,6 +747,9 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     finally {
                         _createPackageSlim.Release();
                     }
+                }
+                else {
+                    NLog.LogManager.GetCurrentClassLogger().Error($"未找到绑定车号");
                 }
                 EventAggregator.Instance.Publish(new InstructionReceived() {
                     Timestamp = new DateTimeOffset(args.InstructionTime).ToUnixTimeMilliseconds(),
@@ -948,14 +953,15 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         }
                         //没返回前置信号禁止创建包裹
                         if (info is not null && _supplyCounterSettingsDto is { IsUseSupplyCounterMode: true, IsWaitForPrecedingSignalReplyBeforeCreatingNewPackage: true } &&
-                            !info.SupplyCounterPackageSignalItem?.Any(a => a.Type == SignalType.ReturningPreSignal) != true) {
+                            info.SupplyCounterPackageSignalItem?.Any(a => a.Type == SignalType.ReturningPreSignal) != true) {
+                            NLog.LogManager.GetCurrentClassLogger().Error($"拦截创建");
                             return;
                         }
                     }
                     finally {
                         _takePackageSlim.Release();
                     }
-
+                    NLog.LogManager.GetCurrentClassLogger().Error($"创建包裹");
                     packageInfo.Timestamp = new DateTimeOffset(packageInfo.CreateTime).ToUnixTimeMilliseconds();
                     _packageInfos.TryAdd(packageInfo.CreateTime, packageInfo);
 
@@ -1186,12 +1192,13 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                         var supplyCounterPackageSignal = pair.Value.SupplyCounterPackageSignalItem.FirstOrDefault(f =>
                                             f.Type == SignalType.SendingAssignmentCompleteSignal);
                                         if (supplyCounterPackageSignal != null &&
-                                            DateTime.Now.Subtract(supplyCounterPackageSignal.Time).TotalMicroseconds > _supplyCounterSettingsDto.BindingCarSignalReplyTimeout) {
+                                            DateTime.Now.Subtract(supplyCounterPackageSignal.Time).TotalMilliseconds > _supplyCounterSettingsDto.BindingCarSignalReplyTimeout) {
                                             if (_supplyCounterSettingsDto.RemovePackageAfterSignalTimeout) {
                                                 _packageInfos.TryRemove(pair);
                                                 if (_supplyCounterSettingsDto.ResetFilterAfterRemovingPackage) {
                                                     BarCodeFilterContainer.ResetFilter();
                                                 }
+                                                NLog.LogManager.GetCurrentClassLogger().Error($"移除包裹");
                                             }
                                             else {
                                                 pair.Value.SupplyCounterPackageSignalItem.Add(new SupplyCounterPackageSignal() {
@@ -1210,12 +1217,13 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                         var counterPackageSignal = pair.Value.SupplyCounterPackageSignalItem.FirstOrDefault(f =>
                                             f.Type == SignalType.SendingPreSignal);
                                         if (counterPackageSignal != null &&
-                                            DateTime.Now.Subtract(counterPackageSignal.Time).TotalMicroseconds > _supplyCounterSettingsDto.PrecedingReplySignalTimeout) {
+                                            DateTime.Now.Subtract(counterPackageSignal.Time).TotalMilliseconds > _supplyCounterSettingsDto.PrecedingReplySignalTimeout) {
                                             if (_supplyCounterSettingsDto.RemovePackageAfterSignalTimeout) {
                                                 _packageInfos.TryRemove(pair);
                                                 if (_supplyCounterSettingsDto.ResetFilterAfterRemovingPackage) {
                                                     BarCodeFilterContainer.ResetFilter();
                                                 }
+                                                NLog.LogManager.GetCurrentClassLogger().Error($"移除包裹");
                                             }
                                             else {
                                                 pair.Value.SupplyCounterPackageSignalItem.AddRange(new List<SupplyCounterPackageSignal>()
@@ -1313,21 +1321,18 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         if (_supplyCounterSettingsDto is { IsUseSupplyCounterMode: true, SendPreSequenceNumber: true }) {
                             try {
                                 await _createPackageSlim.WaitAsync(stoppingToken);
-                                var info = _packageInfos.Any(a => a.Value is { BarCodeInfo: not null, VolumeInfo: not null, WeightInfo: not null })
+                                var info = _packageInfos.Any(a => a.Value is { BarCodeInfo: not null, VolumeInfo: not null, WeightInfo: not null } &&
+                                                                  a.Value.SupplyCounterPackageSignalItem.Any(a1 => a1.Type == SignalType.SendingPreSignal) != true)
                                     ? _packageInfos
-                                        .Where(f => f.Value is {
-                                            BarCodeInfo: not null,
-                                            VolumeInfo: not null,
-                                            WeightInfo: not null,
-                                            SupplyCounterPackageSignalItem: not null
-                                        })
-                                        .Where(f => f.Value.SupplyCounterPackageSignalItem.All(a => a.Type != SignalType.SendingPreSignal))
+                                        .Where(f => f.Value is { BarCodeInfo: not null, VolumeInfo: not null, WeightInfo: not null } &&
+                                                   f.Value.SupplyCounterPackageSignalItem.Any(a => a.Type == SignalType.SendingPreSignal) != true)
                                         .OrderBy(o => o.Key)
                                         .FirstOrDefault()
                                         .Value
                                     : null;
 
-                                if (info is not null) {
+                                if (info is not null &&
+                                    info.SupplyCounterPackageSignalItem.Any(a => a.Type == SignalType.SendingPreSignal) != true) {
                                     //发送前置信号
                                     var instructionsAttach = new InstructionsAttach() {
                                         BarCode = info.BarCodeInfo?.Barcode ?? string.Empty,
@@ -1343,6 +1348,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                     });
                                     //添加到队列
                                     _instructionsAttachItems.Enqueue(instructionsAttach);
+                                    NLog.LogManager.GetCurrentClassLogger().Error($"发送前置信号");
                                 }
                             }
                             finally {

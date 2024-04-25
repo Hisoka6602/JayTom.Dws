@@ -17,6 +17,8 @@ using JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision;
 internal class Program {
 
     private static void Main(string[] args) {
+        var totalMicroseconds = DateTime.Now.Subtract(DateTime.Now.AddSeconds(-1)).TotalMicroseconds;
+        return;
         try {
             var s =
                 "{\"code\":1,\"msg\":\"请求成功\",\"version\":null,\"data\":[{\"waybillNo\":\"JT2073687636814\",\"terminalDispatchCode\":\"432,K848-00,027\",\"firstDispatchCode\":\"432\",\"secondDispatchCode\":\"K848-00\",\"thirdlyDispatchCode\":\"027\",\"customerCode\":null,\"interceptor\":1,\"orderType\":1,\"pickNetworkCode\":\"2596149\",\"destinationCode\":\"330700\",\"extendJson\":\"{\\\"stationCode\\\":\\\"L6\\\"}\",\"codeList\":null},{\"waybillNo\":\"JT2073687636814\",\"terminalDispatchCode\":\"432,K848-00,027\",\"firstDispatchCode\":\"432\",\"secondDispatchCode\":\"K848-00\",\"thirdlyDispatchCode\":\"027\",\"customerCode\":null,\"interceptor\":1,\"orderType\":1,\"pickNetworkCode\":\"2596149\",\"destinationCode\":\"330700\",\"extendJson\":\"{\\\"stationCode\\\":\\\"L6\\\"}\",\"codeList\":null},{\"waybillNo\":\"JT2073687636814\",\"terminalDispatchCode\":\"432,K848-00,027\",\"firstDispatchCode\":\"432\",\"secondDispatchCode\":\"K848-00\",\"thirdlyDispatchCode\":\"027\",\"customerCode\":null,\"interceptor\":2,\"orderType\":1,\"pickNetworkCode\":\"2596149\",\"destinationCode\":\"330700\",\"extendJson\":\"{\\\"stationCode\\\":\\\"L6\\\"}\",\"codeList\":null}],\"succ\":true,\"fail\":false}";

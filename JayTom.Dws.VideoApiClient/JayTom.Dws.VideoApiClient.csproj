@@ -6,11 +6,16 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
+    <ApplicationIcon>ico.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
     <None Remove="Fonts\iconfont.ttf" />
     <None Remove="Fonts\更纱黑体 Mono SC Nerd.ttf" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="ico.ico" />
   </ItemGroup>
 
   <ItemGroup>

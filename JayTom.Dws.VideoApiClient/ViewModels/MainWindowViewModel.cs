@@ -82,7 +82,7 @@ namespace JayTom.Dws.VideoApiClient.ViewModels {
                 });
             };
             _clientMessageHub.ReceiveMessage += async delegate (ReceiveMessageInfo info) {
-                if (info.MessageType == ReceiveMessageType.MessageItem) {
+                /*if (info.MessageType == ReceiveMessageType.MessageItem) {
                     //添加或更新一行
                     if (NodeStartTime is null &&
                         NodeEndTime is null &&
@@ -184,8 +184,8 @@ namespace JayTom.Dws.VideoApiClient.ViewModels {
                             }
                         }
                     }
-                }
-                else if (info.MessageType == ReceiveMessageType.DataStatistics) {
+                }*/
+                if (info.MessageType == ReceiveMessageType.DataStatistics) {
                     //更新数据汇总
                     try {
                         var statistics = JsonConvert.DeserializeObject<DataStatistics>(info.MessageData?.ToString() ?? string.Empty);
@@ -337,9 +337,7 @@ namespace JayTom.Dws.VideoApiClient.ViewModels {
             set => SetProperty(ref _barCodeItems, value);
         }
 
-        public ICommand LoadedCommand {
-            get => new DelegateCommand<object>(LoadedDelegate);
-        }
+        public ICommand LoadedCommand => new DelegateCommand<object>(LoadedDelegate);
 
         private void LoadedDelegate(object obj) {
             //查询节点
@@ -417,9 +415,7 @@ namespace JayTom.Dws.VideoApiClient.ViewModels {
             }
         }
 
-        public ICommand MinWinCommand {
-            get => new DelegateCommand<object>(MinWinDelegate);
-        }
+        public ICommand MinWinCommand => new DelegateCommand<object>(MinWinDelegate);
 
         private void MinWinDelegate(object obj) {
             if (obj is Window window) {
@@ -427,9 +423,7 @@ namespace JayTom.Dws.VideoApiClient.ViewModels {
             }
         }
 
-        public ICommand MaxWinCommand {
-            get => new DelegateCommand<object>(MaxWinDelegate);
-        }
+        public ICommand MaxWinCommand => new DelegateCommand<object>(MaxWinDelegate);
 
         private void MaxWinDelegate(object obj) {
             if (obj is Window window) {
@@ -441,17 +435,13 @@ namespace JayTom.Dws.VideoApiClient.ViewModels {
             }
         }
 
-        public ICommand CloseWinCommand {
-            get => new DelegateCommand<object>(CloseWinDelegate);
-        }
+        public ICommand CloseWinCommand => new DelegateCommand<object>(CloseWinDelegate);
 
         private void CloseWinDelegate(object obj) {
             System.Windows.Application.Current.Shutdown();//关闭
         }
 
-        public ICommand OpenDateTimeDialogCommand {
-            get => new DelegateCommand<object>(OpenDateTimeDialogDelegate);
-        }
+        public ICommand OpenDateTimeDialogCommand => new DelegateCommand<object>(OpenDateTimeDialogDelegate);
 
         private async void OpenDateTimeDialogDelegate(object obj) {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
@@ -490,9 +480,7 @@ namespace JayTom.Dws.VideoApiClient.ViewModels {
         /// <summary>
         /// 清空搜素条件
         /// </summary>
-        public ICommand ClearSearchCriteriaCommand {
-            get => new DelegateCommand<object>(ClearSearchCriteriaDelegate);
-        }
+        public ICommand ClearSearchCriteriaCommand => new DelegateCommand<object>(ClearSearchCriteriaDelegate);
 
         private async void ClearSearchCriteriaDelegate(object obj) {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
@@ -512,18 +500,14 @@ namespace JayTom.Dws.VideoApiClient.ViewModels {
         /// <summary>
         /// 搜索
         /// </summary>
-        public ICommand SearchCommand {
-            get => new DelegateCommand<object>(SearchDelegate);
-        }
+        public ICommand SearchCommand => new DelegateCommand<object>(SearchDelegate);
 
         private void SearchDelegate(object obj) {
             PageIndex = 1;
             LoadData(PageIndex, NodeStartTime, NodeEndTime, SelectedNode, Barcode, CameraName);
         }
 
-        public ICommand SettingCommand {
-            get => new DelegateCommand<object>(SettingDelegate);
-        }
+        public ICommand SettingCommand => new DelegateCommand<object>(SettingDelegate);
 
         private async void SettingDelegate(object obj) {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
@@ -563,9 +547,7 @@ namespace JayTom.Dws.VideoApiClient.ViewModels {
         /// <summary>
         /// 点击全景图方法
         /// </summary>
-        public ICommand PanoramaImageCommand {
-            get => new DelegateCommand<PanoramaImageItemModel>(PanoramaImageDelegate);
-        }
+        public ICommand PanoramaImageCommand => new DelegateCommand<PanoramaImageItemModel>(PanoramaImageDelegate);
 
         private void PanoramaImageDelegate(PanoramaImageItemModel obj) {
             if (!string.IsNullOrEmpty(obj.ImageUrl)) {
@@ -585,9 +567,7 @@ namespace JayTom.Dws.VideoApiClient.ViewModels {
         /// <summary>
         /// 点击视频方法
         /// </summary>
-        public ICommand VideoCommand {
-            get => new DelegateCommand<NvrCameraBindingItemInfo>(VideoDelegate);
-        }
+        public ICommand VideoCommand => new DelegateCommand<NvrCameraBindingItemInfo>(VideoDelegate);
 
         private void VideoDelegate(NvrCameraBindingItemInfo obj) {
             //调用视频Demo并传参
@@ -599,11 +579,12 @@ namespace JayTom.Dws.VideoApiClient.ViewModels {
                 int.TryParse(videoLengthInSeconds, out _videoLengthInSeconds);
                 var secondsToSubtracts = configuration.GetSection("AppSettings:SecondsToSubtract").Value ?? string.Empty;
                 int.TryParse(secondsToSubtracts, out _secondsToSubtract);
+                var nvrIpAddress = configuration.GetSection("AppSettings:NvrIpAddress").Value ?? string.Empty;
                 var process = new Process();
                 process.StartInfo.FileName = $"{AppDomain.CurrentDomain.BaseDirectory}x64Demo\\PlayBackAndDownloadDemo.exe";
                 process.StartInfo.Arguments = JsonConvert.SerializeObject(new {
                     Channel = obj?.Channel,
-                    IpAddress = obj?.IpAddress?.ToString(),
+                    IpAddress = string.IsNullOrEmpty(nvrIpAddress) ? obj?.IpAddress : nvrIpAddress,
                     Port = obj?.Port,
                     Password = obj?.Password?.ToString(),
                     Username = obj?.Username?.ToString(),
@@ -625,9 +606,7 @@ namespace JayTom.Dws.VideoApiClient.ViewModels {
         /// <summary>
         /// 上一页
         /// </summary>
-        public ICommand PreviousPageCommand {
-            get => new DelegateCommand<object>(PreviousPageDelegate);
-        }
+        public ICommand PreviousPageCommand => new DelegateCommand<object>(PreviousPageDelegate);
 
         private void PreviousPageDelegate(object obj) {
             if (PageIndex <= 1) return;
@@ -638,9 +617,7 @@ namespace JayTom.Dws.VideoApiClient.ViewModels {
         /// <summary>
         /// 下一页
         /// </summary>
-        public ICommand NextPageCommand {
-            get => new DelegateCommand<object>(NextPageDelegate);
-        }
+        public ICommand NextPageCommand => new DelegateCommand<object>(NextPageDelegate);
 
         private void NextPageDelegate(object obj) {
             if (PageIndex >= PageCount) return;
@@ -651,9 +628,7 @@ namespace JayTom.Dws.VideoApiClient.ViewModels {
         /// <summary>
         /// 首页
         /// </summary>
-        public ICommand FirstPageCommand {
-            get => new DelegateCommand<object>(FirstPageDelegate);
-        }
+        public ICommand FirstPageCommand => new DelegateCommand<object>(FirstPageDelegate);
 
         private void FirstPageDelegate(object obj) {
             PageIndex = 1;
@@ -663,9 +638,7 @@ namespace JayTom.Dws.VideoApiClient.ViewModels {
         /// <summary>
         /// 尾页
         /// </summary>
-        public ICommand LastPageCommand {
-            get => new DelegateCommand<object>(LastPageDelegate);
-        }
+        public ICommand LastPageCommand => new DelegateCommand<object>(LastPageDelegate);
 
         private void LastPageDelegate(object obj) {
             if (PageCount > 0) {
@@ -675,9 +648,7 @@ namespace JayTom.Dws.VideoApiClient.ViewModels {
         }
 
         //跳转
-        public ICommand JumpPageCommand {
-            get => new DelegateCommand<object>(JumpPageDelegate);
-        }
+        public ICommand JumpPageCommand => new DelegateCommand<object>(JumpPageDelegate);
 
         private void JumpPageDelegate(object obj) {
             if (PageIndex >= 0 && PageIndex <= PageCount) {
