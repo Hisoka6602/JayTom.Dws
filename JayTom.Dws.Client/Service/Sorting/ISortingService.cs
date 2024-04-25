@@ -61,6 +61,11 @@ namespace JayTom.Dws.Client.Service.Sorting {
         public event EventHandler<PackageInstructionEventArgs>? SequenceBinding;
 
         /// <summary>
+        /// 复位按钮触发
+        /// </summary>
+        public event EventHandler<PackageInstructionEventArgs>? ResetButtonTrigger;
+
+        /// <summary>
         /// 解除异常
         /// </summary>
         event EventHandler<string> ClearExceptionEvent;

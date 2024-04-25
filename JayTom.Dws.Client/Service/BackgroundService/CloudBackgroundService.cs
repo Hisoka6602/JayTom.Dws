@@ -593,7 +593,7 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings(
                         case "PackageExitLockSettings" when _syncSettingsDto is { IsUseSyncSettings: true, IsUseLockerExitSync: true }:
                         case "StackedPackageDetectionSettings" when _syncSettingsDto is { IsUseSyncSettings: true, IsUseStackingSync: true }:
                         case "SortingMethodSettings" when _syncSettingsDto is { IsUseSyncSettings: true, IsUseSortingModeSync: true }:
-                        case "SyncSettingsSettings" when _syncSettingsDto is { IsUseSyncSettings: true, IsUseSupplyCounterSync: true }:
+                        case "SupplyCounterSettings" when _syncSettingsDto is { IsUseSyncSettings: true, IsUseSupplyCounterSync: true }:
                         case "AlgorithmSettings" when _syncSettingsDto is { IsUseSyncSettings: true, IsUseAlgorithmSync: true }:
                             await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
                                 ConfigName = info.SettingsName,

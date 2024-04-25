@@ -123,6 +123,54 @@
                         IsChecked="{Binding SupplyCounterInfo.IsWaitForBindingCarSignalToCompletePackage, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                         Style="{StaticResource CustomCheckBoxStyle}" />
                 </StackPanel>
+                <StackPanel Margin="0,5" Orientation="Horizontal">
+
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="前置信号超时后移除包裹:" />
+                    <CheckBox
+                        BorderBrush="DodgerBlue"
+                        BorderThickness="2"
+                        Foreground="#2E2E2E"
+                        IsChecked="{Binding SupplyCounterInfo.RemovePackageAfterSignalTimeout, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                        Style="{StaticResource CustomCheckBoxStyle}" />
+                </StackPanel>
+                <StackPanel Margin="0,5" Orientation="Horizontal">
+
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="复位后是否清空包裹:" />
+                    <CheckBox
+                        BorderBrush="DodgerBlue"
+                        BorderThickness="2"
+                        Foreground="#2E2E2E"
+                        IsChecked="{Binding SupplyCounterInfo.ClearPackagesOnReset, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                        Style="{StaticResource CustomCheckBoxStyle}" />
+                </StackPanel>
+                <StackPanel Margin="0,5" Orientation="Horizontal">
+
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="移除包裹后是否重置过滤:" />
+                    <CheckBox
+                        BorderBrush="DodgerBlue"
+                        BorderThickness="2"
+                        Foreground="#2E2E2E"
+                        IsChecked="{Binding SupplyCounterInfo.ResetFilterAfterRemovingPackage, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                        Style="{StaticResource CustomCheckBoxStyle}" />
+                </StackPanel>
                 <StackPanel Orientation="Horizontal">
                     <!--  图标  -->
                     <TextBlock
@@ -152,6 +200,37 @@
                             Foreground="White"
                             InputMethod.IsInputMethodEnabled="False"
                             Text="{Binding SupplyCounterInfo.PrecedingReplySignalTimeout, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    </Border>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <!--  图标  -->
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="绑定信号回复超时时间(ms):" />
+                    <Border
+                        Margin="5"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Background="#1A696969"
+                        CornerRadius="5">
+                        <TextBox
+                            Width="90"
+                            Height="30"
+                            MaxWidth="500"
+                            Margin="5,0"
+                            materialDesign:TextFieldAssist.HasClearButton="False"
+                            materialDesign:TextFieldAssist.HasFilledTextField="True"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="White"
+                            InputMethod.IsInputMethodEnabled="False"
+                            Text="{Binding SupplyCounterInfo.BindingCarSignalReplyTimeout, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                     </Border>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal">

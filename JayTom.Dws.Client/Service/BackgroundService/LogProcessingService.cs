@@ -375,6 +375,10 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         case InstructionType.SequenceBindingReply:
                             NLog.LogManager.GetCurrentClassLogger().Info($"{instructionInfoModel?.InstructionGeneratedTime:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[格口号:{model.ExitName}]-[序号:{model.SortingCode}]-[序号绑定回复]{instructionInfoModel?.InstructionContent}");
                             break;
+
+                        case InstructionType.ResetButtonTrigger:
+                            NLog.LogManager.GetCurrentClassLogger().Info($"{instructionInfoModel?.InstructionGeneratedTime:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[格口号:{model.ExitName}]-[序号:{model.SortingCode}]-[按下复位]{instructionInfoModel?.InstructionContent}");
+                            break;
                     }
                 }
             });

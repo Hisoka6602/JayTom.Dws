@@ -17,6 +17,10 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         private bool _isWaitForPrecedingSignalReplyBeforeCreatingNewPackage;
         private bool _isWaitForBindingCarSignalToCompletePackage;
         private int _precedingReplySignalTimeout;
+        private int _bindingCarSignalReplyTimeout = 2000;
+        private bool _removePackageAfterSignalTimeout;
+        private bool _clearPackagesOnReset;
+        private bool _resetFilterAfterRemovingPackage;
 
         /// <summary>
         /// 是否使用供包台模式
@@ -80,6 +84,38 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         public int PrecedingReplySignalTimeout {
             get => _precedingReplySignalTimeout;
             set => SetProperty(ref _precedingReplySignalTimeout, value);
+        }
+
+        /// <summary>
+        /// 绑定信号回复超时时间
+        /// </summary>
+        public int BindingCarSignalReplyTimeout {
+            get => _bindingCarSignalReplyTimeout;
+            set => SetProperty(ref _bindingCarSignalReplyTimeout, value);
+        }
+
+        /// <summary>
+        /// 前置信号超时后移除包裹
+        /// </summary>
+        public bool RemovePackageAfterSignalTimeout {
+            get => _removePackageAfterSignalTimeout;
+            set => SetProperty(ref _removePackageAfterSignalTimeout, value);
+        }
+
+        /// <summary>
+        /// 复位后是否清空包裹
+        /// </summary>
+        public bool ClearPackagesOnReset {
+            get => _clearPackagesOnReset;
+            set => SetProperty(ref _clearPackagesOnReset, value);
+        }
+
+        /// <summary>
+        /// 移除包裹后是否重置过滤
+        /// </summary>
+        public bool ResetFilterAfterRemovingPackage {
+            get => _resetFilterAfterRemovingPackage;
+            set => SetProperty(ref _resetFilterAfterRemovingPackage, value);
         }
     }
 }

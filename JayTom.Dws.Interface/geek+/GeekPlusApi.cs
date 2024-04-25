@@ -96,7 +96,7 @@ namespace JayTom.Dws.Interface.geek_ {
                 if (!string.IsNullOrWhiteSpace(resultContent)) {
                     //判断
                     var jObject = JObject.Parse(resultContent);
-                    if (jObject["result"]?.ToString()?.ToLower()?.Equals("true") == true) {
+                    if (jObject["code"]?.ToString()?.ToLower()?.Equals("0") == true) {
                         isSuccess = true;
                     }
                 }
@@ -187,7 +187,7 @@ namespace JayTom.Dws.Interface.geek_ {
                 if (!string.IsNullOrWhiteSpace(resultContent)) {
                     //判断
                     var jObject = JObject.Parse(resultContent);
-                    if (jObject["result"]?.ToString()?.ToLower()?.Equals("true") == true) {
+                    if (jObject["code"]?.ToString()?.ToLower()?.Equals("0") == true) {
                         isSuccess = true;
                     }
                 }
@@ -261,6 +261,15 @@ namespace JayTom.Dws.Interface.geek_ {
                 //扫码图
 
                 if (imageInfo?.Image is not null) {
+                    var clone = (Image)imageInfo.Image?.Clone();
+                    if (clone is not null) {
+                        //传假的全景图
+                        var toStreamContent = ImageToStreamContent(clone, "panoramaImages",
+                            $"{imageInfo.CameraSerialNumber}_{data.timestamp}.jpg");
+                        if (toStreamContent is not null) {
+                            formData.Add(toStreamContent);
+                        }
+                    }
                     var imageToStreamContent = ImageToStreamContent(imageInfo.Image, "barcodeImage",
                         $"{imageInfo.CameraSerialNumber}_{data.timestamp}.jpg");
                     if (imageToStreamContent is not null) {
@@ -268,7 +277,7 @@ namespace JayTom.Dws.Interface.geek_ {
                     }
                 }
                 //全景图
-                if (panoramaImageInfos?.Any() == true) {
+                /*if (panoramaImageInfos?.Any() == true) {
                     foreach (var imageToStreamContent in from cloudUploadImageInfo in panoramaImageInfos
                                                          where cloudUploadImageInfo?.Image is not null
                                                          select ImageToStreamContent(cloudUploadImageInfo.Image, "panoramaImages",
@@ -277,7 +286,7 @@ namespace JayTom.Dws.Interface.geek_ {
                                                          select imageToStreamContent) {
                         formData.Add(imageToStreamContent);
                     }
-                }
+                }*/
 
                 using (var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(Parameters?.Key ?? string.Empty))) {
                     var hashBytes = hmac.ComputeHash(Encoding.UTF8.GetBytes($"{Parameters?.BaseUrl}{method}|{JsonConvert.SerializeObject(data)}"));
@@ -327,8 +336,6 @@ namespace JayTom.Dws.Interface.geek_ {
                     ResponseContent = resultContent,
                     ResponseTime = DateTime.Now
                 };
-                NLog.LogManager.GetCurrentClassLogger().Error($"{JsonConvert.SerializeObject(response)}");
-                Console.WriteLine(response);
             }
         }
 

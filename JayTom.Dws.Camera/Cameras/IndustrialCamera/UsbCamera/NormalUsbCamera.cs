@@ -360,7 +360,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.UsbCamera {
                 CustomRegexReplacementItems = @params.CustomRegexReplacementItems
             };
 
-            _barCodeFilterContainer.CleanupContainer();
+            BarCodeFilterContainer.ResetFilter();
         }
 
         protected virtual async void OnCameraExceptionOccurred(CameraExceptionEventArgs e) {

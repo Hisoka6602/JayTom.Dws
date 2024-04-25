@@ -155,7 +155,7 @@ namespace JayTom.Dws.Camera.FilterContainer {
             };
         }
 
-        public void CleanupContainer() {
+        private void CleanupContainer() {
             if (MaxSize > 0) {
                 if (Container.Count <= _maxSize) {
                     return;
@@ -199,6 +199,13 @@ namespace JayTom.Dws.Camera.FilterContainer {
                 }
             }
             return barCode;
+        }
+
+        /// <summary>
+        /// 重置过滤器
+        /// </summary>
+        public static void ResetFilter() {
+            Container.Clear();
         }
     }
 

@@ -380,7 +380,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
                 CustomRegexReplacementItems = @params.CustomRegexReplacementItems
             };
 
-            _barCodeFilterContainer.CleanupContainer();
+            BarCodeFilterContainer.ResetFilter();
         }
 
         protected virtual async void OnCameraExceptionOccurred(CameraExceptionEventArgs e) {

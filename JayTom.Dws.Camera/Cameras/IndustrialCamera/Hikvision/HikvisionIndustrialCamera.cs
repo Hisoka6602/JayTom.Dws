@@ -620,7 +620,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                 IsUseFilteredBarcodeTypes = @params.IsUseFilteredBarcodeTypes,
                 CustomRegexReplacementItems = @params.CustomRegexReplacementItems
             };
-            _barCodeFilterContainer.CleanupContainer();
+            BarCodeFilterContainer.ResetFilter();
         }
 
         public async Task<Bitmap> DrawIndicator(Bitmap thumbnail, Size originalSize,

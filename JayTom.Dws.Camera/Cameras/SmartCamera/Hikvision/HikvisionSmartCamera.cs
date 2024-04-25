@@ -504,7 +504,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                 IsUseFilteredBarcodeTypes = @params.IsUseFilteredBarcodeTypes,
                 CustomRegexReplacementItems = @params.CustomRegexReplacementItems
             };
-            _barCodeFilterContainer.CleanupContainer();
+            BarCodeFilterContainer.ResetFilter();
         }
 
         private static IPAddress ConvertUintToIpAddress(uint ipAddressValue) {

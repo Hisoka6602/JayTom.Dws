@@ -92,6 +92,11 @@ namespace JayTom.Dws.Data.Package {
         /// <summary>
         /// 序号绑定回复
         /// </summary>
-        SequenceBindingReply
+        SequenceBindingReply,
+
+        /// <summary>
+        /// 复位按钮触发
+        /// </summary>
+        ResetButtonTrigger
     }
 }

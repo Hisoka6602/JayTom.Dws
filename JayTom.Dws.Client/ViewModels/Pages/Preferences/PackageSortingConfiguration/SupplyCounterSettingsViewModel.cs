@@ -45,6 +45,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                     IsWaitForPrecedingSignalReplyBeforeCreatingNewPackage = SupplyCounterInfo.IsWaitForPrecedingSignalReplyBeforeCreatingNewPackage,
                     IsWaitForBindingCarSignalToCompletePackage = SupplyCounterInfo.IsWaitForBindingCarSignalToCompletePackage,
                     PrecedingReplySignalTimeout = SupplyCounterInfo.PrecedingReplySignalTimeout,
+                    BindingCarSignalReplyTimeout = SupplyCounterInfo.BindingCarSignalReplyTimeout,
+                    RemovePackageAfterSignalTimeout = SupplyCounterInfo.RemovePackageAfterSignalTimeout,
+                    ClearPackagesOnReset = SupplyCounterInfo.ClearPackagesOnReset,
+                    ResetFilterAfterRemovingPackage = SupplyCounterInfo.ResetFilterAfterRemovingPackage
                 })
             });
             base.MessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("Save") ?? string.Empty}{(insertOrUpdate ?
@@ -66,6 +70,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                     IsWaitForPrecedingSignalReplyBeforeCreatingNewPackage = settingsDto.IsWaitForPrecedingSignalReplyBeforeCreatingNewPackage,
                     IsWaitForBindingCarSignalToCompletePackage = settingsDto.IsWaitForBindingCarSignalToCompletePackage,
                     PrecedingReplySignalTimeout = settingsDto.PrecedingReplySignalTimeout,
+                    BindingCarSignalReplyTimeout = settingsDto.BindingCarSignalReplyTimeout,
+                    RemovePackageAfterSignalTimeout = settingsDto.RemovePackageAfterSignalTimeout,
+                    ClearPackagesOnReset = settingsDto.ClearPackagesOnReset,
+                    ResetFilterAfterRemovingPackage = settingsDto.ResetFilterAfterRemovingPackage
                 };
             });
         }

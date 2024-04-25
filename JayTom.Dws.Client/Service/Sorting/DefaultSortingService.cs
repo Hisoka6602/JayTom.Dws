@@ -111,6 +111,8 @@ namespace JayTom.Dws.Client.Service.Sorting {
 
         public event EventHandler<PackageInstructionEventArgs>? SequenceBinding;
 
+        public event EventHandler<PackageInstructionEventArgs>? ResetButtonTrigger;
+
         public event EventHandler<string>? ClearExceptionEvent;
 
         public DefaultSortingService(IConfigRepository configRepository,
@@ -216,6 +218,14 @@ namespace JayTom.Dws.Client.Service.Sorting {
                 else if (result.Type == FunctionType.SequenceBindingReply) {
                     //车号绑定回复
                     OnSequenceBinding(new PackageInstructionEventArgs() {
+                        Keyword = result.Keyword,
+                        Instruction = result.RawContent,
+                        InstructionTime = result.Time,
+                    });
+                }
+                else if (result.Type == FunctionType.ResetButtonTrigger) {
+                    //复位按钮触发
+                    OnResetButtonTrigger(new PackageInstructionEventArgs() {
                         Keyword = result.Keyword,
                         Instruction = result.RawContent,
                         InstructionTime = result.Time,
@@ -1068,6 +1078,11 @@ namespace JayTom.Dws.Client.Service.Sorting {
         protected virtual async void OnSequenceBinding(PackageInstructionEventArgs e) {
             await Task.Yield();
             SequenceBinding?.Invoke(this, e);
+        }
+
+        protected virtual async void OnResetButtonTrigger(PackageInstructionEventArgs e) {
+            await Task.Yield();
+            ResetButtonTrigger?.Invoke(this, e);
         }
     }
 }

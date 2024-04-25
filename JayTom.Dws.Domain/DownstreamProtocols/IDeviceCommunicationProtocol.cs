@@ -168,7 +168,12 @@ namespace JayTom.Dws.Domain.DownstreamProtocols {
         /// <summary>
         /// 序号绑定回复
         /// </summary>
-        SequenceBindingReply
+        SequenceBindingReply,
+
+        /// <summary>
+        /// 复位按钮触发
+        /// </summary>
+        ResetButtonTrigger
     }
 
     public class InstructionsAttach {

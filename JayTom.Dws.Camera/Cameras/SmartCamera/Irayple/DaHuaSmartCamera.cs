@@ -306,7 +306,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
                 CustomRegexReplacementItems = @params.CustomRegexReplacementItems
             };
 
-            _barCodeFilterContainer.CleanupContainer();
+            BarCodeFilterContainer.ResetFilter();
         }
 
         /// <summary>

@@ -46,6 +46,73 @@ namespace JayTom.Dws.Domain.Dto {
         /// <summary>
         /// 前置回复信号超时时间
         /// </summary>
-        public int PrecedingReplySignalTimeout { get; set; } = 5000;
+        public int PrecedingReplySignalTimeout { get; set; } = 2000;
+
+        /// <summary>
+        /// 绑定信号回复超时时间
+        /// </summary>
+        public int BindingCarSignalReplyTimeout { get; set; } = 2000;
+
+        /// <summary>
+        /// 前置信号超时后移除包裹
+        /// </summary>
+        public bool RemovePackageAfterSignalTimeout { get; set; }
+
+        /// <summary>
+        /// 复位后是否清空包裹
+        /// </summary>
+        public bool ClearPackagesOnReset { get; set; }
+
+        /// <summary>
+        /// 移除包裹后是否重置过滤
+        /// </summary>
+        public bool ResetFilterAfterRemovingPackage { get; set; }
+    }
+
+    /// <summary>
+    /// 供包台信号类
+    /// </summary>
+    public class SupplyCounterPackageSignal {
+
+        /// <summary>
+        /// 指令
+        /// </summary>
+        public string Instruction { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 信号类型
+        /// </summary>
+        public SignalType Type { get; set; }
+
+        /// <summary>
+        /// 时间
+        /// </summary>
+        public DateTime Time { get; set; }
+    }
+
+    /// <summary>
+    /// 供包台信息
+    /// </summary>
+    public enum SignalType {
+
+        /// <summary>
+        /// 发送的前置信号
+        /// </summary>
+        SendingPreSignal,
+
+        /// <summary>
+        /// 返回的前置信号
+        /// </summary>
+        ReturningPreSignal,
+
+        /// <summary>
+        /// 发送的赋值完成信号
+        /// </summary>
+        SendingAssignmentCompleteSignal,
+
+        /// <summary>
+        /// 返回的绑定信号
+        /// </summary>
+        ReturningBindingSignal
     }
 }

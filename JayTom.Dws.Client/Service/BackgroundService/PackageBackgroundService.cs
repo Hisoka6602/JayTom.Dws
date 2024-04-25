@@ -21,6 +21,7 @@ using System.Collections.Concurrent;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Client.Service.Sorting;
+using JayTom.Dws.Camera.FilterContainer;
 using JayTom.Dws.Domain.DownstreamProtocols;
 using JayTom.Dws.Client.Service.ImageStorage;
 using JayTom.Dws.Client.Service.ResultOutput;
@@ -666,27 +667,39 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             //前置信号回复
             _sortingService.PreSignalReplyReceived += async (sender, args) => {
                 if (_supplyCounterSettingsDto is { IsUseSupplyCounterMode: true, SendPreSequenceNumber: true }) {
-                    //发送信息组合完成信号
-                    _sortingService.SendPackageInfoCompletedSignal(0, new InstructionsAttach() {
-                        BarCode = string.Empty,
-                        Guid = _preSignal,
-                        Timestamp = 0
-                    });
-                    if (_preSignal < _supplyCounterSettingsDto.PrecedingSignalMaxValue) {
-                        _preSignal++;
-                    }
-                    else {
-                        _preSignal = _supplyCounterSettingsDto.StartPrecedingNumber;
-                    }
-
                     try {
                         await _takePackageSlim.WaitAsync();
                         var info = _packageInfos.OrderBy(o => o.Key)?.LastOrDefault()
                             .Value;
+                        if (info is not null) {
+                            //发送信息组合完成信号
+                            _sortingService.SendPackageInfoCompletedSignal(0, new InstructionsAttach() {
+                                BarCode = string.Empty,
+                                Guid = _preSignal,
+                                Timestamp = 0
+                            });
+                            info.SupplyCounterPackageSignalItem.Add(new SupplyCounterPackageSignal() {
+                                Instruction = args.Instruction,
+                                Time = args.InstructionTime,
+                                Type = SignalType.SendingAssignmentCompleteSignal
+                            });
+                            //--------
 
-                        if (info is not null && _supplyCounterSettingsDto is { IsUseSupplyCounterMode: true, IsWaitForPrecedingSignalReplyBeforeCreatingNewPackage: true } &&
-                            !info.IsSignalReceived) {
-                            info.IsSignalReceived = true;
+                            if (_preSignal < _supplyCounterSettingsDto.PrecedingSignalMaxValue) {
+                                _preSignal++;
+                            }
+                            else {
+                                _preSignal = _supplyCounterSettingsDto.StartPrecedingNumber;
+                            }
+
+                            if (_supplyCounterSettingsDto is { IsUseSupplyCounterMode: true, IsWaitForPrecedingSignalReplyBeforeCreatingNewPackage: true }
+                                && info.SupplyCounterPackageSignalItem.Any(a => a.Type == SignalType.ReturningPreSignal) != true) {
+                                info.SupplyCounterPackageSignalItem.Add(new SupplyCounterPackageSignal() {
+                                    Instruction = args.Instruction,
+                                    Time = args.InstructionTime,
+                                    Type = SignalType.ReturningPreSignal
+                                });
+                            }
                         }
                     }
                     finally {
@@ -718,9 +731,14 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         await _createPackageSlim.WaitAsync();
                         var (dateTime, value) = _packageInfos.FirstOrDefault(f => f.Value.BarCodeInfo != null &&
                             f.Value.BarCodeInfo.Barcode.Equals(info.BarCode) &&
-                            f.Value.Timestamp.Equals(info.Timestamp));
+                            f.Value.Timestamp.Equals(info.Timestamp) &&
+                            f.Value.SupplyCounterPackageSignalItem.Any(a => a.Type == SignalType.ReturningBindingSignal) != true);
                         if (value is not null) {
-                            value.IsSupplyStationReplyReceived = true;
+                            value.SupplyCounterPackageSignalItem.Add(new SupplyCounterPackageSignal() {
+                                Instruction = args.Instruction,
+                                Time = args.InstructionTime,
+                                Type = SignalType.ReturningBindingSignal
+                            });
                             value.Guid = Convert.ToInt64(args.Keyword);
                         }
                     }
@@ -739,6 +757,28 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             InstructionContent = args.Instruction,
                             InstructionGeneratedTime = args.InstructionTime,
                             InstructionType = InstructionType.SequenceBindingReply
+                        }
+                    }
+                });
+            };
+            //复位按钮触发
+            _sortingService.ResetButtonTrigger += (sender, args) => {
+                if (_supplyCounterSettingsDto.ClearPackagesOnReset) {
+                    _packageInfos.Clear();
+                    _instructionsAttachItems.Clear();
+                    BarCodeFilterContainer.ResetFilter();
+                }
+                EventAggregator.Instance.Publish(new InstructionReceived() {
+                    Timestamp = new DateTimeOffset(args.InstructionTime).ToUnixTimeMilliseconds(),
+                    IsCreatedByLowerMachine = false,
+                    SortingCode = args.Keyword,
+                    InstructionInfos = new List<InstructionInfoModel>()
+                    {
+                        new()
+                        {
+                            InstructionContent = args.Instruction,
+                            InstructionGeneratedTime = args.InstructionTime,
+                            InstructionType = InstructionType.ResetButtonTrigger
                         }
                     }
                 });
@@ -906,9 +946,9 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             _createPackageSettingsDto.PackageCreationInterval) {
                             return;
                         }
-
+                        //没返回前置信号禁止创建包裹
                         if (info is not null && _supplyCounterSettingsDto is { IsUseSupplyCounterMode: true, IsWaitForPrecedingSignalReplyBeforeCreatingNewPackage: true } &&
-                            !info.IsSignalReceived) {
+                            !info.SupplyCounterPackageSignalItem?.Any(a => a.Type == SignalType.ReturningPreSignal) != true) {
                             return;
                         }
                     }
@@ -973,8 +1013,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     if (info.Status == ApplicationStatus.Stop &&
                         _createPackageSettingsDto.ClearPackageQueueOnStop) {
                         _packageInfos.Clear();
+                        _instructionsAttachItems.Clear();
                     }
-                    _instructionsAttachItems.Clear();
                 }
             });
             //叠包事件
@@ -1132,24 +1172,72 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             try {
                                 await _createPackageSlim.WaitAsync(stoppingToken);
 
-                                var keyValuePairs = _packageInfos
-                                    .Where(w => ((!_supplyCounterSettingsDto.IsUseSupplyCounterMode && !w.Value.IsSupplyStationReplyReceived) ||
-                                                 (_supplyCounterSettingsDto.IsUseSupplyCounterMode && DateTime.Now.Subtract(w.Value.CreateTime).TotalMilliseconds > _supplyCounterSettingsDto.PrecedingReplySignalTimeout))
-                                                && w.Value.BarCodeInfo != null && w.Value is { VolumeInfo: not null, WeightInfo: not null })
-                                    .ToList();
+                                var keyValuePairs = _packageInfos.Where(w => (w.Value.SupplyCounterPackageSignalItem.All(a => a.Type != SignalType.ReturningBindingSignal)
+                                                                            || w.Value.SupplyCounterPackageSignalItem.All(a => a.Type != SignalType.ReturningPreSignal)) &&
+                                                                             w.Value.SupplyCounterPackageSignalItem.Any(a => a.Type == SignalType.SendingPreSignal))
+
+                                    ?.ToList();
+
+                                //判断是否已发送赋值完成信号
 
                                 if (keyValuePairs?.Any() == true) {
-                                    keyValuePairs?.ForEach(key => {
-                                        key.Value.IsSupplyStationReplyReceived = true;
-                                        key.Value.SendPreSignal = true;
-                                        key.Value.IsSignalReceived = true;
-                                        if (_supplyCounterSettingsDto.IsUseSupplyCounterMode &&
-                                            key.Value.Guid > _supplyCounterSettingsDto.PrecedingSignalMaxValue) {
-                                            key.Value.Guid = 0;
+                                    foreach (var pair in keyValuePairs) {
+                                        //绑定信号
+                                        var supplyCounterPackageSignal = pair.Value.SupplyCounterPackageSignalItem.FirstOrDefault(f =>
+                                            f.Type == SignalType.SendingAssignmentCompleteSignal);
+                                        if (supplyCounterPackageSignal != null &&
+                                            DateTime.Now.Subtract(supplyCounterPackageSignal.Time).TotalMicroseconds > _supplyCounterSettingsDto.BindingCarSignalReplyTimeout) {
+                                            if (_supplyCounterSettingsDto.RemovePackageAfterSignalTimeout) {
+                                                _packageInfos.TryRemove(pair);
+                                                if (_supplyCounterSettingsDto.ResetFilterAfterRemovingPackage) {
+                                                    BarCodeFilterContainer.ResetFilter();
+                                                }
+                                            }
+                                            else {
+                                                pair.Value.SupplyCounterPackageSignalItem.Add(new SupplyCounterPackageSignal() {
+                                                    Type = SignalType.ReturningBindingSignal,
+                                                    Time = DateTime.Now
+                                                });
+                                                if (_supplyCounterSettingsDto.IsUseSupplyCounterMode &&
+                                                    pair.Value.Guid > _supplyCounterSettingsDto.PrecedingSignalMaxValue) {
+                                                    pair.Value.Guid = 0;
+                                                }
+                                                //发送赋值信号
+                                            }
+                                            continue;
                                         }
-                                    });
+                                        //前置信号
+                                        var counterPackageSignal = pair.Value.SupplyCounterPackageSignalItem.FirstOrDefault(f =>
+                                            f.Type == SignalType.SendingPreSignal);
+                                        if (counterPackageSignal != null &&
+                                            DateTime.Now.Subtract(counterPackageSignal.Time).TotalMicroseconds > _supplyCounterSettingsDto.PrecedingReplySignalTimeout) {
+                                            if (_supplyCounterSettingsDto.RemovePackageAfterSignalTimeout) {
+                                                _packageInfos.TryRemove(pair);
+                                                if (_supplyCounterSettingsDto.ResetFilterAfterRemovingPackage) {
+                                                    BarCodeFilterContainer.ResetFilter();
+                                                }
+                                            }
+                                            else {
+                                                pair.Value.SupplyCounterPackageSignalItem.AddRange(new List<SupplyCounterPackageSignal>()
+                                                {
+                                                    new() {
+                                                        Type = SignalType.ReturningPreSignal,
+                                                        Time = DateTime.Now
+                                                    },
+                                                    new()
+                                                    {
+                                                        Type = SignalType.SendingAssignmentCompleteSignal,
+                                                        Time = DateTime.Now
+                                                    }
+                                                });
+                                                if (_supplyCounterSettingsDto.IsUseSupplyCounterMode &&
+                                                    pair.Value.Guid > _supplyCounterSettingsDto.PrecedingSignalMaxValue) {
+                                                    pair.Value.Guid = 0;
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
-
                                 if (_supplyCounterSettingsDto.IsUseSupplyCounterMode &&
                                     _instructionsAttachItems.Any()) {
                                     while (_instructionsAttachItems.TryPeek(out var attachItem) && attachItem.ScanTime != null && DateTime.Now.Subtract(attachItem.ScanTime.Value).TotalMilliseconds > _supplyCounterSettingsDto.PrecedingReplySignalTimeout) {
@@ -1168,7 +1256,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 .Value
                             : null;
 
-                        if (value is { IsCompleted: false, BarCodeInfo: not null, IsSupplyStationReplyReceived: true } packageInfo) {
+                        if (value is { IsCompleted: false, BarCodeInfo: not null } packageInfo &&
+                            (!_supplyCounterSettingsDto.IsUseSupplyCounterMode ||
+                             (packageInfo.SupplyCounterPackageSignalItem.Any(a => a.Type == SignalType.ReturningPreSignal)
+                             && packageInfo.SupplyCounterPackageSignalItem
+                                 .Any(a => a.Type == SignalType.ReturningBindingSignal)))) {
                             //判断填充包裹信息
                             if (packageInfo.VolumeInfo is not null &&
                                 packageInfo.WeightInfo is not null &&
@@ -1221,11 +1313,20 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         if (_supplyCounterSettingsDto is { IsUseSupplyCounterMode: true, SendPreSequenceNumber: true }) {
                             try {
                                 await _createPackageSlim.WaitAsync(stoppingToken);
-                                var info = _packageInfos.Any(a => a.Value is { BarCodeInfo: not null, VolumeInfo: not null, WeightInfo: not null, SendPreSignal: false })
-                                    ? _packageInfos.Where(f => f.Value is { BarCodeInfo: not null, VolumeInfo: not null, WeightInfo: not null, SendPreSignal: false }).OrderBy(o => o.Key)
-                                        ?.FirstOrDefault()
+                                var info = _packageInfos.Any(a => a.Value is { BarCodeInfo: not null, VolumeInfo: not null, WeightInfo: not null })
+                                    ? _packageInfos
+                                        .Where(f => f.Value is {
+                                            BarCodeInfo: not null,
+                                            VolumeInfo: not null,
+                                            WeightInfo: not null,
+                                            SupplyCounterPackageSignalItem: not null
+                                        })
+                                        .Where(f => f.Value.SupplyCounterPackageSignalItem.All(a => a.Type != SignalType.SendingPreSignal))
+                                        .OrderBy(o => o.Key)
+                                        .FirstOrDefault()
                                         .Value
                                     : null;
+
                                 if (info is not null) {
                                     //发送前置信号
                                     var instructionsAttach = new InstructionsAttach() {
@@ -1236,7 +1337,10 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                     };
                                     _sortingService.SendPreSignal(_preSignal, instructionsAttach, stoppingToken);
                                     info.Guid = _preSignal;
-                                    info.SendPreSignal = true;
+                                    info.SupplyCounterPackageSignalItem.Add(new SupplyCounterPackageSignal() {
+                                        Time = DateTime.Now,
+                                        Type = SignalType.SendingPreSignal
+                                    });
                                     //添加到队列
                                     _instructionsAttachItems.Enqueue(instructionsAttach);
                                 }
@@ -1507,19 +1611,9 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         public int PackageExceptionStatus { get; set; } = 0;
 
         /// <summary>
-        /// 供包台信号是否已回复
+        /// 供包台信号类型
         /// </summary>
-        public bool IsSupplyStationReplyReceived { get; set; }
-
-        /// <summary>
-        /// 是否已发送前置信号
-        /// </summary>
-        public bool SendPreSignal { get; set; }
-
-        /// <summary>
-        /// 前置信号是否已回复
-        /// </summary>
-        public bool IsSignalReceived { get; set; }
+        public List<SupplyCounterPackageSignal> SupplyCounterPackageSignalItem { get; set; } = new();
     }
 
     public class CameraImageInfo {

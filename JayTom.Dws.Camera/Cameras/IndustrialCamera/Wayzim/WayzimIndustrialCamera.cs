@@ -377,7 +377,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim {
                 IsUseFilteredBarcodeTypes = @params.IsUseFilteredBarcodeTypes,
                 CustomRegexReplacementItems = @params.CustomRegexReplacementItems
             };
-            _barCodeFilterContainer.CleanupContainer();
+            BarCodeFilterContainer.ResetFilter();
         }
 
         protected virtual async void OnCameraExceptionOccurred(CameraExceptionEventArgs e) {
