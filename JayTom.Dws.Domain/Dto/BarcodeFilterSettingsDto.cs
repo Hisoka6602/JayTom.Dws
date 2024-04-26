@@ -123,6 +123,11 @@ namespace JayTom.Dws.Domain.Dto {
         /// 正则表达式
         /// </summary>
         public string RegexPattern { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 备注
+        /// </summary>
+        public string Remarks { get; set; } = string.Empty;
     }
 
     public class CustomRegexReplacementInfo {
@@ -141,6 +146,11 @@ namespace JayTom.Dws.Domain.Dto {
         /// 替换的内容
         /// </summary>
         public string ReplaceContent { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 备注
+        /// </summary>
+        public string Remarks { get; set; } = string.Empty;
     }
 
     /// <summary>

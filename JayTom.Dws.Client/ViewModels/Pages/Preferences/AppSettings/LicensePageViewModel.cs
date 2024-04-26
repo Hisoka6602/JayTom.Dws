@@ -105,9 +105,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings {
         /// <summary>
         /// 页面加载完成
         /// </summary>
-        public ICommand LoadedCommand {
-            get => new DelegateCommand<object>(LoadedDelegate);
-        }
+        public ICommand LoadedCommand => new DelegateCommand<object>(LoadedDelegate);
 
         private async void LoadedDelegate(object obj) {
             if (!_isLoaded) {
@@ -156,9 +154,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings {
             }
         }
 
-        public ICommand RemoteAuthorizeCommand {
-            get => new DelegateCommand<object>(RemoteAuthorizeDelegate);
-        }
+        public ICommand RemoteAuthorizeCommand => new DelegateCommand<object>(RemoteAuthorizeDelegate);
 
         private void RemoteAuthorizeDelegate(object obj) {
             Task.Run(async () => {
@@ -225,9 +221,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings {
             });
         }
 
-        public ICommand ImportLicenseFileCommand {
-            get => new DelegateCommand<object>(ImportLicenseFileDelegate);
-        }
+        public ICommand ImportLicenseFileCommand => new DelegateCommand<object>(ImportLicenseFileDelegate);
 
         private async void ImportLicenseFileDelegate(object obj) {
             var openFileDialog = new OpenFileDialog() {

@@ -25,7 +25,6 @@ using JayTom.Dws.Client.Models.BarcodeFilterSettingsModel;
 using JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration.SortingMethodEditors;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
-
     public class BarcodeFilterSettingsPageViewModel : SettingsPageTemplateViewModel {
         private readonly IExcel _excel;
         private string _testBarcode = string.Empty;
@@ -148,7 +147,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
                 var replacedBarcode = CustomRegexReplacementTestBarcode;
                 try {
-                    replacedBarcode = BarcodeFilterSettingsInfo.CustomRegexReplacementItems.Aggregate(replacedBarcode, (current, customRegexReplacementItemInfoModel) => Regex.Replace(current, customRegexReplacementItemInfoModel.RegexPattern, customRegexReplacementItemInfoModel.ReplaceContent));
+                    replacedBarcode = BarcodeFilterSettingsInfo.CustomRegexReplacementItems.Where(w => w.IsActive).Aggregate(replacedBarcode, (current, customRegexReplacementItemInfoModel) => Regex.Replace(current, customRegexReplacementItemInfoModel.RegexPattern, customRegexReplacementItemInfoModel.ReplaceContent));
                 }
                 catch (Exception e) {
                     base.MessageQueue.Enqueue(Languages.Language.ResourceManager.GetString("不是正确的正则表达式") ?? string.Empty);
@@ -259,7 +258,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                         Num = BarcodeFilterSettingsInfo.CustomRegexReplacementItems.Count + 1,
                         IsActive = true,
                         RegexPattern = model.RegexPattern,
-                        ReplaceContent = model.ReplaceContent
+                        ReplaceContent = model.ReplaceContent,
+                        Remarks = model.Remarks
                     });
                 }
             }
@@ -291,7 +291,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     BarcodeFilterSettingsInfo.CustomRegexFilterItems?.Add(new CustomRegexFilterItemInfoModel() {
                         Num = BarcodeFilterSettingsInfo.CustomRegexFilterItems.Count + 1,
                         IsActive = true,
-                        RegexPattern = model.RegexPattern
+                        RegexPattern = model.RegexPattern,
+                        Remarks = model.Remarks
                     });
                 }
             }
@@ -337,7 +338,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                 }
                 else if (BarcodeFilterSettingsInfo.BarCodeFilterOptions == BarCodeFilterOptions.CustomRegexFilter) {
                     try {
-                        var isMatch = BarcodeFilterSettingsInfo.CustomRegexFilterItems.Any(a =>
+                        var isMatch = BarcodeFilterSettingsInfo.CustomRegexFilterItems.Where(w => w.IsActive).Any(a =>
                             Regex.IsMatch(CustomRegexFilterTestBarcode, a.RegexPattern));
                         base.MessageQueue.Enqueue(isMatch ? Languages.Language.ResourceManager.GetString("验证通过") ?? string.Empty
                             : Languages.Language.ResourceManager.GetString("验证不通过") ?? string.Empty);
@@ -379,12 +380,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                         new CustomRegexFilterInfo {
                             IsActive = s.IsActive,
                             RegexPattern = s.RegexPattern,
+                            Remarks = s.Remarks
                         })?.ToList() ?? new List<CustomRegexFilterInfo>(),
                     CustomRegexReplacementItems = BarcodeFilterSettingsInfo.CustomRegexReplacementItems.Select(s =>
                         new CustomRegexReplacementInfo {
                             IsActive = s.IsActive,
                             RegexPattern = s.RegexPattern,
                             ReplaceContent = s.ReplaceContent,
+                            Remarks = s.Remarks
                         })?.ToList() ?? new List<CustomRegexReplacementInfo>()
                 })
             });
@@ -425,14 +428,16 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                             new CustomRegexFilterItemInfoModel {
                                 Num = i + 1,
                                 IsActive = s.IsActive,
-                                RegexPattern = s.RegexPattern
+                                RegexPattern = s.RegexPattern,
+                                Remarks = s.Remarks
                             })?.ToList() ?? new List<CustomRegexFilterItemInfoModel>()),
                         CustomRegexReplacementItems = new ObservableCollection<CustomRegexReplacementItemInfoModel>(settingsDto.CustomRegexReplacementItems.
                             Select((s, i) => new CustomRegexReplacementItemInfoModel {
                                 Num = i + 1,
                                 IsActive = s.IsActive,
                                 RegexPattern = s.RegexPattern,
-                                ReplaceContent = s.ReplaceContent
+                                ReplaceContent = s.ReplaceContent,
+                                Remarks = s.Remarks
                             })?.ToList() ?? new List<CustomRegexReplacementItemInfoModel>())
                     };
 
@@ -509,7 +514,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                 if (!string.IsNullOrWhiteSpace(BarcodeFilterSettingsInfo.BasicFilterInfo.AnyStartCodes)) {
                     var strings = BarcodeFilterSettingsInfo.BasicFilterInfo.AnyStartCodes.Replace(";", "|");
 
-                    regularChars.Add($"^(?={strings}).*");
+                    regularChars.Add($"(^(?={strings}).*)");
                 }
                 //位数限制
                 regularChars.Add($"(^.{{{BarcodeFilterSettingsInfo.BasicFilterInfo.MinimumLength},{BarcodeFilterSettingsInfo.BasicFilterInfo.MaximumLength}}}$)");

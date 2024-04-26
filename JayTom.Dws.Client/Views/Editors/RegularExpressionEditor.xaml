@@ -40,6 +40,183 @@
                     Foreground="DarkGray"
                     Text="自定义正则表达式" />
                 <!--  正则表达式  -->
+                <StackPanel
+                    Margin="0,10,0,0"
+                    Orientation="Vertical"
+                    Visibility="{Binding IsUseReplace, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
+
+                    <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
+                        <RadioButton
+                            Margin="10,0"
+                            Command="{Binding StartCharacterTypeChangedCommand}"
+                            Content="自定义编辑"
+                            Focusable="False"
+                            FontWeight="Bold"
+                            Foreground="White"
+                            IsChecked="True"
+                            Template="{StaticResource CustomRadioButtonTemplate}" />
+                        <RadioButton
+                            Name="QuickSetupRadioButton"
+                            Margin="10,0"
+                            Command="{Binding StartCharacterTypeChangedCommand}"
+                            Content="快速设置"
+                            Focusable="False"
+                            FontWeight="Bold"
+                            Foreground="White"
+                            IsChecked="{Binding IsQuickSetup, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                            Template="{StaticResource CustomRadioButtonTemplate}" />
+                    </StackPanel>
+                    <!--  快速设置选项  -->
+                    <StackPanel
+                        Margin="0,10"
+                        Orientation="Vertical"
+                        Visibility="{Binding ElementName=QuickSetupRadioButton, Path=IsChecked, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <!--  条码长度限制  -->
+                        <StackPanel
+                            Margin="5,0"
+                            VerticalAlignment="Center"
+                            Orientation="Vertical">
+                            <StackPanel Orientation="Horizontal">
+                                <StackPanel Orientation="Horizontal">
+                                    <!--  图标  -->
+                                    <TextBlock
+                                        Margin="5,0"
+                                        VerticalAlignment="Center"
+                                        FontSize="13"
+                                        FontWeight="Bold"
+                                        Foreground="DarkGray"
+                                        Text="{x:Static languages:Language.MinBarcodeLength}" />
+                                    <Border
+                                        Margin="5"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        Background="#202020"
+                                        CornerRadius="5">
+                                        <TextBox
+                                            Width="80"
+                                            Height="30"
+                                            MaxWidth="500"
+                                            Margin="5,0"
+                                            materialDesign:TextFieldAssist.HasClearButton="False"
+                                            materialDesign:TextFieldAssist.HasFilledTextField="True"
+                                            Background="Transparent"
+                                            BorderThickness="0"
+                                            FontSize="13"
+                                            FontWeight="Bold"
+                                            Foreground="White"
+                                            InputMethod.IsInputMethodEnabled="False"
+                                            Text="{Binding MinimumLength, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                                            <b:Interaction.Triggers>
+                                                <b:EventTrigger EventName="TextChanged">
+                                                    <mvvm:InvokeCommandAction Command="{Binding UpdateRegularExpressionCommand}" />
+                                                </b:EventTrigger>
+                                            </b:Interaction.Triggers>
+                                        </TextBox>
+                                    </Border>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <!--  图标  -->
+                                    <TextBlock
+                                        Margin="5,0"
+                                        VerticalAlignment="Center"
+                                        FontSize="13"
+                                        FontWeight="Bold"
+                                        Foreground="DarkGray"
+                                        Text="{x:Static languages:Language.MaxBarcodeLength}" />
+                                    <Border
+                                        Margin="5"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        Background="#202020"
+                                        CornerRadius="5">
+                                        <TextBox
+                                            Width="80"
+                                            Height="30"
+                                            MaxWidth="500"
+                                            Margin="5,0"
+                                            materialDesign:TextFieldAssist.HasClearButton="False"
+                                            materialDesign:TextFieldAssist.HasFilledTextField="True"
+                                            Background="Transparent"
+                                            BorderThickness="0"
+                                            FontSize="13"
+                                            FontWeight="Bold"
+                                            Foreground="White"
+                                            InputMethod.IsInputMethodEnabled="False"
+                                            Text="{Binding MaximumLength, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                                            <b:Interaction.Triggers>
+                                                <b:EventTrigger EventName="TextChanged">
+                                                    <mvvm:InvokeCommandAction Command="{Binding UpdateRegularExpressionCommand}" />
+                                                </b:EventTrigger>
+                                            </b:Interaction.Triggers>
+                                        </TextBox>
+                                    </Border>
+                                </StackPanel>
+                            </StackPanel>
+                        </StackPanel>
+                        <!--  条码开头  -->
+                        <StackPanel Margin="5,0" Orientation="Horizontal">
+                            <!--  图标  -->
+                            <TextBlock
+                                Margin="5,0"
+                                VerticalAlignment="Center"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                Text="条码开头:" />
+                            <Border
+                                Width="310"
+                                Margin="5"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Background="#202020"
+                                CornerRadius="5">
+                                <TextBox
+                                    Width="310"
+                                    Height="30"
+                                    MaxWidth="500"
+                                    Margin="5,0"
+                                    materialDesign:HintAssist.Hint="{x:Static languages:Language.ConditionSeparationInstruction}"
+                                    materialDesign:TextFieldAssist.HasClearButton="False"
+                                    materialDesign:TextFieldAssist.HasFilledTextField="True"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    FontSize="13"
+                                    FontWeight="Bold"
+                                    Foreground="White"
+                                    InputMethod.IsInputMethodEnabled="False"
+                                    Text="{Binding AnyStartCodes, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                                    <b:Interaction.Triggers>
+                                        <b:EventTrigger EventName="TextChanged">
+                                            <mvvm:InvokeCommandAction Command="{Binding UpdateRegularExpressionCommand}" />
+                                        </b:EventTrigger>
+                                    </b:Interaction.Triggers>
+                                </TextBox>
+                            </Border>
+                        </StackPanel>
+                        <!--  是否纯数字  -->
+                        <StackPanel
+                            Margin="5,10"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Orientation="Horizontal">
+                            <TextBlock
+                                Margin="5,0"
+                                VerticalAlignment="Center"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                Text="是否纯数字:" />
+                            <ToggleButton
+                                Name="IsUseBasicFilterToggleButton"
+                                materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
+                                materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
+                                Command="{Binding UpdateRegularExpressionCommand}"
+                                Focusable="False"
+                                IsChecked="{Binding IsNumeric, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+                        </StackPanel>
+                    </StackPanel>
+                </StackPanel>
                 <StackPanel Margin="0,10" Orientation="Horizontal">
                     <!--  图标  -->
                     <TextBlock
@@ -68,6 +245,7 @@
                             FontSize="13"
                             FontWeight="Bold"
                             Foreground="White"
+                            IsReadOnly="{Binding ElementName=QuickSetupRadioButton, Path=IsChecked}"
                             Style="{StaticResource MaterialDesignOutlinedTextBox}"
                             Text="{Binding RegexPattern, UpdateSourceTrigger=PropertyChanged}"
                             TextWrapping="Wrap"
@@ -105,7 +283,41 @@
                             Text="{Binding ReplaceContent, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                     </Border>
                 </StackPanel>
+                <!--  备注  -->
+                <StackPanel Margin="0,5" Orientation="Horizontal">
+                    <!--  图标  -->
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="备注:" />
+                    <Border
+                        Width="330"
+                        Margin="5"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Background="#202020"
+                        CornerRadius="5">
+                        <TextBox
+                            Width="310"
+                            Height="30"
+                            MaxWidth="500"
+                            Margin="5,0"
+                            materialDesign:TextFieldAssist.HasClearButton="False"
+                            materialDesign:TextFieldAssist.HasFilledTextField="True"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="White"
+                            InputMethod.IsInputMethodEnabled="False"
+                            Text="{Binding Remarks, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    </Border>
+                </StackPanel>
             </StackPanel>
+
             <!--  确定、取消按钮  -->
             <StackPanel
                 Grid.Row="1"

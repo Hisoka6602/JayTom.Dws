@@ -6,14 +6,19 @@ using System.Windows;
 using System.Drawing;
 using System.Diagnostics;
 using System.Windows.Media;
+using System.Windows.Input;
 using System.Threading.Tasks;
 using System.Drawing.Imaging;
+using System.Security.Policy;
 using System.Collections.Generic;
 using System.Windows.Media.Imaging;
+using System.Security.Cryptography;
 
 namespace JayTom.Dws.PluginInterface.Utils {
 
     public static class Utils {
+        private static byte[] _dwsKey = PadKey("Hisoka"u8.ToArray(), 16);
+        private static byte[] _dwsNonce = Encoding.UTF8.GetBytes("15876396602".PadRight(12, '\0'));
         /*public static T? GetVisualChild<T>(DependencyObject parent, Func<T, bool> predicate) where T : Visual {
             var numVisuals = VisualTreeHelper.GetChildrenCount(parent);
             for (var i = 0; i < numVisuals; i++) {
@@ -34,6 +39,51 @@ namespace JayTom.Dws.PluginInterface.Utils {
 
             return null;
         }*/
+
+        public static byte[] PadKey(byte[] key, int length) {
+            var paddedKey = new byte[length];
+            Array.Copy(key, paddedKey, Math.Min(key.Length, length));
+            return paddedKey;
+        }
+
+        //加密
+        public static string EncryptString(string plainText) {
+            try {
+                using var aesGcm = new AesGcm(_dwsKey);
+                var plainBytes = Encoding.UTF8.GetBytes(plainText);
+                var cipherBytes = new byte[plainBytes.Length];
+                var tag = new byte[16]; // 用于存储验证标签
+
+                aesGcm.Encrypt(_dwsNonce, plainBytes, cipherBytes, tag); // 提供 tag 参数
+
+                // 将验证标签追加到密文后面
+                var cipherWithTag = new byte[cipherBytes.Length + tag.Length];
+                Array.Copy(cipherBytes, 0, cipherWithTag, 0, cipherBytes.Length);
+                Array.Copy(tag, 0, cipherWithTag, cipherBytes.Length, tag.Length);
+
+                return Convert.ToBase64String(cipherWithTag);
+            }
+            catch (Exception e) {
+                return plainText;
+            }
+        }
+
+        //解密
+        public static string DecryptString(string cipherText) {
+            try {
+                var cipherBytes = Convert.FromBase64String(cipherText);
+                var decryptedBytes = new byte[cipherBytes.Length];
+                var tag = new byte[16]; // 用于存储验证标签
+
+                using var aesGcm = new AesGcm(_dwsKey);
+                aesGcm.Decrypt(_dwsNonce, cipherBytes, tag, decryptedBytes); // 提供 tag 参数
+
+                return Encoding.UTF8.GetString(decryptedBytes);
+            }
+            catch (Exception e) {
+                return cipherText;
+            }
+        }
 
         public static T? GetVisualChild<T>(DependencyObject parent, Func<T, bool> predicate) where T : Visual {
             if (parent is null) {

@@ -343,9 +343,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 移除标记
         /// </summary>
-        public ICommand RemoveTemplateItemCommand {
-            get => new DelegateCommand<ItemBaseTemplateModel>(RemoveTemplateItemDelegate);
-        }
+        public ICommand RemoveTemplateItemCommand => new DelegateCommand<ItemBaseTemplateModel>(RemoveTemplateItemDelegate);
 
         private async void RemoveTemplateItemDelegate(ItemBaseTemplateModel model) {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
@@ -364,9 +362,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 添加数据模板
         /// </summary>
-        public ICommand AddOutputItemCommand {
-            get => new DelegateCommand<string>(AddOutputItemDelegate);
-        }
+        public ICommand AddOutputItemCommand => new DelegateCommand<string>(AddOutputItemDelegate);
 
         private async void AddOutputItemDelegate(string obj) {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {

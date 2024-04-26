@@ -2,10 +2,12 @@
 using System.Net;
 using System.Linq;
 using System.Text;
+using ThridLibray;
 using System.Drawing;
 using Newtonsoft.Json;
 using MvVolmeasure.NET;
 using MvCodeReaderSDKNet;
+using System.IO.Packaging;
 using Newtonsoft.Json.Linq;
 using System.Threading.Tasks;
 using System.Drawing.Imaging;
@@ -21,7 +23,8 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision {
         private static Task? _volumeThread;
         private static CancellationTokenSource? _cancellationTokenSource;
         private byte[] _bufForDriver = new byte[1024 * 1024 * 10];
-        private static MeasurementTriggerMode _measurementTriggerMode = MeasurementTriggerMode.Single;
+        private static MeasurementTriggerMode _measurementTriggerMode = MeasurementTriggerMode.Continuous;
+        public MvVolmeasure.NET.MvVolmeasure.ResultCallback GetResultHandler;
 
         /// <summary>
         /// 设备列表
@@ -251,6 +254,26 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision {
             }
             //设置开启/关闭图像
             //_mCsVolMeasure?.SetVolAPIOutputImgEnable(true);
+
+            //开启体积线程
+            if (MeasurementTriggerMode == MeasurementTriggerMode.Continuous) {
+                /*_cancellationTokenSource = new CancellationTokenSource();
+                _volumeThread = Task.Factory.StartNew(async () => {
+                    await VolumeThread(_cancellationTokenSource.Token);
+                }, _cancellationTokenSource.Token);*/
+
+                //注册回调
+                GetResultHandler = ProcessCallBackResult;
+                nRet = _mCsVolMeasure?.RegisterResultCallBack(GetResultHandler, IntPtr.Zero) ?? -1;
+                //
+                if (ERROR_DEFINE.MV_VOLM_OK != (ERROR_DEFINE)nRet) {
+                    OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
+                        Exception = new Exception($"设置回调函数失败:{nRet:X}")
+                    });
+
+                    return new KeyValuePair<bool, string>(false, $"设置回调函数失败:{nRet:X}");
+                }
+            }
             //开始工作
             nRet = _mCsVolMeasure?.Start() ?? -1;
             if (ERROR_DEFINE.MV_VOLM_OK != (ERROR_DEFINE)nRet) {
@@ -260,13 +283,7 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision {
 
                 return new KeyValuePair<bool, string>(false, $"开始工作失败:{nRet:X}");
             }
-            //开启体积线程
-            if (MeasurementTriggerMode == MeasurementTriggerMode.Continuous) {
-                _cancellationTokenSource = new CancellationTokenSource();
-                _volumeThread = Task.Factory.StartNew(async () => {
-                    await VolumeThread(_cancellationTokenSource.Token);
-                }, _cancellationTokenSource.Token);
-            }
+
             OnCameraStarted(new CameraStartedEventArgs() {
                 CameraInfo = this.Info
             });
@@ -452,6 +469,78 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision {
             Marshal.FreeHGlobal(stResultInfo.stImage.pData);
         }
 
+        /// <summary>
+        /// 回调
+        /// </summary>
+        /// <param name="stResultInfo"></param>
+        /// <param name="pUser"></param>
+        private void ProcessCallBackResult(ref VOLM_RESULT_INFO stResultInfo, IntPtr pUser) {
+            ProcessCallbackVolumeInfo(stResultInfo);
+        }
+
+        /// <summary>
+        /// 处理回调
+        /// </summary>
+        /// <param name="stResultInfo"></param>
+        private async void ProcessCallbackVolumeInfo(VOLM_RESULT_INFO stResultInfo) {
+            Bitmap? bitmap = null;
+            Bitmap? thumbnailImage = null;
+            var dateTime = DateTime.Now;
+            if (1 == stResultInfo.nImgFlag) {
+                var imageBuffer = new byte[(int)stResultInfo.stExtendImage.nDataLen];
+                bitmap = await GetBitmapAsync(stResultInfo.stExtendImage.pData, imageBuffer, stResultInfo.stExtendImage.nWidth,
+                    stResultInfo.stExtendImage.nHeight);
+                thumbnailImage = GenerateThumbnail(bitmap);
+            }
+
+            //判断体积标记位，是否有体积信息
+            if (1 == stResultInfo.nVolumeFlag && thumbnailImage is not null) {
+                //在界面显示体积信息
+                //画框
+                using var g = Graphics.FromImage(thumbnailImage);
+                if (stResultInfo.stVolumeInfo.rgbvertex_pnts.Length > 0) {
+                    var stPointList = new Point[4];
+                    for (var i = 0; i < 4; i++) {
+                        stPointList[i].X =
+                            (int)(stResultInfo.stVolumeInfo.rgbvertex_pnts[i].fX *
+                                (float)(thumbnailImage.Size.Width) / stResultInfo.stExtendImage.nWidth);
+                        stPointList[i].Y =
+                            (int)(stResultInfo.stVolumeInfo.rgbvertex_pnts[i].fY *
+                                  (float)(thumbnailImage.Size.Height) /
+                                  stResultInfo.stExtendImage.nHeight);
+                    }
+                    g.DrawPolygon(new System.Drawing.Pen(Color.Yellow, 7), stPointList);
+                }
+
+                var volumeCapturedEventArgs = new VolumeCapturedEventArgs() {
+                    Length = Math.Round(stResultInfo.stVolumeInfo.length, 2),
+                    Width = Math.Round(stResultInfo.stVolumeInfo.width, 2),
+                    Height = Math.Round(stResultInfo.stVolumeInfo.height, 2),
+                    Volume = Math.Round(stResultInfo.stVolumeInfo.volume, 2),
+                    Image = bitmap,
+                    Thumbnail = thumbnailImage,
+                    Timestamp = dateTime,
+                    CameraSerialNumber = Info?.SerialNumber ?? string.Empty,
+                    MeasurementTriggerMode = MeasurementTriggerMode
+                };
+                OnVolumeCaptured(volumeCapturedEventArgs);
+            }
+            if (thumbnailImage is not null) {
+                using var g = Graphics.FromImage(thumbnailImage);
+                var text = $"Length: {Math.Round(stResultInfo.stVolumeInfo.length, 2)}\nWidth: {Math.Round(stResultInfo.stVolumeInfo.width, 2)}\nHeight: {Math.Round(stResultInfo.stVolumeInfo.height, 2)}";
+                var font = new System.Drawing.Font("Arial", 20);
+                var brush = new System.Drawing.SolidBrush(Color.LawnGreen);
+                var point = new Point(10, 20); // 左上角位置
+                g.DrawString(text, font, brush, point);
+            }
+            if (IsRealtimeImageEnabled) {
+                OnRealtimeImage(new RealtimeImageEventArgs() {
+                    ThumbImage = thumbnailImage,
+                    Timestamp = new DateTimeOffset(dateTime).ToUnixTimeMilliseconds()
+                });
+            }
+        }
+
         private static IPAddress ConvertUintToIpAddress(uint ipAddressValue) {
             var addressBytes = BitConverter.GetBytes(ipAddressValue);
             Array.Reverse(addressBytes);
@@ -459,12 +548,32 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision {
             return new IPAddress(addressBytes);
         }
 
-        private async Task<Bitmap?> GetBitmapAsync(nint pData, byte[] imageBuffBytes,
-            VOLM_FRAME_INFO volmFrameInfo) {
+        private async Task<Bitmap?> GetBitmapAsync(nint pData, byte[] imageBuffBytes, int width, int height) {
             await Task.Yield();
             Bitmap? bmp = null;
             // 绘制图像
+            GCHandle? handle = null;
+            try {
+                handle = GCHandle.Alloc(imageBuffBytes, GCHandleType.Pinned);
+                Marshal.Copy(pData, imageBuffBytes, 0, imageBuffBytes.Length);
+                IntPtr pImage = handle?.AddrOfPinnedObject() ?? IntPtr.Zero;
+                bmp = new Bitmap(width, height, width, PixelFormat.Format8bppIndexed, pImage);
+                //bmp = new Bitmap(stImageInfo.stExtendImage.nWidth, stImageInfo.stExtendImage.nHeight, stImageInfo.stExtendImage.nWidth, PixelFormat.Format24bppRgb, pImage);
+                var cp = bmp.Palette;
+                for (var i = 0; i < 256; i++) {
+                    cp.Entries[i] = Color.FromArgb(i, i, i);
+                }
 
+                bmp.Palette = cp;
+            }
+            catch (Exception e) {
+                NLog.LogManager.GetCurrentClassLogger().Error($"回调图像异常:{e}");
+            }
+            finally {
+                handle?.Free();
+            }
+
+            /*
             Marshal.Copy(pData, imageBuffBytes, 0, (int)volmFrameInfo.nFrameLen);
 
             switch ((MvVolmeasure.NET.CAMERATYPE_DEFINE)volmFrameInfo.enPixelType) {
@@ -484,7 +593,7 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision {
                         bmp = new Bitmap(ms);
                         break;
                     }
-            }
+            }*/
             if (!IsOriginalImageOut) {
                 bmp = (Bitmap?)GenerateThumbnail(bmp);
             }

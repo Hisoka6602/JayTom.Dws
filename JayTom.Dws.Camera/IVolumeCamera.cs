@@ -79,6 +79,11 @@ namespace JayTom.Dws.Camera {
         /// 相机序列号
         /// </summary>
         public string CameraSerialNumber { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 触发模式
+        /// </summary>
+        public MeasurementTriggerMode MeasurementTriggerMode { get; set; } = MeasurementTriggerMode.Continuous;
     }
 
     public enum MeasurementTriggerMode {

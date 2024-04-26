@@ -725,13 +725,14 @@
                         <!--  自定义正则过滤  -->
                         <!--  表格  -->
                         <DataGrid
-                            Width="650"
+                            Width="850"
                             Height="300"
                             MinWidth="500"
                             MinHeight="200"
                             Margin="0,5"
                             Padding="10,0"
                             HorizontalAlignment="Left"
+                            AlternatingRowBackground="#101E90FF"
                             CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                             ColumnHeaderStyle="{StaticResource CustomDataGridTextColumnStyle}"
                             Focusable="False"
@@ -739,7 +740,8 @@
                             Style="{StaticResource VirtualizingDataGridStyle}">
                             <DataGrid.RowStyle>
                                 <Style BasedOn="{StaticResource MaterialDesignDataGridRow}" TargetType="DataGridRow">
-                                    <Setter Property="Height" Value="35" />
+                                    <Setter Property="Height" Value="Auto" />
+                                    <Setter Property="MinHeight" Value="30" />
                                 </Style>
                             </DataGrid.RowStyle>
                             <DataGrid.Columns>
@@ -769,15 +771,41 @@
                                     </DataGridTemplateColumn.Header>
                                 </DataGridTemplateColumn>
                                 <!--  正则表达式  -->
-                                <DataGridTextColumn
+                                <DataGridTemplateColumn
                                     Width="400"
                                     MinWidth="100"
-                                    Binding="{Binding RegexPattern, UpdateSourceTrigger=PropertyChanged}"
+                                    CellStyle="{StaticResource CustomDataGridTextCellStyle}">
+                                    <DataGridTemplateColumn.Header>
+                                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="正则表达式" />
+                                    </DataGridTemplateColumn.Header>
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBox
+                                                Margin="0,3"
+                                                VerticalAlignment="Center"
+                                                Background="Transparent"
+                                                BorderThickness="0"
+                                                FontWeight="UltraLight"
+                                                Foreground="White"
+                                                IsReadOnly="True"
+                                                Style="{x:Null}"
+                                                Text="{Binding RegexPattern, UpdateSourceTrigger=PropertyChanged}"
+                                                TextWrapping="Wrap" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <!--  备注  -->
+                                <DataGridTextColumn
+                                    Width="200"
+                                    MinWidth="100"
+                                    Binding="{Binding Remarks, UpdateSourceTrigger=PropertyChanged}"
                                     CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                                     EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
                                     <DataGridTextColumn.Header>
-                                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="正则表达式" />
+                                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="备注" />
                                     </DataGridTextColumn.Header>
+
+
                                 </DataGridTextColumn>
                                 <!--  操作  -->
                                 <DataGridTemplateColumn
@@ -1009,13 +1037,14 @@
                         <!--  自定义正则过滤  -->
                         <!--  表格  -->
                         <DataGrid
-                            Width="850"
+                            Width="1050"
                             Height="260"
                             MinWidth="500"
                             MinHeight="200"
                             Margin="0,5"
                             Padding="10,0"
                             HorizontalAlignment="Left"
+                            AlternatingRowBackground="#101E90FF"
                             CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                             ColumnHeaderStyle="{StaticResource CustomDataGridTextColumnStyle}"
                             Focusable="False"
@@ -1023,7 +1052,8 @@
                             Style="{StaticResource VirtualizingDataGridStyle}">
                             <DataGrid.RowStyle>
                                 <Style BasedOn="{StaticResource MaterialDesignDataGridRow}" TargetType="DataGridRow">
-                                    <Setter Property="Height" Value="35" />
+                                    <Setter Property="Height" Value="Auto" />
+                                    <Setter Property="MinHeight" Value="30" />
                                 </Style>
                             </DataGrid.RowStyle>
                             <DataGrid.Columns>
@@ -1053,16 +1083,29 @@
                                     </DataGridTemplateColumn.Header>
                                 </DataGridTemplateColumn>
                                 <!--  正则表达式  -->
-                                <DataGridTextColumn
+                                <DataGridTemplateColumn
                                     Width="400"
                                     MinWidth="100"
-                                    Binding="{Binding RegexPattern, UpdateSourceTrigger=PropertyChanged}"
-                                    CellStyle="{StaticResource CustomDataGridTextCellStyle}"
-                                    EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
-                                    <DataGridTextColumn.Header>
+                                    CellStyle="{StaticResource CustomDataGridTextCellStyle}">
+                                    <DataGridTemplateColumn.Header>
                                         <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="正则表达式" />
-                                    </DataGridTextColumn.Header>
-                                </DataGridTextColumn>
+                                    </DataGridTemplateColumn.Header>
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBox
+                                                Margin="0,3"
+                                                VerticalAlignment="Center"
+                                                Background="Transparent"
+                                                BorderThickness="0"
+                                                FontWeight="UltraLight"
+                                                Foreground="White"
+                                                IsReadOnly="True"
+                                                Style="{x:Null}"
+                                                Text="{Binding RegexPattern, UpdateSourceTrigger=PropertyChanged}"
+                                                TextWrapping="Wrap" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
                                 <!--  替换内容  -->
                                 <DataGridTextColumn
                                     Width="200"
@@ -1073,6 +1116,19 @@
                                     <DataGridTextColumn.Header>
                                         <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="替换内容" />
                                     </DataGridTextColumn.Header>
+                                </DataGridTextColumn>
+                                <!--  备注  -->
+                                <DataGridTextColumn
+                                    Width="200"
+                                    MinWidth="100"
+                                    Binding="{Binding Remarks, UpdateSourceTrigger=PropertyChanged}"
+                                    CellStyle="{StaticResource CustomDataGridTextCellStyle}"
+                                    EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
+                                    <DataGridTextColumn.Header>
+                                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="备注" />
+                                    </DataGridTextColumn.Header>
+
+
                                 </DataGridTextColumn>
                                 <!--  操作  -->
                                 <DataGridTemplateColumn

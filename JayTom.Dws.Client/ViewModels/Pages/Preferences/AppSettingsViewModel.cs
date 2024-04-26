@@ -77,6 +77,19 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     PageClassName = "SyncSettingsPage",
                     ClickCommand = ClickCommand
                 },
+                new()
+                {
+                    Title = "密码设置",
+                    IconFont = new IconInfoModel()
+                    {
+                        IconFont = "pack://application:,,,/Fonts/#iconfont",
+                        IconCode = "\xe983",
+                        IconSize = 25
+                    },
+                    Description = "密码设置",
+                    PageClassName = "PassWordSettingsPage",
+                    ClickCommand = ClickCommand
+                },
             };
         }
 

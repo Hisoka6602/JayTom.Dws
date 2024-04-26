@@ -283,7 +283,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 //填充长宽高
                 try {
                     await _createPackageSlim.WaitAsync();
-                    NLog.LogManager.GetCurrentClassLogger().Error($"返回体积");
+                    NLog.LogManager.GetCurrentClassLogger().Error($"返回的体积:长-{args.Length},宽-{args.Width},高-{args.Height}");
                     var packageInfo =
                    _createPackageSettingsDto.BarcodeQueueOrder == BarcodeQueueOrderEnum.TimeAscending ?
                        _packageInfos.OrderBy(o => o.Key)?.FirstOrDefault(f => f.Value.VolumeInfo == null).Value :
@@ -313,15 +313,33 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
                         //增加体积单位转换
                         if (packageInfo is not null) {
-                            packageInfo.VolumeInfo = new VolumeInfoModel() {
-                                CreateTime = args.Timestamp,
-                                FormattedHeight = args.Height - packageInfo.LengthToDeduct,
-                                FormattedWidth = args.Width - packageInfo.WidthToDeduct,
-                                FormattedLength = args.Length - packageInfo.LengthToDeduct,
-                                FormattedVolume = args.Volume - packageInfo.VolumeToDeduct,
-                                SourceType = SourceType.Camera,
-                            };
-                            NLog.LogManager.GetCurrentClassLogger().Error($"绑定体积");
+                            //VolumeInfo需要返回是否动态
+                            //如果是动态体积就需要满足条码和重量才能使用
+                            if (args.MeasurementTriggerMode == MeasurementTriggerMode.Continuous) {
+                                if (packageInfo is { WeightInfo: not null, BarCodeInfo: not null }) {
+                                    packageInfo.VolumeInfo = new VolumeInfoModel() {
+                                        CreateTime = args.Timestamp,
+                                        FormattedHeight = args.Height - packageInfo.LengthToDeduct,
+                                        FormattedWidth = args.Width - packageInfo.WidthToDeduct,
+                                        FormattedLength = args.Length - packageInfo.LengthToDeduct,
+                                        FormattedVolume = args.Volume - packageInfo.VolumeToDeduct,
+                                        SourceType = SourceType.Camera,
+                                    };
+                                    NLog.LogManager.GetCurrentClassLogger().Error($"称重时间:{packageInfo.WeightInfo.CreateTime:yyyy-MM-dd HH:mm:ss.fff}");
+                                    NLog.LogManager.GetCurrentClassLogger().Error($"扫码时间:{packageInfo.BarCodeInfo.ScanTime:yyyy-MM-dd HH:mm:ss.fff}");
+                                    NLog.LogManager.GetCurrentClassLogger().Error($"使用的体积:长-{args.Length},宽-{args.Width},高-{args.Height}");
+                                }
+                            }
+                            else {
+                                packageInfo.VolumeInfo = new VolumeInfoModel() {
+                                    CreateTime = args.Timestamp,
+                                    FormattedHeight = args.Height - packageInfo.LengthToDeduct,
+                                    FormattedWidth = args.Width - packageInfo.WidthToDeduct,
+                                    FormattedLength = args.Length - packageInfo.LengthToDeduct,
+                                    FormattedVolume = args.Volume - packageInfo.VolumeToDeduct,
+                                    SourceType = SourceType.Camera,
+                                };
+                            }
                         }
                         /*else {
                             _volumeQueueInfos.Enqueue(new VolumeInfoModel {
@@ -368,6 +386,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 WeighingMode = WeighingMode.Static
                             }
                         };
+                        //-----
                         EventAggregator.Instance.Publish(new TriggerPositionEvent() {
                             IsSuccess = true,
                             TriggerPosition = TriggerPositionEnum.PackageTrigger,
@@ -970,7 +989,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         //没返回前置信号禁止创建包裹
                         if (info is not null && _supplyCounterSettingsDto is { IsUseSupplyCounterMode: true, IsWaitForPrecedingSignalReplyBeforeCreatingNewPackage: true } &&
                             info.SupplyCounterPackageSignalItem?.Any(a => a.Type == SignalType.ReturningPreSignal) != true) {
-                            NLog.LogManager.GetCurrentClassLogger().Error($"拦截创建:{JsonConvert.SerializeObject(info)}");
                             //使用新条码
                             if (packageInfo?.BarCodeInfo is not null) {
                                 info.BarCodeInfo = new BarCodeInfoModel() {

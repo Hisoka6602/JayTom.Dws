@@ -223,6 +223,12 @@ namespace JayTom.Dws.Client.Models.BarcodeFilterSettingsModel {
             get => _regexPattern;
             set => SetProperty(ref _regexPattern, value);
         }
+
+        /// <summary>
+        /// 备注
+        /// </summary>
+        [DisplayName("备注"), MemberNotNull, ExcelInfo(Width = 10000)]
+        public string Remarks { get; set; } = string.Empty;
     }
 
     public class CustomRegexReplacementItemInfoModel : BindableBase {
@@ -263,5 +269,11 @@ namespace JayTom.Dws.Client.Models.BarcodeFilterSettingsModel {
             get => _replaceContent;
             set => SetProperty(ref _replaceContent, value);
         }
+
+        /// <summary>
+        /// 备注
+        /// </summary>
+        [DisplayName("备注"), MemberNotNull, ExcelInfo(Width = 10000)]
+        public string Remarks { get; set; } = string.Empty;
     }
 }
