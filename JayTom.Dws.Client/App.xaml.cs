@@ -548,8 +548,9 @@ namespace JayTom.Dws.Client {
             ViewModelLocationProvider.Register<ScanCameraSelectionDialog, ScanCameraSelectionDialogViewModel>();
             ViewModelLocationProvider.Register<ResolutionConstraintDialog, ResolutionConstraintViewModel>();
             ViewModelLocationProvider.Register<CloudServicePage, CloudServicePageViewModel>();
-            ViewModelLocationProvider.Register<NetworkVideoRecorderPage, NetworkVideoRecorderPageViewModel>();
+            ViewModelLocationProvider.Register<PasswordValidationDialog, PasswordValidationDialogViewModel>();
 
+            ViewModelLocationProvider.Register<NetworkVideoRecorderPage, NetworkVideoRecorderPageViewModel>();
             ViewModelLocationProvider.Register<PackageSortingSettingsPage, PackageSortingSettingsViewModel>();
             ViewModelLocationProvider.Register<OcrSettingsPage, OcrSettingsViewModel>();
             ViewModelLocationProvider.Register<WorkflowSettingsPage, WorkflowSettingsViewModel>();

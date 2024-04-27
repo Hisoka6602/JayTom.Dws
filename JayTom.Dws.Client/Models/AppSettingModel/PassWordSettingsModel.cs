@@ -12,11 +12,11 @@ namespace JayTom.Dws.Client.Models.AppSettingModel {
 
         private List<PasswordProtectionModuleItemInfoModel> _passwordProtectionModuleItems = new()
         {
-            new PasswordProtectionModuleItemInfoModel()
+            /*new PasswordProtectionModuleItemInfoModel()
             {
                 Description = "数据管理",
                 PageClassName = "DataManagementPage"
-            },
+            },*/
             new PasswordProtectionModuleItemInfoModel()
             {
                 Description = "相机配置",
@@ -41,6 +41,11 @@ namespace JayTom.Dws.Client.Models.AppSettingModel {
             {
                 Description = "称重设置",
                 PageClassName = "WeightSettingPages"
+            },
+            new PasswordProtectionModuleItemInfoModel()
+            {
+                Description = "体积设置",
+                PageClassName = "VolumeSettingsPage"
             },
             new PasswordProtectionModuleItemInfoModel()
             {
@@ -75,7 +80,8 @@ namespace JayTom.Dws.Client.Models.AppSettingModel {
             new PasswordProtectionModuleItemInfoModel()
             {
                 Description = "程序设置",
-                PageClassName = "AppSettingsPage"
+                PageClassName = "AppSettingsPage",
+                IsProtected = true
             },
             new PasswordProtectionModuleItemInfoModel()
             {

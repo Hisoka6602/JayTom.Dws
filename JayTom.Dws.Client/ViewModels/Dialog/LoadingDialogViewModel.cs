@@ -4,7 +4,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog {
 
     public class LoadingDialogViewModel : BindableBase {
         private string _description = "Loading...";
-        private string _identifier;
+        private string _identifier = string.Empty;
 
         /// <summary>
         /// 说明

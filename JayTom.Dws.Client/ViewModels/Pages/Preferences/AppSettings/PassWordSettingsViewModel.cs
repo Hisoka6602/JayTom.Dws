@@ -35,13 +35,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings {
                     IsUsePasswordProtection = settingsDto.IsUsePasswordProtection,
                     PasswordHint = settingsDto.PasswordHint,
                     SkipPasswordValidationForThisSession = settingsDto.SkipPasswordValidationForThisSession,
-                    PasswordProtectionModuleItems = settingsDto.PasswordProtectionModuleItems.Select(s =>
-                        new PasswordProtectionModuleItemInfoModel {
-                            Description = s.Description,
-                            IsProtected = s.IsProtected,
-                            PageClassName = s.PageClassName
-                        }).ToList()
                 };
+                foreach (var model in PassWordSettingsInfo.PasswordProtectionModuleItems) {
+                    model.IsProtected = settingsDto.PasswordProtectionModuleItems.Any(a =>
+                        a.PageClassName.Equals(model.PageClassName) && a.IsProtected);
+                }
             });
         }
 
@@ -67,7 +65,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings {
                         }).ToList()
                 })
             });
-
+            AppContext.SetData("IsValidationPassed", false);
             base.MessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
                 Languages.Language.ResourceManager.GetString("SaveFailed"))}");
             return insertOrUpdate;

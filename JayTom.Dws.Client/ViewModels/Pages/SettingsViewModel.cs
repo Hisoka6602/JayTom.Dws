@@ -1,28 +1,37 @@
 ﻿using System;
 using Prism.Mvvm;
+using System.Linq;
 using Prism.Regions;
 using Prism.Commands;
 using System.Windows;
+using Newtonsoft.Json;
+using System.Threading;
 using System.Windows.Input;
+using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
 using System.Windows.Controls;
 using JayTom.Dws.Client.Models;
 using MaterialDesignThemes.Wpf;
+using JayTom.Dws.Domain.Dto.AppDto;
 using JayTom.Dws.Client.Views.Dialog;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.ViewModels.Dialog;
+using JayTom.Dws.Domain.Repository.LocalConf;
 
 namespace JayTom.Dws.Client.ViewModels.Pages {
 
     public class SettingsViewModel : BindableBase {
         private readonly IRegionManager _regionManager;
+        private readonly IConfigRepository _configRepository;
         private Frame? _frame;
         private ObservableCollection<MenuItemInfoModel> _menuItems;
         private double _listBoxMaxHeight = 900;
+        private PassWordSettingsDto? _passWordSettingsDto;
 
-        public SettingsViewModel(IRegionManager regionManager) {
+        public SettingsViewModel(IRegionManager regionManager, IConfigRepository configRepository) {
             _regionManager = regionManager;
+            _configRepository = configRepository;
             _menuItems = new()
             {
                 /*new MenuItemInfoModel()
@@ -272,6 +281,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     }
                 }
             });
+            EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async settings => {
+                if (settings is SettingsChangedEvent { SettingsName: "PassWordSettings" }) {
+                    _passWordSettingsDto = await _configRepository.FirstOrDefaultEntity<PassWordSettingsDto>("PassWordSettings") ?? new PassWordSettingsDto();
+                }
+            });
         }
 
         //MenuItems
@@ -288,18 +302,15 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         /// <summary>
         /// 点击事件
         /// </summary>
-        public ICommand ClickCommand {
-            get => new DelegateCommand<MenuItemInfoModel>(MenuClickDelegate);
-        }
+        public ICommand ClickCommand => new DelegateCommand<MenuItemInfoModel>(MenuClickDelegate);
 
         /// <summary>
         /// 窗口加载完成
         /// </summary>
-        public ICommand LoadedCommand {
-            get => new DelegateCommand<Frame>(LoadedDelegate);
-        }
+        public ICommand LoadedCommand => new DelegateCommand<Frame>(LoadedDelegate);
 
         private async void LoadedDelegate(Frame obj) {
+            _passWordSettingsDto ??= await _configRepository.FirstOrDefaultEntity<PassWordSettingsDto>("PassWordSettings") ?? new PassWordSettingsDto();
             await Application.Current.Dispatcher.InvokeAsync(() => {
                 //加载loading
                 _frame = obj;
@@ -320,47 +331,68 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             });
         }
 
-        private void MenuClickDelegate(MenuItemInfoModel obj) {
-            //加载loading
-            Task.Run(async () => {
-                await Application.Current.Dispatcher.InvokeAsync(async () => {
-                    var loadingDialog = new LoadingDialog();
-                    if (loadingDialog.DataContext is LoadingDialogViewModel model) {
-                        model.Identifier = "SettingDialog";
-                        DialogHost.Show(loadingDialog, model.Identifier).ConfigureAwait(false);
-                        await Task.Delay(400);
-                        //跳转
-                        {
-                            if (!obj.PageClassName.Equals(string.Empty)) {
-                                foreach (var item in MenuItems) {
-                                    item.IsSelected = false;
-                                    item.RadiusRight = new CornerRadius(0, 0, 0, 0);
-                                }
-                                obj.IsSelected = true;
-                                MenuItemInfoModel? previousItem = null, nextItem = null;
-                                var of = MenuItems.IndexOf(obj);
-                                if (of - 1 >= 0) {
-                                    //有前一个
-                                    previousItem = MenuItems[of - 1];
-                                }
-                                if (of < MenuItems.Count - 1) {
-                                    nextItem = MenuItems[of + 1];
-                                }
+        private async void MenuClickDelegate(MenuItemInfoModel obj) {
+            await Application.Current.Dispatcher.InvokeAsync(async () => {
+                //判断是否使用密码
 
-                                if (previousItem is not null) {
-                                    previousItem.RadiusRight = new CornerRadius(0, 0, 10, 0);
-                                }
+                //加载loading
 
-                                if (nextItem is not null) {
-                                    nextItem.RadiusRight = new CornerRadius(0, 10, 0, 0);
-                                }
-                                _regionManager?.Regions?["ContentRegion"]?.RequestNavigate(new Uri(obj.PageClassName, UriKind.Relative));
-                            }
-                        }
-                        if (DialogHost.IsDialogOpen(model.Identifier)) {
-                            DialogHost.Close(model.Identifier);
+                //弹出密码框
+                if (AppContext.GetData("IsValidationPassed") is not true &&
+                    _passWordSettingsDto?.PasswordProtectionModuleItems
+                        ?.Any(a => a.IsProtected && a.PageClassName.Equals(obj.PageClassName)) == true
+                    ) {
+                    var passwordValidationDialog = new PasswordValidationDialog();
+                    if (passwordValidationDialog.DataContext is PasswordValidationDialogViewModel viewModel) {
+                        viewModel.Identifier = "SettingDialog";
+                        await DialogHost.Show(passwordValidationDialog, viewModel.Identifier);
+
+                        if (!viewModel.IsValidationPassed) {
+                            return;
                         }
                     }
+                }
+
+                Task.Run(async () => {
+                    await Application.Current.Dispatcher.InvokeAsync(async () => {
+                        var loadingDialog = new LoadingDialog();
+                        if (loadingDialog.DataContext is LoadingDialogViewModel model) {
+                            model.Identifier = "SettingDialog";
+                            DialogHost.Show(loadingDialog, model.Identifier).ConfigureAwait(false);
+                            await Task.Delay(400);
+                            //跳转
+                            {
+                                if (!obj.PageClassName.Equals(string.Empty)) {
+                                    foreach (var item in MenuItems) {
+                                        item.IsSelected = false;
+                                        item.RadiusRight = new CornerRadius(0, 0, 0, 0);
+                                    }
+                                    obj.IsSelected = true;
+                                    MenuItemInfoModel? previousItem = null, nextItem = null;
+                                    var of = MenuItems.IndexOf(obj);
+                                    if (of - 1 >= 0) {
+                                        //有前一个
+                                        previousItem = MenuItems[of - 1];
+                                    }
+                                    if (of < MenuItems.Count - 1) {
+                                        nextItem = MenuItems[of + 1];
+                                    }
+
+                                    if (previousItem is not null) {
+                                        previousItem.RadiusRight = new CornerRadius(0, 0, 10, 0);
+                                    }
+
+                                    if (nextItem is not null) {
+                                        nextItem.RadiusRight = new CornerRadius(0, 10, 0, 0);
+                                    }
+                                    _regionManager?.Regions?["ContentRegion"]?.RequestNavigate(new Uri(obj.PageClassName, UriKind.Relative));
+                                }
+                            }
+                            if (DialogHost.IsDialogOpen(model.Identifier)) {
+                                DialogHost.Close(model.Identifier);
+                            }
+                        }
+                    });
                 });
             });
         }
