@@ -176,7 +176,12 @@ namespace JayTom.Dws.Domain.Dto {
         /// <summary>
         /// 创建包裹后
         /// </summary>
-        CreateTimePackageAfter
+        CreateTimePackageAfter,
+
+        /// <summary>
+        /// 发送前置信号
+        /// </summary>
+        SendingPreSignalBefore
     }
 
     /// <summary>

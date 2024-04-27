@@ -171,6 +171,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                 TriggerPositionName = "包裹信息赋值完成后",
                 TriggerPositionValue = TriggerPositionEnum.PackageInfoAssigned,
             },
+            new TriggerPositionModel()
+            {
+                TriggerPositionName = "发送前置信号",
+                TriggerPositionValue = TriggerPositionEnum.SendingPreSignalBefore,
+            },
         };
 
         private TriggerPositionModel _selectedTriggerPosition = new();

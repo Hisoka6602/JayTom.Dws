@@ -73,14 +73,6 @@ namespace JayTom.Dws.Client.EventMediators {
         public PackageInfo? PackageInfo { get; set; }
     }
 
-    public class CreateTimePackageAfter {
-
-        /// <summary>
-        /// 包裹信息
-        /// </summary>
-        public PackageInfo? PackageInfo { get; set; }
-    }
-
     public class BarcodeTypeProviderEvent {
 
         /// <summary>

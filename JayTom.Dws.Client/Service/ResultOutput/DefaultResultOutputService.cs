@@ -59,25 +59,8 @@ namespace JayTom.Dws.Client.Service.ResultOutput {
                     }
                 }
             });
-            EventAggregator.Instance.Subscribe<CreateTimePackageAfter>(async position => {
-                //播放声音事件
-                if (position is CreateTimePackageAfter trigger) {
-                    if (_outputSettingsDto is { IsUseAudioOutput: true, AudioOutputSettingsInfo.TriggerPosition: TriggerPositionEnum.CreateTimePackageAfter }) {
-                        SoundOutput(true);
-                    }
-                }
-            });
-            //CreateTimePackageAfter
-            //包裹信息组合完成
-            EventAggregator.Instance.Subscribe<PackageInfo>(async position => {
-                //播放声音事件
-                if (position is PackageInfo packageInfo) {
-                    if (_outputSettingsDto is { IsUseAudioOutput: true, AudioOutputSettingsInfo.TriggerPosition: TriggerPositionEnum.PackageInfoAssigned }) {
-                        SoundOutput(true);
-                    }
-                }
-            });
             EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async settings => {
+                await Task.Yield();
                 if (settings is SettingsChangedEvent { SettingsName: "ResultOutputSettings" }) {
                     await _semaphore.WaitAsync();
                     var configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("ResultOutputSettings"));

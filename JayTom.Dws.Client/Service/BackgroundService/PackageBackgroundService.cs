@@ -283,7 +283,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 //填充长宽高
                 try {
                     await _createPackageSlim.WaitAsync();
-                    NLog.LogManager.GetCurrentClassLogger().Error($"返回的体积:长-{args.Length},宽-{args.Width},高-{args.Height}");
                     var packageInfo =
                    _createPackageSettingsDto.BarcodeQueueOrder == BarcodeQueueOrderEnum.TimeAscending ?
                        _packageInfos.OrderBy(o => o.Key)?.FirstOrDefault(f => f.Value.VolumeInfo == null).Value :
@@ -325,9 +324,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                         FormattedVolume = args.Volume - packageInfo.VolumeToDeduct,
                                         SourceType = SourceType.Camera,
                                     };
-                                    NLog.LogManager.GetCurrentClassLogger().Error($"称重时间:{packageInfo.WeightInfo.CreateTime:yyyy-MM-dd HH:mm:ss.fff}");
-                                    NLog.LogManager.GetCurrentClassLogger().Error($"扫码时间:{packageInfo.BarCodeInfo.ScanTime:yyyy-MM-dd HH:mm:ss.fff}");
-                                    NLog.LogManager.GetCurrentClassLogger().Error($"使用的体积:长-{args.Length},宽-{args.Width},高-{args.Height}");
                                 }
                             }
                             else {
@@ -706,7 +702,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             .Value;
                         if (info is not null) {
                             //发送信息组合完成信号
-                            NLog.LogManager.GetCurrentClassLogger().Error($"发送组合完成信号");
                             _sortingService.SendPackageInfoCompletedSignal(0, new InstructionsAttach() {
                                 BarCode = string.Empty,
                                 Guid = _preSignal,
@@ -762,8 +757,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     await _createPackageSlim.WaitAsync();
                     var tryDequeue = _instructionsAttachItems.TryDequeue(out var info);
                     if (tryDequeue && info is not null) {
-                        NLog.LogManager.GetCurrentClassLogger().Error($"找到绑定车号");
-
                         var (dateTime, value) = _packageInfos.FirstOrDefault(f => f.Value.BarCodeInfo != null &&
                             f.Value.BarCodeInfo.Barcode.Equals(info.BarCode) &&
                             f.Value.Timestamp.Equals(info.Timestamp) &&
@@ -776,10 +769,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             });
                             value.Guid = Convert.ToInt64(args.Keyword);
                         }
-                    }
-                    else {
-                        NLog.LogManager.GetCurrentClassLogger().Error($"未找到绑定车号:{Convert.ToInt64(args.Keyword)}");
-                        NLog.LogManager.GetCurrentClassLogger().Error($"{JsonConvert.SerializeObject(_packageInfos)}");
                     }
                 }
                 finally {
@@ -1005,11 +994,12 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     finally {
                         _takePackageSlim.Release();
                     }
-                    NLog.LogManager.GetCurrentClassLogger().Error($"创建包裹");
                     packageInfo.Timestamp = new DateTimeOffset(packageInfo.CreateTime).ToUnixTimeMilliseconds();
                     _packageInfos.TryAdd(packageInfo.CreateTime, packageInfo);
                     //触发创建包裹事件
-                    EventAggregator.Instance.Publish(new CreateTimePackageAfter() {
+                    EventAggregator.Instance.Publish(new TriggerPositionEvent() {
+                        IsSuccess = true,
+                        TriggerPosition = TriggerPositionEnum.CreateTimePackageAfter,
                         PackageInfo = packageInfo
                     });
                     //触发全景拍照
@@ -1436,6 +1426,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
                                 if (info is not null &&
                                     info.SupplyCounterPackageSignalItem.Any(a => a.Type == SignalType.SendingPreSignal) != true) {
+                                    EventAggregator.Instance.Publish(new TriggerPositionEvent() {
+                                        IsSuccess = true,
+                                        TriggerPosition = TriggerPositionEnum.SendingPreSignalBefore,
+                                    });
+
                                     //发送前置信号
                                     var instructionsAttach = new InstructionsAttach() {
                                         BarCode = info.BarCodeInfo?.Barcode ?? string.Empty,
@@ -1451,7 +1446,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                     });
                                     //添加到队列
                                     _instructionsAttachItems.Enqueue(instructionsAttach);
-                                    NLog.LogManager.GetCurrentClassLogger().Error($"发送前置信号");
                                 }
                             }
                             finally {
