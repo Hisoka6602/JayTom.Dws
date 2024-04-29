@@ -46,7 +46,7 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
                         break;
 
                     case FunctionType.Heartbeat:
-                        startData = "95";
+                        startData = "F9";
                         functionData = "01";
                         break;
 
@@ -66,10 +66,12 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
             //判断是否8个字节
             var bytes = HexStringToByteArray(data);
             var type = FunctionType.None;
+            var sortingExceptionReturnType = SortingExceptionReturnType.None;
             var description = string.Empty;
             var key = string.Empty;
             var keywordPosition = 0;
-            if (bytes.Length is 8 or 7) {
+            var commandParsing = new CommandParsing();
+            if (bytes.Length is 8) {
                 //不效验
                 string hexString;
                 int number;
@@ -96,7 +98,7 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
                         keywordPosition = 2;
                         break;
 
-                    case 0x21://原0x21,菜鸟项目改成0x22
+                    case 0x21:
                         type = FunctionType.RemovePackage;
                         description = $"移除包裹";
                         hexString = BitConverter.ToString(new[] { bytes[2], bytes[3] })
@@ -108,7 +110,7 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
                         break;
 
                     case 0x22:
-                        /*type = FunctionType.None;*/
+                        sortingExceptionReturnType = SortingExceptionReturnTypeConvert(bytes[6]);
                         type = FunctionType.PackageException;
                         description = $"分拣异常";
                         hexString = BitConverter.ToString(new[] { bytes[2], bytes[3] })
@@ -117,7 +119,25 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
                             key = number.ToString();
                         }
                         keywordPosition = 2;
+                        commandParsing = new CommandParsing() {
+                            SequenceNumber = (uint)number,
+                            ExceptionCode = bytes[7],
+                            FunctionCode = bytes[1],
+                            CompartmentNumber = BitConverter.ToUInt32(new byte[] { bytes[5], bytes[4], 0, 0 }, 0)
+                        };
                         break;
+
+                    /*case 0x23:
+                        /*type = FunctionType.None;#1#
+                        type = FunctionType.FlowToEndOrException;
+                        description = $"流到尾部/或指定异常口";
+                        hexString = BitConverter.ToString(new[] { bytes[2], bytes[3] })
+                            .Replace("-", string.Empty).Replace(" ", string.Empty);
+                        if (int.TryParse(hexString, System.Globalization.NumberStyles.HexNumber, null, out number)) {
+                            key = number.ToString();
+                        }
+                        keywordPosition = 2;
+                        break;*/
 
                     case 0x14:
                         //前置信号回复
@@ -133,7 +153,7 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
 
                     case 0x16:
                         type = FunctionType.SequenceBindingReply;
-                        description = $"前置信号";
+                        description = $"序号回复绑定";
                         hexString = BitConverter.ToString(new[] { bytes[2], bytes[3] })
                             .Replace("-", string.Empty).Replace(" ", string.Empty);
                         if (int.TryParse(hexString, System.Globalization.NumberStyles.HexNumber, null, out number)) {
@@ -160,7 +180,9 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
                     Keyword = key,
                     KeywordPosition = keywordPosition,
                     ProtocolName = "无限创科协议",
-                    RawContent = data
+                    RawContent = data,
+                    SortingExceptionReturnType = sortingExceptionReturnType,
+                    CommandParsing = commandParsing
                 };
             }
 
@@ -172,14 +194,51 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
         }
 
         public string ConvertSortingCode(object tag) {
-            if (tag is long and > 0) {
-                return $"{tag:X4}";
-            }
-
-            return string.Empty;
+            return tag is long and > 0 ? $"{tag:X4}" : string.Empty;
         }
 
         public int DataLen => 8;
+
+        public SortingExceptionReturnType SortingExceptionReturnTypeConvert(object obj) {
+            switch (obj) {
+                case byte exceptionByte:
+                    return exceptionByte switch {
+                        0x01 => SortingExceptionReturnType.DistanceTooClose,
+                        0x02 => SortingExceptionReturnType.Locked,
+                        0x03 => SortingExceptionReturnType.VehicleNumberMismatch,
+                        0x04 => SortingExceptionReturnType.UnstableLineSpeed,
+                        _ => SortingExceptionReturnType.None
+                    };
+
+                case byte[] { Length: 8 } bytes:
+                    return SortingExceptionReturnTypeConvert(bytes[6]);
+
+                case string hexString: {
+                        var toByteArray = HexStringToByteArray(hexString);
+                        return SortingExceptionReturnTypeConvert(toByteArray);
+                    }
+                default:
+                    return SortingExceptionReturnType.None;
+            }
+        }
+
+        public CommandParsing? CommandParsingConvert(object obj) {
+            if (obj is byte[] { Length: 8 } bytes) {
+                return new CommandParsing() {
+                    FunctionCode = bytes[1],
+                    SequenceNumber = BitConverter.ToUInt32(new byte[] { bytes[3], bytes[2], 0, 0 }, 0),
+                    CompartmentNumber = BitConverter.ToUInt32(new byte[] { bytes[5], bytes[4], 0, 0 }, 0),
+                    ExceptionCode = bytes[6],
+                };
+            }
+
+            if (obj is string hexString) {
+                var toByteArray = HexStringToByteArray(hexString);
+                return CommandParsingConvert(toByteArray);
+            }
+
+            return null;
+        }
 
         public static byte[] HexStringToByteArray(string hexString) {
             try {
@@ -198,20 +257,14 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
         }
 
         public static string HexWithDelimiter(string hexString, string delimiter) {
-            for (int i = 2; i <= hexString.Length; i += 3) {
+            for (var i = 2; i <= hexString.Length; i += 3) {
                 hexString = hexString.Insert(i, delimiter);
             }
             return hexString;
         }
 
         public static byte XorChecksum(byte[] data) {
-            byte checksum = 0;
-            for (var i = 0; i < data.Length; i++) {
-                if (i > 0) {
-                    checksum ^= data[i];
-                }
-            }
-            return checksum;
+            return data.Where((t, i) => i > 0).Aggregate<byte, byte>(0, (current, t) => (byte)(current ^ t));
         }
     }
 }

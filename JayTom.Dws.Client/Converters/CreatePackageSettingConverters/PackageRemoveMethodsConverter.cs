@@ -19,6 +19,9 @@ namespace JayTom.Dws.Client.Converters.CreatePackageSettingConverters {
                 else if (parameter?.ToString()?.Equals("LowerMachineRemoval") == true && method == PackageRemoveMethodsEnum.LowerMachineRemoval) {
                     return true;
                 }
+                else if (parameter?.ToString()?.Equals("None") == true && method == PackageRemoveMethodsEnum.None) {
+                    return true;
+                }
                 return false;
             }
             return Binding.DoNothing;
@@ -32,7 +35,10 @@ namespace JayTom.Dws.Client.Converters.CreatePackageSettingConverters {
                 else if (parameter?.ToString()?.Equals("LowerMachineRemoval") == true && boolValue) {
                     return PackageRemoveMethodsEnum.LowerMachineRemoval;
                 }
-                return PackageRemoveMethodsEnum.FillInformation;
+                else if (parameter?.ToString()?.Equals("None") == true && boolValue) {
+                    return PackageRemoveMethodsEnum.None;
+                }
+                return PackageRemoveMethodsEnum.None;
             }
             return Binding.DoNothing;
         }

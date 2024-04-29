@@ -243,6 +243,9 @@ namespace JayTom.Dws.Client.Service.Device {
             _staticScale.WeightStabilized += delegate (object? sender, WeightChangedEventArgs args) {
                 OnWeightStabilized(args);
             };
+            _staticScale.WeightCleared += (sender, args) => {
+                OnWeightCleared(args);
+            };
             _staticScale.Connected += delegate (object? sender, IScale scale) {
                 OnScaleConnected(new ScaleConnectedEventArgs() {
                     ConnectionParameters = new BaseScaleConnectParam() {
@@ -356,6 +359,8 @@ namespace JayTom.Dws.Client.Service.Device {
         public event EventHandler<StableWeightEventArgs>? StableWeight;
 
         public event EventHandler<WeightChangedEventArgs>? WeightStabilized;
+
+        public event EventHandler<WeightChangedEventArgs>? WeightCleared;
 
         public event EventHandler<DeviceExceptionEventArgs>? DeviceException;
 
@@ -1104,6 +1109,11 @@ namespace JayTom.Dws.Client.Service.Device {
         protected virtual async void OnAuthenticationExceptionOccurred(AuthenticationExceptionEventArgs e) {
             await Task.Yield();
             AuthenticationExceptionOccurred?.Invoke(this, e);
+        }
+
+        protected virtual async void OnWeightCleared(WeightChangedEventArgs e) {
+            await Task.Yield();
+            WeightCleared?.Invoke(this, e);
         }
     }
 }

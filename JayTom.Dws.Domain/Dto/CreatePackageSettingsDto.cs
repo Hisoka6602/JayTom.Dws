@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Linq;
 using System.Text;
+using System.ComponentModel;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
 namespace JayTom.Dws.Domain.Dto {
-
     public class CreatePackageSettingsDto {
 
         /// <summary>
@@ -80,16 +80,19 @@ namespace JayTom.Dws.Domain.Dto {
         /// <summary>
         /// 使用一个
         /// </summary>
+        [Description("使用一个")]
         UseOneBarcode,
 
         /// <summary>
         /// 使用多个条码
         /// </summary>
+        [Description("使用多个条码")]
         UseMultipleBarcodes,
 
         /// <summary>
         /// 合并条码
         /// </summary>
+        [Description("合并条码")]
         MergeBarcodes,
 
         //使用多个条码
@@ -101,50 +104,65 @@ namespace JayTom.Dws.Domain.Dto {
         /// <summary>
         /// 扫码相机
         /// </summary>
+        [Description("扫码相机")]
         ScanBarcodeCamera = 1,
 
         /// <summary>
         /// 稳定重量
         /// </summary>
+        [Description("稳定重量")]
         StableWeight = 2,
 
         /// <summary>
         /// 控件输入
         /// </summary>
+        [Description("控件输入")]
         ControlInput = 4,
 
         /// <summary>
         /// 体积输入
         /// </summary>
+        [Description("体积输入")]
         VolumeInput = 8,
 
         /// <summary>
         /// 下位机创建
         /// </summary>
+        [Description("下位机创建")]
         LowerMachineCreation = 16,
 
         /// <summary>
         /// Tcp内容输入
         /// </summary>
+        [Description("Tcp内容输入")]
         TcpInput = 32,
 
         /// <summary>
         /// Ocr信息
         /// </summary>
+        [Description("Ocr信息")]
         OcrInfo = 64
     }
 
     public enum PackageRemoveMethodsEnum {
 
         /// <summary>
+        /// 不移除
+        /// </summary>
+        [Description("无")]
+        None,
+
+        /// <summary>
         /// 填充完整信息
         /// </summary>
+        [Description("填充完整信息")]
         FillInformation,
 
         /// <summary>
         /// 下位机移除
         /// </summary>
-        LowerMachineRemoval
+        [Description("下位机移除")]
+        LowerMachineRemoval,
     }
 
     public enum BarcodeQueueOrderEnum {
@@ -152,11 +170,13 @@ namespace JayTom.Dws.Domain.Dto {
         /// <summary>
         /// 时间正序
         /// </summary>
+        [Description("时间正序")]
         TimeAscending,
 
         /// <summary>
         /// 时间倒序
         /// </summary>
+        [Description("时间倒序")]
         TimeDescending
     }
 }

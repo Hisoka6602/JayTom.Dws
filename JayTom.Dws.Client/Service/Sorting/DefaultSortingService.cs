@@ -113,6 +113,8 @@ namespace JayTom.Dws.Client.Service.Sorting {
 
         public event EventHandler<PackageInstructionEventArgs>? ResetButtonTrigger;
 
+        public event EventHandler<PackageInstructionEventArgs>? FlowToEndOrException;
+
         public event EventHandler<string>? ClearExceptionEvent;
 
         public DefaultSortingService(IConfigRepository configRepository,
@@ -852,7 +854,6 @@ namespace JayTom.Dws.Client.Service.Sorting {
                             PackageCreationInstruction = param.PackageCreationInstruction ?? string.Empty,
                             IsCreatedByLowerMachine = param.IsCreatedByLowerMachine,
                         });
-
                     //回调分拣消息
                 }
                 else {
@@ -1083,6 +1084,11 @@ namespace JayTom.Dws.Client.Service.Sorting {
         protected virtual async void OnResetButtonTrigger(PackageInstructionEventArgs e) {
             await Task.Yield();
             ResetButtonTrigger?.Invoke(this, e);
+        }
+
+        protected virtual async void OnFlowToEndOrException(PackageInstructionEventArgs e) {
+            await Task.Yield();
+            FlowToEndOrException?.Invoke(this, e);
         }
     }
 }

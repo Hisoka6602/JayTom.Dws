@@ -239,7 +239,10 @@ namespace JayTom.Dws.Interface.CaiNiao {
             double width = default, double height = default, double volume = default, UploadImageInfo? imageInfo = default,
             List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
             if (other is ReportChuteInfo reportChuteInfo) {
-                NLog.LogManager.GetCurrentClassLogger().Error($"提交分拣报告:chuteCode-{reportChuteInfo.ChuteCode}");
+                if (reportChuteInfo.ErrorReson.Contains("车号不匹配")) {
+                    reportChuteInfo.ChuteCode = "100";
+                }
+                NLog.LogManager.GetCurrentClassLogger().Error($"提交分拣报告:barCode:{barcode},chuteCode:{reportChuteInfo.ChuteCode},reportChuteInfo.ErrorReson:{reportChuteInfo.ErrorReson}");
                 var resultContent = string.Empty;
                 var requestTime = DateTime.Now;
                 var data = new {

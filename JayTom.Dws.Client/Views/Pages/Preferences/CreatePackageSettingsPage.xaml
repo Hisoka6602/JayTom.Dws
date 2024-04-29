@@ -585,6 +585,14 @@
                     <StackPanel Orientation="Horizontal">
                         <RadioButton
                             Margin="10,0"
+                            Content="无"
+                            Focusable="False"
+                            FontWeight="Bold"
+                            Foreground="White"
+                            IsChecked="{Binding CreatePackageSettingsInfo.PackageRemoveMethods, Converter={StaticResource PackageRemoveMethodsConverter}, ConverterParameter=None, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                            Template="{StaticResource CustomRadioButtonTemplate}" />
+                        <RadioButton
+                            Margin="10,0"
                             Content="填充完整信息"
                             Focusable="False"
                             FontWeight="Bold"

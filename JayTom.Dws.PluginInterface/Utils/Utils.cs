@@ -4,9 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Windows;
 using System.Drawing;
+using System.Reflection;
 using System.Diagnostics;
 using System.Windows.Media;
 using System.Windows.Input;
+using System.ComponentModel;
 using System.Threading.Tasks;
 using System.Drawing.Imaging;
 using System.Security.Policy;
@@ -198,6 +200,20 @@ namespace JayTom.Dws.PluginInterface.Utils {
             }
 
             return null;
+        }
+
+        public static string GetDescription(this Enum value) {
+            try {
+                var field = value.GetType().GetField(value.ToString());
+
+                var attribute =
+                    (DescriptionAttribute)Attribute.GetCustomAttribute(field, typeof(DescriptionAttribute));
+
+                return attribute == null ? value.ToString() : attribute.Description;
+            }
+            catch (Exception e) {
+            }
+            return string.Empty;
         }
     }
 }

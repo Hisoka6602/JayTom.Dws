@@ -338,7 +338,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                 //加载loading
 
                 //弹出密码框
-                if (AppContext.GetData("IsValidationPassed") is not true &&
+                if (_passWordSettingsDto?.IsUsePasswordProtection == true && AppContext.GetData("IsValidationPassed") is not true &&
                     _passWordSettingsDto?.PasswordProtectionModuleItems
                         ?.Any(a => a.IsProtected && a.PageClassName.Equals(obj.PageClassName)) == true
                     ) {

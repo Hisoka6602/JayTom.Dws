@@ -9,7 +9,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\JayTom.Dws.Camera\JayTom.Dws.Camera.csproj" />
+    <ProjectReference Include="..\JayTom.Dws.Domain\JayTom.Dws.Domain.csproj" />
     <ProjectReference Include="..\JayTom.Dws.Interface\JayTom.Dws.Interface.csproj" />
+    <ProjectReference Include="..\JayTom.Dws.PluginInterface\JayTom.Dws.PluginInterface.csproj" />
     <ProjectReference Include="..\JayTom.Dws.Plugin\JayTom.Dws.Plugin.csproj" />
   </ItemGroup>
 

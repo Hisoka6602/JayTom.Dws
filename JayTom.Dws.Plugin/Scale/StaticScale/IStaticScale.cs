@@ -15,6 +15,11 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
         /// 实时重量
         /// </summary>
         event EventHandler<float> CurrentWeight;
+
+        /// <summary>
+        /// 重量清零
+        /// </summary>
+        public event EventHandler<WeightChangedEventArgs> WeightCleared;
     }
 
     public enum WeightAccessMode {

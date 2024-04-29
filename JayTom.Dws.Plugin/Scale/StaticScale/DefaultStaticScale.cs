@@ -214,6 +214,15 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
                             });
                             _weightQueue.Clear();
                         }
+                        else if (_weightQueue.All(item => item == 0)) {
+                            OnWeightCleared(new WeightChangedEventArgs() {
+                                Format = WeightFormat,
+                                FormattedWeight = 0,
+                                OriginalContent = string.Join(",", _weightQueue.ToList()),
+                                Type = WeightType.Static
+                            });
+                            _weightQueue.Clear();
+                        }
                     }
 
                     if (WeightAdditionalProperties.IsUseMergedWeightTimeout) {
@@ -262,6 +271,8 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
         }
 
         public event EventHandler<float>? CurrentWeight;
+
+        public event EventHandler<WeightChangedEventArgs>? WeightCleared;
 
         protected virtual async void OnCurrentWeight(float e) {
             await Task.Yield();
@@ -329,6 +340,11 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
         protected virtual async void OnWeightStabilized(WeightChangedEventArgs e) {
             await Task.Yield();
             WeightStabilized?.Invoke(this, e);
+        }
+
+        protected virtual async void OnWeightCleared(WeightChangedEventArgs e) {
+            await Task.Yield();
+            WeightCleared?.Invoke(this, e);
         }
     }
 }

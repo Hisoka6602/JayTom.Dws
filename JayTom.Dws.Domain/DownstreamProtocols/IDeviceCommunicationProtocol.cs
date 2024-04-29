@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Text;
+using System.ComponentModel;
 using System.Threading.Tasks;
 using JayTom.Dws.Data.Package;
 using System.Collections.Generic;
@@ -38,6 +39,20 @@ namespace JayTom.Dws.Domain.DownstreamProtocols {
         /// </summary>
 
         public int DataLen { get; }
+
+        /// <summary>
+        /// 异常类型转换
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
+        public SortingExceptionReturnType SortingExceptionReturnTypeConvert(object obj);
+
+        /// <summary>
+        /// 转换指令信息
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
+        public CommandParsing? CommandParsingConvert(object obj);
     }
 
     public class DeviceDecodeResult {
@@ -86,6 +101,16 @@ namespace JayTom.Dws.Domain.DownstreamProtocols {
         /// 指令时间
         /// </summary>
         public DateTime Time { get; set; }
+
+        /// <summary>
+        /// 包裹分拣异常返回类型
+        /// </summary>
+        public SortingExceptionReturnType SortingExceptionReturnType { get; set; }
+
+        /// <summary>
+        /// 指令解析
+        /// </summary>
+        public CommandParsing CommandParsing { get; set; } = new();
     }
 
     public enum FunctionType {
@@ -93,87 +118,104 @@ namespace JayTom.Dws.Domain.DownstreamProtocols {
         /// <summary>
         /// 无
         /// </summary>
+        [Description("无")]
         None,
 
         /// <summary>
         /// 创建包裹
         /// </summary>
+        [Description("创建包裹")]
         CreatePackage,
 
         /// <summary>
         /// 移除包裹(分拣完成)
         /// </summary>
+        [Description("落格完成")]
         RemovePackage,
 
         /// <summary>
         /// 包裹异常
         /// </summary>
+        [Description("包裹异常")]
         PackageException,
 
         /// <summary>
         /// 开始运行
         /// </summary>
+        [Description("开始运行")]
         StartRunning,
 
         /// <summary>
         /// 停止运行
         /// </summary>
+        [Description("停止运行")]
         StopRunning,
 
         /// <summary>
         /// 异常信息
         /// </summary>
+        [Description("异常信息")]
         ExceptionMessage,
 
         /// <summary>
         /// 设备信息
         /// </summary>
+        [Description("设备信息")]
         DeviceInfo,
 
         /// <summary>
         /// 心跳包
         /// </summary>
+        [Description("心跳包")]
         Heartbeat,
 
         /// <summary>
         /// 发送出口
         /// </summary>
+        [Description("发送出口")]
         SendExit,
 
         /// <summary>
         /// 解除异常
         /// </summary>
+        [Description("解除异常")]
         ClearException,
 
         /// <summary>
         /// 锁格
         /// </summary>
+        [Description("锁格")]
         LockExit,
 
         /// <summary>
         /// 发送前置动作
         /// </summary>
+        [Description("发送前置动作")]
         SendPreSignal,
 
         /// <summary>
         /// 接收前置动作回复
         /// </summary>
+        [Description("接收前置动作回复")]
         ReceivePreSignalReply,
 
         /// <summary>
         /// 包裹信息赋值完成
         /// </summary>
+        [Description("包裹信息赋值完成")]
         PackageInfoCompletedSignal,
 
         /// <summary>
         /// 序号绑定回复
         /// </summary>
+        [Description("序号绑定回复")]
         SequenceBindingReply,
 
         /// <summary>
         /// 复位按钮触发
         /// </summary>
-        ResetButtonTrigger
+        [Description("复位按钮触发")]
+        ResetButtonTrigger,
     }
 
     public class InstructionsAttach {
@@ -287,5 +329,61 @@ namespace JayTom.Dws.Domain.DownstreamProtocols {
         /// 获取或设置其他信息（通用对象类型）。
         /// </summary>
         public object? Other { get; set; }
+    }
+
+    public enum SortingExceptionReturnType {
+
+        /// <summary>
+        /// 无
+        /// </summary>
+        [Description("分拣成功")]
+        None,
+
+        /// <summary>
+        /// 距离过近
+        /// </summary>
+        [Description("距离过近")]
+        DistanceTooClose,
+
+        /// <summary>
+        /// 锁格
+        /// </summary>
+        [Description("锁格")]
+        Locked,
+
+        /// <summary>
+        /// 车号不匹配
+        /// </summary>
+        [Description("车号不匹配")]
+        VehicleNumberMismatch,
+
+        /// <summary>
+        /// 线速度未稳定放包
+        /// </summary>
+        [Description("线速度未稳定放包")]
+        UnstableLineSpeed
+    }
+
+    public class CommandParsing {
+
+        /// <summary>
+        /// 功能码
+        /// </summary>
+        public byte FunctionCode { get; set; }
+
+        /// <summary>
+        /// 序号
+        /// </summary>
+        public uint SequenceNumber { get; set; }
+
+        /// <summary>
+        /// 格口号
+        /// </summary>
+        public uint CompartmentNumber { get; set; }
+
+        /// <summary>
+        /// 异常码
+        /// </summary>
+        public byte ExceptionCode { get; set; }
     }
 }

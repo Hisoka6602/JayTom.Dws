@@ -414,6 +414,29 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     _createPackageSlim.Release();
                 }
             };
+            //重量清0
+            _deviceService.WeightCleared += async (sender, args) => {
+                //供包台模式
+                if (_supplyCounterSettingsDto.IsUseSupplyCounterMode) {
+                    //如果重量为0且没有其他属性数据就需要删除该包裹
+                    try {
+                        await _createPackageSlim.WaitAsync();
+
+                        var keyValuePair = _createPackageSettingsDto.BarcodeQueueOrder == BarcodeQueueOrderEnum.TimeAscending
+                            ? _packageInfos.OrderBy(o => o.Key)?.FirstOrDefault(f => f.Value is { IsCompleted: false, WeightInfo: not null })
+                            : _packageInfos.OrderBy(o => o.Key)?.LastOrDefault(f => f.Value is { IsCompleted: false, WeightInfo: not null });
+
+                        if (keyValuePair?.Value is not null && (keyValuePair.Value.Value.VolumeInfo is null || keyValuePair.Value.Value.BarCodeInfo is null)) {
+                            //移除包裹
+                            _packageInfos.TryRemove(keyValuePair.Value);
+                        }
+                    }
+                    finally {
+                        _createPackageSlim.Release();
+                    }
+                }
+            };
+
             //外部数据源
             _externalDataService.DataSourceEnabled += delegate (object? sender, ExternalDataSourceEventArgs args) {
                 _externalDataSource = args;
@@ -605,48 +628,42 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             };
             //下位机(移除包裹)
             _sortingService.RemovePackageEvent += async delegate (object? sender, PackageInstructionEventArgs args) {
-                if (_createPackageSettingsDto.PackageRemoveMethods == PackageRemoveMethodsEnum.LowerMachineRemoval) {
-                    try {
-                        await _createPackageSlim.WaitAsync();
-                        var tryParse = int.TryParse(args.Keyword, out var num);
-                        if (tryParse) {
-                            var keyValuePair = _packageInfos.OrderBy(o => o.Key).FirstOrDefault(f => f.Value.Guid.Equals(num));
-                            if (keyValuePair.Value is not null) {
-                                EventAggregator.Instance.Publish(new InstructionReceived() {
-                                    Timestamp = new DateTimeOffset(keyValuePair.Value.CreateTime).ToUnixTimeMilliseconds(),
-                                    IsCreatedByLowerMachine = true,
-                                    SortingCode = num.ToString(),
-                                    InstructionInfos = new List<InstructionInfoModel>()
+                try {
+                    await _createPackageSlim.WaitAsync();
+                    var tryParse = int.TryParse(args.Keyword, out var num);
+                    if (tryParse) {
+                        var keyValuePair = _packageInfos.OrderBy(o => o.Key).FirstOrDefault(f => f.Value.Guid.Equals(num));
+                        if (keyValuePair.Value is not null) {
+                            EventAggregator.Instance.Publish(new InstructionReceived() {
+                                Timestamp = new DateTimeOffset(keyValuePair.Value.CreateTime).ToUnixTimeMilliseconds(),
+                                IsCreatedByLowerMachine = true,
+                                SortingCode = num.ToString(),
+                                InstructionInfos = new List<InstructionInfoModel>()
+                                {
+                                    new()
                                     {
-                                        new()
-                                        {
-                                            InstructionContent = args.Instruction,
-                                            InstructionGeneratedTime = DateTime.Now,
-                                            InstructionType = InstructionType.SignalCallback
-                                        }
+                                        InstructionContent = args.Instruction,
+                                        InstructionGeneratedTime = DateTime.Now,
+                                        InstructionType = InstructionType.SignalCallback
                                     }
-                                });
-                                if (keyValuePair.Value.PackageExceptionStatus == 0) {
-                                    var (key, value) = GetExceptionStatus(keyValuePair.Value.BarCodeInfo?.Barcode ?? string.Empty, args.Instruction);
-                                    keyValuePair.Value.PackageExceptionMsg = value;
-                                    keyValuePair.Value.PackageExceptionStatus = key;
                                 }
-                                //是否延迟包
-                                var isDelayPacket = IsDelayPacket(args.Instruction);
-                                EventAggregator.Instance.Publish(new CallBackPackageInfo {
-                                    CallBackTime = DateTime.Now,
-                                    PackageCreateTime = keyValuePair.Value.CreateTime,
-                                    PackageInfo = keyValuePair.Value,
-                                    InstructionContent = args.Instruction,
-                                    ExitNum = isDelayPacket.Value
-                                });
+                            });
+                            //是否延迟包
+
+                            EventAggregator.Instance.Publish(new CallBackPackageInfo {
+                                CallBackTime = DateTime.Now,
+                                PackageCreateTime = keyValuePair.Value.CreateTime,
+                                PackageInfo = keyValuePair.Value,
+                                InstructionContent = args.Instruction,
+                            });
+                            if (_createPackageSettingsDto.PackageRemoveMethods == PackageRemoveMethodsEnum.LowerMachineRemoval) {
                                 _packageInfos.TryRemove(keyValuePair);
                             }
                         }
                     }
-                    finally {
-                        _createPackageSlim.Release();
-                    }
+                }
+                finally {
+                    _createPackageSlim.Release();
                 }
 
                 //其他协议
@@ -673,9 +690,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                     }
                                 }
                             });
-                            var (key, value) = GetExceptionStatus(keyValuePair.Value.BarCodeInfo?.Barcode ?? string.Empty, args.Instruction);
-                            keyValuePair.Value.PackageExceptionMsg = value;
-                            keyValuePair.Value.PackageExceptionStatus = key;
                         }
                     }
                 }
@@ -683,6 +697,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     _createPackageSlim.Release();
                 }
             };
+
             //下位机(清空异常)
             _sortingService.ClearExceptionEvent += async delegate (object? sender, string o) {
                 try {
@@ -1356,7 +1371,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 ?.FirstOrDefault()
                                 .Value
                             : null;
-
                         if (value is { IsCompleted: false, BarCodeInfo: not null } packageInfo &&
                             (!_supplyCounterSettingsDto.IsUseSupplyCounterMode ||
                              (packageInfo.SupplyCounterPackageSignalItem.Any(a => a.Type == SignalType.ReturningPreSignal)
@@ -1574,45 +1588,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 await Task.Delay(10, stoppingToken);
             }
         }
-
-        //判断是否延迟包
-        private KeyValuePair<bool, int> IsDelayPacket(string instruction) {
-            var bytes = WxkcCommunicationProtocol.HexStringToByteArray(instruction);
-            if (bytes.Length > 5) {
-                var hexString = BitConverter.ToString(new[] { bytes[4], bytes[5] })
-                    .Replace("-", string.Empty).Replace(" ", string.Empty);
-                int.TryParse(hexString, System.Globalization.NumberStyles.HexNumber, null,
-                    out var outExitNum);
-                return new KeyValuePair<bool, int>(outExitNum is 999 or 998, outExitNum);
-            }
-
-            return new KeyValuePair<bool, int>(false, 0);
-        }
-
-        //判断包裹异常信息
-        private KeyValuePair<int, string> GetExceptionStatus(string barcode, string instructionContent) {
-            var hexStringToByteArray = WxkcCommunicationProtocol.HexStringToByteArray(instructionContent);
-            if (hexStringToByteArray.Length > 5) {
-                var hexString = BitConverter.ToString(new[] { hexStringToByteArray[4], hexStringToByteArray[5] })
-                    .Replace("-", string.Empty).Replace(" ", string.Empty);
-                int.TryParse(hexString, System.Globalization.NumberStyles.HexNumber, null,
-                    out var outExitNum);
-                switch (outExitNum) {
-                    case 999:
-                        //锁格
-                        return new KeyValuePair<int, string>(3, "目的格口锁格");
-
-                    case 998:
-                        //间隔太近
-                        return new KeyValuePair<int, string>(6, "包裹间隔太近");
-                }
-            }
-            if (string.IsNullOrEmpty(barcode) || barcode.ToLower().Equals("noread")) {
-                return new KeyValuePair<int, string>(1, "无条码");
-            }
-
-            return new KeyValuePair<int, string>(0, "分拣成功");
-        }
     }
 
     public class PackageInfo {
@@ -1702,7 +1677,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         /// </summary>
         public long Timestamp { get; set; }
 
-        /// <summary>
+        /*/// <summary>
         /// 包裹异常信息
         /// </summary>
         public string PackageExceptionMsg { get; set; } = "分拣成功";
@@ -1710,7 +1685,13 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         /// <summary>
         /// 包裹异常状态
         /// </summary>
-        public int PackageExceptionStatus { get; set; } = 0;
+        public int PackageExceptionStatus { get; set; } = 0;*/
+
+        /// <summary>
+        /// 包裹异常类型
+        /// </summary>
+
+        public List<SortingExceptionReturnType> SortingExceptionReturnTypes { get; set; } = new();
 
         /// <summary>
         /// 供包台信号类型

@@ -9,6 +9,8 @@ using JayTom.Dws.Plugin.Speech;
 using JayTom.Dws.Interface.geek_;
 using System.Text.RegularExpressions;
 using JayTom.Dws.Interface.Eshippingit;
+using JayTom.Dws.PluginInterface.Utils;
+using JayTom.Dws.Domain.DownstreamProtocols;
 using JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision;
 using Microsoft.Extensions.FileSystemGlobbing.Internal;
 using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech;
@@ -17,6 +19,8 @@ using JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision;
 internal class Program {
 
     private static void Main(string[] args) {
+        var description = SortingExceptionReturnType.VehicleNumberMismatch.GetDescription();
+        return;
         var totalMicroseconds = DateTime.Now.Subtract(DateTime.Now.AddSeconds(-1)).TotalMicroseconds;
         return;
         try {

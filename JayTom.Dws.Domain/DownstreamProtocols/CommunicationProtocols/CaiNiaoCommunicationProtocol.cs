@@ -304,5 +304,13 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
         }
 
         public int DataLen { get; } = 0;
+
+        public SortingExceptionReturnType SortingExceptionReturnTypeConvert(object obj) {
+            throw new NotImplementedException();
+        }
+
+        public CommandParsing? CommandParsingConvert(object obj) {
+            throw new NotImplementedException();
+        }
     }
 }

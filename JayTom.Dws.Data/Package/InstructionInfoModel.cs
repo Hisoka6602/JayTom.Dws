@@ -97,6 +97,11 @@ namespace JayTom.Dws.Data.Package {
         /// <summary>
         /// 复位按钮触发
         /// </summary>
-        ResetButtonTrigger
+        ResetButtonTrigger,
+
+        /// <summary>
+        /// 流到尾部或指定异常口
+        /// </summary>
+        FlowToEndOrException
     }
 }

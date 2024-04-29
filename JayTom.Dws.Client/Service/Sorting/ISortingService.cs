@@ -66,6 +66,11 @@ namespace JayTom.Dws.Client.Service.Sorting {
         public event EventHandler<PackageInstructionEventArgs>? ResetButtonTrigger;
 
         /// <summary>
+        /// 流到尾部或指定异常口
+        /// </summary>
+        public event EventHandler<PackageInstructionEventArgs>? FlowToEndOrException;
+
+        /// <summary>
         /// 解除异常
         /// </summary>
         event EventHandler<string> ClearExceptionEvent;

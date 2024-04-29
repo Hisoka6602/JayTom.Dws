@@ -121,6 +121,14 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
 
         public int DataLen => 43;
 
+        public SortingExceptionReturnType SortingExceptionReturnTypeConvert(object obj) {
+            throw new NotImplementedException();
+        }
+
+        public CommandParsing? CommandParsingConvert(object obj) {
+            throw new NotImplementedException();
+        }
+
         private static byte[] BarcodeToByteArray(string barcode, int length, byte paddingCharacter) {
             // 使用UTF-8编码将字符串转换为字节数组
             var byteArray = Encoding.UTF8.GetBytes(barcode);

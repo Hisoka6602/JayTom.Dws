@@ -176,6 +176,11 @@ namespace JayTom.Dws.Client.Service.Device {
         event EventHandler<WeightChangedEventArgs> WeightStabilized;
 
         /// <summary>
+        /// 重量归0(一般指包裹离开称重台)
+        /// </summary>
+        event EventHandler<WeightChangedEventArgs> WeightCleared;
+
+        /// <summary>
         /// 当设备发生异常时触发的事件
         /// </summary>
         event EventHandler<DeviceExceptionEventArgs> DeviceException;

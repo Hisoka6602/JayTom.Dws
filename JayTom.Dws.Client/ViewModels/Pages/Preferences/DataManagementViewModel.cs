@@ -35,6 +35,7 @@ using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
+
     public class DataManagementViewModel : BindableBase {
         private readonly IDialogService _dialogService;
         private readonly IExcel _excel;
@@ -768,9 +769,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             }, DispatcherPriority.Background);
         }
 
-        public ICommand ShowDetailsCommand {
-            get => new DelegateCommand<object>(ShowDetailsDelegate);
-        }
+        public ICommand ShowDetailsCommand => new DelegateCommand<object>(ShowDetailsDelegate);
 
         private void ShowDetailsDelegate(object obj) {
             _dialogService.Show("PackageDetailsDialog", new DialogParameters { { "PackageItem", obj } }, null);
