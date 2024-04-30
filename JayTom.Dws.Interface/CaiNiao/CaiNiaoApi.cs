@@ -320,7 +320,7 @@ namespace JayTom.Dws.Interface.CaiNiao {
                     }
                 },
             };
-
+            NLog.LogManager.GetCurrentClassLogger().Error($"提交集包报告:包裹数:{packageItems.Count},具体单号:{string.Join(",", packageItems)}");
             var stopwatch = new Stopwatch();
             stopwatch.Start();
             try {
@@ -338,6 +338,7 @@ namespace JayTom.Dws.Interface.CaiNiao {
 
                     resultContent = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
                     resultContent = Regex.Unescape(resultContent);
+                    NLog.LogManager.GetCurrentClassLogger().Error($"集包返回:{resultContent}");
                 }
             }
             finally {

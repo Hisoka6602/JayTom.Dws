@@ -296,6 +296,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             //分拣指令
             EventAggregator.Instance.Subscribe<InstructionReceived>(async item => {
                 await Task.Yield();
+                await Task.Delay(50);
                 try {
                     await _takePackageSlim.WaitAsync();
 
@@ -865,7 +866,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                                         NLog.LogManager.GetCurrentClassLogger().Error("设置Api参数失败");
                                                     }
 
-                                                    await uploader.SetParameters(_jtExpressApiParam);
                                                     break;
                                             }
                                             //删除这条
@@ -1027,10 +1027,9 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         }
 
         private KeyValuePair<int, string> CaiNiaoStatusConvert(string barcode, List<SortingExceptionReturnType> sortingExceptionReturnTypes) {
-            if (string.IsNullOrEmpty(barcode) || barcode.ToLower().Equals("noread")) {
+            /*if (string.IsNullOrEmpty(barcode) || barcode.ToLower().Equals("noread")) {
                 return new KeyValuePair<int, string>(1, "无条码");
-            }
-
+            }*/
             var lastOrDefault = sortingExceptionReturnTypes?.LastOrDefault();
             if (lastOrDefault == SortingExceptionReturnType.Locked) {
                 return new KeyValuePair<int, string>(3, "锁格");
