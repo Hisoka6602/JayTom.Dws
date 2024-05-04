@@ -379,6 +379,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                     sortingInfoModel.IsAbnormalSorting =
                                         packageExitUpdateModel.PackageCloudAbnormalSortingType !=
                                         PackageCloudAbnormalSortingType.None;
+
                                     var update = await _sortingRepository.Update(sortingInfoModel, stoppingToken);
                                 }
                             }
