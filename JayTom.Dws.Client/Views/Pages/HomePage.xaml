@@ -31,6 +31,7 @@
         <converters:HalfHeightConverter x:Key="HalfHeightConverter" />
 
         <converters:OcrInfoShowToVisibilityConverter x:Key="OcrInfoShowToVisibilityConverter" />
+        <converters:PackageExitStatusConverter x:Key="PackageExitStatusConverter" />
 
         <settingsConverter:VolumeUnitConverter x:Key="VolumeUnitConverter" />
         <unitConverter:VolumeConverter x:Key="VolumeConverter" />
@@ -1028,6 +1029,8 @@
                                             <TextBlock
                                                 Width="80"
                                                 MinWidth="80"
+                                                FontWeight="{Binding PackageExitStatus, Converter={StaticResource PackageExitStatusConverter}, ConverterParameter=FontWeight}"
+                                                Foreground="{Binding PackageExitStatus, Converter={StaticResource PackageExitStatusConverter}, ConverterParameter=Foreground}"
                                                 Style="{StaticResource CustomGridViewTextBlockCellStyle}"
                                                 Text="{Binding ExitName}"
                                                 TextTrimming="CharacterEllipsis" />

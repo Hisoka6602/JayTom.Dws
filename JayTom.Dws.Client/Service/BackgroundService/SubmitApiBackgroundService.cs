@@ -16,6 +16,7 @@ using JayTom.Dws.PluginInterface;
 using JayTom.Dws.Interface.geek_;
 using System.Collections.Generic;
 using NPOI.XSSF.Streaming.Values;
+using JayTom.Dws.Interface.Cloud;
 using JayTom.Dws.Interface.Sunnen;
 using JayTom.Dws.Interface.JdyWms;
 using JayTom.Dws.Domain.Dto.ApiDto;
@@ -36,6 +37,8 @@ using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 using static JayTom.Dws.Interface.CaiNiao.CaiNiaoApi;
 using static Aliyun.OSS.Model.ListMultipartUploadsResult;
 using UploadResponse = JayTom.Dws.Interface.UploadResponse;
+using InstructionType = JayTom.Dws.Data.Package.InstructionType;
+using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols;
 
 namespace JayTom.Dws.Client.Service.BackgroundService {
@@ -47,7 +50,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IConfigRepository _configRepository;
         private readonly IImageStorageService _imageStorageService;
-        private readonly IPackageRepository _packageRepository;
         private ConcurrentQueue<SubmitItemInfo> _submitItems = new();
         private ApiSettingsDto? _apiSettingsDto;
         private static DefaultApi.DefaultApiParameters _defaultApiParameters = new();
@@ -75,12 +77,10 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         #endregion 非通用版本变量(临时)
 
         public SubmitApiBackgroundService(IHttpClientFactory httpClientFactory,
-            IConfigRepository configRepository, IImageStorageService imageStorageService,
-            IPackageRepository packageRepository) {
+            IConfigRepository configRepository, IImageStorageService imageStorageService) {
             _httpClientFactory = httpClientFactory;
             _configRepository = configRepository;
             _imageStorageService = imageStorageService;
-            _packageRepository = packageRepository;
             //包裹信息完成
             EventAggregator.Instance.Subscribe<PackageInfo>(item => {
                 if (item is PackageInfo { BarCodeInfo: not null } model) {
@@ -110,122 +110,132 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             });
             EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async item => {
                 if (item is SettingsChangedEvent model) {
-                    if (model.SettingsName.Equals("ApiSettings")) {
-                        _apiSettingsDto = await _configRepository.FirstOrDefaultEntity<ApiSettingsDto>(model.SettingsName) ?? new ApiSettingsDto();
+                    switch (model.SettingsName) {
+                        case "ApiSettings":
+                            _apiSettingsDto = await _configRepository.FirstOrDefaultEntity<ApiSettingsDto>(model.SettingsName) ?? new ApiSettingsDto();
+                            break;
+
+                        case "DefaultApiParameters": {
+                                //默认上传接口改参数
+                                var entity = await _configRepository.FirstOrDefaultEntity<DefaultApiDto>(model.SettingsName) ?? new DefaultApiDto();
+                                _defaultApiParameters = new DefaultApi.DefaultApiParameters() {
+                                    CompleteMatch = entity.CompleteMatch,
+                                    IsUseJsonUpload = entity.IsUseJsonUpload,
+                                    JsonTemplate = entity.JsonTemplate,
+                                    RegularExpression = entity.RegularExpression,
+                                    StringContains = entity.StringContains,
+                                    Timeout = entity.Timeout,
+                                    StringTemplate = entity.StringTemplate,
+                                    Url = entity.Url,
+                                    ValidationMode = (int)entity.ValidationMode,
+                                };
+                                break;
+                            }
+                        case "SzjyApiParameters": {
+                                //默认上传接口改参数
+                                var entity = await _configRepository.FirstOrDefaultEntity<SzjyApiDto>(model.SettingsName) ?? new SzjyApiDto();
+                                _szjyApiParam = new SzjyApi.ApiParameter() {
+                                    Machine = entity.Machine,
+                                    Password = entity.Password,
+                                    TimeOut = entity.TimeOut,
+                                    UserName = entity.UserName,
+                                    Url = entity.Url,
+                                };
+                                break;
+                            }
+                        case "WdtWmsApiParameters": {
+                                //默认上传接口改参数
+                                var entity = await _configRepository.FirstOrDefaultEntity<WdtWmsApiDto>(model.SettingsName) ?? new WdtWmsApiDto();
+                                _wdtWmsApiParameter = new WdtWmsApi.ApiParameter {
+                                    AppKey = entity.AppKey,
+                                    AppSecret = entity.AppSecret,
+                                    TimeOut = entity.TimeOut,
+                                    Method = entity.Method,
+                                    Url = entity.Url,
+                                    Sid = entity.Sid
+                                };
+                                break;
+                            }
+                        case "WdtFlagshipApiParameters": {
+                                //默认上传接口改参数
+                                var entity = await _configRepository.FirstOrDefaultEntity<WdtFlagshipApiDto>(model.SettingsName) ?? new WdtFlagshipApiDto();
+                                _wdtFlagshipApiParameter = new WdtFlagshipApi.ApiParameter {
+                                    TimeOut = entity.TimeOut,
+                                    Method = entity.Method,
+                                    Url = entity.Url,
+                                    Sid = entity.Sid,
+                                    Appsecret = entity.Appsecret,
+                                    Force = entity.Force,
+                                    Key = entity.Key,
+                                    OperateTableName = entity.OperateTableName,
+                                    PackagerId = entity.PackagerId,
+                                    Salt = entity.Salt,
+                                    V = entity.V
+                                };
+                                break;
+                            }
+                        case "JtExpressApiParameters":
+                            //默认上传接口改参数
+                            _jtExpressDto = await _configRepository.FirstOrDefaultEntity<JtExpressDto>(model.SettingsName) ?? new JtExpressDto();
+                            _jtExpressApiParam = new JtExpressApi.ApiParameter {
+                                AppSecret = _jtExpressDto.AppSecret,
+                                AppKey = _jtExpressDto.AppKey,
+                                BusinessType = (JtExpressApi.BusinessType)_jtExpressDto.BusinessType,
+                                Password = _jtExpressDto.Password,
+                                ScanPda = _jtExpressDto.ScanPda,
+                                ScanType = _jtExpressDto.ScanType,
+                                ScanTypeCode = _jtExpressDto.ScanTypeCode,
+                                SegmentCodeTimeOut = _jtExpressDto.SegmentCodeTimeOut,
+                                SegmentCodeUrl = _jtExpressDto.SegmentCodeUrl,
+                                TimeOut = _jtExpressDto.TimeOut,
+                                TransportTypeCode = _jtExpressDto.TransportTypeCode,
+                                Url = _jtExpressDto.Url,
+                                UserName = _jtExpressDto.UserName,
+                                WeightFlag = _jtExpressDto.WeightFlag,
+                                InterceptorEnabled = _jtExpressDto.InterceptorEnabled
+                            };
+                            break;
+
+                        case "RoutDataApiParameters": {
+                                var entity = await _configRepository.FirstOrDefaultEntity<RoutDataApiDto>(model.SettingsName) ?? new RoutDataApiDto();
+                                _rstDataApiParam = new RoutDataApi.ApiParameters() {
+                                    Url = entity.Url,
+                                    TimeOut = entity.TimeOut,
+                                    DeviceCode = entity.DeviceCode,
+                                    RetryCount = entity.RetryCount,
+                                    RetryInterval = entity.RetryInterval,
+                                    SignKey = entity.SignKey,
+                                    OrgCode = entity.OrgCode
+                                };
+                                break;
+                            }
+                        case "CaiNiaoApiParameters": {
+                                var entity = await _configRepository.FirstOrDefaultEntity<CaiNiaoApiDto>(model.SettingsName) ?? new CaiNiaoApiDto();
+                                _caiNiaoApiParam = new CaiNiaoApi.ApiParameters() {
+                                    BcrName = entity.BcrName,
+                                    BcrCode = entity.BcrCode,
+                                    Source = entity.Source,
+                                    TimeOut = entity.TimeOut,
+                                    Url = entity.Url,
+                                    Version = entity.Version
+                                };
+                                break;
+                            }
+                        case "EshippingitApiParameters": {
+                                var entity = await _configRepository.FirstOrDefaultEntity<EshippingitApiDto>(model.SettingsName) ?? new EshippingitApiDto();
+                                _eshippingitApiParam = new EshippingitApi.ApiParameters() {
+                                    Authorization = entity.Authorization,
+                                    BucketName = entity.BucketName,
+                                    Domain = entity.Domain,
+                                    Endpoint = entity.Endpoint,
+                                    RetryCount = entity.RetryCount,
+                                    RetryInterval = entity.RetryInterval,
+                                    TimeOut = entity.TimeOut,
+                                    Machine = entity.Machine
+                                };
+                                break;
+                            }
                     }
-                    else if (model.SettingsName.Equals("DefaultApiParameters")) {
-                        //默认上传接口改参数
-                        var entity = await _configRepository.FirstOrDefaultEntity<DefaultApiDto>(model.SettingsName) ?? new DefaultApiDto();
-                        _defaultApiParameters = new DefaultApi.DefaultApiParameters() {
-                            CompleteMatch = entity.CompleteMatch,
-                            IsUseJsonUpload = entity.IsUseJsonUpload,
-                            JsonTemplate = entity.JsonTemplate,
-                            RegularExpression = entity.RegularExpression,
-                            StringContains = entity.StringContains,
-                            Timeout = entity.Timeout,
-                            StringTemplate = entity.StringTemplate,
-                            Url = entity.Url,
-                            ValidationMode = (int)entity.ValidationMode,
-                        };
-                    }
-                    else if (model.SettingsName.Equals("SzjyApiParameters")) {
-                        //默认上传接口改参数
-                        var entity = await _configRepository.FirstOrDefaultEntity<SzjyApiDto>(model.SettingsName) ?? new SzjyApiDto();
-                        _szjyApiParam = new SzjyApi.ApiParameter() {
-                            Machine = entity.Machine,
-                            Password = entity.Password,
-                            TimeOut = entity.TimeOut,
-                            UserName = entity.UserName,
-                            Url = entity.Url,
-                        };
-                    }
-                    else if (model.SettingsName.Equals("WdtWmsApiParameters")) {
-                        //默认上传接口改参数
-                        var entity = await _configRepository.FirstOrDefaultEntity<WdtWmsApiDto>(model.SettingsName) ?? new WdtWmsApiDto();
-                        _wdtWmsApiParameter = new WdtWmsApi.ApiParameter {
-                            AppKey = entity.AppKey,
-                            AppSecret = entity.AppSecret,
-                            TimeOut = entity.TimeOut,
-                            Method = entity.Method,
-                            Url = entity.Url,
-                            Sid = entity.Sid
-                        };
-                    }
-                    else if (model.SettingsName.Equals("WdtFlagshipApiParameters")) {
-                        //默认上传接口改参数
-                        var entity = await _configRepository.FirstOrDefaultEntity<WdtFlagshipApiDto>(model.SettingsName) ?? new WdtFlagshipApiDto();
-                        _wdtFlagshipApiParameter = new WdtFlagshipApi.ApiParameter {
-                            TimeOut = entity.TimeOut,
-                            Method = entity.Method,
-                            Url = entity.Url,
-                            Sid = entity.Sid,
-                            Appsecret = entity.Appsecret,
-                            Force = entity.Force,
-                            Key = entity.Key,
-                            OperateTableName = entity.OperateTableName,
-                            PackagerId = entity.PackagerId,
-                            Salt = entity.Salt,
-                            V = entity.V
-                        };
-                    }
-                    else if (model.SettingsName.Equals("JtExpressApiParameters")) {
-                        //默认上传接口改参数
-                        _jtExpressDto = await _configRepository.FirstOrDefaultEntity<JtExpressDto>(model.SettingsName) ?? new JtExpressDto();
-                        _jtExpressApiParam = new JtExpressApi.ApiParameter {
-                            AppSecret = _jtExpressDto.AppSecret,
-                            AppKey = _jtExpressDto.AppKey,
-                            BusinessType = (JtExpressApi.BusinessType)_jtExpressDto.BusinessType,
-                            Password = _jtExpressDto.Password,
-                            ScanPda = _jtExpressDto.ScanPda,
-                            ScanType = _jtExpressDto.ScanType,
-                            ScanTypeCode = _jtExpressDto.ScanTypeCode,
-                            SegmentCodeTimeOut = _jtExpressDto.SegmentCodeTimeOut,
-                            SegmentCodeUrl = _jtExpressDto.SegmentCodeUrl,
-                            TimeOut = _jtExpressDto.TimeOut,
-                            TransportTypeCode = _jtExpressDto.TransportTypeCode,
-                            Url = _jtExpressDto.Url,
-                            UserName = _jtExpressDto.UserName,
-                            WeightFlag = _jtExpressDto.WeightFlag,
-                            InterceptorEnabled = _jtExpressDto.InterceptorEnabled
-                        };
-                    }
-                    else if (model.SettingsName.Equals("RoutDataApiParameters")) {
-                        var entity = await _configRepository.FirstOrDefaultEntity<RoutDataApiDto>(model.SettingsName) ?? new RoutDataApiDto();
-                        _rstDataApiParam = new RoutDataApi.ApiParameters() {
-                            Url = entity.Url,
-                            TimeOut = entity.TimeOut,
-                            DeviceCode = entity.DeviceCode,
-                            RetryCount = entity.RetryCount,
-                            RetryInterval = entity.RetryInterval,
-                            SignKey = entity.SignKey,
-                            OrgCode = entity.OrgCode
-                        };
-                    }
-                    else if (model.SettingsName.Equals("CaiNiaoApiParameters")) {
-                        var entity = await _configRepository.FirstOrDefaultEntity<CaiNiaoApiDto>(model.SettingsName) ?? new CaiNiaoApiDto();
-                        _caiNiaoApiParam = new CaiNiaoApi.ApiParameters() {
-                            BcrName = entity.BcrName,
-                            BcrCode = entity.BcrCode,
-                            Source = entity.Source,
-                            TimeOut = entity.TimeOut,
-                            Url = entity.Url,
-                            Version = entity.Version
-                        };
-                    }
-                    else if (model.SettingsName.Equals("EshippingitApiParameters")) {
-                        var entity = await _configRepository.FirstOrDefaultEntity<EshippingitApiDto>(model.SettingsName) ?? new EshippingitApiDto();
-                        _eshippingitApiParam = new EshippingitApi.ApiParameters() {
-                            Authorization = entity.Authorization,
-                            BucketName = entity.BucketName,
-                            Domain = entity.Domain,
-                            Endpoint = entity.Endpoint,
-                            RetryCount = entity.RetryCount,
-                            RetryInterval = entity.RetryInterval,
-                            TimeOut = entity.TimeOut,
-                            Machine = entity.Machine
-                        };
-                    }
-                    //其他接口
                 }
             });
             EventAggregator.Instance.Subscribe<PluginParamChangedEvent>(item => {
@@ -250,24 +260,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     _isWindowsClose = true;
                 }
             });
-            //包裹完结
-            EventAggregator.Instance.Subscribe<CallBackPackageInfo>(async item => {
-                if (item is CallBackPackageInfo info) {
-                    // _callBackItems.Enqueue(info);
-
-                    try {
-                        await _takePackageSlim.WaitAsync();
-
-                        var (key, package) = _packageSubmissionPushItems.FirstOrDefault(f => f.Key.Equals(info.PackageCreateTime));
-                        if (package is not null) {
-                            package.CallBackPackageInfo = info;
-                        }
-                    }
-                    finally {
-                        _takePackageSlim.Release();
-                    }
-                }
-            });
             //集包推送
             EventAggregator.Instance.Subscribe<PackageAggregationInfo>(async item => {
                 //加入队列
@@ -275,17 +267,17 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     _packageAggregationInfoItems.Enqueue(info);
                 }
             });
-            //格口信息
-            EventAggregator.Instance.Subscribe<SortingExitReceived>(async item => {
-                if (item is SortingExitReceived info) {
+            //更新上传状态
+            EventAggregator.Instance.Subscribe<ApiResponseReceived>(async item => {
+                if (item is ApiResponseReceived model) {
                     await Task.Yield();
-                    //_sortingExitItems.TryAdd(info.Timestamp, info);
                     try {
                         await _takePackageSlim.WaitAsync();
-                        _packageSubmissionPushItems.TryGetValue(info.Timestamp, out var package);
-                        if (package?.PackageInfo != null) {
-                            info.ExitType = SortingExitType.TheoreticalExit;
-                            package?.SortingExitReceivedInfos?.Add(info);
+                        //获取包裹
+                        var (key, value) = _packageSubmissionPushItems.FirstOrDefault(f => f.Key.Equals(model.Timestamp));
+                        if (value is not null) {
+                            //更新格口信息
+                            value.ApiResponse = model;
                         }
                     }
                     finally {
@@ -293,59 +285,43 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     }
                 }
             });
-            //分拣指令
-            EventAggregator.Instance.Subscribe<InstructionReceived>(async item => {
-                await Task.Yield();
-                await Task.Delay(50);
-                try {
-                    await _takePackageSlim.WaitAsync();
-
-                    if (item is InstructionReceived model && model.InstructionInfos?.Any() == true
-                       ) {
-                        var instructionInfoModel = model.InstructionInfos.FirstOrDefault();
-                        if (instructionInfoModel?.InstructionType == InstructionType.PackageException) {
-                            //返回异常
-
-                            _packageSubmissionPushItems.TryGetValue(model.Timestamp, out var package);
-                            if (package?.PackageInfo != null) {
-                                //找到包裹
-
-                                /*if (!string.IsNullOrEmpty(instructionInfoModel?.SortingInfo?.ChecksumProtocolName)) {
-                                    var communicationProtocol = (CommunicationProtocol)Enum.Parse(typeof(CommunicationProtocol), instructionInfoModel.SortingInfo.ChecksumProtocolName);
-                                    IDeviceCommunicationProtocol? protocol = communicationProtocol switch {
-                                        CommunicationProtocol.Wxkc => new WxkcCommunicationProtocol(),
-                                        CommunicationProtocol.JT_ST => new JtstCommunicationProtocol(),
-                                        CommunicationProtocol.CaiNiao => new CaiNiaoCommunicationProtocol(),
-                                        _ => null
-                                    };
-                                }*/
-
-                                //暂时默认无限创科
-
-                                //更新到包裹
-                                IDeviceCommunicationProtocol? protocol = new WxkcCommunicationProtocol();
-                                var type = protocol?.SortingExceptionReturnTypeConvert(instructionInfoModel.InstructionContent) ?? SortingExceptionReturnType.None;
-                                package.PackageInfo.SortingExceptionReturnTypes.Add(type);
-
-                                //取出格口
-                                var commandParsingConvert = protocol?.CommandParsingConvert(instructionInfoModel.InstructionContent);
-
-                                package.SortingExitReceivedInfos?.Add(new SortingExitReceived() {
-                                    ExitType = SortingExitType.PhysicalExit,
-                                    //后面这里需要实际格口号名称
-                                    ExitName = commandParsingConvert?.CompartmentNumber.ToString() ?? string.Empty
-                                });
-                            }
-                        }
-                    }
-                }
-                finally {
-                    _takePackageSlim.Release();
-                }
-            });
+            //系统信息
             EventAggregator.Instance.Subscribe<ApplicationStatusChanged>(item => {
                 if (item is ApplicationStatusChanged { Status: ApplicationStatus.Stop }) {
                     _packageSubmissionPushItems.Clear();
+                }
+            });
+            //更新格口信息
+            EventAggregator.Instance.Subscribe<PackageExitUpdateEvent>(async item => {
+                if (item is PackageExitUpdateEvent model) {
+                    try {
+                        await _takePackageSlim.WaitAsync();
+                        //获取包裹
+                        var (key, value) = _packageSubmissionPushItems.FirstOrDefault(f => f.Key.Equals(model.Timestamp));
+                        if (value is not null) {
+                            //如果判断有[车号不匹配] 则 [车号不匹配]需要 需要根据FC 21(正常的更新格口号)
+
+                            if (model.PackageCloudAbnormalSortingType == PackageCloudAbnormalSortingType.VehicleNumberMismatch) {
+                                var packageExitUpdateEvent = value.PackageExitUpdateItems.FirstOrDefault(f =>
+                                    f.PackageCloudAbnormalSortingType == PackageCloudAbnormalSortingType.None);
+                                if (packageExitUpdateEvent is not null) {
+                                    model.ExitId = packageExitUpdateEvent.ExitId;
+                                    model.ExitName = packageExitUpdateEvent.ExitName;
+                                }
+                            }
+                            //更新格口信息
+                            value.PackageExitUpdateItems.Add(model);
+
+                            //推送集包信息
+                            EventAggregator.Instance.Publish(new PushPackageInfo() {
+                                PackageInfo = value.PackageInfo ?? new PackageInfo(),
+                                PackageExitUpdateEvent = model
+                            });
+                        }
+                    }
+                    finally {
+                        _takePackageSlim.Release();
+                    }
                 }
             });
         }
@@ -802,9 +778,9 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     }*/
 
                     //获取包裹
-                    var pairs = _packageSubmissionPushItems?.Any(f => (f.Value.SortingExitReceivedInfos?.Any() == true || f.Value.CallBackPackageInfo is not null)
+                    var pairs = _packageSubmissionPushItems?.Any(f => (f.Value.PackageExitUpdateItems?.Any() == true)
                                                                               && f.Value.PackageInfo is not null) == true
-                        ? _packageSubmissionPushItems?.Where(f => (f.Value.SortingExitReceivedInfos?.Any() == true || f.Value.CallBackPackageInfo is not null)
+                        ? _packageSubmissionPushItems?.Where(f => (f.Value.PackageExitUpdateItems?.Any() == true)
                                                                   && f.Value.PackageInfo is not null)?.ToList()
                         : new List<KeyValuePair<long, PackageSubmissionPushInfo>>();
 
@@ -812,34 +788,33 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         IDataUploader? uploader = _apiSettingsDto switch { { Type: ApiType.CaiNiaoApi } => new CaiNiaoApi(_httpClientFactory), { Type: ApiType.JtExpressApi } => new JtExpressApi(_httpClientFactory),
                             _ => null
                         };
-
                         if (uploader is not null) {
                             Parallel.ForEach(pairs, async packageValue => {
                                 Task.Factory.StartNew(async () => {
                                     try {
                                         await _takePackageSlim.WaitAsync(stoppingToken);
                                         //提交
-                                        if (packageValue.Value is { PackageInfo: not null } && packageValue.Value.SortingExitReceivedInfos?.Any() == true) {
+                                        if (packageValue.Value is { PackageInfo: not null } && packageValue.Value.PackageExitUpdateItems?.Any() == true) {
                                             switch (_apiSettingsDto) {
                                                 case { Type: ApiType.CaiNiaoApi }:
-                                                    //判断提交(从创建包裹时间开始判断) 60秒
-                                                    if (DateTime.Now.Subtract(packageValue.Value.PackageInfo.CreateTime).TotalSeconds < 50) {
+
+                                                    //判断状态有完成再提交
+                                                    if (packageValue.Value.PackageExitUpdateItems?.Any(a => a.InstructionType == InstructionType.SignalCallback) != true) {
                                                         return;
                                                     }
                                                     var (key, value) = await uploader.SetParameters(_caiNiaoApiParam);
                                                     if (key) {
                                                         var caiNiaoStatusConvert = CaiNiaoStatusConvert(
                                                             packageValue.Value.PackageInfo.BarCodeInfo?.Barcode ?? string.Empty,
-                                                            packageValue.Value.PackageInfo.SortingExceptionReturnTypes);
-
+                                                            packageValue.Value.PackageExitUpdateItems);
                                                         uploader.UploadInBackground(packageValue.Value.PackageInfo.BarCodeInfo?.Barcode ?? string.Empty, packageValue.Value.PackageInfo.WeightInfo?.FormattedWeight ?? 0,
                                                             packageValue.Value.PackageInfo.BarCodeInfo?.ScanTime ?? DateTime.Now, imageInfo: new UploadImageInfo() {
                                                                 CameraCustomName = packageValue.Value.PackageInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
                                                                 CameraName = packageValue.Value.PackageInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
                                                                 CameraSerialNumber = packageValue.Value.PackageInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
                                                             }, other: new ReportChuteInfo {
-                                                                ChuteCode = packageValue.Value.SortingExitReceivedInfos?.LastOrDefault(l => l.ExitType == SortingExitType.PhysicalExit)?.ExitName ?? (packageValue.Value.SortingExitReceivedInfos?.FirstOrDefault(l => l.ExitType == SortingExitType.TheoreticalExit)?.ExitName ?? string.Empty),
-                                                                ChuteCodePhysical = packageValue.Value.SortingExitReceivedInfos?.FirstOrDefault(l => l.ExitType == SortingExitType.TheoreticalExit)?.ExitName ?? string.Empty,
+                                                                ChuteCode = packageValue.Value.PackageExitUpdateItems?.LastOrDefault()?.ExitName ?? string.Empty,
+                                                                ChuteCodePhysical = packageValue.Value.PackageExitUpdateItems?.LastOrDefault(l => l.ExitType == SortingExitType.TheoreticalExit)?.ExitName ?? string.Empty,
                                                                 ErrorReson = caiNiaoStatusConvert.Value,
                                                                 Status = caiNiaoStatusConvert.Key,
                                                             }, token: stoppingToken);
@@ -850,7 +825,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                                     break;
 
                                                 case { Type: ApiType.JtExpressApi }:
-                                                    if (_jtExpressDto.IsUploadAfterReturn && packageValue.Value.SortingExitReceivedInfos.Any(a => a.Type == ExitType.AbnormalExit)) {
+                                                    if (_jtExpressDto.IsUploadAfterReturn && packageValue.Value.PackageExitUpdateItems.Any(a => a.Type == ExitType.AbnormalExit)) {
                                                         //删除这条
                                                         _packageSubmissionPushItems?.TryRemove(packageValue);
                                                         return;
@@ -858,9 +833,9 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
                                                     var keyValuePair = await uploader.SetParameters(_jtExpressApiParam);
                                                     if (keyValuePair.Key) {
-                                                        uploader.UploadInBackground(packageValue.Value.PackageInfo.BarCodeInfo?.Barcode ?? string.Empty, packageValue.Value.SortingExitReceivedInfos?.FirstOrDefault()?.SortingParam?.Weight ?? 0,
-                                                            packageValue.Value.SortingExitReceivedInfos?.FirstOrDefault()?.SortingParam?.ScanTime ?? DateTime.Now, imageInfo: new UploadImageInfo(), other:
-                                                            packageValue.Value.SortingExitReceivedInfos?.FirstOrDefault()?.SortingParam?.ApiResponse ?? new UploadResponse(), token: stoppingToken);
+                                                        uploader.UploadInBackground(packageValue.Value.PackageInfo.BarCodeInfo?.Barcode ?? string.Empty, packageValue.Value.PackageInfo?.WeightInfo?.FormattedWeight ?? 0,
+                                                            packageValue.Value.PackageInfo?.BarCodeInfo?.ScanTime ?? DateTime.Now, imageInfo: new UploadImageInfo(), other:
+                                                            packageValue.Value.ApiResponse, token: stoppingToken);
                                                     }
                                                     else {
                                                         NLog.LogManager.GetCurrentClassLogger().Error("设置Api参数失败");
@@ -879,7 +854,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             });
                         }
                     }
-
                     var packageAggregationDequeue = _packageAggregationInfoItems.TryDequeue(out var packageAggregationInfo);
                     if (packageAggregationDequeue && packageAggregationInfo is not null) {
                         //集包推送(判断需要使用的Api-Task.Factory.StartNew)
@@ -1026,15 +1000,17 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             };
         }
 
-        private KeyValuePair<int, string> CaiNiaoStatusConvert(string barcode, List<SortingExceptionReturnType> sortingExceptionReturnTypes) {
-            /*if (string.IsNullOrEmpty(barcode) || barcode.ToLower().Equals("noread")) {
-                return new KeyValuePair<int, string>(1, "无条码");
-            }*/
-            var lastOrDefault = sortingExceptionReturnTypes?.LastOrDefault();
-            if (lastOrDefault == SortingExceptionReturnType.Locked) {
+        private KeyValuePair<int, string> CaiNiaoStatusConvert(string barcode, List<PackageExitUpdateEvent> packageExitItems) {
+            if (packageExitItems.Any(a => a.PackageCloudAbnormalSortingType == PackageCloudAbnormalSortingType.LockExit) == true) {
                 return new KeyValuePair<int, string>(3, "锁格");
             }
-            return lastOrDefault is not null ? new KeyValuePair<int, string>(6, lastOrDefault.Value.GetDescription()) : new KeyValuePair<int, string>(0, "分拣成功");
+
+            var packageCloudAbnormalSortingType = packageExitItems?.LastOrDefault(l => l.PackageCloudAbnormalSortingType != PackageCloudAbnormalSortingType.None)?.PackageCloudAbnormalSortingType;
+            if (packageCloudAbnormalSortingType is not null) {
+                return new KeyValuePair<int, string>(6, packageCloudAbnormalSortingType.GetDescription());
+            }
+
+            return barcode.ToLower().Equals("noread") ? new KeyValuePair<int, string>(6, "无条码") : new KeyValuePair<int, string>(0, "分拣成功");
         }
 
         public class SubmitItemInfo {
@@ -1174,14 +1150,24 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             public DateTime WaitSubmitTime { get; set; } = DateTime.Now;
 
             /// <summary>
+            /// 格口更新
+            /// </summary>
+            public List<PackageExitUpdateEvent> PackageExitUpdateItems { get; set; } = new();
+
+            /// <summary>
+            /// 回传信息
+            /// </summary>
+            public ApiResponseReceived ApiResponse { get; set; } = new();
+
+            /*/// <summary>
             /// 返回分拣信息(列表)
             /// </summary>
-            public List<SortingExitReceived>? SortingExitReceivedInfos { get; set; } = new();
+             public List<SortingExitReceived>? SortingExitReceivedInfos { get; set; } = new();
 
             /// <summary>
             /// 包裹完结信息
             /// </summary>
-            public CallBackPackageInfo? CallBackPackageInfo { get; set; }
+            public CallBackPackageInfo? CallBackPackageInfo { get; set; }*/
         }
     }
 }

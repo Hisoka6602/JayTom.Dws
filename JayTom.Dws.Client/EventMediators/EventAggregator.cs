@@ -1,9 +1,14 @@
 ﻿using System;
 using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Data.Package;
 using JayTom.Dws.Data.LocalLog;
 using JayTom.Dws.PluginInterface;
 using System.Collections.Generic;
+using JayTom.Dws.Interface.Cloud;
+using JayTom.Dws.Client.Service.Sorting;
 using JayTom.Dws.Client.Service.BackgroundService;
+using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
+using InstructionType = JayTom.Dws.Data.Package.InstructionType;
 
 namespace JayTom.Dws.Client.EventMediators {
 
@@ -205,5 +210,70 @@ namespace JayTom.Dws.Client.EventMediators {
         /// 重启
         /// </summary>
         Restart
+    }
+
+    /// <summary>
+    /// 格口更新事件
+    /// </summary>
+    public class PackageExitUpdateEvent {
+
+        /// <summary>
+        /// 包裹创建时间
+        /// </summary>
+        public DateTime CreateTime { get; set; } = DateTime.Now;
+
+        /// <summary>
+        /// 包裹时间戳
+        /// </summary>
+        public long Timestamp { get; set; }
+
+        /// <summary>
+        /// 格口名称
+        /// </summary>
+        public string ExitName { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 格口Id
+        /// </summary>
+
+        public long ExitId { get; set; }
+
+        /// <summary>
+        /// 格口类型(物理/理论)
+        /// </summary>
+        public SortingExitType ExitType { get; set; }
+
+        /// <summary>
+        /// 包裹异常原因
+        /// </summary>
+        public PackageCloudAbnormalSortingType PackageCloudAbnormalSortingType { get; set; }
+
+        /// <summary>
+        /// 指令信息
+        /// </summary>
+        public List<InstructionInfoModel>? InstructionInfos { get; set; }
+
+        /// <summary>
+        /// 指令类型
+        /// </summary>
+        public InstructionType InstructionType { get; set; }
+
+        /// <summary>
+        /// 格口类型
+        /// </summary>
+        public ExitType Type { get; set; }
+    }
+
+    public class PushPackageInfo {
+
+        /// <summary>
+        /// 落格信息
+        /// </summary>
+        public PackageExitUpdateEvent PackageExitUpdateEvent { get; set; } = new();
+
+        /// <summary>
+        /// 包裹信息
+        /// </summary>
+        public PackageInfo PackageInfo { get; set; } = new();
     }
 }

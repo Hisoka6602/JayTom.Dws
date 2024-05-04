@@ -617,7 +617,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                         InstructionGeneratedTime = args.InstructionTime,
                                         InstructionType = InstructionType.CreatePackage
                                     }
-                                }
+                                },
+                                ConnectionName = args.ConnectionName,
                             });
                         }
                     }
@@ -645,8 +646,9 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                         InstructionContent = args.Instruction,
                                         InstructionGeneratedTime = DateTime.Now,
                                         InstructionType = InstructionType.SignalCallback
-                                    }
-                                }
+                                    },
+                                },
+                                ConnectionName = args.ConnectionName,
                             });
                             //是否延迟包
 
@@ -688,7 +690,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                         InstructionGeneratedTime = DateTime.Now,
                                         InstructionType = InstructionType.PackageException
                                     }
-                                }
+                                },
+                                ConnectionName = args.ConnectionName,
                             });
                         }
                     }
@@ -697,7 +700,37 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     _createPackageSlim.Release();
                 }
             };
-
+            //下位机(包裹异常需要判断操作)
+            _sortingService.PackageExceptionEx += async (sender, args) => {
+                try {
+                    await _createPackageSlim.WaitAsync();
+                    var tryParse = int.TryParse(args.Keyword, out var num);
+                    if (tryParse) {
+                        var keyValuePair = _packageInfos.OrderBy(o => o.Key)
+                            .FirstOrDefault(f => f.Value.Guid.Equals(num));
+                        if (keyValuePair.Value is not null) {
+                            EventAggregator.Instance.Publish(new InstructionReceived() {
+                                Timestamp = new DateTimeOffset(keyValuePair.Value.CreateTime).ToUnixTimeMilliseconds(),
+                                IsCreatedByLowerMachine = true,
+                                SortingCode = num.ToString(),
+                                InstructionInfos = new List<InstructionInfoModel>()
+                                {
+                                    new()
+                                    {
+                                        InstructionContent = args.Instruction,
+                                        InstructionGeneratedTime = DateTime.Now,
+                                        InstructionType = InstructionType.PackageExceptionEx
+                                    }
+                                },
+                                ConnectionName = args.ConnectionName,
+                            });
+                        }
+                    }
+                }
+                finally {
+                    _createPackageSlim.Release();
+                }
+            };
             //下位机(清空异常)
             _sortingService.ClearExceptionEvent += async delegate (object? sender, string o) {
                 try {
@@ -761,7 +794,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 InstructionGeneratedTime = args.InstructionTime,
                                 InstructionType = InstructionType.ReceivePreSignalReply
                             }
-                        }
+                        },
+                        ConnectionName = args.ConnectionName,
                     });
                 }
             };
@@ -802,7 +836,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             InstructionGeneratedTime = args.InstructionTime,
                             InstructionType = InstructionType.SequenceBindingReply
                         }
-                    }
+                    },
+                    ConnectionName = args.ConnectionName,
                 });
             };
             //复位按钮触发
@@ -824,7 +859,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             InstructionGeneratedTime = args.InstructionTime,
                             InstructionType = InstructionType.ResetButtonTrigger
                         }
-                    }
+                    },
+                    ConnectionName = args.ConnectionName,
                 });
             };
             //Ocr算法

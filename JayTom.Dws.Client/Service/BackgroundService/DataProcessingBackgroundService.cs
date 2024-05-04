@@ -43,7 +43,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private ConcurrentQueue<SavedImageInfo> _savedImageItems = new();
         private ConcurrentQueue<InstructionReceived> _instructionItems = new();
         private ConcurrentQueue<ExceptionSortingReceived> _exceptionSortingItems = new();
-        private ConcurrentQueue<SortingExitReceived> _sortingExitItems = new();
+        private ConcurrentQueue<PackageExitUpdateEvent> _packageExitUpdateItems = new();
+
         private static bool _isWindowsClose;
 
         public DataProcessingBackgroundService(IPackageRepository packageRepository,
@@ -101,13 +102,12 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     _isWindowsClose = true;
                 }
             });
-            EventAggregator.Instance.Subscribe<SortingExitReceived>(async item => {
-                if (item is SortingExitReceived info) {
-                    _sortingExitItems.Enqueue(info);
+
+            EventAggregator.Instance.Subscribe<PackageExitUpdateEvent>(async item => {
+                if (item is PackageExitUpdateEvent info) {
+                    _packageExitUpdateItems.Enqueue(info);
                 }
             });
-
-            //SortingExitReceived
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
@@ -290,6 +290,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             _instructionItems.Enqueue(sortingModel);
                         }
                     }
+                    //异常更新
 
                     var isExceptionSorting = _exceptionSortingItems.TryDequeue(out var exceptionSortingModel);
                     if (isExceptionSorting && exceptionSortingModel is not null) {
@@ -315,24 +316,75 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         }
                     }
 
-                    var isSortingExit = _sortingExitItems.TryDequeue(out var sortingExitModel);
-                    if (isSortingExit && sortingExitModel is not null) {
+                    //格口更新
+                    var packageExitUpdate = _packageExitUpdateItems.TryDequeue(out var packageExitUpdateModel);
+                    if (packageExitUpdate && packageExitUpdateModel is not null) {
+                        //找到对应的包裹
                         var (key, value) = await _packageRepository.FirstOrDefaultInfo(
-                            f => f.PackageTimestamped.Equals(sortingExitModel.Timestamp),
+                            f => f.PackageTimestamped.Equals(packageExitUpdateModel.Timestamp),
                             stoppingToken);
                         if (key && value is not null) {
-                            var isExitInfoUpdate = await _exitInfoRepository.Insert(new ExitInfoModel() {
-                                PackageId = value.Id,
-                                PhysicalExit = sortingExitModel.ExitName,
-                                PhysicalExitId = sortingExitModel.ExitId,
-                                TheoreticalExit = sortingExitModel.ExitName
-                            }, stoppingToken);
-                            if (!isExitInfoUpdate) {
-                                _sortingExitItems.Enqueue(sortingExitModel);
+                            //更新格口
+                            var model = await _exitInfoRepository.FirstOrDefault(f => f.PackageId.Equals(value.Id), stoppingToken);
+
+                            if (model is not null) {
+                                //更新
+                                switch (packageExitUpdateModel.ExitType) {
+                                    case SortingExitType.PhysicalExit:
+                                        model.PhysicalExit = packageExitUpdateModel.ExitName;
+                                        model.PhysicalExitId = packageExitUpdateModel.ExitId;
+                                        break;
+
+                                    case SortingExitType.TheoreticalExit:
+                                        model.TheoreticalExit = packageExitUpdateModel.ExitName;
+                                        break;
+                                }
+
+                                var update = await _exitInfoRepository.Update(model, stoppingToken);
+                                if (!update) {
+                                    _packageExitUpdateItems.Enqueue(packageExitUpdateModel);
+                                }
+                            }
+                            else {
+                                //添加
+                                ExitInfoModel exitInfoModel = packageExitUpdateModel.ExitType switch {
+                                    SortingExitType.PhysicalExit => new ExitInfoModel() {
+                                        PackageId = value.Id,
+                                        PhysicalExit = packageExitUpdateModel.ExitName,
+                                        PhysicalExitId = packageExitUpdateModel.ExitId,
+                                    },
+                                    SortingExitType.TheoreticalExit => new ExitInfoModel() {
+                                        PackageId = value.Id,
+                                        TheoreticalExit = packageExitUpdateModel.ExitName,
+                                        PhysicalExit = packageExitUpdateModel.ExitName,
+                                        PhysicalExitId = packageExitUpdateModel.ExitId,
+                                    },
+                                    _ => new()
+                                };
+
+                                var insert = await _exitInfoRepository.Insert(exitInfoModel, stoppingToken);
+                                if (!insert) {
+                                    _packageExitUpdateItems.Enqueue(packageExitUpdateModel);
+                                }
+                            }
+                            if (packageExitUpdateModel.PackageCloudAbnormalSortingType != PackageCloudAbnormalSortingType.None &&
+                                model?.PackageId > 0) {
+                                //更新异常
+                                var sortingInfoModel =
+
+                                    await _sortingRepository.FirstOrDefault(f => f.PackageId.Equals(model.PackageId), stoppingToken);
+                                if (sortingInfoModel is not null) {
+                                    sortingInfoModel.AbnormalSortingType =
+                                        (AbnormalSortingType)packageExitUpdateModel.PackageCloudAbnormalSortingType;
+                                    sortingInfoModel.IsAbnormalSorting =
+                                        packageExitUpdateModel.PackageCloudAbnormalSortingType !=
+                                        PackageCloudAbnormalSortingType.None;
+                                    var update = await _sortingRepository.Update(sortingInfoModel, stoppingToken);
+                                }
                             }
                         }
                         else {
-                            _sortingExitItems.Enqueue(sortingExitModel);
+                            _packageExitUpdateItems.Enqueue(packageExitUpdateModel);
                         }
                     }
                 }

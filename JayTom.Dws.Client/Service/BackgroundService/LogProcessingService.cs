@@ -380,8 +380,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             NLog.LogManager.GetCurrentClassLogger().Info($"{instructionInfoModel?.InstructionGeneratedTime:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[格口号:{model.ExitName}]-[序号:{model.SortingCode}]-[按下复位]{instructionInfoModel?.InstructionContent}");
                             break;
 
-                        case InstructionType.FlowToEndOrException:
-                            NLog.LogManager.GetCurrentClassLogger().Info($"{instructionInfoModel?.InstructionGeneratedTime:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[格口号:{model.ExitName}]-[序号:{model.SortingCode}]-[流到尾部/指定异常口]{instructionInfoModel?.InstructionContent}");
+                        case InstructionType.PackageExceptionEx:
+                            NLog.LogManager.GetCurrentClassLogger().Info($"{instructionInfoModel?.InstructionGeneratedTime:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[格口号:{model.ExitName}]-[序号:{model.SortingCode}]-[包裹异常(需要判断)]{instructionInfoModel?.InstructionContent}");
                             break;
                     }
                 }

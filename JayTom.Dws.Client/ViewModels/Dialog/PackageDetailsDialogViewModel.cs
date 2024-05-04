@@ -19,6 +19,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog {
         private string _packageCreationInstruction = string.Empty;
         private string _sentInstruction = string.Empty;
         private string _receivedInstruction = string.Empty;
+        private string _exceptionInstruction = string.Empty;
 
         public string PackageCreationInstruction {
             get => _packageCreationInstruction;
@@ -33,6 +34,11 @@ namespace JayTom.Dws.Client.ViewModels.Dialog {
         public string ReceivedInstruction {
             get => _receivedInstruction;
             set => SetProperty(ref _receivedInstruction, value);
+        }
+
+        public string ExceptionInstruction {
+            get => _exceptionInstruction;
+            set => SetProperty(ref _exceptionInstruction, value);
         }
 
         public PackageItemModel PackageItem {
@@ -77,23 +83,28 @@ namespace JayTom.Dws.Client.ViewModels.Dialog {
             if (signalCallbackItems?.Any() == true) {
                 ReceivedInstruction = string.Join("\n", signalCallbackItems);
             }
+
+            var exceptionInstructionItems = PackageItem.SortingInfo.InstructionInfoItems?.Where(w =>
+                    w.InstructionType is InstructionType.PackageException or InstructionType.PackageExceptionEx)
+                ?.Select(s =>
+                    $"{s.InstructionGeneratedTime:yyyy-MM-dd HH:mm:ss.fff}->{s.InstructionContent}")
+                ?.ToList();
+            if (exceptionInstructionItems?.Any() == true) {
+                ExceptionInstruction = string.Join("\n", exceptionInstructionItems);
+            }
         }
 
         public string Title => "包裹详情";
 
         public event Action<IDialogResult>? RequestClose;
 
-        public ICommand CloseWinCommand {
-            get => new DelegateCommand<object>(CloseWinDelegate);
-        }
+        public ICommand CloseWinCommand => new DelegateCommand<object>(CloseWinDelegate);
 
         private void CloseWinDelegate(object obj) {
             RequestClose?.Invoke(new DialogResult(ButtonResult.OK));
         }
 
-        public ICommand LoadedCommand {
-            get => new DelegateCommand<UserControl>(LoadedDelegate);
-        }
+        public ICommand LoadedCommand => new DelegateCommand<UserControl>(LoadedDelegate);
 
         private void LoadedDelegate(UserControl obj) {
             var dialogWindow = Application.Current.Windows.OfType<Window>().SingleOrDefault(x => x.IsActive);

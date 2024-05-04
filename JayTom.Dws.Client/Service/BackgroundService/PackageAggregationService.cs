@@ -25,14 +25,14 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
 
         private ConcurrentDictionary<long, PackageAggregationInfo> _exitPackageAggregationItems = new();
-        private ConcurrentQueue<PackageInfoModel> _packageInfoItems = new();
+        private ConcurrentQueue<PushPackageInfo> _packageInfoItems = new();
 
         public PackageAggregationService(IPackageRepository packageRepository,
             IExitMonitor exitMonitor, IPackageExitDefinitionRepository packageExitDefinitionRepository) {
             _packageRepository = packageRepository;
             _exitMonitor = exitMonitor;
             _packageExitDefinitionRepository = packageExitDefinitionRepository;
-            EventAggregator.Instance.Subscribe<CallBackPackageInfo>(async item => {
+            /*EventAggregator.Instance.Subscribe<CallBackPackageInfo>(async item => {
                 if (item is CallBackPackageInfo info) {
                     var (key, value) = await _packageRepository.FirstOrDefaultInfo(f => f.PackageCreateTime.Equals(info.PackageCreateTime));
                     if (key && value is not null) {
@@ -40,12 +40,19 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         _packageInfoItems.Enqueue(value);
                     }
                 }
+            });*/
+            EventAggregator.Instance.Subscribe<PushPackageInfo>(async item => {
+                if (item is PushPackageInfo model) {
+                    _packageInfoItems.Enqueue(model);
+                }
             });
+
             EventAggregator.Instance.Subscribe<ApplicationStatusChanged>(item => {
                 if (item is ApplicationStatusChanged info) {
                     _packageInfoItems.Clear();
                 }
             });
+
             _exitMonitor.LockExitEvent += (sender, model) => {
                 var packageAggregationInfo = _exitPackageAggregationItems
                     .FirstOrDefault(f => f.Key.Equals(model.Id)).Value;
@@ -82,10 +89,25 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             while (!stoppingToken.IsCancellationRequested) {
                 var tryDequeue = _packageInfoItems.TryDequeue(out var packageInfo);
                 if (tryDequeue && packageInfo is not null) {
+                    //检查所有格口有没有对应的包裹
+
+                    foreach (var info in _exitPackageAggregationItems) {
+                        var packageInfoModel = info.Value.PackageItems.FirstOrDefault(f =>
+                            f.PackageTimestamped.Equals(packageInfo.PackageInfo.Timestamp));
+                        if (packageInfoModel is not null) {
+                            info.Value.PackageItems.Remove(packageInfoModel);
+                        }
+                    }
+
                     var packageAggregationInfo = _exitPackageAggregationItems
-                        .FirstOrDefault(f => f.Key.Equals(packageInfo.ExitInfo?.PhysicalExitId ?? 0)).Value;
+                        .FirstOrDefault(f => f.Key.Equals(packageInfo.PackageExitUpdateEvent?.ExitId ?? 0)).Value;
                     if (packageAggregationInfo is not null) {
-                        packageAggregationInfo.PackageItems.Add(packageInfo);
+                        packageAggregationInfo.PackageItems.Add(new PackageInfoModel() {
+                            BarCodeInfo = new BarCodeInfoModel() {
+                                Barcode = packageInfo?.PackageInfo?.BarCodeInfo?.Barcode ?? string.Empty
+                            },
+                            PackageTimestamped = packageInfo?.PackageInfo?.Timestamp ?? 0
+                        });
                     }
                     else {
                         _packageInfoItems.Enqueue(packageInfo);

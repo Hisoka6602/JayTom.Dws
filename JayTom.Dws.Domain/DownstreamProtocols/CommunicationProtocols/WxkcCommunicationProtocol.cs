@@ -127,17 +127,23 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
                         };
                         break;
 
-                    /*case 0x23:
-                        /*type = FunctionType.None;#1#
-                        type = FunctionType.FlowToEndOrException;
-                        description = $"流到尾部/或指定异常口";
+                    case 0x23:
+                        sortingExceptionReturnType = SortingExceptionReturnTypeConvert(bytes[6]);
+                        type = FunctionType.PackageExceptionEx;
+                        description = $"分拣异常";
                         hexString = BitConverter.ToString(new[] { bytes[2], bytes[3] })
                             .Replace("-", string.Empty).Replace(" ", string.Empty);
                         if (int.TryParse(hexString, System.Globalization.NumberStyles.HexNumber, null, out number)) {
                             key = number.ToString();
                         }
                         keywordPosition = 2;
-                        break;*/
+                        commandParsing = new CommandParsing() {
+                            SequenceNumber = (uint)number,
+                            ExceptionCode = bytes[7],
+                            FunctionCode = bytes[1],
+                            CompartmentNumber = BitConverter.ToUInt32(new byte[] { bytes[5], bytes[4], 0, 0 }, 0)
+                        };
+                        break;
 
                     case 0x14:
                         //前置信号回复
@@ -204,7 +210,7 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
                 case byte exceptionByte:
                     return exceptionByte switch {
                         0x01 => SortingExceptionReturnType.DistanceTooClose,
-                        0x02 => SortingExceptionReturnType.Locked,
+                        0x02 => SortingExceptionReturnType.LockExit,
                         0x03 => SortingExceptionReturnType.VehicleNumberMismatch,
                         0x04 => SortingExceptionReturnType.UnstableLineSpeed,
                         _ => SortingExceptionReturnType.None
@@ -237,6 +243,18 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
                 return CommandParsingConvert(toByteArray);
             }
 
+            return null;
+        }
+
+        public string? ExitContentConvert(object data) {
+            if (data is byte[] { Length: 8 } bytes) {
+                return BitConverter.ToString(new[] { bytes[4], bytes[5] })
+                    .Replace("-", " ");
+            }
+            if (data is string hexString) {
+                var toByteArray = HexStringToByteArray(hexString);
+                return ExitContentConvert(toByteArray);
+            }
             return null;
         }
 

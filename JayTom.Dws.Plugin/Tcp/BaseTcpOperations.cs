@@ -154,8 +154,8 @@ namespace JayTom.Dws.Plugin.Tcp {
 
         protected virtual async void OnDisconnected(string e) {
             await Task.Yield();
-
             Disconnected?.Invoke(this, e);
+            //await Reconnect(0);
         }
 
         protected virtual async void OnCommunication(CommunicationInfo e) {

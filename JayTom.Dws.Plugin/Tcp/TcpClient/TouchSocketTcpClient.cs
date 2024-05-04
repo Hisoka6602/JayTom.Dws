@@ -9,7 +9,6 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace JayTom.Dws.Plugin.Tcp.TcpClient {
-
     public class TouchSocketTcpClient : ITcpCommClient {
         private TouchSocket.Sockets.TcpClient? _tcpClient;
         public string IpAddress { get; private set; } = string.Empty;
@@ -96,11 +95,24 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
         }
 
         public async Task<bool> Reconnect(int count, CancellationToken token = default) {
-            for (var i = 0; i < count; i++) {
-                await Connect(token: token);
-                if (ConnectionStatus == ConnectionStatus.Connected) {
-                    return true;
+            if (count > 0) {
+                for (var i = 0; i < count; i++) {
+                    await Connect(token: token);
+                    await Task.Delay(500, token);
+                    if (ConnectionStatus == ConnectionStatus.Connected) {
+                        return true;
+                    }
                 }
+
+            }
+            else {
+                do {
+                    await Connect(token: token);
+                    await Task.Delay(500, token);
+                    if (ConnectionStatus == ConnectionStatus.Connected) {
+                        return true;
+                    }
+                } while (true);
             }
             return false;
         }

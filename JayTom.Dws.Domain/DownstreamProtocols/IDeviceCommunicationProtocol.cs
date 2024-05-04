@@ -53,6 +53,13 @@ namespace JayTom.Dws.Domain.DownstreamProtocols {
         /// <param name="obj"></param>
         /// <returns></returns>
         public CommandParsing? CommandParsingConvert(object obj);
+
+        /// <summary>
+        /// 格口匹配内容转换
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        public string? ExitContentConvert(object data);
     }
 
     public class DeviceDecodeResult {
@@ -111,6 +118,11 @@ namespace JayTom.Dws.Domain.DownstreamProtocols {
         /// 指令解析
         /// </summary>
         public CommandParsing CommandParsing { get; set; } = new();
+
+        /// <summary>
+        /// 连接名称
+        /// </summary>
+        public string ConnectionName { get; set; } = string.Empty;
     }
 
     public enum FunctionType {
@@ -138,6 +150,12 @@ namespace JayTom.Dws.Domain.DownstreamProtocols {
         /// </summary>
         [Description("包裹异常")]
         PackageException,
+
+        /// <summary>
+        /// 包裹异常(需要判断操作)
+        /// </summary>
+        [Description("包裹异常")]
+        PackageExceptionEx,
 
         /// <summary>
         /// 开始运行
@@ -349,7 +367,7 @@ namespace JayTom.Dws.Domain.DownstreamProtocols {
         /// 锁格
         /// </summary>
         [Description("锁格")]
-        Locked,
+        LockExit,
 
         /// <summary>
         /// 车号不匹配

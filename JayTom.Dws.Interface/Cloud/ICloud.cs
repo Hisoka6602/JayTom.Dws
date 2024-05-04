@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Text;
 using System.Drawing;
+using System.ComponentModel;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -624,62 +625,92 @@ namespace JayTom.Dws.Interface.Cloud {
         /// <summary>
         /// 无
         /// </summary>
+        [Description("正常分拣")]
         None,
 
         /// <summary>
         /// 网络超时
         /// </summary>
+        [Description("网络超时")]
         NetworkTimeout,
 
         /// <summary>
         /// Api异常访问
         /// </summary>
+        [Description("Api异常访问")]
         ApiAccessError,
 
         /// <summary>
         /// 无条码
         /// </summary>
+        [Description("无条码")]
         NoRead,
 
         /// <summary>
         /// 多条码识别
         /// </summary>
+        [Description("多条码识别")]
         MultipleBarCode,
 
         /// <summary>
         /// 无分拣指令
         /// </summary>
+        [Description("无分拣指令")]
         NoSortingInstruction,
 
         /// <summary>
         /// 无物理格口
         /// </summary>
+        [Description("无物理格口")]
         NoPhysicalMailbox,
 
         /// <summary>
         /// 锁格
         /// </summary>
+        [Description("锁格")]
         LockExit,
 
         /// <summary>
         /// 叠包
         /// </summary>
+        [Description("叠包")]
         StackedPackage,
 
         /// <summary>
         /// 非本机构条码
         /// </summary>
+        [Description("非本机构条码")]
         PostNonLocalBarcode,
 
         /// <summary>
         /// 查不到段道
         /// </summary>
+        [Description("查不到段道")]
         PostSegmentNotFound,
 
         /// <summary>
         /// 未命中规则
         /// </summary>
+        [Description("未命中规则")]
         UnmatchedRule,
+
+        /// <summary>
+        /// 距离过近
+        /// </summary>
+        [Description("距离过近")]
+        DistanceTooClose,
+
+        /// <summary>
+        /// 车号不匹配
+        /// </summary>
+        [Description("车号不匹配")]
+        VehicleNumberMismatch,
+
+        /// <summary>
+        /// 线速度未稳定放包
+        /// </summary>
+        [Description("线速度未稳定放包")]
+        UnstableLineSpeed
     }
 
     public enum InstructionType {

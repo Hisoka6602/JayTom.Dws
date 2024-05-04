@@ -51,6 +51,11 @@ namespace JayTom.Dws.Client.Service.Sorting {
         event EventHandler<PackageInstructionEventArgs> PackageException;
 
         /// <summary>
+        /// 包裹异常(需要判断操作)
+        /// </summary>
+        event EventHandler<PackageInstructionEventArgs> PackageExceptionEx;
+
+        /// <summary>
         /// 接收前置信号回复事件
         /// </summary>
         event EventHandler<PackageInstructionEventArgs> PreSignalReplyReceived;
@@ -218,6 +223,11 @@ namespace JayTom.Dws.Client.Service.Sorting {
         /// 指令时间
         /// </summary>
         public DateTime InstructionTime { get; set; }
+
+        /// <summary>
+        /// 连接名称
+        /// </summary>
+        public string ConnectionName { get; set; } = string.Empty;
     }
 
     public class LogEventArgs : EventArgs {
@@ -407,6 +417,11 @@ namespace JayTom.Dws.Client.Service.Sorting {
         /// 指令信息
         /// </summary>
         public List<InstructionInfoModel>? InstructionInfos { get; set; }
+
+        /// <summary>
+        /// 连接名称
+        /// </summary>
+        public string ConnectionName { get; set; } = string.Empty;
     }
 
     public class ExceptionSortingReceived {

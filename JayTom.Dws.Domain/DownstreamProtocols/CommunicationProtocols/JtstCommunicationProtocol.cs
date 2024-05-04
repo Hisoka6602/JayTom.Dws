@@ -129,6 +129,10 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
             throw new NotImplementedException();
         }
 
+        public string? ExitContentConvert(object data) {
+            return null;
+        }
+
         private static byte[] BarcodeToByteArray(string barcode, int length, byte paddingCharacter) {
             // 使用UTF-8编码将字符串转换为字节数组
             var byteArray = Encoding.UTF8.GetBytes(barcode);

@@ -382,6 +382,7 @@ namespace JayTom.Dws.Client {
                 services.AddHostedService<TimerBackgroundService>();//计时
                 services.AddHostedService<CloudBackgroundService>();//上传云端
                 services.AddHostedService<PackageAggregationService>();//集包服务
+                services.AddHostedService<PackageExitUpdateBackgroundService>();//格口更新
             });
         }
 

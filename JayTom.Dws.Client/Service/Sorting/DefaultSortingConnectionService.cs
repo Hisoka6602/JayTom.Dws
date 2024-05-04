@@ -501,7 +501,8 @@ namespace JayTom.Dws.Client.Service.Sorting {
                                                     InstructionGeneratedTime =sendTime,
                                                     InstructionType = InstructionType.SendSorting
                                                 }
-                                            }
+                                            },
+                                            ConnectionName = connection?.ConnectionName ?? string.Empty
                                         });
                                         await Task.Delay(interval);
                                     }
@@ -691,7 +692,8 @@ namespace JayTom.Dws.Client.Service.Sorting {
                                                     InstructionGeneratedTime = sendTime,
                                                     InstructionType = InstructionType.SendSorting
                                                 }
-                                            }
+                                            },
+                                            ConnectionName = connection?.ConnectionName ?? string.Empty
                                         });
                                         await Task.Delay(interval);
                                     }
@@ -793,7 +795,8 @@ namespace JayTom.Dws.Client.Service.Sorting {
                                 InstructionGeneratedTime = sendTime,
                                 InstructionType = InstructionType.SendPreSignal
                             }
-                        }
+                        },
+                        ConnectionName = key ?? string.Empty
                     });
                 }
             }
@@ -886,7 +889,8 @@ namespace JayTom.Dws.Client.Service.Sorting {
                                 InstructionGeneratedTime = sendTime,
                                 InstructionType = InstructionType.PackageInfoCompletedSignal
                             }
-                        }
+                        },
+                        ConnectionName = key
                     });
                 }
             }
@@ -917,7 +921,10 @@ namespace JayTom.Dws.Client.Service.Sorting {
                                 RawContent = deviceDecodeResult.RawContent,
                                 Keyword = deviceDecodeResult.Keyword,
                                 Type = deviceDecodeResult.Type,
-                                Time = e.Time
+                                Time = e.Time,
+                                ConnectionName = e.ConnectionName,
+                                CommandParsing = deviceDecodeResult.CommandParsing,
+                                SortingExceptionReturnType = deviceDecodeResult.SortingExceptionReturnType
                             });
                         }
                     }

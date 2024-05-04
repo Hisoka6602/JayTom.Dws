@@ -31,6 +31,7 @@ namespace JayTom.Dws.Client.Models.DataModels {
         private string _exitName = string.Empty;
         private bool _isUploadedToCloudVideo;
         private ExitInfoItemModel _exitInfo = new();
+        private PackageExitStatus _packageExitStatus = PackageExitStatus.None;
 
         [DisplayName("No."), ExcelInfo(Width = 3000)]
         public int Num {
@@ -231,6 +232,11 @@ namespace JayTom.Dws.Client.Models.DataModels {
             get => _isUploadedToCloudVideo;
             set => SetProperty(ref _isUploadedToCloudVideo, value);
         }
+
+        public PackageExitStatus PackageExitStatus {
+            get => _packageExitStatus;
+            set => SetProperty(ref _packageExitStatus, value);
+        }
     }
 
     public class PanoramaImageItemModel : BindableBase {
@@ -248,5 +254,23 @@ namespace JayTom.Dws.Client.Models.DataModels {
             get => _isPanoramaImageExists;
             set => SetProperty(ref _isPanoramaImageExists, value);
         }
+    }
+
+    public enum PackageExitStatus {
+
+        /// <summary>
+        /// 无
+        /// </summary>
+        [Description("无")]
+        None,
+
+        /// <summary>
+        /// 正常落格
+        /// </summary>
+        [Description("正常落格")]
+        Normal,
+
+        [Description("异常")]
+        Abnormal
     }
 }

@@ -312,5 +312,9 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
         public CommandParsing? CommandParsingConvert(object obj) {
             throw new NotImplementedException();
         }
+
+        public string? ExitContentConvert(object data) {
+            return null;
+        }
     }
 }

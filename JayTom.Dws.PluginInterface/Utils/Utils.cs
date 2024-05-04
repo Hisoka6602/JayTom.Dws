@@ -215,5 +215,14 @@ namespace JayTom.Dws.PluginInterface.Utils {
             }
             return string.Empty;
         }
+
+        public static TTargetEnum ConvertTo<TTargetEnum>(this Enum sourceEnum) where TTargetEnum : struct, Enum {
+            if (!sourceEnum.GetType().IsEnum || !typeof(TTargetEnum).IsEnum) {
+                throw new ArgumentException("Both source and target types must be enums.");
+            }
+
+            var enumName = sourceEnum.ToString();
+            return Enum.TryParse<TTargetEnum>(enumName, out var targetEnum) ? targetEnum : default(TTargetEnum);
+        }
     }
 }

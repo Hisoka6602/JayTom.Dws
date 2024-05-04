@@ -105,6 +105,8 @@ namespace JayTom.Dws.Client.Service.Sorting {
 
         public event EventHandler<PackageInstructionEventArgs>? PackageException;
 
+        public event EventHandler<PackageInstructionEventArgs>? PackageExceptionEx;
+
         public event EventHandler<PackageInstructionEventArgs>? PreSignalReplyReceived;
 
         public event EventHandler<PackageInstructionEventArgs>? SendInstruction;
@@ -177,61 +179,86 @@ namespace JayTom.Dws.Client.Service.Sorting {
                 });
             };
             _sortingConnectionService.ReceivedInstructionsEvent += delegate (object? sender, DeviceDecodeResult result) {
-                if (result.Type == FunctionType.CreatePackage) {
-                    //创建包裹
-                    OnCreatePackageEvent(new PackageInstructionEventArgs() {
-                        Keyword = result.Keyword,
-                        Instruction = result.RawContent,
-                        InstructionTime = result.Time,
-                    });
-                }
-                else if (result.Type == FunctionType.RemovePackage) {
-                    //移除包裹
-                    OnRemovePackageEvent(new PackageInstructionEventArgs() {
-                        Keyword = result.Keyword,
-                        Instruction = result.RawContent,
-                        InstructionTime = result.Time,
-                    });
-                }
-                else if (result.Type == FunctionType.PackageException) {
-                    //包裹异常
-                    OnPackageException(new PackageInstructionEventArgs() {
-                        Keyword = result.Keyword,
-                        Instruction = result.RawContent,
-                        InstructionTime = result.Time,
-                    });
-                }
-                else if (result.Type == FunctionType.Heartbeat) {
-                    //心跳包
+                switch (result.Type) {
+                    case FunctionType.CreatePackage:
+                        //创建包裹
+                        OnCreatePackageEvent(new PackageInstructionEventArgs() {
+                            Keyword = result.Keyword,
+                            Instruction = result.RawContent,
+                            InstructionTime = result.Time,
+                            ConnectionName = result.ConnectionName
+                        });
+                        break;
 
-                    //OnCreatePackageEvent(result.Keyword);
-                }
-                else if (result.Type == FunctionType.ClearException) {
-                    //清空异常
-                }
-                else if (result.Type == FunctionType.ReceivePreSignalReply) {
-                    //前置信号回复
-                    OnPreSignalReplyReceived(new PackageInstructionEventArgs() {
-                        Keyword = result.Keyword,
-                        Instruction = result.RawContent,
-                        InstructionTime = result.Time,
-                    });
-                }
-                else if (result.Type == FunctionType.SequenceBindingReply) {
-                    //车号绑定回复
-                    OnSequenceBinding(new PackageInstructionEventArgs() {
-                        Keyword = result.Keyword,
-                        Instruction = result.RawContent,
-                        InstructionTime = result.Time,
-                    });
-                }
-                else if (result.Type == FunctionType.ResetButtonTrigger) {
-                    //复位按钮触发
-                    OnResetButtonTrigger(new PackageInstructionEventArgs() {
-                        Keyword = result.Keyword,
-                        Instruction = result.RawContent,
-                        InstructionTime = result.Time,
-                    });
+                    case FunctionType.RemovePackage:
+                        //移除包裹
+                        OnRemovePackageEvent(new PackageInstructionEventArgs() {
+                            Keyword = result.Keyword,
+                            Instruction = result.RawContent,
+                            InstructionTime = result.Time,
+                            ConnectionName = result.ConnectionName
+                        });
+                        break;
+
+                    case FunctionType.PackageException:
+                        //包裹异常
+                        OnPackageException(new PackageInstructionEventArgs() {
+                            Keyword = result.Keyword,
+                            Instruction = result.RawContent,
+                            InstructionTime = result.Time,
+                            ConnectionName = result.ConnectionName
+                        });
+                        break;
+
+                    case FunctionType.Heartbeat:
+                        //心跳包
+
+                        //OnCreatePackageEvent(result.Keyword);
+                        break;
+
+                    case FunctionType.ClearException:
+                        //清空异常
+                        break;
+
+                    case FunctionType.ReceivePreSignalReply:
+                        //前置信号回复
+                        OnPreSignalReplyReceived(new PackageInstructionEventArgs() {
+                            Keyword = result.Keyword,
+                            Instruction = result.RawContent,
+                            InstructionTime = result.Time,
+                            ConnectionName = result.ConnectionName
+                        });
+                        break;
+
+                    case FunctionType.SequenceBindingReply:
+                        //车号绑定回复
+                        OnSequenceBinding(new PackageInstructionEventArgs() {
+                            Keyword = result.Keyword,
+                            Instruction = result.RawContent,
+                            InstructionTime = result.Time,
+                            ConnectionName = result.ConnectionName
+                        });
+                        break;
+
+                    case FunctionType.ResetButtonTrigger:
+                        //复位按钮触发
+                        OnResetButtonTrigger(new PackageInstructionEventArgs() {
+                            Keyword = result.Keyword,
+                            Instruction = result.RawContent,
+                            InstructionTime = result.Time,
+                            ConnectionName = result.ConnectionName
+                        });
+                        break;
+
+                    case FunctionType.PackageExceptionEx:
+
+                        OnPackageExceptionEx(new PackageInstructionEventArgs() {
+                            Keyword = result.Keyword,
+                            Instruction = result.RawContent,
+                            InstructionTime = result.Time,
+                            ConnectionName = result.ConnectionName
+                        });
+                        break;
                 }
             };
             //格口更改
@@ -1089,6 +1116,11 @@ namespace JayTom.Dws.Client.Service.Sorting {
         protected virtual async void OnFlowToEndOrException(PackageInstructionEventArgs e) {
             await Task.Yield();
             FlowToEndOrException?.Invoke(this, e);
+        }
+
+        protected virtual async void OnPackageExceptionEx(PackageInstructionEventArgs e) {
+            await Task.Yield();
+            PackageExceptionEx?.Invoke(this, e);
         }
     }
 }

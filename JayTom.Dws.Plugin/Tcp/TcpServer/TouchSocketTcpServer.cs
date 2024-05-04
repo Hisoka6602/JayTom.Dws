@@ -92,10 +92,12 @@ namespace JayTom.Dws.Plugin.Tcp.TcpServer {
         public async Task<bool> Reconnect(int count, CancellationToken token = default) {
             for (var i = 0; i < count; i++) {
                 var connect = await Connect(token: token);
+
                 if (connect) {
                     return true;
                 }
             }
+
             return false;
         }
 

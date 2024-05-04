@@ -281,9 +281,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
         /// <summary>
         /// 串口刷新
         /// </summary>
-        public ICommand PortUpdateCommand {
-            get => new DelegateCommand(PortUpdateDelegate);
-        }
+        public ICommand PortUpdateCommand => new DelegateCommand(PortUpdateDelegate);
 
         private async void PortUpdateDelegate() {
             //重新枚举串口
@@ -296,9 +294,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
         /// <summary>
         /// 保存
         /// </summary>
-        public ICommand SaveCommand {
-            get => new DelegateCommand(SaveDelegate);
-        }
+        public ICommand SaveCommand => new DelegateCommand(SaveDelegate);
 
         private void SaveDelegate() {
             //保存返回
@@ -322,9 +318,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
         /// <summary>
         /// 取消
         /// </summary>
-        public ICommand CancelCommand {
-            get => new DelegateCommand(CancelDelegate);
-        }
+        public ICommand CancelCommand => new DelegateCommand(CancelDelegate);
 
         private void CancelDelegate() {
             IsOk = false;
@@ -336,9 +330,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
         /// <summary>
         /// 加载方法
         /// </summary>
-        public ICommand LoadedCommand {
-            get => new DelegateCommand<object>(LoadedDelegate);
-        }
+        public ICommand LoadedCommand => new DelegateCommand<object>(LoadedDelegate);
 
         private async void LoadedDelegate(object obj) {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
