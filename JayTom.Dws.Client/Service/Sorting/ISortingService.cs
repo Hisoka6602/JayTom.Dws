@@ -236,34 +236,6 @@ namespace JayTom.Dws.Client.Service.Sorting {
         //接收的内容
     }
 
-    //需要实现数据库映射
-    public class SendInstructionsLog {
-        //发送的内容
-        //发送时间
-        //发送的内容Guid
-        //目标
-        //发送间隔
-        //发送总耗时
-        //绑定的格口
-        //扫码时间
-        //条码
-        //效验协议
-        //通讯协议
-        //是否心跳包
-    }
-
-    //需要实现数据库映射
-    public class ReceiveInstructionsLog {
-        //接收的内容
-        //接收时间
-        //对应的发送指令
-        //对应的发送指令Guid
-        //目标
-        //效验协议
-        //通讯协议
-        //是否心跳包
-    }
-
     public class SortingParam {
         public object? Tag { get; set; }
 
@@ -346,6 +318,11 @@ namespace JayTom.Dws.Client.Service.Sorting {
         /// 是否叠包
         /// </summary>
         public bool IsStackedPackage { get; set; }
+
+        /// <summary>
+        /// 是否备用格口指令
+        /// </summary>
+        public bool IsAlternateExitInstruction { get; set; }
     }
 
     /// <summary>

@@ -325,6 +325,9 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             stoppingToken);
                         if (key && value is not null) {
                             //更新格口
+
+                            //如果出现异常则不再更新
+
                             var model = await _exitInfoRepository.FirstOrDefault(f => f.PackageId.Equals(value.Id), stoppingToken);
 
                             if (model is not null) {
@@ -343,6 +346,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 var update = await _exitInfoRepository.Update(model, stoppingToken);
                                 if (!update) {
                                     _packageExitUpdateItems.Enqueue(packageExitUpdateModel);
+                                    continue;
                                 }
                             }
                             else {
@@ -365,6 +369,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 var insert = await _exitInfoRepository.Insert(exitInfoModel, stoppingToken);
                                 if (!insert) {
                                     _packageExitUpdateItems.Enqueue(packageExitUpdateModel);
+                                    continue;
                                 }
                             }
                             if (packageExitUpdateModel.PackageCloudAbnormalSortingType != PackageCloudAbnormalSortingType.None &&

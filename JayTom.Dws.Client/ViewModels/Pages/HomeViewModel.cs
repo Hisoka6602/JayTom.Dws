@@ -520,10 +520,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                                 if (packageItemModel is not null) {
                                     await Application.Current.Dispatcher.BeginInvoke(() => {
                                         //更新数据
-                                        if (!string.IsNullOrEmpty(exitInfo.ExitName)) {
-                                            packageItemModel.ExitName = exitInfo.ExitName;
-                                        }
                                         if (packageItemModel.PackageExitStatus is PackageExitStatus.None or PackageExitStatus.Normal) {
+                                            packageItemModel.ExitName = exitInfo.ExitName;
                                             packageItemModel.PackageExitStatus =
                                                 exitInfo.InstructionType switch {
                                                     InstructionType.SignalCallback => PackageExitStatus.Normal,

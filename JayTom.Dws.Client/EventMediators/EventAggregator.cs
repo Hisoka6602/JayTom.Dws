@@ -264,6 +264,9 @@ namespace JayTom.Dws.Client.EventMediators {
         public ExitType Type { get; set; }
     }
 
+    /// <summary>
+    /// 推送包裹
+    /// </summary>
     public class PushPackageInfo {
 
         /// <summary>
@@ -275,5 +278,31 @@ namespace JayTom.Dws.Client.EventMediators {
         /// 包裹信息
         /// </summary>
         public PackageInfo PackageInfo { get; set; } = new();
+    }
+
+    /// <summary>
+    /// 推送备用格口分拣
+    /// </summary>
+    public class PushAlternateExitSorterEvent {
+
+        /// <summary>
+        /// 包裹信息
+        /// </summary>
+        public PackageInfo PackageInfo { get; set; } = new();
+
+        /// <summary>
+        /// 原出口Id
+        /// </summary>
+        public long OriginalExitId { get; set; }
+
+        /// <summary>
+        /// 原出口名称
+        /// </summary>
+        public string OriginalExitName { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 锁格时间
+        /// </summary>
+        public DateTime LockTime { get; set; }
     }
 }

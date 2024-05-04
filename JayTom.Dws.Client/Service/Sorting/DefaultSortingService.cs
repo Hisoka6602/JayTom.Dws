@@ -337,6 +337,23 @@ namespace JayTom.Dws.Client.Service.Sorting {
                     }
                 }
             });
+
+            //备用格口分拣
+            EventAggregator.Instance.Subscribe<PushAlternateExitSorterEvent>(async item => {
+                if (item is PushAlternateExitSorterEvent model) {
+                    SubSorting(new SortingParam {
+                        Timestamp = model.PackageInfo.Timestamp,
+                        Guid = model.PackageInfo.Guid,
+                        BarCode = model.PackageInfo.BarCodeInfo?.Barcode ?? string.Empty,
+                        ScanTime = model.PackageInfo.BarCodeInfo?.ScanTime,
+                        PackageCreationTime = model.PackageInfo.CreateTime,
+                        PackageCreationInstruction = model.PackageInfo.PackageCreationInstruction,
+                        IsCreatedByLowerMachine = true,
+                        ExitId = model.OriginalExitId,
+                        IsAlternateExitInstruction = true,
+                    });
+                }
+            });
             //锁格
             _exitMonitor.LockExitEvent += (sender, model) => {
                 var infoModel = _packageExitDefinitionInfos.FirstOrDefault(f => f.Id.Equals(model.Id));
@@ -826,7 +843,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
             var packageExitDefinitionInfoModel = _packageExitDefinitionInfos.FirstOrDefault(f => f.Id.Equals(param.ExitId) &&
                 f is { IsActive: true });
             if (packageExitDefinitionInfoModel is not null) {
-                if (packageExitDefinitionInfoModel.IsLockExit) {
+                if (packageExitDefinitionInfoModel.IsLockExit || param.IsAlternateExitInstruction) {
                     //判断备用格口
 
                     exitDefinitionInfoModel = _packageExitDefinitionInfos.FirstOrDefault(f => f is { IsLockExit: false, IsActive: true } &&

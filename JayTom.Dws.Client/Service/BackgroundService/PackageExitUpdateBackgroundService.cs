@@ -76,7 +76,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             //分拣指令
             EventAggregator.Instance.Subscribe<InstructionReceived>(async item => {
                 await Task.Yield();
-                await Task.Delay(50);
+                await Task.Delay(100);
                 if (item is InstructionReceived model && model.InstructionInfos?.Any() == true
                       ) {
                     var instructionInfoModel = model.InstructionInfos.FirstOrDefault();
@@ -89,7 +89,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                     f.ConnectionName.Equals(model.ConnectionName));
                                 var communicationProtocol = (CommunicationProtocol)Enum.Parse(typeof(CommunicationProtocol),
                                     connectionConfigInfoModel?.CommunicationProtocol ?? "None");
-                                _protocol = communicationProtocol switch {
+                                _protocol ??= communicationProtocol switch {
                                     CommunicationProtocol.Wxkc => new WxkcCommunicationProtocol(),
                                     CommunicationProtocol.JT_ST => new JtstCommunicationProtocol(),
                                     CommunicationProtocol.CaiNiao => new CaiNiaoCommunicationProtocol(),
@@ -138,7 +138,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                     f.ConnectionName.Equals(model.ConnectionName));
                                 var communicationProtocol = (CommunicationProtocol)Enum.Parse(typeof(CommunicationProtocol),
                                     connectionConfigInfoModel?.CommunicationProtocol ?? "None");
-                                _protocol = communicationProtocol switch {
+                                _protocol ??= communicationProtocol switch {
                                     CommunicationProtocol.Wxkc => new WxkcCommunicationProtocol(),
                                     CommunicationProtocol.JT_ST => new JtstCommunicationProtocol(),
                                     CommunicationProtocol.CaiNiao => new CaiNiaoCommunicationProtocol(),
@@ -182,7 +182,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                     f.ConnectionName.Equals(model.ConnectionName));
                                 var communicationProtocol = (CommunicationProtocol)Enum.Parse(typeof(CommunicationProtocol),
                                     connectionConfigInfoModel?.CommunicationProtocol ?? "None");
-                                _protocol = communicationProtocol switch {
+                                _protocol ??= communicationProtocol switch {
                                     CommunicationProtocol.Wxkc => new WxkcCommunicationProtocol(),
                                     CommunicationProtocol.JT_ST => new JtstCommunicationProtocol(),
                                     CommunicationProtocol.CaiNiao => new CaiNiaoCommunicationProtocol(),
@@ -221,7 +221,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                     f.ConnectionName.Equals(model.ConnectionName));
                                 var communicationProtocol = (CommunicationProtocol)Enum.Parse(typeof(CommunicationProtocol),
                                     connectionConfigInfoModel?.CommunicationProtocol ?? "None");
-                                _protocol = communicationProtocol switch {
+                                _protocol ??= communicationProtocol switch {
                                     CommunicationProtocol.Wxkc => new WxkcCommunicationProtocol(),
                                     CommunicationProtocol.JT_ST => new JtstCommunicationProtocol(),
                                     CommunicationProtocol.CaiNiao => new CaiNiaoCommunicationProtocol(),
@@ -240,7 +240,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
                                 var packageExitDefinitionInfoModel = _packageExitDefinitionInfoModels.FirstOrDefault(f =>
                                     f.Id.Equals(exitId ?? 0));
-
+                                NLog.LogManager.GetCurrentClassLogger().Error($"判断到落格信号");
                                 //更新理论格口
                                 EventAggregator.Instance.Publish(new PackageExitUpdateEvent {
                                     ExitType = SortingExitType.PhysicalExit,
@@ -255,6 +255,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                     ExitName = packageExitDefinitionInfoModel?.ExitName ?? string.Empty,
                                     InstructionType = instructionInfoModel?.InstructionType ?? InstructionType.None
                                 });
+
                                 break;
                             }
                     }

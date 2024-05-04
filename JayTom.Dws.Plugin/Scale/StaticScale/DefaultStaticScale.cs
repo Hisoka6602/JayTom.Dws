@@ -214,7 +214,8 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
                             });
                             _weightQueue.Clear();
                         }
-                        else if (_weightQueue.All(item => item == 0)) {
+                        else if (_weightQueue.All(item => item == 0) ||
+                                 _weightQueue.Reverse().Take(_weightQueue.Count / 3).All(weight => weight < _defaultStaticScaleValueParameters.MinWeight)) {
                             OnWeightCleared(new WeightChangedEventArgs() {
                                 Format = WeightFormat,
                                 FormattedWeight = 0,

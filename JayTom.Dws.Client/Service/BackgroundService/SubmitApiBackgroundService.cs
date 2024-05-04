@@ -82,7 +82,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             _configRepository = configRepository;
             _imageStorageService = imageStorageService;
             //包裹信息完成
-            EventAggregator.Instance.Subscribe<PackageInfo>(item => {
+            EventAggregator.Instance.Subscribe<PackageInfo>(async item => {
                 if (item is PackageInfo { BarCodeInfo: not null } model) {
                     _submitItems.Enqueue(new SubmitItemInfo() {
                         Barcode = model?.BarCodeInfo?.Barcode ?? string.Empty,
@@ -102,9 +102,17 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
                     //添加到推送队列
                     if (model is not null && model.IsCreatedByLowerMachine) {
-                        _packageSubmissionPushItems.TryAdd(new DateTimeOffset(model.CreateTime).ToUnixTimeMilliseconds(), new PackageSubmissionPushInfo() {
-                            PackageInfo = model
-                        });
+                        try {
+                            await _takePackageSlim.WaitAsync();
+                            _packageSubmissionPushItems.TryAdd(
+                                new DateTimeOffset(model.CreateTime).ToUnixTimeMilliseconds(),
+                                new PackageSubmissionPushInfo() {
+                                    PackageInfo = model
+                                });
+                        }
+                        finally {
+                            _takePackageSlim.Release();
+                        }
                     }
                 }
             });
@@ -293,30 +301,24 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             });
             //更新格口信息
             EventAggregator.Instance.Subscribe<PackageExitUpdateEvent>(async item => {
+                await Task.Yield();
+                await Task.Delay(50);
                 if (item is PackageExitUpdateEvent model) {
                     try {
                         await _takePackageSlim.WaitAsync();
                         //获取包裹
                         var (key, value) = _packageSubmissionPushItems.FirstOrDefault(f => f.Key.Equals(model.Timestamp));
                         if (value is not null) {
-                            //如果判断有[车号不匹配] 则 [车号不匹配]需要 需要根据FC 21(正常的更新格口号)
-
-                            if (model.PackageCloudAbnormalSortingType == PackageCloudAbnormalSortingType.VehicleNumberMismatch) {
-                                var packageExitUpdateEvent = value.PackageExitUpdateItems.FirstOrDefault(f =>
-                                    f.PackageCloudAbnormalSortingType == PackageCloudAbnormalSortingType.None);
-                                if (packageExitUpdateEvent is not null) {
-                                    model.ExitId = packageExitUpdateEvent.ExitId;
-                                    model.ExitName = packageExitUpdateEvent.ExitName;
-                                }
-                            }
                             //更新格口信息
                             value.PackageExitUpdateItems.Add(model);
-
                             //推送集包信息
                             EventAggregator.Instance.Publish(new PushPackageInfo() {
                                 PackageInfo = value.PackageInfo ?? new PackageInfo(),
                                 PackageExitUpdateEvent = model
                             });
+                        }
+                        else {
+                            NLog.LogManager.GetCurrentClassLogger().Error($"未匹配到包裹:{model.InstructionInfos?.FirstOrDefault()?.InstructionContent}");
                         }
                     }
                     finally {
@@ -611,197 +613,75 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         });
                     }
 
-                    /*//格口分拣后回调提交
-                    var callBackDequeue = _callBackItems.TryDequeue(out var callBackModel);
-                    if (callBackDequeue && callBackModel is not null) {
-                        Task.Factory.StartNew(async () => {
-                            if (callBackModel.PackageInfo is { } packageInfo &&
-                                DateTime.Now.Subtract(callBackModel.CallBackTime).TotalMilliseconds >= 0) {
-                                //获取返回的格口
+                    //获取需要提交到备用格口的数据
 
-                                var (l, sortingExitReceived) = _sortingExitItems.FirstOrDefault(f =>
-                                    packageInfo.BarCodeInfo != null &&
-                                    f.Value.ScanTime.Equals(packageInfo.BarCodeInfo.ScanTime));
+                    /*
+                    var keyValuePairs = _packageSubmissionPushItems?.Any(f => (f.Value.PackageExitUpdateItems?.Any(a => a.InstructionType == InstructionType.PackageExceptionEx) == true
+                                                                               && f.Value.PackageExitUpdateItems?.Any(a => a.InstructionType == InstructionType.SendSorting) == true)
+                                                                              && f.Value.PackageInfo is not null
+                                                                              && !f.Value.WasPushedAlternateExitSorter) == true
+                        ? _packageSubmissionPushItems?.Where(f => (f.Value.PackageExitUpdateItems?.Any(a => a.InstructionType == InstructionType.PackageExceptionEx) == true
+                                                                   && f.Value.PackageExitUpdateItems?.Any(a => a.InstructionType == InstructionType.SendSorting) == true)
+                                                                  && f.Value.PackageInfo is not null && !f.Value.WasPushedAlternateExitSorter)?.ToList()
+                        : new List<KeyValuePair<long, PackageSubmissionPushInfo>>();
 
-                                if (sortingExitReceived is not null) {
-                                    IDataUploader uploader;
-                                    UploadResponse? uploadResponse = null;
-                                    switch (_apiSettingsDto?.Type) {
-                                        case ApiType.None:
-                                            _sortingExitItems.TryRemove(l, out _);
-                                            return;
-
-                                            /*case ApiType.CaiNiaoApi:
-                                                //60秒后再提交
-                                                if (callBackModel?.PackageInfo?.BarCodeInfo is not null) {
-                                                    //在页面上加个配置设置这个时间
-                                                    if (DateTime.Now.Subtract(callBackModel.PackageInfo.BarCodeInfo.ScanTime).TotalSeconds < 60) {
-                                                        _callBackItems.Enqueue(callBackModel);
-                                                        NLog.LogManager.GetCurrentClassLogger().Error($"小于60秒");
-                                                        return;
-                                                    }
-
-                                                    uploader = new CaiNiaoApi(_httpClientFactory);
-                                                    var (key, value) = await uploader.SetParameters(_caiNiaoApiParam);
-                                                    if (key) {
-                                                        uploader.UploadInBackground(packageInfo.BarCodeInfo?.Barcode ?? string.Empty, packageInfo.WeightInfo?.FormattedWeight ?? 0,
-                                                            packageInfo.BarCodeInfo?.ScanTime ?? DateTime.Now, imageInfo: new UploadImageInfo() {
-                                                                CameraCustomName = packageInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
-                                                                CameraName = packageInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
-                                                                CameraSerialNumber = packageInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
-                                                            }, other: new ReportChuteInfo {
-                                                                ChuteCode = callBackModel.ExitNum.ToString(),
-                                                                ChuteCodePhysical = sortingExitReceived.ExitName ?? string.Empty,
-                                                                ErrorReson = packageInfo.PackageExceptionMsg,
-                                                                Status = packageInfo.PackageExceptionStatus,
-                                                            }, token: stoppingToken);
-                                                    }
-                                                    else {
-                                                        NLog.LogManager.GetCurrentClassLogger().Error("设置Api参数失败");
-                                                    }
-                                                    _sortingExitItems.TryRemove(l, out _);
-                                                }
-
-                                                break;#1#
-                                    }
-                                }
-                                else {
-                                    NLog.LogManager.GetCurrentClassLogger().Error($"未找到sortingExitReceived");
-                                    NLog.LogManager.GetCurrentClassLogger().Error($"callBackModel:{callBackModel.ExitNum}");
-                                    NLog.LogManager.GetCurrentClassLogger().Error($"_sortingExitItems:{JsonConvert.SerializeObject(_sortingExitItems)}");
-                                    _callBackItems.Enqueue(callBackModel);
+                    if (keyValuePairs?.Any() == true) {
+                        Parallel.ForEach(keyValuePairs, async packageValue => {
+                            try {
+                                await _takePackageSlim.WaitAsync(stoppingToken);
+                                //获取包裹信息
+                                var updateEvent = packageValue.Value.PackageExitUpdateItems.FirstOrDefault(f =>
+                                    f.InstructionType == InstructionType.SendSorting);
+                                if (packageValue.Value.PackageInfo is not null &&
+                                    updateEvent is not null) {
+                                    //推送
+                                    EventAggregator.Instance.Publish(new PushAlternateExitSorterEvent() {
+                                        PackageInfo = packageValue.Value.PackageInfo,
+                                        LockTime = packageValue.Value.PackageExitUpdateItems
+                                                       .FirstOrDefault(
+                                                           f => f.InstructionType == InstructionType.PackageExceptionEx)
+                                                       ?.InstructionInfos?.FirstOrDefault()?.InstructionGeneratedTime ??
+                                                   DateTime.Now,
+                                        OriginalExitId = updateEvent.ExitId,
+                                        OriginalExitName = updateEvent.ExitName
+                                    });
+                                    packageValue.Value.WasPushedAlternateExitSorter = true;
                                 }
                             }
-                            else {
-                                _callBackItems.Enqueue(callBackModel);
+                            finally {
+                                _takePackageSlim.Release();
                             }
                         });
-                    }
-
-                    //提交的格口列表
-                    if (_sortingExitItems.Any()) {
-                        IDataUploader? uploader;
-                        switch (_apiSettingsDto?.Type) {
-                            case ApiType.None:
-                                _sortingExitItems.Clear();
-                                return;
-
-                            case ApiType.CaiNiaoApi:
-                                //判断是否超过60秒,如果超过则强制提交(菜鸟专用)
-                                var sortingReport = _sortingExitItems
-                                    .Where(w => w.Value.ScanTime != null &&
-                                                DateTime.Now.Subtract(w.Value.ScanTime.Value).TotalSeconds >= 60)
-                                    ?.ToList();
-                                if (sortingReport?.Any() == true) {
-                                    uploader = new CaiNiaoApi(_httpClientFactory);
-                                    Parallel.ForEach(sortingReport, sValue => {
-                                        _sortingExitItems.TryRemove(sValue.Key, out var sortingValue);
-
-                                        if (sortingValue is not null) {
-                                            Task.Factory.StartNew(async () => {
-                                                /*var (key, value) = await uploader.SetParameters(_caiNiaoApiParam);
-                                                if (key) {
-                                                    uploader.UploadInBackground(sortingValue.BarCode ?? string.Empty, 0,
-                                                        sortingValue.ScanTime ?? DateTime.Now, imageInfo: new UploadImageInfo() {
-                                                            CameraCustomName = string.Empty,
-                                                            CameraName = string.Empty,
-                                                            CameraSerialNumber = string.Empty,
-                                                        }, other: new ReportChuteInfo {
-                                                            ChuteCode = sortingValue.ExitName ?? string.Empty,
-                                                            ChuteCodePhysical = sortingValue.ExitName ?? string.Empty,
-                                                            ErrorReson = (string.IsNullOrEmpty(sortingValue.BarCode) || sortingValue.BarCode.ToLower().Equals("noread") == true) ?
-                                                                "无条码" : "分拣成功 ",
-                                                            Status = (string.IsNullOrEmpty(sortingValue.BarCode) || sortingValue.BarCode.ToLower().Equals("noread") == true) ?
-                                                                1 : 0,
-                                                        }, token: stoppingToken);
-                                                }
-                                                else {
-                                                    NLog.LogManager.GetCurrentClassLogger().Error("设置Api参数失败");
-                                                }#1#
-                                                var callBackPackageInfo = _callBackItems.FirstOrDefault(f =>
-                                                    f.PackageInfo.Timestamp.Equals(sortingValue.Timestamp));
-                                                if (callBackPackageInfo is not null && callBackPackageInfo.PackageInfo is { } packageInfo) {
-                                                    var (key, value) = await uploader.SetParameters(_caiNiaoApiParam);
-                                                    if (key) {
-                                                        uploader.UploadInBackground(packageInfo.BarCodeInfo?.Barcode ?? string.Empty, packageInfo.WeightInfo?.FormattedWeight ?? 0,
-                                                            packageInfo.BarCodeInfo?.ScanTime ?? DateTime.Now, imageInfo: new UploadImageInfo() {
-                                                                CameraCustomName = packageInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
-                                                                CameraName = packageInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
-                                                                CameraSerialNumber = packageInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
-                                                            }, other: new ReportChuteInfo {
-                                                                ChuteCode = callBackPackageInfo.ExitNum.ToString(),
-                                                                ChuteCodePhysical = sortingValue.ExitName ?? string.Empty,
-                                                                ErrorReson = packageInfo.PackageExceptionMsg,
-                                                                Status = packageInfo.PackageExceptionStatus,
-                                                            }, token: stoppingToken);
-                                                    }
-                                                    else {
-                                                        NLog.LogManager.GetCurrentClassLogger().Error("设置Api参数失败");
-                                                    }
-                                                }
-                                            }, stoppingToken);
-                                        }
-                                    });
-                                }
-                                break;
-
-                            case ApiType.JtExpressApi:
-                                uploader = new JtExpressApi(_httpClientFactory);
-                                var (b, s) = await uploader.SetParameters(_jtExpressApiParam);
-                                Parallel.ForEach(_sortingExitItems, sValue => {
-                                    _sortingExitItems.TryRemove(sValue.Key, out var sortingValue);
-                                    if (sortingValue is not null) {
-                                        if (_jtExpressDto.IsUploadAfterReturn && sortingValue.Type == ExitType.AbnormalExit) {
-                                            return;
-                                        }
-
-                                        Task.Factory.StartNew(async () => {
-                                            var keyValuePair = await uploader.SetParameters(_jtExpressApiParam);
-                                            if (keyValuePair.Key) {
-                                                uploader.UploadInBackground(sortingValue.BarCode ?? string.Empty, sortingValue.SortingParam?.Weight ?? 0,
-                                                    sortingValue.SortingParam?.ScanTime ?? DateTime.Now, imageInfo: new UploadImageInfo(), other:
-                                                    sortingValue.SortingParam?.ApiResponse ?? new UploadResponse(), token: stoppingToken);
-                                            }
-                                            else {
-                                                NLog.LogManager.GetCurrentClassLogger().Error("设置Api参数失败");
-                                            }
-                                        }, stoppingToken);
-                                    }
-                                });
-                                break;
-
-                            default: {
-                                    _sortingExitItems.Clear();
-                                    break;
-                                }
-                        }
                     }*/
 
                     //获取包裹
-                    var pairs = _packageSubmissionPushItems?.Any(f => (f.Value.PackageExitUpdateItems?.Any() == true)
+                    var pairs = _packageSubmissionPushItems?.Any(f => f.Value.PackageExitUpdateItems?.Any() == true
                                                                               && f.Value.PackageInfo is not null) == true
                         ? _packageSubmissionPushItems?.Where(f => (f.Value.PackageExitUpdateItems?.Any() == true)
                                                                   && f.Value.PackageInfo is not null)?.ToList()
                         : new List<KeyValuePair<long, PackageSubmissionPushInfo>>();
 
                     if (pairs?.Any() == true) {
-                        IDataUploader? uploader = _apiSettingsDto switch { { Type: ApiType.CaiNiaoApi } => new CaiNiaoApi(_httpClientFactory), { Type: ApiType.JtExpressApi } => new JtExpressApi(_httpClientFactory),
+                        IDataUploader? uploader = _apiSettingsDto?.Type switch {
+                            ApiType.CaiNiaoApi => new CaiNiaoApi(_httpClientFactory),
+                            ApiType.JtExpressApi => new JtExpressApi(_httpClientFactory),
                             _ => null
                         };
                         if (uploader is not null) {
-                            Parallel.ForEach(pairs, async packageValue => {
+                            Parallel.ForEach(pairs, packageValue => {
                                 Task.Factory.StartNew(async () => {
                                     try {
                                         await _takePackageSlim.WaitAsync(stoppingToken);
                                         //提交
                                         if (packageValue.Value is { PackageInfo: not null } && packageValue.Value.PackageExitUpdateItems?.Any() == true) {
-                                            switch (_apiSettingsDto) {
-                                                case { Type: ApiType.CaiNiaoApi }:
+                                            switch (_apiSettingsDto?.Type) {
+                                                case ApiType.CaiNiaoApi:
 
                                                     //判断状态有完成再提交
                                                     if (packageValue.Value.PackageExitUpdateItems?.Any(a => a.InstructionType == InstructionType.SignalCallback) != true) {
                                                         return;
                                                     }
+                                                    NLog.LogManager.GetCurrentClassLogger().Error($"准备发送");
                                                     var (key, value) = await uploader.SetParameters(_caiNiaoApiParam);
                                                     if (key) {
                                                         var caiNiaoStatusConvert = CaiNiaoStatusConvert(
@@ -824,7 +704,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                                     }
                                                     break;
 
-                                                case { Type: ApiType.JtExpressApi }:
+                                                case ApiType.JtExpressApi:
                                                     if (_jtExpressDto.IsUploadAfterReturn && packageValue.Value.PackageExitUpdateItems.Any(a => a.Type == ExitType.AbnormalExit)) {
                                                         //删除这条
                                                         _packageSubmissionPushItems?.TryRemove(packageValue);
@@ -843,6 +723,9 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
                                                     break;
                                             }
+
+                                            //判断推送锁格(条码、原格口、包裹信息)
+
                                             //删除这条
                                             _packageSubmissionPushItems?.TryRemove(packageValue);
                                         }
@@ -1159,15 +1042,10 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             /// </summary>
             public ApiResponseReceived ApiResponse { get; set; } = new();
 
-            /*/// <summary>
-            /// 返回分拣信息(列表)
-            /// </summary>
-             public List<SortingExitReceived>? SortingExitReceivedInfos { get; set; } = new();
-
             /// <summary>
-            /// 包裹完结信息
+            /// 是否已提交过备用格口
             /// </summary>
-            public CallBackPackageInfo? CallBackPackageInfo { get; set; }*/
+            public bool WasPushedAlternateExitSorter { get; set; }
         }
     }
 }
