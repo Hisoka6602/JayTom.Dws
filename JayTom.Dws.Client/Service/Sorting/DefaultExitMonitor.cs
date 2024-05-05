@@ -1,5 +1,6 @@
 ﻿using System;
 using S7.Net;
+using ImTools;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -7,6 +8,7 @@ using S7.Net.Types;
 using Newtonsoft.Json;
 using System.Threading;
 using System.Diagnostics;
+using Byte = System.Byte;
 using JayTom.Dws.Plugin.Tcp;
 using System.Threading.Tasks;
 using JayTom.Dws.Data.LocalLog;
@@ -49,6 +51,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
         private Plc? plc;
         private PackageExitLockSettingsDto? _packageExitLockSettingsDto;
         private List<PackageExitLockBindingInfoModel>? _lockBindingInfoModels;
+        private bool _locking = false;
 
         public DefaultExitMonitor(IPackageExitDefinitionRepository packageExitDefinitionRepository,
             IConfigRepository configRepository, IPackageExitLockBindingRepository packageExitLockBindingRepository) {
@@ -215,6 +218,140 @@ namespace JayTom.Dws.Client.Service.Sorting {
 
         public Task<KeyValuePair<bool, List<PackageExitDefinitionInfoModel>>> GetAllPackageExitStatus() {
             return Task.FromResult(new KeyValuePair<bool, List<PackageExitDefinitionInfoModel>>(true, _definitionInfoModels));
+        }
+
+        public async Task<KeyValuePair<bool, string>> AllLockExit() {
+            if (plc is not null && _lockBindingInfoModels is not null &&
+                _packageExitLockSettingsDto is not null) {
+                if (_locking) {
+                    return new KeyValuePair<bool, string>(false, $"锁格操作中");
+                }
+
+                try {
+                    /*foreach (var model in _lockBindingInfoModels) {
+                        await plc.WriteBytesAsync(DataType.DataBlock,
+                             _packageExitLockSettingsDto.S7Config.Db,
+                             Convert.ToInt32(model.Address),
+                             new ReadOnlyMemory<byte>(new byte[] { 0x1 }));
+                        await Task.Delay(200);
+                    }*/
+                    var data = new byte[100];
+                    for (var i = 0; i < data.Length; i++) {
+                        data[i] = 0x1;
+                    }
+                    await plc.WriteBytesAsync(DataType.DataBlock,
+                        _packageExitLockSettingsDto.S7Config.Db,
+                        Convert.ToInt32(0),
+                        new ReadOnlyMemory<byte>(data));
+                    return new KeyValuePair<bool, string>(true, "锁格成功");
+                }
+                catch (Exception e) {
+                    NLog.LogManager.GetCurrentClassLogger().Error($"锁格失败:{e}");
+                    return new KeyValuePair<bool, string>(false, $"锁格失败:{e.Message}");
+                }
+                finally {
+                    _locking = false;
+                }
+            }
+            else {
+                return new KeyValuePair<bool, string>(false, "锁格未连接");
+            }
+        }
+
+        public async Task<KeyValuePair<bool, string>> AllUnLockExit() {
+            if (plc is not null && _lockBindingInfoModels is not null &&
+                _packageExitLockSettingsDto is not null) {
+                if (_locking) {
+                    return new KeyValuePair<bool, string>(false, $"解锁操作中");
+                }
+
+                try {
+                    /*foreach (var model in _lockBindingInfoModels) {
+                        await plc.WriteBytesAsync(DataType.DataBlock,
+                            _packageExitLockSettingsDto.S7Config.Db,
+                            Convert.ToInt32(model.Address),
+                            new ReadOnlyMemory<byte>(new byte[100]));
+                        await Task.Delay(200);
+                    }*/
+                    await plc.WriteBytesAsync(DataType.DataBlock,
+                        _packageExitLockSettingsDto.S7Config.Db,
+                        Convert.ToInt32(0),
+                        new ReadOnlyMemory<byte>(new byte[100]));
+                    return new KeyValuePair<bool, string>(true, "解锁成功");
+                }
+                catch (Exception e) {
+                    NLog.LogManager.GetCurrentClassLogger().Error($"解锁失败:{e}");
+                    return new KeyValuePair<bool, string>(false, $"解锁失败:{e.Message}");
+                }
+                finally {
+                    _locking = false;
+                }
+            }
+            else {
+                return new KeyValuePair<bool, string>(false, "锁格未连接");
+            }
+        }
+
+        public async Task<KeyValuePair<bool, string>> AllLockExit(int db, int address = 0, int length = 1) {
+            await Task.Yield();
+
+            //锁格->256.0
+
+            if (plc is not null) {
+                if (_locking) {
+                    return new KeyValuePair<bool, string>(false, $"锁格操作中");
+                }
+                try {
+                    _locking = true;
+                    db = _packageExitLockSettingsDto?.S7Config.Db ?? 0;
+
+                    await plc.WriteBitAsync(DataType.DataBlock, db,
+                        256, 0, true);
+                    await Task.Delay(2000);
+                    await plc.WriteBitAsync(DataType.DataBlock, db,
+                        256, 0, false);
+                    return new KeyValuePair<bool, string>(true, $"锁格成功");
+                }
+                catch (Exception e) {
+                    NLog.LogManager.GetCurrentClassLogger().Error($"锁格失败:{e}");
+                    return new KeyValuePair<bool, string>(false, $"锁格失败:{e.Message}");
+                }
+                finally {
+                    _locking = false;
+                }
+            }
+            else {
+                return new KeyValuePair<bool, string>(false, "锁格未连接");
+            }
+        }
+
+        public async Task<KeyValuePair<bool, string>> AllUnLockExit(int db, int address = 1, int length = 1) {
+            //解锁->256.1
+            if (plc is not null) {
+                if (_locking) {
+                    return new KeyValuePair<bool, string>(false, $"解锁操作中");
+                }
+                try {
+                    _locking = true;
+                    db = _packageExitLockSettingsDto?.S7Config.Db ?? 0;
+                    await plc.WriteBitAsync(DataType.DataBlock, db,
+                        256, 1, true);
+                    await Task.Delay(2000);
+                    await plc.WriteBitAsync(DataType.DataBlock, db,
+                        256, 1, false);
+                    return new KeyValuePair<bool, string>(true, $"解锁成功");
+                }
+                catch (Exception e) {
+                    NLog.LogManager.GetCurrentClassLogger().Error($"解锁失败:{e}");
+                    return new KeyValuePair<bool, string>(false, $"解锁失败:{e.Message}");
+                }
+                finally {
+                    _locking = false;
+                }
+            }
+            else {
+                return new KeyValuePair<bool, string>(false, "锁格未连接");
+            }
         }
 
         protected virtual async void OnExceptionOccurred(ExceptionEventArgs e) {

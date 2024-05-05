@@ -22,6 +22,11 @@ namespace JayTom.Dws.Domain.Dto.PackageExitLockDto {
         /// S7连接配置
         /// </summary>
         public S7ConfigDto S7Config { get; set; } = new();
+
+        /// <summary>
+        /// 是否自动异常口
+        /// </summary>
+        public bool IsAutoExceptionSorting { get; set; } = true;
     }
 
     public enum LockProtocolType {

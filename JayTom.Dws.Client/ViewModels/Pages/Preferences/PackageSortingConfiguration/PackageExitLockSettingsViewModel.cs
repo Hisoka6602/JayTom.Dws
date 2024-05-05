@@ -44,6 +44,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         private PackageExitLockSettingsModel _packageExitLockSettings = new();
         private ObservableCollection<LockProtocolType> _lockProtocolTypeItems = new(Enum.GetValues(typeof(LockProtocolType)).Cast<LockProtocolType>());
         private bool _isLoaded;
+        private bool _isLocking;
 
         public PackageExitLockSettingsViewModel(IPackageExitLockBindingRepository packageExitLockBindingRepository,
             IPackageExitDefinitionRepository packageExitDefinitionRepository,
@@ -98,13 +99,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         PackageExitLockSettings = new PackageExitLockSettingsModel() {
                             IsUsePackageExitLock = packageExitLockSettingsDto.IsUsePackageExitLock,
                             ProtocolType = packageExitLockSettingsDto.ProtocolType,
-                            S7Config = new S7ConfigModel() {
+                            S7Config = new S7ConfigModel {
                                 Db = packageExitLockSettingsDto.S7Config.Db,
                                 Ip = packageExitLockSettingsDto.S7Config.Ip,
                                 Slot = packageExitLockSettingsDto.S7Config.Slot,
                                 Rack = packageExitLockSettingsDto.S7Config.Rack,
                                 Timeout = packageExitLockSettingsDto.S7Config.Timeout
-                            }
+                            },
+                            IsAutoExceptionSorting = packageExitLockSettingsDto.IsAutoExceptionSorting
                         };
                     }
                     else {
@@ -115,9 +117,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             RefreshData();
         }
 
-        public ICommand AddCommand {
-            get => new DelegateCommand<object>(AddDelegate);
-        }
+        public ICommand AddCommand => new DelegateCommand<object>(AddDelegate);
 
         private async void AddDelegate(object obj) {
             await Application.Current.Dispatcher.InvokeAsync(async () => {
@@ -168,9 +168,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             });
         }
 
-        public ICommand ImportCommand {
-            get => new DelegateCommand<object>(ImportDelegate);
-        }
+        public ICommand ImportCommand => new DelegateCommand<object>(ImportDelegate);
 
         private async void ImportDelegate(object obj) {
             //导入
@@ -251,9 +249,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             }
         }
 
-        public ICommand ExportCommand {
-            get => new DelegateCommand<object>(ExportDelegate);
-        }
+        public ICommand ExportCommand => new DelegateCommand<object>(ExportDelegate);
 
         private async void ExportDelegate(object obj) {
             //导出
@@ -304,9 +300,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             }
         }
 
-        public ICommand ModifyCommand {
-            get => new DelegateCommand<PackageExitLockBindingItemInfoModel>(ModifyDelegate);
-        }
+        public ICommand ModifyCommand => new DelegateCommand<PackageExitLockBindingItemInfoModel>(ModifyDelegate);
 
         private async void ModifyDelegate(PackageExitLockBindingItemInfoModel obj) {
             await Application.Current.Dispatcher.InvokeAsync(async () => {
@@ -352,9 +346,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             });
         }
 
-        public ICommand DeleteCommand {
-            get => new DelegateCommand<PackageExitLockBindingItemInfoModel>(DeleteDelegate);
-        }
+        public ICommand DeleteCommand => new DelegateCommand<PackageExitLockBindingItemInfoModel>(DeleteDelegate);
 
         private async void DeleteDelegate(PackageExitLockBindingItemInfoModel obj) {
             await Application.Current.Dispatcher.InvokeAsync(async () => {
@@ -394,7 +386,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         Slot = PackageExitLockSettings.S7Config.Slot,
                         Rack = PackageExitLockSettings.S7Config.Rack,
                         Timeout = PackageExitLockSettings.S7Config.Timeout
-                    }
+                    },
+                    IsAutoExceptionSorting = PackageExitLockSettings.IsAutoExceptionSorting
                 })
             });
             base.MessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
@@ -441,6 +434,39 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                     DialogHost.Close(model.Identifier);
                 }
             });
+        }
+
+        public ICommand AllLockExitCommand => new DelegateCommand<object>(AllLockExitDelegate);
+
+        /// <summary>
+        /// 一键锁格
+        /// </summary>
+        /// <param name="obj"></param>
+        private async void AllLockExitDelegate(object obj) {
+            if (_isLocking) {
+                return;
+            }
+            _isLocking = true;
+            var (key, value) = await _exitMonitor.AllLockExit();
+            MessageQueue.Enqueue(value);
+            _isLocking = false;
+        }
+
+        public ICommand AllUnLockExitCommand => new DelegateCommand<object>(AllUnLockExitDelegate);
+
+        /// <summary>
+        /// 一键解锁
+        /// </summary>
+        /// <param name="obj"></param>
+        private async void AllUnLockExitDelegate(object obj) {
+            if (_isLocking) {
+                return;
+            }
+
+            _isLocking = true;
+            var (key, value) = await _exitMonitor.AllUnLockExit();
+            MessageQueue.Enqueue(value);
+            _isLocking = false;
         }
     }
 }

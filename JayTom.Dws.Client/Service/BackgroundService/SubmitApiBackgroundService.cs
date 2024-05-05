@@ -317,9 +317,9 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 PackageExitUpdateEvent = model
                             });
                         }
-                        else {
+                        /*else {
                             NLog.LogManager.GetCurrentClassLogger().Error($"未匹配到包裹:{model.InstructionInfos?.FirstOrDefault()?.InstructionContent}");
-                        }
+                        }*/
                     }
                     finally {
                         _takePackageSlim.Release();

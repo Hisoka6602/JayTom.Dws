@@ -12,6 +12,7 @@ namespace JayTom.Dws.Client.Models.PackageSorting.PackageExitLockModels {
         private S7ConfigModel _s7Config = new();
         private LockProtocolType _protocolType = LockProtocolType.S7;
         private bool _isUsePackageExitLock;
+        private bool _isAutoExceptionSorting = true;
 
         /// <summary>
         /// 是否使用锁格监测
@@ -35,6 +36,14 @@ namespace JayTom.Dws.Client.Models.PackageSorting.PackageExitLockModels {
         public S7ConfigModel S7Config {
             get => _s7Config;
             set => SetProperty(ref _s7Config, value);
+        }
+
+        /// <summary>
+        /// 是否自动异常口
+        /// </summary>
+        public bool IsAutoExceptionSorting {
+            get => _isAutoExceptionSorting;
+            set => SetProperty(ref _isAutoExceptionSorting, value);
         }
     }
 }

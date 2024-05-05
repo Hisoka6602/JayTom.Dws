@@ -22,6 +22,7 @@ using System.Text.RegularExpressions;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.DownstreamProtocols;
 using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Domain.Dto.PackageExitLockDto;
 using JayTom.Dws.Client.Service.BackgroundService;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 using UploadResponse = JayTom.Dws.Interface.UploadResponse;
@@ -62,6 +63,8 @@ namespace JayTom.Dws.Client.Service.Sorting {
 
         //private ConcurrentDictionary<DateTime, long> _stackedPackageGuidItems = new();
         private SortingMethodDto _sortingMethodDto = new();
+
+        private PackageExitLockSettingsDto _packageExitLockSettingsDto = new();
 
         private StackedPackageDetectionSettingsDto? _stackedPackageDetectionSettingsDto = new();
 
@@ -452,6 +455,9 @@ namespace JayTom.Dws.Client.Service.Sorting {
                     _apiSettingsDto = await _configRepository.FirstOrDefaultEntity<ApiSettingsDto>("ApiSettings", token) ?? new ApiSettingsDto();
                     _sortingMethodDto = await _configRepository.FirstOrDefaultEntity<SortingMethodDto>("SortingMethodSettings", token) ?? new SortingMethodDto();
                     _stackedPackageDetectionSettingsDto = await _configRepository.FirstOrDefaultEntity<StackedPackageDetectionSettingsDto>("StackedPackageDetectionSettings", token) ?? new StackedPackageDetectionSettingsDto();
+
+                    _packageExitLockSettingsDto = await _configRepository.FirstOrDefaultEntity<PackageExitLockSettingsDto>("PackageExitLockSettings", token) ?? new PackageExitLockSettingsDto();
+
                     _packageExitDefinitionInfos = await _packageExitDefinitionRepository.Select(s => s.Id > 0,
                         o => o.Id, token);
 
@@ -849,7 +855,10 @@ namespace JayTom.Dws.Client.Service.Sorting {
                     exitDefinitionInfoModel = _packageExitDefinitionInfos.FirstOrDefault(f => f is { IsLockExit: false, IsActive: true } &&
                         f.Pid == packageExitDefinitionInfoModel.Id);
                     if (exitDefinitionInfoModel is null) {
-                        ExceptionSorting(param, PackageCloudAbnormalSortingType.LockExit, token);
+                        if (_packageExitLockSettingsDto.IsAutoExceptionSorting) {
+                            ExceptionSorting(param, PackageCloudAbnormalSortingType.LockExit, token);
+                        }
+
                         return;
                     }
                     param.ExitId = exitDefinitionInfoModel.Id;

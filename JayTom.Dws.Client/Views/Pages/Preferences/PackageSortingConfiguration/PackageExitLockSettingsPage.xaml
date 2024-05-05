@@ -77,6 +77,7 @@
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
                     <!--  锁格协议  -->
@@ -307,8 +308,56 @@
                             </StackPanel>
                         </TabItem>
                     </TabControl>
+                    <!--  锁格设置  -->
+                    <StackPanel Grid.Row="2">
+                        <!--  锁格是否流到异常口  -->
+                        <StackPanel Orientation="Horizontal">
+                            <!--  图标  -->
+                            <TextBlock
+                                Margin="5,5"
+                                VerticalAlignment="Center"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                Text="是否自动流到异常口:" />
+                            <ToggleButton
+                                materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
+                                materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
+                                Focusable="False"
+                                IsChecked="{Binding PackageExitLockSettings.IsAutoExceptionSorting, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+                        </StackPanel>
+                        <!--  一键锁格/解锁  -->
+                        <StackPanel Orientation="Horizontal">
+                            <Button
+                                Width="120"
+                                Height="30"
+                                Margin="10,5"
+                                HorizontalAlignment="Left"
+                                materialDesign:ButtonAssist.CornerRadius="15"
+                                Background="BlueViolet"
+                                BorderBrush="BlueViolet"
+                                Foreground="White"
+                                Command="{Binding AllLockExitCommand}"
+                                Style="{StaticResource MaterialDesignRaisedDarkButton}">
+                                <TextBlock Text="一键锁格" />
+                            </Button>
+                            <Button
+                                Width="120"
+                                Height="30"
+                                Margin="10,5"
+                                HorizontalAlignment="Left"
+                                materialDesign:ButtonAssist.CornerRadius="15"
+                                Background="DodgerBlue"
+                                Foreground="White"
+                                Command="{Binding AllUnLockExitCommand}"
+                                Style="{StaticResource MaterialDesignRaisedDarkButton}">
+                                <TextBlock Text="一键解锁" />
+                            </Button>
+                        </StackPanel>
+                    </StackPanel>
                     <!--  格口配置表  -->
-                    <Grid Grid.Row="2">
+                    <Grid Grid.Row="3">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="*" />
                             <RowDefinition Height="Auto" />

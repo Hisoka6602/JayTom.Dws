@@ -69,5 +69,29 @@ namespace JayTom.Dws.Client.Service.Sorting {
         /// </summary>
         /// <returns></returns>
         Task<KeyValuePair<bool, List<PackageExitDefinitionInfoModel>>> GetAllPackageExitStatus();
+
+        /// <summary>
+        /// 全部锁格
+        /// </summary>
+        /// <returns></returns>
+        Task<KeyValuePair<bool, string>> AllLockExit();
+
+        /// <summary>
+        /// 全部解锁
+        /// </summary>
+        /// <returns></returns>
+        Task<KeyValuePair<bool, string>> AllUnLockExit();
+
+        /// <summary>
+        /// 全部锁格
+        /// </summary>
+        /// <returns></returns>
+        Task<KeyValuePair<bool, string>> AllLockExit(int db, int address, int length = 1);
+
+        /// <summary>
+        /// 全部解锁
+        /// </summary>
+        /// <returns></returns>
+        Task<KeyValuePair<bool, string>> AllUnLockExit(int db, int address, int length = 1);
     }
 }
