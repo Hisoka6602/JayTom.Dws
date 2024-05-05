@@ -248,13 +248,23 @@ namespace JayTom.Dws.Interface.Eshippingit {
 
                     memoryStream.Seek(0, SeekOrigin.Begin);
 
-                    var putObjectResult = _ossClient.PutObject(Parameters.BucketName, $"ilwParcelImages/{scanTime:yyyy-MM-dd}/{barcode}.png",
+                    var putObjectResult = _ossClient.PutObject(Parameters.BucketName,
+                        $"ilwParcelImages/{scanTime:yyyy-MM-dd}/{barcode}.png",
                         memoryStream);
                     if (putObjectResult.HttpStatusCode == HttpStatusCode.OK) {
-                        return await UploadWeightImage(barcode, $"ilwParcelImages/{scanTime:yyyy-MM-dd}/{barcode}.png", token);
+                        return await UploadWeightImage(barcode, $"ilwParcelImages/{scanTime:yyyy-MM-dd}/{barcode}.png",
+                            token);
                     }
                     else {
                         NLog.LogManager.GetCurrentClassLogger().Error($"Oss上传失败");
+                    }
+                }
+                catch (Aliyun.OSS.Common.OssException ossException) {
+                    if (ossException.Message.Contains("The OSS Access Key Id you provided does not exist in our records")) {
+                        OssParam = await GetOssParameters();
+                        NLog.LogManager.GetCurrentClassLogger().Error($"{JsonConvert.SerializeObject(OssParam)}");
+                        NLog.LogManager.GetCurrentClassLogger().Error($"{ossException}");
+                        return false;
                     }
                 }
                 catch (Exception e) {

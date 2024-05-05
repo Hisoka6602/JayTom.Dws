@@ -23,6 +23,11 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
         private BaseScaleConnectParam _baseScaleConnectParam = new();
         private SemaphoreSlim _semaphore = new(1);
 
+        //增加一个稳定重量推送间隔
+        private static bool _isZeroed = true;
+
+        private static float _lastweight = 0;
+
         public void Dispose() {
             _tokenSource?.Cancel();
             if (_serialPort?.IsOpen == true) {
@@ -204,25 +209,33 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
                                 .OrderByDescending(g => g.Count())
                                 .Select(g => g.Key)
                                 .FirstOrDefault();
-                            OnStabledWeight(weight);
-                            //返回原文
-                            OnWeightStabilized(new WeightChangedEventArgs() {
-                                Format = WeightFormat,
-                                FormattedWeight = weight,
-                                OriginalContent = string.Join(",", _weightQueue.ToList()),
-                                Type = WeightType.Static
-                            });
+                            if (_isZeroed) {
+                                OnStabledWeight(weight);
+                                //返回原文
+                                OnWeightStabilized(new WeightChangedEventArgs() {
+                                    Format = WeightFormat,
+                                    FormattedWeight = weight,
+                                    OriginalContent = string.Join(",", _weightQueue.ToList()),
+                                    Type = WeightType.Static
+                                });
+                                _serialPort?.DiscardInBuffer();
+                                _isZeroed = false;
+                                _lastweight = weight;
+                            }
+
                             _weightQueue.Clear();
                         }
                         else if (_weightQueue.All(item => item == 0) ||
-                                 _weightQueue.Reverse().Take(_weightQueue.Count / 3).All(weight => weight < _defaultStaticScaleValueParameters.MinWeight)) {
-                            OnWeightCleared(new WeightChangedEventArgs() {
+                                 _weightQueue.Reverse().Take(_weightQueue.Count / 4).All(w => w < _lastweight / 1.5f)) {
+                            /*OnWeightCleared(new WeightChangedEventArgs() {
                                 Format = WeightFormat,
                                 FormattedWeight = 0,
                                 OriginalContent = string.Join(",", _weightQueue.ToList()),
                                 Type = WeightType.Static
-                            });
+                            });*/
                             _weightQueue.Clear();
+                            _serialPort?.DiscardInBuffer();
+                            _isZeroed = true;
                         }
                     }
 
