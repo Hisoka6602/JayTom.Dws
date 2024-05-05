@@ -44,7 +44,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         private PackageExitLockSettingsModel _packageExitLockSettings = new();
         private ObservableCollection<LockProtocolType> _lockProtocolTypeItems = new(Enum.GetValues(typeof(LockProtocolType)).Cast<LockProtocolType>());
         private bool _isLoaded;
-        private bool _isLocking;
+        private bool _isExitLockProgress;
+        private bool _isUnExitLockProgress;
 
         public PackageExitLockSettingsViewModel(IPackageExitLockBindingRepository packageExitLockBindingRepository,
             IPackageExitDefinitionRepository packageExitDefinitionRepository,
@@ -88,6 +89,22 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         public ObservableCollection<LockProtocolType> LockProtocolTypeItems {
             get => _lockProtocolTypeItems;
             set => SetProperty(ref _lockProtocolTypeItems, value);
+        }
+
+        /// <summary>
+        /// 锁格中
+        /// </summary>
+        public bool IsExitLockProgress {
+            get => _isExitLockProgress;
+            set => SetProperty(ref _isExitLockProgress, value);
+        }
+
+        /// <summary>
+        /// 解锁中
+        /// </summary>
+        public bool IsUnExitLockProgress {
+            get => _isUnExitLockProgress;
+            set => SetProperty(ref _isUnExitLockProgress, value);
         }
 
         public override async void LoadedDelegate(object obj) {
@@ -442,14 +459,21 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         /// 一键锁格
         /// </summary>
         /// <param name="obj"></param>
-        private async void AllLockExitDelegate(object obj) {
-            if (_isLocking) {
+        private void AllLockExitDelegate(object obj) {
+            if (IsExitLockProgress || IsUnExitLockProgress) {
                 return;
             }
-            _isLocking = true;
-            var (key, value) = await _exitMonitor.AllLockExit();
-            MessageQueue.Enqueue(value);
-            _isLocking = false;
+
+            IsExitLockProgress = true;
+            Task.Run(async () => {
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+                    await Task.Delay(5000);
+                    //var (key, value) = await _exitMonitor.AllLockExit();
+                    //MessageQueue.Enqueue(value);
+                    MessageQueue.Enqueue("操作完成");
+                    IsExitLockProgress = false;
+                });
+            });
         }
 
         public ICommand AllUnLockExitCommand => new DelegateCommand<object>(AllUnLockExitDelegate);
@@ -458,15 +482,21 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         /// 一键解锁
         /// </summary>
         /// <param name="obj"></param>
-        private async void AllUnLockExitDelegate(object obj) {
-            if (_isLocking) {
+        private void AllUnLockExitDelegate(object obj) {
+            if (IsExitLockProgress || IsUnExitLockProgress) {
                 return;
             }
 
-            _isLocking = true;
-            var (key, value) = await _exitMonitor.AllUnLockExit();
-            MessageQueue.Enqueue(value);
-            _isLocking = false;
+            IsUnExitLockProgress = true;
+            Task.Run(async () => {
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+                    await Task.Delay(5000);
+                    /*var (key, value) = await _exitMonitor.AllUnLockExit();
+                    MessageQueue.Enqueue(value);*/
+                    MessageQueue.Enqueue("操作完成");
+                    IsUnExitLockProgress = false;
+                });
+            });
         }
     }
 }

@@ -331,28 +331,118 @@
                         <StackPanel Orientation="Horizontal">
                             <Button
                                 Width="120"
-                                Height="30"
+                                Height="35"
                                 Margin="10,5"
                                 HorizontalAlignment="Left"
                                 materialDesign:ButtonAssist.CornerRadius="15"
                                 Background="BlueViolet"
                                 BorderBrush="BlueViolet"
-                                Foreground="White"
                                 Command="{Binding AllLockExitCommand}"
+                                Foreground="White"
                                 Style="{StaticResource MaterialDesignRaisedDarkButton}">
-                                <TextBlock Text="一键锁格" />
+                                <Grid>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock
+                                            Margin="2,1,0,0"
+                                            VerticalAlignment="Center"
+                                            FontFamily="{StaticResource CustomFontFamily}"
+                                            FontSize="14"
+                                            FontWeight="Bold"
+                                            Foreground="White"
+                                            Text="一键锁格" />
+                                        <StackPanel.Style>
+                                            <Style TargetType="StackPanel">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding DataContext.IsExitLockProgress, RelativeSource={RelativeSource AncestorType={x:Type Page}}}" Value="True">
+                                                        <Setter Property="Visibility" Value="Hidden" />
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding DataContext.IsExitLockProgress, RelativeSource={RelativeSource AncestorType={x:Type Page}}}" Value="False">
+                                                        <Setter Property="Visibility" Value="Visible" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </StackPanel.Style>
+                                    </StackPanel>
+                                    <ProgressBar
+                                        Width="25"
+                                        Height="25"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        IsIndeterminate="True"
+                                        Value="0">
+                                        <ProgressBar.Style>
+                                            <Style BasedOn="{StaticResource MaterialDesignCircularProgressBar}" TargetType="ProgressBar">
+                                                <Setter Property="Visibility" Value="Hidden" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding DataContext.IsExitLockProgress, RelativeSource={RelativeSource AncestorType={x:Type Page}}}" Value="True">
+                                                        <Setter Property="Visibility" Value="Visible" />
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding DataContext.IsExitLockProgress, RelativeSource={RelativeSource AncestorType={x:Type Page}}}" Value="False">
+                                                        <Setter Property="Visibility" Value="Hidden" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </ProgressBar.Style>
+                                    </ProgressBar>
+                                </Grid>
                             </Button>
                             <Button
                                 Width="120"
-                                Height="30"
+                                Height="35"
                                 Margin="10,5"
                                 HorizontalAlignment="Left"
                                 materialDesign:ButtonAssist.CornerRadius="15"
                                 Background="DodgerBlue"
-                                Foreground="White"
                                 Command="{Binding AllUnLockExitCommand}"
+                                Foreground="White"
                                 Style="{StaticResource MaterialDesignRaisedDarkButton}">
-                                <TextBlock Text="一键解锁" />
+                                <Grid>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock
+                                            Margin="2,1,0,0"
+                                            VerticalAlignment="Center"
+                                            FontFamily="{StaticResource CustomFontFamily}"
+                                            FontSize="14"
+                                            FontWeight="Bold"
+                                            Foreground="White"
+                                            Text="一键锁格" />
+                                        <StackPanel.Style>
+                                            <Style TargetType="StackPanel">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding DataContext.IsUnExitLockProgress, RelativeSource={RelativeSource AncestorType={x:Type Page}}}" Value="True">
+                                                        <Setter Property="Visibility" Value="Hidden" />
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding DataContext.IsUnExitLockProgress, RelativeSource={RelativeSource AncestorType={x:Type Page}}}" Value="False">
+                                                        <Setter Property="Visibility" Value="Visible" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </StackPanel.Style>
+                                    </StackPanel>
+                                    <ProgressBar
+                                        Width="25"
+                                        Height="25"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        IsIndeterminate="True"
+                                        Value="0">
+                                        <ProgressBar.Style>
+                                            <Style BasedOn="{StaticResource MaterialDesignCircularProgressBar}" TargetType="ProgressBar">
+                                                <Setter Property="Visibility" Value="Hidden" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding DataContext.IsUnExitLockProgress, RelativeSource={RelativeSource AncestorType={x:Type Page}}}" Value="True">
+                                                        <Setter Property="Visibility" Value="Visible" />
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding DataContext.IsUnExitLockProgress, RelativeSource={RelativeSource AncestorType={x:Type Page}}}" Value="False">
+                                                        <Setter Property="Visibility" Value="Hidden" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </ProgressBar.Style>
+                                    </ProgressBar>
+                                </Grid>
                             </Button>
                         </StackPanel>
                     </StackPanel>

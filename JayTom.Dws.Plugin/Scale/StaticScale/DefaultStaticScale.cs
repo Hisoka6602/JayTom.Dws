@@ -99,7 +99,6 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
                                         // 将字节数组转换为十六进制表示
                                         receivedData = BitConverter.ToString(buffer).Replace("-", "");
                                     }
-
                                     _character.Enqueue(receivedData);
                                     // 添加到接收数据缓冲区
                                     //receivedDataBuffer += receivedData;
@@ -142,6 +141,7 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
                         Task.Factory.StartNew(ProcessSending, TaskCreationOptions.LongRunning);
                     }
                     OnConnected(this);
+                    _isZeroed = true;
                     return true;
                 }
             }
@@ -219,6 +219,7 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
                                     Type = WeightType.Static
                                 });
                                 _serialPort?.DiscardInBuffer();
+
                                 _isZeroed = false;
                                 _lastweight = weight;
                             }
