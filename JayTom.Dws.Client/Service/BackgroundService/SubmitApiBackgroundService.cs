@@ -737,6 +737,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             });
                         }
                     }
+                    //集包
                     var packageAggregationDequeue = _packageAggregationInfoItems.TryDequeue(out var packageAggregationInfo);
                     if (packageAggregationDequeue && packageAggregationInfo is not null) {
                         //集包推送(判断需要使用的Api-Task.Factory.StartNew)

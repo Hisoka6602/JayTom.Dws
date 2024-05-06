@@ -235,14 +235,20 @@ namespace JayTom.Dws.Client.Service.Sorting {
                              new ReadOnlyMemory<byte>(new byte[] { 0x1 }));
                         await Task.Delay(200);
                     }*/
-                    var data = new byte[100];
-                    for (var i = 0; i < data.Length; i++) {
-                        data[i] = 0x1;
-                    }
-                    await plc.WriteBytesAsync(DataType.DataBlock,
-                        _packageExitLockSettingsDto.S7Config.Db,
-                        Convert.ToInt32(0),
-                        new ReadOnlyMemory<byte>(data));
+                    var allOne = false;
+                    do {
+                        var data = Enumerable.Repeat((byte)0x1, 100).ToArray();
+                        await plc.WriteBytesAsync(DataType.DataBlock,
+                            _packageExitLockSettingsDto.S7Config.Db,
+                            Convert.ToInt32(0),
+                            new ReadOnlyMemory<byte>(data));
+                        await Task.Delay(2000);
+                        var readBytesAsync = await plc.ReadBytesAsync(DataType.DataBlock,
+                            _packageExitLockSettingsDto.S7Config.Db,
+                            Convert.ToInt32(0), 100);
+                        allOne = readBytesAsync.All(b => b == 0x1);
+                    } while (!allOne);
+
                     return new KeyValuePair<bool, string>(true, "锁格成功");
                 }
                 catch (Exception e) {
@@ -273,10 +279,19 @@ namespace JayTom.Dws.Client.Service.Sorting {
                             new ReadOnlyMemory<byte>(new byte[100]));
                         await Task.Delay(200);
                     }*/
-                    await plc.WriteBytesAsync(DataType.DataBlock,
-                        _packageExitLockSettingsDto.S7Config.Db,
-                        Convert.ToInt32(0),
-                        new ReadOnlyMemory<byte>(new byte[100]));
+                    var allZero = false;
+                    do {
+                        await plc.WriteBytesAsync(DataType.DataBlock,
+                            _packageExitLockSettingsDto.S7Config.Db,
+                            Convert.ToInt32(0),
+                            new ReadOnlyMemory<byte>(new byte[100]));
+                        await Task.Delay(2000);
+                        var readBytesAsync = await plc.ReadBytesAsync(DataType.DataBlock,
+                            _packageExitLockSettingsDto.S7Config.Db,
+                            Convert.ToInt32(0), 100);
+                        allZero = readBytesAsync.All(b => b == 0x0);
+                    } while (!allZero);
+
                     return new KeyValuePair<bool, string>(true, "解锁成功");
                 }
                 catch (Exception e) {

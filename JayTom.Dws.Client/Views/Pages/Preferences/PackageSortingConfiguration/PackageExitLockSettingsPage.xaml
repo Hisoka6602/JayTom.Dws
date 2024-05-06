@@ -406,7 +406,7 @@
                                             FontSize="14"
                                             FontWeight="Bold"
                                             Foreground="White"
-                                            Text="一键锁格" />
+                                            Text="一键解锁" />
                                         <StackPanel.Style>
                                             <Style TargetType="StackPanel">
                                                 <Setter Property="Visibility" Value="Visible" />

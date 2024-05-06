@@ -467,10 +467,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             IsExitLockProgress = true;
             Task.Run(async () => {
                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
-                    await Task.Delay(5000);
-                    //var (key, value) = await _exitMonitor.AllLockExit();
-                    //MessageQueue.Enqueue(value);
-                    MessageQueue.Enqueue("操作完成");
+                    await Task.Delay(3000);
+                    var (key, value) = await _exitMonitor.AllLockExit();
+                    MessageQueue.Enqueue(value);
                     IsExitLockProgress = false;
                 });
             });
@@ -490,10 +489,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             IsUnExitLockProgress = true;
             Task.Run(async () => {
                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
-                    await Task.Delay(5000);
-                    /*var (key, value) = await _exitMonitor.AllUnLockExit();
-                    MessageQueue.Enqueue(value);*/
-                    MessageQueue.Enqueue("操作完成");
+                    await Task.Delay(3000);
+                    var (key, value) = await _exitMonitor.AllUnLockExit();
+                    MessageQueue.Enqueue(value);
                     IsUnExitLockProgress = false;
                 });
             });
