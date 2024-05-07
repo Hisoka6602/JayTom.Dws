@@ -444,6 +444,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             //外部全量数据
             _externalDataService.ContentInputReceived += async (sender, args) => {
                 await Task.Yield();
+                //测试，记得删
+                await Task.Delay(10);
                 if (!_createPackageSettingsDto.IsUseNoRead &&
                     args.Barcode.ToLower().Equals("noread")) {
                     return;
@@ -629,11 +631,17 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             };
             //下位机(移除包裹)
             _sortingService.RemovePackageEvent += async delegate (object? sender, PackageInstructionEventArgs args) {
+                /*//测试,记得删
+                return;*/
+
                 try {
                     await _createPackageSlim.WaitAsync();
+                    //测试间隔200,记得删掉
+                    await Task.Delay(200);
                     var tryParse = int.TryParse(args.Keyword, out var num);
                     if (tryParse) {
-                        var keyValuePair = _packageInfos.OrderBy(o => o.Key).FirstOrDefault(f => f.Value.Guid.Equals(num));
+                        var keyValuePair = _packageInfos.OrderBy(o => o.Key).
+                            FirstOrDefault(f => f.Value.Guid.Equals(num));
                         if (keyValuePair.Value is not null) {
                             EventAggregator.Instance.Publish(new InstructionReceived() {
                                 Timestamp = new DateTimeOffset(keyValuePair.Value.CreateTime).ToUnixTimeMilliseconds(),
@@ -650,18 +658,22 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 },
                                 ConnectionName = args.ConnectionName,
                             });
-                            //是否延迟包
-
-                            EventAggregator.Instance.Publish(new CallBackPackageInfo {
+                            /*EventAggregator.Instance.Publish(new CallBackPackageInfo {
                                 CallBackTime = DateTime.Now,
                                 PackageCreateTime = keyValuePair.Value.CreateTime,
                                 PackageInfo = keyValuePair.Value,
                                 InstructionContent = args.Instruction,
-                            });
+                            });*/
                             if (_createPackageSettingsDto.PackageRemoveMethods == PackageRemoveMethodsEnum.LowerMachineRemoval) {
                                 _packageInfos.TryRemove(keyValuePair);
                             }
                         }
+                        else {
+                            NLog.LogManager.GetCurrentClassLogger().Error($"序号匹配包裹失败,序号:{num},原文:{args.Keyword}");
+                        }
+                    }
+                    else {
+                        NLog.LogManager.GetCurrentClassLogger().Error($"关键字节转数字失败:{args.Keyword}");
                     }
                 }
                 finally {
@@ -1603,13 +1615,14 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                     .ToList();
 
                                 foreach (var kvp in packageInfos) {
-                                    if (_packageInfos.TryRemove(kvp.Key, out var removedValue)) {
+                                    _packageInfos.TryRemove(kvp.Key, out var removedValue);
+                                    /*if (_packageInfos.TryRemove(kvp.Key, out var removedValue)) {
                                         EventAggregator.Instance.Publish(new CallBackPackageInfo {
                                             CallBackTime = DateTime.Now,
                                             PackageCreateTime = kvp.Value.CreateTime,
                                             PackageInfo = kvp.Value
                                         });
-                                    }
+                                    }*/
                                 }
                             }
                             finally {

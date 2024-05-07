@@ -248,12 +248,19 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
 
         public string? ExitContentConvert(object data) {
             if (data is byte[] { Length: 8 } bytes) {
-                return BitConverter.ToString(new[] { bytes[4], bytes[5] })
+                /*return BitConverter.ToString(new[] { bytes[4], bytes[5] })
+                    .Replace("-", " ");*/
+
+                var replace = BitConverter.ToString(new[] { bytes[4], bytes[5] })
                     .Replace("-", " ");
+                return replace;
             }
-            if (data is string hexString) {
+            if (data is string { Length: 24 or 23 } hexString) {
+                var extracted = string.Join(" ", hexString.Trim().Split().Reverse().Skip(2).Take(2).Reverse());
+                return extracted;
+                /*var hexStringLength = hexString.Length;
                 var toByteArray = HexStringToByteArray(hexString);
-                return ExitContentConvert(toByteArray);
+                return ExitContentConvert(toByteArray);*/
             }
             return null;
         }

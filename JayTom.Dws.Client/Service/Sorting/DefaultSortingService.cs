@@ -854,11 +854,21 @@ namespace JayTom.Dws.Client.Service.Sorting {
 
                     exitDefinitionInfoModel = _packageExitDefinitionInfos.FirstOrDefault(f => f is { IsLockExit: false, IsActive: true } &&
                         f.Pid == packageExitDefinitionInfoModel.Id);
-                    if (exitDefinitionInfoModel is null || _packageExitLockSettingsDto.IsAutoExceptionSorting) {
+                    /*if (exitDefinitionInfoModel is null || _packageExitLockSettingsDto.IsAutoExceptionSorting) {
                         ExceptionSorting(param, PackageCloudAbnormalSortingType.LockExit, token);
                         return;
                     }
-                    param.ExitId = exitDefinitionInfoModel.Id;
+                    param.ExitId = exitDefinitionInfoModel.Id;*/
+                    if (exitDefinitionInfoModel is not null) {
+                        param.ExitId = exitDefinitionInfoModel.Id;
+                    }
+                    else {
+                        //判断去异常口
+                        if (_packageExitLockSettingsDto.IsAutoExceptionSorting) {
+                            ExceptionSorting(param, PackageCloudAbnormalSortingType.LockExit, token);
+                            return;
+                        }
+                    }
                 }
 
                 var sortingInstructionBindingInfoModel = _sortingInstructionBindingInfoModels.FirstOrDefault(f =>

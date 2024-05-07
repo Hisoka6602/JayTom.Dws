@@ -243,6 +243,8 @@ namespace JayTom.Dws.Client.Service.Sorting {
                             Convert.ToInt32(0),
                             new ReadOnlyMemory<byte>(data));
                         await Task.Delay(2000);
+                        //挑出未成功的单独写
+
                         var readBytesAsync = await plc.ReadBytesAsync(DataType.DataBlock,
                             _packageExitLockSettingsDto.S7Config.Db,
                             Convert.ToInt32(0), 100);

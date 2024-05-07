@@ -236,6 +236,7 @@ namespace JayTom.Dws.Interface.CaiNiao {
         }
 
         public async void UploadInBackground(string barcode, double weight, DateTime scanTime, double length = default,
+
             double width = default, double height = default, double volume = default, UploadImageInfo? imageInfo = default,
             List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
             if (other is ReportChuteInfo reportChuteInfo) {
@@ -267,26 +268,24 @@ namespace JayTom.Dws.Interface.CaiNiao {
                     }
                     },
                 };
-
                 var stopwatch = new Stopwatch();
                 stopwatch.Start();
                 try {
-                    using (var httpClient = _httpClientFactory.CreateClient("INSURANCE")) {
-                        httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut * 5);
-                        HttpResponseMessage message;
-                        using (Stream dataStream =
-                               new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data)))) {
-                            using (HttpContent content = new StreamContent(dataStream)) {
-                                content.Headers.Add("Content-Type", "application/json");
-                                message = await httpClient.PostAsync(Parameters.Url, content, token)
-                                    .ConfigureAwait(false);
-                            }
+                    using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+                    httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut * 5);
+                    HttpResponseMessage message;
+                    await using (Stream dataStream =
+                                 new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data)))) {
+                        using (HttpContent content = new StreamContent(dataStream)) {
+                            content.Headers.Add("Content-Type", "application/json");
+                            message = await httpClient.PostAsync(Parameters.Url, content, token)
+                                .ConfigureAwait(false);
                         }
-
-                        resultContent = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
-                        resultContent = Regex.Unescape(resultContent);
-                        NLog.LogManager.GetCurrentClassLogger().Error($"分拣报告返回:{resultContent}");
                     }
+
+                    resultContent = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                    resultContent = Regex.Unescape(resultContent);
+                    NLog.LogManager.GetCurrentClassLogger().Error($"分拣报告返回:{resultContent}");
                 }
                 catch (TaskCanceledException) {
                     NLog.LogManager.GetCurrentClassLogger().Error($"分拣请求超时:{Parameters.TimeOut * 5}ms");

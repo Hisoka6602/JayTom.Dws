@@ -75,12 +75,12 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
             //分拣指令
             EventAggregator.Instance.Subscribe<InstructionReceived>(async item => {
-                await Task.Yield();
+                //await Task.Yield();
                 await Task.Delay(100);
                 if (item is InstructionReceived model && model.InstructionInfos?.Any() == true
                       ) {
-                    var instructionInfoModel = model.InstructionInfos.FirstOrDefault();
-                    switch (instructionInfoModel?.InstructionType) {
+                    var instructionInfoModel = model.InstructionInfos.FirstOrDefault() ?? new InstructionInfoModel();
+                    switch (instructionInfoModel.InstructionType) {
                         //异常
                         case InstructionType.PackageException: {
                                 //返回异常
@@ -103,7 +103,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                     exitContentConvert = "00 00";
                                 }
                                 var instructionBindingId = _sortingInstructionInfoModels.FirstOrDefault(f =>
-                                    f.Instruction.Equals(exitContentConvert))?.Id;
+                                    f.Instruction.Equals(exitContentConvert))?.InstructionBindingId ?? 0;
                                 //异常口
 
                                 var abnormalExit = _packageExitDefinitionInfoModels.FirstOrDefault(f =>
@@ -111,7 +111,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
                                 var exitId = _sortingInstructionBindingInfoModels
                                     .FirstOrDefault(f =>
-                                        f.Id.Equals(instructionBindingId ?? 0))
+                                        f.Id.Equals(instructionBindingId))
                                     ?.ExitId;
                                 var packageExitDefinitionInfoModel = _packageExitDefinitionInfoModels.FirstOrDefault(f =>
                                     f.Id.Equals(exitId ?? 0));
@@ -153,10 +153,10 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 var exitContentConvert = _protocol?.ExitContentConvert(instructionInfoModel.InstructionContent) ?? instructionInfoModel.InstructionContent;
 
                                 var instructionBindingId = _sortingInstructionInfoModels.FirstOrDefault(f =>
-                                    f.Instruction.Equals(exitContentConvert))?.Id;
+                                    f.Instruction.Equals(exitContentConvert))?.InstructionBindingId ?? 0;
                                 var exitId = _sortingInstructionBindingInfoModels
                                     .FirstOrDefault(f =>
-                                        f.Id.Equals(instructionBindingId ?? 0))
+                                        f.Id.Equals(instructionBindingId))
                                     ?.ExitId;
                                 var packageExitDefinitionInfoModel = _packageExitDefinitionInfoModels.FirstOrDefault(f =>
                                     f.Id.Equals(exitId ?? 0));
@@ -191,10 +191,10 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 var exitContentConvert = _protocol?.ExitContentConvert(instructionInfoModel.InstructionContent) ?? instructionInfoModel.InstructionContent;
 
                                 var instructionBindingId = _sortingInstructionInfoModels.FirstOrDefault(f =>
-                                    f.Instruction.Equals(exitContentConvert))?.Id;
+                                    f.Instruction.Equals(exitContentConvert))?.InstructionBindingId ?? 0;
                                 var exitId = _sortingInstructionBindingInfoModels
                                     .FirstOrDefault(f =>
-                                        f.Id.Equals(instructionBindingId ?? 0))
+                                        f.Id.Equals(instructionBindingId))
                                     ?.ExitId;
                                 var packageExitDefinitionInfoModel = _packageExitDefinitionInfoModels.FirstOrDefault(f =>
                                     f.Id.Equals(exitId ?? 0));
@@ -227,17 +227,15 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                     CommunicationProtocol.CaiNiao => new CaiNiaoCommunicationProtocol(),
                                     _ => null
                                 };
-                                var type = _protocol?.SortingExceptionReturnTypeConvert(instructionInfoModel.InstructionContent) ?? SortingExceptionReturnType.None;
-                                //匹配实际定义格口
+
                                 var exitContentConvert = _protocol?.ExitContentConvert(instructionInfoModel.InstructionContent) ?? instructionInfoModel.InstructionContent;
 
                                 var instructionBindingId = _sortingInstructionInfoModels.FirstOrDefault(f =>
-                                    f.Instruction.Equals(exitContentConvert))?.Id;
+                                    f.Instruction.Equals(exitContentConvert))?.InstructionBindingId ?? 0;
                                 var exitId = _sortingInstructionBindingInfoModels
                                     .FirstOrDefault(f =>
-                                        f.Id.Equals(instructionBindingId ?? 0))
+                                        f.Id.Equals(instructionBindingId))
                                     ?.ExitId;
-
                                 var packageExitDefinitionInfoModel = _packageExitDefinitionInfoModels.FirstOrDefault(f =>
                                     f.Id.Equals(exitId ?? 0));
                                 NLog.LogManager.GetCurrentClassLogger().Error($"判断到落格信号");
