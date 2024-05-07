@@ -676,7 +676,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                         if (packageValue.Value is { PackageInfo: not null } && packageValue.Value.PackageExitUpdateItems?.Any() == true) {
                                             switch (_apiSettingsDto?.Type) {
                                                 case ApiType.CaiNiaoApi:
-
+                                                    if (DateTime.Now.Subtract(packageValue.Value.PackageInfo.CreateTime).Seconds >= 60) {
+                                                        //超时删除直接不匹配
+                                                        _packageSubmissionPushItems?.TryRemove(packageValue);
+                                                        return;
+                                                    }
                                                     //判断状态有完成再提交
                                                     if (packageValue.Value.PackageExitUpdateItems?.Any(a => a.InstructionType == InstructionType.SignalCallback) != true) {
                                                         return;
