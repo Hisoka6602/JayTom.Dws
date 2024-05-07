@@ -20,7 +20,13 @@ using JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision;
 internal class Program {
 
     private static Task Main(string[] args) {
-        new GwGrayscaleDevice().SendCarNumber(10, new CancellationToken());
+        var gwGrayscaleDevice = new GwGrayscaleDevice();
+        string hexString = "3A 73 30 31 37 2C 30 2C 00 00 00 00 2C 00 00 00 00 2C 32 2C D1 00 E1 01 2C AF 00 78 01 2C 30 2C 00 00 00 00 2C 00 00 00 00 2C 30 2C 00 00 00 00 2C 00 00 00 00 2C 30 2C 00 00 00 00 2C 00 00 00 00 0D 0A";
+        var hexStringToByteArray = HexStringToByteArray(hexString);
+
+        var grayscaleResult = gwGrayscaleDevice.DecodeData(hexStringToByteArray);
+
+        gwGrayscaleDevice.SendCarNumber(17, new CancellationToken());
         Console.ReadLine();
         var description = SortingExceptionReturnType.VehicleNumberMismatch.GetDescription();
         return Task.CompletedTask;

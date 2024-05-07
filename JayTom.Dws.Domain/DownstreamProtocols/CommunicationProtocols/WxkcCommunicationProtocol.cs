@@ -50,8 +50,21 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
                         functionData = "01";
                         break;
 
+                    case FunctionType.PackageCenter:
+                        //包裹居中
+                        startData = "F9";
+                        functionData = "15";
+                        interaction = "01";
+                        break;
+
                     default:
                         return string.Empty;
+                }
+
+                if (type == FunctionType.PackageCenter && attach.PackagePositionInfo is not null) {
+                    //需要传偏移方向和偏移量
+                    data =
+                        $"{(attach.PackagePositionInfo.OffsetDirection == OffsetDirection.Right ? "01" : "00")} {attach.PackagePositionInfo.OffsetDistance:X2}";
                 }
                 var hexData = $"{startData}{functionData}{attach.Guid:X4}{data.Replace(" ", string.Empty)}{interaction}";
                 var byteArray = HexStringToByteArray(hexData);

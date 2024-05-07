@@ -186,6 +186,7 @@ namespace JayTom.Dws.Client {
                 containerRegistry.RegisterForNavigation<PackageExitLockSettingsPage>();
                 containerRegistry.RegisterForNavigation<StackedPackageDetectionSettingsPage>();
                 containerRegistry.RegisterForNavigation<SupplyCounterSettingsPage>();
+                containerRegistry.RegisterForNavigation<GrayscaleDeviceSettingsPage>();
                 //程序设置
                 containerRegistry.RegisterForNavigation<GridSettingsPage>();
                 containerRegistry.RegisterForNavigation<OtherSettingsPage>();
@@ -565,6 +566,7 @@ namespace JayTom.Dws.Client {
             ViewModelLocationProvider.Register<PackageExitLockSettingsPage, PackageExitLockSettingsViewModel>();
             ViewModelLocationProvider.Register<StackedPackageDetectionSettingsPage, StackedPackageDetectionSettingsViewModel>();
             ViewModelLocationProvider.Register<SupplyCounterSettingsPage, SupplyCounterSettingsViewModel>();
+            ViewModelLocationProvider.Register<GrayscaleDeviceSettingsPage, GrayscaleDeviceSettingsViewModel>();
             //分拣模式
             ViewModelLocationProvider.Register<BarcodeSortingPage, BarcodeSortingViewModel>();
             ViewModelLocationProvider.Register<WeightSortingPage, WeightSortingViewModel>();

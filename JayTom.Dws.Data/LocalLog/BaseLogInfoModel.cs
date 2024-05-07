@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Text;
+using System.ComponentModel;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -47,7 +48,11 @@ namespace JayTom.Dws.Data.LocalLog {
     }
 
     public enum DataFormatType {
+
+        [Description("Hex")]
         Hex,
+
+        [Description("Ascii")]
         Ascii
     }
 

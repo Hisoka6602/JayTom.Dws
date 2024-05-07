@@ -2,10 +2,14 @@
 using System.Linq;
 using System.Text;
 using System.Drawing;
+using System.ComponentModel;
+using JayTom.Dws.Plugin.Tcp;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using NPOI.XSSF.Streaming.Values;
 using Org.BouncyCastle.Utilities;
+using JayTom.Dws.Plugin.Tcp.TcpClient;
+using JayTom.Dws.Plugin.Tcp.TcpServer;
 using SixLabors.ImageSharp.Metadata.Profiles.Iptc;
 
 namespace JayTom.Dws.Plugin.Device.GrayscaleDevice {
@@ -13,6 +17,7 @@ namespace JayTom.Dws.Plugin.Device.GrayscaleDevice {
     /// <summary>
     /// 归位灰度仪x02
     /// </summary>
+    [Description("归位灰度仪x02,上层判断小车数量")]
     public class GwGrayscaleDevice : IGrayscaleDevice {
 
         //起始符
@@ -48,13 +53,13 @@ namespace JayTom.Dws.Plugin.Device.GrayscaleDevice {
             return false;
         }
 
-        private GrayscaleResult? DecodeData(byte[] dataBytes) {
-            if (dataBytes.Length == 45) {
+        public GrayscaleResult? DecodeData(byte[] dataBytes) {
+            if (dataBytes.Length == 67) {
                 var grayscaleResult = new GrayscaleResult();
-                var data = Encoding.UTF8.GetString(dataBytes);
+                var data = Encoding.UTF8.GetString(dataBytes).Replace("\0", "0");
 
                 var strings = data.Split(",");
-                if (strings.Length == 9) {
+                if (strings.Length == 16) {
                     //小车号
                     grayscaleResult.CarNumber = Convert.ToInt32(strings[0].Replace(":s", string.Empty));
                     //小车框
@@ -77,6 +82,51 @@ namespace JayTom.Dws.Plugin.Device.GrayscaleDevice {
             }
 
             return new GrayscaleResult();
+        }
+
+        public FormatType FormatType { get; set; }
+        public ConnectionStatus ConnectionStatus { get; }
+
+        public event EventHandler<string>? ConnectionException;
+
+        public event EventHandler<Exception>? Exception;
+
+        public event EventHandler<string>? Disconnected;
+
+        public event EventHandler<CommunicationInfo>? Communication;
+
+        public event EventHandler<string>? Connected;
+
+        public event EventHandler<Exception>? SendError;
+
+        public Task<bool> Connect(string ipAddress, int port, int timeOut = 1000, FormatType dataType = FormatType.Ascii, int dataLen = 0,
+            CancellationToken token = default) {
+            throw new NotImplementedException();
+        }
+
+        public Task<bool> Reconnect(int count, CancellationToken token = default) {
+            throw new NotImplementedException();
+        }
+
+        public Task<bool> SendMessage(string message, CancellationToken token = default) {
+            throw new NotImplementedException();
+        }
+
+        public Task<bool> SendMessage(byte[] message, CancellationToken token = default) {
+            throw new NotImplementedException();
+        }
+
+        public void Close() {
+            throw new NotImplementedException();
+        }
+
+        public ConnectionType ConnectionType { get; }
+        public ITcpCommServer? TcpServer { get; }
+        public ITcpCommClient? TcpClient { get; }
+
+        public Task<bool> Connect(string ipAddress, int port, ConnectionType type, int timeOut = 1000,
+            FormatType dataType = FormatType.Ascii, int dataLen = 0, CancellationToken token = default) {
+            throw new NotImplementedException();
         }
     }
 }

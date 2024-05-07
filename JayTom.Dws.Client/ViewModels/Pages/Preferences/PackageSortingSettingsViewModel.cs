@@ -126,6 +126,19 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     PageClassName = "SupplyCounterSettingsPage",
                     ClickCommand = ClickCommand
                 },
+                new()
+                {
+                    Title = "灰度仪",
+                    IconFont = new IconInfoModel()
+                    {
+                        IconFont = "pack://application:,,,/Fonts/#iconfont",
+                        IconCode = "\xe9a5",
+                        IconSize = 25
+                    },
+                    Description = "灰度仪相关设置",
+                    PageClassName = "GrayscaleDeviceSettingsPage",
+                    ClickCommand = ClickCommand
+                },
             };
         }
 

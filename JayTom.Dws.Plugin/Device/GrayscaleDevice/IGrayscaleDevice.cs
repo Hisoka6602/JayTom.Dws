@@ -3,12 +3,13 @@ using System.Linq;
 using System.Text;
 using System.Drawing;
 using System.ComponentModel;
+using JayTom.Dws.Plugin.Tcp;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
 namespace JayTom.Dws.Plugin.Device.GrayscaleDevice {
 
-    public interface IGrayscaleDevice : IDisposable {
+    public interface IGrayscaleDevice : IDisposable, ITcpOperations {
 
         /// <summary>
         /// 中心坐标

@@ -1,0 +1,299 @@
+﻿<Page
+    x:Class="JayTom.Dws.Client.Views.Pages.Preferences.PackageSortingConfiguration.GrayscaleDeviceSettingsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:languages="clr-namespace:JayTom.Dws.Client.Languages"
+    xmlns:local="clr-namespace:JayTom.Dws.Client.Views.Pages.Preferences.PackageSortingConfiguration"
+    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:mvvm="http://prismlibrary.com/"
+    xmlns:validationRules="clr-namespace:JayTom.Dws.Client.ValidationRules"
+    xmlns:settingsConverter="clr-namespace:JayTom.Dws.Client.Converters.SettingsConverter"
+    xmlns:packageSortingConfiguration="clr-namespace:JayTom.Dws.Client.Converters.PackageSortingConfiguration"
+    Name="GrayscaleDeviceSettingsView"
+    Title="GrayscaleDeviceSettingsPage"
+    d:DesignHeight="450"
+    d:DesignWidth="800"
+    mvvm:ViewModelLocator.AutoWireViewModel="True"
+    Focusable="False"
+    FontFamily="{StaticResource CustomFontFamily}"
+    Template="{StaticResource SettingsPageTemplate}"
+    mc:Ignorable="d">
+    <b:Interaction.Triggers>
+        <b:EventTrigger EventName="Loaded" SourceName="{Binding Name, RelativeSource={RelativeSource AncestorType={x:Type Page}}}">
+            <b:InvokeCommandAction Command="{Binding LoadedCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Page}}}" />
+        </b:EventTrigger>
+    </b:Interaction.Triggers>
+    <Page.Resources>
+        <settingsConverter:TcpConnectionModeToBooleanConverter x:Key="TcpConnectionModeToBooleanConverter" />
+        <packageSortingConfiguration:CommunicationsTypeToVisibilityConverter x:Key="CommunicationsTypeToVisibilityConverter" />
+    </Page.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <StackPanel
+            Grid.Row="0"
+            VerticalAlignment="Center"
+            Orientation="Horizontal">
+            <TextBlock
+                Margin="0,0,0,1"
+                VerticalAlignment="Center"
+                FontFamily="{StaticResource IconFontFamily}"
+                FontSize="20"
+                Foreground="DarkGray"
+                Text="&#xe9a5;" />
+            <TextBlock
+                Margin="5,0"
+                VerticalAlignment="Center"
+                FontSize="16"
+                FontWeight="Bold"
+                Foreground="DarkGray"
+                Text="是否使用灰度仪检测包裹:" />
+            <ToggleButton
+                Name="IsUseGrayscaleDetectorToggleButton"
+                materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
+                materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
+                Focusable="False"
+                IsChecked="{Binding GrayscaleDeviceInfo.IsUseGrayscaleDetector, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+        </StackPanel>
+
+        <!--  内容  -->
+        <StackPanel
+            Grid.Row="1"
+            Margin="50,20,0,0"
+            Orientation="Vertical"
+            Visibility="{Binding ElementName=IsUseGrayscaleDetectorToggleButton, Path=IsChecked, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <!--  连接配置  -->
+            <StackPanel Orientation="Vertical">
+                <!--  使用Tcp服务端  -->
+                <RadioButton
+                    Name="IsUseServerRadioButton"
+                    Content="{x:Static languages:Language.IsUseTCPServer}"
+                    Focusable="False"
+                    FontSize="13"
+                    FontWeight="Bold"
+                    Foreground="DarkGray"
+                    IsChecked="{Binding GrayscaleDeviceInfo.TcpConnectionConfigInfo.ConnectionMode, Converter={StaticResource TcpConnectionModeToBooleanConverter}, ConverterParameter=Server}"
+                    Template="{StaticResource CustomRadioButtonTemplate}" />
+                <StackPanel
+                    Margin="50,0,0,0"
+                    IsEnabled="{Binding ElementName=IsUseServerRadioButton, Path=IsChecked}"
+                    Orientation="Horizontal">
+                    <StackPanel Orientation="Horizontal">
+                        <!--  图标  -->
+                        <TextBlock
+                            Margin="5,0"
+                            VerticalAlignment="Center"
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="DarkGray"
+                            Text="{x:Static languages:Language.IPAddress}" />
+                        <Border
+                            Margin="5"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Background="#1A696969"
+                            CornerRadius="5">
+                            <TextBox
+                                Width="100"
+                                Height="30"
+                                MaxWidth="500"
+                                Margin="5,0"
+                                materialDesign:TextFieldAssist.HasClearButton="False"
+                                materialDesign:TextFieldAssist.HasFilledTextField="True"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="White"
+                                InputMethod.IsInputMethodEnabled="False"
+                                IsReadOnly="True"
+                                Text="{Binding GrayscaleDeviceInfo.TcpConnectionConfigInfo.ServerParameter.IpAddress, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                        </Border>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <!--  图标  -->
+                        <TextBlock
+                            Margin="5,0"
+                            VerticalAlignment="Center"
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="DarkGray"
+                            Text="{x:Static languages:Language.Port}" />
+                        <Border
+                            Margin="5"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Background="#1A696969"
+                            CornerRadius="5">
+                            <TextBox
+                                Width="80"
+                                Height="30"
+                                MaxWidth="500"
+                                Margin="5,0"
+                                materialDesign:TextFieldAssist.HasClearButton="False"
+                                materialDesign:TextFieldAssist.HasFilledTextField="True"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="White"
+                                InputMethod.IsInputMethodEnabled="False"
+                                Text="{Binding GrayscaleDeviceInfo.TcpConnectionConfigInfo.ServerParameter.Port, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                        </Border>
+                    </StackPanel>
+                </StackPanel>
+                <!--  使用Tcp客户端  -->
+                <RadioButton
+                    Name="IsUseClientRadioButton"
+                    Content="{x:Static languages:Language.IsUseTCPClient}"
+                    Focusable="False"
+                    FontSize="13"
+                    FontWeight="Bold"
+                    Foreground="DarkGray"
+                    IsChecked="{Binding GrayscaleDeviceInfo.TcpConnectionConfigInfo.ConnectionMode, Converter={StaticResource TcpConnectionModeToBooleanConverter}, ConverterParameter=Client}"
+                    Template="{StaticResource CustomRadioButtonTemplate}" />
+                <StackPanel
+                    Margin="50,0,0,0"
+                    IsEnabled="{Binding ElementName=IsUseClientRadioButton, Path=IsChecked}"
+                    Orientation="Horizontal">
+                    <StackPanel Orientation="Horizontal">
+                        <!--  图标  -->
+                        <TextBlock
+                            Margin="5,0"
+                            VerticalAlignment="Center"
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="DarkGray"
+                            Text="{x:Static languages:Language.IPAddress}" />
+                        <Border
+                            Margin="5"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Background="#1A696969"
+                            CornerRadius="5">
+                            <TextBox
+                                Width="100"
+                                Height="30"
+                                MaxWidth="500"
+                                Margin="5,0"
+                                materialDesign:TextFieldAssist.HasClearButton="False"
+                                materialDesign:TextFieldAssist.HasFilledTextField="True"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="White"
+                                InputMethod.IsInputMethodEnabled="False">
+                                <TextBox.Text>
+                                    <Binding
+                                        Mode="TwoWay"
+                                        Path="GrayscaleDeviceInfo.TcpConnectionConfigInfo.ClientParameter.IpAddress"
+                                        UpdateSourceTrigger="PropertyChanged">
+                                        <Binding.ValidationRules>
+                                            <validationRules:RegexValidationRule ErrorMessage="请输入有效的 IP 地址" Pattern="^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$" />
+                                        </Binding.ValidationRules>
+                                    </Binding>
+                                </TextBox.Text>
+                            </TextBox>
+                        </Border>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <!--  图标  -->
+                        <TextBlock
+                            Margin="5,0"
+                            VerticalAlignment="Center"
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="DarkGray"
+                            Text="{x:Static languages:Language.Port}" />
+                        <Border
+                            Margin="5"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Background="#1A696969"
+                            CornerRadius="5">
+                            <TextBox
+                                Width="80"
+                                Height="30"
+                                MaxWidth="500"
+                                Margin="5,0"
+                                materialDesign:TextFieldAssist.HasClearButton="False"
+                                materialDesign:TextFieldAssist.HasFilledTextField="True"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="White"
+                                InputMethod.IsInputMethodEnabled="False"
+                                Text="{Binding GrayscaleDeviceInfo.TcpConnectionConfigInfo.ClientParameter.Port, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                        </Border>
+                    </StackPanel>
+                </StackPanel>
+                <!--  数据格式  -->
+                <StackPanel Orientation="Horizontal">
+                    <!--  图标  -->
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="{x:Static languages:Language.DataFormat}" />
+                    <Border
+                        Margin="5"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Background="#1A696969"
+                        CornerRadius="5">
+                        <ComboBox
+                            Height="30"
+                            MinWidth="190"
+                            Padding="5,0"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            HorizontalContentAlignment="Center"
+                            VerticalContentAlignment="Center"
+                            materialDesign:ButtonAssist.CornerRadius="15"
+                            materialDesign:ColorZoneAssist.Mode="Dark"
+                            BorderThickness="0"
+                            DisplayMemberPath="Name"
+                            FontSize="12"
+                            FontWeight="Bold"
+                            Foreground="White"
+                            ItemsSource="{Binding DataFormatTypeItems, UpdateSourceTrigger=PropertyChanged}"
+                            SelectedItem="{Binding GrayscaleDeviceInfo.TcpConnectionConfigInfo.DataFormat, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                            SelectedValuePath="Value"
+                            Style="{StaticResource MaterialDesignComboBox}" />
+                    </Border>
+                </StackPanel>
+            </StackPanel>
+            <!--  其他配置  -->
+            <StackPanel Margin="0,10" Orientation="Horizontal">
+
+                <!--  其他配置  -->
+                <TextBlock
+                    Margin="5,0"
+                    VerticalAlignment="Center"
+                    FontSize="13"
+                    FontWeight="Bold"
+                    Foreground="DarkGray"
+                    Text="是否判断包裹偏向:" />
+                <CheckBox
+                    BorderBrush="DodgerBlue"
+                    BorderThickness="2"
+                    Foreground="#2E2E2E"
+                    IsChecked="{Binding GrayscaleDeviceInfo.IsCheckPackageOrientation, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                    Style="{StaticResource CustomCheckBoxStyle}" />
+            </StackPanel>
+        </StackPanel>
+    </Grid>
+</Page>

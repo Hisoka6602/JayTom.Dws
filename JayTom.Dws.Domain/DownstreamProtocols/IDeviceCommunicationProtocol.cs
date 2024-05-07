@@ -234,6 +234,12 @@ namespace JayTom.Dws.Domain.DownstreamProtocols {
         /// </summary>
         [Description("复位按钮触发")]
         ResetButtonTrigger,
+
+        /// <summary>
+        /// 包裹居中
+        /// </summary>
+        [Description("包裹居中")]
+        PackageCenter,
     }
 
     public class InstructionsAttach {
@@ -347,6 +353,11 @@ namespace JayTom.Dws.Domain.DownstreamProtocols {
         /// 获取或设置其他信息（通用对象类型）。
         /// </summary>
         public object? Other { get; set; }
+
+        /// <summary>
+        /// 包裹位置信息(灰度仪居中使用)
+        /// </summary>
+        public PackagePositionInfo? PackagePositionInfo { get; set; }
     }
 
     public enum SortingExceptionReturnType {
@@ -403,5 +414,46 @@ namespace JayTom.Dws.Domain.DownstreamProtocols {
         /// 异常码
         /// </summary>
         public byte ExceptionCode { get; set; }
+    }
+
+    public class PackagePositionInfo {
+
+        /// <summary>
+        /// 中心点X
+        /// </summary>
+        public int CenterX { get; set; }
+
+        /// <summary>
+        /// 中心点Y
+        /// </summary>
+        public int CenterY { get; set; }
+
+        /// <summary>
+        /// 偏移方向
+        /// </summary>
+        public OffsetDirection OffsetDirection { get; set; }
+
+        /// <summary>
+        /// 偏移量
+        /// </summary>
+        public int OffsetDistance { get; set; }
+    }
+
+    /// <summary>
+    /// 偏移方向
+    /// </summary>
+    public enum OffsetDirection {
+
+        /// <summary>
+        /// 左
+        /// </summary>
+        [Description("偏左")]
+        Left,
+
+        /// <summary>
+        /// 右
+        /// </summary>
+        [Description("偏右")]
+        Right
     }
 }
