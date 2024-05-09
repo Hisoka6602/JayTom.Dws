@@ -47,6 +47,7 @@ namespace JayTom.Dws.Client.ViewModels {
         private readonly IStackedPackageService _stackedPackageService;
         private readonly ISortingConnectionService _sortingConnectionService;
         private readonly ISoundRepository _soundRepository;
+        private readonly IGrayscaleService _grayscaleService;
         private static readonly SemaphoreSlim UpdateSlim = new(1, 1);
 
         private ObservableCollection<string> _exceptionItems = new()
@@ -128,7 +129,8 @@ namespace JayTom.Dws.Client.ViewModels {
             IExitMonitor exitMonitor,
             IStackedPackageService stackedPackageService,
             ISortingConnectionService sortingConnectionService,
-            ISoundRepository soundRepository) {
+            ISoundRepository soundRepository,
+            IGrayscaleService grayscaleService) {
             _computerInfoReporter = computerInfoReporter;
             _deviceService = deviceService;
             _ftp = ftp;
@@ -141,6 +143,7 @@ namespace JayTom.Dws.Client.ViewModels {
             _stackedPackageService = stackedPackageService;
             _sortingConnectionService = sortingConnectionService;
             _soundRepository = soundRepository;
+            _grayscaleService = grayscaleService;
             _computerInfoReporter.ComputerInfoReceived += async delegate (object? sender, ComputerInfoModel model) {
                 await Task.Run(async () => {
                     try {
@@ -424,6 +427,18 @@ namespace JayTom.Dws.Client.ViewModels {
                                 ConnectionType = Models.StatusBarModels.ConnectionType.TCP,
                             });
                         }
+
+                        //灰度仪
+                        var grayscaleDeviceSettingsDto = await configRepository
+                                                             .FirstOrDefaultEntity<GrayscaleDeviceSettingsDto>("GrayscaleDeviceSettings") ??
+                                                         new GrayscaleDeviceSettingsDto();
+                        if (grayscaleDeviceSettingsDto.IsUseGrayscaleDetector) {
+                            ConnectionItems.Add(new ConnectionItemInfoModel() {
+                                ConnectionName = $"灰度仪",
+                                ConnectionState = ConnectionState.Disconnected,
+                                ConnectionType = Models.StatusBarModels.ConnectionType.TCP,
+                            });
+                        }
                     });
                 }
             });
@@ -547,6 +562,19 @@ namespace JayTom.Dws.Client.ViewModels {
             };
             _sortingConnectionService.Disconnected += (sender, info) => {
                 var model = ConnectionItems.FirstOrDefault(f => f.ConnectionName.EndsWith(info.ConnectionName));
+                if (model is not null) {
+                    model.ConnectionState = ConnectionState.ConnectionFailed;
+                }
+            };
+            //灰度仪 [连接、断开]事件
+            _grayscaleService.Connected += (sender, service) => {
+                var model = ConnectionItems.FirstOrDefault(f => f.ConnectionName.Equals("灰度仪"));
+                if (model is not null) {
+                    model.ConnectionState = ConnectionState.Connected;
+                }
+            };
+            _grayscaleService.Disconnected += (sender, service) => {
+                var model = ConnectionItems.FirstOrDefault(f => f.ConnectionName.Equals("灰度仪"));
                 if (model is not null) {
                     model.ConnectionState = ConnectionState.ConnectionFailed;
                 }

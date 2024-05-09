@@ -119,5 +119,11 @@ namespace JayTom.Dws.Data.Package {
         /// </summary>
         [Description("复位按钮触发")]
         ResetButtonTrigger,
+
+        /// <summary>
+        /// 包裹居中
+        /// </summary>
+        [Description("包裹居中")]
+        PackageCenter
     }
 }

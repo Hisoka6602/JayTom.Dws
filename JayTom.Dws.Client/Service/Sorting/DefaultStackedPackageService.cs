@@ -125,25 +125,10 @@ namespace JayTom.Dws.Client.Service.Sorting {
         public bool IsConnected { get; private set; }
 
         public async Task<KeyValuePair<bool, string>> Start(CancellationToken token = default) {
-            try {
-                var configInfoModel = await _configRepository.FirstOrDefault(f =>
-                    f.ConfigName.Equals("StackedPackageDetectionSettings"), token);
-                if (configInfoModel is not null) {
-                    _stackedPackageDetectionSettingsDto = JsonConvert.DeserializeObject<StackedPackageDetectionSettingsDto>(configInfoModel.Value);
-                    if (_stackedPackageDetectionSettingsDto is null) {
-                        return new KeyValuePair<bool, string>(false, "叠包配置不存在");
-                    }
-                }
-                else {
-                    return new KeyValuePair<bool, string>(false, "叠包配置不存在或读取错误");
-                }
-            }
-            catch (Exception e) {
-                return new KeyValuePair<bool, string>(false, $"叠包配置读取错误:{e.Message}");
-            }
-
+            _stackedPackageDetectionSettingsDto = await _configRepository.FirstOrDefaultEntity<StackedPackageDetectionSettingsDto>(
+                "StackedPackageDetectionSettings", token) ?? new StackedPackageDetectionSettingsDto();
             //创建清理线程
-            if (_clearThread is null) {
+            if (_clearThread is null && _stackedPackageDetectionSettingsDto.IsStackedPackageDetection) {
                 _cancellationTokenSource = new CancellationTokenSource();
                 _clearThread = Task.Run(async () => {
                     while (!_cancellationTokenSource.IsCancellationRequested) {

@@ -27,16 +27,21 @@ namespace JayTom.Dws.Plugin.Device.GrayscaleDevice {
         event EventHandler ParcelLocationNotReceived;
 
         /// <summary>
-        /// 连接
-        /// </summary>
-        Task<bool> Connect(string ip, int port, CancellationToken token);
-
-        /// <summary>
         /// 发送小车号
         /// </summary>
         /// <param name="carNumber"></param>
+        /// <param name="token"></param>
         /// <returns></returns>
-        Task<bool> SendCarNumber(int carNumber, CancellationToken token);
+        Task<bool> SendCarNumber(int carNumber, CancellationToken token = default);
+
+        /// <summary>
+        /// 发送小车号并获取结果
+        /// </summary>
+        /// <param name="carNumber"></param>
+        /// <param name="timeOut"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        Task<GrayscaleResult> SendCarNumber(int carNumber, int timeOut, CancellationToken token = default);
     }
 
     public class GrayscaleResult {

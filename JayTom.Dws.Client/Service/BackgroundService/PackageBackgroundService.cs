@@ -27,6 +27,7 @@ using JayTom.Dws.Client.Service.ImageStorage;
 using JayTom.Dws.Client.Service.ResultOutput;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Data.LocalConf.CameraConfig;
+using JayTom.Dws.Plugin.Device.GrayscaleDevice;
 using JayTom.Dws.Client.Service.ExternalDataService;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 using JayTom.Dws.Infrastructure.Repository.LocalConf.CameraConfig;
@@ -42,6 +43,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private readonly IConfigRepository _configRepository;
         private readonly ISortingService _sortingService;
         private readonly IStackedPackageService _stackedPackageService;
+        private readonly IGrayscaleService _grayscaleService;
         private ExternalDataSourceEventArgs _externalDataSource = new();
         private List<ConfigInfoModel> _configInfoModels = new();
 
@@ -50,6 +52,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
         private BarcodeFilterSettingsDto _barcodeFilterSettingsDto = new();
         private SupplyCounterSettingsDto _supplyCounterSettingsDto = new();
+        private GrayscaleDeviceSettingsDto _grayscaleDeviceSettingsDto = new();
         private WeightSettingsDto _weightSettingsDto = new();
         private CreatePackageSettingsDto _createPackageSettingsDto = new();
         private StackedPackageDetectionSettingsDto _stackedPackageDetectionSettingsDto = new();
@@ -79,7 +82,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             IExternalDataService externalDataService, IConfigRepository configRepository,
             ISortingService sortingService, IPanoramaCameraConfigRepository panoramaCameraConfigRepository,
             IBarcodeScannerCameraConfigRepository barcodeScannerCameraConfigRepository,
-            IStackedPackageService stackedPackageService) {
+            IStackedPackageService stackedPackageService,
+            IGrayscaleService grayscaleService) {
             _deviceService = deviceService;
             _resultOutputService = resultOutputService;
             _imageStorageService = imageStorageService;
@@ -87,6 +91,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             _configRepository = configRepository;
             _sortingService = sortingService;
             _stackedPackageService = stackedPackageService;
+            _grayscaleService = grayscaleService;
 
             //相机
             _deviceService.CameraInitialized += delegate (object? sender, List<ICamera> list) {
@@ -1065,6 +1070,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         TriggerPosition = TriggerPositionEnum.CreateTimePackageAfter,
                         PackageInfo = packageInfo
                     });
+
                     //触发全景拍照
                     if (packageInfo.BarCodeInfo is not null) {
                         var list = _panoramaCameras?.Where(w => w.SelectedCameraSerialNumber.Equals(packageInfo.BarCodeInfo.CameraSerialNumber))?
@@ -1139,6 +1145,22 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             }
                         }
                     }*/
+
+                    //触发灰度仪
+                    if (_grayscaleDeviceSettingsDto.IsUseGrayscaleDetector &&
+                        _grayscaleService.IsConnected) {
+                        packageInfo.GrayscaleResultInfo = await _grayscaleService.GetSingleGrayscaleSensorResult(packageInfo.Guid, 300);
+
+                        if (_grayscaleDeviceSettingsDto.IsCheckPackageOrientation) {
+                            //发送包裹居中指令
+                            _sortingService.SendPackageCenter((int)packageInfo.Guid, new InstructionsAttach() {
+                                BarCode = string.Empty,
+                                Guid = packageInfo.Guid,
+                                Timestamp = packageInfo.Timestamp,
+                                // PackagePositionInfo =  这里计算偏移
+                            });
+                        }
+                    }
                 }
             });
             //包裹组合完成后触发
@@ -1746,6 +1768,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         /// 供包台信号类型
         /// </summary>
         public List<SupplyCounterPackageSignal> SupplyCounterPackageSignalItem { get; set; } = new();
+
+        /// <summary>
+        /// 灰度仪信息
+        /// </summary>
+        public GrayscaleResult? GrayscaleResultInfo { get; set; }
     }
 
     public class CameraImageInfo {

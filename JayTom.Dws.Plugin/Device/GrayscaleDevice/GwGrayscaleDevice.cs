@@ -46,11 +46,24 @@ namespace JayTom.Dws.Plugin.Device.GrayscaleDevice {
 
         public async Task<bool> SendCarNumber(int carNumber, CancellationToken token) {
             await Task.Yield();
+            if (carNumber is > 0 and < 1000) {
+                var array = $":s{carNumber.ToString().PadLeft(3, '0')}\r\n".Select(c => (byte)c).ToArray();
 
-            var array = $":s{carNumber.ToString().PadLeft(3, '0')}\r\n".Select(c => (byte)c).ToArray();
+                var s = BitConverter.ToString(array);
+            }
 
-            var s = BitConverter.ToString(array);
             return false;
+        }
+
+        public async Task<GrayscaleResult> SendCarNumber(int carNumber, int timeOut, CancellationToken token = default) {
+            await Task.Yield();
+            if (carNumber is > 0 and < 1000) {
+                var array = $":s{carNumber.ToString().PadLeft(3, '0')}\r\n".Select(c => (byte)c).ToArray();
+
+                var s = BitConverter.ToString(array);
+            }
+
+            return new GrayscaleResult();
         }
 
         public GrayscaleResult? DecodeData(byte[] dataBytes) {

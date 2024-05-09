@@ -63,6 +63,7 @@ using JayTom.Dws.Domain.Repository.LocalData;
 using JayTom.Dws.Domain.Service.CacheCleanup;
 using JayTom.Dws.Client.Service.SyncSettings;
 using Microsoft.Extensions.DependencyInjection;
+using JayTom.Dws.Plugin.Device.GrayscaleDevice;
 using JayTom.Dws.Client.Views.Pages.Preferences;
 using JayTom.Dws.Client.Service.BackgroundService;
 using JayTom.Dws.Client.Views.Editors.CloudService;
@@ -359,6 +360,10 @@ namespace JayTom.Dws.Client {
                 //叠包监控注册
                 services.AddSingleton<IStackedPackageService, DefaultStackedPackageService>();
                 services.AddSingleton<ISortingConnectionService, DefaultSortingConnectionService>();
+                //灰度仪服务注册
+                services.AddSingleton<IGrayscaleService, DefaultGrayscaleService>();
+                services.AddSingleton<IGrayscaleDevice, GwGrayscaleDevice>();
+
                 //云视频云端
                 services.AddSingleton<ICloud, CloudVideoUploadApi>();
                 //Nvr

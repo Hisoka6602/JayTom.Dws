@@ -896,6 +896,100 @@ namespace JayTom.Dws.Client.Service.Sorting {
             }
         }
 
+        public async void SendPackageCenter(int num, InstructionsAttach info, CancellationToken token = default) {
+            //获取第一个连接
+            var (key, value) = _connectionInfos.FirstOrDefault();
+            if (key is not null && value is not null) {
+                var isSend = false;
+                var sendTime = DateTime.Now;
+                if (value is { Type: CommunicationsType.SerialPort, SortingSerialPort: not null }) {
+                    //串口
+                    if (value.SortingSerialPort.Status == SerialPortStatus.Running) {
+                        var message = string.Empty;
+                        if (value.DeviceCommunicationProtocol is not null) {
+                            message = value.DeviceCommunicationProtocol.EncodeData(FunctionType.PackageCenter, new object(),
+                                string.Empty, info);
+                        }
+                        value.SortingSerialPort.Send(message);
+                        OnCommunicationInfoEvent(new ConnectionCommunicationMessageInfo() {
+                            ConnectionName = key,
+                            BarCode = info.BarCode,
+                            Content = message,
+                            ExitName = string.Empty,
+                            FormatType = (FormatType)value.SortingSerialPort.FormatType,
+                            Guid = num,
+                            Time = sendTime = DateTime.Now,
+                            Type = CommunicationType.Send,
+                            Timestamp = info.Timestamp,
+                        });
+                        isSend = true;
+                    }
+                    else {
+                        OnCommunicationExceptionEvent(new Exception("下位机未连接!"));
+                    }
+                }
+                else if (value is { Type: CommunicationsType.TCP, SortingTcp: not null }) {
+                    if (value.SortingTcp.ConnectionStatus == ConnectionStatus.Connected) {
+                        var message = string.Empty;
+                        if (value.DeviceCommunicationProtocol is not null) {
+                            message = value.DeviceCommunicationProtocol.EncodeData(FunctionType.PackageCenter, new object(),
+                                string.Empty, info);
+                        }
+
+                        var sendMessage = await value.SortingTcp.SendMessage(HexStringToByteArray(message), token);
+                        OnCommunicationInfoEvent(new ConnectionCommunicationMessageInfo() {
+                            BarCode = info.BarCode,
+                            Content = message,
+                            ExitName = info.ExitName,
+                            FormatType = value.SortingTcp.FormatType,
+                            Guid = num,
+                            Time = sendTime = DateTime.Now,
+                            Timestamp = info.Timestamp,
+                            Type = CommunicationType.Send,
+                            ConnectionName = key
+                        });
+                        if (!sendMessage) {
+                            OnCommunicationExceptionEvent(new Exception("发送失败!"));
+                        }
+                        else {
+                            isSend = true;
+                        }
+                    }
+                    else {
+                        OnCommunicationExceptionEvent(new Exception("下位机未连接!"));
+                    }
+                }
+
+                //记录
+                if (isSend) {
+                    EventAggregator.Instance.Publish(new InstructionReceived() {
+                        Timestamp = info.Timestamp,
+                        BarCode = info.BarCode ?? string.Empty,
+                        ScanTime = info.ScanTime,
+                        ExitId = info.ExitId,
+                        ExitName = info.ExitName,
+                        //先忽略快递
+                        LogisticsName = info.LogisticsName,
+                        SortingMode = info.SortingMode,
+                        IsCreatedByLowerMachine = info.IsCreatedByLowerMachine,
+                        CommunicationMethod = value?.Type ?? CommunicationsType.None,
+                        SortingCode = info.Guid.ToString(),
+                        InstructionInfos = new List<InstructionInfoModel>()
+                        {
+                            new()
+                            {
+                                InstructionContent = value?.DeviceCommunicationProtocol?.EncodeData(FunctionType.PackageCenter, new object(),
+                                    string.Empty, info) ?? string.Empty,
+                                InstructionGeneratedTime = sendTime,
+                                InstructionType = InstructionType.PackageCenter
+                            }
+                        },
+                        ConnectionName = key ?? string.Empty
+                    });
+                }
+            }
+        }
+
         protected virtual async void OnCommunicationInfoEvent(ConnectionCommunicationMessageInfo e) {
             await Task.Yield();
             CommunicationInfoEvent?.Invoke(this, e);

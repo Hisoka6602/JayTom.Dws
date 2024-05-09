@@ -20,6 +20,7 @@ using MathNet.Numerics.RootFinding;
 using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
 using JayTom.Dws.Client.EventMediators;
+using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Domain.DownstreamProtocols;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Dto.PackageExitLockDto;
@@ -58,6 +59,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
         private readonly IApiRuleRepository _apiRuleRepository;
         private readonly IExitMonitor _exitMonitor;
         private readonly IStackedPackageService _stackedPackageService;
+        private readonly IGrayscaleService _grayscaleService;
 
         private SemaphoreSlim _semaphore = new(1);
 
@@ -143,7 +145,8 @@ namespace JayTom.Dws.Client.Service.Sorting {
            ICommunicationConnectionConfigRepository communicationConnectionConfigRepository,
             IApiRuleRepository apiRuleRepository,
             IExitMonitor exitMonitor,
-            IStackedPackageService stackedPackageService) {
+            IStackedPackageService stackedPackageService,
+            IGrayscaleService grayscaleService) {
             _configRepository = configRepository;
             _logisticsRegexRepository = logisticsRegexRepository;
             _logisticsCodeRecognitionRepository = logisticsCodeRecognitionRepository;
@@ -166,6 +169,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
             _apiRuleRepository = apiRuleRepository;
             _exitMonitor = exitMonitor;
             _stackedPackageService = stackedPackageService;
+            _grayscaleService = grayscaleService;
 
             //事件
             _sortingConnectionService.HeartbeatError += delegate (object? sender, Exception exception) {
@@ -506,6 +510,13 @@ namespace JayTom.Dws.Client.Service.Sorting {
                             ExceptionMessage = $"{value1}"
                         });
                     }
+
+                    var (key1, s1) = await _grayscaleService.StartSensor();
+                    if (!key1) {
+                        OnExceptionOccurred(new ExceptionEventArgs() {
+                            ExceptionMessage = $"{s1}"
+                        });
+                    }
                 }
                 catch (Exception e) {
                     OnExceptionOccurred(new ExceptionEventArgs() {
@@ -815,6 +826,10 @@ namespace JayTom.Dws.Client.Service.Sorting {
 
         public void SendPackageInfoCompletedSignal(int num, InstructionsAttach attach, CancellationToken token = default) {
             _sortingConnectionService.SendPackageInfoCompletedSignal(num, attach, token);
+        }
+
+        public void SendPackageCenter(int num, InstructionsAttach attach, CancellationToken token = default) {
+            _sortingConnectionService.SendPackageCenter(num, attach, token);
         }
 
         protected virtual async void OnExceptionOccurred(ExceptionEventArgs e) {

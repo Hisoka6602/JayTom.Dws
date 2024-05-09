@@ -100,6 +100,14 @@ namespace JayTom.Dws.Client.Service.Sorting {
         /// 发送信息组合完成信号
         /// </summary>
         void SendPackageInfoCompletedSignal(int num, InstructionsAttach attach, CancellationToken token = default);
+
+        /// <summary>
+        /// 发送包裹居中
+        /// </summary>
+        /// <param name="num"></param>
+        /// <param name="info"></param>
+        /// <param name="token"></param>
+        void SendPackageCenter(int num, InstructionsAttach info, CancellationToken token = default);
     }
 
     public class ConnectionCommunicationMessageInfo : CommunicationInfo {
