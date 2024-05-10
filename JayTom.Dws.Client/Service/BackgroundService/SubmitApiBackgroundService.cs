@@ -676,13 +676,15 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                         if (packageValue.Value is { PackageInfo: not null } && packageValue.Value.PackageExitUpdateItems?.Any() == true) {
                                             switch (_apiSettingsDto?.Type) {
                                                 case ApiType.CaiNiaoApi:
-                                                    if (DateTime.Now.Subtract(packageValue.Value.PackageInfo.CreateTime).Seconds >= 60) {
-                                                        //超时删除直接不匹配
+                                                    if (DateTime.Now.Subtract(packageValue.Value.PackageInfo.CreateTime).TotalSeconds >= 60) {
+                                                        //实时-超时删除直接不匹配
                                                         _packageSubmissionPushItems?.TryRemove(packageValue);
+                                                        NLog.LogManager.GetCurrentClassLogger().Error($"待提交的单号:{packageValue.Value.PackageInfo.BarCodeInfo?.Barcode},格口:[{packageValue.Value.PackageExitUpdateItems?.FirstOrDefault(f => f.InstructionType == InstructionType.CreatePackage)?.ExitName}],超过等待回调时间");
                                                         return;
                                                     }
                                                     //判断状态有完成再提交
-                                                    if (packageValue.Value.PackageExitUpdateItems?.Any(a => a.InstructionType == InstructionType.SignalCallback) != true) {
+                                                    if (packageValue.Value.PackageExitUpdateItems?.Any(a => a.InstructionType == InstructionType.SignalCallback &&
+                                                            a.InstructionType == InstructionType.PackageExceptionEx) != true) {
                                                         return;
                                                     }
                                                     NLog.LogManager.GetCurrentClassLogger().Error($"准备发送");

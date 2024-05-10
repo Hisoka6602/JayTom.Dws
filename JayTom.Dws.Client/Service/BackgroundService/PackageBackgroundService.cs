@@ -185,6 +185,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                     Source = SourceType.Camera
                                 };
                                 packageInfo.Image = args.Image;
+                                EventAggregator.Instance.Publish(new TriggerPositionEvent() {
+                                    IsSuccess = true,
+                                    TriggerPosition = TriggerPositionEnum.BarCodeSetValueAfter,
+                                    PackageInfo = packageInfo
+                                });
                             }
                             else {
                                 BarCodeFilterContainer.ResetFilter();
@@ -265,6 +270,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                     Source = SourceType.Camera
                                 };
                                 packageInfo.Image = args.Image;
+                                EventAggregator.Instance.Publish(new TriggerPositionEvent() {
+                                    IsSuccess = true,
+                                    TriggerPosition = TriggerPositionEnum.BarCodeSetValueAfter,
+                                    PackageInfo = packageInfo
+                                });
                             }
                         }
                     }
@@ -329,6 +339,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                         FormattedVolume = args.Volume - packageInfo.VolumeToDeduct,
                                         SourceType = SourceType.Camera,
                                     };
+                                    EventAggregator.Instance.Publish(new TriggerPositionEvent() {
+                                        IsSuccess = true,
+                                        TriggerPosition = TriggerPositionEnum.VolumeSetValueAfter,
+                                        PackageInfo = packageInfo
+                                    });
                                 }
                             }
                             else {
@@ -340,6 +355,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                     FormattedVolume = args.Volume - packageInfo.VolumeToDeduct,
                                     SourceType = SourceType.Camera,
                                 };
+                                EventAggregator.Instance.Publish(new TriggerPositionEvent() {
+                                    IsSuccess = true,
+                                    TriggerPosition = TriggerPositionEnum.VolumeSetValueAfter,
+                                    PackageInfo = packageInfo
+                                });
                             }
                         }
                         /*else {
@@ -402,6 +422,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 SourceType = SourceType.SerialPort,
                                 WeighingMode = WeighingMode.Static
                             };
+                            EventAggregator.Instance.Publish(new TriggerPositionEvent() {
+                                IsSuccess = true,
+                                TriggerPosition = TriggerPositionEnum.WeightSetValueAfter,
+                                PackageInfo = packageInfo
+                            });
                         }
                         /*else {
                             if (_weightSettingsDto.Mode == WeightMode.Dynamic) {
@@ -521,6 +546,21 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 SourceType = SourceType.Input,
                                 OriginalText = args.SourceContent
                             };
+                            EventAggregator.Instance.Publish(new TriggerPositionEvent() {
+                                IsSuccess = true,
+                                TriggerPosition = TriggerPositionEnum.BarCodeSetValueAfter,
+                                PackageInfo = packageInfo
+                            });
+                            EventAggregator.Instance.Publish(new TriggerPositionEvent() {
+                                IsSuccess = true,
+                                TriggerPosition = TriggerPositionEnum.WeightSetValueAfter,
+                                PackageInfo = packageInfo
+                            });
+                            EventAggregator.Instance.Publish(new TriggerPositionEvent() {
+                                IsSuccess = true,
+                                TriggerPosition = TriggerPositionEnum.VolumeSetValueAfter,
+                                PackageInfo = packageInfo
+                            });
                         }
                     }
                 }
@@ -568,6 +608,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 FormattedVolume = args.Volume - packageInfo.VolumeToDeduct,
                                 SourceType = SourceType.Tcp,
                             };
+                            EventAggregator.Instance.Publish(new TriggerPositionEvent() {
+                                IsSuccess = true,
+                                TriggerPosition = TriggerPositionEnum.VolumeSetValueAfter,
+                                PackageInfo = packageInfo
+                            });
                         }
                         /*else {
                             _volumeQueueInfos.Enqueue(new VolumeInfoModel {
@@ -670,7 +715,12 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 InstructionContent = args.Instruction,
                             });*/
                             if (_createPackageSettingsDto.PackageRemoveMethods == PackageRemoveMethodsEnum.LowerMachineRemoval) {
-                                _packageInfos.TryRemove(keyValuePair);
+                                _packageInfos.TryRemove(keyValuePair.Key, out var packageInfo);
+                                EventAggregator.Instance.Publish(new TriggerPositionEvent() {
+                                    IsSuccess = true,
+                                    TriggerPosition = TriggerPositionEnum.CreateTimePackageAfter,
+                                    PackageInfo = packageInfo
+                                });
                             }
                         }
                         else {
@@ -1301,7 +1351,14 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                         .Select(kvp => kvp.Key)
                                         .ToList();
 
-                                    keysToRemove.ForEach(key => _packageInfos.TryRemove(key, out _));
+                                    keysToRemove.ForEach(key => {
+                                        _packageInfos.TryRemove(key, out var info);
+                                        EventAggregator.Instance.Publish(new TriggerPositionEvent() {
+                                            IsSuccess = true,
+                                            TriggerPosition = TriggerPositionEnum.CreateTimePackageAfter,
+                                            PackageInfo = info
+                                        });
+                                    });
                                 }
                             }
                             finally {
@@ -1638,13 +1695,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
                                 foreach (var kvp in packageInfos) {
                                     _packageInfos.TryRemove(kvp.Key, out var removedValue);
-                                    /*if (_packageInfos.TryRemove(kvp.Key, out var removedValue)) {
-                                        EventAggregator.Instance.Publish(new CallBackPackageInfo {
-                                            CallBackTime = DateTime.Now,
-                                            PackageCreateTime = kvp.Value.CreateTime,
-                                            PackageInfo = kvp.Value
-                                        });
-                                    }*/
+                                    EventAggregator.Instance.Publish(new TriggerPositionEvent() {
+                                        IsSuccess = true,
+                                        TriggerPosition = TriggerPositionEnum.CreateTimePackageAfter,
+                                        PackageInfo = removedValue
+                                    });
                                 }
                             }
                             finally {

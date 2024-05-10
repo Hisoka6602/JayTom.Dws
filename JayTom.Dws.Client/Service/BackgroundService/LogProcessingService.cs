@@ -345,11 +345,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     var instructionInfoModel = model.InstructionInfos.FirstOrDefault();
                     switch (instructionInfoModel?.InstructionType) {
                         case InstructionType.CreatePackage:
-                            NLog.LogManager.GetCurrentClassLogger().Info($"{instructionInfoModel?.InstructionGeneratedTime:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[格口号:{model.ExitName}]-[序号:{model.SortingCode}]-[创建]{instructionInfoModel?.InstructionContent}");
+                            NLog.LogManager.GetCurrentClassLogger().Info($"{instructionInfoModel?.InstructionGeneratedTime:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[格口号:{model.ExitName}]-[序号:{model.SortingCode}]-[创建指令]{instructionInfoModel?.InstructionContent}");
                             break;
 
                         case InstructionType.SendSorting:
-                            NLog.LogManager.GetCurrentClassLogger().Info($"{instructionInfoModel?.InstructionGeneratedTime:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[格口号:{model.ExitName}]-[序号:{model.SortingCode}]-[发送]{instructionInfoModel?.InstructionContent}");
+                            NLog.LogManager.GetCurrentClassLogger().Info($"{instructionInfoModel?.InstructionGeneratedTime:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[格口号:{model.ExitName}]-[序号:{model.SortingCode}]-[发送格口]{instructionInfoModel?.InstructionContent}");
                             break;
 
                         case InstructionType.SignalCallback:
@@ -386,6 +386,27 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     }
                 }
             });
+            EventAggregator.Instance.Subscribe<TriggerPositionEvent>(async position => {
+                //创建包裹
+                if (position is TriggerPositionEvent trigger) {
+                    if (trigger is { TriggerPosition: TriggerPositionEnum.CreateTimePackageAfter, PackageInfo: not null }) {
+                        NLog.LogManager.GetCurrentClassLogger().Info($"{trigger.PackageInfo.CreateTime:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[序号:{trigger.PackageInfo.Guid}]-[创建包裹成功]");
+                    }
+                    else if (trigger is { TriggerPosition: TriggerPositionEnum.RemovePackageAfter, PackageInfo: not null }) {
+                        NLog.LogManager.GetCurrentClassLogger().Info($"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[序号:{trigger.PackageInfo.Guid}]-[移除包裹成功] {trigger.PackageInfo.BarCodeInfo?.Barcode}");
+                    }
+                    else if (trigger is { TriggerPosition: TriggerPositionEnum.BarCodeSetValueAfter, PackageInfo.BarCodeInfo: not null }) {
+                        NLog.LogManager.GetCurrentClassLogger().Info($"{trigger.PackageInfo.BarCodeInfo.ScanTime:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[序号:{trigger.PackageInfo.Guid}]-[条码赋值] {trigger.PackageInfo.BarCodeInfo?.Barcode}");
+                    }
+                    else if (trigger is { TriggerPosition: TriggerPositionEnum.WeightSetValueAfter, PackageInfo.WeightInfo: not null }) {
+                        NLog.LogManager.GetCurrentClassLogger().Info($"{trigger.PackageInfo.WeightInfo.CreateTime:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[序号:{trigger.PackageInfo.Guid}]-[重量赋值] {trigger.PackageInfo.BarCodeInfo?.Barcode}");
+                    }
+                    else if (trigger is { TriggerPosition: TriggerPositionEnum.VolumeSetValueAfter, PackageInfo.VolumeInfo: not null }) {
+                        NLog.LogManager.GetCurrentClassLogger().Info($"{trigger.PackageInfo.VolumeInfo.CreateTime:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[序号:{trigger.PackageInfo.Guid}]-[重量赋值] {trigger.PackageInfo.BarCodeInfo?.Barcode}");
+                    }
+                }
+            });
+
             //http
             EventAggregator.Instance.Subscribe<ApiResponseReceived>(item => {
                 if (item is ApiResponseReceived model) {

@@ -181,7 +181,27 @@ namespace JayTom.Dws.Domain.Dto {
         /// <summary>
         /// 发送前置信号
         /// </summary>
-        SendingPreSignalBefore
+        SendingPreSignalBefore,
+
+        /// <summary>
+        /// 移除包裹后
+        /// </summary>
+        RemovePackageAfter,
+
+        /// <summary>
+        /// 条码赋值
+        /// </summary>
+        BarCodeSetValueAfter,
+
+        /// <summary>
+        /// 重量赋值
+        /// </summary>
+        WeightSetValueAfter,
+
+        /// <summary>
+        /// 体积赋值
+        /// </summary>
+        VolumeSetValueAfter,
     }
 
     /// <summary>

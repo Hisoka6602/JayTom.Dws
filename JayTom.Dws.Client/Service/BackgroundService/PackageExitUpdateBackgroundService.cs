@@ -257,7 +257,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 break;
                             }
                     }
-
                     //异常2
                 }
             });

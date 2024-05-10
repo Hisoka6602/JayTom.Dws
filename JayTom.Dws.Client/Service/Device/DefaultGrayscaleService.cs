@@ -59,9 +59,7 @@ namespace JayTom.Dws.Client.Service.Device {
                     };
                     return new KeyValuePair<bool, string>(IsConnected, IsConnected ? "连接成功" : "连接失败");
                 }
-                else {
-                    return new KeyValuePair<bool, string>(IsConnected, "未使用灰度仪");
-                }
+
                 //注册事件
             }
 
