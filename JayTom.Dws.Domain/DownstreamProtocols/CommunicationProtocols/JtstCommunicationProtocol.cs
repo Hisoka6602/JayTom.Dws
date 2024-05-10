@@ -121,6 +121,14 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
 
         public int DataLen => 43;
 
+        public SortingExceptionReturnType SortingExceptionReturnTypeConvert(string obj) {
+            throw new NotImplementedException();
+        }
+
+        public SortingExceptionReturnType SortingExceptionReturnTypeConvert(byte obj) {
+            throw new NotImplementedException();
+        }
+
         public SortingExceptionReturnType SortingExceptionReturnTypeConvert(object obj) {
             throw new NotImplementedException();
         }

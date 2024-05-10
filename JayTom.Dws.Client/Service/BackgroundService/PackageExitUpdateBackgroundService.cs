@@ -75,14 +75,14 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
             //分拣指令
             EventAggregator.Instance.Subscribe<InstructionReceived>(async item => {
-                //await Task.Yield();
-                await Task.Delay(100);
+                await Task.Yield();
                 if (item is InstructionReceived model && model.InstructionInfos?.Any() == true
                       ) {
                     var instructionInfoModel = model.InstructionInfos.FirstOrDefault() ?? new InstructionInfoModel();
                     switch (instructionInfoModel.InstructionType) {
                         //异常
                         case InstructionType.PackageException: {
+                                await Task.Delay(500);
                                 //返回异常
                                 //判断协议选择(如果无协议则直接使用字符串)
                                 var connectionConfigInfoModel = _communicationConnectionConfigInfoModels.FirstOrDefault(f =>
@@ -128,6 +128,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                     ExitName = packageExitDefinitionInfoModel?.ExitName ?? abnormalExit?.ExitName ?? string.Empty,
                                     InstructionType = instructionInfoModel?.InstructionType ?? InstructionType.None
                                 });
+                                NLog.LogManager.GetCurrentClassLogger().Error($"{model.Timestamp}");
+                                NLog.LogManager.GetCurrentClassLogger().Error($"PackageCloudAbnormalSortingType:{type.ConvertTo<PackageCloudAbnormalSortingType>()}");
                                 break;
                             }
                         //异常
@@ -144,7 +146,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                     CommunicationProtocol.CaiNiao => new CaiNiaoCommunicationProtocol(),
                                     _ => null
                                 };
-                                var type = _protocol?.SortingExceptionReturnTypeConvert(instructionInfoModel.InstructionContent) ?? SortingExceptionReturnType.None;
                                 //异常口
 
                                 var abnormalExit = _packageExitDefinitionInfoModels.FirstOrDefault(f =>

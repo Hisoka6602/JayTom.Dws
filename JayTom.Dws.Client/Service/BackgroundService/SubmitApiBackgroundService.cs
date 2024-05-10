@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using JayTom.Dws.Data.Package;
 using JayTom.Dws.Interface.Wdt;
 using JayTom.Dws.Data.LocalConf;
+using NPOI.SS.Formula.Functions;
 using JayTom.Dws.PluginInterface;
 using JayTom.Dws.Interface.geek_;
 using System.Collections.Generic;
@@ -301,8 +302,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             });
             //更新格口信息
             EventAggregator.Instance.Subscribe<PackageExitUpdateEvent>(async item => {
-                await Task.Yield();
-                await Task.Delay(50);
                 if (item is PackageExitUpdateEvent model) {
                     try {
                         await _takePackageSlim.WaitAsync();
@@ -312,14 +311,14 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             //更新格口信息
                             value.PackageExitUpdateItems.Add(model);
                             //推送集包信息
-                            EventAggregator.Instance.Publish(new PushPackageInfo() {
+                            /*EventAggregator.Instance.Publish(new PushPackageInfo() {
                                 PackageInfo = value.PackageInfo ?? new PackageInfo(),
                                 PackageExitUpdateEvent = model
-                            });
+                            });*/
                         }
-                        /*else {
-                            NLog.LogManager.GetCurrentClassLogger().Error($"未匹配到包裹:{model.InstructionInfos?.FirstOrDefault()?.InstructionContent}");
-                        }*/
+                        else {
+                            NLog.LogManager.GetCurrentClassLogger().Error($"未匹配到包裹:{model.InstructionInfos?.FirstOrDefault()?.InstructionContent} 操作指令");
+                        }
                     }
                     finally {
                         _takePackageSlim.Release();
@@ -676,7 +675,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                         if (packageValue.Value is { PackageInfo: not null } && packageValue.Value.PackageExitUpdateItems?.Any() == true) {
                                             switch (_apiSettingsDto?.Type) {
                                                 case ApiType.CaiNiaoApi:
-                                                    if (DateTime.Now.Subtract(packageValue.Value.PackageInfo.CreateTime).TotalSeconds >= 60) {
+                                                    //实时方案
+                                                    /*if (DateTime.Now.Subtract(packageValue.Value.PackageInfo.CreateTime).TotalSeconds >= 60) {
                                                         //实时-超时删除直接不匹配
                                                         _packageSubmissionPushItems?.TryRemove(packageValue);
                                                         NLog.LogManager.GetCurrentClassLogger().Error($"待提交的单号:{packageValue.Value.PackageInfo.BarCodeInfo?.Barcode},格口:[{packageValue.Value.PackageExitUpdateItems?.FirstOrDefault(f => f.InstructionType == InstructionType.CreatePackage)?.ExitName}],超过等待回调时间");
@@ -707,7 +707,44 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                                     }
                                                     else {
                                                         NLog.LogManager.GetCurrentClassLogger().Error("设置Api参数失败");
+                                                    }*/
+                                                    //延迟方案
+                                                    if (DateTime.Now.Subtract(packageValue.Value.PackageInfo.CreateTime).TotalSeconds >= 60) {
+                                                        //超时删除直接不匹配
+                                                        _packageSubmissionPushItems?.TryRemove(packageValue);
+                                                        NLog.LogManager.GetCurrentClassLogger().Error($"待提交的单号:{packageValue.Value.PackageInfo.BarCodeInfo?.Barcode},格口:[{packageValue.Value.PackageExitUpdateItems?.FirstOrDefault(f => f.InstructionType == InstructionType.CreatePackage)?.ExitName}],超过等待回调时间");
+                                                        return;
                                                     }
+                                                    //创建时间大于23s再提交
+                                                    if (DateTime.Now.Subtract(packageValue.Value.PackageInfo.CreateTime).TotalSeconds < 23 ||
+                                                        packageValue.Value.PackageExitUpdateItems?.Any(a =>
+                                                            a.InstructionType == InstructionType.SendSorting) != true) {
+                                                        return;
+                                                    }
+
+                                                    NLog.LogManager.GetCurrentClassLogger().Error($"准备发送");
+
+                                                    var (key, value) = await uploader.SetParameters(_caiNiaoApiParam);
+                                                    if (key) {
+                                                        var caiNiaoStatusConvert = CaiNiaoStatusConvert(
+                                                            packageValue.Value.PackageInfo.BarCodeInfo?.Barcode ?? string.Empty,
+                                                            packageValue.Value.PackageExitUpdateItems);
+                                                        uploader.UploadInBackground(packageValue.Value.PackageInfo.BarCodeInfo?.Barcode ?? string.Empty, packageValue.Value.PackageInfo.WeightInfo?.FormattedWeight ?? 0,
+                                                            packageValue.Value.PackageInfo.BarCodeInfo?.ScanTime ?? DateTime.Now, imageInfo: new UploadImageInfo() {
+                                                                CameraCustomName = packageValue.Value.PackageInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
+                                                                CameraName = packageValue.Value.PackageInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
+                                                                CameraSerialNumber = packageValue.Value.PackageInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
+                                                            }, other: new ReportChuteInfo {
+                                                                ChuteCode = caiNiaoStatusConvert.Value.ChuteCode,
+                                                                ChuteCodePhysical = packageValue.Value.PackageExitUpdateItems?.LastOrDefault(l => l.ExitType == SortingExitType.TheoreticalExit)?.ExitName ?? string.Empty,
+                                                                ErrorReson = caiNiaoStatusConvert.Value.ErrorReson,
+                                                                Status = caiNiaoStatusConvert.Key,
+                                                            }, token: stoppingToken);
+                                                    }
+                                                    else {
+                                                        NLog.LogManager.GetCurrentClassLogger().Error("设置Api参数失败");
+                                                    }
+
                                                     break;
 
                                                 case ApiType.JtExpressApi:
@@ -731,7 +768,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                             }
 
                                             //判断推送锁格(条码、原格口、包裹信息)
-
+                                            //推送集包信息
+                                            EventAggregator.Instance.Publish(new PushPackageInfo() {
+                                                PackageInfo = packageValue.Value.PackageInfo ?? new PackageInfo(),
+                                                PackageExitUpdateEvent = packageValue.Value.PackageExitUpdateItems?.LastOrDefault() ?? new PackageExitUpdateEvent()
+                                            });
                                             //删除这条
                                             _packageSubmissionPushItems?.TryRemove(packageValue);
                                         }
@@ -890,17 +931,41 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             };
         }
 
-        private KeyValuePair<int, string> CaiNiaoStatusConvert(string barcode, List<PackageExitUpdateEvent> packageExitItems) {
+        private KeyValuePair<int, CaiNiaoExitInfo> CaiNiaoStatusConvert(string barcode, List<PackageExitUpdateEvent> packageExitItems) {
             if (packageExitItems.Any(a => a.PackageCloudAbnormalSortingType == PackageCloudAbnormalSortingType.LockExit) == true) {
-                return new KeyValuePair<int, string>(3, "锁格");
+                return new KeyValuePair<int, CaiNiaoExitInfo>(3, new CaiNiaoExitInfo() {
+                    ErrorReson = "锁格",
+                    ChuteCode = packageExitItems?.FirstOrDefault(f =>
+                        f.PackageCloudAbnormalSortingType ==
+                        PackageCloudAbnormalSortingType.LockExit)?.ExitName ?? string.Empty
+                });
             }
 
-            var packageCloudAbnormalSortingType = packageExitItems?.LastOrDefault(l => l.PackageCloudAbnormalSortingType != PackageCloudAbnormalSortingType.None)?.PackageCloudAbnormalSortingType;
-            if (packageCloudAbnormalSortingType is not null) {
-                return new KeyValuePair<int, string>(6, packageCloudAbnormalSortingType.GetDescription());
+            var exitUpdateEvent = packageExitItems?.FirstOrDefault(f => f.InstructionType == InstructionType.PackageException);
+            if (exitUpdateEvent is not null) {
+                return new KeyValuePair<int, CaiNiaoExitInfo>(6, new CaiNiaoExitInfo() {
+                    ChuteCode = exitUpdateEvent.ExitName,
+                    ErrorReson = exitUpdateEvent.PackageCloudAbnormalSortingType.GetDescription()
+                });
             }
 
-            return barcode.ToLower().Equals("noread") ? new KeyValuePair<int, string>(6, "无条码") : new KeyValuePair<int, string>(0, "分拣成功");
+            if (packageExitItems?.Any(a => a.PackageCloudAbnormalSortingType
+                                          == PackageCloudAbnormalSortingType.LockExit) != true &&
+                packageExitItems?.Any(a => a.InstructionType ==
+                                          InstructionType.SignalCallback) != true) {
+                return new KeyValuePair<int, CaiNiaoExitInfo>(6, new CaiNiaoExitInfo() {
+                    ChuteCode = "格口100",
+                    ErrorReson = "未获取到落格信息"
+                });
+            }
+            NLog.LogManager.GetCurrentClassLogger().Error($"{JsonConvert.SerializeObject(packageExitItems)}");
+            return barcode.ToLower().Equals("noread") ? new KeyValuePair<int, CaiNiaoExitInfo>(6, new CaiNiaoExitInfo() {
+                ErrorReson = "无条码",
+                ChuteCode = packageExitItems?.LastOrDefault()?.ExitName ?? string.Empty
+            }) : new KeyValuePair<int, CaiNiaoExitInfo>(0, new CaiNiaoExitInfo() {
+                ErrorReson = "分拣成功",
+                ChuteCode = packageExitItems?.LastOrDefault()?.ExitName ?? string.Empty
+            });
         }
 
         public class SubmitItemInfo {
@@ -1053,6 +1118,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             /// 是否已提交过备用格口
             /// </summary>
             public bool WasPushedAlternateExitSorter { get; set; }
+        }
+
+        public class CaiNiaoExitInfo {
+            public string ChuteCode { get; set; } = string.Empty;
+            public string ErrorReson { get; set; } = string.Empty;
         }
     }
 }

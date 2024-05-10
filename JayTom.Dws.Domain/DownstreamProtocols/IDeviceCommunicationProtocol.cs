@@ -45,7 +45,14 @@ namespace JayTom.Dws.Domain.DownstreamProtocols {
         /// </summary>
         /// <param name="obj"></param>
         /// <returns></returns>
-        public SortingExceptionReturnType SortingExceptionReturnTypeConvert(object obj);
+        public SortingExceptionReturnType SortingExceptionReturnTypeConvert(string obj);
+
+        /// <summary>
+        /// 异常类型转换
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
+        public SortingExceptionReturnType SortingExceptionReturnTypeConvert(byte obj);
 
         /// <summary>
         /// 转换指令信息

@@ -60,6 +60,7 @@ namespace JayTom.Dws.Client.Service.Device {
                     return new KeyValuePair<bool, string>(IsConnected, IsConnected ? "连接成功" : "连接失败");
                 }
 
+                return new KeyValuePair<bool, string>(true, string.Empty);
                 //注册事件
             }
 

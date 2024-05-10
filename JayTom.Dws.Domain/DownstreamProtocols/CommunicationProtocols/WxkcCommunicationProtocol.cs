@@ -218,27 +218,23 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
 
         public int DataLen => 8;
 
-        public SortingExceptionReturnType SortingExceptionReturnTypeConvert(object obj) {
-            switch (obj) {
-                case byte exceptionByte:
-                    return exceptionByte switch {
-                        0x01 => SortingExceptionReturnType.DistanceTooClose,
-                        0x02 => SortingExceptionReturnType.LockExit,
-                        0x03 => SortingExceptionReturnType.VehicleNumberMismatch,
-                        0x04 => SortingExceptionReturnType.UnstableLineSpeed,
-                        _ => SortingExceptionReturnType.None
-                    };
-
-                case byte[] { Length: 8 } bytes:
-                    return SortingExceptionReturnTypeConvert(bytes[6]);
-
-                case string hexString: {
-                        var toByteArray = HexStringToByteArray(hexString);
-                        return SortingExceptionReturnTypeConvert(toByteArray);
-                    }
-                default:
-                    return SortingExceptionReturnType.None;
+        public SortingExceptionReturnType SortingExceptionReturnTypeConvert(string obj) {
+            var hexStringToByteArray = HexStringToByteArray(obj);
+            if (hexStringToByteArray.Length == 8) {
+                return SortingExceptionReturnTypeConvert(hexStringToByteArray[6]);
             }
+
+            return SortingExceptionReturnType.None;
+        }
+
+        public SortingExceptionReturnType SortingExceptionReturnTypeConvert(byte obj) {
+            return obj switch {
+                0x01 => SortingExceptionReturnType.DistanceTooClose,
+                0x02 => SortingExceptionReturnType.LockExit,
+                0x03 => SortingExceptionReturnType.VehicleNumberMismatch,
+                0x04 => SortingExceptionReturnType.UnstableLineSpeed,
+                _ => SortingExceptionReturnType.None
+            };
         }
 
         public CommandParsing? CommandParsingConvert(object obj) {

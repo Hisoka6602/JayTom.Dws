@@ -718,7 +718,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 _packageInfos.TryRemove(keyValuePair.Key, out var packageInfo);
                                 EventAggregator.Instance.Publish(new TriggerPositionEvent() {
                                     IsSuccess = true,
-                                    TriggerPosition = TriggerPositionEnum.CreateTimePackageAfter,
+                                    TriggerPosition = TriggerPositionEnum.RemovePackageAfter,
                                     PackageInfo = packageInfo
                                 });
                             }
@@ -740,6 +740,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             //下位机(包裹异常)
             _sortingService.PackageException += async (sender, args) => {
                 try {
+                    await Task.Delay(500);
                     await _createPackageSlim.WaitAsync();
                     var tryParse = int.TryParse(args.Keyword, out var num);
                     if (tryParse) {
@@ -1355,7 +1356,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                         _packageInfos.TryRemove(key, out var info);
                                         EventAggregator.Instance.Publish(new TriggerPositionEvent() {
                                             IsSuccess = true,
-                                            TriggerPosition = TriggerPositionEnum.CreateTimePackageAfter,
+                                            TriggerPosition = TriggerPositionEnum.RemovePackageAfter,
                                             PackageInfo = info
                                         });
                                     });
@@ -1380,7 +1381,14 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                         .Select(kvp => kvp.Key)
                                         .ToList();
 
-                                    keysToRemove.ForEach(key => _packageInfos.TryRemove(key, out _));
+                                    keysToRemove.ForEach(key => {
+                                        _packageInfos.TryRemove(key, out var info);
+                                        EventAggregator.Instance.Publish(new TriggerPositionEvent() {
+                                            IsSuccess = true,
+                                            TriggerPosition = TriggerPositionEnum.RemovePackageAfter,
+                                            PackageInfo = info
+                                        });
+                                    });
                                 }
                             }
                             finally {
@@ -1697,7 +1705,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                     _packageInfos.TryRemove(kvp.Key, out var removedValue);
                                     EventAggregator.Instance.Publish(new TriggerPositionEvent() {
                                         IsSuccess = true,
-                                        TriggerPosition = TriggerPositionEnum.CreateTimePackageAfter,
+                                        TriggerPosition = TriggerPositionEnum.RemovePackageAfter,
                                         PackageInfo = removedValue
                                     });
                                 }
