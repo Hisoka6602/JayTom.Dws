@@ -28,7 +28,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
         private ConcurrentDictionary<long, PackageAggregationInfo> _exitPackageAggregationItems = new();
         private ConcurrentQueue<PushPackageInfo> _packageInfoItems = new();
-        private ConcurrentDictionary<long, PackageAggregationInfo> _overexitPackageAggregationItems = new();
+        private ConcurrentDictionary<DateTime, PackageAggregationInfo> _overexitPackageAggregationItems = new();
+        private SemaphoreSlim _createPackageSlim = new(1);
 
         public PackageAggregationService(IPackageRepository packageRepository,
             IExitMonitor exitMonitor, IPackageExitDefinitionRepository packageExitDefinitionRepository) {
@@ -46,7 +47,27 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             });*/
             EventAggregator.Instance.Subscribe<PushPackageInfo>(async item => {
                 if (item is PushPackageInfo model) {
-                    _packageInfoItems.Enqueue(model);
+                    //判断加入历史包还是当前包
+                    try {
+                        await _createPackageSlim.WaitAsync();
+                        var packageAggregationInfo = _overexitPackageAggregationItems.FirstOrDefault(f =>
+                            f.Value.ExitId.Equals(model.PackageExitUpdateEvent.ExitId) &&
+                            f.Key >= model.PackageInfo.CreateTime).Value;
+                        if (packageAggregationInfo is not null) {
+                            packageAggregationInfo.PackageItems.Add(new PackageInfoModel() {
+                                BarCodeInfo = new BarCodeInfoModel() {
+                                    Barcode = model?.PackageInfo?.BarCodeInfo?.Barcode ?? string.Empty
+                                },
+                                PackageTimestamped = model?.PackageInfo?.Timestamp ?? 0
+                            });
+                            return;
+                        }
+
+                        _packageInfoItems.Enqueue(model);
+                    }
+                    finally {
+                        _createPackageSlim.Release();
+                    }
                 }
             });
 
@@ -57,28 +78,45 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             });
 
             _exitMonitor.LockExitEvent += async (sender, model) => {
-                var (key, value) = _exitPackageAggregationItems
-                    .FirstOrDefault(f => f.Key.Equals(model.Id));
-                var packageAggregationInfo = _exitPackageAggregationItems
-                    .FirstOrDefault(f => f.Key.Equals(model.Id)).Value;
+                /*var (key, value) = _exitPackageAggregationItems
+                    .FirstOrDefault(f => f.Key.Equals(model.Id));*/
 
-                if (packageAggregationInfo is not null) {
-                    packageAggregationInfo.PackagingTime = DateTime.Now;
-                    var aggregationInfo = packageAggregationInfo.Copy();
-                    _overexitPackageAggregationItems.TryAdd(model.Id, aggregationInfo);
+                try {
+                    //从原包裹分离数据
+                    var packageItems = new List<PackageInfoModel>();
+                    var (key, value) = _exitPackageAggregationItems.
+                        FirstOrDefault(f =>
+                        f.Key.Equals(model.Id) && f.Value.PackageItems.Any());
+                    if (value is not null && value.PackageItems.Any()) {
+                        //取出数据
 
-                    //EventAggregator.Instance.Publish(packageAggregationInfo);
+                        packageItems = value.PackageItems.Select(s => new PackageInfoModel {
+                            PackageTimestamped = s.PackageTimestamped,
+                            PackageCreateTime = s.PackageCreateTime,
+                            Other = s.Other,
+                            AggregatePackagesInfo = s.AggregatePackagesInfo,
+                            BarCodeInfo = s.BarCodeInfo,
+                            CloudVideoUploadInfo = s.CloudVideoUploadInfo,
+                            WeightInfo = s.WeightInfo,
+                            VolumeInfo = s.VolumeInfo,
+                            UploadInfo = s.UploadInfo,
+                            ExitInfo = s.ExitInfo,
+                        })?.ToList();
 
-                    /*packageAggregationInfo.Copy();
-
-                    _exitPackageAggregationItems.TryRemove(key, out _);
-                    _exitPackageAggregationItems.TryAdd(key, new PackageAggregationInfo() {
-                        PackageExitDefinitionInfo = packageAggregationInfo.PackageExitDefinitionInfo,
-                        PackageItems = new List<PackageInfoModel>(),
-                        AggregatePackageCode =
-                            $"PK{DateTimeOffset.Now.ToUnixTimeSeconds()}",
-                    });*/
-                    packageAggregationInfo.PackageItems.Clear();
+                        //清空原包信息
+                        value.PackageItems.Clear();
+                    }
+                    //锁格后创建历史包
+                    var packagingTime = DateTime.Now;
+                    _overexitPackageAggregationItems.TryAdd(packagingTime, new PackageAggregationInfo() {
+                        PackageExitDefinitionInfo = model,
+                        AggregatePackageCode = $"PK{DateTimeOffset.Now.ToUnixTimeSeconds()}{model.Id.ToString().PadLeft(3, '0')}",
+                        PackageItems = packageItems ?? new List<PackageInfoModel>(),
+                    });
+                    //清空原包裹对应格口数据
+                }
+                finally {
+                    _createPackageSlim.Release();
                 }
             };
             _exitMonitor.UnLockExitEvent += (sender, model) => {
@@ -112,47 +150,21 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 if (tryDequeue && packageInfo is not null) {
                     //检查所有格口有没有对应的包裹
 
-                    foreach (var info in _exitPackageAggregationItems) {
-                        var packageInfoModel = info.Value.PackageItems.FirstOrDefault(f =>
-                            f.PackageTimestamped.Equals(packageInfo.PackageInfo.Timestamp));
-                        if (packageInfoModel is not null) {
-                            info.Value.PackageItems.Remove(packageInfoModel);
-                        }
-                    }
-                    //判断是否在历史里面
-
-                    var aggregationInfo = _overexitPackageAggregationItems.FirstOrDefault(f =>
-                        f.Key.Equals(packageInfo.PackageExitUpdateEvent?.ExitId ?? 0) &&
-                        f.Value.PackagingTime.CompareTo(packageInfo.PackageInfo.CreateTime) > 0).Value;
-                    if (aggregationInfo is not null) {
-                        aggregationInfo.PackageItems.Add(new PackageInfoModel() {
+                    var packageAggregationInfo = _exitPackageAggregationItems
+                        .FirstOrDefault(f => f.Key.Equals(packageInfo.PackageExitUpdateEvent?.ExitId ?? 0)).Value;
+                    if (packageAggregationInfo is not null) {
+                        packageAggregationInfo.PackageItems.Add(new PackageInfoModel() {
                             BarCodeInfo = new BarCodeInfoModel() {
                                 Barcode = packageInfo?.PackageInfo?.BarCodeInfo?.Barcode ?? string.Empty
                             },
                             PackageTimestamped = packageInfo?.PackageInfo?.Timestamp ?? 0
                         });
-
-                        NLog.LogManager.GetCurrentClassLogger().Error($"{packageInfo?.PackageInfo?.BarCodeInfo?.Barcode} 加入历史包");
                     }
                     else {
-                        var packageAggregationInfo = _exitPackageAggregationItems
-                            .FirstOrDefault(f => f.Key.Equals(packageInfo.PackageExitUpdateEvent?.ExitId ?? 0)).Value;
-                        if (packageAggregationInfo is not null) {
-                            packageAggregationInfo.PackageItems.Add(new PackageInfoModel() {
-                                BarCodeInfo = new BarCodeInfoModel() {
-                                    Barcode = packageInfo?.PackageInfo?.BarCodeInfo?.Barcode ?? string.Empty
-                                },
-                                PackageTimestamped = packageInfo?.PackageInfo?.Timestamp ?? 0
-                            });
-                        }
-                        else {
-                            _packageInfoItems.Enqueue(packageInfo);
-                        }
+                        _packageInfoItems.Enqueue(packageInfo);
                     }
-
                     var keyValuePairs = _overexitPackageAggregationItems.Where(w =>
                         DateTime.Now.Subtract(w.Value.PackagingTime).TotalSeconds >= 23)?.ToList();
-
                     if (keyValuePairs?.Any() == true) {
                         NLog.LogManager.GetCurrentClassLogger().Error("推送集包");
                         Parallel.ForEach(keyValuePairs, svalue => {
@@ -181,5 +193,10 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         /// 打包时间
         /// </summary>
         public DateTime PackagingTime { get; set; } = DateTime.Now;
+
+        /// <summary>
+        /// 格口Id
+        /// </summary>
+        public long ExitId { get; set; }
     }
 }

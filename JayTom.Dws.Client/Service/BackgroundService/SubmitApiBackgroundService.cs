@@ -766,7 +766,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
                                                     break;
                                             }
-
                                             //判断推送锁格(条码、原格口、包裹信息)
                                             //推送集包信息
                                             EventAggregator.Instance.Publish(new PushPackageInfo() {
