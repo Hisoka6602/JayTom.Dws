@@ -278,6 +278,11 @@ namespace JayTom.Dws.Client.EventMediators {
         /// 包裹信息
         /// </summary>
         public PackageInfo PackageInfo { get; set; } = new();
+
+        /// <summary>
+        /// 落格信号时间
+        /// </summary>
+        public DateTime? SignalCallbackTime { get; set; }
     }
 
     /// <summary>
