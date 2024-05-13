@@ -393,7 +393,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         NLog.LogManager.GetCurrentClassLogger().Info($"{trigger.PackageInfo.CreateTime:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[序号:{trigger.PackageInfo.Guid}]-[创建包裹成功]");
                     }
                     else if (trigger is { TriggerPosition: TriggerPositionEnum.RemovePackageAfter, PackageInfo: not null }) {
-                        NLog.LogManager.GetCurrentClassLogger().Info($"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[序号:{trigger.PackageInfo.Guid}]-[移除包裹成功] {trigger.PackageInfo.BarCodeInfo?.Barcode}");
+                        NLog.LogManager.GetCurrentClassLogger().Info($"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[序号:{trigger.PackageInfo.Guid}]-[移除包裹成功] {trigger.PackageInfo.BarCodeInfo?.Barcode} -[{trigger.Description}]");
                     }
                     else if (trigger is { TriggerPosition: TriggerPositionEnum.BarCodeSetValueAfter, PackageInfo.BarCodeInfo: not null }) {
                         NLog.LogManager.GetCurrentClassLogger().Info($"{trigger.PackageInfo.BarCodeInfo.ScanTime:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[序号:{trigger.PackageInfo.Guid}]-[条码赋值] {trigger.PackageInfo.BarCodeInfo?.Barcode}");

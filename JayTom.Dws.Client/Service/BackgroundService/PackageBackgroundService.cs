@@ -719,7 +719,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 EventAggregator.Instance.Publish(new TriggerPositionEvent() {
                                     IsSuccess = true,
                                     TriggerPosition = TriggerPositionEnum.RemovePackageAfter,
-                                    PackageInfo = packageInfo
+                                    PackageInfo = packageInfo,
+                                    Description = "下位机移除"
                                 });
                             }
                         }
@@ -792,6 +793,16 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 },
                                 ConnectionName = args.ConnectionName,
                             });
+                            //移除包裹
+                            if (_createPackageSettingsDto.PackageRemoveMethods == PackageRemoveMethodsEnum.LowerMachineRemoval) {
+                                _packageInfos.TryRemove(keyValuePair.Key, out var packageInfo);
+                                EventAggregator.Instance.Publish(new TriggerPositionEvent() {
+                                    IsSuccess = true,
+                                    TriggerPosition = TriggerPositionEnum.RemovePackageAfter,
+                                    PackageInfo = packageInfo,
+                                    Description = "下位机移除"
+                                });
+                            }
                         }
                     }
                 }
@@ -1357,7 +1368,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                         EventAggregator.Instance.Publish(new TriggerPositionEvent() {
                                             IsSuccess = true,
                                             TriggerPosition = TriggerPositionEnum.RemovePackageAfter,
-                                            PackageInfo = info
+                                            PackageInfo = info,
+                                            Description = "空包裹过期"
                                         });
                                     });
                                 }
@@ -1371,7 +1383,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             try {
                                 await _createPackageSlim.WaitAsync(stoppingToken);
 
-                                var keyValuePairs = _packageInfos.Where(w => w.Value.BarCodeInfo == null &&
+                                var keyValuePairs = _packageInfos.Where(w =>
                                                                              DateTime.Now.Subtract(w.Key).TotalMilliseconds >
                                                                              _createPackageSettingsDto.PackageExpiryTime)
                                     ?.ToList();
@@ -1386,7 +1398,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                         EventAggregator.Instance.Publish(new TriggerPositionEvent() {
                                             IsSuccess = true,
                                             TriggerPosition = TriggerPositionEnum.RemovePackageAfter,
-                                            PackageInfo = info
+                                            PackageInfo = info,
+                                            Description = "包裹生存周期结束"
                                         });
                                     });
                                 }

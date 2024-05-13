@@ -1,5 +1,6 @@
 ﻿using System;
 using JayTom.Dws.Domain.Dto;
+using System.ComponentModel;
 using JayTom.Dws.Data.Package;
 using JayTom.Dws.Data.LocalLog;
 using JayTom.Dws.PluginInterface;
@@ -76,6 +77,11 @@ namespace JayTom.Dws.Client.EventMediators {
         /// 包裹信息
         /// </summary>
         public PackageInfo? PackageInfo { get; set; }
+
+        /// <summary>
+        /// 说明
+        /// </summary>
+        public string Description { get; set; } = string.Empty;
     }
 
     public class BarcodeTypeProviderEvent {

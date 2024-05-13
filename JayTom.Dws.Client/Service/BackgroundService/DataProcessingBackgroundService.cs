@@ -218,7 +218,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             }
                         }
                     }
-
+                    //指令更新
                     var isSorting = _instructionItems.TryDequeue(out var sortingModel);
                     if (isSorting && sortingModel is not null) {
                         //取出对应条码id(根据条码、扫码时间)
