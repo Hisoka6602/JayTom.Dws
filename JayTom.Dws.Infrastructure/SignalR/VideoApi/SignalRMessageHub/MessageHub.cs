@@ -20,11 +20,12 @@ namespace JayTom.Dws.Infrastructure.SignalR.VideoApi.SignalRMessageHub {
         }
 
         public async void DataStatistics() {
+            return;
             try {
                 var dataStatistics = new DataStatistics();
                 await _semaphoreSlim.WaitAsync();
                 //获取计数
-                var (key, value) = await _videoBarCodeService.BarcodeTotalForDateBetween(
+                /*var (key, value) = await _videoBarCodeService.BarcodeTotalForDateBetween(
                     new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1),
                     new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1)
                         .AddMonths(1).AddSeconds(-1));
@@ -36,9 +37,9 @@ namespace JayTom.Dws.Infrastructure.SignalR.VideoApi.SignalRMessageHub {
                     new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1).AddSeconds(-1));
                 if (key && value is int lastMonthBarcodeTotal) {
                     dataStatistics.LastMonthBarcodeTotal = lastMonthBarcodeTotal;
-                }
+                }*/
 
-                (key, value) = await _videoBarCodeService.BarcodeTotalForDate(DateTime.Today);
+                var (key, value) = await _videoBarCodeService.BarcodeTotalForDate(DateTime.Today);
                 if (key && value is int todayBarcodeTotal) {
                     dataStatistics.TodayBarcodeTotal = todayBarcodeTotal;
                 }
@@ -95,6 +96,7 @@ namespace JayTom.Dws.Infrastructure.SignalR.VideoApi.SignalRMessageHub {
         }
 
         public async void UpDateNodes() {
+            return;
             try {
                 await _semaphoreSlim.WaitAsync();
                 var (key, value) = await _videoBarCodeService.GroupedNodeNames();
