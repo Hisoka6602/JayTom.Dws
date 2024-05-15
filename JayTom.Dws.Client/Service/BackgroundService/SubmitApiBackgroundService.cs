@@ -668,11 +668,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             _ => null
                         };
                         if (uploader is not null) {
-                            Parallel.ForEach(pairs, async packageValue => {
+                            Parallel.ForEach(pairs, packageValue => {
                                 /*Task.Factory.StartNew(async () => {
                                 });*/
                                 try {
-                                    await _takePackageSlim.WaitAsync(stoppingToken);
+                                    _takePackageSlim.WaitAsync(stoppingToken).GetAwaiter().GetResult();
                                     //提交
                                     if (packageValue.Value is { PackageInfo: not null } && packageValue.Value.PackageExitUpdateItems?.Any() == true) {
                                         switch (_apiSettingsDto?.Type) {
@@ -726,7 +726,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
                                                 NLog.LogManager.GetCurrentClassLogger().Error($"准备发送");
 
-                                                var (key, value) = await uploader.SetParameters(_caiNiaoApiParam);
+                                                var (key, value) = uploader.SetParameters(_caiNiaoApiParam).GetAwaiter().GetResult();
                                                 if (key) {
                                                     var caiNiaoStatusConvert = CaiNiaoStatusConvert(
                                                         packageValue.Value.PackageInfo.BarCodeInfo?.Barcode ?? string.Empty,
@@ -756,7 +756,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                                     return;
                                                 }
 
-                                                var keyValuePair = await uploader.SetParameters(_jtExpressApiParam);
+                                                var keyValuePair = uploader.SetParameters(_jtExpressApiParam).GetAwaiter().GetResult();
                                                 if (keyValuePair.Key) {
                                                     uploader.UploadInBackground(packageValue.Value.PackageInfo.BarCodeInfo?.Barcode ?? string.Empty, packageValue.Value.PackageInfo?.WeightInfo?.FormattedWeight ?? 0,
                                                         packageValue.Value.PackageInfo?.BarCodeInfo?.ScanTime ?? DateTime.Now, imageInfo: new UploadImageInfo(), other:
