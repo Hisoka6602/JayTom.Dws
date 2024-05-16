@@ -301,6 +301,205 @@
                             Text="{Binding EshippingitApiInfo.Machine, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                     </Border>
                 </StackPanel>
+                <!--  上传按钮  -->
+                <StackPanel Margin="0,30" Orientation="Vertical">
+
+                    <!--  目录  -->
+                    <StackPanel
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        Orientation="Horizontal">
+                        <!--  图标  -->
+                        <TextBlock
+                            Margin="0,0,0,1"
+                            VerticalAlignment="Center"
+                            FontFamily="{StaticResource IconFontFamily}"
+                            FontSize="20"
+                            Foreground="DarkGray"
+                            Text="&#xe65f;" />
+                        <TextBlock
+                            Margin="5,0"
+                            VerticalAlignment="Center"
+                            FontSize="16"
+                            FontWeight="Bold"
+                            Foreground="DarkGray"
+                            Text="需要上传图片的目录:" />
+                        <Border
+                            Margin="5"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Background="#1A696969"
+                            CornerRadius="5">
+                            <TextBox
+                                Width="300"
+                                Height="30"
+                                MaxWidth="500"
+                                Margin="5,0"
+                                materialDesign:TextFieldAssist.HasClearButton="False"
+                                materialDesign:TextFieldAssist.HasFilledTextField="True"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                FontSize="15"
+                                FontWeight="Bold"
+                                Foreground="White"
+                                IsReadOnly="True"
+                                Text="{Binding ImageRootDirectory, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                        </Border>
+                        <Button
+                            MinHeight="30"
+                            Margin="30,0"
+                            HorizontalAlignment="Left"
+                            materialDesign:ButtonAssist.CornerRadius="5"
+                            Background="#2E2E2E"
+                            BorderThickness="0"
+                            Command="{Binding OpenFolderCommand}"
+                            FocusVisualStyle="{x:Null}"
+                            Style="{StaticResource MaterialDesignFlatAccentBgButton}">
+                            <TextBlock
+                                Margin="2,1,0,0"
+                                VerticalAlignment="Center"
+                                FontFamily="{StaticResource CustomFontFamily}"
+                                FontSize="14"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                Text="{x:Static languages:Language.BrowseDirectory}" />
+                        </Button>
+                    </StackPanel>
+                    <!--  上传按钮  -->
+                    <Button
+                        MinHeight="30"
+                        Margin="0,10"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Bottom"
+                        materialDesign:ButtonAssist.CornerRadius="5"
+                        Background="#2E2E2E"
+                        BorderThickness="0"
+                        Command="{Binding DataContext.UploadImageCommand, RelativeSource={RelativeSource AncestorType={x:Type Page}}}"
+                        FocusVisualStyle="{x:Null}"
+                        Style="{StaticResource MaterialDesignFlatAccentBgButton}">
+
+                        <Grid>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock
+                                    Margin="0,0,0,0"
+                                    VerticalAlignment="Center"
+                                    FontFamily="{StaticResource IconFontFamily}"
+                                    FontSize="18"
+                                    Foreground="DarkGray"
+                                    Text="&#xe6f0;" />
+                                <TextBlock
+                                    Margin="2,1,0,0"
+                                    VerticalAlignment="Center"
+                                    FontFamily="{StaticResource CustomFontFamily}"
+                                    FontSize="14"
+                                    FontWeight="Bold"
+                                    Foreground="DarkGray"
+                                    Text="上传图片" />
+                                <StackPanel.Style>
+                                    <Style TargetType="StackPanel">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding DataContext.IsUploadProgress, RelativeSource={RelativeSource AncestorType={x:Type Page}}}" Value="True">
+                                                <Setter Property="Visibility" Value="Hidden" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding DataContext.IsUploadProgress, RelativeSource={RelativeSource AncestorType={x:Type Page}}}" Value="False">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </StackPanel.Style>
+                            </StackPanel>
+                            <ProgressBar
+                                Name="StatusProgressBar"
+                                Width="25"
+                                Height="25"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                IsIndeterminate="True"
+                                Value="0">
+                                <ProgressBar.Style>
+                                    <Style BasedOn="{StaticResource MaterialDesignCircularProgressBar}" TargetType="ProgressBar">
+                                        <Setter Property="Visibility" Value="Hidden" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding DataContext.IsUploadProgress, RelativeSource={RelativeSource AncestorType={x:Type Page}}}" Value="True">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding DataContext.IsUploadProgress, RelativeSource={RelativeSource AncestorType={x:Type Page}}}" Value="False">
+                                                <Setter Property="Visibility" Value="Hidden" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ProgressBar.Style>
+                            </ProgressBar>
+                        </Grid>
+                    </Button>
+                </StackPanel>
+
+                <!--  上传信息  -->
+                <StackPanel
+                    Margin="0,5"
+                    HorizontalAlignment="Left"
+                    Orientation="Vertical">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Margin="2,10"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontSize="15"
+                            FontWeight="Bold"
+                            Foreground="DimGray"
+                            Text="扫码图上传进度:" />
+                        <Grid HorizontalAlignment="Left">
+
+                            <ProgressBar
+                                Width="500"
+                                Height="30"
+                                Padding="0"
+                                materialDesign:TransitionAssist.DisableTransitions="True"
+                                Background="#196e3dff"
+                                Foreground="BlueViolet"
+                                Maximum="{Binding MaxProgress}"
+                                Opacity="0.8"
+                                Style="{StaticResource CustomProgressBarStyle}"
+                                Value="{Binding Progress}" />
+                            <!--  百分比  -->
+                            <TextBlock
+                                Margin="0,10"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                FontSize="15"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                Text="{Binding ProgressText}" />
+                        </Grid>
+                    </StackPanel>
+
+                    <!--  上传信息  -->
+                    <StackPanel Orientation="Horizontal">
+                        <!--  上传成功文件数  -->
+                        <TextBlock
+                            MinWidth="160"
+                            Margin="0,10"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontSize="15"
+                            FontWeight="Bold"
+                            Foreground="DimGray">
+                            <Run Text="上传成功:" /> <Run Text="{Binding SuccessfulUploads, UpdateSourceTrigger=PropertyChanged}" />
+                        </TextBlock>
+                        <!--  上传失败文件数  -->
+                        <TextBlock
+                            MinWidth="160"
+                            Margin="0,10"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontSize="15"
+                            FontWeight="Bold"
+                            Foreground="DimGray">
+                            <Run Text="上传失败:" /> <Run Text="{Binding FailedUploads, UpdateSourceTrigger=PropertyChanged}" />
+                        </TextBlock>
+                    </StackPanel>
+                </StackPanel>
             </StackPanel>
         </StackPanel>
     </Grid>

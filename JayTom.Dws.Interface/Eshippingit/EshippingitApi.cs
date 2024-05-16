@@ -23,6 +23,7 @@ namespace JayTom.Dws.Interface.Eshippingit {
         public ApiParameters Parameters { get; private set; } = new();
         public static OssParameters? OssParam { get; private set; }
         private static OssClient? _ossClient;
+        private SemaphoreSlim _semaphore = new(1);
 
         public EshippingitApi(IHttpClientFactory httpClientFactory) {
             _httpClientFactory = httpClientFactory;
@@ -223,25 +224,31 @@ namespace JayTom.Dws.Interface.Eshippingit {
             object? other = null, CancellationToken token = default) {
         }
 
-        public async Task PolicyPush(string barcode, DateTime scanTime, Image image, CancellationToken token = default) {
+        public async Task<bool> PolicyPush(string barcode, DateTime scanTime, Image image, CancellationToken token = default) {
             barcode = Regex.Replace(barcode, @"[\u0000-\u001f\b]", "");
             var waitAndRetryAsync = Policy.HandleResult<bool>(result => !result)
                 .Or<Exception>().WaitAndRetryAsync(Parameters.RetryCount, retryCount => TimeSpan.FromSeconds(Parameters.RetryInterval), // 重试间隔时间
                     (ex, timespan, retryCount, context) => {
                         NLog.LogManager.GetCurrentClassLogger().Error($"Oss接口重试次数:{retryCount}");
                     });
-            var uploadResponse = await waitAndRetryAsync.ExecuteAsync(async () => {
+            return await waitAndRetryAsync.ExecuteAsync(async () => {
                 try {
-                    if (OssParam is null || DateTime.Now.CompareTo(OssParam.Expiration.ToLocalTime()) >= 0) {
-                        //重新申请
-                        OssParam = await GetOssParameters();
-                        if (OssParam is null) {
-                            return false;
+                    try {
+                        await _semaphore.WaitAsync(token);
+                        if (OssParam is null || DateTime.Now.CompareTo(OssParam.Expiration.ToLocalTime()) >= 0) {
+                            //重新申请
+                            OssParam = await GetOssParameters();
+                            if (OssParam is null) {
+                                return false;
+                            }
                         }
-                    }
 
-                    _ossClient ??= new OssClient(Parameters.Endpoint, OssParam.AccessKeyId, OssParam.AccessKeySecret,
-                        OssParam.SecurityToken);
+                        _ossClient ??= new OssClient(Parameters.Endpoint, OssParam.AccessKeyId, OssParam.AccessKeySecret,
+                            OssParam.SecurityToken);
+                    }
+                    finally {
+                        _semaphore.Release();
+                    }
 
                     using MemoryStream memoryStream = new MemoryStream();
                     image.Save(memoryStream, image.RawFormat);
@@ -277,18 +284,17 @@ namespace JayTom.Dws.Interface.Eshippingit {
 
         public async Task<OssParameters?> GetOssParameters() {
             try {
-                using (var httpClient = _httpClientFactory.CreateClient("INSURANCE")) {
-                    httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut);
-                    httpClient.DefaultRequestHeaders.Add("Authorization", Parameters.Authorization);
+                using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+                httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut * 3);
+                httpClient.DefaultRequestHeaders.Add("Authorization", Parameters.Authorization);
 
-                    var stringAsync = await httpClient.GetStringAsync($"{Parameters.Domain}/api/mdm-service/oss/openSts");
+                var stringAsync = await httpClient.GetStringAsync($"{Parameters.Domain}/api/mdm-service/oss/openSts");
 
-                    var resultContent = Regex.Unescape(stringAsync);
+                var resultContent = Regex.Unescape(stringAsync);
 
-                    var jObject = JObject.Parse(resultContent);
-                    if (jObject["content"] is not null) {
-                        return JsonConvert.DeserializeObject<OssParameters>(jObject["content"]?.ToString() ?? string.Empty);
-                    }
+                var jObject = JObject.Parse(resultContent);
+                if (jObject["content"] is not null) {
+                    return JsonConvert.DeserializeObject<OssParameters>(jObject["content"]?.ToString() ?? string.Empty);
                 }
             }
             catch (Exception e) {

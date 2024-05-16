@@ -155,13 +155,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             set => SetProperty(ref _imageNamingItems, value);
         }
 
-        public ICommand SliderValueChangedCommand {
-            get => new DelegateCommand(SetWatermarkToImage);
-        }
+        public ICommand SliderValueChangedCommand => new DelegateCommand(SetWatermarkToImage);
 
-        public ICommand ColorPickerValueChangedCommand {
-            get => new DelegateCommand(SetWatermarkToImage);
-        }
+        public ICommand ColorPickerValueChangedCommand => new DelegateCommand(SetWatermarkToImage);
 
         public ICommand CheckBoxValueChangedCommand => new DelegateCommand(SetWatermarkToImage);
 
@@ -437,9 +433,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 移除标记
         /// </summary>
-        public ICommand RemoveTemplateItemCommand {
-            get => new DelegateCommand<ItemBaseTemplateModel>(RemoveTemplateItemDelegate);
-        }
+        public ICommand RemoveTemplateItemCommand => new DelegateCommand<ItemBaseTemplateModel>(RemoveTemplateItemDelegate);
 
         private async void RemoveTemplateItemDelegate(ItemBaseTemplateModel model) {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {

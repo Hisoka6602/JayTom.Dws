@@ -1,8 +1,8 @@
-﻿using Prism.Commands;
+﻿using System;
 using Prism.Mvvm;
-using System;
-using System.Diagnostics;
+using Prism.Commands;
 using System.Threading;
+using System.Diagnostics;
 using System.Windows.Input;
 
 namespace JayTom.Dws.Client.ViewModels.Dialog {
@@ -64,9 +64,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog {
         /// <summary>
         /// 加载事件
         /// </summary>
-        public ICommand LoadedCommand {
-            get => new DelegateCommand<object>(LoadedDelegate);
-        }
+        public ICommand LoadedCommand => new DelegateCommand<object>(LoadedDelegate);
 
         private void LoadedDelegate(object obj) {
         }
