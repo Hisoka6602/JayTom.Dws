@@ -10,7 +10,10 @@ using System.Threading;
 using System.Windows.Input;
 using System.Windows.Forms;
 using JayTom.Dws.Domain.Dto;
+using System.Windows.Shapes;
+using Path = System.IO.Path;
 using System.Threading.Tasks;
+using JayTom.Dws.Data.Package;
 using JayTom.Dws.Data.LocalConf;
 using NPOI.SS.Formula.Functions;
 using System.Collections.Generic;
@@ -30,6 +33,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IDeviceService _deviceService;
         private readonly IPackageRepository _packageRepository;
+        private readonly IBarCodeRepository _barCodeRepository;
         private EshippingitApiModel _eshippingitApiInfo = new();
         private string _progressText = $"0%";
         private double _progress;
@@ -38,6 +42,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
         private string _imageRootDirectory = string.Empty;
         private int _successfulUploads;
         private int _failedUploads;
+        private SemaphoreSlim _uploadSemaphore = new(7);
 
         public EshippingitApiModel EshippingitApiInfo {
             get => _eshippingitApiInfo;
@@ -82,10 +87,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
         public EshippingitApiPageViewModel(IConfigRepository configRepository,
             IHttpClientFactory httpClientFactory,
             IDeviceService deviceService,
-            IPackageRepository packageRepository) : base(configRepository) {
+            IPackageRepository packageRepository,
+            IBarCodeRepository barCodeRepository) : base(configRepository) {
             _httpClientFactory = httpClientFactory;
             _deviceService = deviceService;
             _packageRepository = packageRepository;
+            _barCodeRepository = barCodeRepository;
         }
 
         public override string Identifier => "EshippingitApiParametersDialogHost";
@@ -228,34 +235,44 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
                 });
             });
 
-            /*var barCodeInfoModels = await _barCodeRepository.SelectOrderByDescending(w =>
-                imagesPath.Contains(w.Barcode), o => o.ScanTime);*/
-            var tasks = imagesPath.Select((path, i) => UploadImageAsync(path, eshippingitApi, uploadedList, progress, i));
-            /*var tasks = imagesPath.Select(async (path, i) => {
+            var barCodeInfoModels = await _barCodeRepository.SelectOrderByDescending(w =>
+                imagesPath.Select(Path.GetFileNameWithoutExtension).Contains(w.Barcode), o => o.ScanTime);
+
+            NLog.LogManager.GetCurrentClassLogger().Error($"barCodeInfoModels:{barCodeInfoModels.Count}");
+
+            /*var tasks = imagesPath.Select((path, i) => UploadImageAsync(path, eshippingitApi,
+            uploadedList, progress,
+            barCodeInfoModels.FirstOrDefault(f => f.Barcode.Equals(path))?.ScanTime ?? File.GetLastWriteTime(path),
+                i));*/
+            var tasks = imagesPath.Select(async (path, i) => {
                 await Task.Delay(TimeSpan.FromMilliseconds(5)); // 添加时间间隔
-                await UploadImageAsync(path, eshippingitApi, uploadedList, progress, i);
-            });*/
+                await UploadImageAsync(path, eshippingitApi,
+                     uploadedList, progress,
+                     barCodeInfoModels.FirstOrDefault(f => f.Barcode.Equals(path))?.ScanTime ??
+                     File.GetLastWriteTime(path), i);
+            });
             await Task.WhenAll(tasks);
 
             return uploadedList.ToList();
         }
 
-        private async Task UploadImageAsync(string path, EshippingitApi eshippingitApi, ConcurrentBag<string> uploadedList, IProgress<(int, bool)> progress, int num) {
-            await Task.Yield();
-            var (b, packageInfoModel) = await _packageRepository.FirstOrDefaultInfo(w => w.BarCodeInfo != null &&
-                    w.BarCodeInfo.Barcode.Equals(Path.GetFileNameWithoutExtension(path)));
+        private async Task UploadImageAsync(string path, EshippingitApi eshippingitApi, ConcurrentBag<string> uploadedList, IProgress<(int, bool)> progress, DateTime scanTime, int num) {
+            try {
+                await _uploadSemaphore.WaitAsync();
+                using var image = Image.FromFile(path);
+                var policyPush = await eshippingitApi.PolicyPush(Path.GetFileNameWithoutExtension(path),
+                    scanTime,
+                    image);
 
-            using var image = Image.FromFile(path);
-            var policyPush = await eshippingitApi.PolicyPush(Path.GetFileNameWithoutExtension(path),
-                packageInfoModel?.BarCodeInfo?.ScanTime ?? File.GetLastWriteTime(path),
-                image);
-
-            if (policyPush) {
-                uploadedList.Add(path);
+                if (policyPush) {
+                    uploadedList.Add(path);
+                }
+                // 报告进度和更新成功和失败上传数
+                progress.Report((num, policyPush));
             }
-
-            // 报告进度和更新成功和失败上传数
-            progress.Report((num, policyPush));
+            finally {
+                _uploadSemaphore.Release();
+            }
         }
 
         private IEnumerable<string> GetImageFiles(string folderPath, Regex regex) {

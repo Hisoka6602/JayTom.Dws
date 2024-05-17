@@ -24,6 +24,7 @@ namespace JayTom.Dws.Interface.Eshippingit {
         public static OssParameters? OssParam { get; private set; }
         private static OssClient? _ossClient;
         private SemaphoreSlim _semaphore = new(1);
+        private SemaphoreSlim _uploadSemaphore = new(10);
 
         public EshippingitApi(IHttpClientFactory httpClientFactory) {
             _httpClientFactory = httpClientFactory;
@@ -233,23 +234,24 @@ namespace JayTom.Dws.Interface.Eshippingit {
                     });
             return await waitAndRetryAsync.ExecuteAsync(async () => {
                 try {
-                    try {
-                        await _semaphore.WaitAsync(token);
-                        if (OssParam is null || DateTime.Now.CompareTo(OssParam.Expiration.ToLocalTime()) >= 0) {
-                            //重新申请
-                            OssParam = await GetOssParameters();
-                            if (OssParam is null) {
-                                return false;
-                            }
+                    await _semaphore.WaitAsync(token);
+                    if (OssParam is null || DateTime.Now.CompareTo(OssParam.Expiration.ToLocalTime()) >= 0) {
+                        //重新申请
+                        OssParam = await GetOssParameters();
+                        if (OssParam is null) {
+                            return false;
                         }
-
-                        _ossClient ??= new OssClient(Parameters.Endpoint, OssParam.AccessKeyId, OssParam.AccessKeySecret,
-                            OssParam.SecurityToken);
-                    }
-                    finally {
-                        _semaphore.Release();
                     }
 
+                    _ossClient ??= new OssClient(Parameters.Endpoint, OssParam.AccessKeyId, OssParam.AccessKeySecret,
+                        OssParam.SecurityToken);
+                }
+                finally {
+                    _semaphore.Release();
+                }
+
+                try {
+                    await _uploadSemaphore.WaitAsync(token);
                     using MemoryStream memoryStream = new MemoryStream();
                     image.Save(memoryStream, image.RawFormat);
 
@@ -267,7 +269,8 @@ namespace JayTom.Dws.Interface.Eshippingit {
                     }
                 }
                 catch (Aliyun.OSS.Common.OssException ossException) {
-                    if (ossException.Message.Contains("The OSS Access Key Id you provided does not exist in our records")) {
+                    if (ossException.Message.Contains(
+                            "The OSS Access Key Id you provided does not exist in our records")) {
                         OssParam = await GetOssParameters();
                         NLog.LogManager.GetCurrentClassLogger().Error($"{JsonConvert.SerializeObject(OssParam)}");
                         NLog.LogManager.GetCurrentClassLogger().Error($"{ossException}");
@@ -277,7 +280,9 @@ namespace JayTom.Dws.Interface.Eshippingit {
                 catch (Exception e) {
                     NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
                 }
-
+                finally {
+                    _uploadSemaphore.Release();
+                }
                 return false;
             });
         }
