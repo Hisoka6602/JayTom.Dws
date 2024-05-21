@@ -3,13 +3,16 @@ using System.Linq;
 using System.Text;
 using Newtonsoft.Json;
 using System.Threading;
+using TouchSocket.Core;
 using System.Diagnostics;
 using Newtonsoft.Json.Linq;
 using System.Threading.Tasks;
 using System.Security.Policy;
 using System.Collections.Generic;
 using Org.BouncyCastle.Asn1.Ocsp;
+using Microsoft.Extensions.Options;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Caching.Memory;
 using static JayTom.Dws.Interface.CaiNiao.CaiNiaoApi;
 
 namespace JayTom.Dws.Interface.CaiNiao {

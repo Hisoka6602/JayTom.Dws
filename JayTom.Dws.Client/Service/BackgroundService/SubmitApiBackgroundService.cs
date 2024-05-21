@@ -6,6 +6,7 @@ using System.Drawing;
 using Newtonsoft.Json;
 using System.Net.Http;
 using System.Threading;
+using TouchSocket.Core;
 using JayTom.Dws.Interface;
 using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
@@ -52,6 +53,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IConfigRepository _configRepository;
         private readonly IImageStorageService _imageStorageService;
+        private readonly IMemoryCache _memoryCache;
         private ConcurrentQueue<SubmitItemInfo> _submitItems = new();
         private ApiSettingsDto? _apiSettingsDto;
         private static DefaultApi.DefaultApiParameters _defaultApiParameters = new();
@@ -69,7 +71,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private SemaphoreSlim _takePackageSlim = new(1);
         private ConcurrentDictionary<long, PackageSubmissionPushInfo> _packageSubmissionPushItems = new();
         private JtExpressDto _jtExpressDto = new();
-        private object _packageSubmissionPushLock = new();
 
         #region 非通用版本变量(临时)
 
@@ -79,10 +80,12 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         #endregion 非通用版本变量(临时)
 
         public SubmitApiBackgroundService(IHttpClientFactory httpClientFactory,
-            IConfigRepository configRepository, IImageStorageService imageStorageService) {
+            IConfigRepository configRepository, IImageStorageService imageStorageService,
+            IMemoryCache memoryCache) {
             _httpClientFactory = httpClientFactory;
             _configRepository = configRepository;
             _imageStorageService = imageStorageService;
+            _memoryCache = memoryCache;
             //包裹信息完成
             EventAggregator.Instance.Subscribe<PackageInfo>(async item => {
                 if (item is PackageInfo { BarCodeInfo: not null } model) {
@@ -669,6 +672,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             _ => null
                         };
                         if (uploader is not null) {
+                            /*
                             Parallel.ForEach(pairs, new ParallelOptions() {
                                 MaxDegreeOfParallelism = 10
                             }, (packageValue, _) => {
@@ -676,6 +680,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                     ReportProgress(packageValue, uploader, stoppingToken);
                                 }
                             });
+                            */
+
+                            foreach (var pair in pairs) {
+                                ReportProgress(pair, uploader, stoppingToken);
+                            }
                         }
                     }
                     //集包
@@ -866,6 +875,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             IDataUploader uploader, CancellationToken token) {
             try {
                 await _takePackageSlim.WaitAsync(token);
+                var isRemove = false;
                 //提交
                 if (packageValue.Value is { PackageInfo: not null } && packageValue.Value.PackageExitUpdateItems?.Any() == true) {
                     switch (_apiSettingsDto?.Type) {
@@ -906,8 +916,16 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             //延迟方案
                             if (DateTime.Now.Subtract(packageValue.Value.PackageInfo.CreateTime).TotalSeconds >= 60) {
                                 //超时删除直接不匹配
-                                _packageSubmissionPushItems?.TryRemove(packageValue);
-                                NLog.LogManager.GetCurrentClassLogger().Error($"待提交的单号:{packageValue.Value.PackageInfo.BarCodeInfo?.Barcode},格口:[{packageValue.Value.PackageExitUpdateItems?.FirstOrDefault(f => f.InstructionType == InstructionType.CreatePackage)?.ExitName}],超过等待回调时间");
+                                /*do {
+                                    if (_packageSubmissionPushItems?.ContainsKey(packageValue.Key) == true) {
+                                        isRemove = _packageSubmissionPushItems?.TryRemove(packageValue.Key, out _) ?? false;
+                                    }
+                                    else {
+                                        break;
+                                    }
+                                    await Task.Delay(5, token);
+                                } while (isRemove);*/
+                                _packageSubmissionPushItems?.TryRemove(packageValue.Key, out _);
                                 return;
                             }
                             //创建时间大于23s再提交
@@ -920,21 +938,27 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             NLog.LogManager.GetCurrentClassLogger().Error($"准备发送");
 
                             var (key, value) = await uploader.SetParameters(_caiNiaoApiParam);
+
                             if (key) {
-                                var caiNiaoStatusConvert = CaiNiaoStatusConvert(
-                                    packageValue.Value.PackageInfo.BarCodeInfo?.Barcode ?? string.Empty,
-                                    packageValue.Value.PackageExitUpdateItems);
-                                uploader.UploadInBackground(packageValue.Value.PackageInfo.BarCodeInfo?.Barcode ?? string.Empty, packageValue.Value.PackageInfo.WeightInfo?.FormattedWeight ?? 0,
-                                    packageValue.Value.PackageInfo.BarCodeInfo?.ScanTime ?? DateTime.Now, imageInfo: new UploadImageInfo() {
-                                        CameraCustomName = packageValue.Value.PackageInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
-                                        CameraName = packageValue.Value.PackageInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
-                                        CameraSerialNumber = packageValue.Value.PackageInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
-                                    }, other: new ReportChuteInfo {
-                                        ChuteCode = caiNiaoStatusConvert.Value.ChuteCode,
-                                        ChuteCodePhysical = packageValue.Value.PackageExitUpdateItems?.LastOrDefault(l => l.ExitType == SortingExitType.TheoreticalExit)?.ExitName ?? string.Empty,
-                                        ErrorReson = caiNiaoStatusConvert.Value.ErrorReson,
-                                        Status = caiNiaoStatusConvert.Key,
-                                    }, token: token);
+                                if (!_memoryCache.TryGetValue(packageValue.Key, out _)) {
+                                    _memoryCache.Set(packageValue.Key, packageValue.Value, new MemoryCacheEntryOptions {
+                                        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(1)
+                                    });
+                                    var caiNiaoStatusConvert = CaiNiaoStatusConvert(
+                                        packageValue.Value.PackageInfo.BarCodeInfo?.Barcode ?? string.Empty,
+                                        packageValue.Value.PackageExitUpdateItems);
+                                    uploader.UploadInBackground(packageValue.Value.PackageInfo.BarCodeInfo?.Barcode ?? string.Empty, packageValue.Value.PackageInfo.WeightInfo?.FormattedWeight ?? 0,
+                                        packageValue.Value.PackageInfo.BarCodeInfo?.ScanTime ?? DateTime.Now, imageInfo: new UploadImageInfo() {
+                                            CameraCustomName = packageValue.Value.PackageInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
+                                            CameraName = packageValue.Value.PackageInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
+                                            CameraSerialNumber = packageValue.Value.PackageInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
+                                        }, other: new ReportChuteInfo {
+                                            ChuteCode = caiNiaoStatusConvert.Value.ChuteCode,
+                                            ChuteCodePhysical = packageValue.Value.PackageExitUpdateItems?.LastOrDefault(l => l.ExitType == SortingExitType.TheoreticalExit)?.ExitName ?? string.Empty,
+                                            ErrorReson = caiNiaoStatusConvert.Value.ErrorReson,
+                                            Status = caiNiaoStatusConvert.Key,
+                                        }, token: token);
+                                }
                             }
                             else {
                                 NLog.LogManager.GetCurrentClassLogger().Error("设置Api参数失败");
@@ -945,7 +969,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         case ApiType.JtExpressApi:
                             if (_jtExpressDto.IsUploadAfterReturn && packageValue.Value.PackageExitUpdateItems.Any(a => a.Type == ExitType.AbnormalExit)) {
                                 //删除这条
-                                _packageSubmissionPushItems?.TryRemove(packageValue);
+                                _packageSubmissionPushItems?.TryRemove(packageValue.Key, out _);
                                 return;
                             }
 
@@ -969,7 +993,17 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         SignalCallbackTime = packageValue.Value.PackageExitUpdateItems?.LastOrDefault(l => l.InstructionType == InstructionType.SignalCallback || l.InstructionType == InstructionType.PackageExceptionEx)?.InstructionInfos?.FirstOrDefault()?.InstructionGeneratedTime
                     });
                     //删除这条
-                    _packageSubmissionPushItems?.TryRemove(packageValue);
+
+                    /*do {
+                        if (_packageSubmissionPushItems?.ContainsKey(packageValue.Key) == true) {
+                            isRemove = _packageSubmissionPushItems?.TryRemove(packageValue.Key, out _) ?? false;
+                        }
+                        else {
+                            break;
+                        }
+                        await Task.Delay(5, token);
+                    } while (isRemove);*/
+                    _packageSubmissionPushItems?.TryRemove(packageValue.Key, out _);
                 }
             }
             finally {

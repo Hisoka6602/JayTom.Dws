@@ -241,10 +241,9 @@ namespace JayTom.Dws.Interface.Eshippingit {
                         if (OssParam is null) {
                             return false;
                         }
+                        _ossClient ??= new OssClient(Parameters.Endpoint, OssParam.AccessKeyId, OssParam.AccessKeySecret,
+                            OssParam.SecurityToken);
                     }
-
-                    _ossClient ??= new OssClient(Parameters.Endpoint, OssParam.AccessKeyId, OssParam.AccessKeySecret,
-                        OssParam.SecurityToken);
                 }
                 finally {
                     _semaphore.Release();
