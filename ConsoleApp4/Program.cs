@@ -20,6 +20,9 @@ using JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision;
 internal class Program {
 
     private static Task Main(string[] args) {
+        var localTime = Convert.ToDateTime("2024-05-21T12:17:17Z").ToLocalTime();
+
+        return Task.CompletedTask;
         var gwGrayscaleDevice = new GwGrayscaleDevice();
         string hexString = "3A 73 30 31 37 2C 30 2C 00 00 00 00 2C 00 00 00 00 2C 32 2C D1 00 E1 01 2C AF 00 78 01 2C 30 2C 00 00 00 00 2C 00 00 00 00 2C 30 2C 00 00 00 00 2C 00 00 00 00 2C 30 2C 00 00 00 00 2C 00 00 00 00 0D 0A";
         var hexStringToByteArray = HexStringToByteArray(hexString);

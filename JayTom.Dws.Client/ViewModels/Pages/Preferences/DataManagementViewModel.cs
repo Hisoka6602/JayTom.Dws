@@ -31,6 +31,7 @@ using JayTom.Dws.Client.ViewModels.Editors;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Repository.LocalData;
 using JayTom.Dws.Client.Models.PackageSorting;
+using JayTom.Dws.Client.Models.PackageSorting.Excel;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
 
@@ -506,9 +507,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     model.Identifier = "MainDialog";
                     model.Message = "Retrieving data...";
                     DialogHost.Show(exportDialog, model.Identifier);
-                    //如果页数超过1页则从数据库获取数据(未完成)
-                    var packageItemModels = new List<PackageItemModel>();
-                    if (PageCount > 1) {
+                    //如果页数超过1页则从数据库获取数据(未完成)  ExcelPackageItemModel
+                    // var packageItemModels = new List<PackageItemModel>();
+                    var packageItemModels = new List<ExcelPackageItemModel>();
+                    if (PageCount > 0) {
                         for (var i = 0; i < PageCount; i++) {
                             var (key, infoModels) = await _packageRepository.SelectPackageOrderByDescending(s =>
                                s.BarCodeInfo != null && s.WeightInfo != null &&
@@ -522,7 +524,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                            o => o.PackageCreateTime, i, 500, new CancellationToken(false));
 
                             if (infoModels?.Any() == true) {
-                                var itemModels = infoModels?.Select((s, num) => new PackageItemModel {
+                                var itemModels = infoModels?.Select((s, num) => new ExcelPackageItemModel {
                                     Num = num + 1 + (i * 500),
                                     TimestampedGuid = s.PackageTimestamped,
                                     Barcode = s.BarCodeInfo?.Barcode ?? string.Empty,
@@ -534,77 +536,18 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                                     ScanTime = s.BarCodeInfo?.ScanTime ?? s.PackageCreateTime,
                                     RequestStatus = s.UploadInfo?.RequestStatus ?? UploadStatus.NotUploaded,
                                     BarcodeImagePath = s.ImageInfos?.LastOrDefault(l => l.Type == 0)?.LocalPath ?? string.Empty,
-                                    IsBarcodeImageExists = s.ImageInfos?.LastOrDefault(l => l.Type == 0)?.LocalPath?.IsFileExists() ?? false,
-                                    Other = s.Other ?? string.Empty,
-                                    ExitName = s.ExitInfo?.PhysicalExit ?? string.Empty,
-                                    PanoramaImageItems = s.ImageInfos?.Where(w => w.Type == 1)?.Select(ps =>
-                                    new PanoramaImageItemModel() {
-                                        IsPanoramaImageExists = ps.LocalPath?.IsFileExists() ?? false,
-                                        PanoramaImagePath = ps.LocalPath
-                                    })?.ToList() ?? new List<PanoramaImageItemModel>(),
-                                    UploadInfo = new UploadItemModel {
-                                        DurationInSeconds = s.UploadInfo?.DurationInSeconds ?? 0,
-                                        ExceptionMessage = s.UploadInfo?.ExceptionMessage ?? string.Empty,
-                                        InterfaceParameters = s.UploadInfo?.InterfaceParameters ?? string.Empty,
-                                        IsSuccess = s.UploadInfo?.RequestStatus == UploadStatus.Succeeded,
-                                        RequestContent = s.UploadInfo?.RequestContent ?? string.Empty,
-                                        RequestTime = s.UploadInfo?.RequestTime,
-                                        RequestUrl = s.UploadInfo?.RequestUrl ?? string.Empty,
-                                        ResponseContent = s.UploadInfo?.ResponseContent ?? string.Empty,
-                                        ResponseTime = s.UploadInfo?.ResponseTime
-                                    },
-                                    WeightInfo = new WeightItemModel() {
-                                        CreateTime = s.WeightInfo?.CreateTime,
-                                        FormattedWeight = s.WeightInfo?.FormattedWeight ?? 0,
-                                        OriginalText = s.WeightInfo?.OriginalText ?? string.Empty,
-                                        SourceType = s.WeightInfo?.SourceType ?? SourceType.SerialPort
-                                    },
-                                    SortingInfo = new SortingItemModel {
-                                        IsSortingUsed = s.SortingInfo?.IsSortingUsed ?? false,
-                                        SortingCode = s.SortingInfo?.SortingCode ?? string.Empty,
-                                        SortingMode = s.SortingInfo?.SortingMode ?? SortMode.None,
-                                        IsCreatedByLowerMachine = s.SortingInfo?.IsCreatedByLowerMachine ?? false,
-                                        CommunicationMethod = s.SortingInfo?.CommunicationMethod ?? CommunicationsType.None,
-                                        ChecksumProtocolName = s.SortingInfo?.ChecksumProtocolName ?? string.Empty,
-                                        ConnectionName = s.SortingInfo?.ConnectionName ?? string.Empty,
-                                        IsAbnormalSorting = s.SortingInfo?.IsAbnormalSorting ?? false,
-                                        AbnormalSortingType = s.SortingInfo?.AbnormalSortingType ?? AbnormalSortingType.None,
-                                        InstructionInfoItems = new ObservableCollection<InstructionInfoItemModel>(s.SortingInfo?.InstructionInfos?
-                                            .Select(s1 => new InstructionInfoItemModel() {
-                                                InstructionGeneratedTime = s1.InstructionGeneratedTime,
-                                                InstructionType = s1.InstructionType,
-                                                InstructionContent = s1.InstructionContent
-                                            })?.ToList() ?? new List<InstructionInfoItemModel>())
-                                    },
-                                    VolumeInfo = new VolumeItemModel() {
-                                        CreateTime = s.VolumeInfo?.CreateTime,
-                                        FormattedHeight = s.VolumeInfo?.FormattedHeight ?? 0,
-                                        FormattedLength = s.VolumeInfo?.FormattedLength ?? 0,
-                                        FormattedVolume = s.VolumeInfo?.FormattedVolume ?? 0,
-                                        FormattedWidth = s.VolumeInfo?.FormattedWidth ?? 0,
-                                        OriginalText = s.VolumeInfo?.OriginalText ?? string.Empty,
-                                        SourceType = s.VolumeInfo?.SourceType ?? SourceType.Camera
-                                    },
-                                    OcrInfo = new OcrItemInfo() {
-                                        CreateTime = s.OcrInfo?.RecognizeTime,
-                                        /*OcrInterfaceName = s.OcrInfo?.OcrInterfaceName ?? string.Empty,
-                                        OriginalContent = s.OcrInfo?.OriginalContent ?? string.Empty,
-                                        ParsedContent = s.OcrInfo?.ParsedContent ?? string.Empty*/
-                                    },
-                                    ExitInfo = new ExitInfoItemModel() {
-                                        PhysicalExitId = s.ExitInfo?.PhysicalExitId ?? 0,
-                                        PhysicalExit = s.ExitInfo?.PhysicalExit ?? string.Empty,
-                                        TheoreticalExit = s.ExitInfo?.TheoreticalExit ?? string.Empty,
-                                    },
-                                    IsUploadedToCloudVideo = s.CloudVideoUploadInfo is { UploadTime: not null }
+                                    TheoreticalExit = s.ExitInfo?.TheoreticalExit ?? string.Empty,
+                                    PhysicalExit = s.ExitInfo?.PhysicalExit ?? string.Empty,
+                                    SortingCode = s.SortingInfo?.SortingCode ?? string.Empty,
+                                    SignalCallbackInstructionGeneratedTime = s?.SortingInfo?.InstructionInfos?.LastOrDefault(l => l.InstructionType
+                                        is InstructionType.SignalCallback
+                                        or InstructionType.PackageExceptionEx)?.InstructionGeneratedTime
                                 })?.ToList();
-                                packageItemModels.AddRange(itemModels ?? new List<PackageItemModel>());
+                                packageItemModels.AddRange(itemModels ?? new List<ExcelPackageItemModel>());
                             }
                         }
                     }
-                    else {
-                        packageItemModels.AddRange(PackageItems?.ToList() ?? new List<PackageItemModel>());
-                    }
+
                     var export = await _excel.Export(saveFileDialog.FileName,
                         $"PackageItems",
                         "PackageItems", packageItemModels,

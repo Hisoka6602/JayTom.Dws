@@ -875,7 +875,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             IDataUploader uploader, CancellationToken token) {
             try {
                 await _takePackageSlim.WaitAsync(token);
-                var isRemove = false;
                 //提交
                 if (packageValue.Value is { PackageInfo: not null } && packageValue.Value.PackageExitUpdateItems?.Any() == true) {
                     switch (_apiSettingsDto?.Type) {
@@ -972,12 +971,19 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 _packageSubmissionPushItems?.TryRemove(packageValue.Key, out _);
                                 return;
                             }
-
+                            if (packageValue.Value.ApiResponse.UploadResponse is null || DateTime.Now.Subtract(packageValue.Value.ApiResponse.UploadResponse.RequestTime).TotalSeconds < 2) {
+                                return;
+                            }
                             var keyValuePair = await uploader.SetParameters(_jtExpressApiParam);
                             if (keyValuePair.Key) {
-                                uploader.UploadInBackground(packageValue.Value.PackageInfo.BarCodeInfo?.Barcode ?? string.Empty, packageValue.Value.PackageInfo?.WeightInfo?.FormattedWeight ?? 0,
-                                    packageValue.Value.PackageInfo?.BarCodeInfo?.ScanTime ?? DateTime.Now, imageInfo: new UploadImageInfo(), other:
-                                    packageValue.Value.ApiResponse, token: token);
+                                if (!_memoryCache.TryGetValue(packageValue.Key, out _)) {
+                                    _memoryCache.Set(packageValue.Key, packageValue.Value, new MemoryCacheEntryOptions {
+                                        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(1)
+                                    });
+                                    uploader.UploadInBackground(packageValue.Value.PackageInfo.BarCodeInfo?.Barcode ?? string.Empty, packageValue.Value.PackageInfo?.WeightInfo?.FormattedWeight ?? 0,
+                                        packageValue.Value.PackageInfo?.BarCodeInfo?.ScanTime ?? DateTime.Now, imageInfo: new UploadImageInfo(), other:
+                                        packageValue.Value.ApiResponse, token: token);
+                                }
                             }
                             else {
                                 NLog.LogManager.GetCurrentClassLogger().Error("设置Api参数失败");

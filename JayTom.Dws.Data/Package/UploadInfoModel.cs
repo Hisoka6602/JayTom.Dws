@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Text;
+using System.ComponentModel;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -111,16 +112,19 @@ namespace JayTom.Dws.Data.Package {
         /// <summary>
         /// 上传成功
         /// </summary>
+        [Description("上传成功")]
         Succeeded = 0,
 
         /// <summary>
         /// 上传失败
         /// </summary>
+        [Description("上传失败")]
         Failed = 1,
 
         /// <summary>
         /// 未上传
         /// </summary>
+        [Description("未上传")]
         NotUploaded = 2
     }
 }
