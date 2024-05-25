@@ -266,8 +266,6 @@ namespace JayTom.Dws.Interface.CaiNiao {
                     }
                     },
                 };
-                var stopwatch = new Stopwatch();
-                stopwatch.Start();
                 try {
                     using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
                     httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut * 5);
@@ -289,9 +287,6 @@ namespace JayTom.Dws.Interface.CaiNiao {
                 }
                 catch (Exception e) {
                     NLog.LogManager.GetCurrentClassLogger().Error($"分拣报告异常:{e}");
-                }
-                finally {
-                    stopwatch.Stop();
                 }
             }
         }
@@ -320,8 +315,7 @@ namespace JayTom.Dws.Interface.CaiNiao {
                 },
             };
             NLog.LogManager.GetCurrentClassLogger().Error($"提交集包报告:格口:{new string(packageExit.Where(char.IsDigit).ToArray())},包裹数:{packageItems.Count},具体单号:{string.Join(",", packageItems)}");
-            var stopwatch = new Stopwatch();
-            stopwatch.Start();
+
             try {
                 using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
                 httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut * 5);
@@ -338,8 +332,8 @@ namespace JayTom.Dws.Interface.CaiNiao {
                 resultContent = Regex.Unescape(resultContent);
                 NLog.LogManager.GetCurrentClassLogger().Error($"集包返回:{resultContent}");
             }
-            finally {
-                stopwatch.Stop();
+            catch (Exception e) {
+                NLog.LogManager.GetCurrentClassLogger().Error($"集包报告异常:{e}");
             }
         }
 
