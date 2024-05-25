@@ -423,7 +423,15 @@ namespace JayTom.Dws.Client {
                     Type = LogType.Exception
                 });
             };
-
+            TaskScheduler.UnobservedTaskException += (sender, args) => {
+                //异常触发
+                NLog.LogManager.GetCurrentClassLogger().Error($"{JsonConvert.SerializeObject(args.Exception)}");
+                EventAggregator.Instance.Publish(new AppLogInfoModel {
+                    CreateTime = DateTime.Now,
+                    Message = args.Exception.Message,
+                    Type = LogType.Exception
+                });
+            };
             base.OnStartup(e);
 
             var container = Container.GetContainer();
@@ -488,12 +496,10 @@ namespace JayTom.Dws.Client {
 
         private void NotifyExistingInstance() {
             try {
-                using (var pipeClient = new NamedPipeClientStream(".", PipeName, PipeDirection.Out)) {
-                    pipeClient.Connect(5000); // 连接到已存在的管道
-                    using (var sw = new StreamWriter(pipeClient)) {
-                        sw.Write("ActivateWindow");
-                    }
-                }
+                using var pipeClient = new NamedPipeClientStream(".", PipeName, PipeDirection.Out);
+                pipeClient.Connect(5000); // 连接到已存在的管道
+                using var sw = new StreamWriter(pipeClient);
+                sw.Write("ActivateWindow");
             }
             catch (TimeoutException) {
                 // 如果连接超时，可以处理错误情况

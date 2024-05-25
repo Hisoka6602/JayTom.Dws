@@ -971,7 +971,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 _packageSubmissionPushItems?.TryRemove(packageValue.Key, out _);
                                 return;
                             }
-                            if (packageValue.Value.ApiResponse.UploadResponse is null || DateTime.Now.Subtract(packageValue.Value.ApiResponse.UploadResponse.RequestTime).TotalSeconds < 2) {
+                            if (packageValue.Value.ApiResponse.UploadResponse is null || DateTime.Now.Subtract(packageValue.Value.ApiResponse.UploadResponse.ResponseTime).TotalSeconds < 2) {
                                 return;
                             }
                             var keyValuePair = await uploader.SetParameters(_jtExpressApiParam);

@@ -61,31 +61,29 @@ namespace JayTom.Dws.Interface.CaiNiao {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
             try {
-                using (var httpClient = _httpClientFactory.CreateClient("INSURANCE")) {
-                    httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut);
-                    HttpResponseMessage message;
-                    using (Stream dataStream =
-                           new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data)))) {
-                        using (HttpContent content = new StreamContent(dataStream)) {
-                            content.Headers.Add("Content-Type", "application/json");
-                            message = await httpClient.PostAsync(Parameters.Url, content, token)
-                                .ConfigureAwait(false);
-                        }
-                    }
-
-                    resultContent = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
-                    resultContent = Regex.Unescape(resultContent);
-                    if (!string.IsNullOrWhiteSpace(resultContent)) {
-                        //判断
-                        var jObject = JObject.Parse(resultContent);
-
-                        if (jObject["result"] is not null) {
-                            var jArray = JArray.Parse(jObject["result"]?.ToString() ?? string.Empty);
-                            isSuccess = jArray.FirstOrDefault()?["code"]?.ToString() == "0";
-                        }
-                    }
-                    //判断是否成功条件
+                using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+                httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut);
+                HttpResponseMessage message;
+                await using (Stream dataStream =
+                             new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data)))) {
+                    using HttpContent content = new StreamContent(dataStream);
+                    content.Headers.Add("Content-Type", "application/json");
+                    message = await httpClient.PostAsync(Parameters.Url, content, token)
+                        .ConfigureAwait(false);
                 }
+
+                resultContent = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                resultContent = Regex.Unescape(resultContent);
+                if (!string.IsNullOrWhiteSpace(resultContent)) {
+                    //判断
+                    var jObject = JObject.Parse(resultContent);
+
+                    if (jObject["result"] is not null) {
+                        var jArray = JArray.Parse(jObject["result"]?.ToString() ?? string.Empty);
+                        isSuccess = jArray.FirstOrDefault()?["code"]?.ToString() == "0";
+                    }
+                }
+                //判断是否成功条件
             }
             catch (HttpRequestException e) {
                 isSuccess = false;
@@ -160,31 +158,29 @@ namespace JayTom.Dws.Interface.CaiNiao {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
             try {
-                using (var httpClient = _httpClientFactory.CreateClient("INSURANCE")) {
-                    httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut);
-                    HttpResponseMessage message;
-                    using (Stream dataStream =
-                           new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data)))) {
-                        using (HttpContent content = new StreamContent(dataStream)) {
-                            content.Headers.Add("Content-Type", "application/json");
-                            message = await httpClient.PostAsync(Parameters.Url, content, token)
-                                .ConfigureAwait(false);
-                        }
-                    }
-
-                    resultContent = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
-                    resultContent = Regex.Unescape(resultContent);
-                    if (!string.IsNullOrWhiteSpace(resultContent)) {
-                        //判断
-                        var jObject = JObject.Parse(resultContent);
-
-                        if (jObject["result"] is not null) {
-                            var jArray = JArray.Parse(jObject["result"]?.ToString() ?? string.Empty);
-                            isSuccess = jArray.FirstOrDefault()?["code"]?.ToString() == "0";
-                        }
-                    }
-                    //判断是否成功条件
+                using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+                httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut);
+                HttpResponseMessage message;
+                await using (Stream dataStream =
+                             new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data)))) {
+                    using HttpContent content = new StreamContent(dataStream);
+                    content.Headers.Add("Content-Type", "application/json");
+                    message = await httpClient.PostAsync(Parameters.Url, content, token)
+                        .ConfigureAwait(false);
                 }
+
+                resultContent = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                resultContent = Regex.Unescape(resultContent);
+                if (!string.IsNullOrWhiteSpace(resultContent)) {
+                    //判断
+                    var jObject = JObject.Parse(resultContent);
+
+                    if (jObject["result"] is not null) {
+                        var jArray = JArray.Parse(jObject["result"]?.ToString() ?? string.Empty);
+                        isSuccess = jArray.FirstOrDefault()?["code"]?.ToString() == "0";
+                    }
+                }
+                //判断是否成功条件
             }
             catch (HttpRequestException e) {
                 isSuccess = false;
@@ -247,7 +243,6 @@ namespace JayTom.Dws.Interface.CaiNiao {
                     reportChuteInfo.ChuteCode = "100";
                 }
                 NLog.LogManager.GetCurrentClassLogger().Error($"提交分拣报告:barCode:{barcode},chuteCode:{reportChuteInfo.ChuteCode},reportChuteInfo.ErrorReson:{reportChuteInfo.ErrorReson}");
-                var resultContent = string.Empty;
                 var requestTime = DateTime.Now;
                 var data = new {
                     source = Parameters.Source,
@@ -279,19 +274,21 @@ namespace JayTom.Dws.Interface.CaiNiao {
                     HttpResponseMessage message;
                     await using (Stream dataStream =
                                  new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data)))) {
-                        using (HttpContent content = new StreamContent(dataStream)) {
-                            content.Headers.Add("Content-Type", "application/json");
-                            message = await httpClient.PostAsync(Parameters.Url, content, token)
-                                .ConfigureAwait(false);
-                        }
+                        using HttpContent content = new StreamContent(dataStream);
+                        content.Headers.Add("Content-Type", "application/json");
+                        message = await httpClient.PostAsync(Parameters.Url, content, token)
+                            .ConfigureAwait(false);
                     }
 
-                    resultContent = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                    var resultContent = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
                     resultContent = Regex.Unescape(resultContent);
                     NLog.LogManager.GetCurrentClassLogger().Error($"分拣报告返回:{resultContent}");
                 }
                 catch (TaskCanceledException) {
-                    NLog.LogManager.GetCurrentClassLogger().Error($"分拣请求超时:{Parameters.TimeOut * 5}ms");
+                    NLog.LogManager.GetCurrentClassLogger().Error($"分拣报告请求超时:{Parameters.TimeOut * 5}ms");
+                }
+                catch (Exception e) {
+                    NLog.LogManager.GetCurrentClassLogger().Error($"分拣报告异常:{e}");
                 }
                 finally {
                     stopwatch.Stop();
@@ -331,11 +328,10 @@ namespace JayTom.Dws.Interface.CaiNiao {
                 HttpResponseMessage message;
                 await using (Stream dataStream =
                              new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data)))) {
-                    using (HttpContent content = new StreamContent(dataStream)) {
-                        content.Headers.Add("Content-Type", "application/json");
-                        message = await httpClient.PostAsync(Parameters.Url, content, token)
-                            .ConfigureAwait(false);
-                    }
+                    using HttpContent content = new StreamContent(dataStream);
+                    content.Headers.Add("Content-Type", "application/json");
+                    message = await httpClient.PostAsync(Parameters.Url, content, token)
+                        .ConfigureAwait(false);
                 }
 
                 resultContent = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);

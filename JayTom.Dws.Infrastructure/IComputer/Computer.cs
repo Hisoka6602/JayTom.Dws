@@ -96,7 +96,7 @@ namespace JayTom.Dws.Infrastructure.IComputer {
             }
             catch (Exception ex) {
                 // 处理异常，例如记录日志或向用户显示错误消息
-                Console.WriteLine("获取磁盘信息时出现异常：" + ex.Message);
+                NLog.LogManager.GetCurrentClassLogger().Error($"获取磁盘信息时出现异常:{ex}");
             }
 
             return diskInfoList;
@@ -212,7 +212,7 @@ namespace JayTom.Dws.Infrastructure.IComputer {
                     return (int)(fanSensor?.Value ?? 0);
                 }
                 catch (Exception e) {
-                    Console.WriteLine(e);
+                    NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
                 }
 
                 return 0;
@@ -285,8 +285,7 @@ namespace JayTom.Dws.Infrastructure.IComputer {
                 }
             }
             catch (Exception e) {
-                Console.WriteLine(e);
-                // ignored
+                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
             }
 
             return new CpuInfo();
@@ -347,8 +346,7 @@ namespace JayTom.Dws.Infrastructure.IComputer {
                 }
             }
             catch (Exception e) {
-                // ignored
-                Console.WriteLine(e);
+                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
             }
 
             return new NetworkInfo();
@@ -422,7 +420,7 @@ namespace JayTom.Dws.Infrastructure.IComputer {
                 }
             }
             catch (Exception e) {
-                Console.WriteLine(e);
+                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
                 // Do nothing and return default MemoryInfo object
             }
 
@@ -499,7 +497,7 @@ namespace JayTom.Dws.Infrastructure.IComputer {
                     }
                 }
                 catch (Exception e) {
-                    Console.WriteLine(e);
+                    NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
                 }
 
                 return null;
@@ -532,7 +530,7 @@ namespace JayTom.Dws.Infrastructure.IComputer {
                 }
             }
             catch (Exception e) {
-                Console.WriteLine(e);
+                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
             }
 
             return systemInfo;
@@ -582,46 +580,51 @@ namespace JayTom.Dws.Infrastructure.IComputer {
         public async Task<List<LocalNetworkConnectionInfo>?> GetLocalNetworkConnectionInfosAsync() {
             var connectionInfos = new List<LocalNetworkConnectionInfo>();
             await Task.Run(async () => {
-                var statsAtStarts = new List<IPv4InterfaceStatistics>();
-                var interfaces = NetworkInterface.GetAllNetworkInterfaces()
-                    .Where(w =>
-                        w.NetworkInterfaceType != NetworkInterfaceType.Loopback)?.ToList();
-                if (interfaces?.Any() == true) {
-                    statsAtStarts.AddRange(interfaces.Select(t => t.GetIPv4Statistics()));
+                try {
+                    var statsAtStarts = new List<IPv4InterfaceStatistics>();
+                    var interfaces = NetworkInterface.GetAllNetworkInterfaces()
+                        .Where(w =>
+                            w.NetworkInterfaceType != NetworkInterfaceType.Loopback)?.ToList();
+                    if (interfaces?.Any() == true) {
+                        statsAtStarts.AddRange(interfaces.Select(t => t.GetIPv4Statistics()));
 
-                    await Task.Delay(1000);
-                    for (var i = 0; i < interfaces.Count; i++) {
-                        var statsAtEnd = interfaces[i].GetIPv4Statistics();
-                        var downloadSpeed = (statsAtEnd.BytesReceived - statsAtStarts[i].BytesReceived);
-                        var uploadSpeed = (statsAtEnd.BytesSent - statsAtStarts[i].BytesSent);
-                        connectionInfos.Add(new LocalNetworkConnectionInfo() {
-                            IsConnection = interfaces[i].OperationalStatus == OperationalStatus.Up,
-                            ConnectionName = interfaces[i].Name,
-                            DownloadSpeed = downloadSpeed / 1024,
-                            UploadSpeed = uploadSpeed / 1024,
-                            Speed = interfaces[i].Speed,
-                            Type = interfaces[i].NetworkInterfaceType switch {
-                                NetworkInterfaceType.Wireless80211 => NetworkType.Wifi,
-                                var ethernetTypes when new[]
-                                {
+                        await Task.Delay(1000);
+                        for (var i = 0; i < interfaces.Count; i++) {
+                            var statsAtEnd = interfaces[i].GetIPv4Statistics();
+                            var downloadSpeed = (statsAtEnd.BytesReceived - statsAtStarts[i].BytesReceived);
+                            var uploadSpeed = (statsAtEnd.BytesSent - statsAtStarts[i].BytesSent);
+                            connectionInfos.Add(new LocalNetworkConnectionInfo() {
+                                IsConnection = interfaces[i].OperationalStatus == OperationalStatus.Up,
+                                ConnectionName = interfaces[i].Name,
+                                DownloadSpeed = downloadSpeed / 1024,
+                                UploadSpeed = uploadSpeed / 1024,
+                                Speed = interfaces[i].Speed,
+                                Type = interfaces[i].NetworkInterfaceType switch {
+                                    NetworkInterfaceType.Wireless80211 => NetworkType.Wifi,
+                                    var ethernetTypes when new[]
+                                    {
                                     NetworkInterfaceType.Ethernet,
                                     NetworkInterfaceType.Ethernet3Megabit,
                                     NetworkInterfaceType.FastEthernetT,
                                     NetworkInterfaceType.FastEthernetFx,
                                     NetworkInterfaceType.GigabitEthernet
                                 }.Contains(ethernetTypes) => NetworkType.Ethernet,
-                                NetworkInterfaceType.Tunnel => NetworkType.Tunnel,
-                                var wmanTypes when new[]
-                                {
+                                    NetworkInterfaceType.Tunnel => NetworkType.Tunnel,
+                                    var wmanTypes when new[]
+                                    {
                                     NetworkInterfaceType.Wman,
                                     NetworkInterfaceType.Wwanpp,
                                     NetworkInterfaceType.Wwanpp2
                                 }.Contains(wmanTypes) => NetworkType.Wman,
 
-                                _ => NetworkType.Unknown
-                            }
-                        });
+                                    _ => NetworkType.Unknown
+                                }
+                            });
+                        }
                     }
+                }
+                catch (Exception e) {
+                    NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
                 }
             });
             return connectionInfos;

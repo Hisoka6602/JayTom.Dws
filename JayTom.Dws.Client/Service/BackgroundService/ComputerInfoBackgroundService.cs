@@ -43,16 +43,16 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     var memoryInfoTask = _computer.GetMemoryInfoAsync();
                     var gpuInfosTask = _computer.GetGpuInformationAsync();
                     var networkInfoTask = _computer.GetNetworkInfoAsync();
-                    // var diskInfoTask = _computer.GetDiskInfoAsync();
+                    var diskInfoTask = _computer.GetDiskInfoAsync();
                     var localNetworkConnectionInfosAsync = _computer.GetLocalNetworkConnectionInfosAsync();
-                    await Task.WhenAll(cpuInfoTask, fanSpeedTask, localNetworkConnectionInfosAsync, memoryInfoTask, gpuInfosTask, networkInfoTask/*, diskInfoTask*/);
+                    await Task.WhenAll(cpuInfoTask, fanSpeedTask, localNetworkConnectionInfosAsync, memoryInfoTask, gpuInfosTask, networkInfoTask, diskInfoTask);
                     // 提取各项信息
                     var cpuInfoAsync = cpuInfoTask.Result;
                     var fanSpeed = fanSpeedTask.Result;
                     var memoryInfoAsync = memoryInfoTask.Result;
                     var gpuInfos = gpuInfosTask.Result;
                     var networkInfo = networkInfoTask.Result;
-                    // var diskInfoAsync = diskInfoTask.Result;
+                    var diskInfoAsync = diskInfoTask.Result;
                     var localNetworkConnectionInfos = localNetworkConnectionInfosAsync.Result;
                     // 提交到事件
                     var computerInfoModel = new ComputerInfoModel() {

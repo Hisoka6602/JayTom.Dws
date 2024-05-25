@@ -202,6 +202,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             });
             EventAggregator.Instance.Subscribe<WindowsAction>(async item => {
                 if (item is WindowsAction { Type: WindowsActionType.Close }) {
+                    EventAggregator.Instance.Publish(new AppLogInfoModel {
+                        CreateTime = DateTime.Now,
+                        Message = "程序关闭",
+                        Type = LogType.Information
+                    });
                     _isWindowsClose = true;
                 }
             });
