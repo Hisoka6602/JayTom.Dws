@@ -1,9 +1,11 @@
 ﻿using DryIoc;
 using System;
 using Example;
+using MediatR;
 using Prism.Ioc;
 using System.IO;
 using Prism.Mvvm;
+using System.Linq;
 using Prism.DryIoc;
 using System.Windows;
 using JayTom.Dws.Ocr;
@@ -249,6 +251,19 @@ namespace JayTom.Dws.Client {
                     .SetBasePath(Directory.GetCurrentDirectory())
                     .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
                     .Build());
+
+                /*//MediatR注册
+                services.AddMediatR(typeof(App).Assembly)
+                    .AddTransient(typeof(IRequestHandler<,>), typeof(GenericHandler<,>))
+                    .BuildServiceProvider();*/
+                // 注入MediatR
+                var assemblies = AppDomain.CurrentDomain.GetAssemblies().ToList();
+                var assembly = typeof(App).GetAssembly();
+                assemblies.Add(assembly);
+                services.AddMediatR(configure => {
+                    configure.RegisterServicesFromAssemblies(assemblies.ToArray());
+                });
+                //---------------
                 services.AddSingleton<IPackageRepository, PackageRepository>();
                 services.AddSingleton<IBarCodeRepository, BarCodeRepository>();
                 services.AddSingleton<ISoundRepository, SoundRepository>();

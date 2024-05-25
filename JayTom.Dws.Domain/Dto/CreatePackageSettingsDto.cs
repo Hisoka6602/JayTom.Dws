@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 
 namespace JayTom.Dws.Domain.Dto {
+
     public class CreatePackageSettingsDto {
 
         /// <summary>
