@@ -29,11 +29,17 @@ namespace JayTom.Dws.Data.Package {
         [Column("SortingMode")]
         public SortMode SortingMode { get; set; }
 
-        /// <summary>
+        /*/// <summary>
         /// 是否有下位机创建
         /// </summary>
         [Column("IsCreatedByLowerMachine")]
-        public bool IsCreatedByLowerMachine { get; set; }
+        public bool IsCreatedByLowerMachine { get; set; }*/
+
+        /// <summary>
+        /// 小车号
+        /// </summary>
+        [Column("CarNum")]
+        public int CarNum { get; set; }
 
         /// <summary>
         /// 通讯方式

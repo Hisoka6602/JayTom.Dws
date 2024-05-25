@@ -99,4 +99,163 @@ namespace JayTom.Dws.Domain.EventMediators {
         [Description("数据消息")]
         Data
     }
+
+    /// <summary>
+    /// 系统消息
+    /// </summary>
+    public class SystemMessageInfo {
+        public SystemMessageType Type { get; set; }
+
+        /// <summary>
+        /// 触发时间
+        /// </summary>
+        public DateTime TriggerTime { get; set; }
+
+        /// <summary>
+        /// 描述
+        /// </summary>
+        public string Description { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 信息
+        /// </summary>
+        public string Message { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 参数
+        /// </summary>
+        public object? Parameters { get; set; } = string.Empty;
+    }
+
+    /// <summary>
+    /// 系统消息类型枚举
+    /// </summary>
+    public enum SystemMessageType {
+
+        /// <summary>
+        /// 启动
+        /// </summary>
+        [Description("启动")]
+        Start,
+
+        /// <summary>
+        /// 停止
+        /// </summary>
+        [Description("停止")]
+        Stop,
+
+        /// <summary>
+        /// 最大化
+        /// </summary>
+        [Description("最大化")]
+        Maximize,
+
+        /// <summary>
+        /// 最小化
+        /// </summary>
+        [Description("最小化")]
+        Minimize,
+
+        /// <summary>
+        /// 加载程序
+        /// </summary>
+        [Description("加载程序")]
+        LoadProgram,
+
+        /// <summary>
+        /// 退出程序
+        /// </summary>
+        [Description("退出程序")]
+        ExitProgram,
+
+        /// <summary>
+        /// 点击关闭
+        /// </summary>
+        [Description("点击关闭")]
+        CloseClicked,
+
+        /// <summary>
+        /// 授权成功
+        /// </summary>
+        [Description("授权成功")]
+        AuthorizationSuccess,
+
+        /// <summary>
+        /// 授权失败
+        /// </summary>
+        [Description("授权失败")]
+        AuthorizationFailure,
+
+        /// <summary>
+        /// 点击菜单
+        /// </summary>
+        [Description("点击菜单")]
+        MenuClicked,
+
+        /// <summary>
+        /// 点击返回
+        /// </summary>
+        [Description("点击返回")]
+        BackClicked,
+
+        /// <summary>
+        /// 进程退出
+        /// </summary>
+        [Description("进程退出")]
+        ProcessExit,
+
+        /// <summary>
+        /// 多开限制触发
+        /// </summary>
+        [Description("多开限制触发")]
+        MultiOpenLimitTriggered,
+
+        /// <summary>
+        /// 超时监控
+        /// </summary>
+        [Description("超时监控")]
+        TimeoutMonitoring,
+
+        /// <summary>
+        /// 无响应触发
+        /// </summary>
+        [Description("无响应触发")]
+        UnresponsiveTriggered,
+
+        /// <summary>
+        /// Cpu温度过高
+        /// </summary>
+        [Description("Cpu温度过高")]
+        CpuTemperatureHigh,
+
+        /// <summary>
+        /// Cpu占用过高
+        /// </summary>
+        [Description("Cpu占用过高")]
+        CpuUsageHigh,
+
+        /// <summary>
+        /// 内存占用过高
+        /// </summary>
+        [Description("内存占用过高")]
+        MemoryUsageHigh,
+
+        /// <summary>
+        /// 磁盘占用过高
+        /// </summary>
+        [Description("磁盘占用过高")]
+        DiskUsageHigh,
+
+        /// <summary>
+        /// 获取电脑设备信息超时
+        /// </summary>
+        [Description("获取电脑设备信息超时")]
+        DeviceInfoTimeout,
+
+        /// <summary>
+        /// 网络连接断开
+        /// </summary>
+        [Description("网络连接断开")]
+        NetworkDisconnected
+    }
 }

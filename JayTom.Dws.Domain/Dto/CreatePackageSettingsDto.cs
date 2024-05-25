@@ -99,52 +99,6 @@ namespace JayTom.Dws.Domain.Dto {
         //使用多个条码
     }
 
-    [Flags]
-    public enum PackageCreationMethodsEnum {
-
-        /// <summary>
-        /// 扫码相机
-        /// </summary>
-        [Description("扫码相机")]
-        ScanBarcodeCamera = 1,
-
-        /// <summary>
-        /// 稳定重量
-        /// </summary>
-        [Description("稳定重量")]
-        StableWeight = 2,
-
-        /// <summary>
-        /// 控件输入
-        /// </summary>
-        [Description("控件输入")]
-        ControlInput = 4,
-
-        /// <summary>
-        /// 体积输入
-        /// </summary>
-        [Description("体积输入")]
-        VolumeInput = 8,
-
-        /// <summary>
-        /// 下位机创建
-        /// </summary>
-        [Description("下位机创建")]
-        LowerMachineCreation = 16,
-
-        /// <summary>
-        /// Tcp内容输入
-        /// </summary>
-        [Description("Tcp内容输入")]
-        TcpInput = 32,
-
-        /// <summary>
-        /// Ocr信息
-        /// </summary>
-        [Description("Ocr信息")]
-        OcrInfo = 64
-    }
-
     public enum PackageRemoveMethodsEnum {
 
         /// <summary>

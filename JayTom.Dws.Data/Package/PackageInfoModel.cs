@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Text;
+using System.ComponentModel;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -22,6 +23,13 @@ namespace JayTom.Dws.Data.Package {
         /// </summary>
         [Column("PackageCreateTime"), Required]
         public DateTime PackageCreateTime { get; set; } = DateTime.Now;
+
+        /// <summary>
+        /// 创建方式
+        /// </summary>
+
+        [Column("PackageCreationMethod")]
+        public PackageCreationMethodsEnum PackageCreationMethod { get; set; }
 
         /// <summary>
         /// 其他项
@@ -88,5 +96,51 @@ namespace JayTom.Dws.Data.Package {
         /// 聚合包裹信息
         /// </summary>
         public virtual AggregatePackagesInfoModel? AggregatePackagesInfo { get; set; }
+    }
+
+    [Flags]
+    public enum PackageCreationMethodsEnum {
+
+        /// <summary>
+        /// 扫码相机
+        /// </summary>
+        [Description("扫码相机")]
+        ScanBarcodeCamera = 1,
+
+        /// <summary>
+        /// 稳定重量
+        /// </summary>
+        [Description("稳定重量")]
+        StableWeight = 2,
+
+        /// <summary>
+        /// 控件输入
+        /// </summary>
+        [Description("控件输入")]
+        ControlInput = 4,
+
+        /// <summary>
+        /// 体积输入
+        /// </summary>
+        [Description("体积输入")]
+        VolumeInput = 8,
+
+        /// <summary>
+        /// 下位机创建
+        /// </summary>
+        [Description("下位机创建")]
+        LowerMachineCreation = 16,
+
+        /// <summary>
+        /// Tcp内容输入
+        /// </summary>
+        [Description("Tcp内容输入")]
+        TcpInput = 32,
+
+        /// <summary>
+        /// Ocr信息
+        /// </summary>
+        [Description("Ocr信息")]
+        OcrInfo = 64
     }
 }
