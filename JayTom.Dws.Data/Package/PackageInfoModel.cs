@@ -96,6 +96,16 @@ namespace JayTom.Dws.Data.Package {
         /// 聚合包裹信息
         /// </summary>
         public virtual AggregatePackagesInfoModel? AggregatePackagesInfo { get; set; }
+
+        /// <summary>
+        /// 过期定时器
+        /// </summary>
+        public Timer? ExpirationTime { get; set; }
+
+        /// <summary>
+        /// 空包过期定时器
+        /// </summary>
+        public Timer? EmptyPackageExpirationTime { get; set; }
     }
 
     [Flags]
@@ -142,5 +152,87 @@ namespace JayTom.Dws.Data.Package {
         /// </summary>
         [Description("Ocr信息")]
         OcrInfo = 64
+    }
+
+    [Flags]
+    public enum NecessaryAttributes {
+
+        /// <summary>
+        /// 无
+        /// </summary>
+        [Description("无")]
+        None = 0,
+
+        /// <summary>
+        /// 条码信息
+        /// </summary>
+        [Description("条码信息")]
+        BarcodeInfo = 1 << 0,
+
+        /// <summary>
+        /// 称重信息
+        /// </summary>
+        [Description("称重信息")]
+        WeightInfo = 1 << 1,
+
+        /// <summary>
+        /// 体积信息
+        /// </summary>
+        [Description("体积信息")]
+        VolumeInfo = 1 << 2,
+
+        /// <summary>
+        /// 上传信息
+        /// </summary>
+        [Description("上传信息")]
+        UploadInfo = 1 << 3,
+
+        /// <summary>
+        /// 格口信息
+        /// </summary>
+        [Description("格口信息")]
+        LockerInfo = 1 << 4,
+
+        /// <summary>
+        /// 分拣信息
+        /// </summary>
+        [Description("分拣信息")]
+        SortingInfo = 1 << 5,
+
+        /// <summary>
+        /// 物流信息
+        /// </summary>
+        [Description("物流信息")]
+        LogisticsInfo = 1 << 6,
+
+        /// <summary>
+        /// Ocr信息
+        /// </summary>
+        [Description("Ocr信息")]
+        OcrInfo = 1 << 7,
+
+        /// <summary>
+        /// 图片信息
+        /// </summary>
+        [Description("图片信息")]
+        ImageInfo = 1 << 8,
+
+        /// <summary>
+        /// 视频云信息
+        /// </summary>
+        [Description("视频云信息")]
+        VideoCloudInfo = 1 << 9,
+
+        /// <summary>
+        /// 设备信息
+        /// </summary>
+        [Description("设备信息")]
+        DeviceInfo = 1 << 10,
+
+        /// <summary>
+        /// 聚合包裹信息
+        /// </summary>
+        [Description("聚合包裹信息")]
+        AggregatePackageInfo = 1 << 11
     }
 }

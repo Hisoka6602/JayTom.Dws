@@ -50,12 +50,12 @@ namespace JayTom.Dws.Domain.Service.Client.Package {
         /// <summary>
         /// 移除包裹方法，用于从包裹管理器中移除指定追踪号的包裹。
         /// </summary>
-        Task<KeyValuePair<bool, PackageInfoModel?>> RemovePackage(PackageInfoModel packageInfo);
+        Task<KeyValuePair<bool, PackageInfoModel?>> RemovePackage(PackageRemoveMethodsEnum packageRemoveMethod, PackageInfoModel packageInfo);
 
         /// <summary>
         /// 移除包裹方法，用于从包裹管理器中移除指定追踪号的包裹。
         /// </summary>
-        Task<KeyValuePair<bool, PackageInfoModel?>> RemovePackage(long packageTimestamped);
+        Task<KeyValuePair<bool, PackageInfoModel?>> RemovePackage(PackageRemoveMethodsEnum packageRemoveMethod, long packageTimestamped);
 
         /// <summary>
         /// 清空包裹方法，用于清空包裹管理器中的所有包裹。
@@ -65,12 +65,12 @@ namespace JayTom.Dws.Domain.Service.Client.Package {
         /// <summary>
         /// 更新包裹方法，用于更新指定追踪号的包裹信息。
         /// </summary>
-        Task<KeyValuePair<bool, PackageInfoModel?>> UpdatePackage(Expression<Func<PackageInfoModel, bool>> @where, BasePackageForeignKeyInfoModel info);
+        Task<KeyValuePair<bool, PackageInfoModel?>> UpdatePackage(Expression<Func<PackageInfoModel, bool>> @where, BasePackageForeignKeyInfoModel info, NecessaryAttributes attributes = NecessaryAttributes.BarcodeInfo);
 
         /// <summary>
         /// 追加包裹信息方法，用于向指定追踪号的包裹添加额外信息。
         /// </summary>
-        Task<KeyValuePair<bool, PackageInfoModel?>> AppendPackageInfo(Expression<Func<PackageInfoModel, bool>> @where, BasePackageForeignKeyInfoModel info);
+        Task<KeyValuePair<bool, PackageInfoModel?>> AppendPackageInfo(Expression<Func<PackageInfoModel, bool>> @where, BasePackageForeignKeyInfoModel info, NecessaryAttributes attributes = NecessaryAttributes.BarcodeInfo);
 
         /// <summary>
         /// 查询包裹方法，用于根据追踪号查询指定的包裹。
@@ -121,6 +121,12 @@ namespace JayTom.Dws.Domain.Service.Client.Package {
         RemovePackage,
 
         /// <summary>
+        /// 拦截创建
+        /// </summary>
+        [Description("拦截创建")]
+        PackageIntercepted,
+
+        /// <summary>
         /// 清空包裹
         /// </summary>
         [Description("清空包裹")]
@@ -153,8 +159,8 @@ namespace JayTom.Dws.Domain.Service.Client.Package {
         /// <summary>
         /// 包裹填充全景图信息
         /// </summary>
-        [Description("包裹填充全景图信息")]
-        FillPanoramaInfo,
+        [Description("包裹填充图片信息")]
+        FillImageInfo,
 
         /// <summary>
         /// 包裹填充Api信息
@@ -184,6 +190,12 @@ namespace JayTom.Dws.Domain.Service.Client.Package {
         /// 包裹填充Ocr信息
         /// </summary>
         [Description("包裹填充Ocr信息")]
-        FillOcrInfo
+        FillOcrInfo,
+
+        /// <summary>
+        /// 包裹填充集包信息
+        /// </summary>
+        [Description("包裹填充集包信息")]
+        FillAggregatePackages,
     }
 }

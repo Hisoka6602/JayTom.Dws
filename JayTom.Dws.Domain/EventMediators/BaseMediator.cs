@@ -20,6 +20,23 @@ namespace JayTom.Dws.Domain.EventMediators {
         public async Task PublishMessage(GenericMessage message, CancellationToken cancellationToken = default) {
             await _mediator.Publish(message, cancellationToken);
         }
+
+        public string GetDescription(Enum value) {
+            try {
+                var field = value.GetType().GetField(value.ToString());
+                if (field is not null) {
+                    var attribute =
+                        (DescriptionAttribute)Attribute.GetCustomAttribute(field, typeof(DescriptionAttribute));
+
+                    return attribute == null ? value.ToString() : attribute.Description;
+                }
+            }
+            catch (Exception e) {
+                // ignored
+            }
+
+            return string.Empty;
+        }
     }
 
     public class GenericMessage : INotification {
@@ -98,6 +115,54 @@ namespace JayTom.Dws.Domain.EventMediators {
         /// </summary>
         [Description("数据消息")]
         Data
+    }
+
+    /// <summary>
+    /// 表示不同操作模式的枚举。
+    /// </summary>
+    public enum RunMode {
+
+        /// <summary>
+        /// 标准模式/自定义模式
+        /// </summary>
+        [Description("标准模式/自定义模式")]
+        StandardMode,
+
+        /// <summary>
+        /// 快手模式。
+        /// </summary>
+        [Description("快手模式")]
+        QuickMode,
+
+        /// <summary>
+        /// 供包台模式。
+        /// </summary>
+        [Description("供包台模式")]
+        SupplyMode,
+
+        /// <summary>
+        /// 窄带模式。
+        /// </summary>
+        [Description("窄带模式")]
+        NarrowbandMode,
+
+        /// <summary>
+        /// 环线模式。
+        /// </summary>
+        [Description("环线模式")]
+        LoopMode,
+
+        /// <summary>
+        /// 转向机模式。
+        /// </summary>
+        [Description("转向机模式")]
+        SteeringMode,
+
+        /// <summary>
+        /// 视频追溯模式。
+        /// </summary>
+        [Description("视频追溯模式")]
+        VideoTraceMode
     }
 
     /// <summary>
@@ -257,5 +322,21 @@ namespace JayTom.Dws.Domain.EventMediators {
         /// </summary>
         [Description("网络连接断开")]
         NetworkDisconnected
+    }
+
+    /// <summary>
+    /// 配置消息
+    /// </summary>
+    public class SettingMessageInfo {
+
+        /// <summary>
+        /// 配置名称
+        /// </summary>
+        public string SettingsName { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 是否本地保存
+        /// </summary>
+        public bool IsLocallySaved { get; set; }
     }
 }
