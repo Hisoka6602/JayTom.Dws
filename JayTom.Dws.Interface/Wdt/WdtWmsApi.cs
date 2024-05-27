@@ -10,8 +10,10 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
+using JayTom.Dws.Domain.Service;
 
-namespace JayTom.Dws.Interface.Wdt {
+namespace JayTom.Dws.Interface.Wdt
+{
 
     public class WdtWmsApi : IDataUploader {
         private readonly IHttpClientFactory _httpClientFactory;

@@ -191,7 +191,7 @@ namespace JayTom.Dws.Data.Package {
         /// 格口信息
         /// </summary>
         [Description("格口信息")]
-        LockerInfo = 1 << 4,
+        ExitInfo = 1 << 4,
 
         /// <summary>
         /// 分拣信息

@@ -10,8 +10,10 @@ using System.Net.Http.Headers;
 using JayTom.Dws.Interface.Cloud;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
+using JayTom.Dws.Domain.Service;
 
-namespace JayTom.Dws.Interface.Routdata {
+namespace JayTom.Dws.Interface.Routdata
+{
 
     public class RoutDataApi : IDataUploader {
         private readonly IHttpClientFactory _httpClientFactory;

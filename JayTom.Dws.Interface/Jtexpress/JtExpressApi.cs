@@ -21,8 +21,10 @@ using static System.Net.Mime.MediaTypeNames;
 using MD5 = System.Security.Cryptography.MD5;
 using static JayTom.Dws.Interface.Szjy188.SzjyApi;
 using JsonException = Newtonsoft.Json.JsonException;
+using JayTom.Dws.Domain.Service;
 
-namespace JayTom.Dws.Interface.Jtexpress {
+namespace JayTom.Dws.Interface.Jtexpress
+{
 
     public class JtExpressApi : IDataUploader {
         private readonly IHttpClientFactory _httpClientFactory;

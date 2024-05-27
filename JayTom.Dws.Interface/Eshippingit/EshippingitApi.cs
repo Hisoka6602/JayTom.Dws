@@ -11,6 +11,7 @@ using System.Diagnostics;
 using SixLabors.ImageSharp;
 using Newtonsoft.Json.Linq;
 using System.Threading.Tasks;
+using JayTom.Dws.Domain.Service;
 using System.Collections.Generic;
 using Image = System.Drawing.Image;
 using JayTom.Dws.Interface.Routdata;

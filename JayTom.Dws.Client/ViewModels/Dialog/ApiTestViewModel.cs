@@ -1,4 +1,4 @@
-﻿using JayTom.Dws.Interface;
+﻿using JayTom.Dws.Domain.Service;
 using Newtonsoft.Json;
 using Prism.Commands;
 using Prism.Mvvm;
@@ -6,7 +6,8 @@ using Prism.Services.Dialogs;
 using System;
 using System.Windows.Input;
 
-namespace JayTom.Dws.Client.ViewModels.Dialog {
+namespace JayTom.Dws.Client.ViewModels.Dialog
+{
     public class ApiTestViewModel : BindableBase, IDialogAware {
         private string _apiJsonContent = string.Empty;
 

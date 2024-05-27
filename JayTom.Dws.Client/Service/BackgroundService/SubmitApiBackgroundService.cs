@@ -39,7 +39,7 @@ using JayTom.Dws.Domain.Repository.LocalData;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 using static JayTom.Dws.Interface.CaiNiao.CaiNiaoApi;
 using static Aliyun.OSS.Model.ListMultipartUploadsResult;
-using UploadResponse = JayTom.Dws.Interface.UploadResponse;
+using UploadResponse = JayTom.Dws.Domain.Service.UploadResponse;
 using InstructionType = JayTom.Dws.Data.Package.InstructionType;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols;

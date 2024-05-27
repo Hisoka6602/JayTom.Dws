@@ -10,7 +10,7 @@ using System.Collections.Generic;
 
 namespace JayTom.Dws.Domain.Service.Client.Package {
 
-    public interface IPackageManager {
+    public interface IPackageService {
 
         /// <summary>
         /// 创建包裹完成事件，当成功创建包裹时触发。
@@ -68,14 +68,19 @@ namespace JayTom.Dws.Domain.Service.Client.Package {
         Task<KeyValuePair<bool, PackageInfoModel?>> UpdatePackage(Expression<Func<PackageInfoModel, bool>> @where, BasePackageForeignKeyInfoModel info, NecessaryAttributes attributes = NecessaryAttributes.BarcodeInfo);
 
         /// <summary>
-        /// 追加包裹信息方法，用于向指定追踪号的包裹添加额外信息。
+        /// 追加图片信息。
         /// </summary>
-        Task<KeyValuePair<bool, PackageInfoModel?>> AppendPackageInfo(Expression<Func<PackageInfoModel, bool>> @where, BasePackageForeignKeyInfoModel info, NecessaryAttributes attributes = NecessaryAttributes.BarcodeInfo);
+        Task<KeyValuePair<bool, PackageInfoModel?>> AppendImageInfo(Expression<Func<PackageInfoModel, bool>> @where, ImageInfoModel info, NecessaryAttributes attributes = NecessaryAttributes.BarcodeInfo);
+
+        /// <summary>
+        /// 追加指令信息。
+        /// </summary>
+        Task<KeyValuePair<bool, PackageInfoModel?>> AppendInstructionInfo(Expression<Func<PackageInfoModel, bool>> @where, InstructionInfoModel info, NecessaryAttributes attributes = NecessaryAttributes.BarcodeInfo);
 
         /// <summary>
         /// 查询包裹方法，用于根据追踪号查询指定的包裹。
         /// </summary>
-        Task<PackageInfoModel>? FindPackage(Expression<Func<PackageInfoModel, bool>> @where, CancellationToken token);
+        PackageInfoModel? FindPackage(Expression<Func<PackageInfoModel, bool>> @where, CancellationToken token);
 
         //BasePackageForeignKeyInfoModel
     }
@@ -157,7 +162,7 @@ namespace JayTom.Dws.Domain.Service.Client.Package {
         FillWeightInfo,
 
         /// <summary>
-        /// 包裹填充全景图信息
+        /// 包裹填充图片信息
         /// </summary>
         [Description("包裹填充图片信息")]
         FillImageInfo,
@@ -172,7 +177,7 @@ namespace JayTom.Dws.Domain.Service.Client.Package {
         /// 包裹填充落格信息
         /// </summary>
         [Description("包裹填充落格信息")]
-        FillGridInfo,
+        FillExitInfo,
 
         /// <summary>
         /// 包裹填充分拣信息
@@ -197,5 +202,23 @@ namespace JayTom.Dws.Domain.Service.Client.Package {
         /// </summary>
         [Description("包裹填充集包信息")]
         FillAggregatePackages,
+
+        /// <summary>
+        /// 填充设备信息
+        /// </summary>
+        [Description("包裹填充设备信息")]
+        FillDeviceInfo,
+
+        /// <summary>
+        /// 填充云端信息
+        /// </summary>
+        [Description("包裹填充云端信息")]
+        FillCloudInfo,
+
+        /// <summary>
+        /// 包裹填充指令信息
+        /// </summary>
+        [Description("包裹填充指令信息")]
+        FillInstructionInfo,
     }
 }

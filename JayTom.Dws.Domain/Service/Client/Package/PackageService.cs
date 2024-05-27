@@ -2,6 +2,7 @@
 using MediatR;
 using System.Linq;
 using System.Text;
+using System.Reflection;
 using JayTom.Dws.Domain.Dto;
 using System.ComponentModel;
 using System.Threading.Tasks;
@@ -17,14 +18,14 @@ namespace JayTom.Dws.Domain.Service.Client.Package {
     /// <summary>
     /// 包裹管理器
     /// </summary>
-    public class PackageManager : BaseMediator, IPackageManager {
+    public class PackageService : BaseMediator, IPackageService {
         private readonly IConfigRepository _configRepository;
         private readonly ConcurrentDictionary<DateTime, PackageInfoModel> _packageInfos = new();
         private SemaphoreSlim _packageSlim = new(1);
         private CreatePackageSettingsDto _createPackageSettingsDto = new();
         private SupplyCounterSettingsDto _supplyCounterSettingsDto = new();
 
-        public PackageManager(IMediator mediator,
+        public PackageService(IMediator mediator,
             IConfigRepository configRepository) : base(mediator) {
             _configRepository = configRepository;
         }
@@ -146,9 +147,13 @@ namespace JayTom.Dws.Domain.Service.Client.Package {
                     });
                     return new KeyValuePair<bool, PackageInfoModel?>(false, null);
                 }
-
+                //判断是否使用灰度仪联合创建
                 //其他拦截
                 //创建
+
+                packageInfo.PackageTimestamped =
+                    new DateTimeOffset(packageInfo.PackageCreateTime).ToUnixTimeMilliseconds();
+
                 if (_createPackageSettingsDto is { IsUseEmptyPackageExpiry: true, EmptyPackageExpiryTime: > 0 }) {
                     packageInfo.EmptyPackageExpirationTime = new Timer(EmptyPackageExpireItem, packageInfo,
                         TimeSpan.FromMilliseconds(_createPackageSettingsDto.EmptyPackageExpiryTime),
@@ -163,7 +168,7 @@ namespace JayTom.Dws.Domain.Service.Client.Package {
                 var tryAdd = _packageInfos.TryAdd(packageInfo.PackageCreateTime, packageInfo);
                 if (tryAdd) {
                     OnPackageCreated(new PackageInfoMessage() {
-                        Description = "包裹创建成功",
+                        Description = $"包裹创建{(tryAdd ? "成功" : "失败")}",
                         IsSuccess = tryAdd,
                         Type = PackagingType.CreatePackage,
                         Info = packageInfo
@@ -235,123 +240,256 @@ namespace JayTom.Dws.Domain.Service.Client.Package {
             //判断必要的信息是否填充完成
             try {
                 await _packageSlim.WaitAsync();
+                var packageInfoModel = _createPackageSettingsDto.BarcodeQueueOrder == BarcodeQueueOrderEnum.TimeAscending ?
+                    _packageInfos.Values.OrderBy(o => o.PackageCreateTime)?.FirstOrDefault(where.Compile()) :
+                    _packageInfos.Values.OrderBy(o => o.PackageCreateTime)?.LastOrDefault(where.Compile());
 
-                var packageInfoModel = _packageInfos.Values.FirstOrDefault(where.Compile());
                 if (packageInfoModel is not null) {
-                    if (info is BarCodeInfoModel barCodeInfo) {
-                        packageInfoModel.BarCodeInfo = barCodeInfo;
-                        OnPackageUpdated(new PackageInfoMessage() {
-                            Description = "填充条码信息",
-                            Info = packageInfoModel,
-                            IsSuccess = true,
-                            Type = PackagingType.FillBarcodeInfo
-                        });
+                    switch (info) {
+                        case BarCodeInfoModel barCodeInfo:
+                            packageInfoModel.BarCodeInfo = barCodeInfo;
+                            OnPackageUpdated(new PackageInfoMessage() {
+                                Description = "填充条码信息",
+                                Info = packageInfoModel,
+                                IsSuccess = true,
+                                Type = PackagingType.FillBarcodeInfo
+                            });
+                            break;
+
+                        case WeightInfoModel weightInfoModel:
+                            packageInfoModel.WeightInfo = weightInfoModel;
+                            OnPackageUpdated(new PackageInfoMessage() {
+                                Description = "填充重量信息",
+                                Info = packageInfoModel,
+                                IsSuccess = true,
+                                Type = PackagingType.FillWeightInfo
+                            });
+                            break;
+
+                        case VolumeInfoModel volumeInfoModel:
+                            packageInfoModel.VolumeInfo = volumeInfoModel;
+                            OnPackageUpdated(new PackageInfoMessage() {
+                                Description = "填充体积信息",
+                                Info = packageInfoModel,
+                                IsSuccess = true,
+                                Type = PackagingType.FillVolumeInfo
+                            });
+                            break;
+
+                        case UploadInfoModel uploadInfoModel:
+                            packageInfoModel.UploadInfo = uploadInfoModel;
+                            OnPackageUpdated(new PackageInfoMessage() {
+                                Description = "填充上传信息",
+                                Info = packageInfoModel,
+                                IsSuccess = true,
+                                Type = PackagingType.FillApiInfo
+                            });
+                            break;
+
+                        case ExitInfoModel exitInfoModel:
+                            packageInfoModel.ExitInfo = exitInfoModel;
+                            OnPackageUpdated(new PackageInfoMessage() {
+                                Description = "填充格口信息",
+                                Info = packageInfoModel,
+                                IsSuccess = true,
+                                Type = PackagingType.FillExitInfo
+                            });
+                            break;
+
+                        case SortingInfoModel sortingInfoModel:
+                            packageInfoModel.SortingInfo = sortingInfoModel;
+                            OnPackageUpdated(new PackageInfoMessage() {
+                                Description = "填充分拣信息",
+                                Info = packageInfoModel,
+                                IsSuccess = true,
+                                Type = PackagingType.FillSortingInfo
+                            });
+                            break;
+
+                        case LogisticsInfoModel logisticsInfoModel:
+                            packageInfoModel.LogisticsInfo = logisticsInfoModel;
+                            OnPackageUpdated(new PackageInfoMessage() {
+                                Description = "填充物流信息",
+                                Info = packageInfoModel,
+                                IsSuccess = true,
+                                Type = PackagingType.FillLogisticsInfo
+                            });
+                            break;
+
+                        case OcrInfoModel ocrInfoModel:
+                            packageInfoModel.OcrInfo = ocrInfoModel;
+                            OnPackageUpdated(new PackageInfoMessage() {
+                                Description = "填充Ocr信息",
+                                Info = packageInfoModel,
+                                IsSuccess = true,
+                                Type = PackagingType.FillOcrInfo
+                            });
+                            break;
+
+                        case CloudVideoUploadInfoModel cloudVideoUploadInfoModel:
+                            packageInfoModel.CloudVideoUploadInfo = cloudVideoUploadInfoModel;
+                            OnPackageUpdated(new PackageInfoMessage() {
+                                Description = "填充云端信息",
+                                Info = packageInfoModel,
+                                IsSuccess = true,
+                                Type = PackagingType.FillCloudInfo
+                            });
+                            break;
+
+                        case DeviceInfoModel deviceInfoModel:
+                            packageInfoModel.DeviceInfo = deviceInfoModel;
+                            OnPackageUpdated(new PackageInfoMessage() {
+                                Description = "填充设备信息",
+                                Info = packageInfoModel,
+                                IsSuccess = true,
+                                Type = PackagingType.FillDeviceInfo
+                            });
+                            break;
+
+                        case AggregatePackagesInfoModel aggregatePackagesInfoModel:
+                            packageInfoModel.AggregatePackagesInfo = aggregatePackagesInfoModel;
+                            OnPackageUpdated(new PackageInfoMessage() {
+                                Description = "填充集包信息",
+                                Info = packageInfoModel,
+                                IsSuccess = true,
+                                Type = PackagingType.FillAggregatePackages
+                            });
+                            break;
                     }
-                    else if (info is WeightInfoModel weightInfoModel) {
-                        packageInfoModel.WeightInfo = weightInfoModel;
-                        OnPackageUpdated(new PackageInfoMessage() {
-                            Description = "填充重量信息",
-                            Info = packageInfoModel,
-                            IsSuccess = true,
-                            Type = PackagingType.FillBarcodeInfo
-                        });
+
+                    if (_createPackageSettingsDto.PackageRemoveMethods == PackageRemoveMethodsEnum.FillInformation) {
+                        //验证信息是否填充完,填充完则移除
+                        var isPackageInfoComplete = IsPackageInfoComplete(packageInfoModel, attributes);
+                        if (isPackageInfoComplete) {
+                            await RemovePackage(PackageRemoveMethodsEnum.FillInformation, packageInfoModel);
+                        }
                     }
-                    else if (info is VolumeInfoModel volumeInfoModel) {
-                        packageInfoModel.VolumeInfo = volumeInfoModel;
-                        OnPackageUpdated(new PackageInfoMessage() {
-                            Description = "填充体积信息",
-                            Info = packageInfoModel,
-                            IsSuccess = true,
-                            Type = PackagingType.FillBarcodeInfo
-                        });
-                    }
-                    else if (info is UploadInfoModel uploadInfoModel) {
-                        packageInfoModel.UploadInfo = uploadInfoModel;
-                        OnPackageUpdated(new PackageInfoMessage() {
-                            Description = "填充上传信息",
-                            Info = packageInfoModel,
-                            IsSuccess = true,
-                            Type = PackagingType.FillBarcodeInfo
-                        });
-                    }
-                    else if (info is ExitInfoModel exitInfoModel) {
-                        packageInfoModel.ExitInfo = exitInfoModel;
-                        OnPackageUpdated(new PackageInfoMessage() {
-                            Description = "填充格口信息",
-                            Info = packageInfoModel,
-                            IsSuccess = true,
-                            Type = PackagingType.FillBarcodeInfo
-                        });
-                    }
-                    else if (info is SortingInfoModel sortingInfoModel) {
-                        packageInfoModel.SortingInfo = sortingInfoModel;
-                        OnPackageUpdated(new PackageInfoMessage() {
-                            Description = "填充分拣信息",
-                            Info = packageInfoModel,
-                            IsSuccess = true,
-                            Type = PackagingType.FillBarcodeInfo
-                        });
-                    }
-                    else if (info is LogisticsInfoModel logisticsInfoModel) {
-                        packageInfoModel.LogisticsInfo = logisticsInfoModel;
-                        OnPackageUpdated(new PackageInfoMessage() {
-                            Description = "填充物流信息",
-                            Info = packageInfoModel,
-                            IsSuccess = true,
-                            Type = PackagingType.FillBarcodeInfo
-                        });
-                    }
-                    else if (info is OcrInfoModel ocrInfoModel) {
-                        packageInfoModel.OcrInfo = ocrInfoModel;
-                        OnPackageUpdated(new PackageInfoMessage() {
-                            Description = "填充Ocr信息",
-                            Info = packageInfoModel,
-                            IsSuccess = true,
-                            Type = PackagingType.FillBarcodeInfo
-                        });
-                    }
-                    else if (info is CloudVideoUploadInfoModel cloudVideoUploadInfoModel) {
-                        packageInfoModel.CloudVideoUploadInfo = cloudVideoUploadInfoModel;
-                        OnPackageUpdated(new PackageInfoMessage() {
-                            Description = "填充云端信息",
-                            Info = packageInfoModel,
-                            IsSuccess = true,
-                            Type = PackagingType.FillBarcodeInfo
-                        });
-                    }
-                    else if (info is DeviceInfoModel deviceInfoModel) {
-                        packageInfoModel.DeviceInfo = deviceInfoModel;
-                        OnPackageUpdated(new PackageInfoMessage() {
-                            Description = "填充设备信息",
-                            Info = packageInfoModel,
-                            IsSuccess = true,
-                            Type = PackagingType.d
-                        });
-                    }
-                    else if (info is AggregatePackagesInfoModel aggregatePackagesInfoModel) {
-                        packageInfoModel.AggregatePackagesInfo = aggregatePackagesInfoModel;
-                        OnPackageUpdated(new PackageInfoMessage() {
-                            Description = "填充集包信息",
-                            Info = packageInfoModel,
-                            IsSuccess = true,
-                            Type = PackagingType.FillAggregatePackages
-                        });
-                    }
+
+                    return new KeyValuePair<bool, PackageInfoModel?>(true, packageInfoModel);
                 }
             }
             finally {
                 _packageSlim.Release();
             }
 
-            throw new NotImplementedException();
+            return new KeyValuePair<bool, PackageInfoModel?>(false, null);
         }
 
-        public Task<KeyValuePair<bool, PackageInfoModel?>> AppendPackageInfo(Expression<Func<PackageInfoModel, bool>> where, BasePackageForeignKeyInfoModel info, NecessaryAttributes attributes = NecessaryAttributes.BarcodeInfo) {
-            throw new NotImplementedException();
+        public async Task<KeyValuePair<bool, PackageInfoModel?>> AppendImageInfo(Expression<Func<PackageInfoModel, bool>> where, ImageInfoModel info,
+            NecessaryAttributes attributes = NecessaryAttributes.BarcodeInfo) {
+            try {
+                await _packageSlim.WaitAsync();
+                var packageInfoModel = _createPackageSettingsDto.BarcodeQueueOrder == BarcodeQueueOrderEnum.TimeAscending ?
+                    _packageInfos.Values.OrderBy(o => o.PackageCreateTime)?.FirstOrDefault(where.Compile()) :
+                    _packageInfos.Values.OrderBy(o => o.PackageCreateTime)?.LastOrDefault(where.Compile());
+
+                if (packageInfoModel is not null) {
+                    packageInfoModel.ImageInfos ??= new List<ImageInfoModel>();
+                    packageInfoModel.ImageInfos.Add(info);
+                    OnPackageAppended(new PackageInfoMessage() {
+                        Description = "包裹填充图片信息",
+                        Info = packageInfoModel,
+                        IsSuccess = true,
+                        Type = PackagingType.FillImageInfo
+                    });
+                    if (_createPackageSettingsDto.PackageRemoveMethods == PackageRemoveMethodsEnum.FillInformation) {
+                        //验证信息是否填充完,填充完则移除
+                        var isPackageInfoComplete = IsPackageInfoComplete(packageInfoModel, attributes);
+                        if (isPackageInfoComplete) {
+                            await RemovePackage(PackageRemoveMethodsEnum.FillInformation, packageInfoModel);
+                        }
+                    }
+
+                    return new KeyValuePair<bool, PackageInfoModel?>(true, packageInfoModel);
+                }
+            }
+            finally {
+                _packageSlim.Release();
+            }
+
+            return new KeyValuePair<bool, PackageInfoModel?>(false, null);
         }
 
-        public Task<PackageInfoModel>? FindPackage(Expression<Func<PackageInfoModel, bool>> where, CancellationToken token) {
-            throw new NotImplementedException();
+        public async Task<KeyValuePair<bool, PackageInfoModel?>> AppendInstructionInfo(Expression<Func<PackageInfoModel, bool>> where, InstructionInfoModel info,
+            NecessaryAttributes attributes = NecessaryAttributes.BarcodeInfo) {
+            try {
+                await _packageSlim.WaitAsync();
+                var packageInfoModel = _createPackageSettingsDto.BarcodeQueueOrder == BarcodeQueueOrderEnum.TimeAscending ?
+                    _packageInfos.Values.OrderBy(o => o.PackageCreateTime)?.FirstOrDefault(where.Compile()) :
+                    _packageInfos.Values.OrderBy(o => o.PackageCreateTime)?.LastOrDefault(where.Compile());
+
+                if (packageInfoModel?.SortingInfo != null) {
+                    packageInfoModel.SortingInfo.InstructionInfos ??= new List<InstructionInfoModel>();
+                    packageInfoModel.SortingInfo.InstructionInfos.Add(info);
+                    OnPackageAppended(new PackageInfoMessage() {
+                        Description = "包裹填充图片信息",
+                        Info = packageInfoModel,
+                        IsSuccess = true,
+                        Type = PackagingType.FillInstructionInfo
+                    });
+                    if (_createPackageSettingsDto.PackageRemoveMethods == PackageRemoveMethodsEnum.FillInformation) {
+                        //验证信息是否填充完,填充完则移除
+                        var isPackageInfoComplete = IsPackageInfoComplete(packageInfoModel, attributes);
+                        if (isPackageInfoComplete) {
+                            await RemovePackage(PackageRemoveMethodsEnum.FillInformation, packageInfoModel);
+                        }
+                    }
+
+                    return new KeyValuePair<bool, PackageInfoModel?>(true, packageInfoModel);
+                }
+            }
+            finally {
+                _packageSlim.Release();
+            }
+
+            return new KeyValuePair<bool, PackageInfoModel?>(false, null);
+        }
+
+        public PackageInfoModel? FindPackage(Expression<Func<PackageInfoModel, bool>> where, CancellationToken token) {
+            return _createPackageSettingsDto.BarcodeQueueOrder == BarcodeQueueOrderEnum.TimeAscending ?
+                _packageInfos.Values.OrderBy(o => o.PackageCreateTime)?.FirstOrDefault(where.Compile()) :
+                _packageInfos.Values.OrderBy(o => o.PackageCreateTime)?.LastOrDefault(where.Compile());
+        }
+
+        private bool IsPackageInfoComplete(PackageInfoModel info, NecessaryAttributes attributes) {
+            if (attributes.HasFlag(NecessaryAttributes.BarcodeInfo) && info.BarCodeInfo is null) {
+                return false;
+            }
+            if (attributes.HasFlag(NecessaryAttributes.WeightInfo) && info.WeightInfo is null) {
+                return false;
+            }
+            if (attributes.HasFlag(NecessaryAttributes.VolumeInfo) && info.VolumeInfo is null) {
+                return false;
+            }
+            if (attributes.HasFlag(NecessaryAttributes.UploadInfo) && info.UploadInfo is null) {
+                return false;
+            }
+            if (attributes.HasFlag(NecessaryAttributes.ExitInfo) && info.ExitInfo is null) {
+                return false;
+            }
+            if (attributes.HasFlag(NecessaryAttributes.SortingInfo) && info.SortingInfo is null) {
+                return false;
+            }
+            if (attributes.HasFlag(NecessaryAttributes.LogisticsInfo) && info.LogisticsInfo is null) {
+                return false;
+            }
+            if (attributes.HasFlag(NecessaryAttributes.OcrInfo) && info.OcrInfo is null) {
+                return false;
+            }
+            if (attributes.HasFlag(NecessaryAttributes.ImageInfo) && info.ImageInfos is null) {
+                return false;
+            }
+            if (attributes.HasFlag(NecessaryAttributes.VideoCloudInfo) && info.CloudVideoUploadInfo is null) {
+                return false;
+            }
+            if (attributes.HasFlag(NecessaryAttributes.DeviceInfo) && info.DeviceInfo is null) {
+                return false;
+            }
+            if (attributes.HasFlag(NecessaryAttributes.AggregatePackageInfo) && info.AggregatePackagesInfo is null) {
+                return false;
+            }
+
+            return true;
         }
 
         private async void EmptyPackageExpireItem(object? state) {

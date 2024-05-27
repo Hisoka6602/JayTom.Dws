@@ -9,8 +9,10 @@ using Newtonsoft.Json.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using JayTom.Dws.Domain.Service;
 
-namespace JayTom.Dws.Interface.Sunnen {
+namespace JayTom.Dws.Interface.Sunnen
+{
 
     public class SunnenApi : IDataUploader {
         private readonly IHttpClientFactory _httpClientFactory;

@@ -15,8 +15,10 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection.PortableExecutable;
+using JayTom.Dws.Domain.Service;
 
-namespace JayTom.Dws.Interface {
+namespace JayTom.Dws.Interface
+{
 
     public class DefaultApi : IDataUploader {
         private readonly IHttpClientFactory _httpClientFactory;

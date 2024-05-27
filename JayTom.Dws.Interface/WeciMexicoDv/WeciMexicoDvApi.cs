@@ -14,8 +14,10 @@ using System.Drawing.Imaging;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Diagnostics.CodeAnalysis;
+using JayTom.Dws.Domain.Service;
 
-namespace JayTom.Dws.Interface.WeciMexicoDv {
+namespace JayTom.Dws.Interface.WeciMexicoDv
+{
 
     /// <summary>
     /// 卫慈-墨西哥dv60

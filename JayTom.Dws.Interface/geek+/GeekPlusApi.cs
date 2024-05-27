@@ -17,8 +17,10 @@ using JayTom.Dws.Interface.Cloud;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Configuration;
+using JayTom.Dws.Domain.Service;
 
-namespace JayTom.Dws.Interface.geek_ {
+namespace JayTom.Dws.Interface.geek_
+{
 
     public class GeekPlusApi : IDataUploader {
         private readonly IHttpClientFactory _httpClientFactory;
