@@ -982,7 +982,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                     });
                                     uploader.UploadInBackground(packageValue.Value.PackageInfo.BarCodeInfo?.Barcode ?? string.Empty, packageValue.Value.PackageInfo?.WeightInfo?.FormattedWeight ?? 0,
                                         packageValue.Value.PackageInfo?.BarCodeInfo?.ScanTime ?? DateTime.Now, imageInfo: new UploadImageInfo(), other:
-                                        packageValue.Value.ApiResponse, token: token);
+                                        packageValue.Value.ApiResponse.UploadResponse, token: token);
+                                    NLog.LogManager.GetCurrentClassLogger().Error($"提交");
                                 }
                             }
                             else {
