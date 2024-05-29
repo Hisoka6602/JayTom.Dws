@@ -15,7 +15,7 @@ namespace JayTom.Dws.Domain.Attributes {
         public string DisplayName { get; set; } = string.Empty;
 
         /// <summary>
-        /// 名称
+        /// 名称(配置名称)
         /// </summary>
         public string Name { get; set; } = string.Empty;
 

@@ -2,9 +2,11 @@
 using MediatR;
 using System.Linq;
 using System.Text;
+using System.Reflection;
 using System.ComponentModel;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using JayTom.Dws.Domain.Attributes;
 
 namespace JayTom.Dws.Domain.EventMediators {
 
@@ -36,6 +38,27 @@ namespace JayTom.Dws.Domain.EventMediators {
             }
 
             return string.Empty;
+        }
+
+        public IEnumerable<Type>? FindClassesWithAttribute(Assembly assembly, Type attributeType) {
+            if (!typeof(Attribute).IsAssignableFrom(attributeType)) {
+                return null;
+            }
+
+            // 获取程序集中所有类型
+            return assembly.GetTypes()
+                .Where(type => type.GetCustomAttributes(attributeType, false).Length > 0);
+        }
+
+        public object InstantiateClasses<T>(Type type, IServiceProvider serviceProvider) {
+            var constructor = type.GetConstructors().FirstOrDefault();
+            if (constructor != null) {
+                var parameters = constructor.GetParameters();
+                var args = parameters.Select(p => serviceProvider.GetService(p.ParameterType)).ToArray();
+                var instance = Activator.CreateInstance(type, args);
+            }
+            else {
+            }
         }
     }
 

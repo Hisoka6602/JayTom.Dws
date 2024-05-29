@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Text;
+using System.ComponentModel;
 using System.Threading.Tasks;
 using JayTom.Dws.Data.Package;
 using System.Collections.Generic;
@@ -26,6 +27,15 @@ namespace JayTom.Dws.Domain.Service {
         /// <param name="token"></param>
         /// <returns></returns>
         Task<UploadResponse> SubmitSortReportAsync(PackageInfoModel info, object? other = null, CancellationToken token = default);
+
+        /// <summary>
+        /// 上传信息
+        /// </summary>
+        /// <param name="info"></param>
+        /// <param name="other"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        Task<UploadResponse> SubmitPackageInfoAsync(PackageInfoModel info, object? other = null, CancellationToken token = default);
 
         /// <summary>
         /// 上传图片信息
@@ -117,6 +127,38 @@ namespace JayTom.Dws.Domain.Service {
         /// Api异常类型
         /// </summary>
         public ApiExceptionType ApiExceptionType { get; set; } = ApiExceptionType.None;
+
+        /// <summary>
+        /// 请求类型
+        /// </summary>
+        public RequestApiType RequestApiType { get; set; }
+    }
+
+    public enum RequestApiType {
+
+        /// <summary>
+        /// 格口请求
+        /// </summary>
+        [Description("格口请求")]
+        ExitRequest,
+
+        /// <summary>
+        /// 分拣报告
+        /// </summary>
+        [Description("分拣报告")]
+        SortingReport,
+
+        /// <summary>
+        /// 集包报告
+        /// </summary>
+        [Description("集包报告")]
+        PackageAggregationReport,
+
+        /// <summary>
+        /// 信息上传
+        /// </summary>
+        [Description("信息上传")]
+        InfoUpload
     }
 
     public enum ApiExceptionType {
