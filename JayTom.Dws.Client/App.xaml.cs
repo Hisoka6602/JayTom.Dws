@@ -202,6 +202,7 @@ namespace JayTom.Dws.Client {
                 containerRegistry.RegisterForNavigation<NetworkVideoRecorderPage>();
             }
             //其他注册
+
             containerRegistry.GetContainer().RegisterServices(services => {
                 services.AddPooledDbContextFactory<SqliteContext>(options => {
                     options.UseSqlite(

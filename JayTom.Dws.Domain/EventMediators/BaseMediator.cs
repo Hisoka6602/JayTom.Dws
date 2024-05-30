@@ -5,6 +5,7 @@ using System.Text;
 using System.Reflection;
 using System.ComponentModel;
 using System.Threading.Tasks;
+using JayTom.Dws.Domain.Service;
 using System.Collections.Generic;
 using JayTom.Dws.Domain.Attributes;
 
@@ -50,15 +51,24 @@ namespace JayTom.Dws.Domain.EventMediators {
                 .Where(type => type.GetCustomAttributes(attributeType, false).Length > 0);
         }
 
-        public object InstantiateClasses<T>(Type type, IServiceProvider serviceProvider) {
-            var constructor = type.GetConstructors().FirstOrDefault();
-            if (constructor != null) {
-                var parameters = constructor.GetParameters();
-                var args = parameters.Select(p => serviceProvider.GetService(p.ParameterType)).ToArray();
-                var instance = Activator.CreateInstance(type, args);
+        public object? InstantiateClasses(Type type, IServiceProvider serviceProvider) {
+            try {
+                var constructor = type.GetConstructors().FirstOrDefault();
+                if (constructor != null) {
+                    var parameters = constructor.GetParameters();
+                    var args = parameters.Select(p => serviceProvider.GetService(p.ParameterType)).ToArray();
+                    var instance = Activator.CreateInstance(type, args);
+                    return instance;
+                }
+                else {
+                    throw new InvalidOperationException($"No constructor found for type {type.FullName}");
+                }
             }
-            else {
+            catch (Exception e) {
+                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
             }
+
+            return null;
         }
     }
 
@@ -361,5 +371,55 @@ namespace JayTom.Dws.Domain.EventMediators {
         /// 是否本地保存
         /// </summary>
         public bool IsLocallySaved { get; set; }
+    }
+
+    /// <summary>
+    /// Api消息
+    /// </summary>
+    public class ApiMessageInfo {
+        public ApiRequestType ApiRequestType { get; set; }
+
+        /// <summary>
+        /// 响应内容
+        /// </summary>
+        public UploadResponse? UploadResponse { get; set; }
+
+        /// <summary>
+        /// 方法名称
+        /// </summary>
+        public string MethodName { get; set; } = string.Empty;
+    }
+
+    public enum ApiRequestType {
+
+        /// <summary>
+        /// 格口请求
+        /// </summary>
+        [Description("格口请求")]
+        ExitRequest,
+
+        /// <summary>
+        /// 分拣报告
+        /// </summary>
+        [Description("分拣报告")]
+        SortingReport,
+
+        /// <summary>
+        /// 集包报告
+        /// </summary>
+        [Description("集包报告")]
+        PackageReport,
+
+        /// <summary>
+        /// 包裹信息查询
+        /// </summary>
+        [Description("包裹信息查询")]
+        PackageInfoQuery,
+
+        /// <summary>
+        /// 其他
+        /// </summary>
+        [Description("其他")]
+        Other
     }
 }
