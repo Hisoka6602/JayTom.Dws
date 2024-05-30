@@ -142,7 +142,7 @@ namespace JayTom.Dws.Interface.Jtexpress {
             }
         }
 
-        public void UploadInBackground(string barcode, double weight, DateTime scanTime, double length = default,
+        public async void UploadInBackground(string barcode, double weight, DateTime scanTime, double length = default,
             double width = default, double height = default, double volume = default, UploadImageInfo? imageInfo = default,
             List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
             NLog.LogManager.GetCurrentClassLogger().Error($"进入提交方法");
@@ -168,20 +168,18 @@ namespace JayTom.Dws.Interface.Jtexpress {
                 }
                 if (!barcode.ToLower().Equals("noread")) {
                     if (Parameters.BusinessType == BusinessType.ArrivalScan) {
-                        NLog.LogManager.GetCurrentClassLogger().Error($"使用进仓扫描");
                         ArrivalScan(barcode, weight, DateTime.Now, length, width, height, Parameters.ScanTypeCode
                             , Parameters.TransportTypeCode, Parameters.ScanPda, Parameters.ScanType, Parameters.WeightFlag
                         );
                     }
                     else if (Parameters.BusinessType == BusinessType.DepartureScan) {
-                        NLog.LogManager.GetCurrentClassLogger().Error($"使用出仓扫描");
                         DepartureScan(barcode, deliveryCode, Parameters.ScanPda);
                     }
                     else if (Parameters.BusinessType == BusinessType.ArrivalScanAndDepartureScan) {
-                        NLog.LogManager.GetCurrentClassLogger().Error($"使用一体处理");
                         ArrivalScan(barcode, weight, DateTime.Now, length, width, height, Parameters.ScanTypeCode
                             , Parameters.TransportTypeCode, Parameters.ScanPda, Parameters.ScanType, Parameters.WeightFlag
                         );
+                        await Task.Delay(TimeSpan.FromSeconds(10), token);
                         DepartureScan(barcode, deliveryCode, Parameters.ScanPda);
                     }
                 }
