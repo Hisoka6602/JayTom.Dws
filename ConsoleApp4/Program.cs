@@ -6,6 +6,7 @@ using FluentFTP.Helpers;
 using System.Configuration;
 using JayTom.Dws.Interface;
 using JayTom.Dws.Plugin.Speech;
+using JayTom.Dws.Interface.Post;
 using JayTom.Dws.Interface.geek_;
 using System.Text.RegularExpressions;
 using JayTom.Dws.Interface.Eshippingit;
@@ -19,10 +20,13 @@ using JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision;
 
 internal class Program {
 
-    private static Task Main(string[] args) {
+    private static async Task Main(string[] args) {
+        await new PostApi(null).UploadData("0123456789", 0, 0);
+
         var localTime = Convert.ToDateTime("2024-05-21T12:17:17Z").ToLocalTime();
 
-        return Task.CompletedTask;
+        return;
+        //return Task.CompletedTask;
         var gwGrayscaleDevice = new GwGrayscaleDevice();
         string hexString = "3A 73 30 31 37 2C 30 2C 00 00 00 00 2C 00 00 00 00 2C 32 2C D1 00 E1 01 2C AF 00 78 01 2C 30 2C 00 00 00 00 2C 00 00 00 00 2C 30 2C 00 00 00 00 2C 00 00 00 00 2C 30 2C 00 00 00 00 2C 00 00 00 00 0D 0A";
         var hexStringToByteArray = HexStringToByteArray(hexString);
@@ -32,10 +36,10 @@ internal class Program {
         gwGrayscaleDevice.SendCarNumber(17, new CancellationToken());
         Console.ReadLine();
         var description = SortingExceptionReturnType.VehicleNumberMismatch.GetDescription();
-        return Task.CompletedTask;
+        // return Task.CompletedTask;
         var totalMicroseconds = DateTime.Now.Subtract(DateTime.Now.AddSeconds(-1)).TotalMicroseconds;
-        return Task.CompletedTask;
-        try {
+        // return Task.CompletedTask;
+        /*try {
             var s =
                 "{\"code\":1,\"msg\":\"请求成功\",\"version\":null,\"data\":[{\"waybillNo\":\"JT2073687636814\",\"terminalDispatchCode\":\"432,K848-00,027\",\"firstDispatchCode\":\"432\",\"secondDispatchCode\":\"K848-00\",\"thirdlyDispatchCode\":\"027\",\"customerCode\":null,\"interceptor\":1,\"orderType\":1,\"pickNetworkCode\":\"2596149\",\"destinationCode\":\"330700\",\"extendJson\":\"{\\\"stationCode\\\":\\\"L6\\\"}\",\"codeList\":null},{\"waybillNo\":\"JT2073687636814\",\"terminalDispatchCode\":\"432,K848-00,027\",\"firstDispatchCode\":\"432\",\"secondDispatchCode\":\"K848-00\",\"thirdlyDispatchCode\":\"027\",\"customerCode\":null,\"interceptor\":1,\"orderType\":1,\"pickNetworkCode\":\"2596149\",\"destinationCode\":\"330700\",\"extendJson\":\"{\\\"stationCode\\\":\\\"L6\\\"}\",\"codeList\":null},{\"waybillNo\":\"JT2073687636814\",\"terminalDispatchCode\":\"432,K848-00,027\",\"firstDispatchCode\":\"432\",\"secondDispatchCode\":\"K848-00\",\"thirdlyDispatchCode\":\"027\",\"customerCode\":null,\"interceptor\":2,\"orderType\":1,\"pickNetworkCode\":\"2596149\",\"destinationCode\":\"330700\",\"extendJson\":\"{\\\"stationCode\\\":\\\"L6\\\"}\",\"codeList\":null}],\"succ\":true,\"fail\":false}";
             var resultContent = Regex.Unescape(s);
@@ -54,7 +58,7 @@ internal class Program {
         }
         catch (Exception e) {
             Console.WriteLine(e);
-        }
+        }*/
         Console.ReadLine();
     }
 

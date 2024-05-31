@@ -80,6 +80,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                 Name = "海通智运Api",
                 Value = ApiType.EshippingitApi
             },
+            new ApiTypeInfoModel()
+            {
+                Name = "邮政Api",
+                Value = ApiType.PostApi
+            },
         };
 
         private ApiTypeInfoModel? _selectApiType = new();
@@ -105,9 +110,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             set => SetProperty(ref _selectApiType, value);
         }
 
-        public ICommand OptionSelectionChangedCommand {
-            get => new DelegateCommand<SelectionChangedEventArgs>(OptionSelectionChangedDelegate);
-        }
+        public ICommand OptionSelectionChangedCommand => new DelegateCommand<SelectionChangedEventArgs>(OptionSelectionChangedDelegate);
 
         private async void OptionSelectionChangedDelegate(SelectionChangedEventArgs obj) {
             var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {

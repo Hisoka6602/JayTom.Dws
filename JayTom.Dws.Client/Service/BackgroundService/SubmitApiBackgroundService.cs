@@ -14,6 +14,7 @@ using JayTom.Dws.Data.Package;
 using JayTom.Dws.Interface.Wdt;
 using JayTom.Dws.Data.LocalConf;
 using NPOI.SS.Formula.Functions;
+using JayTom.Dws.Interface.Post;
 using JayTom.Dws.PluginInterface;
 using JayTom.Dws.Interface.geek_;
 using System.Collections.Generic;
@@ -64,6 +65,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private static RoutDataApi.ApiParameters _rstDataApiParam = new();
         private static CaiNiaoApi.ApiParameters _caiNiaoApiParam = new();
         private static EshippingitApi.ApiParameters _eshippingitApiParam = new();
+        private static PostApi.ApiParameters _postApiParam = new();
         private ConcurrentQueue<SavedImageInfo> _savedImageItems = new();
         /*private ConcurrentQueue<CallBackPackageInfo> _callBackItems = new();
         private ConcurrentDictionary<long, SortingExitReceived> _sortingExitItems = new();*/
@@ -547,6 +549,26 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                         }
                                         break;
                                     }
+                                case ApiType.PostApi: {
+                                        uploader = new PostApi(_httpClientFactory);
+                                        var (key, value) = await uploader.SetParameters(_postApiParam);
+                                        if (key) {
+                                            uploadResponse = await uploader.UploadData(info.Barcode ?? string.Empty,
+                                                info.Weight, info.ScanTime,
+                                                info.Length, info.Width,
+                                                info.Height, info.Volume,
+                                                null, null,
+                                                info.IsStackedPackage, stoppingToken);
+                                        }
+                                        else {
+                                            uploadResponse = new UploadResponse() {
+                                                ExceptionMsg = value
+                                            };
+                                            Console.WriteLine("设置参数失败!");
+                                        }
+                                    }
+
+                                    break;
                             }
                             if (_apiSettingsDto?.Type is not null &&
                                 _apiSettingsDto.Type != ApiType.None) {
