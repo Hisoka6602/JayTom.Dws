@@ -66,6 +66,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private static CaiNiaoApi.ApiParameters _caiNiaoApiParam = new();
         private static EshippingitApi.ApiParameters _eshippingitApiParam = new();
         private static PostApi.ApiParameters _postApiParam = new();
+        private static PostInApi.ApiParameters _postInApiParam = new();
         private ConcurrentQueue<SavedImageInfo> _savedImageItems = new();
         /*private ConcurrentQueue<CallBackPackageInfo> _callBackItems = new();
         private ConcurrentDictionary<long, SortingExitReceived> _sortingExitItems = new();*/
@@ -569,6 +570,27 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                     }
 
                                     break;
+
+                                case ApiType.PostInApi: {
+                                        uploader = new PostInApi(_httpClientFactory);
+                                        var (key, value) = await uploader.SetParameters(_postInApiParam);
+                                        if (key) {
+                                            uploadResponse = await uploader.UploadData(info.Barcode ?? string.Empty,
+                                                info.Weight, info.ScanTime,
+                                                info.Length, info.Width,
+                                                info.Height, info.Volume,
+                                                null, null,
+                                                info.IsStackedPackage, stoppingToken);
+                                        }
+                                        else {
+                                            uploadResponse = new UploadResponse() {
+                                                ExceptionMsg = value
+                                            };
+                                            Console.WriteLine("设置参数失败!");
+                                        }
+                                    }
+
+                                    break;
                             }
                             if (_apiSettingsDto?.Type is not null &&
                                 _apiSettingsDto.Type != ApiType.None) {
@@ -691,6 +713,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         IDataUploader? uploader = _apiSettingsDto?.Type switch {
                             ApiType.CaiNiaoApi => new CaiNiaoApi(_httpClientFactory),
                             ApiType.JtExpressApi => new JtExpressApi(_httpClientFactory),
+                            ApiType.PostInApi => new PostInApi(_httpClientFactory),
                             _ => null
                         };
                         if (uploader is not null) {
@@ -996,6 +1019,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             if (packageValue.Value.ApiResponse.UploadResponse is null || DateTime.Now.Subtract(packageValue.Value.ApiResponse.UploadResponse.ResponseTime).TotalSeconds < 2) {
                                 return;
                             }
+
                             var keyValuePair = await uploader.SetParameters(_jtExpressApiParam);
                             if (keyValuePair.Key) {
                                 if (!_memoryCache.TryGetValue(packageValue.Key, out _)) {
@@ -1012,6 +1036,30 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 NLog.LogManager.GetCurrentClassLogger().Error("设置Api参数失败");
                             }
 
+                            break;
+
+                        case ApiType.PostInApi:
+                            if (DateTime.Now.Subtract(packageValue.Value.PackageInfo.CreateTime).TotalSeconds >= 100) {
+                                _packageSubmissionPushItems?.TryRemove(packageValue.Key, out _);
+                                return;
+                            }
+                            if (DateTime.Now.Subtract(packageValue.Value.PackageInfo.CreateTime).TotalSeconds < 80 ||
+                                packageValue.Value.PackageExitUpdateItems?.Any(a =>
+                                    a.InstructionType == InstructionType.SendSorting) != true) {
+                                return;
+                            }
+                            var (b, s) = await uploader.SetParameters(_postInApiParam);
+                            if (b) {
+                                if (!_memoryCache.TryGetValue(packageValue.Key, out _)) {
+                                    _memoryCache.Set(packageValue.Key, packageValue.Value, new MemoryCacheEntryOptions {
+                                        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(1)
+                                    });
+                                    uploader.UploadInBackground(packageValue.Value.PackageInfo.BarCodeInfo?.Barcode ?? string.Empty, packageValue.Value.PackageInfo?.WeightInfo?.FormattedWeight ?? 0,
+                                        packageValue.Value.PackageInfo?.BarCodeInfo?.ScanTime ?? DateTime.Now, imageInfo: new UploadImageInfo(), other:
+                                        packageValue.Value.ApiResponse.UploadResponse, token: token);
+                                    NLog.LogManager.GetCurrentClassLogger().Error($"提交");
+                                }
+                            }
                             break;
                     }
                     //判断推送锁格(条码、原格口、包裹信息)

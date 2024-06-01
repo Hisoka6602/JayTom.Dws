@@ -80,6 +80,11 @@ namespace JayTom.Dws.Domain.Dto {
         /// <summary>
         /// 邮政Api
         /// </summary>
-        PostApi = 13
+        PostApi = 13,
+
+        /// <summary>
+        /// 邮政揽投Api
+        /// </summary>
+        PostInApi = 14
     }
 }

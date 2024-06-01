@@ -82,8 +82,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             },
             new ApiTypeInfoModel()
             {
-                Name = "邮政Api",
+                Name = "邮政处理中心Api",
                 Value = ApiType.PostApi
+            },
+            new ApiTypeInfoModel()
+            {
+                Name = "邮政揽投Api",
+                Value = ApiType.PostInApi
             },
         };
 

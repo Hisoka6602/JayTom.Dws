@@ -21,7 +21,28 @@ using JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision;
 internal class Program {
 
     private static async Task Main(string[] args) {
-        await new PostApi(null).UploadData("0123456789", 0, 0);
+        var resultContent = @"<soap:Envelope xmlns:soap=""http://schemas.xmlsoap.org/soap/envelope/"">
+    <soap:Body>
+        <ns2:getLTGKCXResponse xmlns:ns2=""http://serverNs.webservice.pcs.jdpt.chinapost.cn/"">
+            <return>#HEAD::202405WS20140010FJ000000001::5::151::X136::X136::20140047::奉城速::0071000000000000::460.00::||#END</return>
+        </ns2:getLTGKCXResponse>
+    </soap:Body>
+</soap:Envelope>";
+
+        var pattern = @"#HEAD::(.*?)::\|\|#END";
+        var match = Regex.Match(resultContent, pattern);
+        if (match.Success) {
+            // Extract the content and split by '::'
+            var content = match.Groups[1].Value;
+            var parts = content.Split(new string[] { "::" }, StringSplitOptions.None);
+
+            if (parts.Length > 7 && parts[7].Length >= 4) {
+                //格口
+                resultContent += $"格口:[{parts[7][..4]}]";
+            }
+        }
+
+        await new PostInApi(null).UploadData("0123456789", 0, 0);
 
         var localTime = Convert.ToDateTime("2024-05-21T12:17:17Z").ToLocalTime();
 
