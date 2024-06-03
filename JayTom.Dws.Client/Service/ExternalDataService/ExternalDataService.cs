@@ -191,32 +191,6 @@ namespace JayTom.Dws.Client.Service.ExternalDataService {
                 var inputEventArgs = new ExternalContentInputEventArgs {
                     SourceContent = e.Content
                 };
-                /*const string separator = "|";
-                var strings = e.Content.Split(separator);*/
-                //条码、重量、长度、宽度、高度、体积
-                /*if (strings.Length > 0) {
-                    inputEventArgs.Barcode = strings[0];
-                }
-                if (strings.Length > 1) {
-                    float.TryParse(strings[1], out var weight);
-                    inputEventArgs.Weight = weight;
-                }
-                if (strings.Length > 2) {
-                    float.TryParse(strings[2], out var length);
-                    inputEventArgs.Length = length;
-                }
-                if (strings.Length > 3) {
-                    float.TryParse(strings[3], out var width);
-                    inputEventArgs.Width = width;
-                }
-                if (strings.Length > 4) {
-                    float.TryParse(strings[4], out var height);
-                    inputEventArgs.Height = height;
-                }
-                if (strings.Length > 5) {
-                    float.TryParse(strings[5], out var volume);
-                    inputEventArgs.Volume = volume;
-                }*/
                 try {
                     float length = 0, width = 0, height = 0, volume = 0, weight = 0;
                     var split = e.Content.Split(_contentInputSettingsDto.Separator);
@@ -244,7 +218,7 @@ namespace JayTom.Dws.Client.Service.ExternalDataService {
                                 inputEventArgs.Weight = weight;
                             }
                             else if (templateInfos[i].Content.ToLower().Contains("barcode")) {
-                                inputEventArgs.Barcode = split[i];
+                                inputEventArgs.Barcode = Regex.Replace(split[i], @"[\u0000-\u001f\b]", "");
                             }
                         }
                     }
