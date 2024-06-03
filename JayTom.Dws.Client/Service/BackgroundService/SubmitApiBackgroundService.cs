@@ -714,6 +714,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             ApiType.CaiNiaoApi => new CaiNiaoApi(_httpClientFactory),
                             ApiType.JtExpressApi => new JtExpressApi(_httpClientFactory),
                             ApiType.PostInApi => new PostInApi(_httpClientFactory),
+                            ApiType.PostApi => new PostApi(_httpClientFactory),
                             _ => null
                         };
                         if (uploader is not null) {
@@ -1050,6 +1051,31 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             }
                             var (b, s) = await uploader.SetParameters(_postInApiParam);
                             if (b) {
+                                if (!_memoryCache.TryGetValue(packageValue.Key, out _)) {
+                                    _memoryCache.Set(packageValue.Key, packageValue.Value, new MemoryCacheEntryOptions {
+                                        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(1)
+                                    });
+                                    uploader.UploadInBackground(packageValue.Value.PackageInfo.BarCodeInfo?.Barcode ?? string.Empty, packageValue.Value.PackageInfo?.WeightInfo?.FormattedWeight ?? 0,
+                                        packageValue.Value.PackageInfo?.BarCodeInfo?.ScanTime ?? DateTime.Now, imageInfo: new UploadImageInfo(), other:
+                                        packageValue.Value.ApiResponse.UploadResponse, token: token);
+                                    NLog.LogManager.GetCurrentClassLogger().Error($"提交");
+                                }
+                            }
+                            break;
+
+                        case ApiType.PostApi:
+                            if (DateTime.Now.Subtract(packageValue.Value.PackageInfo.CreateTime).TotalSeconds >= 60) {
+                                _packageSubmissionPushItems?.TryRemove(packageValue.Key, out _);
+                                return;
+                            }
+                            if (DateTime.Now.Subtract(packageValue.Value.PackageInfo.CreateTime).TotalSeconds < 35 ||
+                                packageValue.Value.PackageExitUpdateItems?.Any(a =>
+                                    a.InstructionType == InstructionType.SendSorting) != true) {
+                                return;
+                            }
+
+                            var valuePair = await uploader.SetParameters(_postApiParam);
+                            if (valuePair.Key) {
                                 if (!_memoryCache.TryGetValue(packageValue.Key, out _)) {
                                     _memoryCache.Set(packageValue.Key, packageValue.Value, new MemoryCacheEntryOptions {
                                         AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(1)

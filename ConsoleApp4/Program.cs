@@ -21,13 +21,7 @@ using JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision;
 internal class Program {
 
     private static async Task Main(string[] args) {
-        var resultContent = @"<soap:Envelope xmlns:soap=""http://schemas.xmlsoap.org/soap/envelope/"">
-    <soap:Body>
-        <ns2:getLTGKCXResponse xmlns:ns2=""http://serverNs.webservice.pcs.jdpt.chinapost.cn/"">
-            <return>#HEAD::202405WS20140010FJ000000001::5::151::X136::X136::20140047::奉城速::0071000000000000::460.00::||#END</return>
-        </ns2:getLTGKCXResponse>
-    </soap:Body>
-</soap:Envelope>";
+        var resultContent = @"<return>#HEAD::202405WS43400001FJ000000000::2143004019::18::53000000::南宁市::151::0011000000000000::860.0::0::0::1::*::*::0000000000000000::43410005::43000164::*::||#END</return>";
 
         var pattern = @"#HEAD::(.*?)::\|\|#END";
         var match = Regex.Match(resultContent, pattern);
