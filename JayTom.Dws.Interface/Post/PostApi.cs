@@ -272,7 +272,7 @@ namespace JayTom.Dws.Interface.Post {
                 var routingDirection = "0";//1
                 var mailType = "0";//5
                 var playId = "0";//2
-
+                var lcgk = "0";
                 if (!string.IsNullOrWhiteSpace(uploadResponse.ResponseContent)) {
                     var pattern = @"#HEAD::(.*?)::\|\|#END";
                     var match = Regex.Match(uploadResponse.ResponseContent, pattern);
@@ -296,6 +296,9 @@ namespace JayTom.Dws.Interface.Post {
                         if (parts.Length > 2) {
                             playId = parts[2];
                         }
+                        if (parts.Length > 3) {
+                            lcgk = parts[3];
+                        }
                     }
                 }
 
@@ -315,7 +318,7 @@ namespace JayTom.Dws.Interface.Post {
     <soapenv:Header />
     <soapenv:Body>
         <web:getYJLG>
-            <arg0>#HEAD::{Parameters.DeviceId}::{barcode}::{"0"}::{"0"}::{Parameters.EmployeeNumber}::{"0"}::{DateTime.Now:yyyyMMddHHmmss}:: {routingDirection}::{chuteCode}::{mailType}::{chuteCode}::{Parameters.WorkshopCode}::{"1"}::{"0"}::{"0"}::{"0"}::{"0"}::{"0"}::{"0"}::{"0"}::{"0"}::{playId}::||#END</arg0>
+            <arg0>#HEAD::{Parameters.DeviceId}::{barcode}::{"0"}::{"0"}::{Parameters.EmployeeNumber}::{"0"}::{DateTime.Now:yyyyMMddHHmmss}::{routingDirection}::{lcgk}::{mailType}::{chuteCode}::{Parameters.WorkshopCode}::{"1"}::{"0"}::{"0"}::{"0"}::{"0"}::{"0"}::{"0"}::{"0"}::{"0"}::{playId}::||#END</arg0>
         </web:getYJLG>
     </soapenv:Body>
 </soapenv:Envelope>";
