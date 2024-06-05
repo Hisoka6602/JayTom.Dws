@@ -18,6 +18,7 @@ using System.Collections.ObjectModel;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Models.Cameras;
 using JayTom.Dws.Client.Service.Device;
+using Microsoft.AspNetCore.Connections;
 using JayTom.Dws.Client.Service.Sorting;
 using JayTom.Dws.Plugin.Scale.StaticScale;
 using JayTom.Dws.Plugin.Scale.DynamicScale;
@@ -301,12 +302,12 @@ namespace JayTom.Dws.Client.ViewModels {
                 if (item is SettingsChangedEvent info) {
                     await Task.Yield();
                     await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
-                        ConnectionItems.Clear();
+                        var newConnectionItems = new List<ConnectionItemInfoModel>();
                         //判断添加
                         //FTP图片上传
                         var imageSettingsDto = await configRepository.FirstOrDefaultEntity<ImageSettingsDto>("SaveImageSettings") ?? new ImageSettingsDto();
                         if (imageSettingsDto.IsFtpUploadEnabled) {
-                            ConnectionItems.Add(new ConnectionItemInfoModel() {
+                            newConnectionItems.Add(new ConnectionItemInfoModel() {
                                 ConnectionName = "FTP图片上传",
                                 ConnectionState = ConnectionState.Disconnected,
                                 ConnectionType = Models.StatusBarModels.ConnectionType.FTP,
@@ -315,14 +316,14 @@ namespace JayTom.Dws.Client.ViewModels {
                         //称重
                         var weightSettingsDto = await configRepository.FirstOrDefaultEntity<WeightSettingsDto>("WeightSettings") ?? new WeightSettingsDto();
                         if (weightSettingsDto.Mode == WeightMode.Dynamic) {
-                            ConnectionItems.Add(new ConnectionItemInfoModel() {
+                            newConnectionItems.Add(new ConnectionItemInfoModel() {
                                 ConnectionName = "动态称重",
                                 ConnectionState = ConnectionState.Disconnected,
                                 ConnectionType = Models.StatusBarModels.ConnectionType.SerialPort,
                             });
                         }
                         else if (weightSettingsDto.Mode == WeightMode.Static) {
-                            ConnectionItems.Add(new ConnectionItemInfoModel() {
+                            newConnectionItems.Add(new ConnectionItemInfoModel() {
                                 ConnectionName = "静态称重",
                                 ConnectionState = ConnectionState.Disconnected,
                                 ConnectionType = Models.StatusBarModels.ConnectionType.SerialPort,
@@ -331,7 +332,7 @@ namespace JayTom.Dws.Client.ViewModels {
                         //体积
                         var volumeSettingsDto = await configRepository.FirstOrDefaultEntity<VolumeSettingsDto>("VolumeSettings") ?? new VolumeSettingsDto();
                         if (volumeSettingsDto.IsUseExternalVolumeInput) {
-                            ConnectionItems.Add(new ConnectionItemInfoModel() {
+                            newConnectionItems.Add(new ConnectionItemInfoModel() {
                                 ConnectionName = "外部体积",
                                 ConnectionState = ConnectionState.Disconnected,
                                 ConnectionType = volumeSettingsDto.VolumeInformationRequesterInfo.VolumeRequesterType == VolumeRequesterType.Tcp ? Models.StatusBarModels.ConnectionType.TCP : Models.StatusBarModels.ConnectionType.SerialPort,
@@ -342,7 +343,7 @@ namespace JayTom.Dws.Client.ViewModels {
                                                           .FirstOrDefaultEntity<ResultOutputSettingsDto>("ResultOutputSettings") ??
                                                       new ResultOutputSettingsDto();
                         if (resultOutputSettingsDto.IsUseTcpOutput) {
-                            ConnectionItems.Add(new ConnectionItemInfoModel() {
+                            newConnectionItems.Add(new ConnectionItemInfoModel() {
                                 ConnectionName = "TCP输出结果",
                                 ConnectionState = ConnectionState.Disconnected,
                                 ConnectionType = Models.StatusBarModels.ConnectionType.TCP,
@@ -350,7 +351,7 @@ namespace JayTom.Dws.Client.ViewModels {
                         }
                         //串口输出结果
                         if (resultOutputSettingsDto.IsUseSerialOutput) {
-                            ConnectionItems.Add(new ConnectionItemInfoModel() {
+                            newConnectionItems.Add(new ConnectionItemInfoModel() {
                                 ConnectionName = "串口输出结果",
                                 ConnectionState = ConnectionState.Disconnected,
                                 ConnectionType = Models.StatusBarModels.ConnectionType.SerialPort,
@@ -360,7 +361,7 @@ namespace JayTom.Dws.Client.ViewModels {
                         if (resultOutputSettingsDto.IsUseAudioOutput) {
                             //检测文件是否存在
                             var total = await _soundRepository.Total(t => t.Id > 0);
-                            ConnectionItems.Add(new ConnectionItemInfoModel() {
+                            newConnectionItems.Add(new ConnectionItemInfoModel() {
                                 ConnectionName = "音频输出",
                                 ConnectionState = total > 0 ? ConnectionState.Connected : ConnectionState.ConnectionFailed,
                                 ConnectionType = Models.StatusBarModels.ConnectionType.Audio,
@@ -368,7 +369,7 @@ namespace JayTom.Dws.Client.ViewModels {
                         }
                         //位置输出
                         if (resultOutputSettingsDto.IsUseLocationOutput) {
-                            ConnectionItems.Add(new ConnectionItemInfoModel() {
+                            newConnectionItems.Add(new ConnectionItemInfoModel() {
                                 ConnectionName = "位置输出",
                                 ConnectionState = ConnectionState.Disconnected,
                                 ConnectionType = Models.StatusBarModels.ConnectionType.Location,
@@ -379,7 +380,7 @@ namespace JayTom.Dws.Client.ViewModels {
                                                           .FirstOrDefaultEntity<ContentInputSettingsDto>("ContentInputSettings") ??
                                                       new ContentInputSettingsDto();
                         if (contentInputSettingsDto.IsUseControlInput) {
-                            ConnectionItems.Add(new ConnectionItemInfoModel() {
+                            newConnectionItems.Add(new ConnectionItemInfoModel() {
                                 ConnectionName = "控件输入",
                                 ConnectionState = ConnectionState.Disconnected,
                                 ConnectionType = Models.StatusBarModels.ConnectionType.Custom,
@@ -387,7 +388,7 @@ namespace JayTom.Dws.Client.ViewModels {
                         }
                         //Tcp输入
                         if (contentInputSettingsDto.IsUseTcpInput) {
-                            ConnectionItems.Add(new ConnectionItemInfoModel() {
+                            newConnectionItems.Add(new ConnectionItemInfoModel() {
                                 ConnectionName = "Tcp输入",
                                 ConnectionState = ConnectionState.Disconnected,
                                 ConnectionType = Models.StatusBarModels.ConnectionType.TCP,
@@ -397,7 +398,7 @@ namespace JayTom.Dws.Client.ViewModels {
                         var models = await communicationConnectionConfigRepository.
                             CommunicationConnectionConfigItems(s => s.Id > 0);
                         models.ForEach(f => {
-                            ConnectionItems.Add(new ConnectionItemInfoModel() {
+                            newConnectionItems.Add(new ConnectionItemInfoModel() {
                                 ConnectionName = $"[下位机]{f.ConnectionName}",
                                 ConnectionState = ConnectionState.Disconnected,
                                 ConnectionType = f.CommunicationType == 1 ? Models.StatusBarModels.ConnectionType.SerialPort : Models.StatusBarModels.ConnectionType.TCP,
@@ -408,7 +409,7 @@ namespace JayTom.Dws.Client.ViewModels {
                                                              .FirstOrDefaultEntity<PackageExitLockSettingsDto>("PackageExitLockSettings") ??
                                                          new PackageExitLockSettingsDto();
                         if (packageExitLockSettingsDto.IsUsePackageExitLock) {
-                            ConnectionItems.Add(new ConnectionItemInfoModel() {
+                            newConnectionItems.Add(new ConnectionItemInfoModel() {
                                 ConnectionName = $"锁格检测",
                                 ConnectionState = ConnectionState.Disconnected,
                                 ConnectionType = Models.StatusBarModels.ConnectionType.TCP,
@@ -421,7 +422,7 @@ namespace JayTom.Dws.Client.ViewModels {
                                                                      .FirstOrDefaultEntity<StackedPackageDetectionSettingsDto>("StackedPackageDetectionSettings") ??
                                                                  new StackedPackageDetectionSettingsDto();
                         if (stackedPackageDetectionSettingsDto.IsStackedPackageDetection) {
-                            ConnectionItems.Add(new ConnectionItemInfoModel() {
+                            newConnectionItems.Add(new ConnectionItemInfoModel() {
                                 ConnectionName = $"叠包检测",
                                 ConnectionState = ConnectionState.Disconnected,
                                 ConnectionType = Models.StatusBarModels.ConnectionType.TCP,
@@ -433,11 +434,22 @@ namespace JayTom.Dws.Client.ViewModels {
                                                              .FirstOrDefaultEntity<GrayscaleDeviceSettingsDto>("GrayscaleDeviceSettings") ??
                                                          new GrayscaleDeviceSettingsDto();
                         if (grayscaleDeviceSettingsDto.IsUseGrayscaleDetector) {
-                            ConnectionItems.Add(new ConnectionItemInfoModel() {
+                            newConnectionItems.Add(new ConnectionItemInfoModel() {
                                 ConnectionName = $"灰度仪",
                                 ConnectionState = ConnectionState.Disconnected,
                                 ConnectionType = Models.StatusBarModels.ConnectionType.TCP,
                             });
+                        }
+
+                        // 比较新旧列表并更新 ConnectionItems
+                        var itemsToRemove = ConnectionItems.Except(newConnectionItems, new ConnectionItemInfoModelComparer()).ToList();
+                        var itemsToAdd = newConnectionItems.Except(ConnectionItems, new ConnectionItemInfoModelComparer()).ToList();
+
+                        foreach (var model in itemsToRemove) {
+                            ConnectionItems.Remove(model);
+                        }
+                        foreach (var model in itemsToAdd) {
+                            ConnectionItems.Add(model);
                         }
                     });
                 }

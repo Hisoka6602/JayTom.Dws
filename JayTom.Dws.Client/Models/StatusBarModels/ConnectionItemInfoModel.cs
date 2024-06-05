@@ -31,6 +31,17 @@ namespace JayTom.Dws.Client.Models.StatusBarModels {
         }
     }
 
+    public class ConnectionItemInfoModelComparer : IEqualityComparer<ConnectionItemInfoModel> {
+
+        public bool Equals(ConnectionItemInfoModel? x, ConnectionItemInfoModel? y) {
+            return x != null && x?.ConnectionName == y?.ConnectionName && x?.ConnectionType == y?.ConnectionType;
+        }
+
+        public int GetHashCode(ConnectionItemInfoModel obj) {
+            return obj.ConnectionName.GetHashCode() ^ obj.ConnectionType.GetHashCode();
+        }
+    }
+
     public enum ConnectionType {
         None,
 
