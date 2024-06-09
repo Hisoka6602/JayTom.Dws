@@ -4,6 +4,7 @@ using System.Text;
 using System.ServiceModel;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Runtime.Serialization;
 
 namespace PostSoapCoreService.Service {
 
@@ -15,23 +16,33 @@ namespace PostSoapCoreService.Service {
         /// </summary>
         /// <param name="arg0"></param>
         /// <returns></returns>
-        [OperationContract, XmlSerializerFormat]
-        Task<string> getLXGK(string arg0);
+        [OperationContract(Name = "getLXGK")]
+        [return: MessageParameter(Name = "return")]
+        Task<string> GetLxgk(string arg0);
 
         /// <summary>
         /// 格口查询
         /// </summary>
         /// <param name="arg0"></param>
         /// <returns></returns>
-        [OperationContract, XmlSerializerFormat]
-        Task<string> getGKCX(string arg0);
+        [OperationContract(Name = "getGKCX")]
+        [return: MessageParameter(Name = "return")]
+        Task<string> GetGkcx(string arg0);
 
         /// <summary>
         /// 锁格/解锁
         /// </summary>
         /// <param name="arg0"></param>
         /// <returns></returns>
-        [OperationContract, XmlSerializerFormat]
-        Task<string> getGKSG(string arg0);
+        [OperationContract(Name = "getGKSG")]
+        [return: MessageParameter(Name = "return")]
+        Task<string> GetGksg(string arg0);
+    }
+
+    [DataContract(Namespace = "http://serverNs.webservice.pcs.jdpt.chinapost.cn/")]
+    public class CommFjjResponse {
+
+        [DataMember(Name = "return")]
+        public string Result { get; set; } = string.Empty;
     }
 }

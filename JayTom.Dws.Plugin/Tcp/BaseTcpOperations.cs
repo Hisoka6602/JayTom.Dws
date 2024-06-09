@@ -180,5 +180,23 @@ namespace JayTom.Dws.Plugin.Tcp {
             await Task.Yield();
             SendError?.Invoke(this, e);
         }
+
+        public byte[] ConvertHexStringToByteArray(string hexString) {
+            try {
+                hexString = hexString.Replace(" ", ""); // 移除空格
+
+                var length = hexString.Length;
+                var byteArray = new byte[length / 2];
+
+                for (var i = 0; i < length; i += 2) {
+                    byteArray[i / 2] = Convert.ToByte(hexString.Substring(i, 2), 16);
+                }
+
+                return byteArray;
+            }
+            catch (Exception e) {
+                return Array.Empty<byte>();
+            }
+        }
     }
 }

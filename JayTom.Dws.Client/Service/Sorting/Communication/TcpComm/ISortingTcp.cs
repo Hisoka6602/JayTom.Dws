@@ -1,5 +1,5 @@
-﻿using JayTom.Dws.Plugin.Tcp;
-using System;
+﻿using System;
+using JayTom.Dws.Plugin.Tcp;
 
 namespace JayTom.Dws.Client.Service.Sorting.Communication.TcpComm {
 
@@ -14,8 +14,9 @@ namespace JayTom.Dws.Client.Service.Sorting.Communication.TcpComm {
         /// 开启心跳包
         /// </summary>
         /// <param name="heartbeatData"></param>
+        /// <param name="formatType"></param>
         /// <param name="interval"></param>
-        void StartHeartbeat(string heartbeatData, TimeSpan interval);
+        void StartHeartbeat(string heartbeatData, FormatType formatType, TimeSpan interval);
 
         /// <summary>
         /// 停止心跳包

@@ -1,12 +1,12 @@
-﻿using JayTom.Dws.Plugin.Tcp;
+﻿using System;
+using System.Linq;
+using Newtonsoft.Json;
+using System.Threading;
+using JayTom.Dws.Plugin.Tcp;
+using System.Threading.Tasks;
+using System.Collections.Concurrent;
 using JayTom.Dws.Plugin.Tcp.TcpClient;
 using JayTom.Dws.Plugin.Tcp.TcpServer;
-using Newtonsoft.Json;
-using System;
-using System.Collections.Concurrent;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace JayTom.Dws.Client.Service.Sorting.Communication.TcpComm {
 
@@ -42,7 +42,7 @@ namespace JayTom.Dws.Client.Service.Sorting.Communication.TcpComm {
 
         public event EventHandler<Exception>? HeartbeatError;
 
-        public void StartHeartbeat(string heartbeatData, TimeSpan interval) {
+        public void StartHeartbeat(string heartbeatData, FormatType formatType, TimeSpan interval) {
             if (_heartbeatThread is null) {
                 _cancellationTokenSource = new CancellationTokenSource();
                 _heartbeatThread = Task.Run(async () => {
@@ -56,7 +56,12 @@ namespace JayTom.Dws.Client.Service.Sorting.Communication.TcpComm {
                         if (ConnectionStatus == ConnectionStatus.Connected) {
                             _heartbeatQueue.Clear();
                             _heartbeatQueue.Enqueue(heartbeatData);
-                            await SendMessage(heartbeatData);
+                            if (formatType == FormatType.Ascii) {
+                                await SendMessage(heartbeatData);
+                            }
+                            else if (formatType == FormatType.Hex) {
+                                await SendMessage(ConvertHexStringToByteArray(heartbeatData));
+                            }
                         }
                     }
                 });

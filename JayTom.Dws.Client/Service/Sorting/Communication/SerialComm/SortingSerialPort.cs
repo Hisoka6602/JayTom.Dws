@@ -33,7 +33,7 @@ namespace JayTom.Dws.Client.Service.Sorting.Communication.SerialComm {
 
         public event EventHandler<Exception>? HeartbeatError;
 
-        public void StartHeartbeat(string heartbeatData, TimeSpan interval) {
+        public void StartHeartbeat(string heartbeatData, SerialPortFormat formatType, TimeSpan interval) {
             //开启心跳线程
             if (_heartbeatThread is null) {
                 _cancellationTokenSource = new CancellationTokenSource();
@@ -49,7 +49,12 @@ namespace JayTom.Dws.Client.Service.Sorting.Communication.SerialComm {
                         if (base.Status == SerialPortStatus.Running) {
                             _heartbeatQueue.Clear();
                             _heartbeatQueue.Enqueue(heartbeatData);
-                            Send(heartbeatData);
+                            if (formatType == SerialPortFormat.Ascii) {
+                                Send(heartbeatData);
+                            }
+                            else {
+                                Send(ConvertHexStringToByteArray(heartbeatData));
+                            }
                         }
                     }
                 });

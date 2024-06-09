@@ -1,4 +1,5 @@
 using SoapCore;
+using System.Text;
 using Microsoft.AspNetCore.Http;
 using PostSoapCoreService.Service;
 using Microsoft.AspNetCore.Builder;
@@ -30,15 +31,12 @@ namespace PostSoapCoreService {
                         .Configure(app => {
                             app.UseRouting();
                             app.UseEndpoints(endpoints => {
-                                endpoints.UseSoapEndpoint<ICommFjjService>("/FjjService/services/CommFJJ", new SoapEncoderOptions(), SoapSerializer.DataContractSerializer);
-
-                                /*
-                                // 添加用于处理 WSDL 请求的路由处理程序
-                                endpoints.MapGet("/FjjService/services/CommFJJ", async context => {
-                                    // 返回 WSDL 描述信息
-                                    context.Response.ContentType = "text/xml";
-                                    await context.Response.WriteAsync(/* WSDL 描述信息内容 #1#string.Empty, cancellationToken: stoppingToken);
-                                });*/
+                                endpoints.UseSoapEndpoint<ICommFjjService>(
+                                    "/FjjService/services/CommFJJ",
+                                    new SoapEncoderOptions {
+                                        WriteEncoding = Encoding.UTF8
+                                    },
+                                    SoapSerializer.DataContractSerializer);
                             });
                         });
                 });

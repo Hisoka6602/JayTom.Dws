@@ -141,7 +141,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                         var connectionConfigInfoModel = _connectionConfigInfoModels.FirstOrDefault(f => f.ConnectionName.Equals(connectionName));
 
                         if (connectionConfigInfoModel?.HeartbeatConfigInfo is { IsHeartbeatEnabled: true, IsHeartbeatActive: true }) {
-                            sortingSerialPort.StartHeartbeat(connectionConfigInfoModel?.HeartbeatConfigInfo?.HeartbeatContent ?? string.Empty, TimeSpan.FromMilliseconds(connectionConfigInfoModel?.HeartbeatConfigInfo?.HeartbeatInterval ?? 1000));
+                            sortingSerialPort.StartHeartbeat(connectionConfigInfoModel?.HeartbeatConfigInfo?.HeartbeatContent ?? string.Empty, sortingSerialPortFormat, TimeSpan.FromMilliseconds(connectionConfigInfoModel?.HeartbeatConfigInfo?.HeartbeatInterval ?? 1000));
                         }
                         _connectionInfos.AddOrUpdate(connectionName, new ConnectionInfo() {
                             ConnectionName = connectionName,
@@ -236,7 +236,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                                 var connectionConfigInfoModel = _connectionConfigInfoModels.FirstOrDefault(f => f.ConnectionName.Equals(connectionName));
 
                                 if (connectionConfigInfoModel?.HeartbeatConfigInfo is { IsHeartbeatEnabled: true, IsHeartbeatActive: true }) {
-                                    sortingTcp.StartHeartbeat(connectionConfigInfoModel?.HeartbeatConfigInfo?.HeartbeatContent ?? string.Empty, TimeSpan.FromMilliseconds(connectionConfigInfoModel?.HeartbeatConfigInfo?.HeartbeatInterval ?? 1000));
+                                    sortingTcp.StartHeartbeat(connectionConfigInfoModel?.HeartbeatConfigInfo?.HeartbeatContent ?? string.Empty, (FormatType)(tcpConfigInfoModel.TcpConnectionConfigInfoInfo?.DataFormat ?? 0), TimeSpan.FromMilliseconds(connectionConfigInfoModel?.HeartbeatConfigInfo?.HeartbeatInterval ?? 1000));
                                 }
                                 _connectionInfos.AddOrUpdate(connectionName, new ConnectionInfo() {
                                     ConnectionName = connectionName,
@@ -316,7 +316,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                                 var connectionConfigInfoModel = _connectionConfigInfoModels.FirstOrDefault(f => f.ConnectionName.Equals(connectionName));
 
                                 if (connectionConfigInfoModel?.HeartbeatConfigInfo is { IsHeartbeatEnabled: true, IsHeartbeatActive: true }) {
-                                    sortingTcp.StartHeartbeat(connectionConfigInfoModel?.HeartbeatConfigInfo?.HeartbeatContent ?? string.Empty, TimeSpan.FromMilliseconds(connectionConfigInfoModel?.HeartbeatConfigInfo?.HeartbeatInterval ?? 1000));
+                                    sortingTcp.StartHeartbeat(connectionConfigInfoModel?.HeartbeatConfigInfo?.HeartbeatContent ?? string.Empty, (FormatType)(tcpConfigInfoModel.TcpConnectionConfigInfoInfo?.DataFormat ?? 0), TimeSpan.FromMilliseconds(connectionConfigInfoModel?.HeartbeatConfigInfo?.HeartbeatInterval ?? 1000));
                                 }
                                 _connectionInfos.AddOrUpdate(connectionName, new ConnectionInfo() {
                                     ConnectionName = connectionName,
