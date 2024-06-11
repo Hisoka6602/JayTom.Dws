@@ -13,6 +13,7 @@
     xmlns:mvvm="http://prismlibrary.com/"
     xmlns:settingsConverter="clr-namespace:JayTom.Dws.Client.Converters.SettingsConverter"
     xmlns:unitConverter="clr-namespace:JayTom.Dws.Client.Converters.UnitConverter"
+    xmlns:validationRules="clr-namespace:JayTom.Dws.Client.ValidationRules"
     x:Name="HomePageView"
     d:DesignHeight="450"
     d:DesignWidth="800"
@@ -102,48 +103,204 @@
                         </EllipseGeometry>
                     </GeometryGroup>
                 </Grid.Clip>
-                <ListBox
-                    Name="CameraListBox"
-                    Width="900"
-                    MinWidth="600"
-                    MaxWidth="900"
-                    Margin="0,10"
-                    HorizontalAlignment="Left"
-                    VerticalAlignment="Center"
-                    HorizontalContentAlignment="Center"
-                    VerticalContentAlignment="Center"
-                    Focusable="False"
-                    ItemTemplate="{StaticResource CameraTemplate}"
-                    ItemsSource="{Binding CameraItems, UpdateSourceTrigger=PropertyChanged}"
-                    ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                    ScrollViewer.VerticalScrollBarVisibility="Disabled"
-                    Style="{StaticResource CustomListBoxStyle}">
-                    <ListBox.Template>
-                        <ControlTemplate TargetType="{x:Type ListBox}">
-                            <ScrollViewer Focusable="False">
-                                <ScrollViewer.Style>
-                                    <Style TargetType="ScrollViewer">
-                                        <Style.Triggers>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
-                                            </Trigger>
-                                            <Trigger Property="IsMouseOver" Value="False">
-                                                <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Hidden" />
-                                            </Trigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </ScrollViewer.Style>
-                                <WrapPanel
+                <TabControl SelectedIndex="1">
+                    <TabItem Header="相机" Visibility="Collapsed">
+                        <!--  相机  -->
+                        <ListBox
+                            Name="CameraListBox"
+                            Width="900"
+                            MinWidth="600"
+                            MaxWidth="900"
+                            Margin="0,10"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            HorizontalContentAlignment="Center"
+                            VerticalContentAlignment="Center"
+                            Focusable="False"
+                            ItemTemplate="{StaticResource CameraTemplate}"
+                            ItemsSource="{Binding CameraItems, UpdateSourceTrigger=PropertyChanged}"
+                            ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                            ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                            Style="{StaticResource CustomListBoxStyle}">
+                            <ListBox.Template>
+                                <ControlTemplate TargetType="{x:Type ListBox}">
+                                    <ScrollViewer Focusable="False">
+                                        <ScrollViewer.Style>
+                                            <Style TargetType="ScrollViewer">
+                                                <Style.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
+                                                    </Trigger>
+                                                    <Trigger Property="IsMouseOver" Value="False">
+                                                        <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Hidden" />
+                                                    </Trigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </ScrollViewer.Style>
+                                        <WrapPanel
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Top"
+                                            Focusable="False"
+                                            IsItemsHost="True"
+                                            Orientation="Horizontal"
+                                            ScrollViewer.CanContentScroll="True" />
+                                    </ScrollViewer>
+                                </ControlTemplate>
+                            </ListBox.Template>
+                        </ListBox>
+                    </TabItem>
+                    <TabItem Header="控件输入" Visibility="Collapsed">
+
+                        <Border
+                            Width="600"
+                            Height="600"
+                            Background="#BF2E2E2E"
+                            CornerRadius="20">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="60" />
+                                </Grid.RowDefinitions>
+                                <!--  背景  -->
+                                <TextBlock
+                                    Grid.Row="0"
+                                    Margin="10"
                                     HorizontalAlignment="Center"
-                                    VerticalAlignment="Top"
-                                    Focusable="False"
-                                    IsItemsHost="True"
-                                    Orientation="Horizontal"
-                                    ScrollViewer.CanContentScroll="True" />
-                            </ScrollViewer>
-                        </ControlTemplate>
-                    </ListBox.Template>
-                </ListBox>
+                                    VerticalAlignment="Center"
+                                    FontFamily="{StaticResource IconFontFamily}"
+                                    FontSize="180"
+                                    Foreground="DimGray"
+                                    Opacity="0.2"
+                                    Text="&#xe9ad;"
+                                    Visibility="Collapsed" />
+                                <!--  底条  -->
+                                <Border
+                                    Grid.Row="1"
+                                    Background="#4169E1"
+                                    CornerRadius="0,0,20,20">
+                                    <!--  上次扫描的内容  -->
+                                    <TextBlock
+                                        Width="Auto"
+                                        MaxWidth="460"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        FontFamily="{StaticResource CustomFontFamily}"
+                                        FontSize="23"
+                                        FontWeight="Bold"
+                                        Foreground="White"
+                                        Text="SF45454566666666666666666666666666666666666666666666666666665555555555555555555555555555555555555555555666666"
+                                        TextTrimming="CharacterEllipsis"
+                                        TextWrapping="Wrap" />
+                                </Border>
+                                <StackPanel
+                                    Grid.Row="0"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Orientation="Vertical">
+                                    <!--  条码框  -->
+                                    <Border
+                                        Margin="10,10,10,5"
+                                        Background="#8A696969"
+                                        CornerRadius="8">
+                                        <Grid>
+                                            <Border
+                                                Width="80"
+                                                Margin="2"
+                                                HorizontalAlignment="Left"
+                                                Background="DarkGray"
+                                                CornerRadius="8">
+                                                <TextBlock
+                                                    HorizontalAlignment="Center"
+                                                    VerticalAlignment="Center"
+                                                    FontFamily="{StaticResource CustomFontFamily}"
+                                                    FontSize="13"
+                                                    FontWeight="Bold"
+                                                    Foreground="#2E2E2E"
+                                                    Text="条码" />
+                                            </Border>
+                                            <TextBox
+                                                Name="BarCodeTextBox"
+                                                Width="380"
+                                                Height="60"
+                                                MaxWidth="400"
+                                                Margin="85,0,5,0"
+                                                materialDesign:TextFieldAssist.HasClearButton="False"
+                                                materialDesign:TextFieldAssist.HasFilledTextField="True"
+                                                Background="Transparent"
+                                                BorderThickness="0"
+                                                Focusable="True"
+                                                FontFamily="{StaticResource CustomFontFamily}"
+                                                FontSize="23"
+                                                FontWeight="Bold"
+                                                Foreground="White"
+                                                Text="{Binding BarcodeInput, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                                                <TextBox.InputBindings>
+                                                    <KeyBinding Key="Enter" Command="{Binding BarcodeInputCommand}" />
+                                                </TextBox.InputBindings>
+                                            </TextBox>
+                                        </Grid>
+                                    </Border>
+                                    <!--  重量框  -->
+                                    <Border
+                                        Margin="10,20,10,5"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        Background="#8A696969"
+                                        CornerRadius="5">
+                                        <Grid>
+                                            <Border
+                                                Width="60"
+                                                Margin="2"
+                                                HorizontalAlignment="Left"
+                                                Background="DarkGray"
+                                                CornerRadius="5">
+                                                <TextBlock
+                                                    HorizontalAlignment="Center"
+                                                    VerticalAlignment="Center"
+                                                    FontFamily="{StaticResource CustomFontFamily}"
+                                                    FontSize="13"
+                                                    FontWeight="Bold"
+                                                    Foreground="#2E2E2E"
+                                                    Text="重量" />
+                                            </Border>
+                                            <TextBox
+                                                Width="160"
+                                                Height="40"
+                                                MaxWidth="500"
+                                                Margin="65,0,5,0"
+                                                materialDesign:TextFieldAssist.HasClearButton="False"
+                                                materialDesign:TextFieldAssist.HasFilledTextField="True"
+                                                Background="Transparent"
+                                                BorderThickness="0"
+                                                Focusable="True"
+                                                FontFamily="{StaticResource CustomFontFamily}"
+                                                FontSize="16"
+                                                FontWeight="Bold"
+                                                Foreground="White">
+                                                <TextBox.Text>
+                                                    <Binding
+                                                        Mode="TwoWay"
+                                                        Path="WeightInput"
+                                                        UpdateSourceTrigger="PropertyChanged">
+                                                        <Binding.ValidationRules>
+                                                            <validationRules:RegexValidationRule ErrorMessage="请输入有效的浮点数" Pattern="^\d+(\.\d+)?$" />
+                                                        </Binding.ValidationRules>
+                                                    </Binding>
+                                                </TextBox.Text>
+                                                <TextBox.InputBindings>
+                                                    <KeyBinding Key="Enter" Command="{Binding BarcodeInputCommand}" />
+                                                </TextBox.InputBindings>
+                                            </TextBox>
+                                        </Grid>
+                                    </Border>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </TabItem>
+                    <TabItem Header="TCP输入" Visibility="Collapsed" />
+                </TabControl>
+
+                <!--  增加一个控件输入控件、TCP输入控件、用TabControl做容器  -->
             </Grid>
         </materialDesign:Card>
 

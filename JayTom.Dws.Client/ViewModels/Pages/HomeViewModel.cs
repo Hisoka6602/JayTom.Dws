@@ -98,6 +98,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         private ConcurrentQueue<PackageExitUpdateEvent> _packageExitUpdateItems = new();
 
         private ConcurrentQueue<CloudVideoUploadMessage> _cloudVideoUploadItems = new();
+        private string _barcodeInput = string.Empty;
+        private float _weightInput;
+        private string _previousBarcode = string.Empty;
 
         public SnackbarMessageQueue HomeMessageQueue {
             get => _homeMessageQueue;
@@ -229,6 +232,25 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         }
 
         #endregion 条码信息
+
+        #region 条码输入相关信息
+
+        public string BarcodeInput {
+            get => _barcodeInput;
+            set => SetProperty(ref _barcodeInput, value);
+        }
+
+        public float WeightInput {
+            get => _weightInput;
+            set => SetProperty(ref _weightInput, value);
+        }
+
+        public string PreviousBarcode {
+            get => _previousBarcode;
+            set => SetProperty(ref _previousBarcode, value);
+        }
+
+        #endregion 条码输入相关信息
 
         public HomeViewModel(IDialogService dialogService,
             IComputerInfoReporter computerInfoReporter,
@@ -963,6 +985,24 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                 _packageExitUpdateItems.Clear();
                 _cloudVideoUploadItems.Clear();
             }, DispatcherPriority.Background);
+        }
+
+        public enum DisplayInputMethod {
+
+            /// <summary>
+            /// 显示相机输入
+            /// </summary>
+            ShowCameraInput = 0,
+
+            /// <summary>
+            /// 显示控件输入
+            /// </summary>
+            ShowControlInput = 1,
+
+            /// <summary>
+            /// 显示TCP输入
+            /// </summary>
+            ShowTcpInput = 2
         }
     }
 }
