@@ -1028,6 +1028,9 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 LengthToDeduct = args.LengthToDeduct,
                                 VolumeToDeduct = args.VolumeToDeduct,
                                 CreateTime = DateTime.Now,
+                                WeightInfo = new WeightInfoModel() {
+                                    FormattedWeight = args.Weight,
+                                },
                                 IsCreatedByLowerMachine = false,
                             };
                             EventAggregator.Instance.Publish(new TriggerPositionEvent() {

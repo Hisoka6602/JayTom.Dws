@@ -12,7 +12,6 @@ using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 using InstructionType = JayTom.Dws.Data.Package.InstructionType;
 
 namespace JayTom.Dws.Client.EventMediators {
-
     public class EventAggregator {
         private static readonly Lazy<EventAggregator> _instance = new(() => new EventAggregator());
 
@@ -90,7 +89,10 @@ namespace JayTom.Dws.Client.EventMediators {
         /// 条码
         /// </summary>
         public string Barcode { get; set; } = string.Empty;
-
+        /// <summary>
+        /// 重量
+        /// </summary>
+        public float Weight { get; set; }
         /// <summary>
         /// 需要扣除的重量
         /// </summary>

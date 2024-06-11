@@ -6,18 +6,19 @@ using Prism.Commands;
 using System.Windows.Input;
 using System.Threading.Tasks;
 using MaterialDesignThemes.Wpf;
+using NPOI.SS.Formula.Functions;
 using System.Collections.Generic;
 using LibreHardwareMonitor.Hardware;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Data.LocalConf.CloudConfig;
+using JayTom.Dws.Data.LocalConf.CameraConfig;
 using JayTom.Dws.Client.Models.CloudSettingModel;
 using JayTom.Dws.Domain.Repository.LocalConf.CloudConfig;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 
 namespace JayTom.Dws.Client.ViewModels.Editors.CloudService {
-
     public class NvrCameraBindingEditorViewModel : BindableBase {
         private readonly IDeviceService _deviceService;
         private readonly IBarcodeScannerCameraConfigRepository _barcodeScannerCameraConfigRepository;
@@ -139,14 +140,13 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CloudService {
             });
         }
 
-        public ICommand LoadedCommand {
-            get => new DelegateCommand<object>(LoadedDelegate);
-        }
+        public ICommand LoadedCommand => new DelegateCommand<object>(LoadedDelegate);
 
         private async void LoadedDelegate(object obj) {
             //加载扫码相机
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
                 NvrCameraBindingItems.Clear();
+
                 if (_deviceService.CameraItems?.Any() != true &&
                     !_deviceService.RunningStatus) {
                     await _deviceService.OnCameraEnumerationRefreshed();
@@ -158,9 +158,17 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CloudService {
                     s.Channel.Equals(Channel) &&
                     s.IpAddress.Equals(IpAddress) &&
                     s.Port.Equals(Port), o => o.Id);
+                //默认添加一个扫码枪
+                NvrCameraBindingItems.Add(new NvrCameraBindingItemInfoModel() {
+
+                    CustomCameraName = "扫码枪",
+                    CameraSerialNumber = "扫码枪",
+                    Num = 1,
+                    IsBinding = nvrCameraBindingInfoModels.Any(a => a.BarcodeScannerSerialNumber.Equals("扫码枪")),
+                });
                 if (configInfoModels?.Any() == true) {
                     if (_deviceService.CameraItems?.Any() == true) {
-                        var num = 1;
+                        var num = 2;
                         foreach (var barcodeScannerCameraConfigInfoModel in configInfoModels) {
                             var isExistingSerialNumber = _deviceService.CameraItems.Any(a =>
                                 a.SerialNumber.Equals(barcodeScannerCameraConfigInfoModel.SerialNumber));

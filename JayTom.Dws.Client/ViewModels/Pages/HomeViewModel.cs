@@ -48,6 +48,7 @@ using CameraType = JayTom.Dws.Client.Models.CameraType;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 using CameraStatus = JayTom.Dws.Client.Models.CameraStatus;
 using ConnectionType = JayTom.Dws.Client.Models.ConnectionType;
+using JayTom.Dws.Client.HomeToolPlugin.SunnenPlugin.ViewModels;
 using InstructionType = JayTom.Dws.Data.Package.InstructionType;
 using ExceptionEventArgs = JayTom.Dws.Client.Service.Sorting.ExceptionEventArgs;
 using static JayTom.Dws.Client.Service.BackgroundService.SubmitApiBackgroundService;
@@ -411,6 +412,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     await Application.Current.Dispatcher.BeginInvoke(() => {
                         //更新右边信息
                         BarCode = args?.Barcode ?? "未识别到条码";
+                        Weight = args?.Weight ?? 0;
                     });
                 }
             });
@@ -985,6 +987,24 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                 _packageExitUpdateItems.Clear();
                 _cloudVideoUploadItems.Clear();
             }, DispatcherPriority.Background);
+        }
+
+        /// <summary>
+        /// 控件输入事件
+        /// </summary>
+        public ICommand BarcodeInputCommand => new DelegateCommand<object>(BarcodeInputDelegate);
+
+        private async void BarcodeInputDelegate(object obj) {
+            await Application.Current.Dispatcher.InvokeAsync(() => {
+                PreviousBarcode = BarcodeInput;
+                if (!string.IsNullOrEmpty(BarCode)) {
+                    EventAggregator.Instance.Publish(new BarcodeTypeProviderEvent {
+                        Barcode = BarcodeInput,
+                        Weight = WeightInput
+                    });
+                    BarcodeInput = string.Empty;
+                }
+            });
         }
 
         public enum DisplayInputMethod {

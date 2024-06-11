@@ -188,7 +188,7 @@
                                         FontSize="23"
                                         FontWeight="Bold"
                                         Foreground="White"
-                                        Text="SF45454566666666666666666666666666666666666666666666666666665555555555555555555555555555555555555555555666666"
+                                        Text="{Binding PreviousBarcode, UpdateSourceTrigger=PropertyChanged}"
                                         TextTrimming="CharacterEllipsis"
                                         TextWrapping="Wrap" />
                                 </Border>
@@ -246,14 +246,14 @@
                                         HorizontalAlignment="Center"
                                         VerticalAlignment="Center"
                                         Background="#8A696969"
-                                        CornerRadius="5">
+                                        CornerRadius="8">
                                         <Grid>
                                             <Border
-                                                Width="60"
+                                                Width="80"
                                                 Margin="2"
                                                 HorizontalAlignment="Left"
                                                 Background="DarkGray"
-                                                CornerRadius="5">
+                                                CornerRadius="8">
                                                 <TextBlock
                                                     HorizontalAlignment="Center"
                                                     VerticalAlignment="Center"
@@ -264,17 +264,17 @@
                                                     Text="重量" />
                                             </Border>
                                             <TextBox
-                                                Width="160"
-                                                Height="40"
+                                                Width="400"
+                                                Height="60"
                                                 MaxWidth="500"
-                                                Margin="65,0,5,0"
+                                                Margin="85,0,5,0"
                                                 materialDesign:TextFieldAssist.HasClearButton="False"
                                                 materialDesign:TextFieldAssist.HasFilledTextField="True"
                                                 Background="Transparent"
                                                 BorderThickness="0"
                                                 Focusable="True"
                                                 FontFamily="{StaticResource CustomFontFamily}"
-                                                FontSize="16"
+                                                FontSize="23"
                                                 FontWeight="Bold"
                                                 Foreground="White">
                                                 <TextBox.Text>

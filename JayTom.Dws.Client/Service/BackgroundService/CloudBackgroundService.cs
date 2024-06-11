@@ -825,9 +825,11 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings(
                         List<NvrCameraBindingInfoModel> nvrCameraBindingInfoModels;
                         try {
                             await _setNvrCameraBindingSlim.WaitAsync(token);
-                            nvrCameraBindingInfoModels = _nvrCameraBindingInfoModels.Where(f => !string.IsNullOrEmpty(cameraSerialNumber)
+
+                            nvrCameraBindingInfoModels = _nvrCameraBindingInfoModels.Where(f => (!string.IsNullOrEmpty(cameraSerialNumber)
                                                                                                                                  && f.BarcodeScannerSerialNumber.Equals(
-                                                                                                                                     cameraSerialNumber))?.ToList() ??
+                                                                                                                                     cameraSerialNumber)) ||
+                                                             f.BarcodeScannerSerialNumber.Equals("扫码枪"))?.ToList() ??
                                                                                           new List<NvrCameraBindingInfoModel>();
                         }
                         finally {
