@@ -142,7 +142,6 @@
                                     <TextBox.InputBindings>
                                         <KeyBinding Key="Enter" Command="{Binding SearchDataCommand}" />
                                     </TextBox.InputBindings>
-
                                 </TextBox>
                                 <Button
                                     Width="30"
@@ -428,7 +427,7 @@
                             Style="{StaticResource MaterialDesignOutlinedTextBox}"
                             Text="{Binding Details, UpdateSourceTrigger=PropertyChanged}"
                             TextWrapping="Wrap"
-                            VerticalScrollBarVisibility="Auto" />
+                            VerticalScrollBarVisibility="Auto" Cursor="" />
                     </Border>
                 </Grid>
             </Border>

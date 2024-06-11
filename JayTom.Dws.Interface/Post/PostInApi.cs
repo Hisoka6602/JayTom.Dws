@@ -271,6 +271,7 @@ namespace JayTom.Dws.Interface.Post {
                 var chuteCode = "0";
                 var routingDirection = "0";
                 var mailType = "0";
+                var sortingSchemeCode = "0";
                 if (!string.IsNullOrWhiteSpace(uploadResponse.ResponseContent)) {
                     var pattern = @"#HEAD::(.*?)::\|\|#END";
                     var match = Regex.Match(uploadResponse.ResponseContent, pattern);
@@ -288,8 +289,12 @@ namespace JayTom.Dws.Interface.Post {
                         if (parts.Length > 4) {
                             routingDirection = parts[4];
                         }
+                        if (parts.Length > 2) {
+                            mailType = parts[2];
+                        }
+
                         if (parts.Length > 1) {
-                            mailType = parts[1];
+                            sortingSchemeCode = parts[1];
                         }
                         //邮件种类-1
                     }
@@ -311,7 +316,7 @@ namespace JayTom.Dws.Interface.Post {
     <soapenv:Header />
     <soapenv:Body>
         <web:getYJLG>
-            <arg0>#HEAD::{Parameters.DeviceId}::{barcode}::{0}::{0}::{Parameters.EmployeeNumber}::{0}::{DateTime.Now:yyyyMMddHHmmss}::{routingDirection}::{mailType}::{chuteCode}::{1}::{0}::{0}::{0}::{0}::{0}::{0}::{0}::{Parameters.OrganizationNumber}||#END</arg0>
+            <arg0>#HEAD::{Parameters.DeviceId}::{barcode}::{0}::{0}::{Parameters.EmployeeNumber}::{0}::{DateTime.Now:yyyyMMddHHmmss}::{routingDirection}::{mailType}::{chuteCode}::{1}::{0}::{0}::{0}::{0}::{0}::{0}::{0}::{sortingSchemeCode}||#END</arg0>
         </web:getYJLG>
     </soapenv:Body>
 </soapenv:Envelope>";

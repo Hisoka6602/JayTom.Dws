@@ -386,9 +386,7 @@ namespace JayTom.Dws.VideoApiClient.ViewModels {
             });
         }
 
-        public ICommand SizeChangedCommand {
-            get => new DelegateCommand<object>(SizeChangeDelegate);
-        }
+        public ICommand SizeChangedCommand => new DelegateCommand<object>(SizeChangeDelegate);
 
         private void SizeChangeDelegate(object obj) {
             if (obj is Window window) {

@@ -6,16 +6,12 @@ namespace JayTom.Dws.Infrastructure.SignalR {
 
         public TimeSpan? NextRetryDelay(RetryContext retryContext) {
             var count = retryContext.PreviousRetryCount / 50;
-            if (count < 1)//重试次数<50,间隔1s
-            {
-                return new TimeSpan(0, 0, 0);
-            }
-            else if (count < 5) {
-                return new TimeSpan(0, 0, 2);
-            }
-            else {
-                return new TimeSpan(0, 0, 30);
-            }
+            return count switch {
+                //重试次数<50,间隔1s
+                < 1 => new TimeSpan(0, 0, 0),
+                < 5 => new TimeSpan(0, 0, 2),
+                _ => new TimeSpan(0, 0, 30)
+            };
         }
     }
 }
