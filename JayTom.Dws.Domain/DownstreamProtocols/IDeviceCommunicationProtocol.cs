@@ -365,6 +365,11 @@ namespace JayTom.Dws.Domain.DownstreamProtocols {
         /// 包裹位置信息(灰度仪居中使用)
         /// </summary>
         public PackagePositionInfo? PackagePositionInfo { get; set; }
+
+        /// <summary>
+        /// 联动车辆
+        /// </summary>
+        public int LinkedCarCount { get; set; } = 0;
     }
 
     public enum SortingExceptionReturnType {

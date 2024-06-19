@@ -104,36 +104,35 @@ namespace JayTom.Dws.CloudApiClient.Api {
                     deviceName = deviceName,
                 });
 
-                using (var httpClient = _httpClientFactory.CreateClient("INSURANCE")) {
-                    httpClient.Timeout = TimeSpan.FromSeconds(20);
-                    HttpResponseMessage message;
-                    await using (Stream dataStream = new MemoryStream(Encoding.UTF8.GetBytes(requestJson))) {
-                        using (HttpContent content = new StreamContent(dataStream)) {
-                            content.Headers.Add("Content-Type", "application/json");
-                            message = await httpClient.PostAsync($"{Domain}{"/api/Package/Packages"}", content, token)
-                                .ConfigureAwait(false);
-                        }
+                using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+                httpClient.Timeout = TimeSpan.FromSeconds(20);
+                HttpResponseMessage message;
+                await using (Stream dataStream = new MemoryStream(Encoding.UTF8.GetBytes(requestJson))) {
+                    using (HttpContent content = new StreamContent(dataStream)) {
+                        content.Headers.Add("Content-Type", "application/json");
+                        message = await httpClient.PostAsync($"{Domain}{"/api/Package/Packages"}", content, token)
+                            .ConfigureAwait(false);
                     }
-                    string httpResult;
-                    switch (message.StatusCode) {
-                        case HttpStatusCode.OK: {
-                                using (message) {
-                                    httpResult = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
-                                }
-                                break;
-                            }
-                        case HttpStatusCode.NotFound:
-                            return new KeyValuePair<bool, object>(false, $"该地址不存在!");
-
-                        default:
-                            httpResult = $"{message}";
-                            break;
-                    }
-
-                    //解码
-                    var result = JsonConvert.DeserializeObject<ApiResult>(httpResult);
-                    return new KeyValuePair<bool, object>(result?.Result ?? false, result ?? new ApiResult());
                 }
+                string httpResult;
+                switch (message.StatusCode) {
+                    case HttpStatusCode.OK: {
+                            using (message) {
+                                httpResult = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                            }
+                            break;
+                        }
+                    case HttpStatusCode.NotFound:
+                        return new KeyValuePair<bool, object>(false, $"该地址不存在!");
+
+                    default:
+                        httpResult = $"{message}";
+                        break;
+                }
+
+                //解码
+                var result = JsonConvert.DeserializeObject<ApiResult>(httpResult);
+                return new KeyValuePair<bool, object>(result?.Result ?? false, result ?? new ApiResult());
             }
             catch (HttpRequestException) {
                 return new KeyValuePair<bool, object>(false, "Http访问异常!");

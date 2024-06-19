@@ -2,14 +2,16 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace JayTom.Dws.CloudApiDbTest.Migrations
 {
     [DbContext(typeof(Program.CloudApiContext1))]
-    partial class CloudApiContext1ModelSnapshot : ModelSnapshot
+    [Migration("20240613095425_AddBarcodeIndex")]
+    partial class AddBarcodeIndex
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -53,7 +55,7 @@ namespace JayTom.Dws.CloudApiDbTest.Migrations
 
                     b.Property<string>("Barcode")
                         .IsRequired()
-                        .HasColumnType("longtext")
+                        .HasColumnType("varchar(255)")
                         .HasColumnName("Barcode");
 
                     b.Property<string>("CameraSerialNumber")
@@ -75,7 +77,11 @@ namespace JayTom.Dws.CloudApiDbTest.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("PackageId");
+                    b.HasIndex("Barcode")
+                        .HasAnnotation("MySQL:IndexType", "BTREE");
+
+                    b.HasIndex("PackageId")
+                        .IsUnique();
 
                     b.HasIndex("ScanTime")
                         .HasAnnotation("IndexSortOrder", "Descending");

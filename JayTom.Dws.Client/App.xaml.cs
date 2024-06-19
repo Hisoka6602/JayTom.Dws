@@ -362,7 +362,7 @@ namespace JayTom.Dws.Client {
                 services.AddSingleton<ISortingConnectionService, DefaultSortingConnectionService>();
                 //灰度仪服务注册
                 services.AddSingleton<IGrayscaleService, DefaultGrayscaleService>();
-                services.AddSingleton<IGrayscaleDevice, GwGrayscaleDevice>();
+                services.AddSingleton<IGrayscaleDevice>(provider => new GwGrayscaleDevice(new TouchSocketTcpClient(), new TouchSocketTcpServer()));
 
                 //云视频云端
                 services.AddSingleton<ICloud, CloudVideoUploadApi>();

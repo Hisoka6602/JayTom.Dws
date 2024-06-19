@@ -304,6 +304,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                             PackageCreationInstruction = model.PackageCreationInstruction,
                             IsCreatedByLowerMachine = model.IsCreatedByLowerMachine,
                             IsStackedPackage = model.IsStackedPackage ?? false,
+                            LinkedCarCount = model.LinkedCarCount
                         });
                     }
                 }
@@ -321,7 +322,8 @@ namespace JayTom.Dws.Client.Service.Sorting {
                             PackageCreationInstruction = model.PackageCreationInstruction,
                             IsCreatedByLowerMachine = model.IsCreatedByLowerMachine,
                             ApiResponse = model.UploadResponse ?? new UploadResponse(),
-                            IsStackedPackage = model.IsStackedPackage
+                            IsStackedPackage = model.IsStackedPackage,
+                            LinkedCarCount = model.LinkedCarCount
                         });
                     }
                 }
@@ -339,7 +341,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                             PackageCreationInstruction = null,
                             IsCreatedByLowerMachine = false,
                             OcrInfo = model,
-                            IsStackedPackage = model.IsStackedPackage
+                            IsStackedPackage = model.IsStackedPackage,
                         });
                     }
                 }
@@ -552,6 +554,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
             await _sortingConnectionService.DisconnectAll();
             await _exitMonitor.Stop(token);
             await _stackedPackageService.Stop(token);
+            await _grayscaleService.StopSensor();
             RunningStatus = false;
             return new KeyValuePair<bool, string>(true, "已停止");
         }
@@ -607,6 +610,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                             PackageCreationTime = param.PackageCreationTime,
                             PackageCreationInstruction = param.PackageCreationInstruction ?? string.Empty,
                             IsCreatedByLowerMachine = param.IsCreatedByLowerMachine,
+                            LinkedCarCount = param.LinkedCarCount
                         });
                     //回调分拣消息
                 }
@@ -928,6 +932,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                             PackageCreationTime = param.PackageCreationTime,
                             PackageCreationInstruction = param.PackageCreationInstruction ?? string.Empty,
                             IsCreatedByLowerMachine = param.IsCreatedByLowerMachine,
+                            LinkedCarCount = param.LinkedCarCount
                         });
                     //回调分拣消息
                 }

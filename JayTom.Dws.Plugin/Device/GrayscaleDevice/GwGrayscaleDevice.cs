@@ -2,12 +2,15 @@
 using System.Linq;
 using System.Text;
 using System.Drawing;
+using SixLabors.ImageSharp;
 using System.ComponentModel;
 using JayTom.Dws.Plugin.Tcp;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using NPOI.XSSF.Streaming.Values;
 using Org.BouncyCastle.Utilities;
+using Point = System.Drawing.Point;
+using System.Collections.Concurrent;
 using JayTom.Dws.Plugin.Tcp.TcpClient;
 using JayTom.Dws.Plugin.Tcp.TcpServer;
 using SixLabors.ImageSharp.Metadata.Profiles.Iptc;
@@ -18,8 +21,15 @@ namespace JayTom.Dws.Plugin.Device.GrayscaleDevice {
     /// 归位灰度仪x02
     /// </summary>
     [Description("归位灰度仪x02,上层判断小车数量")]
-    public class GwGrayscaleDevice : IGrayscaleDevice {
+    public class GwGrayscaleDevice : BaseTcpOperations, IGrayscaleDevice {
+        private ConcurrentQueue<GrayscaleResult> _grayscaleResult = new();
 
+        public static Coordinates AttachmentRectangleBoxCoordinates { get; private set; } = new(0, 0, 600, 200);
+        public static Coordinates MainRectangleBoxCoordinates { get; private set; } = new(0, 0, 600, 600);
+
+        public static int RegionCarCount { get; private set; } = 1;
+
+        /*
         //起始符
         private readonly byte _startBytes = 0x3A;
 
@@ -27,119 +37,185 @@ namespace JayTom.Dws.Plugin.Device.GrayscaleDevice {
         private readonly byte _action = 0x73;
 
         private byte[] _nullByte = "\r\n"u8.ToArray();
+        */
 
-        public void Dispose() {
-            //断开
-        }
-
-        public Point CenterCoordinates { get; } = new Point(0, 0);
+        //public Point CenterCoordinates { get; } = new Point(0, 0);
 
         public event EventHandler<GrayscaleResult>? ParcelLocationReceived;
 
         public event EventHandler? ParcelLocationNotReceived;
 
-        public Task<bool> Connect(string ip, int port, CancellationToken token) {
-            //连接
-
-            return Task.FromResult(false);
-        }
-
         public async Task<bool> SendCarNumber(int carNumber, CancellationToken token) {
             await Task.Yield();
             if (carNumber is > 0 and < 1000) {
                 var array = $":s{carNumber.ToString().PadLeft(3, '0')}\r\n".Select(c => (byte)c).ToArray();
-
-                var s = BitConverter.ToString(array);
+                return await base.SendMessage(array, token);
             }
-
             return false;
         }
 
         public async Task<GrayscaleResult> SendCarNumber(int carNumber, int timeOut, CancellationToken token = default) {
             await Task.Yield();
+            NLog.LogManager.GetCurrentClassLogger().Info("请求获取灰度仪信息");
             if (carNumber is > 0 and < 1000) {
                 var array = $":s{carNumber.ToString().PadLeft(3, '0')}\r\n".Select(c => (byte)c).ToArray();
-
-                var s = BitConverter.ToString(array);
-            }
-
-            return new GrayscaleResult();
-        }
-
-        public GrayscaleResult? DecodeData(byte[] dataBytes) {
-            if (dataBytes.Length == 67) {
-                var grayscaleResult = new GrayscaleResult();
-                var data = Encoding.UTF8.GetString(dataBytes).Replace("\0", "0");
-
-                var strings = data.Split(",");
-                if (strings.Length == 16) {
-                    //小车号
-                    grayscaleResult.CarNumber = Convert.ToInt32(strings[0].Replace(":s", string.Empty));
-                    //小车框
-                    grayscaleResult.CarFrameExists = strings[1].Equals("1");
-                    //中心点x坐标
-                    grayscaleResult.CarCenter = new Point(Convert.ToInt32(strings[2]),
-                        Convert.ToInt32(strings[3]));
-                    //风琴罩
-                    grayscaleResult.AccordionExists = strings[4].Equals("1");
-                    //风琴罩中心点坐标
-                    grayscaleResult.AccordionCenter = new Point(Convert.ToInt32(strings[5]),
-                        Convert.ToInt32(strings[6]));
-                    //小车包裹面积
-                    grayscaleResult.ParcelAreaOnCar = Convert.ToInt32(strings[7]);
-                    //风琴罩上的包裹面积
-                    grayscaleResult.ParcelAreaOnAccordion = Convert.ToInt32(strings[8]);
-
-                    //如果风琴罩上的中心点坐标等于负数则转两辆车,否则转动回传一辆车
+                var sendMessage = await base.SendMessage(array, token);
+                if (sendMessage) {
+                    await Task.Delay(timeOut, token);
+                    do {
+                        _grayscaleResult.TryDequeue(out var result);
+                        if (result is not null && result.CarNumber.Equals(carNumber)) {
+                            return result;
+                        }
+                    } while (_grayscaleResult.Count > 0);
+                    NLog.LogManager.GetCurrentClassLogger().Error($"灰度仪超时未返回");
                 }
             }
 
             return new GrayscaleResult();
         }
 
-        public FormatType FormatType { get; set; }
-        public ConnectionStatus ConnectionStatus { get; }
-
-        public event EventHandler<string>? ConnectionException;
-
-        public event EventHandler<Exception>? Exception;
-
-        public event EventHandler<string>? Disconnected;
-
-        public event EventHandler<CommunicationInfo>? Communication;
-
-        public event EventHandler<string>? Connected;
-
-        public event EventHandler<Exception>? SendError;
-
-        public Task<bool> Connect(string ipAddress, int port, int timeOut = 1000, FormatType dataType = FormatType.Ascii, int dataLen = 0,
-            CancellationToken token = default) {
-            throw new NotImplementedException();
+        public void SetRectangleSizes(Coordinates attachmentRectangle, Coordinates mainRectangle) {
+            AttachmentRectangleBoxCoordinates = attachmentRectangle;
+            MainRectangleBoxCoordinates = mainRectangle;
         }
 
-        public Task<bool> Reconnect(int count, CancellationToken token = default) {
-            throw new NotImplementedException();
+        public void SetRegionCarCount(int regionCarCount) {
         }
 
-        public Task<bool> SendMessage(string message, CancellationToken token = default) {
-            throw new NotImplementedException();
+        public GrayscaleResult? DecodeData(byte[] dataBytes) {
+            try {
+                NLog.LogManager.GetCurrentClassLogger().Info($"接收到的内容:{BitConverter.ToString(dataBytes).Replace("-", " ")}");
+                if (dataBytes.Length == 67) {
+                    var grayscaleResult = new GrayscaleResult();
+
+                    var segments = SplitByteArray(dataBytes, 0x2C);
+                    if (segments?.Any() == true && segments.Count == 16) {
+                        var replace = Encoding.UTF8.GetString(segments[0]).Replace("\0", "0");
+                        //小车号
+                        grayscaleResult.CarNumber = Convert.ToInt32(replace.Replace(":s", string.Empty));
+
+                        //附加框信息
+                        var isAttachmentPackagePresent = segments[1][0] > 0x30;
+                        var coordinates = new Coordinates(
+                            BitConverter.ToInt16(segments[2].Take(2).ToArray()),
+                            BitConverter.ToInt16(segments[3].Take(2).ToArray()),
+                            BitConverter.ToInt16(segments[2].Skip(2).Take(2).ToArray()),
+                            BitConverter.ToInt16(segments[3].Skip(2).Take(2).ToArray()));
+                        var attachmentCenterPoint = (AttachmentRectangleBoxCoordinates.X2 - AttachmentRectangleBoxCoordinates.X1) / 2;
+                        var attachmentPackageCenterPoint = (coordinates.X2 - coordinates.X1) / 2;
+                        var attachmentPoint = attachmentPackageCenterPoint - attachmentCenterPoint;
+                        var orientation = attachmentPoint switch {
+                            > 0 => PackageOrientation.Right,
+                            < 0 => PackageOrientation.Left,
+                            _ => PackageOrientation.Center
+                        };
+                        grayscaleResult.AttachmentRectangleBoxInfo = new BoxPackageInfo() {
+                            IsPackagePresent = isAttachmentPackagePresent,
+                            PackageRegionCoordinates = coordinates,
+                            PackageOrientation = isAttachmentPackagePresent ? orientation : PackageOrientation.Center,
+                            OrientationValue = isAttachmentPackagePresent ? Math.Abs(attachmentPoint) : 0,
+                        };
+                        //主框信息
+                        for (var i = 1; i <= 4; i++) {
+                            var isPackagePresent = segments[i * 3 + 1][0] > 0x30;
+                            var packageRegionCoordinates = new Coordinates(
+                                BitConverter.ToInt16(segments[i * 3 + 2].Take(2).ToArray()),
+                                BitConverter.ToInt16(segments[i * 3 + 3].Take(2).ToArray()),
+                                BitConverter.ToInt16(segments[i * 3 + 2].Skip(2).Take(2).ToArray()),
+                                BitConverter.ToInt16(segments[i * 3 + 3].Skip(2).Take(2).ToArray()));
+                            //计算偏向
+                            var centerPoint = (MainRectangleBoxCoordinates.X2 - MainRectangleBoxCoordinates.X1) / 2;
+                            var packageCenterPoint = (packageRegionCoordinates.X2 - packageRegionCoordinates.X1) / 2;
+                            var point = packageCenterPoint - centerPoint;
+                            var packageOrientation = point switch {
+                                > 0 => PackageOrientation.Right,
+                                < 0 => PackageOrientation.Left,
+                                _ => PackageOrientation.Center
+                            };
+                            if (isPackagePresent) {
+                                grayscaleResult.MainRectangleBoxInfos.Add(new BoxPackageInfo() {
+                                    IsPackagePresent = isPackagePresent,
+                                    PackageRegionCoordinates = packageRegionCoordinates,
+                                    PackageOrientation = isPackagePresent ? packageOrientation : PackageOrientation.Center,
+                                    OrientationValue = isPackagePresent ? Math.Abs(point) : 0
+                                });
+                            }
+                        }
+                        //中心点
+                        grayscaleResult.CenterPoint = new Point(MainRectangleBoxCoordinates.X2 / 2,
+                            MainRectangleBoxCoordinates.Y2 / 2);
+                        if (grayscaleResult.MainRectangleBoxInfos.Any()) {
+                            var pCenterPoint = grayscaleResult.MainRectangleBoxInfos.Max(a => a.PackageRegionCoordinates.Y2) -
+                                               grayscaleResult.MainRectangleBoxInfos.Min(a => a.PackageRegionCoordinates.Y1);
+
+                            var carWidth = (MainRectangleBoxCoordinates.Y2 - MainRectangleBoxCoordinates.Y1) / RegionCarCount;
+
+                            grayscaleResult.LinkedCarCount =
+                                pCenterPoint / carWidth + (pCenterPoint % (float)carWidth > 0 ? 1 : 0);
+                        }
+                        else {
+                            grayscaleResult.LinkedCarCount = 1;
+                        }
+
+                        if (grayscaleResult.AttachmentRectangleBoxInfo.IsPackagePresent) {
+                            grayscaleResult.LinkedCarCount += 1;
+                        }
+                        NLog.LogManager.GetCurrentClassLogger().Info($"解析后的内容:{grayscaleResult}");
+
+                        return grayscaleResult;
+                    }
+                }
+            }
+            catch (Exception e) {
+                NLog.LogManager.GetCurrentClassLogger().Error($"灰度仪解析异常:{e.Message}");
+            }
+
+            NLog.LogManager.GetCurrentClassLogger().Error($"灰度仪返回结果未符合解析条件");
+            return null;
         }
 
-        public Task<bool> SendMessage(byte[] message, CancellationToken token = default) {
-            throw new NotImplementedException();
+        private List<byte[]>? SplitByteArray(byte[] data, byte delimiter) {
+            try {
+                var segments = new List<byte[]>();
+                var start = 0;
+
+                for (var i = 0; i < data.Length; i++) {
+                    if (data[i] == delimiter) {
+                        var length = i - start;
+                        var segment = new byte[length];
+                        Array.Copy(data, start, segment, 0, length);
+                        segments.Add(segment);
+                        start = i + 1;
+                    }
+                }
+
+                // Add the last segment
+                if (start < data.Length) {
+                    var length = data.Length - start;
+                    var segment = new byte[length];
+                    Array.Copy(data, start, segment, 0, length);
+                    segments.Add(segment);
+                }
+
+                return segments;
+            }
+            catch (Exception e) {
+                NLog.LogManager.GetCurrentClassLogger().Error($"数据转换错误:{e.Message}");
+                return null;
+            }
         }
 
-        public void Close() {
-            throw new NotImplementedException();
-        }
-
-        public ConnectionType ConnectionType { get; }
-        public ITcpCommServer? TcpServer { get; }
-        public ITcpCommClient? TcpClient { get; }
-
-        public Task<bool> Connect(string ipAddress, int port, ConnectionType type, int timeOut = 1000,
-            FormatType dataType = FormatType.Ascii, int dataLen = 0, CancellationToken token = default) {
-            throw new NotImplementedException();
+        public GwGrayscaleDevice(ITcpCommClient tcpCommClient, ITcpCommServer tcpCommServer) : base(tcpCommClient, tcpCommServer) {
+            base.Communication += (sender, info) => {
+                if (info.Type == CommunicationType.Receive) {
+                    var array = base.ConvertHexStringToByteArray(info.Content);
+                    var result = DecodeData(array);
+                    if (result is not null) {
+                        _grayscaleResult.Enqueue(result);
+                    }
+                }
+            };
         }
     }
 }

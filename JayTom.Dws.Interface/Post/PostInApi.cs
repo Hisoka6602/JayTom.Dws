@@ -8,16 +8,43 @@ using Newtonsoft.Json.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Configuration;
 
 namespace JayTom.Dws.Interface.Post {
 
     public class PostInApi : IDataUploader {
         private readonly IHttpClientFactory _httpClientFactory;
-        public ApiParameters Parameters { get; private set; } = new();
+        public ApiParameters? Parameters { get; private set; }
         private static long _num = 1;
+        public object SettingLock { get; private set; } = new();
 
         public PostInApi(IHttpClientFactory httpClientFactory) {
             _httpClientFactory = httpClientFactory;
+            lock (SettingLock) {
+                try {
+                    if (Parameters is null) {
+                        IConfiguration configuration = new ConfigurationBuilder()
+                            .SetBasePath($"{AppContext.BaseDirectory}ApiSettingJson")
+                            .AddJsonFile("PostDeliveryAgencySettings.json", optional: false, reloadOnChange: true)
+                            .Build();
+                        Parameters = new ApiParameters() {
+                            Url = configuration["Url"] ?? string.Empty,
+                            Timeout = Convert.ToInt32(configuration["Timeout"]),
+                            WorkshopCode = configuration["WorkshopCode"] ?? string.Empty,
+                            DeviceId = configuration["DeviceId"] ?? string.Empty,
+                            CompanyName = configuration["CompanyName"] ?? string.Empty,
+                            DeviceBarcode = configuration["DeviceBarcode"] ?? string.Empty,
+                            OrganizationNumber = configuration["OrganizationNumber"] ?? string.Empty,
+                            EmployeeNumber = configuration["EmployeeNumber"] ?? string.Empty,
+                        };
+                    }
+                }
+                catch (Exception e) {
+                    Parameters = new();
+                    NLog.LogManager.GetCurrentClassLogger().Error($"读取接口配置错误:{e}");
+                }
+                _httpClientFactory = httpClientFactory;
+            }
         }
 
         public async Task<UploadResponse> UploadData(string barcode, double weight, double length = default, double width = default, double height = default,
@@ -40,7 +67,7 @@ namespace JayTom.Dws.Interface.Post {
     <soapenv:Header />
     <soapenv:Body>
         <web:getLTGKCX>
-            <arg0>#HEAD::{DateTime.Now:yyyyMM}{Parameters.WorkshopCode}FJ{_num.ToString().PadLeft(9, '0')}::{Parameters.DeviceId}::{barcode}::0:: :: :: ::{DateTime.Now:yyyy-MM-dd HH:mm:ss}::{Parameters.EmployeeNumber}::{Parameters.OrganizationNumber}::{Parameters.CompanyName}::{Parameters.DeviceBarcode}::||#END</arg0>
+            <arg0>#HEAD::{DateTime.Now:yyyyMM}{Parameters?.WorkshopCode}FJ{_num.ToString().PadLeft(9, '0')}::{Parameters?.DeviceId}::{barcode}::0:: :: :: ::{DateTime.Now:yyyy-MM-dd HH:mm:ss}::{Parameters?.EmployeeNumber}::{Parameters?.OrganizationNumber}::{Parameters?.CompanyName}::{Parameters?.DeviceBarcode}::||#END</arg0>
         </web:getLTGKCX>
     </soapenv:Body>
 </soapenv:Envelope>";
@@ -71,13 +98,13 @@ namespace JayTom.Dws.Interface.Post {
                 }*/
 
                 using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
-                httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.Timeout);
+                httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters?.Timeout ?? 1000);
                 HttpResponseMessage message;
                 await using (Stream dataStream =
                              new MemoryStream(Encoding.UTF8.GetBytes(data))) {
                     using HttpContent content = new StreamContent(dataStream);
                     content.Headers.Add("Content-Type", "text/xml");
-                    message = await httpClient.PostAsync(Parameters.Url, content, token)
+                    message = await httpClient.PostAsync(Parameters?.Url, content, token)
                         .ConfigureAwait(false);
                 }
 
@@ -131,7 +158,7 @@ namespace JayTom.Dws.Interface.Post {
                     Duration = stopwatch.Elapsed.TotalSeconds,
                     RequestContent = data,
                     RequestTime = requestTime,
-                    RequestUrl = Parameters.Url,
+                    RequestUrl = Parameters?.Url ?? string.Empty,
                     ResponseContent = resultContent,
                     ResponseTime = DateTime.Now
                 };
@@ -160,7 +187,7 @@ namespace JayTom.Dws.Interface.Post {
     <soapenv:Header />
     <soapenv:Body>
         <web:getLTGKCX>
-            <arg0>#HEAD::{DateTime.Now:yyyyMM}{Parameters.WorkshopCode}FJ{_num.ToString().PadLeft(9, '0')}::{Parameters.DeviceId}::{barcode}::0:: :: :: ::{DateTime.Now:yyyy-MM-dd HH:mm:ss}::{Parameters.EmployeeNumber}::{Parameters.OrganizationNumber}::{Parameters.CompanyName}::{Parameters.DeviceBarcode}::||#END</arg0>
+            <arg0>#HEAD::{DateTime.Now:yyyyMM}{Parameters?.WorkshopCode}FJ{_num.ToString().PadLeft(9, '0')}::{Parameters?.DeviceId}::{barcode}::0:: :: :: ::{DateTime.Now:yyyy-MM-dd HH:mm:ss}::{Parameters?.EmployeeNumber}::{Parameters?.OrganizationNumber}::{Parameters?.CompanyName}::{Parameters?.DeviceBarcode}::||#END</arg0>
         </web:getLTGKCX>
     </soapenv:Body>
 </soapenv:Envelope>";
@@ -250,7 +277,7 @@ namespace JayTom.Dws.Interface.Post {
                     Duration = stopwatch.Elapsed.TotalSeconds,
                     RequestContent = data,
                     RequestTime = requestTime,
-                    RequestUrl = Parameters.Url,
+                    RequestUrl = Parameters?.Url ?? string.Empty,
                     ResponseContent = resultContent,
                     ResponseTime = DateTime.Now
                 };
@@ -316,18 +343,18 @@ namespace JayTom.Dws.Interface.Post {
     <soapenv:Header />
     <soapenv:Body>
         <web:getYJLG>
-            <arg0>#HEAD::{Parameters.DeviceId}::{barcode}::{0}::{0}::{Parameters.EmployeeNumber}::{0}::{DateTime.Now:yyyyMMddHHmmss}::{routingDirection}::{mailType}::{chuteCode}::{1}::{0}::{0}::{0}::{0}::{0}::{0}::{0}::{sortingSchemeCode}||#END</arg0>
+            <arg0>#HEAD::{Parameters?.DeviceId}::{barcode}::{0}::{0}::{Parameters?.EmployeeNumber}::{0}::{DateTime.Now:yyyyMMddHHmmss}::{routingDirection}::{mailType}::{chuteCode}::{1}::{0}::{0}::{0}::{0}::{0}::{0}::{0}::{sortingSchemeCode}||#END</arg0>
         </web:getYJLG>
     </soapenv:Body>
 </soapenv:Envelope>";
                     using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
-                    httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.Timeout);
+                    httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters?.Timeout ?? 1000);
                     HttpResponseMessage message;
                     await using (Stream dataStream =
                                  new MemoryStream(Encoding.UTF8.GetBytes(data))) {
                         using HttpContent content = new StreamContent(dataStream);
                         content.Headers.Add("Content-Type", "text/xml");
-                        message = await httpClient.PostAsync(Parameters.Url, content, token)
+                        message = await httpClient.PostAsync(Parameters?.Url, content, token)
                             .ConfigureAwait(false);
                     }
 
@@ -363,7 +390,7 @@ namespace JayTom.Dws.Interface.Post {
                         Duration = stopwatch.Elapsed.TotalSeconds,
                         RequestContent = data,
                         RequestTime = requestTime,
-                        RequestUrl = Parameters.Url,
+                        RequestUrl = Parameters?.Url ?? string.Empty,
                         ResponseContent = resultContent,
                         ResponseTime = DateTime.Now
                     };
@@ -399,18 +426,18 @@ namespace JayTom.Dws.Interface.Post {
     <soapenv:Header />
     <soapenv:Body>
         <web:getYJSM>
-            <arg0>#HEAD::{Parameters.DeviceId}::{barcode}::{Parameters.EmployeeNumber}::{DateTime.Now:yyyyMMddHHmmss}::2::001::0000::{"0000"}::0::0::0::0::0::0::0||#END</arg0>
+            <arg0>#HEAD::{Parameters?.DeviceId}::{barcode}::{Parameters?.EmployeeNumber}::{DateTime.Now:yyyyMMddHHmmss}::2::001::0000::{"0000"}::0::0::0::0::0::0::0||#END</arg0>
         </web:getYJSM>
     </soapenv:Body>
 </soapenv:Envelope>";
                 using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
-                httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.Timeout);
+                httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters?.Timeout ?? 1000);
                 HttpResponseMessage message;
                 await using (Stream dataStream =
                              new MemoryStream(Encoding.UTF8.GetBytes(data))) {
                     using HttpContent content = new StreamContent(dataStream);
                     content.Headers.Add("Content-Type", "text/xml");
-                    message = await httpClient.PostAsync(Parameters.Url, content, token)
+                    message = await httpClient.PostAsync(Parameters?.Url, content, token)
                         .ConfigureAwait(false);
                 }
 
@@ -446,7 +473,7 @@ namespace JayTom.Dws.Interface.Post {
                     Duration = stopwatch.Elapsed.TotalSeconds,
                     RequestContent = data,
                     RequestTime = requestTime,
-                    RequestUrl = Parameters.Url,
+                    RequestUrl = Parameters?.Url ?? string.Empty,
                     ResponseContent = resultContent,
                     ResponseTime = DateTime.Now
                 };

@@ -104,7 +104,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         IsCreatedByLowerMachine = (bool)model?.IsCreatedByLowerMachine,
                         PackageCreationInstruction = model?.PackageCreationInstruction ?? string.Empty,
                         IsStackedPackage = model?.IsStackedPackage,
-                        Timestamp = model?.Timestamp ?? 0
+                        Timestamp = model?.Timestamp ?? 0,
+                        LinkedCarCount = model.LinkedCarCount
                         //图片暂时不写
                     });
 
@@ -604,6 +605,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                     PackageCreationTime = info.PackageCreationTime,
                                     IsCreatedByLowerMachine = info.IsCreatedByLowerMachine,
                                     Timestamp = info.Timestamp,
+                                    LinkedCarCount = info.LinkedCarCount
                                 });
                                 EventAggregator.Instance.Publish(new TriggerPositionEvent() {
                                     IsSuccess = uploadResponse?.IsSuccess ?? false,
@@ -1186,6 +1188,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             /// 包裹时间戳
             /// </summary>
             public long Timestamp { get; set; }
+
+            /// <summary>
+            /// 联动车辆
+            /// </summary>
+            public int LinkedCarCount { get; set; } = 0;
         }
 
         /// <summary>
@@ -1233,6 +1240,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             /// 包裹时间戳
             /// </summary>
             public long Timestamp { get; set; }
+
+            /// <summary>
+            /// 联动车辆
+            /// </summary>
+            public int LinkedCarCount { get; set; } = 0;
         }
 
         /// <summary>

@@ -66,8 +66,12 @@ internal class Program {
                         c.Id
                     });
                 modelBuilder.Entity<BarCodeInfoModel>()
-                    .HasIndex(b => b.Barcode)
+                    .HasIndex(b => b.PackageId)
                     .IsUnique(false);
+                modelBuilder.Entity<BarCodeInfoModel>()
+                    .HasIndex(b => b.ScanTime)
+                    .IsUnique(false)
+                    .HasAnnotation("IndexSortOrder", "Descending");
                 modelBuilder.Entity<BarCodeInfoModel>()
                     .HasIndex(b => b.ScanTime)
                     .IsUnique(false)

@@ -1,0 +1,12 @@
+//处理中心
+{
+  "Url": "http://10.4.188.85/pcs-tc-nc-job/WyService/services/CommWY?wsdl",
+  //超时时间 (Timeout in milliseconds)
+  "Timeout": 1000,
+  //车间代码 (Workshop code)
+  "WorkshopCode": "WS43400001",
+  //设备ID (Device ID)
+  "DeviceId": "43400002",
+  //员工号 (Employee number)
+  "EmployeeNumber": "03178298"
+}

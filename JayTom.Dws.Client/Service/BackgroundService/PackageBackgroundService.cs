@@ -65,6 +65,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private ConcurrentQueue<InstructionsAttach> _instructionsAttachItems = new();
 
         /// <summary>
+        /// 灰度仪跳过的车辆
+        /// </summary>
+        public int GrayScaleSkippedVehicles { get; set; } = 0;
+
+        /// <summary>
         /// 前置信号是否已回复
         /// </summary>
         //private static bool _isSignalReceived;
@@ -205,6 +210,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             _deviceService.NotBarcodeHitEvent += async delegate (object? sender, BarcodeReadEventArgs args) {
                 await Task.Yield();
                 if (!_createPackageSettingsDto.IsUseNoRead) {
+                    args.Image?.Dispose();
                     return;
                 }
                 try {
@@ -227,6 +233,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     else {
                         if (_createPackageSettingsDto.IsUseNoReadFilter) {
                             if (DateTime.Now.Subtract(_lastNoReadTime).TotalMilliseconds < _createPackageSettingsDto.FilterInterval) {
+                                args.Image?.Dispose();
                                 return;
                             }
                             else {
@@ -1088,6 +1095,12 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             _supplyCounterSettingsDto = await _configRepository.FirstOrDefaultEntity<SupplyCounterSettingsDto>(model.SettingsName) ?? new SupplyCounterSettingsDto();
                             _preSignal = _supplyCounterSettingsDto.StartPrecedingNumber;
                             break;
+
+                        case "GrayscaleDeviceSettings":
+                            _grayscaleDeviceSettingsDto = await _configRepository.FirstOrDefaultEntity<GrayscaleDeviceSettingsDto>(model.SettingsName)
+                                                          ?? new GrayscaleDeviceSettingsDto();
+
+                            break;
                     }
                     //其他设置
                 }
@@ -1119,6 +1132,54 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             }
 
                             return;
+                        }
+                        //发送包裹居中指令
+                        /*await Task.Delay(10);
+                        _sortingService.SendPackageCenter((int)packageInfo.Guid, new InstructionsAttach() {
+                            BarCode = string.Empty,
+                            Guid = packageInfo.Guid,
+                            Timestamp = packageInfo.Timestamp,
+                            PackagePositionInfo = new PackagePositionInfo() {
+                                CenterX = 0,
+                                CenterY = 0,
+                                OffsetDirection = OffsetDirection.Left,
+                                OffsetDistance = 127
+                            },
+                            // PackagePositionInfo =  这里计算偏移
+                        });*/
+
+                        if (_grayscaleDeviceSettingsDto.IsUseGrayscaleDetector &&
+                            _grayscaleService.IsConnected) {
+                            /*//跳过车辆
+                            if (GrayScaleSkippedVehicles > 1) {
+                                GrayScaleSkippedVehicles--;
+                                NLog.LogManager.GetCurrentClassLogger().Error("跳过车辆");
+                                return;
+                            }*/
+                            packageInfo.GrayscaleResultInfo = await _grayscaleService.GetSingleGrayscaleSensorResult(packageInfo.Guid, _grayscaleDeviceSettingsDto.TimeOut);
+
+                            /*if (packageInfo.GrayscaleResultInfo is not null) {
+                                //联动车辆
+                                GrayScaleSkippedVehicles = packageInfo.LinkedCarCount = packageInfo.GrayscaleResultInfo.LinkedCarCount;
+                            }
+                            if (_grayscaleDeviceSettingsDto.IsCheckPackageOrientation &&
+                                packageInfo.GrayscaleResultInfo is not null) {
+                                //发送包裹居中指令
+                                _sortingService.SendPackageCenter((int)packageInfo.Guid, new InstructionsAttach() {
+                                    BarCode = string.Empty,
+                                    Guid = packageInfo.Guid,
+                                    Timestamp = packageInfo.Timestamp,
+                                    PackagePositionInfo = new PackagePositionInfo() {
+                                        CenterX = packageInfo.GrayscaleResultInfo.CenterPoint.X,
+                                        CenterY = packageInfo.GrayscaleResultInfo.CenterPoint.Y,
+                                        OffsetDirection = (OffsetDirection)(packageInfo.GrayscaleResultInfo.MainRectangleBoxInfos?.FirstOrDefault()?.PackageOrientation ?? PackageOrientation.Left),
+                                        OffsetDistance = packageInfo.GrayscaleResultInfo.MainRectangleBoxInfos?.FirstOrDefault()?.OrientationValue ?? 0
+                                    },
+                                    // PackagePositionInfo =  这里计算偏移
+                                });
+
+                                //如果是没包裹则返回
+                            }*/
                         }
                     }
                     finally {
@@ -1207,22 +1268,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             }
                         }
                     }*/
-
-                    //触发灰度仪
-                    if (_grayscaleDeviceSettingsDto.IsUseGrayscaleDetector &&
-                        _grayscaleService.IsConnected) {
-                        packageInfo.GrayscaleResultInfo = await _grayscaleService.GetSingleGrayscaleSensorResult(packageInfo.Guid, 300);
-
-                        if (_grayscaleDeviceSettingsDto.IsCheckPackageOrientation) {
-                            //发送包裹居中指令
-                            _sortingService.SendPackageCenter((int)packageInfo.Guid, new InstructionsAttach() {
-                                BarCode = string.Empty,
-                                Guid = packageInfo.Guid,
-                                Timestamp = packageInfo.Timestamp,
-                                // PackagePositionInfo =  这里计算偏移
-                            });
-                        }
-                    }
                 }
             });
             //包裹组合完成后触发
@@ -1282,6 +1327,10 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 if (configInfoModel is not null) {
                     _supplyCounterSettingsDto = JsonConvert.DeserializeObject<SupplyCounterSettingsDto>(configInfoModel.Value) ?? new SupplyCounterSettingsDto();
                     _preSignal = _supplyCounterSettingsDto.StartPrecedingNumber;
+                }
+                configInfoModel = _configInfoModels?.FirstOrDefault(f => f.ConfigName.Equals("GrayscaleDeviceSettings"));
+                if (configInfoModel is not null) {
+                    _grayscaleDeviceSettingsDto = JsonConvert.DeserializeObject<GrayscaleDeviceSettingsDto>(configInfoModel.Value) ?? new GrayscaleDeviceSettingsDto();
                 }
             }
             catch (Exception e) {
@@ -1849,6 +1898,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         /// 灰度仪信息
         /// </summary>
         public GrayscaleResult? GrayscaleResultInfo { get; set; }
+
+        /// <summary>
+        /// 联动车辆
+        /// </summary>
+        public int LinkedCarCount { get; set; } = 0;
     }
 
     public class CameraImageInfo {

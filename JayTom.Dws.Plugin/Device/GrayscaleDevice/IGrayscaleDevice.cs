@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Text;
 using System.Drawing;
+using System.Reflection;
 using System.ComponentModel;
 using JayTom.Dws.Plugin.Tcp;
 using System.Threading.Tasks;
@@ -9,12 +10,7 @@ using System.Collections.Generic;
 
 namespace JayTom.Dws.Plugin.Device.GrayscaleDevice {
 
-    public interface IGrayscaleDevice : IDisposable, ITcpOperations {
-
-        /// <summary>
-        /// 中心坐标
-        /// </summary>
-        Point CenterCoordinates { get; }
+    public interface IGrayscaleDevice : ITcpOperations {
 
         /// <summary>
         /// 触发获取到小车集合
@@ -42,6 +38,19 @@ namespace JayTom.Dws.Plugin.Device.GrayscaleDevice {
         /// <param name="token"></param>
         /// <returns></returns>
         Task<GrayscaleResult> SendCarNumber(int carNumber, int timeOut, CancellationToken token = default);
+
+        /// <summary>
+        /// 设置矩形大小
+        /// </summary>
+        /// <param name="attachmentRectangle"></param>
+        /// <param name="mainRectangle"></param>
+        public void SetRectangleSizes(Coordinates attachmentRectangle, Coordinates mainRectangle);
+
+        /// <summary>
+        /// 设置区域小车数量
+        /// </summary>
+        /// <param name="regionCarCount"></param>
+        public void SetRegionCarCount(int regionCarCount);
     }
 
     public class GrayscaleResult {
@@ -53,57 +62,110 @@ namespace JayTom.Dws.Plugin.Device.GrayscaleDevice {
         public int CarNumber { get; set; }
 
         /// <summary>
-        /// 是否存在小车框
+        /// 附件框信息
         /// </summary>
-        [Description("是否存在小车框")]
-        public bool CarFrameExists { get; set; }
+        [Description("附件框信息")]
+        public BoxPackageInfo AttachmentRectangleBoxInfo { get; set; } = new();
 
         /// <summary>
-        ///  小车中心点坐标
+        /// 主框信息
         /// </summary>
-        [Description("小车中心点坐标")]
-        public Point CarCenter { get; set; }
+        [Description("主框信息")]
+        public List<BoxPackageInfo> MainRectangleBoxInfos { get; set; } = new();
 
         /// <summary>
-        /// 是否存在风琴罩
+        /// 联动小车数量
         /// </summary>
-        [Description("是否存在风琴罩")]
-        public bool AccordionExists { get; set; }
+        [Description("联动小车数量")]
+        public int LinkedCarCount { get; set; }
 
         /// <summary>
-        /// 风琴罩中心点坐标
+        /// 中心点
         /// </summary>
-        [Description("风琴罩中心点坐标")]
-        public Point AccordionCenter { get; set; }
+        [Description("中心点")]
+        public Point CenterPoint { get; set; }
+
+        public override string ToString() {
+            // 构建字符串表示
+            var result = $"小车号: {CarNumber}\n";
+
+            result += $"附件框信息:\n{AttachmentRectangleBoxInfo}\n";
+
+            result += "主框信息:\n";
+            result = MainRectangleBoxInfos.Aggregate(result, (current, boxInfo) => current + $"{boxInfo}\n");
+
+            result += $"联动小车数量: {LinkedCarCount}";
+
+            return result;
+        }
+    }
+
+    public class BoxPackageInfo {
 
         /// <summary>
-        /// 小车上的包裹面积
+        /// 是否存在包裹
         /// </summary>
-        [Description("小车上的包裹面积")]
-        public double ParcelAreaOnCar { get; set; }
+        public bool IsPackagePresent { get; set; }
 
         /// <summary>
-        /// 风琴罩上的包裹面积
+        /// 包裹区域坐标
         /// </summary>
-        [Description("风琴罩上的包裹面积")]
-        public double ParcelAreaOnAccordion { get; set; }
+        public Coordinates PackageRegionCoordinates { get; set; }
 
         /// <summary>
-        /// 是否超过小车左边
+        /// 包裹偏向
         /// </summary>
-        [Description("是否超过小车左边")]
-        public bool IsExceedsCarLeft { get; set; }
+        public PackageOrientation PackageOrientation { get; set; } = PackageOrientation.Center;
 
         /// <summary>
-        /// 是否超过小车右边
+        /// 偏向值
         /// </summary>
-        [Description("是否超过小车右边")]
-        public bool IsExceedsCarRight { get; set; }
+        public int OrientationValue { get; set; }
+
+        public override string ToString() {
+            return $"是否存在包裹: {IsPackagePresent}, 包裹区域坐标: {PackageRegionCoordinates}, 包裹偏向: {PackageOrientation}, 偏向值: {OrientationValue}";
+        }
+    }
+
+    /// <summary>
+    /// 包裹偏向
+    /// </summary>
+    public enum PackageOrientation {
+        /// <summary>
+        /// 偏左
+        /// </summary>
+
+        [Description("偏左")]
+        Left,
 
         /// <summary>
-        /// 是否超过风琴罩左边
+        /// 偏右
         /// </summary>
-        [Description("是否超过风琴罩左边")]
-        public bool IsExceedsAccordionLeft { get; set; }
+        [Description("偏右")]
+        Right,
+
+        /// <summary>
+        /// 居中
+        /// </summary>
+        [Description("居中")]
+        Center
+    }
+
+    public struct Coordinates {
+        public int X1 { get; set; }
+        public int Y1 { get; set; }
+        public int X2 { get; set; }
+        public int Y2 { get; set; }
+
+        public Coordinates(int x1, int y1, int x2, int y2) {
+            X1 = x1;
+            Y1 = y1;
+            X2 = x2;
+            Y2 = y2;
+        }
+
+        public override string ToString() {
+            return $"({X1}, {Y1}), ({X2}, {Y2})";
+        }
     }
 }

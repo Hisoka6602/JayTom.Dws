@@ -2,6 +2,7 @@
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
+using System.Drawing;
 using Newtonsoft.Json;
 using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
@@ -36,6 +37,15 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             },
         };
 
+        private int _additionalFrameRegionX1;
+        private int _additionalFrameRegionY1;
+        private int _additionalFrameRegionX2;
+        private int _additionalFrameRegionY2;
+        private int _mainFrameRegionX1;
+        private int _mainFrameRegionY1;
+        private int _mainFrameRegionX2;
+        private int _mainFrameRegionY2;
+
         public override string Identifier => "PackageSortingSettingsDialog";
         public override string SettingsName => "GrayscaleDeviceSettings";
 
@@ -47,6 +57,46 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         public GrayscaleDeviceInfoModel GrayscaleDeviceInfo {
             get => _grayscaleDeviceInfo;
             set => SetProperty(ref _grayscaleDeviceInfo, value);
+        }
+
+        public int AdditionalFrameRegionX1 {
+            get => _additionalFrameRegionX1;
+            set => SetProperty(ref _additionalFrameRegionX1, value);
+        }
+
+        public int AdditionalFrameRegionY1 {
+            get => _additionalFrameRegionY1;
+            set => SetProperty(ref _additionalFrameRegionY1, value);
+        }
+
+        public int AdditionalFrameRegionX2 {
+            get => _additionalFrameRegionX2;
+            set => SetProperty(ref _additionalFrameRegionX2, value);
+        }
+
+        public int AdditionalFrameRegionY2 {
+            get => _additionalFrameRegionY2;
+            set => SetProperty(ref _additionalFrameRegionY2, value);
+        }
+
+        public int MainFrameRegionX1 {
+            get => _mainFrameRegionX1;
+            set => SetProperty(ref _mainFrameRegionX1, value);
+        }
+
+        public int MainFrameRegionY1 {
+            get => _mainFrameRegionY1;
+            set => SetProperty(ref _mainFrameRegionY1, value);
+        }
+
+        public int MainFrameRegionX2 {
+            get => _mainFrameRegionX2;
+            set => SetProperty(ref _mainFrameRegionX2, value);
+        }
+
+        public int MainFrameRegionY2 {
+            get => _mainFrameRegionY2;
+            set => SetProperty(ref _mainFrameRegionY2, value);
         }
 
         public override async void LoadedDelegate(object obj) {
@@ -73,8 +123,20 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                                         string.Empty,
                             Port = settingsDto.TcpConnectionConfigInfo?.ServerConfig?.Port ?? 0,
                         }
-                    }
+                    },
+                    AdditionalFrameRegion = settingsDto.AdditionalFrameRegion,
+                    MainFrameRegion = settingsDto.MainFrameRegion,
+                    RegionCarCount = settingsDto.RegionCarCount,
+                    TimeOut = settingsDto.TimeOut
                 };
+                AdditionalFrameRegionX1 = GrayscaleDeviceInfo.AdditionalFrameRegion.X;
+                AdditionalFrameRegionY1 = GrayscaleDeviceInfo.AdditionalFrameRegion.Y;
+                AdditionalFrameRegionX2 = GrayscaleDeviceInfo.AdditionalFrameRegion.Width;
+                AdditionalFrameRegionY2 = GrayscaleDeviceInfo.AdditionalFrameRegion.Height;
+                MainFrameRegionX1 = GrayscaleDeviceInfo.MainFrameRegion.X;
+                MainFrameRegionY1 = GrayscaleDeviceInfo.MainFrameRegion.Y;
+                MainFrameRegionX2 = GrayscaleDeviceInfo.MainFrameRegion.Width;
+                MainFrameRegionY2 = GrayscaleDeviceInfo.MainFrameRegion.Height;
             });
         }
 
@@ -102,7 +164,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         Port = GrayscaleDeviceInfo.TcpConnectionConfigInfo?.ServerParameter?.Port ??
                                0,
                     }
-                }
+                },
+                AdditionalFrameRegion = new Rectangle(AdditionalFrameRegionX1, AdditionalFrameRegionY1,
+                    AdditionalFrameRegionX2, AdditionalFrameRegionY2),
+                MainFrameRegion = new Rectangle(MainFrameRegionX1, MainFrameRegionY1, MainFrameRegionX2, MainFrameRegionY2),
+                RegionCarCount = GrayscaleDeviceInfo.RegionCarCount,
+                TimeOut = GrayscaleDeviceInfo.TimeOut
             };
 
             var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {

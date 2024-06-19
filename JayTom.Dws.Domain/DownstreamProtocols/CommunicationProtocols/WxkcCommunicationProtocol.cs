@@ -27,7 +27,7 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
                             //格口号
                             startData = "F9";
                             functionData = "11";
-                            interaction = "01";
+                            interaction = attach.LinkedCarCount > 0 ? attach.LinkedCarCount.ToString().PadLeft(2, '0') : "01";
                         }
                         break;
 
@@ -63,6 +63,9 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
 
                 if (type == FunctionType.PackageCenter && attach.PackagePositionInfo is not null) {
                     //需要传偏移方向和偏移量
+                    if (attach.PackagePositionInfo.OffsetDistance > 127) {
+                        attach.PackagePositionInfo.OffsetDistance = 127;
+                    }
                     data =
                         $"{(attach.PackagePositionInfo.OffsetDirection == OffsetDirection.Right ? "01" : "00")} {attach.PackagePositionInfo.OffsetDistance:X2}";
                 }

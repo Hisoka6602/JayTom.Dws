@@ -57,6 +57,13 @@ namespace JayTom.Dws.Client.Service.Device {
                             1000, (FormatType)grayscaleDeviceSettingsDto.TcpConnectionConfigInfo.DataFormat),
                         _ => false
                     };
+                    _grayscaleDevice.SetRegionCarCount(grayscaleDeviceSettingsDto.RegionCarCount);
+                    _grayscaleDevice.SetRectangleSizes(new Coordinates(grayscaleDeviceSettingsDto.AdditionalFrameRegion.X,
+                        grayscaleDeviceSettingsDto.AdditionalFrameRegion.Y, grayscaleDeviceSettingsDto.AdditionalFrameRegion.Width,
+                        grayscaleDeviceSettingsDto.AdditionalFrameRegion.Height),
+                        new Coordinates(grayscaleDeviceSettingsDto.MainFrameRegion.X,
+                            grayscaleDeviceSettingsDto.MainFrameRegion.Y, grayscaleDeviceSettingsDto.MainFrameRegion.Width,
+                            grayscaleDeviceSettingsDto.MainFrameRegion.Height));
                     return new KeyValuePair<bool, string>(IsConnected, IsConnected ? "连接成功" : "连接失败");
                 }
 

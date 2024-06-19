@@ -331,6 +331,11 @@ namespace JayTom.Dws.Client.Service.Sorting {
         /// 是否备用格口指令
         /// </summary>
         public bool IsAlternateExitInstruction { get; set; }
+
+        /// <summary>
+        /// 联动车辆
+        /// </summary>
+        public int LinkedCarCount { get; set; } = 0;
     }
 
     /// <summary>

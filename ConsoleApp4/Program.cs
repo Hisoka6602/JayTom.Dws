@@ -9,6 +9,8 @@ using JayTom.Dws.Plugin.Speech;
 using JayTom.Dws.Interface.Post;
 using JayTom.Dws.Interface.geek_;
 using System.Text.RegularExpressions;
+using JayTom.Dws.Plugin.Tcp.TcpClient;
+using JayTom.Dws.Plugin.Tcp.TcpServer;
 using JayTom.Dws.Interface.Eshippingit;
 using JayTom.Dws.PluginInterface.Utils;
 using JayTom.Dws.Domain.DownstreamProtocols;
@@ -21,7 +23,7 @@ using JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision;
 internal class Program {
 
     private static async Task Main(string[] args) {
-        var resultContent = @"<return>#HEAD::202405WS43400001FJ000000000::2143004019::18::53000000::南宁市::151::0011000000000000::860.0::0::0::1::*::*::0000000000000000::43410005::43000164::*::||#END</return>";
+        /*var resultContent = @"<return>#HEAD::202405WS43400001FJ000000000::2143004019::18::53000000::南宁市::151::0011000000000000::860.0::0::0::1::*::*::0000000000000000::43410005::43000164::*::||#END</return>";
 
         var pattern = @"#HEAD::(.*?)::\|\|#END";
         var match = Regex.Match(resultContent, pattern);
@@ -40,14 +42,15 @@ internal class Program {
 
         var localTime = Convert.ToDateTime("2024-05-21T12:17:17Z").ToLocalTime();
 
-        return;
+        return;*/
         //return Task.CompletedTask;
-        var gwGrayscaleDevice = new GwGrayscaleDevice();
-        string hexString = "3A 73 30 31 37 2C 30 2C 00 00 00 00 2C 00 00 00 00 2C 32 2C D1 00 E1 01 2C AF 00 78 01 2C 30 2C 00 00 00 00 2C 00 00 00 00 2C 30 2C 00 00 00 00 2C 00 00 00 00 2C 30 2C 00 00 00 00 2C 00 00 00 00 0D 0A";
+        var gwGrayscaleDevice = new GwGrayscaleDevice(new TouchSocketTcpClient(), new TouchSocketTcpServer());
+        string hexString = "3A 73 30 31 37 2C 30 2C 00 00 00 00 2C 00 00 00 00 2C 31 2C 64 00 9C 01 2C 1A 01 F3 01 2C 30 2C 00 00 00 00 2C 00 00 00 00 2C 30 2C 00 00 00 00 2C 00 00 00 00 2C 30 2C 00 00 00 00 2C 00 00 00 00 0D 0A";
         var hexStringToByteArray = HexStringToByteArray(hexString);
 
         var grayscaleResult = gwGrayscaleDevice.DecodeData(hexStringToByteArray);
-
+        var s = grayscaleResult?.ToString();
+        return;
         gwGrayscaleDevice.SendCarNumber(17, new CancellationToken());
         Console.ReadLine();
         var description = SortingExceptionReturnType.VehicleNumberMismatch.GetDescription();
