@@ -182,5 +182,10 @@ namespace JayTom.Dws.Infrastructure {
 
             base.OnModelCreating(modelBuilder);
         }
+
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
+            base.OnConfiguring(optionsBuilder);
+            //optionsBuilder.EnableSensitiveDataLogging(); // 启用敏感数据日志
+        }
     }
 }

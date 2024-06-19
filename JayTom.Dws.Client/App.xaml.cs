@@ -226,6 +226,7 @@ namespace JayTom.Dws.Client {
                             builder.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
                         }).UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
                 }, 300);
+
                 //http
                 services.AddHttpClient("INSURANCE", httpClient => {
                     // httpClient.Timeout = TimeSpan.FromSeconds(10);

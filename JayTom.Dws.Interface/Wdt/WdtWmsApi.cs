@@ -31,7 +31,8 @@ namespace JayTom.Dws.Interface.Wdt {
             var data = new {
                 logistics_no = barcode,
                 weight = Math.Round(Convert.ToDecimal(weight), 3),
-                is_weight = "Y"
+                is_weight = "Y",
+                package_barcode = $"{other}"
             };
             var timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
             var dictionary = new Dictionary<string, object>()
@@ -138,7 +139,8 @@ namespace JayTom.Dws.Interface.Wdt {
             var data = new {
                 logistics_no = barcode,
                 weight = Math.Round(Convert.ToDecimal(weight), 3),
-                is_weight = "Y"
+                is_weight = "Y",
+                package_barcode = $"{other}"
             };
             var timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
             var dictionary = new Dictionary<string, object>()

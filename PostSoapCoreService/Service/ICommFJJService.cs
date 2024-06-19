@@ -37,6 +37,15 @@ namespace PostSoapCoreService.Service {
         [OperationContract(Name = "getGKSG")]
         [return: MessageParameter(Name = "return")]
         Task<string> GetGksg(string arg0);
+
+        /// <summary>
+        /// 格口状态
+        /// </summary>
+        /// <param name="arg0"></param>
+        /// <returns></returns>
+        [OperationContract(Name = "getGkzt")]
+        [return: MessageParameter(Name = "return")]
+        public Task<string> GetGkzt(string arg0);
     }
 
     [DataContract(Namespace = "http://serverNs.webservice.pcs.jdpt.chinapost.cn/")]

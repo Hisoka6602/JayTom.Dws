@@ -24,6 +24,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
         private string _barcode = string.Empty;
         private double _weight;
         private bool _isUploading;
+        private string _boxBarcode = string.Empty;
 
         public WdtWmsApiPageViewModel(IHttpClientFactory httpClientFactory,
             IDialogService dialogService,
@@ -51,6 +52,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
         public double Weight {
             get => _weight;
             set => SetProperty(ref _weight, value);
+        }
+
+        /// <summary>
+        /// 箱子条码
+        /// </summary>
+        public string BoxBarcode {
+            get => _boxBarcode;
+            set => SetProperty(ref _boxBarcode, value);
         }
 
         /// <summary>
@@ -114,7 +123,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
                         Url = WdtWmsApiInfo.Url,
                         TimeOut = WdtWmsApiInfo.TimeOut,
                     });
-                    var uploadResponse = await wdtWmsApi.UploadData(Barcode, Weight);
+                    var uploadResponse = await wdtWmsApi.UploadData(Barcode, Weight, other: BoxBarcode);
                     IsUploading = false;
                     //弹窗
                     _dialogService.ShowDialog("ApiTestDialog", new DialogParameters { { "UploadResponse", uploadResponse } }, null);

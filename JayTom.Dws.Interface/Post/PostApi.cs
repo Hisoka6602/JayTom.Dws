@@ -116,9 +116,13 @@ namespace JayTom.Dws.Interface.Post {
                         var content = match.Groups[1].Value;
                         var parts = content.Split(new string[] { "::" }, StringSplitOptions.None);
 
-                        if (parts.Length > 7 && parts[6].Length >= 4) {
-                            //格口
-                            resultContent += $"格口:[{parts[6][..4]}]";
+                        if (parts.Length > 7 && parts[6].Length >= 8) {
+                            var exit = $"格口:[{parts[6][..4]}]";
+                            //判断备用格口
+                            if (await IsExitLocked(exit, token)) {
+                                exit = $"格口:[{parts[6][4..8]}]";
+                            }
+                            resultContent += exit;
                             isSuccess = true;
                             SubmitScanInfo(barcode, token);
                         }
@@ -235,9 +239,13 @@ namespace JayTom.Dws.Interface.Post {
                         var content = match.Groups[1].Value;
                         var parts = content.Split(new string[] { "::" }, StringSplitOptions.None);
 
-                        if (parts.Length > 7 && parts[6].Length >= 4) {
-                            //格口
-                            resultContent += $"格口:[{parts[6][..4]}]";
+                        if (parts.Length > 7 && parts[6].Length >= 8) {
+                            var exit = $"格口:[{parts[6][..4]}]";
+                            //判断备用格口
+                            if (await IsExitLocked(exit, token)) {
+                                exit = $"格口:[{parts[6][4..8]}]";
+                            }
+                            resultContent += exit;
                             isSuccess = true;
                             SubmitScanInfo(barcode, token);
                         }
@@ -480,6 +488,47 @@ namespace JayTom.Dws.Interface.Post {
             }
         }
 
+        /// <summary>
+        /// 判断锁格
+        /// </summary>
+        /// <param name="exit"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        public async Task<bool> IsExitLocked(string exit, CancellationToken token = default) {
+            try {
+                if (!string.IsNullOrEmpty(Parameters?.LocalServiceUrl)) {
+                    var data = $@"
+<soapenv:Envelope xmlns:web=""http://serverNs.webservice.pcs.jdpt.chinapost.cn/"" xmlns:soapenv=""http://schemas.xmlsoap.org/soap/envelope/"">
+    <soapenv:Header />
+    <soapenv:Body>
+        <web:getGkzt>
+            <arg0>{exit}</arg0>
+        </web:getGkzt>
+    </soapenv:Body>
+</soapenv:Envelope>";
+
+                    using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+                    httpClient.Timeout = TimeSpan.FromMilliseconds(1000);
+                    HttpResponseMessage message;
+                    await using (Stream dataStream =
+                                 new MemoryStream(Encoding.UTF8.GetBytes(data))) {
+                        using HttpContent content = new StreamContent(dataStream);
+                        content.Headers.Add("Content-Type", "text/xml");
+                        message = await httpClient.PostAsync(Parameters?.Url, content, token)
+                            .ConfigureAwait(false);
+                    }
+
+                    var resultContent = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                    resultContent = Regex.Unescape(resultContent);
+                    return resultContent.Contains("已锁格");
+                }
+            }
+            catch (Exception e) {
+                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
+            }
+            return false;
+        }
+
         public class ApiParameters {
 
             /// <summary>
@@ -506,6 +555,11 @@ namespace JayTom.Dws.Interface.Post {
             /// 员工号 (Employee number)
             /// </summary>
             public string EmployeeNumber { get; set; } = "03178298";
+
+            /// <summary>
+            /// 本地服务Url
+            /// </summary>
+            public string LocalServiceUrl { get; set; } = string.Empty;
         }
 
         [XmlRoot(ElementName = "Envelope", Namespace = "http://schemas.xmlsoap.org/soap/envelope/")]

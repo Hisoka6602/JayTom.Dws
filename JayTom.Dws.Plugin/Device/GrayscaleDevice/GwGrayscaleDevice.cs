@@ -175,7 +175,7 @@ namespace JayTom.Dws.Plugin.Device.GrayscaleDevice {
             return null;
         }
 
-        private List<byte[]>? SplitByteArray(byte[] data, byte delimiter) {
+        private List<byte[]>? SplitByteArray1(byte[] data, byte delimiter) {
             try {
                 var segments = new List<byte[]>();
                 var start = 0;
@@ -191,6 +191,52 @@ namespace JayTom.Dws.Plugin.Device.GrayscaleDevice {
                 }
 
                 // Add the last segment
+                if (start < data.Length) {
+                    var length = data.Length - start;
+                    var segment = new byte[length];
+                    Array.Copy(data, start, segment, 0, length);
+                    segments.Add(segment);
+                }
+
+                return segments;
+            }
+            catch (Exception e) {
+                NLog.LogManager.GetCurrentClassLogger().Error($"数据转换错误:{e.Message}");
+                return null;
+            }
+        }
+
+        private List<byte[]>? SplitByteArray(byte[] data, byte delimiter) {
+            try {
+                var segments = new List<byte[]>();
+                var start = 0;
+
+                for (var i = 0; i < data.Length; i++) {
+                    // 检查是否遇到了分隔符
+                    if (data[i] == delimiter) {
+                        // 检查分隔符后面是否有一个Uint16值 (2字节)
+                        if (i + 2 < data.Length && data[i + 2] == delimiter) {
+                            // 创建当前段并跳过 Uint16 段 (2字节)
+                            var length = i - start;
+                            var segment = new byte[length];
+                            Array.Copy(data, start, segment, 0, length);
+                            segments.Add(segment);
+                            start = i + 1;
+
+                            // 跳过 Uint16 段
+                            i += 2;
+                        }
+                        else {
+                            var length = i - start;
+                            var segment = new byte[length];
+                            Array.Copy(data, start, segment, 0, length);
+                            segments.Add(segment);
+                            start = i + 1;
+                        }
+                    }
+                }
+
+                // 添加最后一个段
                 if (start < data.Length) {
                     var length = data.Length - start;
                     var segment = new byte[length];

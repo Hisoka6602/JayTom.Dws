@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 
 namespace JayTom.Dws.Infrastructure {
+
     public sealed class SqliteLogsContext : DbContext {
 
         public SqliteLogsContext(DbContextOptions<SqliteLogsContext> options) : base(options) {
@@ -126,6 +127,11 @@ namespace JayTom.Dws.Infrastructure {
                     .HasAnnotation("IndexSortOrder", "Descending");
             }
             base.OnModelCreating(modelBuilder);
+        }
+
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
+            base.OnConfiguring(optionsBuilder);
+            //optionsBuilder.EnableSensitiveDataLogging(); // 启用敏感数据日志
         }
     }
 }

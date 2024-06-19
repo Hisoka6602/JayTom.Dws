@@ -814,6 +814,11 @@ namespace JayTom.Dws.Infrastructure.Repository {
                 if (dbSet is null) return null;
                 return await dbSet.AsNoTracking().Where(where).FirstOrDefaultAsync(token);
             }
+            catch (NullReferenceException ex) {
+                // 记录详细的错误信息
+                LogManager.GetCurrentClassLogger().Log(LogLevel.Error, $"NullReferenceException: {ex.Message}");
+                throw;
+            }
             catch (Exception e) {
                 LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
             }

@@ -110,7 +110,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     });
 
                     //添加到推送队列
-                    if (model is not null && model.IsCreatedByLowerMachine) {
+                    if (model.IsCreatedByLowerMachine) {
                         try {
                             await _takePackageSlim.WaitAsync();
                             _packageSubmissionPushItems.TryAdd(
@@ -732,6 +732,15 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
                             foreach (var pair in pairs) {
                                 ReportProgress(pair, uploader, stoppingToken);
+                            }
+                        }
+                        else {
+                            try {
+                                await _takePackageSlim.WaitAsync();
+                                _packageSubmissionPushItems.Clear();
+                            }
+                            finally {
+                                _packageSubmissionPushItems?.Clear();
                             }
                         }
                     }
