@@ -12,7 +12,7 @@ using JayTom.Dws.Plugin.Scale.ScaleValueParameters;
 namespace JayTom.Dws.Plugin.Scale.DynamicScale {
 
     public class DefaultDynamicScale : IDynamicScale {
-        private System.IO.Ports.SerialPort? _serialPort { get; set; }
+        private static System.IO.Ports.SerialPort? _serialPort { get; set; }
         private DefaultDynamicScaleValueParameters _defaultDynamicScaleValueParameters = new();
         private BaseScaleConnectParam _baseScaleConnectParam = new();
         private SemaphoreSlim _semaphore = new(1);
@@ -21,7 +21,7 @@ namespace JayTom.Dws.Plugin.Scale.DynamicScale {
             if (_serialPort?.IsOpen == true) {
                 _serialPort?.Close();
             }
-            _serialPort?.Dispose();
+            // _serialPort?.Dispose();
             _serialPort = null;
         }
 
@@ -56,7 +56,7 @@ namespace JayTom.Dws.Plugin.Scale.DynamicScale {
             if (_serialPort?.IsOpen == true) {
                 return true;
             }
-
+            NLog.LogManager.GetCurrentClassLogger().Error($"connectParam.BaudRate:{connectParam.BaudRate},connectParam.DataBits:{connectParam.DataBits},connectParam.PortName:{connectParam.PortName},connectParam.Parity:{connectParam.Parity},,connectParam.StopBits:{connectParam.StopBits}");
             try {
                 if (_serialPort is null) {
                     _serialPort = new System.IO.Ports.SerialPort() {
@@ -66,6 +66,7 @@ namespace JayTom.Dws.Plugin.Scale.DynamicScale {
                         StopBits = _baseScaleConnectParam.StopBits,
                         PortName = _baseScaleConnectParam.PortName,
                     };
+                    NLog.LogManager.GetCurrentClassLogger().Error("新的连接");
                     //注册事件
                     _serialPort.DataReceived += async delegate (object sender, SerialDataReceivedEventArgs args) {
                         //读数据
@@ -148,11 +149,13 @@ namespace JayTom.Dws.Plugin.Scale.DynamicScale {
                     _serialPort.Parity = _baseScaleConnectParam.Parity;
                     _serialPort.StopBits = _baseScaleConnectParam.StopBits;
                     _serialPort.PortName = _baseScaleConnectParam.PortName;
+                    NLog.LogManager.GetCurrentClassLogger().Error("其他连接");
                 }
 
                 _serialPort.Open();
                 if (_serialPort.IsOpen) {
                     OnConnected(this);
+                    NLog.LogManager.GetCurrentClassLogger().Error("连接成功");
                     return true;
                 }
             }
@@ -160,6 +163,7 @@ namespace JayTom.Dws.Plugin.Scale.DynamicScale {
                 Dispose();
                 OnExcepted(e);
                 OnDisconnected(this);
+                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
                 return false;
             }
             return false;

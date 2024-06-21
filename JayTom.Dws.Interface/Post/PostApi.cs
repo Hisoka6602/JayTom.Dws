@@ -34,6 +34,7 @@ namespace JayTom.Dws.Interface.Post {
                             EmployeeNumber = configuration["EmployeeNumber"] ?? string.Empty,
                             DeviceId = configuration["DeviceId"] ?? string.Empty,
                             WorkshopCode = configuration["WorkshopCode"] ?? string.Empty,
+                            LocalServiceUrl = configuration["LocalServiceUrl"] ?? string.Empty,
                         };
                     }
                 }
@@ -119,7 +120,7 @@ namespace JayTom.Dws.Interface.Post {
                         if (parts.Length > 7 && parts[6].Length >= 8) {
                             var exit = $"格口:[{parts[6][..4]}]";
                             //判断备用格口
-                            if (await IsExitLocked(exit, token)) {
+                            if (await IsExitLocked(parts[6][..4], token)) {
                                 exit = $"格口:[{parts[6][4..8]}]";
                             }
                             resultContent += exit;
@@ -242,7 +243,7 @@ namespace JayTom.Dws.Interface.Post {
                         if (parts.Length > 7 && parts[6].Length >= 8) {
                             var exit = $"格口:[{parts[6][..4]}]";
                             //判断备用格口
-                            if (await IsExitLocked(exit, token)) {
+                            if (await IsExitLocked(parts[6][..4], token)) {
                                 exit = $"格口:[{parts[6][4..8]}]";
                             }
                             resultContent += exit;
@@ -514,7 +515,7 @@ namespace JayTom.Dws.Interface.Post {
                                  new MemoryStream(Encoding.UTF8.GetBytes(data))) {
                         using HttpContent content = new StreamContent(dataStream);
                         content.Headers.Add("Content-Type", "text/xml");
-                        message = await httpClient.PostAsync(Parameters?.Url, content, token)
+                        message = await httpClient.PostAsync(Parameters?.LocalServiceUrl, content, token)
                             .ConfigureAwait(false);
                     }
 

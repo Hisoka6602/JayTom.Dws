@@ -14,7 +14,7 @@ using static JayTom.Dws.Plugin.WeighingScale.WeighingScale;
 namespace JayTom.Dws.Plugin.Scale.StaticScale {
 
     public class DefaultStaticScale : IStaticScale {
-        private System.IO.Ports.SerialPort? _serialPort { get; set; }
+        private static System.IO.Ports.SerialPort? _serialPort { get; set; }
         private readonly ConcurrentQueue<float> _weightQueue = new();
         private readonly ConcurrentQueue<string> _character = new();
         private DateTime StabledTime { get; set; } = DateTime.Now;
@@ -33,7 +33,7 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
             if (_serialPort?.IsOpen == true) {
                 _serialPort?.Close();
             }
-            _serialPort?.Dispose();
+            //_serialPort?.Dispose();
             _serialPort = null;
         }
 
@@ -131,6 +131,7 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
                 }
 
                 _serialPort.Open();
+                NLog.LogManager.GetCurrentClassLogger().Error("静态称连接");
                 if (_serialPort.IsOpen) {
                     //注册转换事件
                     _tokenSource?.Cancel();

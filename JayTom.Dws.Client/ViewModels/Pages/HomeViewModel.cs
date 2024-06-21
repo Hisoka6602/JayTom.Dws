@@ -850,7 +850,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                                         if (o is ApiResult result &&
                                             !string.IsNullOrEmpty(result.Data?.ToString() ?? string.Empty)) {
                                             if (key1) {
-                                                var licenseDirectory = Path.Combine(Directory.GetCurrentDirectory(), "License");
+                                                var licenseDirectory = Path.Combine(AppContext.BaseDirectory, "License");
                                                 var files = Directory.GetFiles(licenseDirectory, "*.key");
                                                 Parallel.ForEach(files, File.Delete);
 

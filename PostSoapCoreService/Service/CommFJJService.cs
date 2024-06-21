@@ -47,7 +47,7 @@ namespace PostSoapCoreService.Service {
                     var parts = content.Split(new string[] { "::" }, StringSplitOptions.None);
 
                     if (parts.Length >= 4 && int.TryParse(parts[3], out var exit) &&
-                        int.TryParse(parts[3], out var status)) {
+                        int.TryParse(parts[4], out var status)) {
                         _exitItems.AddOrUpdate(exit.ToString(),
                             _ => status == 1,
                             (_, _) => status == 1);

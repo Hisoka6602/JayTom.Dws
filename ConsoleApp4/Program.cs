@@ -23,6 +23,12 @@ using JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision;
 internal class Program {
 
     private static async Task Main(string[] args) {
+        var testStr = "0011000100000000";
+        var s1 = testStr[..4];
+        var s2 = testStr[4..8];
+        Console.WriteLine(s1);
+        Console.WriteLine(s2);
+
         await GetGksg("#HEAD::10000012::20000001::11002333::2012::1:: ||#END");
 
         /*var resultContent = @"<return>#HEAD::202405WS43400001FJ000000000::2143004019::18::53000000::南宁市::151::0011000000000000::860.0::0::0::1::*::*::0000000000000000::43410005::43000164::*::||#END</return>";

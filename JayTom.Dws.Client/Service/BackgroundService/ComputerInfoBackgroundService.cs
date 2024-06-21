@@ -15,14 +15,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
     public class ComputerInfoBackgroundService : Microsoft.Extensions.Hosting.BackgroundService {
         private readonly IComputerInfoReporter _computerInfoReporter;
-        private readonly IConfiguration _configuration;
         private readonly IComputer _computer;
         private static bool _isWindowsClose;
 
-        public ComputerInfoBackgroundService(IComputerInfoReporter computerInfoReporter,
-            IConfiguration configuration, IComputer computer) {
+        public ComputerInfoBackgroundService(IComputerInfoReporter computerInfoReporter, IComputer computer) {
             _computerInfoReporter = computerInfoReporter;
-            _configuration = configuration;
             _computer = computer;
             EventAggregator.Instance.Subscribe<WindowsAction>(async item => {
                 if (item is WindowsAction { Type: WindowsActionType.Close }) {

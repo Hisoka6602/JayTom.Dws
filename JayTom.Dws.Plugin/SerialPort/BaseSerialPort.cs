@@ -97,6 +97,7 @@ namespace JayTom.Dws.Plugin.SerialPort {
                 };
 
                 _serialPort.Open();
+                NLog.LogManager.GetCurrentClassLogger().Error($"BaseSerialPort连接");
                 if (_serialPort.IsOpen) {
                     OnConnectionChanged(this);
                     return true;

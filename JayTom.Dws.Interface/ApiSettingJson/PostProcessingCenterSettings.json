@@ -8,5 +8,7 @@
   //设备ID (Device ID)
   "DeviceId": "43400002",
   //员工号 (Employee number)
-  "EmployeeNumber": "03178298"
+  "EmployeeNumber": "03178298",
+  //分拣服务地址
+  "LocalServiceUrl": "http://10.166.42.95:8080/FjjService/services/CommFJJ?wsdl"
 }

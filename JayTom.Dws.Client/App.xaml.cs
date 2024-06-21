@@ -402,9 +402,10 @@ namespace JayTom.Dws.Client {
             if (!createdNew) {
                 // 另一个实例已经在运行，尝试激活它的窗口
                 NotifyExistingInstance();
+                NLog.LogManager.GetCurrentClassLogger().Error("阻止多开");
                 Environment.Exit(0);
             }
-            ThreadPool.SetMinThreads(300, 300);
+            ThreadPool.SetMinThreads(100, 200);
 
             this.DispatcherUnhandledException += delegate (object sender, DispatcherUnhandledExceptionEventArgs args) {
                 //异常触发

@@ -215,7 +215,7 @@ namespace JayTom.Dws.Client.Service.ExternalDataService {
                             }
                             else if (templateInfos[i].Content.ToLower().Contains("weight")) {
                                 float.TryParse(split[i], out weight);
-                                inputEventArgs.Weight = weight;
+                                inputEventArgs.Weight = weight / 10;
                             }
                             else if (templateInfos[i].Content.ToLower().Contains("barcode")) {
                                 inputEventArgs.Barcode = Regex.Replace(split[i], @"[\u0000-\u001f\b]", "");
