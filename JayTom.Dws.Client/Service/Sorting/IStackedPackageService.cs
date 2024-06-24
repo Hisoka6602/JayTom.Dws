@@ -4,6 +4,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using JayTom.Dws.Client.Service.Manager;
 using JayTom.Dws.Client.Service.BackgroundService;
 
 namespace JayTom.Dws.Client.Service.Sorting {

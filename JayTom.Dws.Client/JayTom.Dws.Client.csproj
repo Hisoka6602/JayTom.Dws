@@ -169,12 +169,6 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <Compile Remove="Service\新文件夹\**" />
-    <EmbeddedResource Remove="Service\新文件夹\**" />
-    <None Remove="Service\新文件夹\**" />
-    <Page Remove="Service\新文件夹\**" />
-  </ItemGroup>
-  <ItemGroup>
     <Content Include="favicon.ico" />
     <Content Include="ico.ico" />
   </ItemGroup>

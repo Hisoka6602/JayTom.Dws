@@ -32,6 +32,7 @@ using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Interface.Eshippingit;
 using JayTom.Dws.PluginInterface.Utils;
 using JayTom.Dws.Client.Service.Sorting;
+using JayTom.Dws.Client.Service.Manager;
 using Microsoft.Extensions.Caching.Memory;
 using JayTom.Dws.Domain.DownstreamProtocols;
 using JayTom.Dws.Domain.Repository.LocalConf;
@@ -74,6 +75,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private SemaphoreSlim _takePackageSlim = new(1);
         private ConcurrentDictionary<long, PackageSubmissionPushInfo> _packageSubmissionPushItems = new();
         private JtExpressDto _jtExpressDto = new();
+        private IDataUploader? _submissionUploader;
 
         #region 非通用版本变量(临时)
 
@@ -105,12 +107,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         PackageCreationInstruction = model?.PackageCreationInstruction ?? string.Empty,
                         IsStackedPackage = model?.IsStackedPackage,
                         Timestamp = model?.Timestamp ?? 0,
-                        LinkedCarCount = model.LinkedCarCount
+                        LinkedCarCount = model?.LinkedCarCount ?? 1
                         //图片暂时不写
                     });
-
                     //添加到推送队列
-                    if (model.IsCreatedByLowerMachine) {
+                    if (model.IsCreatedByLowerMachine && _submissionUploader is not null) {
                         try {
                             await _takePackageSlim.WaitAsync();
                             _packageSubmissionPushItems.TryAdd(
@@ -130,6 +131,14 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     switch (model.SettingsName) {
                         case "ApiSettings":
                             _apiSettingsDto = await _configRepository.FirstOrDefaultEntity<ApiSettingsDto>(model.SettingsName) ?? new ApiSettingsDto();
+                            _submissionUploader = _apiSettingsDto?.Type switch {
+                                ApiType.CaiNiaoApi => new CaiNiaoApi(_httpClientFactory),
+                                ApiType.JtExpressApi => new JtExpressApi(_httpClientFactory),
+                                ApiType.PostInApi => new PostInApi(_httpClientFactory),
+                                ApiType.PostApi => new PostApi(_httpClientFactory),
+                                _ => null
+                            };
+
                             break;
 
                         case "DefaultApiParameters": {
@@ -286,7 +295,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             });
             //更新上传状态
             EventAggregator.Instance.Subscribe<ApiResponseReceived>(async item => {
-                if (item is ApiResponseReceived model) {
+                if (item is ApiResponseReceived model && _packageSubmissionPushItems.Any()) {
                     await Task.Yield();
                     try {
                         await _takePackageSlim.WaitAsync();
@@ -311,7 +320,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             });
             //更新格口信息
             EventAggregator.Instance.Subscribe<PackageExitUpdateEvent>(async item => {
-                if (item is PackageExitUpdateEvent model) {
+                if (item is PackageExitUpdateEvent model && _packageSubmissionPushItems.Any()) {
                     try {
                         await _takePackageSlim.WaitAsync();
                         //获取包裹
@@ -712,14 +721,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         : new List<KeyValuePair<long, PackageSubmissionPushInfo>>();
 
                     if (pairs?.Any() == true) {
-                        IDataUploader? uploader = _apiSettingsDto?.Type switch {
-                            ApiType.CaiNiaoApi => new CaiNiaoApi(_httpClientFactory),
-                            ApiType.JtExpressApi => new JtExpressApi(_httpClientFactory),
-                            ApiType.PostInApi => new PostInApi(_httpClientFactory),
-                            ApiType.PostApi => new PostApi(_httpClientFactory),
-                            _ => null
-                        };
-                        if (uploader is not null) {
+                        if (_submissionUploader is not null) {
                             /*
                             Parallel.ForEach(pairs, new ParallelOptions() {
                                 MaxDegreeOfParallelism = 10
@@ -731,16 +733,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             */
 
                             foreach (var pair in pairs) {
-                                ReportProgress(pair, uploader, stoppingToken);
-                            }
-                        }
-                        else {
-                            try {
-                                await _takePackageSlim.WaitAsync();
-                                _packageSubmissionPushItems.Clear();
-                            }
-                            finally {
-                                _packageSubmissionPushItems?.Clear();
+                                ReportProgress(pair, _submissionUploader, stoppingToken);
                             }
                         }
                     }
@@ -888,6 +881,14 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 RetryInterval = eshippingitApiDto.RetryInterval,
                 TimeOut = eshippingitApiDto.TimeOut,
                 Machine = eshippingitApiDto.Machine
+            };
+
+            _submissionUploader = _apiSettingsDto?.Type switch {
+                ApiType.CaiNiaoApi => new CaiNiaoApi(_httpClientFactory),
+                ApiType.JtExpressApi => new JtExpressApi(_httpClientFactory),
+                ApiType.PostInApi => new PostInApi(_httpClientFactory),
+                ApiType.PostApi => new PostApi(_httpClientFactory),
+                _ => null
             };
         }
 
@@ -1104,7 +1105,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     EventAggregator.Instance.Publish(new PushPackageInfo() {
                         PackageInfo = packageValue.Value.PackageInfo ?? new PackageInfo(),
                         PackageExitUpdateEvent = packageValue.Value.PackageExitUpdateItems?.LastOrDefault() ?? new PackageExitUpdateEvent(),
-                        SignalCallbackTime = packageValue.Value.PackageExitUpdateItems?.LastOrDefault(l => l.InstructionType == InstructionType.SignalCallback || l.InstructionType == InstructionType.PackageExceptionEx)?.InstructionInfos?.FirstOrDefault()?.InstructionGeneratedTime
+                        SignalCallbackTime = packageValue.Value.PackageExitUpdateItems?.LastOrDefault(l => l.InstructionType is InstructionType.SignalCallback or InstructionType.PackageExceptionEx)?.InstructionInfos?.FirstOrDefault()?.InstructionGeneratedTime
                     });
                     //删除这条
 

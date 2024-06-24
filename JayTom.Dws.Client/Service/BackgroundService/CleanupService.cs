@@ -63,9 +63,9 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             }
 
             _cacheClearSettingsDto = await _configRepository.FirstOrDefaultEntity<CacheClearSettingsDto>("CacheClearSettings", stoppingToken);
-
             //删除文件日志
             try {
+                await Task.Yield();
                 var logsFolderPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs");
                 if (Directory.Exists(logsFolderPath) && _cacheClearSettingsDto?.LogDataAgoDays > 0) {
                     // 匹配日期命名的.log文件
@@ -81,6 +81,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 NLog.LogManager.GetCurrentClassLogger().Error($"删除日志文件异常:{e}");
             }
             while (!stoppingToken.IsCancellationRequested && !_isWindowsClose) {
+                await Task.Yield();
                 //数据盘
                 if (_cacheClearSettingsDto?.MinimumSpaceRetention > 0) {
                     var diskInfo = (await _computer.GetDiskInfoAsync())

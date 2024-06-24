@@ -27,7 +27,7 @@ namespace JayTom.Dws.Client.Models {
         private ICamera? _camera;
         private bool _isRealtimeImageEnabled;
         private Image? _imageControl;
-        private CancellationTokenSource tokenSource = new();
+        private readonly CancellationTokenSource _tokenSource = new();
 
         public CameraItemInfoModel() {
             if (this is INotifyCollectionChanged notifyCollectionChanged) {
@@ -36,12 +36,12 @@ namespace JayTom.Dws.Client.Models {
                         if (args.Action == NotifyCollectionChangedAction.Remove && args.OldItems?.Contains(this) == true) {
                             //移除
                             BitmapQueue.Clear();
-                            tokenSource.Cancel();
+                            _tokenSource.Cancel();
                         }
                     };
             }
             Task.Factory.StartNew(async () => {
-                while (!tokenSource.IsCancellationRequested) {
+                while (!_tokenSource.IsCancellationRequested) {
                     var tryDequeue = BitmapQueue.TryDequeue(out var bitmap);
                     if (tryDequeue && bitmap is not null && this.Image is not null) {
                         var rect = new Rectangle(0, 0, bitmap.Width, bitmap.Height);
@@ -57,7 +57,7 @@ namespace JayTom.Dws.Client.Models {
                             }, DispatcherPriority.Render);
                         });
                     }
-                    await Task.Delay(1);
+                    await Task.Delay(3);
                 }
             }, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
         }

@@ -33,6 +33,7 @@ using System.Collections.ObjectModel;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Client.Service.Sorting;
+using JayTom.Dws.Client.Service.Manager;
 using JayTom.Dws.Client.Models.DataModels;
 using JayTom.Dws.Infrastructure.IComputer;
 using JayTom.Dws.Client.Service.ImageStorage;
@@ -678,6 +679,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     if (args.Timestamp != model.ImageTimestamp) {
                         model.ImageTimestamp = args.Timestamp;
                         if (!model.IsRealtimeImageEnabled) {
+                            //先清除累积的
+                            if (model.BitmapQueue.Count > 3) {
+                                model.BitmapQueue.Clear();
+                            }
                             model.BitmapQueue.Enqueue(args.ThumbImage);
                         }
                         await Application.Current.Dispatcher.BeginInvoke(() => {

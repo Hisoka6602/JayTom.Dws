@@ -7,6 +7,7 @@ using JayTom.Dws.PluginInterface;
 using System.Collections.Generic;
 using JayTom.Dws.Interface.Cloud;
 using JayTom.Dws.Client.Service.Sorting;
+using JayTom.Dws.Client.Service.Manager;
 using JayTom.Dws.Client.Service.BackgroundService;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 using InstructionType = JayTom.Dws.Data.Package.InstructionType;

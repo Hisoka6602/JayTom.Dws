@@ -8,6 +8,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace JayTom.Dws.Data.Package {
+
     [Table("Data_BarCodeInfo", Schema = "dbo")]
     public class BarCodeInfoModel : BasePackageForeignKeyInfoModel {
 
@@ -34,11 +35,19 @@ namespace JayTom.Dws.Data.Package {
         /// </summary>
         [Column("CameraSerialNumber")]
         public string CameraSerialNumber { get; set; } = string.Empty;
+
         /// <summary>
         /// 源字符
         /// </summary>
         [Column("OriginalText"), NotMapped]
         public string OriginalText { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 绑定时间
+        /// </summary>
+
+        [Column("BindTime"), NotMapped]
+        public DateTime BindTime { get; set; } = DateTime.Now;
     }
 
     public enum BarCodeSourceType {

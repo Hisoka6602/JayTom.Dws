@@ -33,6 +33,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             var systemInfo = _computer.GetSystemInfo();
             var systemInfoString = $"{systemInfo.OsVersion}-{systemInfo.SystemType}";
             while (!stoppingToken.IsCancellationRequested && !_isWindowsClose) {
+                await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken);
+                continue;
                 await Task.Run(async () => {
                     // 并行获取各项信息
                     var cpuInfoTask = _computer.GetCpuInfoAsync();
@@ -138,7 +140,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         GC.Collect();
                     }
                 }, stoppingToken);
-                await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken);
             }
         }
     }

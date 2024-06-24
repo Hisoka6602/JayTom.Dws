@@ -24,6 +24,11 @@ namespace JayTom.Dws.Camera {
         public int BarcodeBorderSize { get; set; }
 
         /// <summary>
+        /// 是否隐藏NoRead
+        /// </summary>
+        public bool IsHideNoRead { get; set; }
+
+        /// <summary>
         /// 边框颜色
         /// </summary>
         public System.Drawing.Color BarcodeBorderColor { get; set; }

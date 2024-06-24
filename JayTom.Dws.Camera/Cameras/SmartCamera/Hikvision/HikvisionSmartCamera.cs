@@ -460,6 +460,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
         public IOcr? Ocr { get; set; }
 
         public int BarcodeBorderSize { get; set; } = 5;
+        public bool IsHideNoRead { get; set; } = true;
         public Color BarcodeBorderColor { get; set; } = Color.LawnGreen;
         public bool IsShowBarcodeBorder { get; set; } = true;
         public bool IsUseTriggerMode { get; set; } = true;
@@ -558,7 +559,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                     }
                     try {
                         var nRet = _mvCodeReader?.MV_CODEREADER_GetOneFrameTimeoutEx2_NET(ref pData, pstFrameInfoEx2,
-                                       1000) ??
+                                       500) ??
                                    0;
                         if (nRet == MvCodeReader.MV_CODEREADER_OK) {
                             stFrameInfoEx2 =
@@ -574,8 +575,19 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                             //锁半秒
                             if (DateTime.Now.Subtract(_lockDateTime).TotalMilliseconds >= 50) {
                                 _lockDateTime = DateTime.Now;
+                                var stBcrResultEx2 =
+                                    (MvCodeReader.MV_CODEREADER_RESULT_BCR_EX2)(Marshal.PtrToStructure(
+                                            stFrameInfoEx2.UnparsedBcrList
+                                                .pstCodeListEx2,
+                                            typeof(MvCodeReader.
+                                                MV_CODEREADER_RESULT_BCR_EX2)) ??
+                                        new MvCodeReader.
+                                            MV_CODEREADER_RESULT_BCR_EX2());
+                                //判断是否需要返回NoRead
+                                if (IsHideNoRead && stBcrResultEx2.nCodeNum < 1) {
+                                    continue;
+                                }
                                 var bmp = await GetBitmapAsync(pData, _bufForDriver, stFrameInfoEx2);
-
                                 //智能相机没有纯图像回调,暂时先写在这里
                                 if (this.BindingType is CameraBindingType.OcrCamera) {
                                     //调用Ocr
@@ -587,14 +599,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                                 }
                                 else {
                                     var thumbnailImage = GenerateThumbnail(bmp);
-                                    var stBcrResultEx2 =
-                                  (MvCodeReader.MV_CODEREADER_RESULT_BCR_EX2)(Marshal.PtrToStructure(
-                                          stFrameInfoEx2.UnparsedBcrList
-                                              .pstCodeListEx2,
-                                          typeof(MvCodeReader.
-                                              MV_CODEREADER_RESULT_BCR_EX2)) ??
-                                      new MvCodeReader.
-                                          MV_CODEREADER_RESULT_BCR_EX2());
+
                                     //返回条码
                                     var scanTime = DateTime.Now;
                                     var localTime = new DateTimeOffset(scanTime).ToLocalTime();
@@ -680,6 +685,8 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                                     else {
                                         //如果没读到条码
                                         if (TriggerMode == TriggerMode.Hardware) {
+                                            //临时等待5ms,邮政3个项目
+                                            await Task.Delay(5, token);
                                             OnNotBarcodeHitEvent(new BarcodeReadEventArgs() {
                                                 Timestamp = timestamp,
                                                 Barcode = "NoRead",

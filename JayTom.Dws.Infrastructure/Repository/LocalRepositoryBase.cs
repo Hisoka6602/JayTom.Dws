@@ -811,7 +811,7 @@ namespace JayTom.Dws.Infrastructure.Repository {
             try {
                 await using var concardContext = _contextFactory.CreateDbContext();
                 var dbSet = concardContext?.Set<T>();
-                if (dbSet is null) return null;
+                if (dbSet is null || @where is null) return null;
                 return await dbSet.AsNoTracking().Where(where).FirstOrDefaultAsync(token);
             }
             catch (NullReferenceException ex) {
