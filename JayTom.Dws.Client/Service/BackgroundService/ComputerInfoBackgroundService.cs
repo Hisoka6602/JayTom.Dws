@@ -12,7 +12,6 @@ using JayTom.Dws.Infrastructure.IComputer;
 using NetworkType = JayTom.Dws.Client.Models.NetworkType;
 
 namespace JayTom.Dws.Client.Service.BackgroundService {
-
     public class ComputerInfoBackgroundService : Microsoft.Extensions.Hosting.BackgroundService {
         private readonly IComputerInfoReporter _computerInfoReporter;
         private readonly IComputer _computer;
@@ -33,8 +32,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             var systemInfo = _computer.GetSystemInfo();
             var systemInfoString = $"{systemInfo.OsVersion}-{systemInfo.SystemType}";
             while (!stoppingToken.IsCancellationRequested && !_isWindowsClose) {
-                await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken);
-                continue;
+
                 await Task.Run(async () => {
                     // 并行获取各项信息
                     var cpuInfoTask = _computer.GetCpuInfoAsync();
