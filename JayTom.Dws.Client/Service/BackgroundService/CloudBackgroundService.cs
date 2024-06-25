@@ -804,31 +804,34 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings(
             try {
                 await _cloudVideoUpLoadSlim.WaitAsync(token);
                 var retryPolicy = Policy.HandleResult<bool>(result => !result)
-               .Or<Exception>().RetryAsync(_cloudVideoSettingsDto.RetryAttempts, (a, b) => {
-                   EventAggregator.Instance.Publish(new CloudVideoUploadRetryMessage {
-                       Barcode = packageInfoModel.BarCodeInfo?.Barcode ?? string.Empty,
-                       RetryCount = b
-                   });
-               });
+                    .Or<Exception>().RetryAsync(_cloudVideoSettingsDto.RetryAttempts, (a, b) => {
+                        EventAggregator.Instance.Publish(new CloudVideoUploadRetryMessage {
+                            Barcode = packageInfoModel.BarCodeInfo?.Barcode ?? string.Empty,
+                            RetryCount = b
+                        });
+                    });
                 await retryPolicy.ExecuteAsync(async () => {
                     //获取数据
                     //创建多线程
 
                     //位置输出*/
-                    var (key, value) = await _cloud.SetParameters(new Dictionary<string, object>() {
-                    { "WebDoMain", _cloudVideoSettingsDto.WebDoMain },
-                    { "Timeout", _cloudVideoSettingsDto.RequestTimeout },
+                    var (key, value) = await _cloud.SetParameters(new Dictionary<string, object>()
+                    {
+                        { "WebDoMain", _cloudVideoSettingsDto.WebDoMain },
+                        { "Timeout", _cloudVideoSettingsDto.RequestTimeout },
                     });
                     if (key) {
-                        var cameraSerialNumber = packageInfoModel.ImageInfos?.FirstOrDefault(f => f.Type == 0)?.CameraSerialNumber;
+                        var cameraSerialNumber = packageInfoModel.ImageInfos?.FirstOrDefault(f => f.Type == 0)
+                            ?.CameraSerialNumber;
                         //取出绑定信息
                         List<NvrCameraBindingInfoModel> nvrCameraBindingInfoModels;
                         try {
                             await _setNvrCameraBindingSlim.WaitAsync(token);
-                            nvrCameraBindingInfoModels = _nvrCameraBindingInfoModels.Where(f => !string.IsNullOrEmpty(cameraSerialNumber)
-                                                                                                                                 && f.BarcodeScannerSerialNumber.Equals(
-                                                                                                                                     cameraSerialNumber))?.ToList() ??
-                                                                                          new List<NvrCameraBindingInfoModel>();
+                            nvrCameraBindingInfoModels = _nvrCameraBindingInfoModels.Where(f =>
+                                                             !string.IsNullOrEmpty(cameraSerialNumber)
+                                                             && f.BarcodeScannerSerialNumber.Equals(
+                                                                 cameraSerialNumber))?.ToList() ??
+                                                         new List<NvrCameraBindingInfoModel>();
                         }
                         finally {
                             _setNvrCameraBindingSlim.Release();
@@ -907,15 +910,17 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings(
                                 IsCreatedByLowerMachine =
                                     packageInfoModel.SortingInfo?.IsCreatedByLowerMachine ?? false,
                                 InstructionInfos = packageInfoModel.SortingInfo?.InstructionInfos?
-                                        .Select(s => new PackageCloudInstructionInfo {
-                                            InstructionContent = s.InstructionContent,
-                                            InstructionGeneratedTime = s.InstructionGeneratedTime,
-                                            InstructionType = (InstructionType)s.InstructionType,
-                                        })?.ToList(),
+                                    .Select(s => new PackageCloudInstructionInfo {
+                                        InstructionContent = s.InstructionContent,
+                                        InstructionGeneratedTime = s.InstructionGeneratedTime,
+                                        InstructionType = (InstructionType)s.InstructionType,
+                                    })?.ToList(),
                                 SortingMode = (int)(packageInfoModel.SortingInfo?.SortingMode ?? 0),
                                 IsSortingUsed = packageInfoModel.SortingInfo?.IsSortingUsed ?? false,
                                 IsAbnormalSorting = packageInfoModel.SortingInfo?.IsAbnormalSorting ?? false,
-                                AbnormalSortingType = (PackageCloudAbnormalSortingType)(packageInfoModel.SortingInfo?.AbnormalSortingType ?? AbnormalSortingType.None)
+                                AbnormalSortingType =
+                                    (PackageCloudAbnormalSortingType)
+                                    (packageInfoModel.SortingInfo?.AbnormalSortingType ?? AbnormalSortingType.None)
                             },
                             LogisticsInfo = new PackageCloudLogisticsInfo() {
                                 LogisticsCode = packageInfoModel.LogisticsInfo?.LogisticsCode ?? string.Empty,
@@ -939,7 +944,7 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings(
                                     })?.ToList(),
                             },
                             ImageInfos = packageInfoModel.ImageInfos?.Select(s =>
-                                new PackageCloudImageInfo() {
+                                new PackageCloudImageInfo {
                                     CameraSerialNumber = s.CameraSerialNumber,
                                     CameraName = s.CameraName,
                                     CustomCameraName = s.CustomCameraName,
@@ -979,7 +984,8 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings(
                                 cloudVideoUploadInfoModel.UploadTime = cloudUploadResponse.UploadTime;
                                 cloudVideoUploadInfoModel.UploadContent = cloudUploadResponse.UploadContent;
                                 cloudVideoUploadInfoModel.UploadDuration = cloudUploadResponse.UploadDuration;
-                                cloudVideoUploadInfoModel.ScanImageCount = packageInfoModel.ImageInfos?.Count(c => c.Type == 0) ?? 0;
+                                cloudVideoUploadInfoModel.ScanImageCount =
+                                    packageInfoModel.ImageInfos?.Count(c => c.Type == 0) ?? 0;
                                 cloudVideoUploadInfoModel.PanoramaImageCount =
                                     packageInfoModel.ImageInfos?.Count(c => c.Type == 1) ?? 0;
 
@@ -999,12 +1005,17 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings(
                                 }, token);
                             }
                         }
+
                         return false;
                     }
                     else {
+                        NLog.LogManager.GetCurrentClassLogger().Error($"云端上传失败:{value}");
                         return false;
                     }
                 });
+            }
+            catch (Exception e) {
+                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
             }
             finally {
                 _cloudVideoUpLoadSlim.Release();
