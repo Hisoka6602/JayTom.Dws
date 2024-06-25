@@ -16,6 +16,7 @@ using JayTom.Dws.Data.LocalConf;
 using NPOI.SS.Formula.Functions;
 using System.Threading.Channels;
 using System.Collections.Generic;
+using NPOI.XSSF.Streaming.Values;
 using System.Windows.Media.Media3D;
 using System.Collections.Concurrent;
 using JayTom.Dws.Client.EventMediators;
@@ -1286,6 +1287,10 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         }
                     }*/
                 }
+                else if (item is TriggerPositionEvent { TriggerPosition: TriggerPositionEnum.BarCodeSetValueAfter, PackageInfo: { } info }) {
+                    //邮政专供
+                    PackageInfoManager.CompletedPackage(f => f.Key.Equals(info.CreateTime));
+                }
             });
             //包裹组合完成后触发
             EventAggregator.Instance.Subscribe<PackageInfo>(async item => {
@@ -1319,6 +1324,24 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     PackageInfo = args.RemovedPackage,
                     Description = args.Description
                 });
+            };
+            PackageInfoManager.PackageCompleted += (sender, args) => {
+                //执行输出
+                if (args.CompletedPackage?.BarCodeInfo is not null &&
+                    args.CompletedPackage?.WeightInfo is not null &&
+                    args.CompletedPackage?.VolumeInfo is not null) {
+                    _resultOutputService.ExecuteOutput(
+                        args.CompletedPackage.BarCodeInfo.Barcode,
+                        (float)(args.CompletedPackage.WeightInfo.FormattedWeight),
+                        args.CompletedPackage.BarCodeInfo.ScanTime,
+                        (float)(args.CompletedPackage.VolumeInfo.FormattedLength),
+                        (float)(args.CompletedPackage.VolumeInfo.FormattedWidth),
+                        (float)(args.CompletedPackage.VolumeInfo.FormattedHeight),
+                        (float)(args.CompletedPackage.VolumeInfo.FormattedVolume),
+                        args.CompletedPackage.BarCodeInfo.CameraSerialNumber);
+
+                    EventAggregator.Instance.Publish(args.CompletedPackage);
+                }
             };
         }
 

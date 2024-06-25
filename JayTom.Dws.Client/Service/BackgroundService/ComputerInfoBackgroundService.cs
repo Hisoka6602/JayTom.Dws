@@ -34,7 +34,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             var systemInfoString = $"{systemInfo.OsVersion}-{systemInfo.SystemType}";
             while (!stoppingToken.IsCancellationRequested && !_isWindowsClose) {
                 await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken);
-                continue;
                 await Task.Run(async () => {
                     // 并行获取各项信息
                     var cpuInfoTask = _computer.GetCpuInfoAsync();
