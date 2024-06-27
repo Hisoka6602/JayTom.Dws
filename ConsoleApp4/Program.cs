@@ -23,37 +23,8 @@ using JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision;
 internal class Program {
 
     private static async Task Main(string[] args) {
-        var testStr = "0011000100000000";
-        var s1 = testStr[..4];
-        var s2 = testStr[4..8];
-        Console.WriteLine(s1);
-        Console.WriteLine(s2);
-
-        await GetGksg("#HEAD::10000012::20000001::11002333::2012::1:: ||#END");
-
-        /*var resultContent = @"<return>#HEAD::202405WS43400001FJ000000000::2143004019::18::53000000::南宁市::151::0011000000000000::860.0::0::0::1::*::*::0000000000000000::43410005::43000164::*::||#END</return>";
-
-        var pattern = @"#HEAD::(.*?)::\|\|#END";
-        var match = Regex.Match(resultContent, pattern);
-        if (match.Success) {
-            // Extract the content and split by '::'
-            var content = match.Groups[1].Value;
-            var parts = content.Split(new string[] { "::" }, StringSplitOptions.None);
-
-            if (parts.Length > 7 && parts[7].Length >= 4) {
-                //格口
-                resultContent += $"格口:[{parts[7][..4]}]";
-            }
-        }
-
-        await new PostInApi(null).UploadData("0123456789", 0, 0);
-
-        var localTime = Convert.ToDateTime("2024-05-21T12:17:17Z").ToLocalTime();
-
-        return;*/
-        //return Task.CompletedTask;
         var gwGrayscaleDevice = new GwGrayscaleDevice(new TouchSocketTcpClient(), new TouchSocketTcpServer());
-        string hexString = "3A 73 30 37 30 2C 30 2C 00 00 00 00 2C 00 00 00 00 2C 31 2C 42 00 9B 00 2C 2C 01 AA 01 2C 30 2C 00 00 00 00 2C 00 00 00 00 2C 30 2C 00 00 00 00 2C 00 00 00 00 2C 30 2C 00 00 00 00 2C 00 00 00 00 0D 0A";
+        string hexString = "3A 73 30 31 37 2C 30 2C 00 00 00 00 2C 00 00 00 00 2C 31 2C 64 00 9C 01 2C 1A 01 F3 01 2C 30 2C 00 00 00 00 2C 00 00 00 00 2C 30 2C 00 00 00 00 2C 00 00 00 00 2C 30 2C 00 00 00 00 2C 00 00 00 00 0D 0A";
         var hexStringToByteArray = HexStringToByteArray(hexString);
 
         var grayscaleResult = gwGrayscaleDevice.DecodeData(hexStringToByteArray);

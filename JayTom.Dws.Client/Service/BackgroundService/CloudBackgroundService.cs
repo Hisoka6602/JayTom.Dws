@@ -1005,13 +1005,11 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings(
                                 }, token);
                             }
                         }
+                        NLog.LogManager.GetCurrentClassLogger().Error($"云端上传失败:{JsonConvert.SerializeObject(cloudUploadResponse)}");
+                        return false;
+                    }
 
-                        return false;
-                    }
-                    else {
-                        NLog.LogManager.GetCurrentClassLogger().Error($"云端上传失败:{value}");
-                        return false;
-                    }
+                    return false;
                 });
             }
             catch (Exception e) {

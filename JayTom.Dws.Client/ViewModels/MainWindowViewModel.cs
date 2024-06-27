@@ -290,7 +290,8 @@ namespace JayTom.Dws.Client.ViewModels {
                 }
             }
 
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+            await Application.Current.Dispatcher.InvokeAsync(async () => {
+                NLog.LogManager.GetCurrentClassLogger().Error($"进入主页加载");
                 await Task.Delay(TimeSpan.FromSeconds(5));
                 //加载配置需要有一个事件通知各个模块
                 //加载体积配置
@@ -345,6 +346,7 @@ namespace JayTom.Dws.Client.ViewModels {
                         MainMessageQueue.Enqueue($"同步配置连接{(key ? "成功" : "失败")}");
                     }
                 }
+                NLog.LogManager.GetCurrentClassLogger().Error($"完成主页加载");
             });
 
             //连接同步配置
