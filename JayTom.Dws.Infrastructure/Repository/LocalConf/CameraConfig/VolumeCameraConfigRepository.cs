@@ -11,7 +11,7 @@ using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 
 namespace JayTom.Dws.Infrastructure.Repository.LocalConf.CameraConfig {
 
-    public class VolumeCameraConfigRepository : LocalRepositoryBase<VolumeCameraConfigInfoModel>, IVolumeCameraConfigRepository {
+    public class VolumeCameraConfigRepository : MemoryCacheRepositoryBase<VolumeCameraConfigInfoModel>, IVolumeCameraConfigRepository {
 
         public VolumeCameraConfigRepository(IDbContextFactory<SqliteConfContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
         }

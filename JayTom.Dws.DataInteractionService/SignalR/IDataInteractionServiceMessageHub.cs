@@ -3,10 +3,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using JayTom.Dws.Data.Package;
+using JayTom.Dws.Data.LocalConf;
 using System.Collections.Generic;
 using Microsoft.AspNetCore.SignalR;
 using System.Collections.Concurrent;
 using JayTom.Dws.CrossCutting.SignalR;
+using JayTom.Dws.Domain.Entities.LogsEntities;
 using JayTom.Dws.Domain.Entities.PackageEntities;
 
 namespace JayTom.Dws.DataInteractionService.SignalR {
@@ -167,10 +169,11 @@ namespace JayTom.Dws.DataInteractionService.SignalR {
         /// <summary>
         /// 查询包裹数据
         /// </summary>
+        /// <param name="pageSize"></param>
         /// <param name="packageId">包裹ID</param>
         /// <param name="startTime"></param>
         /// <param name="endTime"></param>
-        /// <param name="compartment"></param>
+        /// <param name="exitName"></param>
         /// <param name="barcode"></param>
         /// <param name="minWeight"></param>
         /// <param name="maxWeight"></param>
@@ -179,36 +182,22 @@ namespace JayTom.Dws.DataInteractionService.SignalR {
         /// <param name="nodeName"></param>
         /// <param name="logisticsName"></param>
         /// <param name="aggregatedPackageCode"></param>
+        /// <param name="pageIndex"></param>
         /// <returns>包裹数据对象</returns>
         [HubMethodName("GetPackageData")]
-        Task<PackageInfoEntities> GetPackageDataAsync(long? packageId = null,
+        Task<PackageInfoEntities> GetPackageDataAsync(int pageIndex, int pageSize,
+            long? packageId = null,
             DateTime? startTime = null,
             DateTime? endTime = null,
-            string? compartment = null,
+            string? exitName = null,
             string? barcode = null,
             double? minWeight = null,
             double? maxWeight = null,
-            bool? uploadStatus = null,
+            int? uploadStatus = null,
             string? deviceName = null,
             string? nodeName = null,
             string? logisticsName = null,
             string? aggregatedPackageCode = null);
-
-        /// <summary>
-        /// 删除包裹数据
-        /// </summary>
-        /// <param name="packageId">包裹ID</param>
-        [HubMethodName("DeletePackageData")]
-        Task<bool> DeletePackageDataAsync(string packageId);
-
-        /// <summary>
-        /// 删除N天之前的包裹信息
-        /// </summary>
-        /// <param name="days">天数</param>
-        [HubMethodName("DeletePackagesOlderThan")]
-        Task<bool> DeletePackagesOlderThanAsync(int days);
-
-        // 配置相关方法
 
         /// <summary>
         /// 查询配置
@@ -216,42 +205,87 @@ namespace JayTom.Dws.DataInteractionService.SignalR {
         /// <param name="configKey">配置键</param>
         /// <returns>配置值</returns>
         [HubMethodName("GetConfig")]
-        Task<object> GetConfigAsync(string configKey);
+        Task<string> GetConfigAsync(string configKey);
 
         /// <summary>
         /// 添加配置
         /// </summary>
-        /// <param name="configKey">配置键</param>
-        /// <param name="configValue">配置值</param>
+        /// <param name="config"></param>
         [HubMethodName("AddOrUpdateConfig")]
-        Task<bool> AddOrUpdateConfigAsync(string configKey, object configValue);
+        Task<bool> AddOrUpdateConfigAsync(ConfigInfoModel config);
+
+        /// <summary>
+        /// 查询相机配置
+        /// </summary>
+        /// <param name="configName"></param>
+        /// <returns></returns>
+        [HubMethodName("GetCameraConfig")]
+        Task<object?> GetCameraConfigAsync(string configName);
+
+        /// <summary>
+        /// 添加或更新相机配置
+        /// </summary>
+        /// <param name="configName"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        [HubMethodName("AddOrUpdateCameraConfig")]
+        Task<bool> AddOrUpdateCameraConfigAsync(string configName, object value);
+
+        /// <summary>
+        /// 查询云端配置
+        /// </summary>
+        /// <returns></returns>
+        [HubMethodName("GetCloudConfig")]
+        Task<object?> GetNvrConfigAsync();
+
+        /// <summary>
+        /// 添加或更新云端配置
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        [HubMethodName("AddOrUpdateCloudConfig")]
+        Task<bool> AddOrUpdateNvrConfigAsync(object value);
+
+        /// <summary>
+        /// 查询分拣配置
+        /// </summary>
+        /// <param name="configName"></param>
+        /// <returns></returns>
+        [HubMethodName("GetSortingConfig")]
+        Task<object?> GetSortingConfigAsync(string configName);
+
+        /// <summary>
+        /// 添加或更新分拣配置
+        /// </summary>
+        /// <param name="configName"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        [HubMethodName("AddOrUpdateSortingConfig")]
+        Task<bool> AddOrUpdateSortingConfigAsync(string configName, object value);
 
         /// <summary>
         /// 查询日志
         /// </summary>
-        /// <param name="logId">日志ID</param>
+        /// <param name="configName">配置名称</param>
+        /// <param name="pageSize"></param>
+        /// <param name="startTime">开始时间</param>
+        /// <param name="endTime">结束时间</param>
+        /// <param name="keyword">关键字</param>
+        /// <param name="pageIndex"></param>
         /// <returns>日志对象</returns>
         [HubMethodName("GetLog")]
-        Task<object> GetLogAsync(string logId);
+        Task<LogsInfoEntities> GetLogAsync(string configName, int pageIndex, int pageSize, DateTime? startTime = null, DateTime? endTime = null, string? keyword = null);
 
         /// <summary>
         /// 添加日志
         /// </summary>
-        /// <param name="log">日志对象</param>
         [HubMethodName("AddLog")]
-        void AddLogAsync(object log);
+        void AddLogAsync(string configName, object value);
 
         /// <summary>
         /// 清理日志
         /// </summary>
         [HubMethodName("ClearLogs")]
-        Task<bool> ClearLogsAsync();
-
-        /// <summary>
-        /// 删除N天之前的日志
-        /// </summary>
-        /// <param name="days">天数</param>
-        [HubMethodName("DeleteLogsOlderThan")]
-        Task<bool> DeleteLogsOlderThanAsync(int days);
+        Task<bool> ClearLogsAsync(string configName);
     }
 }

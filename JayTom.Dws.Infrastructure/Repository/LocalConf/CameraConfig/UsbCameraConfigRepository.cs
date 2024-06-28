@@ -10,7 +10,7 @@ using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 
 namespace JayTom.Dws.Infrastructure.Repository.LocalConf.CameraConfig {
 
-    public class UsbCameraConfigRepository : LocalRepositoryBase<UsbCameraConfigInfoModel>, IUsbCameraConfigRepository {
+    public class UsbCameraConfigRepository : MemoryCacheRepositoryBase<UsbCameraConfigInfoModel>, IUsbCameraConfigRepository {
 
         public UsbCameraConfigRepository(IDbContextFactory<SqliteConfContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
         }

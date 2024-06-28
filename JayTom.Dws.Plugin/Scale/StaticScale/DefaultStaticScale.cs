@@ -28,6 +28,11 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
 
         private static float _lastweight = 0;
 
+        /// <summary>
+        /// 稳定重量累计次数
+        /// </summary>
+        private static int _stableWeightCount = 0;
+
         public void Dispose() {
             _tokenSource?.Cancel();
             if (_serialPort?.IsOpen == true) {
@@ -210,7 +215,7 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
                                 .OrderByDescending(g => g.Count())
                                 .Select(g => g.Key)
                                 .FirstOrDefault();
-                            if (_isZeroed) {
+                            if (_isZeroed || (_stableWeightCount > 6 || Math.Abs(_lastweight - weight) > _defaultStaticScaleValueParameters.BalanceQty * 2)) {
                                 OnStabledWeight(weight);
                                 //返回原文
                                 OnWeightStabilized(new WeightChangedEventArgs() {
@@ -223,12 +228,14 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
 
                                 _isZeroed = false;
                                 _lastweight = weight;
+                                _stableWeightCount = 0;
                             }
 
+                            _stableWeightCount += 1;
                             _weightQueue.Clear();
                         }
                         else if (_weightQueue.All(item => item == 0) ||
-                                 _weightQueue.Reverse().Take(_weightQueue.Count / 4).All(w => w < _lastweight / 1.5f)) {
+                                 _weightQueue.Reverse().Take(_weightQueue.Count / 4).All(w => w < _defaultStaticScaleValueParameters.MaxWeight)) {
                             /*OnWeightCleared(new WeightChangedEventArgs() {
                                 Format = WeightFormat,
                                 FormattedWeight = 0,

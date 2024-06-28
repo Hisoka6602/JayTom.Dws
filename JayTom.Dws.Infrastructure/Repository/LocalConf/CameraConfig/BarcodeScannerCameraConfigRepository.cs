@@ -11,7 +11,7 @@ using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 
 namespace JayTom.Dws.Infrastructure.Repository.LocalConf.CameraConfig {
 
-    public class BarcodeScannerCameraConfigRepository : LocalRepositoryBase<BarcodeScannerCameraConfigInfoModel>, IBarcodeScannerCameraConfigRepository {
+    public class BarcodeScannerCameraConfigRepository : MemoryCacheRepositoryBase<BarcodeScannerCameraConfigInfoModel>, IBarcodeScannerCameraConfigRepository {
 
         public BarcodeScannerCameraConfigRepository(IDbContextFactory<SqliteConfContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
         }

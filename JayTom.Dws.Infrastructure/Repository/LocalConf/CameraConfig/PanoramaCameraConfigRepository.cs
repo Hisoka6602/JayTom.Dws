@@ -11,7 +11,7 @@ using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 
 namespace JayTom.Dws.Infrastructure.Repository.LocalConf.CameraConfig {
 
-    public class PanoramaCameraConfigRepository : LocalRepositoryBase<PanoramaCameraConfigInfoModel>, IPanoramaCameraConfigRepository {
+    public class PanoramaCameraConfigRepository : MemoryCacheRepositoryBase<PanoramaCameraConfigInfoModel>, IPanoramaCameraConfigRepository {
 
         public PanoramaCameraConfigRepository(IDbContextFactory<SqliteConfContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
         }

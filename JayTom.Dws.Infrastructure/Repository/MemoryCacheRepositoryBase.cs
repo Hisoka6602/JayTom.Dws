@@ -40,7 +40,7 @@ namespace JayTom.Dws.Infrastructure.Repository {
             var insert = await base.Insert(entity, token);
             if (insert) {
                 var name = typeof(T).GetCustomAttribute<TableAttribute>()?.Name;
-                _cache.Remove(name);
+                _cache.Remove(name ?? string.Empty);
             }
             return insert;
         }
@@ -48,14 +48,14 @@ namespace JayTom.Dws.Infrastructure.Repository {
         public new void InsertAsync(T entity, CancellationToken token) {
             base.InsertAsync(entity, token);
             var name = typeof(T).GetCustomAttribute<TableAttribute>()?.Name;
-            _cache.Remove(name);
+            _cache.Remove(name ?? string.Empty);
         }
 
         public new async Task<bool> Update(T entity, CancellationToken token) {
             var update = await base.Update(entity, token);
             if (update) {
                 var name = typeof(T).GetCustomAttribute<TableAttribute>()?.Name;
-                _cache.Remove(name);
+                _cache.Remove(name ?? string.Empty);
             }
             return update;
         }
@@ -64,7 +64,7 @@ namespace JayTom.Dws.Infrastructure.Repository {
             var delete = await base.Delete(entity, token);
             if (delete) {
                 var name = typeof(T).GetCustomAttribute<TableAttribute>()?.Name;
-                _cache.Remove(name);
+                _cache.Remove(name ?? string.Empty);
             }
             return delete;
         }
@@ -73,7 +73,7 @@ namespace JayTom.Dws.Infrastructure.Repository {
             var deleteCount = await base.DeleteCount(count, token);
             if (deleteCount > 0) {
                 var name = typeof(T).GetCustomAttribute<TableAttribute>()?.Name;
-                _cache.Remove(name);
+                _cache.Remove(name ?? string.Empty);
             }
 
             return deleteCount;
@@ -83,7 +83,7 @@ namespace JayTom.Dws.Infrastructure.Repository {
             var deleteCount = await base.DeleteCount(count, @where, token);
             if (deleteCount > 0) {
                 var name = typeof(T).GetCustomAttribute<TableAttribute>()?.Name;
-                _cache.Remove(name);
+                _cache.Remove(name ?? string.Empty);
             }
 
             return deleteCount;
@@ -93,7 +93,7 @@ namespace JayTom.Dws.Infrastructure.Repository {
             var insertOrUpdate = await base.InsertOrUpdate(entity, token);
             if (insertOrUpdate) {
                 var name = typeof(T).GetCustomAttribute<TableAttribute>()?.Name;
-                _cache.Remove(name);
+                _cache.Remove(name ?? string.Empty);
             }
             return insertOrUpdate;
         }
@@ -102,7 +102,7 @@ namespace JayTom.Dws.Infrastructure.Repository {
             var syncEntities = await base.SyncEntities(entities, token);
             if (syncEntities) {
                 var name = typeof(T).GetCustomAttribute<TableAttribute>()?.Name;
-                _cache.Remove(name);
+                _cache.Remove(name ?? string.Empty);
             }
             return syncEntities;
         }

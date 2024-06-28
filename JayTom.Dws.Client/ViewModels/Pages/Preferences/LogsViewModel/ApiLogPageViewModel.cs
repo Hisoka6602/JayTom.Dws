@@ -53,9 +53,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel {
             set => SetProperty(ref _details, value);
         }
 
-        public ICommand ClickCommand {
-            get => new DelegateCommand<ApiLogItemModel>(ClickDelegate);
-        }
+        public ICommand ClickCommand => new DelegateCommand<ApiLogItemModel>(ClickDelegate);
 
         private async void ClickDelegate(ApiLogItemModel obj) {
             //显示详细信息
@@ -199,9 +197,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel {
 
         #endregion 翻页执行方法
 
-        public ICommand ClearSearchCriteriaCommand {
-            get => new DelegateCommand<object>(ClearSearchCriteriaDelegate);
-        }
+        public ICommand ClearSearchCriteriaCommand => new DelegateCommand<object>(ClearSearchCriteriaDelegate);
 
         private async void ClearSearchCriteriaDelegate(object obj) {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
@@ -224,9 +220,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel {
             LoadData(PageIndex);
         }
 
-        public ICommand OpenDateTimeDialogCommand {
-            get => new DelegateCommand<object>(OpenDateTimeDialogDelegate);
-        }
+        public ICommand OpenDateTimeDialogCommand => new DelegateCommand<object>(OpenDateTimeDialogDelegate);
 
         private async void OpenDateTimeDialogDelegate(object obj) {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
