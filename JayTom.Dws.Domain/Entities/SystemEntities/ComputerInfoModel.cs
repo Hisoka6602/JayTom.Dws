@@ -68,6 +68,16 @@ namespace JayTom.Dws.Domain.Entities.SystemEntities {
         /// 系统信息
         /// </summary>
         public string? SystemInfoString { get; set; }
+
+        /// <summary>
+        /// 占用 CPU 进程排行
+        /// </summary>
+        public List<string>? CpuUsageProcesses { get; set; }
+
+        /// <summary>
+        /// 占用内存进程排行
+        /// </summary>
+        public List<string>? MemoryUsageProcesses { get; set; }
     }
 
     /// <summary>

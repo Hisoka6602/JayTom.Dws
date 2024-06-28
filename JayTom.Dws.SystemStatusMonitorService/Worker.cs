@@ -3,29 +3,31 @@ using System.Diagnostics;
 using JayTom.Dws.CrossCutting.SignalR;
 using JayTom.Dws.Domain.Entities.SystemEntities;
 using JayTom.Dws.SystemStatusMonitorService.Service;
+using JayTom.Dws.SystemStatusMonitorService.SignalR;
 
 namespace JayTom.Dws.SystemStatusMonitorService {
 
     public class Worker : BackgroundService {
         private readonly ILogger<Worker> _logger;
-        private readonly IBaseServerMessageHub _baseServerMessageHub;
+        private readonly ISystemStatusMonitorMessageHub _systemStatusMonitorMessageHub;
+
         private readonly IComputer _computer;
 
-        public Worker(ILogger<Worker> logger, IBaseServerMessageHub baseServerMessageHub,
+        public Worker(ILogger<Worker> logger, ISystemStatusMonitorMessageHub systemStatusMonitorMessageHub,
             IComputer computer) {
             _logger = logger;
-            _baseServerMessageHub = baseServerMessageHub;
+            _systemStatusMonitorMessageHub = systemStatusMonitorMessageHub;
 
             _computer = computer;
-            _baseServerMessageHub.SetServerInfo("实时系统信息", string.Empty);
+            _systemStatusMonitorMessageHub.SetServerInfo("实时系统信息", string.Empty);
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
-            _baseServerMessageHub.UserConnected += info => {
+            _systemStatusMonitorMessageHub.UserConnected += info => {
                 _logger.LogInformation($"连接加入:{JsonConvert.SerializeObject(info)}");
                 return Task.CompletedTask;
             };
-            _baseServerMessageHub.UserDisconnected += info => {
+            _systemStatusMonitorMessageHub.UserDisconnected += info => {
                 _logger.LogInformation($"连接退出:{JsonConvert.SerializeObject(info)}");
                 return Task.CompletedTask;
             };
@@ -42,7 +44,10 @@ namespace JayTom.Dws.SystemStatusMonitorService {
                     var networkInfoTask = _computer.GetNetworkInfoAsync();
                     var diskInfoTask = _computer.GetDiskInfoAsync();
                     var localNetworkConnectionInfosAsync = _computer.GetLocalNetworkConnectionInfosAsync();
-                    await Task.WhenAll(cpuInfoTask, fanSpeedTask, localNetworkConnectionInfosAsync, memoryInfoTask, gpuInfosTask, networkInfoTask, diskInfoTask);
+                    var topCpuUsageProcessesAsync = _computer.GetTopCpuUsageProcessesAsync();
+                    var topMemoryUsageProcessesAsync = _computer.GetTopMemoryUsageProcessesAsync();
+                    await Task.WhenAll(cpuInfoTask, fanSpeedTask, localNetworkConnectionInfosAsync, memoryInfoTask,
+                        gpuInfosTask, networkInfoTask, diskInfoTask, topCpuUsageProcessesAsync, topMemoryUsageProcessesAsync);
                     // 提取各项信息
                     var cpuInfoAsync = cpuInfoTask.Result;
                     var fanSpeed = fanSpeedTask.Result;
@@ -51,6 +56,8 @@ namespace JayTom.Dws.SystemStatusMonitorService {
                     var networkInfo = networkInfoTask.Result;
                     var diskInfoAsync = diskInfoTask.Result;
                     var localNetworkConnectionInfos = localNetworkConnectionInfosAsync.Result;
+                    var result = topCpuUsageProcessesAsync.Result;
+                    var list = topMemoryUsageProcessesAsync.Result;
                     //提交到事件
                     var computerInfoModel = new ComputerInfoModel() {
                         CpuInfo = new CpuInfoModel() {
@@ -96,11 +103,13 @@ namespace JayTom.Dws.SystemStatusMonitorService {
                                 Type = s.Type
                             })?.ToList() ?? new List<LocalNetworkConnectionInfoModel>(),
                         UpTime = TimeSpan.FromSeconds(counter.NextValue()),
+                        CpuUsageProcesses = result,
+                        MemoryUsageProcesses = list,
                         SystemInfoString = systemInfoString
                     };
 
                     //推送事件
-                    _baseServerMessageHub.MessageAll("SystemInfo", computerInfoModel);
+                    _systemStatusMonitorMessageHub.MessageAll("SystemInfo", computerInfoModel);
                 }
                 catch (Exception e) {
                     _logger.LogError($"{e}");

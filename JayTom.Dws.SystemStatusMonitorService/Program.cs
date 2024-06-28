@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Hosting;
 using JayTom.Dws.CrossCutting.SignalR;
 using Microsoft.Extensions.Configuration;
 using JayTom.Dws.SystemStatusMonitorService.Service;
+using JayTom.Dws.SystemStatusMonitorService.SignalR;
 
 namespace JayTom.Dws.SystemStatusMonitorService;
 
@@ -25,6 +26,7 @@ internal class Program {
                     .ConfigureServices((hostContext, services) => {
                         services.AddSingleton<IComputer, Computer>();
                         services.AddSingleton<IBaseServerMessageHub, BaseServerMessageHub>();
+                        services.AddSingleton<ISystemStatusMonitorMessageHub, SystemStatusMonitorMessageHub>();
                         services.AddMvc();
 
                         // Ìí¼Ó SignalR ·þÎñ

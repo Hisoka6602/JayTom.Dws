@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>dotnet-JayTom.Dws.DataInteractionService-abc0a0de-e3f3-4555-b7b3-d26576424351</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="7.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\JayTom.Dws.CrossCutting\JayTom.Dws.CrossCutting.csproj" />
+    <ProjectReference Include="..\JayTom.Dws.Data\JayTom.Dws.Data.csproj" />
+    <ProjectReference Include="..\JayTom.Dws.Domain\JayTom.Dws.Domain.csproj" />
+    <ProjectReference Include="..\JayTom.Dws.Infrastructure\JayTom.Dws.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>

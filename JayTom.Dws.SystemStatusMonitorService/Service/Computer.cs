@@ -660,6 +660,56 @@ namespace JayTom.Dws.SystemStatusMonitorService.Service {
             return machineCode;
         }
 
+        public async Task<List<string>> GetTopCpuUsageProcessesAsync(int topN = 3) {
+            return await Task.Run(async () => {
+                var processCpuCounters = new List<(Process process, PerformanceCounter cpuCounter)>();
+                int processorCount = Environment.ProcessorCount;
+
+                foreach (var process in Process.GetProcesses()) {
+                    try {
+                        var cpuCounter = new PerformanceCounter("Process", "% Processor Time", process.ProcessName, true);
+                        cpuCounter.NextValue(); // 调用一次以初始化计数器
+                        processCpuCounters.Add((process, cpuCounter));
+                    }
+                    catch (Exception e) {
+                        // 某些进程可能无法访问，忽略异常
+                        NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
+                    }
+                }
+                // 等待一秒钟来计算 CPU 使用率
+                await Task.Delay(1000);
+
+                var topCpuUsageProcesses = processCpuCounters
+                    .Select(p => {
+                        try {
+                            return new { Process = p.process, CpuUsage = p.cpuCounter.NextValue() / processorCount };
+                        }
+                        catch {
+                            return null;
+                        }
+                    })
+                    .Where(p => p != null)
+                    .OrderByDescending(p => p.CpuUsage)
+                    .Take(topN)
+                    .Select(p => $"{p.Process.ProcessName} ({p.CpuUsage:F2}%)")
+                    .ToList();
+
+                return topCpuUsageProcesses;
+            });
+        }
+
+        public async Task<List<string>> GetTopMemoryUsageProcessesAsync(int topN = 3) {
+            return await Task.Run(() => {
+                var topMemoryUsageProcesses = Process.GetProcesses()
+                    .OrderByDescending(p => p.WorkingSet64)
+                    .Take(topN)
+                    .Select(p => $"{p.ProcessName} ({p.WorkingSet64 / 1024 / 1024} MB)")
+                    .ToList();
+
+                return topMemoryUsageProcesses;
+            });
+        }
+
         private string? GetComputerSystemUuid() {
             using var searcher = new ManagementObjectSearcher("SELECT UUID FROM Win32_ComputerSystemProduct");
             foreach (var o in searcher.Get()) {

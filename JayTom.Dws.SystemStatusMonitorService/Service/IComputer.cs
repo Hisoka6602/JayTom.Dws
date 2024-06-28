@@ -107,6 +107,20 @@ namespace JayTom.Dws.SystemStatusMonitorService.Service {
         /// </summary>
         /// <returns></returns>
         public Task<string> GenerateMachineCode();
+
+        /// <summary>
+        /// 获取占用 CPU排名
+        /// </summary>
+        /// <param name="topN"></param>
+        /// <returns></returns>
+        public Task<List<string>> GetTopCpuUsageProcessesAsync(int topN = 3);
+
+        /// <summary>
+        /// 获取占用内存排名
+        /// </summary>
+        /// <param name="topN"></param>
+        /// <returns></returns>
+        public Task<List<string>> GetTopMemoryUsageProcessesAsync(int topN = 3);
     }
 
     public class CpuInfo {
