@@ -10,7 +10,7 @@ using System.Collections.Generic;
 using LibreHardwareMonitor.Hardware;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Service.Device;
-using JayTom.Dws.Client.EventMediators;
+using JayTom.Dws.Domain.EventMediators;
 using JayTom.Dws.Data.LocalConf.CloudConfig;
 using JayTom.Dws.Client.Models.CloudSettingModel;
 using JayTom.Dws.Domain.Repository.LocalConf.CloudConfig;

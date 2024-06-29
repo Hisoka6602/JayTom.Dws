@@ -57,6 +57,8 @@ namespace JayTom.Dws.Client.Service.Device {
                             1000, (FormatType)grayscaleDeviceSettingsDto.TcpConnectionConfigInfo.DataFormat),
                         _ => false
                     };
+                    _grayscaleDevice.SetCircularArrayCarCount(grayscaleDeviceSettingsDto.LineCarCount, grayscaleDeviceSettingsDto.CarNumberOffset);
+                    _grayscaleDevice.SetDirectionReversed(grayscaleDeviceSettingsDto.IsDirectionReversed);
                     _grayscaleDevice.SetRegionCarCount(grayscaleDeviceSettingsDto.RegionCarCount);
                     _grayscaleDevice.SetRectangleSizes(new Coordinates(grayscaleDeviceSettingsDto.AdditionalFrameRegion.X,
                         grayscaleDeviceSettingsDto.AdditionalFrameRegion.Y, grayscaleDeviceSettingsDto.AdditionalFrameRegion.Width,

@@ -2,7 +2,7 @@
 
 namespace JayTom.Dws.Domain.Repository.LocalConf {
 
-    public interface IConfigRepository : IRepository<ConfigInfoModel> {
+    public interface IConfigRepository : IMemoryCacheRepository<ConfigInfoModel> {
 
         /// <summary>
         /// 读取对象实体

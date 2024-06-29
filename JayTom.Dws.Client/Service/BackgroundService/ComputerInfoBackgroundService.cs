@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using JayTom.Dws.Client.Models;
 using JayTom.Dws.Data.LocalLog;
 using System.Collections.Generic;
-using JayTom.Dws.Client.EventMediators;
+using JayTom.Dws.Domain.EventMediators;
 using Microsoft.Extensions.Configuration;
 using JayTom.Dws.Infrastructure.IComputer;
 using NetworkType = JayTom.Dws.Client.Models.NetworkType;

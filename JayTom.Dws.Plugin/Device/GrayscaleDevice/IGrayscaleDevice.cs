@@ -51,6 +51,19 @@ namespace JayTom.Dws.Plugin.Device.GrayscaleDevice {
         /// </summary>
         /// <param name="regionCarCount"></param>
         public void SetRegionCarCount(int regionCarCount);
+
+        /// <summary>
+        /// 设置方向是否取反
+        /// </summary>
+        /// <param name="isReversed"></param>
+        void SetDirectionReversed(bool isReversed);
+
+        /// <summary>
+        /// 设置环形数组小车数量
+        /// </summary>
+        /// <param name="carCount"></param>
+        /// <param name="offset"></param>
+        void SetCircularArrayCarCount(int carCount, int offset);
     }
 
     public class GrayscaleResult {
@@ -88,13 +101,11 @@ namespace JayTom.Dws.Plugin.Device.GrayscaleDevice {
         public override string ToString() {
             // 构建字符串表示
             var result = $"小车号: {CarNumber}\n";
-
             result += $"附件框信息:\n{AttachmentRectangleBoxInfo}\n";
-
             result += "主框信息:\n";
             result = MainRectangleBoxInfos.Aggregate(result, (current, boxInfo) => current + $"{boxInfo}\n");
-
-            result += $"联动小车数量: {LinkedCarCount}";
+            result += $"联动小车数量: {LinkedCarCount}\n";
+            result += $"中心点: {CenterPoint}\n";
 
             return result;
         }
@@ -122,8 +133,13 @@ namespace JayTom.Dws.Plugin.Device.GrayscaleDevice {
         /// </summary>
         public int OrientationValue { get; set; }
 
+        /// <summary>
+        /// 偏向百分比
+        /// </summary>
+        public decimal OffsetPercentage { get; set; }
+
         public override string ToString() {
-            return $"是否存在包裹: {IsPackagePresent}, 包裹区域坐标: {PackageRegionCoordinates}, 包裹偏向: {PackageOrientation}, 偏向值: {OrientationValue}";
+            return $"是否存在包裹: {IsPackagePresent}, 包裹区域坐标: {PackageRegionCoordinates}, 包裹偏向: {PackageOrientation}, 偏向值: {OrientationValue} ,偏向百分比: {OffsetPercentage:P2}";
         }
     }
 

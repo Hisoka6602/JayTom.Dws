@@ -29,17 +29,25 @@ namespace JayTom.Dws.Plugin.Device.GrayscaleDevice {
 
         public static int RegionCarCount { get; private set; } = 1;
 
-        /*
-        //起始符
-        private readonly byte _startBytes = 0x3A;
+        /// <summary>
+        /// 线体小车数量
+        /// </summary>
+        public static int LineCarCount { get; private set; } = 100;
 
-        //命令
-        private readonly byte _action = 0x73;
+        /// <summary>
+        /// 小车取数偏移
+        /// </summary>
+        public static int CarNumberOffset { get; private set; } = 0;
 
-        private byte[] _nullByte = "\r\n"u8.ToArray();
-        */
+        /// <summary>
+        /// 方向是否取反
+        /// </summary>
+        public static bool IsDirectionReversed { get; private set; }
 
-        //public Point CenterCoordinates { get; } = new Point(0, 0);
+        /// <summary>
+        /// 环形数组
+        /// </summary>
+        public static CircularArray CarCircularArray { get; private set; } = new(100);
 
         public event EventHandler<GrayscaleResult>? ParcelLocationReceived;
 
@@ -57,6 +65,7 @@ namespace JayTom.Dws.Plugin.Device.GrayscaleDevice {
         public async Task<GrayscaleResult> SendCarNumber(int carNumber, int timeOut, CancellationToken token = default) {
             await Task.Yield();
             NLog.LogManager.GetCurrentClassLogger().Info("请求获取灰度仪信息");
+            carNumber = CarCircularArray[carNumber + CarNumberOffset];
             if (carNumber is > 0 and < 1000) {
                 var array = $":s{carNumber.ToString().PadLeft(3, '0')}\r\n".Select(c => (byte)c).ToArray();
                 var sendMessage = await base.SendMessage(array, token);
@@ -81,6 +90,17 @@ namespace JayTom.Dws.Plugin.Device.GrayscaleDevice {
         }
 
         public void SetRegionCarCount(int regionCarCount) {
+            RegionCarCount = regionCarCount;
+        }
+
+        public void SetDirectionReversed(bool isReversed) {
+            IsDirectionReversed = isReversed;
+        }
+
+        public void SetCircularArrayCarCount(int carCount, int offset) {
+            LineCarCount = carCount;
+            CarNumberOffset = offset;
+            CarCircularArray = new CircularArray(LineCarCount);
         }
 
         public GrayscaleResult? DecodeData(byte[] dataBytes) {
@@ -100,12 +120,12 @@ namespace JayTom.Dws.Plugin.Device.GrayscaleDevice {
                         BitConverter.ToInt16(dataBytes[13..18].Take(2).ToArray()),
                         BitConverter.ToInt16(dataBytes[8..13].Skip(2).Take(2).ToArray()),
                         BitConverter.ToInt16(dataBytes[13..18].Skip(2).Take(2).ToArray()));
-                    var attachmentCenterPoint = (AttachmentRectangleBoxCoordinates.X2 - AttachmentRectangleBoxCoordinates.X1) / 2;
-                    var attachmentPackageCenterPoint = (coordinates.X2 - coordinates.X1) / 2;
+                    var attachmentCenterPoint = (AttachmentRectangleBoxCoordinates.X2 + AttachmentRectangleBoxCoordinates.X1) / 2;
+                    var attachmentPackageCenterPoint = (coordinates.X2 + coordinates.X1) / 2;
                     var attachmentPoint = attachmentPackageCenterPoint - attachmentCenterPoint;
                     var orientation = attachmentPoint switch {
-                        > 0 => PackageOrientation.Right,
-                        < 0 => PackageOrientation.Left,
+                        > 0 => IsDirectionReversed ? PackageOrientation.Left : PackageOrientation.Right,
+                        < 0 => IsDirectionReversed ? PackageOrientation.Right : PackageOrientation.Left,
                         _ => PackageOrientation.Center
                     };
                     grayscaleResult.AttachmentRectangleBoxInfo = new BoxPackageInfo() {
@@ -113,6 +133,7 @@ namespace JayTom.Dws.Plugin.Device.GrayscaleDevice {
                         PackageRegionCoordinates = coordinates,
                         PackageOrientation = isAttachmentPackagePresent ? orientation : PackageOrientation.Center,
                         OrientationValue = isAttachmentPackagePresent ? Math.Abs(attachmentPoint) : 0,
+                        OffsetPercentage = (decimal)Math.Round((isAttachmentPackagePresent ? Math.Abs(attachmentPoint) : 0) / (float)attachmentCenterPoint, 2)
                     };
                     //主框信息
                     for (var i = 0; i < 4; i++) {
@@ -127,12 +148,12 @@ namespace JayTom.Dws.Plugin.Device.GrayscaleDevice {
                             BitConverter.ToInt16(dataBytes[xStart..xEnd].Skip(2).Take(2).ToArray()),
                             BitConverter.ToInt16(dataBytes[yStart..yEnd].Skip(2).Take(2).ToArray()));
                         //计算偏向
-                        var centerPoint = (MainRectangleBoxCoordinates.X2 - MainRectangleBoxCoordinates.X1) / 2;
-                        var packageCenterPoint = (packageRegionCoordinates.X2 - packageRegionCoordinates.X1) / 2;
+                        var centerPoint = (MainRectangleBoxCoordinates.X2 + MainRectangleBoxCoordinates.X1) / 2;
+                        var packageCenterPoint = (packageRegionCoordinates.X2 + packageRegionCoordinates.X1) / 2;
                         var point = packageCenterPoint - centerPoint;
                         var packageOrientation = point switch {
-                            > 0 => PackageOrientation.Right,
-                            < 0 => PackageOrientation.Left,
+                            > 0 => IsDirectionReversed ? PackageOrientation.Left : PackageOrientation.Right,
+                            < 0 => IsDirectionReversed ? PackageOrientation.Right : PackageOrientation.Left,
                             _ => PackageOrientation.Center
                         };
                         if (isPackagePresent) {
@@ -140,7 +161,8 @@ namespace JayTom.Dws.Plugin.Device.GrayscaleDevice {
                                 IsPackagePresent = isPackagePresent,
                                 PackageRegionCoordinates = packageRegionCoordinates,
                                 PackageOrientation = isPackagePresent ? packageOrientation : PackageOrientation.Center,
-                                OrientationValue = isPackagePresent ? Math.Abs(point) : 0
+                                OrientationValue = isPackagePresent ? Math.Abs(point) : 0,
+                                OffsetPercentage = (decimal)Math.Round((isPackagePresent ? Math.Abs(point) : 0) / (float)centerPoint, 2)
                             });
                         }
                     }
@@ -148,10 +170,10 @@ namespace JayTom.Dws.Plugin.Device.GrayscaleDevice {
                     grayscaleResult.CenterPoint = new Point(MainRectangleBoxCoordinates.X2 / 2,
                         MainRectangleBoxCoordinates.Y2 / 2);
                     if (grayscaleResult.MainRectangleBoxInfos.Any()) {
-                        var pCenterPoint = grayscaleResult.MainRectangleBoxInfos.Max(a => a.PackageRegionCoordinates.Y2) -
+                        var pCenterPoint = grayscaleResult.MainRectangleBoxInfos.Max(a => a.PackageRegionCoordinates.Y2) +
                                            grayscaleResult.MainRectangleBoxInfos.Min(a => a.PackageRegionCoordinates.Y1);
 
-                        var carWidth = (MainRectangleBoxCoordinates.Y2 - MainRectangleBoxCoordinates.Y1) / RegionCarCount;
+                        var carWidth = (MainRectangleBoxCoordinates.Y2 + MainRectangleBoxCoordinates.Y1) / RegionCarCount;
 
                         grayscaleResult.LinkedCarCount =
                             pCenterPoint / carWidth + (pCenterPoint % (float)carWidth > 0 ? 1 : 0);
@@ -187,5 +209,21 @@ namespace JayTom.Dws.Plugin.Device.GrayscaleDevice {
                 }
             };
         }
+    }
+
+    public class CircularArray {
+        private readonly int[] _array;
+        private readonly int _size;
+
+        public CircularArray(int size) {
+            _size = size;
+            _array = new int[size];
+            for (var i = 0; i < size; i++) {
+                _array[i] = i + 1;
+            }
+        }
+
+        public int this[int index] =>
+            _array[(index - 1 + _size) % _size];
     }
 }

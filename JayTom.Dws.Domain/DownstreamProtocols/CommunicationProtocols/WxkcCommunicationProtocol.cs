@@ -63,11 +63,12 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
 
                 if (type == FunctionType.PackageCenter && attach.PackagePositionInfo is not null) {
                     //需要传偏移方向和偏移量
-                    if (attach.PackagePositionInfo.OffsetDistance > 127) {
-                        attach.PackagePositionInfo.OffsetDistance = 127;
+                    var offsetPercentage = 127 * attach.PackagePositionInfo.OffsetPercentage;
+                    if (offsetPercentage > 127) {
+                        offsetPercentage = 127;
                     }
                     data =
-                        $"{(attach.PackagePositionInfo.OffsetDirection == OffsetDirection.Right ? "01" : "00")} {attach.PackagePositionInfo.OffsetDistance:X2}";
+                        $"{(attach.PackagePositionInfo.OffsetDirection == OffsetDirection.Right ? "00" : "01")} {(int)offsetPercentage:X2}";
                 }
                 var hexData = $"{startData}{functionData}{attach.Guid:X4}{data.Replace(" ", string.Empty)}{interaction}";
                 var byteArray = HexStringToByteArray(hexData);

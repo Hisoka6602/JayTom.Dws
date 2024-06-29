@@ -449,6 +449,11 @@ namespace JayTom.Dws.Domain.DownstreamProtocols {
         /// 偏移量
         /// </summary>
         public int OffsetDistance { get; set; }
+
+        /// <summary>
+        /// 偏向百分比
+        /// </summary>
+        public decimal OffsetPercentage { get; set; }
     }
 
     /// <summary>

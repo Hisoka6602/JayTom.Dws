@@ -26,7 +26,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
         private static SemaphoreSlim _enumerateSlim = new(1);
         private static ConcurrentDictionary<string, DEVICE_NET_INFO_EX> _devInfo = new();
         private static ConcurrentDictionary<string, IntPtr> _loginDev = new();
-        private static ConcurrentQueue<ImageMessageInfo> _imageMessageQueue = new();
+        private static ConcurrentQueue<CameraImageMessageInfo> _imageMessageQueue = new();
         private static ConcurrentDictionary<string, Action<Bitmap?>> _imageEvent = new();
         private static ConcurrentDictionary<string, Action<Bitmap?>> _realtimeFrameEvent = new();
         private static ConcurrentDictionary<string, IntPtr> _realPlayInfo = new();

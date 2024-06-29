@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Linq;
 using System.Text;
+using System.Drawing;
 using System.Xml.Linq;
+using System.Collections;
+using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
 using JayTom.Dws.Data.Package;
 using System.Linq.Expressions;
@@ -19,6 +22,7 @@ using JayTom.Dws.Domain.Repository.LocalLog;
 using JayTom.Dws.Domain.Repository.LocalData;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Data.LocalConf.CameraConfig;
+using JayTom.Dws.Domain.Service.ImageService;
 using JayTom.Dws.Domain.Entities.LogsEntities;
 using JayTom.Dws.Domain.Entities.PackageEntities;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
@@ -70,6 +74,7 @@ namespace JayTom.Dws.DataInteractionService.SignalR {
         private readonly ISortingLogRepository _sortingLogRepository;
         private readonly IVolumeLogRepository _volumeLogRepository;
         private readonly IWeighingLogRepository _weighingLogRepository;
+        private readonly IImageStorageService _imageStorageService;
 
         public DataInteractionServiceMessageHub(IHubContext<BaseServerMessageHub> hubContext,
             ILogger<BaseServerMessageHub> logger, IPackageRepository packageRepository,
@@ -109,7 +114,8 @@ namespace JayTom.Dws.DataInteractionService.SignalR {
             IOutputLogRepository outputLogRepository,
             ISortingLogRepository sortingLogRepository,
             IVolumeLogRepository volumeLogRepository,
-            IWeighingLogRepository weighingLogRepository) : base(hubContext, logger) {
+            IWeighingLogRepository weighingLogRepository,
+            IImageStorageService imageStorageService) : base(hubContext, logger) {
             _packageRepository = packageRepository;
             _configRepository = configRepository;
             _barCodeRepository = barCodeRepository;
@@ -149,6 +155,65 @@ namespace JayTom.Dws.DataInteractionService.SignalR {
             _sortingLogRepository = sortingLogRepository;
             _volumeLogRepository = volumeLogRepository;
             _weighingLogRepository = weighingLogRepository;
+            _imageStorageService = imageStorageService;
+
+            _imageStorageService.ImageSaved += async (sender, args) => {
+                //更新存图信息
+                ImageInfoModel imageInfo = new();
+                switch (args.ImageType) {
+                    case SaveImageType.BarcodeImage: {
+                            var scannerCameraConfigInfoModels = await _barcodeScannerCameraConfigRepository.MemoryCacheData();
+                            var model = scannerCameraConfigInfoModels.FirstOrDefault(f => f.SerialNumber.Equals(args.CameraSerialNumber))
+                                        ?? new BarcodeScannerCameraConfigInfoModel();
+
+                            imageInfo = new ImageInfoModel() {
+                                CameraSerialNumber = args.CameraSerialNumber ?? string.Empty,
+                                CameraName = model.Name,
+                                CustomCameraName = model.CustomName,
+                                LocalPath = args.FilePath ?? string.Empty,
+                                PackageId = args.PackageId ?? 0,
+                                Type = (int)(args.ImageType ?? SaveImageType.BarcodeImage)
+                            };
+                            break;
+                        }
+                    case SaveImageType.PanoramaImage: {
+                            var panoramaCameraConfigInfoModels = await _panoramaCameraConfigRepository.MemoryCacheData();
+                            var model = panoramaCameraConfigInfoModels.FirstOrDefault(f => f.SerialNumber.Equals(args.CameraSerialNumber))
+                                        ?? new PanoramaCameraConfigInfoModel();
+
+                            imageInfo = new ImageInfoModel() {
+                                CameraSerialNumber = args.CameraSerialNumber ?? string.Empty,
+                                CameraName = model.Name,
+                                CustomCameraName = model.CustomName,
+                                LocalPath = args.FilePath ?? string.Empty,
+                                PackageId = args.PackageId ?? 0,
+                                Type = (int)(args.ImageType ?? SaveImageType.BarcodeImage)
+                            };
+                            break;
+                        }
+                    case SaveImageType.VolumeImage: {
+                            var volumeCameraConfigInfoModels = await _volumeCameraConfigRepository.MemoryCacheData();
+                            var model = volumeCameraConfigInfoModels.FirstOrDefault(f =>
+                                            f.SerialNumber.Equals(args.CameraSerialNumber))
+                                        ?? new VolumeCameraConfigInfoModel();
+
+                            imageInfo = new ImageInfoModel() {
+                                CameraSerialNumber = args.CameraSerialNumber ?? string.Empty,
+                                CameraName = model.Name,
+                                CustomCameraName = model.CustomName,
+                                LocalPath = args.FilePath ?? string.Empty,
+                                PackageId = args.PackageId ?? 0,
+                                Type = (int)(args.ImageType ?? SaveImageType.BarcodeImage)
+                            };
+                            break;
+                        }
+                }
+                UpdateImageDataAsync(args.PackageId ?? 0, imageInfo);
+            };
+
+            _imageStorageService.ImageSaveFailed += (sender, exception) => {
+                logger.LogError($"存图失败:{exception.Message}");
+            };
         }
 
         public ConcurrentQueue<PackageInfoModel> FallInsertPackageInfoModels { get; private set; } = new();
@@ -163,6 +228,7 @@ namespace JayTom.Dws.DataInteractionService.SignalR {
         public ConcurrentQueue<OcrInfoModel> FallUpdateOcrInfoModels { get; private set; } = new();
         public ConcurrentQueue<ImageInfoModel> FallUpdateImageInfoModels { get; private set; } = new();
         public ConcurrentQueue<CloudVideoUploadInfoModel> FallUpdateVideoCloudInfoModels { get; private set; } = new();
+        public ConcurrentQueue<InstructionInfoModel> FallUpdateInstructionInfoModels { get; private set; } = new();
         public ConcurrentQueue<PackageInfoModel> FallUpdateDeviceInfoModels { get; private set; } = new();
         public ConcurrentQueue<PackageInfoModel> FallUpdateAggregatePackageInfoModels { get; private set; } = new();
 
@@ -241,8 +307,7 @@ namespace JayTom.Dws.DataInteractionService.SignalR {
 
         public async void UpdateImageDataAsync(long packageId, ImageInfoModel imageData) {
             imageData.PackageId = packageId;
-            var insertOrUpdate = await _imageRepository.InsertOrUpdate(imageData);
-
+            var insertOrUpdate = await _imageRepository.Insert(imageData);
             if (!insertOrUpdate) {
                 FallUpdateImageInfoModels.Enqueue(imageData);
             }
@@ -256,8 +321,47 @@ namespace JayTom.Dws.DataInteractionService.SignalR {
             }
         }
 
-        public Task<KeyValuePair<PackageInfoModel, string>> SaveImageDataAsync(PackageInfoModel packageInfo, string rootPath, byte[] imageData) {
-            throw new NotImplementedException();
+        public async void AddInstructionDataAsync(long packageId, InstructionInfoModel instructionData) {
+            var sortingInfoModel = await _sortingRepository.FirstOrDefault(f => f.PackageId.Equals(packageId));
+            if (sortingInfoModel is null) {
+                //添加到回流
+                instructionData.SortingInfoId = packageId;
+                FallUpdateInstructionInfoModels.Enqueue(instructionData);
+            }
+            else {
+                //存在
+                sortingInfoModel.InstructionInfos ??= new List<InstructionInfoModel>();
+                var instructionInfoModels = sortingInfoModel.InstructionInfos?.Select(s =>
+                    new InstructionInfoModel {
+                        InstructionType = s.InstructionType,
+                        InstructionContent = s.InstructionContent,
+                        InstructionGeneratedTime = s.InstructionGeneratedTime,
+                    })?.ToList() ?? new List<InstructionInfoModel>();
+                sortingInfoModel.InstructionInfos?.Clear();
+                foreach (var instructionInfoModel in instructionInfoModels) {
+                    sortingInfoModel.InstructionInfos?.Add(instructionInfoModel);
+                }
+                sortingInfoModel.InstructionInfos?.Add(instructionData);
+                var update = await _sortingRepository.Update(sortingInfoModel);
+                if (!update) {
+                    //添加到回流
+                }
+            }
+        }
+
+        public async Task SaveImageDataAsync(PackageInfoModel packageInfo, SaveImageType type, byte[] imageData) {
+            //获取设置
+
+            using var ms = new MemoryStream(imageData);
+            var image = Image.FromStream(ms);
+            await _imageStorageService.SaveImage(packageInfo.Id, image,
+                type, packageInfo.BarCodeInfo?.Barcode ?? string.Empty, MathF.Round((float)(packageInfo.WeightInfo?.FormattedWeight ?? 0), 3),
+                packageInfo.BarCodeInfo?.ScanTime ?? DateTime.MinValue, MathF.Round((float)(packageInfo.VolumeInfo?.FormattedLength ?? 0), 3),
+                MathF.Round((float)(packageInfo.VolumeInfo?.FormattedWidth ?? 0), 3),
+                MathF.Round((float)(packageInfo.VolumeInfo?.FormattedHeight ?? 0), 3),
+                MathF.Round((float)(packageInfo.VolumeInfo?.FormattedVolume ?? 0), 3), packageInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty);
+
+            //释放imageData
         }
 
         public async Task<PackageInfoEntities> GetPackageDataAsync(int pageIndex, int pageSize, long? packageId = null, DateTime? startTime = null, DateTime? endTime = null,

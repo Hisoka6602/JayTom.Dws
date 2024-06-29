@@ -10,7 +10,7 @@ using JayTom.Dws.Data.Package;
 using MaterialDesignThemes.Wpf;
 using JayTom.Dws.Data.LocalConf;
 using System.Collections.ObjectModel;
-using JayTom.Dws.Client.EventMediators;
+using JayTom.Dws.Domain.EventMediators;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Client.Models.PackageSorting;
 

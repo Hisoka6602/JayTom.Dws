@@ -14,7 +14,6 @@ using JayTom.Dws.Data.LocalConf;
 using System.Collections.Generic;
 using JayTom.Dws.Domain.Converters;
 using System.Collections.ObjectModel;
-using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Client.Models.ImageSettingModels;

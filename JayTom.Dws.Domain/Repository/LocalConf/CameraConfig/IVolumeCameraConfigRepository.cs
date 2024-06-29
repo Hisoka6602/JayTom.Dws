@@ -5,10 +5,8 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using JayTom.Dws.Data.LocalConf.CameraConfig;
 
-namespace JayTom.Dws.Domain.Repository.LocalConf.CameraConfig
-{
+namespace JayTom.Dws.Domain.Repository.LocalConf.CameraConfig {
 
-    public interface IVolumeCameraConfigRepository : IRepository<VolumeCameraConfigInfoModel>
-    {
+    public interface IVolumeCameraConfigRepository : IMemoryCacheRepository<VolumeCameraConfigInfoModel> {
     }
 }

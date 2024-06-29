@@ -8,8 +8,8 @@ using System.Threading.Tasks;
 using JayTom.Dws.Data.Package;
 using System.Collections.Generic;
 using JayTom.Dws.Interface.Cloud;
-using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.PluginInterface.Utils;
+using JayTom.Dws.Domain.EventMediators;
 using JayTom.Dws.Client.Service.Sorting;
 using JayTom.Dws.Domain.DownstreamProtocols;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
@@ -123,13 +123,12 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 },
                                     Type = packageExitDefinitionInfoModel?.Type ?? ExitType.PackageExit,
                                     Timestamp = model.Timestamp,
-                                    PackageCloudAbnormalSortingType = type.ConvertTo<PackageCloudAbnormalSortingType>(),
+                                    PackageAbnormalSortingType = type.ConvertTo<PackageAbnormalSortingType>(),
                                     ExitId = exitId ?? abnormalExit?.Id ?? 0,
                                     ExitName = packageExitDefinitionInfoModel?.ExitName ?? abnormalExit?.ExitName ?? string.Empty,
                                     InstructionType = instructionInfoModel?.InstructionType ?? InstructionType.None
                                 });
-                                NLog.LogManager.GetCurrentClassLogger().Error($"{model.Timestamp}");
-                                NLog.LogManager.GetCurrentClassLogger().Error($"PackageCloudAbnormalSortingType:{type.ConvertTo<PackageCloudAbnormalSortingType>()}");
+
                                 break;
                             }
                         //异常
@@ -169,7 +168,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 },
                                     Type = packageExitDefinitionInfoModel?.Type ?? ExitType.PackageExit,
                                     Timestamp = model.Timestamp,
-                                    PackageCloudAbnormalSortingType = PackageCloudAbnormalSortingType.LockExit,
+                                    PackageAbnormalSortingType = PackageAbnormalSortingType.LockExit,
                                     ExitId = exitId ?? abnormalExit?.Id ?? 0,
                                     ExitName = packageExitDefinitionInfoModel?.ExitName ?? abnormalExit?.ExitName ?? string.Empty,
                                     InstructionType = instructionInfoModel?.InstructionType ?? InstructionType.None
@@ -207,7 +206,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 },
                                     Type = packageExitDefinitionInfoModel?.Type ?? ExitType.PackageExit,
                                     Timestamp = model.Timestamp,
-                                    PackageCloudAbnormalSortingType = PackageCloudAbnormalSortingType.None,
+                                    PackageAbnormalSortingType = PackageAbnormalSortingType.None,
                                     ExitId = exitId ?? 0,
                                     ExitName = packageExitDefinitionInfoModel?.ExitName ?? string.Empty,
                                     InstructionType = instructionInfoModel?.InstructionType ?? InstructionType.None
@@ -249,7 +248,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 },
                                     Type = packageExitDefinitionInfoModel?.Type ?? ExitType.PackageExit,
                                     Timestamp = model.Timestamp,
-                                    PackageCloudAbnormalSortingType = PackageCloudAbnormalSortingType.None,
+                                    PackageAbnormalSortingType = PackageAbnormalSortingType.None,
                                     ExitId = exitId ?? 0,
                                     ExitName = packageExitDefinitionInfoModel?.ExitName ?? string.Empty,
                                     InstructionType = instructionInfoModel?.InstructionType ?? InstructionType.None

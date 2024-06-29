@@ -17,7 +17,6 @@ using System.Collections.ObjectModel;
 using System.Text.RegularExpressions;
 using JayTom.Dws.Client.Views.Dialog;
 using JayTom.Dws.Client.Views.Editors;
-using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.ViewModels.Dialog;
 using JayTom.Dws.Client.ViewModels.Editors;
 using JayTom.Dws.Domain.Repository.LocalConf;
@@ -25,6 +24,7 @@ using JayTom.Dws.Client.Models.BarcodeFilterSettingsModel;
 using JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration.SortingMethodEditors;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
+
     public class BarcodeFilterSettingsPageViewModel : SettingsPageTemplateViewModel {
         private readonly IExcel _excel;
         private string _testBarcode = string.Empty;

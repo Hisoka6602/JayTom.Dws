@@ -3,10 +3,12 @@ using System.Threading;
 using JayTom.Dws.Interface;
 using System.Threading.Tasks;
 using JayTom.Dws.Data.Package;
+using JayTom.Dws.Domain.Model;
 using JayTom.Dws.Data.LocalLog;
 using System.Collections.Generic;
 using System.Diagnostics.Tracing;
 using JayTom.Dws.Interface.Cloud;
+using JayTom.Dws.Domain.EventMediators;
 using JayTom.Dws.Domain.DownstreamProtocols;
 using JayTom.Dws.Client.Service.BackgroundService;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
@@ -484,18 +486,5 @@ namespace JayTom.Dws.Client.Service.Sorting {
         /// 分拣参数
         /// </summary>
         public SortingParam? SortingParam { get; set; }
-    }
-
-    public enum SortingExitType {
-
-        /// <summary>
-        /// 物理格口
-        /// </summary>
-        PhysicalExit,
-
-        /// <summary>
-        /// 理论格口
-        /// </summary>
-        TheoreticalExit
     }
 }

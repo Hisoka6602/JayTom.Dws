@@ -44,5 +44,20 @@ namespace JayTom.Dws.Domain.Dto {
         /// 超时时间
         /// </summary>
         public int TimeOut { get; set; } = 200;
+
+        /// <summary>
+        /// 线体小车数量
+        /// </summary>
+        public int LineCarCount { get; set; } = 100;
+
+        /// <summary>
+        /// 小车取数偏移
+        /// </summary>
+        public int CarNumberOffset { get; set; } = 0;
+
+        /// <summary>
+        /// 方向是否取反
+        /// </summary>
+        public bool IsDirectionReversed { get; set; }
     }
 }

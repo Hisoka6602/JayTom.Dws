@@ -6,10 +6,8 @@ using JayTom.Dws.Data.LocalConf;
 using System.Collections.Generic;
 using JayTom.Dws.Data.LocalConf.CameraConfig;
 
-namespace JayTom.Dws.Domain.Repository.LocalConf.CameraConfig
-{
+namespace JayTom.Dws.Domain.Repository.LocalConf.CameraConfig {
 
-    public interface IPanoramaCameraConfigRepository : IRepository<PanoramaCameraConfigInfoModel>
-    {
+    public interface IPanoramaCameraConfigRepository : IMemoryCacheRepository<PanoramaCameraConfigInfoModel> {
     }
 }

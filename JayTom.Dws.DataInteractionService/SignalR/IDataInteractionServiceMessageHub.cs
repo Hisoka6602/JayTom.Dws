@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Text;
+using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
 using JayTom.Dws.Data.Package;
 using JayTom.Dws.Data.LocalConf;
@@ -69,6 +70,11 @@ namespace JayTom.Dws.DataInteractionService.SignalR {
         /// 更新视频云信息失败的数据队列
         /// </summary>
         ConcurrentQueue<CloudVideoUploadInfoModel> FallUpdateVideoCloudInfoModels { get; }
+
+        /// <summary>
+        /// 指令失败数据
+        /// </summary>
+        ConcurrentQueue<InstructionInfoModel> FallUpdateInstructionInfoModels { get; }
 
         /// <summary>
         /// 添加包裹数据
@@ -157,14 +163,23 @@ namespace JayTom.Dws.DataInteractionService.SignalR {
         void UpdateVideoCloudDataAsync(long packageId, CloudVideoUploadInfoModel videoCloudData);
 
         /// <summary>
+        /// 添加指令信息
+        /// </summary>
+        /// <param name="packageId"></param>
+        /// <param name="instructionData"></param>
+        /// <param name="sortingInfo"></param>
+        [HubMethodName("AddInstructionData")]
+        void AddInstructionDataAsync(long packageId, InstructionInfoModel instructionData);
+
+        /// <summary>
         /// 保存图片信息，并返回图片路径
         /// </summary>
         /// <param name="packageInfo"></param>
-        /// <param name="rootPath"></param>
+        /// <param name="type"></param>
         /// <param name="imageData">图片数据</param>
         /// <returns>保存成功时返回图片路径，否则返回null</returns>
         [HubMethodName("SaveImageData")]
-        Task<KeyValuePair<PackageInfoModel, string>> SaveImageDataAsync(PackageInfoModel packageInfo, string rootPath, byte[] imageData);
+        Task SaveImageDataAsync(PackageInfoModel packageInfo, SaveImageType type, byte[] imageData);
 
         /// <summary>
         /// 查询包裹数据

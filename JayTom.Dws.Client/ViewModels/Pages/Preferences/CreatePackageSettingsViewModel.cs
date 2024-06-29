@@ -12,7 +12,6 @@ using System.Threading.Tasks;
 using MaterialDesignThemes.Wpf;
 using JayTom.Dws.Data.LocalConf;
 using System.Collections.Generic;
-using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
 using JayTom.Dws.Domain.Repository.LocalConf;

@@ -30,7 +30,6 @@ using System.Windows.Media.Imaging;
 using Color = System.Drawing.Color;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Domain.Dto.CloudDto;
-using JayTom.Dws.Client.EventMediators;
 using System.Windows.Forms.Integration;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Client.Models.CloudSettingModel;

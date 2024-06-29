@@ -10,7 +10,6 @@ using JayTom.Dws.Plugin.Ftp;
 using System.Threading.Tasks;
 using MaterialDesignThemes.Wpf;
 using JayTom.Dws.Data.LocalConf;
-using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Infrastructure.IComputer;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Service.CacheCleanup;

@@ -118,6 +118,12 @@ namespace JayTom.Dws.Camera {
         public string Password { get; set; } = string.Empty;
     }
 
+    public class CameraImageMessageInfo {
+        public string Barcode { get; set; } = string.Empty;
+
+        public long BarcodeTimestamp { get; set; }
+    }
+
     public class SecurityCameraInfo : CameraInfo {
 
         /// <summary>

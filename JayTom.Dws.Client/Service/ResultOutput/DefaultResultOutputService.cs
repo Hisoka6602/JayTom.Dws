@@ -13,7 +13,7 @@ using JayTom.Dws.Plugin.Speech;
 using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
-using JayTom.Dws.Client.EventMediators;
+using JayTom.Dws.Domain.EventMediators;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Repository.LocalData;

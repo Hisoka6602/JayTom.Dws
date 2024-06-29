@@ -13,7 +13,6 @@ using MaterialDesignThemes.Wpf;
 using JayTom.Dws.Data.LocalConf;
 using System.Windows.Media.Imaging;
 using System.Collections.ObjectModel;
-using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.PluginInterface.Utils;
 using Color = System.Windows.Media.Color;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;

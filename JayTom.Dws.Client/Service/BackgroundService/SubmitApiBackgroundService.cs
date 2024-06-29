@@ -11,10 +11,12 @@ using JayTom.Dws.Interface;
 using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
 using JayTom.Dws.Data.Package;
+using JayTom.Dws.Domain.Model;
 using JayTom.Dws.Interface.Wdt;
 using JayTom.Dws.Data.LocalConf;
 using NPOI.SS.Formula.Functions;
 using JayTom.Dws.Interface.Post;
+using JayTom.Dws.Domain.Manager;
 using JayTom.Dws.PluginInterface;
 using JayTom.Dws.Interface.geek_;
 using System.Collections.Generic;
@@ -28,20 +30,21 @@ using JayTom.Dws.Interface.CaiNiao;
 using System.Collections.Concurrent;
 using JayTom.Dws.Interface.Routdata;
 using JayTom.Dws.Interface.Jtexpress;
-using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Interface.Eshippingit;
 using JayTom.Dws.PluginInterface.Utils;
+using JayTom.Dws.Domain.EventMediators;
 using JayTom.Dws.Client.Service.Sorting;
 using JayTom.Dws.Client.Service.Manager;
 using Microsoft.Extensions.Caching.Memory;
 using JayTom.Dws.Domain.DownstreamProtocols;
 using JayTom.Dws.Domain.Repository.LocalConf;
-using JayTom.Dws.Client.Service.ImageStorage;
 using JayTom.Dws.Domain.Repository.LocalData;
+using JayTom.Dws.Domain.Service.ImageService;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 using static JayTom.Dws.Interface.CaiNiao.CaiNiaoApi;
 using static Aliyun.OSS.Model.ListMultipartUploadsResult;
 using UploadResponse = JayTom.Dws.Interface.UploadResponse;
+using PluginType = JayTom.Dws.Domain.EventMediators.PluginType;
 using InstructionType = JayTom.Dws.Data.Package.InstructionType;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols;
@@ -893,12 +896,12 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         }
 
         private KeyValuePair<int, CaiNiaoExitInfo> CaiNiaoStatusConvert(string barcode, List<PackageExitUpdateEvent> packageExitItems) {
-            if (packageExitItems.Any(a => a.PackageCloudAbnormalSortingType == PackageCloudAbnormalSortingType.LockExit) == true) {
+            if (packageExitItems.Any(a => (int)a.PackageAbnormalSortingType == (int)PackageAbnormalSortingType.LockExit) == true) {
                 return new KeyValuePair<int, CaiNiaoExitInfo>(3, new CaiNiaoExitInfo() {
                     ErrorReson = "锁格",
                     ChuteCode = packageExitItems?.FirstOrDefault(f =>
-                        f.PackageCloudAbnormalSortingType ==
-                        PackageCloudAbnormalSortingType.LockExit)?.ExitName ?? string.Empty
+                        f.PackageAbnormalSortingType ==
+                        PackageAbnormalSortingType.LockExit)?.ExitName ?? string.Empty
                 });
             }
 
@@ -906,12 +909,12 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             if (exitUpdateEvent is not null) {
                 return new KeyValuePair<int, CaiNiaoExitInfo>(6, new CaiNiaoExitInfo() {
                     ChuteCode = exitUpdateEvent.ExitName,
-                    ErrorReson = exitUpdateEvent.PackageCloudAbnormalSortingType.GetDescription()
+                    ErrorReson = exitUpdateEvent.PackageAbnormalSortingType.GetDescription()
                 });
             }
 
-            if (packageExitItems?.Any(a => a.PackageCloudAbnormalSortingType
-                                          == PackageCloudAbnormalSortingType.LockExit) != true &&
+            if (packageExitItems?.Any(a => a.PackageAbnormalSortingType
+                                          == PackageAbnormalSortingType.LockExit) != true &&
                 packageExitItems?.Any(a => a.InstructionType ==
                                           InstructionType.SignalCallback) != true) {
                 return new KeyValuePair<int, CaiNiaoExitInfo>(6, new CaiNiaoExitInfo() {

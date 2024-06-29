@@ -14,7 +14,6 @@ using MaterialDesignThemes.Wpf;
 using System.Windows.Threading;
 using System.Collections.ObjectModel;
 using System.Text.RegularExpressions;
-using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Plugin.Scale.StaticScale;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
 using JayTom.Dws.Plugin.Scale.DynamicScale;

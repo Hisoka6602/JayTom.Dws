@@ -16,7 +16,6 @@ using JayTom.Dws.Data.LocalConf;
 using System.Security.Principal;
 using System.Windows.Media.Imaging;
 using JayTom.Dws.Domain.Dto.AppDto;
-using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Client.Models.AppSettingModel;

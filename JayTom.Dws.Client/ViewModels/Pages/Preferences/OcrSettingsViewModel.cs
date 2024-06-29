@@ -20,7 +20,6 @@ using System.Collections.Generic;
 using System.Windows.Media.Imaging;
 using Color = System.Drawing.Color;
 using System.Collections.ObjectModel;
-using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.PluginInterface.Utils;
 using JayTom.Dws.Domain.Repository.LocalConf;

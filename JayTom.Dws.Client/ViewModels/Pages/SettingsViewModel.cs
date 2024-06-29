@@ -15,7 +15,7 @@ using MaterialDesignThemes.Wpf;
 using JayTom.Dws.Domain.Dto.AppDto;
 using JayTom.Dws.Client.Views.Dialog;
 using System.Collections.ObjectModel;
-using JayTom.Dws.Client.EventMediators;
+using JayTom.Dws.Domain.EventMediators;
 using JayTom.Dws.Client.ViewModels.Dialog;
 using JayTom.Dws.Domain.Repository.LocalConf;
 

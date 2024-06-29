@@ -8,11 +8,16 @@ using JayTom.Dws.Domain.Dto;
 using System.ComponentModel;
 using System.Threading.Tasks;
 using JayTom.Dws.Data.Package;
+using JayTom.Dws.Domain.Model;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using JayTom.Dws.Domain.DownstreamProtocols;
 using JayTom.Dws.Plugin.Device.GrayscaleDevice;
 using JayTom.Dws.Client.Service.BackgroundService;
+using PackageInfo = JayTom.Dws.Domain.Manager.PackageInfo;
+using PackageRemoveTimer = JayTom.Dws.Domain.Manager.PackageRemoveTimer;
+using PackageRemovedEventArgs = JayTom.Dws.Domain.Manager.PackageRemovedEventArgs;
+using PackageCompletedEventArgs = JayTom.Dws.Domain.Manager.PackageCompletedEventArgs;
 
 namespace JayTom.Dws.Client.Service.Manager {
 
@@ -183,185 +188,6 @@ namespace JayTom.Dws.Client.Service.Manager {
             packageInfo.IsStackedPackage ??= false;
             packageInfo.IsCompleted = true;
             OnPackageCompleted(new PackageCompletedEventArgs(packageInfo, string.Empty));
-        }
-    }
-
-    public class PackageInfo {
-
-        /// <summary>
-        /// 包裹创建时间
-        /// </summary>
-        public DateTime CreateTime { get; set; } = DateTime.Now;
-
-        /// <summary>
-        /// Guid
-        /// </summary>
-        public long Guid { get; set; }
-
-        /// <summary>
-        /// 条码图片
-        /// </summary>
-        public Image? Image { get; set; }
-
-        /// <summary>
-        /// 条码信息
-        /// </summary>
-        public BarCodeInfoModel? BarCodeInfo { get; set; }
-
-        /// <summary>
-        /// 体积信息
-        /// </summary>
-        public VolumeInfoModel? VolumeInfo { get; set; }
-
-        /// <summary>
-        /// 称重信息
-        /// </summary>
-        public WeightInfoModel? WeightInfo { get; set; }
-
-        /// <summary>
-        /// 是否已完成(完成输出、上传、但未从集合删除)
-        /// </summary>
-        public bool IsCompleted;
-
-        /// <summary>
-        /// 是否完成存图
-        /// </summary>
-        public bool IsSavedImage;
-
-        /// <summary>
-        /// 需要扣除的长度
-        /// </summary>
-        public float LengthToDeduct { get; set; }
-
-        /// <summary>
-        /// 需要扣除的宽度
-        /// </summary>
-        public float WidthToDeduct { get; set; }
-
-        /// <summary>
-        /// 需要扣除的高度
-        /// </summary>
-        public float HeightToDeduct { get; set; }
-
-        /// <summary>
-        /// 需要扣除的体积
-        /// </summary>
-        public float VolumeToDeduct { get; set; }
-
-        /// <summary>
-        /// 创建包裹指令
-        /// </summary>
-        public string PackageCreationInstruction { get; set; } = string.Empty;
-
-        /// <summary>
-        /// 是否由下位机创建
-        /// </summary>
-        public bool IsCreatedByLowerMachine { get; set; }
-
-        /// <summary>
-        /// 全景图信息
-        /// </summary>
-        public List<PanoramaCameraImageInfo> PanoramaCameraImageInfo { get; set; } = new();
-
-        /// <summary>
-        /// 是否叠包
-        /// </summary>
-        public bool? IsStackedPackage { get; set; }
-
-        /// <summary>
-        /// 包裹时间戳
-        /// </summary>
-        public long Timestamp { get; set; }
-
-        /*/// <summary>
-        /// 包裹异常信息
-        /// </summary>
-        public string PackageExceptionMsg { get; set; } = "分拣成功";
-
-        /// <summary>
-        /// 包裹异常状态
-        /// </summary>
-        public int PackageExceptionStatus { get; set; } = 0;*/
-
-        /// <summary>
-        /// 包裹异常类型
-        /// </summary>
-        public List<SortingExceptionReturnType> SortingExceptionReturnTypes { get; set; } = new();
-
-        /// <summary>
-        /// 供包台信号类型
-        /// </summary>
-        public List<SupplyCounterPackageSignal> SupplyCounterPackageSignalItem { get; set; } = new();
-
-        /// <summary>
-        /// 灰度仪信息
-        /// </summary>
-        public GrayscaleResult? GrayscaleResultInfo { get; set; }
-
-        /// <summary>
-        /// 联动车辆
-        /// </summary>
-        public int LinkedCarCount { get; set; } = 0;
-
-        /// <summary>
-        /// 移除包裹计时器
-        /// </summary>
-        public List<PackageRemoveTimer>? PackageRemoveTimers { get; private set; } = new();
-
-        private readonly object _removalLock = new();
-
-        public void StartRemovalTimers(ConcurrentDictionary<DateTime, PackageInfo> packageInfos, List<PackageRemoveTimer> removeTimers) {
-            foreach (var timer in removeTimers) {
-                timer.PackageRemovalTimer = new Timer(RemoveFromCollection, new Tuple<ConcurrentDictionary<DateTime, PackageInfo>, PackageRemoveTimer>(packageInfos, timer), timer.RemovalTimeSpan, Timeout.InfiniteTimeSpan);
-                PackageRemoveTimers?.Add(timer);
-            }
-        }
-
-        private void RemoveFromCollection(object? state) {
-            if (state is not null) {
-                var (packageInfos, removeTimer) = (Tuple<ConcurrentDictionary<DateTime, PackageInfo>, PackageRemoveTimer>)state;
-                if (removeTimer.Predicate is not null) {
-                    var any = packageInfos.Where(removeTimer.Predicate)?.All(a => !a.Key.Equals(CreateTime));
-                    if (any == true) {
-                        removeTimer.PackageRemovalTimer?.Dispose();
-                        return;
-                    }
-                }
-                if (packageInfos.TryRemove(CreateTime, out var removedPackage)) {
-                    removeTimer.PackageRemovalTimer?.Dispose();
-                    PackageInfoManager.OnPackageRemoved(new PackageRemovedEventArgs(removedPackage, removeTimer.Description));
-                }
-            }
-        }
-    }
-
-    /// <summary>
-    /// 移除包裹计时器
-    /// </summary>
-    public class PackageRemoveTimer {
-        public TimeSpan RemovalTimeSpan { get; set; }
-        public Timer? PackageRemovalTimer { get; set; }
-        public Func<KeyValuePair<DateTime, PackageInfo>, bool>? Predicate { get; set; }
-        public string Description { get; set; } = string.Empty;
-    }
-
-    public class PackageRemovedEventArgs : EventArgs {
-        public PackageInfo RemovedPackage { get; }
-        public string Description { get; }
-
-        public PackageRemovedEventArgs(PackageInfo removedPackage, string description) {
-            RemovedPackage = removedPackage;
-            Description = description;
-        }
-    }
-
-    public class PackageCompletedEventArgs : EventArgs {
-        public PackageInfo CompletedPackage { get; }
-        public string Description { get; }
-
-        public PackageCompletedEventArgs(PackageInfo completedPackage, string description) {
-            CompletedPackage = completedPackage;
-            Description = description;
         }
     }
 }

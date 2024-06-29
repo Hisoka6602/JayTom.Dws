@@ -3,6 +3,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using JayTom.Dws.Domain.Manager;
 using System.Collections.Generic;
 using JayTom.Dws.Client.Service.Manager;
 using JayTom.Dws.Client.Service.BackgroundService;

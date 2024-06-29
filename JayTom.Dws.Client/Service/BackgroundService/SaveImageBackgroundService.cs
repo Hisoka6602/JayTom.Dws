@@ -6,11 +6,12 @@ using Newtonsoft.Json;
 using System.Threading;
 using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
+using JayTom.Dws.Domain.Model;
 using System.Collections.Concurrent;
-using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Service.Device;
-using JayTom.Dws.Client.Service.ImageStorage;
+using JayTom.Dws.Domain.EventMediators;
 using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Domain.Service.ImageService;
 using static JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.DaHuatechSecurityCamera;
 
 namespace JayTom.Dws.Client.Service.BackgroundService {

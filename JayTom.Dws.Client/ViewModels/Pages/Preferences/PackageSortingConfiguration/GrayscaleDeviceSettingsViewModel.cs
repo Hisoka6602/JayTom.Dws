@@ -17,6 +17,7 @@ using JayTom.Dws.Client.Models.PackageSorting;
 using JayTom.Dws.Client.Models.PackageSorting.CommunicationConnectionSub;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration {
+
     public class GrayscaleDeviceSettingsViewModel : SettingsPageTemplateViewModel {
         private GrayscaleDeviceInfoModel _grayscaleDeviceInfo = new();
 
@@ -127,7 +128,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                     AdditionalFrameRegion = settingsDto.AdditionalFrameRegion,
                     MainFrameRegion = settingsDto.MainFrameRegion,
                     RegionCarCount = settingsDto.RegionCarCount,
-                    TimeOut = settingsDto.TimeOut
+                    TimeOut = settingsDto.TimeOut,
+                    IsDirectionReversed = settingsDto.IsDirectionReversed,
+                    LineCarCount = settingsDto.LineCarCount,
+                    CarNumberOffset = settingsDto.CarNumberOffset
                 };
                 AdditionalFrameRegionX1 = GrayscaleDeviceInfo.AdditionalFrameRegion.X;
                 AdditionalFrameRegionY1 = GrayscaleDeviceInfo.AdditionalFrameRegion.Y;
@@ -169,7 +173,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                     AdditionalFrameRegionX2, AdditionalFrameRegionY2),
                 MainFrameRegion = new Rectangle(MainFrameRegionX1, MainFrameRegionY1, MainFrameRegionX2, MainFrameRegionY2),
                 RegionCarCount = GrayscaleDeviceInfo.RegionCarCount,
-                TimeOut = GrayscaleDeviceInfo.TimeOut
+                TimeOut = GrayscaleDeviceInfo.TimeOut,
+                IsDirectionReversed = GrayscaleDeviceInfo.IsDirectionReversed,
+                LineCarCount = GrayscaleDeviceInfo.LineCarCount,
+                CarNumberOffset = GrayscaleDeviceInfo.CarNumberOffset
             };
 
             var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {

@@ -15,7 +15,6 @@ using MaterialDesignThemes.Wpf;
 using JayTom.Dws.Data.LocalConf;
 using JayTom.Dws.Data.LocalData;
 using System.Collections.ObjectModel;
-using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Repository.LocalData;

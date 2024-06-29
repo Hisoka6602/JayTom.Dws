@@ -31,7 +31,7 @@ using MathNet.Numerics.Distributions;
 using JayTom.Dws.Camera.BarCodeReader;
 using JayTom.Dws.Client.Models.Cameras;
 using JayTom.Dws.Client.Service.Device;
-using JayTom.Dws.Client.EventMediators;
+using JayTom.Dws.Domain.EventMediators;
 using FontStyle = System.Drawing.FontStyle;
 using JayTom.Dws.Data.LocalConf.CameraConfig;
 using JayTom.Dws.Domain.Repository.LocalConf;

@@ -22,7 +22,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
     public class DaHuatechSecurityCamera : ISecurityCamera {
         private BaseDaHuatech _baseDaHuatech = BaseDaHuatech.CreateInstance();
         private SemaphoreSlim _snapRevPhotoSlim = new(1);
-        private ConcurrentQueue<ImageMessageInfo> _imageMessageQueue = new();
+        private ConcurrentQueue<CameraImageMessageInfo> _imageMessageQueue = new();
         private SemaphoreSlim _takePhotoSlim = new(1);
 
         /// <summary>
@@ -314,7 +314,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                                     Exception = new Exception(value)
                                 });
                             }
-                            _imageMessageQueue.Enqueue(new ImageMessageInfo() {
+                            _imageMessageQueue.Enqueue(new CameraImageMessageInfo() {
                                 Barcode = barcode,
                                 BarcodeTimestamp = barcodeTimestamp,
                             });
@@ -348,7 +348,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                                     Exception = new Exception(value)
                                 });
                             }
-                            _imageMessageQueue.Enqueue(new ImageMessageInfo() {
+                            _imageMessageQueue.Enqueue(new CameraImageMessageInfo() {
                                 Barcode = barcode,
                                 BarcodeTimestamp = barcodeTimestamp,
                             });
@@ -377,12 +377,6 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
             await Task.Yield();
             Status = CameraStatus.Running;
             CameraStarted?.Invoke(this, e);
-        }
-
-        public class ImageMessageInfo {
-            public string Barcode { get; set; } = string.Empty;
-
-            public long BarcodeTimestamp { get; set; }
         }
 
         protected virtual async void OnPhotoTaken(PhotoTakenEventArgs e) {

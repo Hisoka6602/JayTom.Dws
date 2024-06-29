@@ -7,18 +7,20 @@ using static ImTools.ImMap;
 using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
 using JayTom.Dws.Data.Package;
+using JayTom.Dws.Domain.Model;
 using System.Windows.Documents;
 using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
 using JayTom.Dws.Interface.Cloud;
 using System.Collections.Concurrent;
-using JayTom.Dws.Client.EventMediators;
+using JayTom.Dws.Domain.EventMediators;
 using JayTom.Dws.Client.Service.Sorting;
 using JayTom.Dws.Client.Service.Manager;
-using JayTom.Dws.Client.Service.ImageStorage;
 using JayTom.Dws.Domain.Repository.LocalData;
+using JayTom.Dws.Domain.Service.ImageService;
 using JayTom.Dws.Infrastructure.Repository.LocalData;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
+using PackageInfo = JayTom.Dws.Domain.Manager.PackageInfo;
 using JayTom.Dws.Infrastructure.Repository.LocalConf.CameraConfig;
 using static JayTom.Dws.Client.Service.BackgroundService.SubmitApiBackgroundService;
 
@@ -373,7 +375,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                     continue;
                                 }
                             }
-                            if (packageExitUpdateModel.PackageCloudAbnormalSortingType != PackageCloudAbnormalSortingType.None &&
+                            if (packageExitUpdateModel.PackageAbnormalSortingType != PackageAbnormalSortingType.None &&
                                 model?.PackageId > 0) {
                                 //更新异常
                                 var sortingInfoModel =
@@ -381,10 +383,10 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                     await _sortingRepository.FirstOrDefault(f => f.PackageId.Equals(model.PackageId), stoppingToken);
                                 if (sortingInfoModel is not null) {
                                     sortingInfoModel.AbnormalSortingType =
-                                        (AbnormalSortingType)packageExitUpdateModel.PackageCloudAbnormalSortingType;
+                                        (AbnormalSortingType)packageExitUpdateModel.PackageAbnormalSortingType;
                                     sortingInfoModel.IsAbnormalSorting =
-                                        packageExitUpdateModel.PackageCloudAbnormalSortingType !=
-                                        PackageCloudAbnormalSortingType.None;
+                                        packageExitUpdateModel.PackageAbnormalSortingType !=
+                                        PackageAbnormalSortingType.None;
                                     var update = await _sortingRepository.Update(sortingInfoModel, stoppingToken);
                                 }
                             }

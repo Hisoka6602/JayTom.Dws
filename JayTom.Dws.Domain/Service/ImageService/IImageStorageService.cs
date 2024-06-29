@@ -1,10 +1,7 @@
-﻿using JayTom.Dws.Domain.Dto;
-using System;
-using System.Drawing;
-using System.Threading;
-using System.Threading.Tasks;
+﻿using System.Drawing;
+using JayTom.Dws.Domain.Dto;
 
-namespace JayTom.Dws.Client.Service.ImageStorage {
+namespace JayTom.Dws.Domain.Service.ImageService {
 
     public interface IImageStorageService {
 
@@ -40,9 +37,14 @@ namespace JayTom.Dws.Client.Service.ImageStorage {
         Task SaveImage(Image image, SaveImageType type, string barCode, float weight,
            DateTime scanTime, float length, float width, float height, float volume,
            string cameraSerialNumber, CancellationToken cancellationToken = default);
+
+        Task SaveImage(long packageId, Image image, SaveImageType type, string barCode, float weight,
+            DateTime scanTime, float length, float width, float height, float volume,
+            string cameraSerialNumber, CancellationToken cancellationToken = default);
     }
 
     public class ImageSavedEventArgs : EventArgs {
+        public long? PackageId { get; set; }
 
         /// <summary>
         /// 相机序列号

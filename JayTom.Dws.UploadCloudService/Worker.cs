@@ -1,4 +1,4 @@
-namespace JayTom.Dws.DataInteractionService {
+namespace JayTom.Dws.UploadCloudService {
     public class Worker : BackgroundService {
         private readonly ILogger<Worker> _logger;
 

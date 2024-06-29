@@ -8,6 +8,6 @@ using JayTom.Dws.Data.LocalConf.CameraConfig;
 
 namespace JayTom.Dws.Domain.Repository.LocalConf.CameraConfig {
 
-    public interface IBarcodeScannerCameraConfigRepository : IRepository<BarcodeScannerCameraConfigInfoModel> {
+    public interface IBarcodeScannerCameraConfigRepository : IMemoryCacheRepository<BarcodeScannerCameraConfigInfoModel> {
     }
 }

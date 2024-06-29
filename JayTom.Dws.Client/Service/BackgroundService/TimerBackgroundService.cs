@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using JayTom.Dws.Data.LocalLog;
 using System.Collections.Generic;
 using JayTom.Dws.Domain.Dto.Timer;
-using JayTom.Dws.Client.EventMediators;
+using JayTom.Dws.Domain.EventMediators;
 
 namespace JayTom.Dws.Client.Service.BackgroundService {
 

@@ -8,10 +8,10 @@ using Prism.Services.Dialogs;
 using System.Windows.Controls;
 using JayTom.Dws.Data.Package;
 using JayTom.Dws.PluginInterface;
-using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Models.DataModels;
 
 namespace JayTom.Dws.Client.ViewModels.Dialog {
+
     public class ApiAccessViewModel : BindableBase, IDialogAware {
         private UploadStatus _requestStatus = UploadStatus.NotUploaded;
         private DateTime? _requestTime;

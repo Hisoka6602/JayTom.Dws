@@ -17,6 +17,9 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         private Rectangle _additionalFrameRegion;
         private int _regionCarCount;
         private int _timeOut;
+        private int _lineCarCount;
+        private int _carNumberOffset;
+        private bool _isDirectionReversed;
 
         /// <summary>
         /// 是否使用灰度仪检测包裹
@@ -73,6 +76,30 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         public int TimeOut {
             get => _timeOut;
             set => SetProperty(ref _timeOut, value);
+        }
+
+        /// <summary>
+        /// 线体小车数量
+        /// </summary>
+        public int LineCarCount {
+            get => _lineCarCount;
+            set => SetProperty(ref _lineCarCount, value);
+        }
+
+        /// <summary>
+        /// 小车取数偏移
+        /// </summary>
+        public int CarNumberOffset {
+            get => _carNumberOffset;
+            set => SetProperty(ref _carNumberOffset, value);
+        }
+
+        /// <summary>
+        /// 方向是否取反
+        /// </summary>
+        public bool IsDirectionReversed {
+            get => _isDirectionReversed;
+            set => SetProperty(ref _isDirectionReversed, value);
         }
     }
 }

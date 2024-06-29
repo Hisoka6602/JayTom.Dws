@@ -11,29 +11,31 @@ using JayTom.Dws.Camera;
 using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
 using JayTom.Dws.Data.Package;
+using JayTom.Dws.Domain.Model;
 using JayTom.Dws.Data.LocalLog;
 using JayTom.Dws.Data.LocalConf;
 using NPOI.SS.Formula.Functions;
 using System.Threading.Channels;
+using JayTom.Dws.Domain.Manager;
 using System.Collections.Generic;
 using NPOI.XSSF.Streaming.Values;
 using System.Windows.Media.Media3D;
 using System.Collections.Concurrent;
-using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Service.Device;
+using JayTom.Dws.Domain.EventMediators;
 using JayTom.Dws.Client.Service.Sorting;
 using JayTom.Dws.Camera.FilterContainer;
-using JayTom.Dws.Client.Service.Manager;
 using JayTom.Dws.Domain.DownstreamProtocols;
-using JayTom.Dws.Client.Service.ImageStorage;
 using JayTom.Dws.Client.Service.ResultOutput;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Data.LocalConf.CameraConfig;
+using JayTom.Dws.Domain.Service.ImageService;
 using JayTom.Dws.Plugin.Device.GrayscaleDevice;
 using JayTom.Dws.Client.Service.ExternalDataService;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 using JayTom.Dws.Infrastructure.Repository.LocalConf.CameraConfig;
 using JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols;
+using PackageInfoManager = JayTom.Dws.Client.Service.Manager.PackageInfoManager;
 
 namespace JayTom.Dws.Client.Service.BackgroundService {
 
@@ -1160,28 +1162,29 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             }*/
                             packageInfo.GrayscaleResultInfo = await _grayscaleService.GetSingleGrayscaleSensorResult(packageInfo.Guid, _grayscaleDeviceSettingsDto.TimeOut);
 
-                            /*if (packageInfo.GrayscaleResultInfo is not null) {
+                            if (packageInfo.GrayscaleResultInfo is not null) {
                                 //联动车辆
                                 GrayScaleSkippedVehicles = packageInfo.LinkedCarCount = packageInfo.GrayscaleResultInfo.LinkedCarCount;
                             }
                             if (_grayscaleDeviceSettingsDto.IsCheckPackageOrientation &&
-                                packageInfo.GrayscaleResultInfo is not null) {
-                                //发送包裹居中指令
-                                _sortingService.SendPackageCenter((int)packageInfo.Guid, new InstructionsAttach() {
+                                packageInfo.GrayscaleResultInfo is not null &&
+                                packageInfo.GrayscaleResultInfo.MainRectangleBoxInfos.Any()) {
+                                //发送包裹居中指令(测试-2)
+                                _sortingService.SendPackageCenter(packageInfo.GrayscaleResultInfo.CarNumber, new InstructionsAttach() {
                                     BarCode = string.Empty,
-                                    Guid = packageInfo.Guid,
+                                    Guid = packageInfo.GrayscaleResultInfo.CarNumber,
                                     Timestamp = packageInfo.Timestamp,
                                     PackagePositionInfo = new PackagePositionInfo() {
                                         CenterX = packageInfo.GrayscaleResultInfo.CenterPoint.X,
                                         CenterY = packageInfo.GrayscaleResultInfo.CenterPoint.Y,
                                         OffsetDirection = (OffsetDirection)(packageInfo.GrayscaleResultInfo.MainRectangleBoxInfos?.FirstOrDefault()?.PackageOrientation ?? PackageOrientation.Left),
-                                        OffsetDistance = packageInfo.GrayscaleResultInfo.MainRectangleBoxInfos?.FirstOrDefault()?.OrientationValue ?? 0
+                                        OffsetDistance = packageInfo.GrayscaleResultInfo.MainRectangleBoxInfos?.FirstOrDefault()?.OrientationValue ?? 0,
+                                        OffsetPercentage = packageInfo.GrayscaleResultInfo.MainRectangleBoxInfos?.FirstOrDefault()?.OffsetPercentage ?? 0
                                     },
-                                    // PackagePositionInfo =  这里计算偏移
                                 });
 
                                 //如果是没包裹则返回
-                            }*/
+                            }
                         }
                     }
                     finally {
@@ -1877,219 +1880,4 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
         public Timer
     }*/
-
-    public class CameraImageInfo {
-
-        /// <summary>
-        /// 图片
-        /// </summary>
-        public Image? Image { get; set; }
-
-        /// <summary>
-        /// 相机序列号
-        /// </summary>
-        public string CameraSerialNumber { get; set; } = string.Empty;
-
-        /// <summary>
-        /// 图片路径
-        /// </summary>
-        public string? ImageFilePath { get; set; }
-
-        /// <summary>
-        /// 条码
-        /// </summary>
-        public string Barcode { get; set; } = string.Empty;
-
-        /// <summary>
-        /// 条码时间戳
-        /// </summary>
-        public long BarcodeTimestamp { get; set; }
-    }
-
-    public class SavedImageInfo {
-
-        /// <summary>
-        /// 文件路径
-        /// </summary>
-        public string? FilePath { get; set; }
-
-        /// <summary>
-        /// 条码
-        /// </summary>
-        public string? BarCode { get; set; }
-
-        /// <summary>
-        /// 图片类型
-        /// </summary>
-        public SaveImageType? ImageType { get; set; }
-
-        /// <summary>
-        /// 相机序列号
-        /// </summary>
-        public string CameraSerialNumber { get; set; } = string.Empty;
-
-        /// <summary>
-        /// 扫码时间
-        /// </summary>
-        public DateTime ScanTime { get; set; }
-    }
-
-    /// <summary>
-    /// 存图参数
-    /// </summary>
-    public class ImageMessageInfo {
-        public Image? Image { get; set; }
-
-        public SaveImageType Type { get; set; }
-        public string BarCode { get; set; } = string.Empty;
-        public float Weight { get; set; }
-        public DateTime ScanTime { get; set; }
-        public float Length { get; set; }
-        public float Width { get; set; }
-        public float Height { get; set; }
-        public float Volume { get; set; }
-        public string CameraSerialNumber { get; set; } = string.Empty;
-
-        /// <summary>
-        /// 相机名称
-        /// </summary>
-        public string CameraName { get; set; } = string.Empty;
-
-        /// <summary>
-        /// 相机自定义名称
-        /// </summary>
-        public string CameraCustomName { get; set; } = string.Empty;
-    }
-
-    public class PackageOcrInfo {
-
-        /// <summary>
-        /// 条码
-        /// </summary>
-        public string BarCode { get; set; } = string.Empty;
-
-        /// <summary>
-        /// 获取或设置虚拟号码。
-        /// </summary>
-        public string VirtualNumber { get; set; } = string.Empty;
-
-        /// <summary>
-        /// 获取或设置收件人地址。
-        /// </summary>
-        public string RecipientAddress { get; set; } = string.Empty;
-
-        /// <summary>
-        /// 获取或设置收件人姓名。
-        /// </summary>
-        public string RecipientName { get; set; } = string.Empty;
-
-        /// <summary>
-        /// 获取或设置收件人电话。
-        /// </summary>
-        public string RecipientPhone { get; set; } = string.Empty;
-
-        /// <summary>
-        /// 获取或设置寄件人姓名。
-        /// </summary>
-        public string SenderName { get; set; } = string.Empty;
-
-        /// <summary>
-        /// 获取或设置寄件人电话。
-        /// </summary>
-        public string SenderPhone { get; set; } = string.Empty;
-
-        /// <summary>
-        /// 发件人地址
-        /// </summary>
-        public string SenderAddress { get; set; } = string.Empty;
-
-        /// <summary>
-        /// 获取或设置三段码。
-        /// </summary>
-        public string ThreeSegmentCode { get; set; } = string.Empty;
-
-        /// <summary>
-        /// 获取或设置虚拟号码后四位。
-        /// </summary>
-        public string VirtualNumberLast4 { get; set; } = string.Empty;
-
-        /// <summary>
-        /// 获取或设置识别时间。
-        /// </summary>
-        public DateTime RecognitionTime { get; set; }
-
-        /// <summary>
-        /// 获取或设置耗时(ms)
-        /// </summary>
-        public long ElapsedTime { get; set; }
-
-        /// <summary>
-        /// 获取或设置识别时间戳。
-        /// </summary>
-        public long RecognitionTimestamp { get; set; }
-
-        /// <summary>
-        /// 相机序列号
-        /// </summary>
-        public string CameraSerialNumber { get; set; } = string.Empty;
-
-        /// <summary>
-        /// 提交图时间
-        /// </summary>
-        public long SubmitTimestamp { get; set; }
-
-        /// <summary>
-        /// 是否叠包
-        /// </summary>
-        public bool IsStackedPackage { get; set; }
-    }
-
-    public class PanoramaCameraImageInfo {
-
-        /// <summary>
-        /// 相机序列号
-        /// </summary>
-        public string CameraSerialNumber { get; set; } = string.Empty;
-
-        /// <summary>
-        /// 是否已存在
-        /// </summary>
-        public bool IsExists { get; set; }
-    }
-
-    public class CallBackPackageInfo {
-
-        /// <summary>
-        /// 包裹创建时间
-        /// </summary>
-        public DateTime PackageCreateTime { get; set; } = DateTime.Now;
-
-        public PackageInfo PackageInfo { get; set; } = new();
-
-        /// <summary>
-        /// 包裹完结时间
-        /// </summary>
-        public DateTime CallBackTime { get; set; } = DateTime.Now;
-
-        /// <summary>
-        /// 指令
-        /// </summary>
-        public string InstructionContent { get; set; } = string.Empty;
-
-        /// <summary>
-        /// 格口
-        /// </summary>
-        public int ExitNum { get; set; }
-    }
-
-    public class BarCodeFrameInfo {
-        public long Timestamp { get; set; }
-        public long Frame { get; set; }
-        public BarCodeInfoModel? BarCodeInfo { get; set; }
-
-        /// <summary>
-        /// 图片
-        /// </summary>
-        public Bitmap? Image { get; set; }
-    }
 }

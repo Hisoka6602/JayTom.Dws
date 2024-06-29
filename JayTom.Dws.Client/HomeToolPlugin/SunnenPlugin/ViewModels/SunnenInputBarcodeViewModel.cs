@@ -1,13 +1,14 @@
-﻿using JayTom.Dws.Client.EventMediators;
-using JayTom.Dws.PluginInterface;
-using Prism.Commands;
+﻿using System;
 using Prism.Mvvm;
-using Prism.Services.Dialogs;
-using System;
 using System.Linq;
+using Prism.Commands;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Input;
+using Prism.Services.Dialogs;
+using System.Windows.Controls;
+using JayTom.Dws.PluginInterface;
+using JayTom.Dws.Domain.EventMediators;
+using PluginType = JayTom.Dws.Domain.EventMediators.PluginType;
 
 namespace JayTom.Dws.Client.HomeToolPlugin.SunnenPlugin.ViewModels {
 
