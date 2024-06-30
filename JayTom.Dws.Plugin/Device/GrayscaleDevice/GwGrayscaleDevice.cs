@@ -182,7 +182,8 @@ namespace JayTom.Dws.Plugin.Device.GrayscaleDevice {
                         grayscaleResult.LinkedCarCount = 1;
                     }
 
-                    if (grayscaleResult.AttachmentRectangleBoxInfo.IsPackagePresent) {
+                    if (grayscaleResult.AttachmentRectangleBoxInfo.IsPackagePresent &&
+                        grayscaleResult.MainRectangleBoxInfos.Any(a => a.PackageRegionCoordinates.Y1 == 0)) {
                         grayscaleResult.LinkedCarCount += 1;
                     }
                     NLog.LogManager.GetCurrentClassLogger().Info($"解析后的内容:{grayscaleResult}");

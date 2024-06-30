@@ -68,7 +68,7 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
                         offsetPercentage = 30;
                     }
                     data =
-                        $"{(attach.PackagePositionInfo.OffsetDirection == OffsetDirection.Right ? "00" : "01")} {(int)offsetPercentage:X2}";
+                        $"{(attach.PackagePositionInfo.OffsetDirection == OffsetDirection.Right ? "01" : "00")} {(int)offsetPercentage:X2}";
                 }
                 var hexData = $"{startData}{functionData}{attach.Guid:X4}{data.Replace(" ", string.Empty)}{interaction}";
                 var byteArray = HexStringToByteArray(hexData);

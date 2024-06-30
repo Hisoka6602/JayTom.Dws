@@ -41,8 +41,8 @@ namespace JayTom.Dws.Domain.Service.VideoApi {
                         Directory.CreateDirectory(barcodeImageRootPath);
                     }
                     var barcodeImagePath = $"{barcodeImageRootPath}\\{DateTimeOffset.Now.ToUnixTimeMilliseconds()}.jpg";
-                    barcodeImageInfo.Image.Save(barcodeImagePath, ImageFormat.Jpeg);
-                    barcodeImageInfo.Image.Dispose();
+                    barcodeImageInfo.Image?.Save(barcodeImagePath, ImageFormat.Jpeg);
+                    barcodeImageInfo.Image?.Dispose();
 
                     imageInfoModels?.Add(new VideoNodeImageInfoModel() {
                         CameraName = barcodeImageInfo.CameraName,

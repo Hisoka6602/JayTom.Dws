@@ -32,8 +32,8 @@ namespace JayTom.Dws.Application.Service.CloudApi {
                     Directory.CreateDirectory(barcodeImageRootPath);
                 }
                 var barcodeImagePath = $"{barcodeImageRootPath}\\{DateTimeOffset.Now.ToUnixTimeMilliseconds()}.jpg";
-                barcodeImageInfo.Image.Save(barcodeImagePath, ImageFormat.Jpeg);
-                barcodeImageInfo.Image.Dispose();
+                barcodeImageInfo.Image?.Save(barcodeImagePath, ImageFormat.Jpeg);
+                barcodeImageInfo.Image?.Dispose();
                 barcodeImageInfo.LocalPath = barcodeImagePath;
                 barcodeImageInfo.ImageUrl = barcodeImagePath.Replace(rootImagePath, webImagePath).Replace("\\", "/");
                 barcodeImageInfo.Image = null;
@@ -49,8 +49,8 @@ namespace JayTom.Dws.Application.Service.CloudApi {
                 var num = 0;
                 foreach (var panoramaImageInfo in panoramaImageInfos) {
                     var panoramaImagePath = $"{panoramaRootImage}\\{DateTimeOffset.Now.ToUnixTimeMilliseconds()}-{num}.jpg";
-                    panoramaImageInfo.Image.Save(panoramaImagePath, ImageFormat.Jpeg);
-                    panoramaImageInfo.Image.Dispose();
+                    panoramaImageInfo.Image?.Save(panoramaImagePath, ImageFormat.Jpeg);
+                    panoramaImageInfo.Image?.Dispose();
                     panoramaImageInfo.LocalPath = panoramaImagePath;
                     panoramaImageInfo.ImageUrl = panoramaImagePath.Replace(rootImagePath, webImagePath).Replace("\\", "/");
                     panoramaImageInfo.Image = null;
