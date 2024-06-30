@@ -63,9 +63,9 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
 
                 if (type == FunctionType.PackageCenter && attach.PackagePositionInfo is not null) {
                     //需要传偏移方向和偏移量
-                    var offsetPercentage = 127 * attach.PackagePositionInfo.OffsetPercentage;
-                    if (offsetPercentage > 127) {
-                        offsetPercentage = 127;
+                    var offsetPercentage = 30 * attach.PackagePositionInfo.OffsetPercentage;
+                    if (offsetPercentage > 30) {
+                        offsetPercentage = 30;
                     }
                     data =
                         $"{(attach.PackagePositionInfo.OffsetDirection == OffsetDirection.Right ? "00" : "01")} {(int)offsetPercentage:X2}";

@@ -12,7 +12,6 @@
     <IncludeSymbols>False</IncludeSymbols>
     <ApplicationIcon>ico.ico</ApplicationIcon>
   </PropertyGroup>
-
   <ItemGroup>
     <Content Remove="C:\Users\77051\.nuget\packages\lottiesharp\2.0.1\contentFiles\any\net6.0-windows7.0\lottie_sharp.ico" />
   </ItemGroup>

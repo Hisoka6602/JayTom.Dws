@@ -1154,12 +1154,17 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
                         if (_grayscaleDeviceSettingsDto.IsUseGrayscaleDetector &&
                             _grayscaleService.IsConnected) {
-                            /*//跳过车辆
+                            //跳过车辆
                             if (GrayScaleSkippedVehicles > 1) {
                                 GrayScaleSkippedVehicles--;
-                                NLog.LogManager.GetCurrentClassLogger().Error("跳过车辆");
+                                NLog.LogManager.GetCurrentClassLogger().Error("前车联动了多车,该车跳过");
                                 return;
-                            }*/
+                            }
+                            //动态时间
+                            var milliseconds = DateTime.Now.Subtract(packageInfo.CreateTime).TotalMilliseconds;
+                            if (milliseconds < 50) {
+                                await Task.Delay((int)(50 - milliseconds));
+                            }
                             packageInfo.GrayscaleResultInfo = await _grayscaleService.GetSingleGrayscaleSensorResult(packageInfo.Guid, _grayscaleDeviceSettingsDto.TimeOut);
 
                             if (packageInfo.GrayscaleResultInfo is not null) {
@@ -1169,7 +1174,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             if (_grayscaleDeviceSettingsDto.IsCheckPackageOrientation &&
                                 packageInfo.GrayscaleResultInfo is not null &&
                                 packageInfo.GrayscaleResultInfo.MainRectangleBoxInfos.Any()) {
-                                //发送包裹居中指令(测试-2)
+                                //发送包裹居中指令
                                 _sortingService.SendPackageCenter(packageInfo.GrayscaleResultInfo.CarNumber, new InstructionsAttach() {
                                     BarCode = string.Empty,
                                     Guid = packageInfo.GrayscaleResultInfo.CarNumber,
