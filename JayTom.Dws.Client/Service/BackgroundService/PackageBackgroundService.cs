@@ -35,7 +35,6 @@ using JayTom.Dws.Client.Service.ExternalDataService;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 using JayTom.Dws.Infrastructure.Repository.LocalConf.CameraConfig;
 using JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols;
-using PackageInfoManager = JayTom.Dws.Client.Service.Manager.PackageInfoManager;
 
 namespace JayTom.Dws.Client.Service.BackgroundService {
 
@@ -1164,6 +1163,9 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             var milliseconds = DateTime.Now.Subtract(packageInfo.CreateTime).TotalMilliseconds;
                             if (milliseconds < 50) {
                                 await Task.Delay((int)(50 - milliseconds));
+                            }
+                            else {
+                                NLog.LogManager.GetCurrentClassLogger().Error($"创建包裹到现在的间隔:{milliseconds}ms");
                             }
                             packageInfo.GrayscaleResultInfo = await _grayscaleService.GetSingleGrayscaleSensorResult(packageInfo.Guid, _grayscaleDeviceSettingsDto.TimeOut);
 

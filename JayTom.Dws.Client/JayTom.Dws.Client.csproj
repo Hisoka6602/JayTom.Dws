@@ -66,6 +66,7 @@
 
   <ItemGroup>
     <Folder Include="Service\ExternalDataService\Communication\SerialComm\" />
+    <Folder Include="Service\Manager\" />
     <Folder Include="Service\ResultOutput\Communication\SerialComm\" />
     <Folder Include="Service\Input\" />
     <Folder Include="Icons\" />

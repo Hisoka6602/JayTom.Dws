@@ -170,8 +170,8 @@ namespace JayTom.Dws.Plugin.Device.GrayscaleDevice {
                     grayscaleResult.CenterPoint = new Point(MainRectangleBoxCoordinates.X2 / 2,
                         MainRectangleBoxCoordinates.Y2 / 2);
                     if (grayscaleResult.MainRectangleBoxInfos.Any()) {
-                        var pCenterPoint = grayscaleResult.MainRectangleBoxInfos.Max(a => a.PackageRegionCoordinates.Y2) +
-                                           grayscaleResult.MainRectangleBoxInfos.Min(a => a.PackageRegionCoordinates.Y1);
+                        var pCenterPoint = (grayscaleResult.MainRectangleBoxInfos.Max(a => a.PackageRegionCoordinates.Y2) +
+                                           grayscaleResult.MainRectangleBoxInfos.Min(a => a.PackageRegionCoordinates.Y1)) / 2;
 
                         var carWidth = (MainRectangleBoxCoordinates.Y2 + MainRectangleBoxCoordinates.Y1) / RegionCarCount;
 
