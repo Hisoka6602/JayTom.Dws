@@ -34,7 +34,6 @@ using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Domain.EventMediators;
 using JayTom.Dws.Client.Service.Sorting;
-using JayTom.Dws.Client.Service.Manager;
 using JayTom.Dws.Client.Models.DataModels;
 using JayTom.Dws.Infrastructure.IComputer;
 using JayTom.Dws.Client.Service.ResultOutput;

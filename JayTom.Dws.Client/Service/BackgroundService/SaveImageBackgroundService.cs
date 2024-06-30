@@ -133,7 +133,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             var fileName =
                                 $"{directory}\\{new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds()}.jpg";
                             cropImage.Save(fileName);
-                            cropImage.Dispose();
+                            cropImage?.Dispose();
                         }
                     }
                 }

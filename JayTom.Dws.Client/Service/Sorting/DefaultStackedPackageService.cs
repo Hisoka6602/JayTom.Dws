@@ -17,7 +17,6 @@ using JayTom.Dws.Plugin.SerialPort;
 using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
 using JayTom.Dws.Domain.EventMediators;
-using JayTom.Dws.Client.Service.Manager;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Dto.PackageExitLockDto;

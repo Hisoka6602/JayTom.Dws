@@ -1406,7 +1406,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 .FirstOrDefault().Value.BarCodeInfo.ScanTime).TotalMilliseconds > _barcodeFilterSettingsDto.MergeTimeout) ||
                             _barCodeFrameInfoItem.Where(w => w.Value.BarCodeInfo != null)
                                 .GroupBy(g => g.Value.BarCodeInfo.Barcode).Count() > 1
-
                             ) {
                             //组数据并清除队列
                             var groupBy = _barCodeFrameInfoItem.Where(w => w.Value.BarCodeInfo != null)

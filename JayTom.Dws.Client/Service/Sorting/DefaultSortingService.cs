@@ -23,7 +23,6 @@ using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
 using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Domain.EventMediators;
-using JayTom.Dws.Client.Service.Manager;
 using JayTom.Dws.Domain.DownstreamProtocols;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Dto.PackageExitLockDto;
