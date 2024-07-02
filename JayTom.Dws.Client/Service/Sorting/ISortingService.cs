@@ -12,6 +12,7 @@ using JayTom.Dws.Domain.EventMediators;
 using JayTom.Dws.Domain.DownstreamProtocols;
 using JayTom.Dws.Client.Service.BackgroundService;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
+using SortingExitType = JayTom.Dws.Client.EventMediators.SortingExitType;
 
 namespace JayTom.Dws.Client.Service.Sorting {
 

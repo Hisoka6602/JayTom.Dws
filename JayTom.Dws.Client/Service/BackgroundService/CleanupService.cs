@@ -7,10 +7,14 @@ using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.EventMediators;
 using JayTom.Dws.Infrastructure.IComputer;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Service.CacheCleanup;
+using WindowsAction = JayTom.Dws.Client.EventMediators.WindowsAction;
+using WindowsActionType = JayTom.Dws.Client.EventMediators.WindowsActionType;
+using SettingsChangedEvent = JayTom.Dws.Client.EventMediators.SettingsChangedEvent;
 
 namespace JayTom.Dws.Client.Service.BackgroundService {
 

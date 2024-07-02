@@ -12,6 +12,7 @@ using System.Threading;
 using TouchSocket.Core;
 using JayTom.Dws.Camera;
 using JayTom.Dws.License;
+using System.Diagnostics;
 using System.Windows.Input;
 using JayTom.Dws.Domain.Dto;
 using Prism.Services.Dialogs;
@@ -31,6 +32,7 @@ using JayTom.Dws.Domain.Dto.AppDto;
 using JayTom.Dws.Interface.License;
 using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
+using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Domain.EventMediators;
 using JayTom.Dws.Client.Service.Sorting;
@@ -50,8 +52,17 @@ using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 using CameraStatus = JayTom.Dws.Client.Models.CameraStatus;
 using ConnectionType = JayTom.Dws.Client.Models.ConnectionType;
 using InstructionType = JayTom.Dws.Data.Package.InstructionType;
+using RemoteAction = JayTom.Dws.Client.EventMediators.RemoteAction;
+using RemoteCommand = JayTom.Dws.Client.EventMediators.RemoteCommand;
+using WindowsAction = JayTom.Dws.Client.EventMediators.WindowsAction;
+using ApplicationStatus = JayTom.Dws.Client.EventMediators.ApplicationStatus;
+using WindowsActionType = JayTom.Dws.Client.EventMediators.WindowsActionType;
 using ExceptionEventArgs = JayTom.Dws.Client.Service.Sorting.ExceptionEventArgs;
+using SettingsChangedEvent = JayTom.Dws.Client.EventMediators.SettingsChangedEvent;
 using static JayTom.Dws.Client.Service.BackgroundService.SubmitApiBackgroundService;
+using PackageExitUpdateEvent = JayTom.Dws.Client.EventMediators.PackageExitUpdateEvent;
+using ApplicationStatusChanged = JayTom.Dws.Client.EventMediators.ApplicationStatusChanged;
+using BarcodeTypeProviderEvent = JayTom.Dws.Client.EventMediators.BarcodeTypeProviderEvent;
 
 namespace JayTom.Dws.Client.ViewModels.Pages {
 
@@ -371,10 +382,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             _sortingService.ExceptionOccurred += delegate (object? sender, ExceptionEventArgs args) {
                 HomeMessageQueue.Enqueue($"{args.ExceptionMessage}");
             };
-
-            EventAggregator.Instance.Subscribe<PackageInfo>(info => {
+            EventAggregator.Instance.Subscribe<PackageInfo>(async info => {
                 //填充数据到列表
-                if (info is PackageInfo model) {
+                Debug.WriteLine($"接收到包裹推送");
+                await Task.Delay(1);
+                if (info is { } model) {
                     AddNewRow(new PackageItemModel() {
                         Barcode = model.BarCodeInfo?.Barcode ?? string.Empty,
                         ScanTime = model.BarCodeInfo?.ScanTime ?? DateTime.Now,
@@ -471,6 +483,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             });
             if (!_isLoaded) {
                 _isLoaded = true;
+
                 new TaskFactory().StartNew(async () => {
                     while (!_cancellationTokenSource.IsCancellationRequested) {
                         var tryDequeue = _updateResponseItems.TryDequeue(out var updateResponse);
@@ -934,30 +947,25 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         /// 添加一行
         /// </summary>
         private async void AddNewRow(PackageItemModel item) {
-            /*try {
-                Application.Current.Dispatcher.InvokeAsync(() => {
-                    item.Num = TotalDataCount += 1;
+            await Application.Current.Dispatcher.InvokeAsync(() => {
+                item.Num = TotalDataCount += 1;
 
-                    PackageItems.Insert(0, item);
-                    if (PackageItems.Count > 200) {
-                        PackageItems.RemoveAt(PackageItems.Count - 1);
-                    }
-                    item.IsInserting = true;
-                }, DispatcherPriority.Background);
-            }
-            finally {
-                _updateSlim.Release();
-            }*/
-            await Task.Run(() => {
+                PackageItems.Insert(0, item);
+                if (PackageItems.Count > 50) {
+                    PackageItems.RemoveAt(PackageItems.Count - 1);
+                }
+                //item.IsInserting = true;
+            }, DispatcherPriority.Background);
+            /*await Task.Run(() => {
                 item.Num = TotalDataCount += 1;
                 Application.Current.Dispatcher.Invoke(() => {
                     PackageItems.Insert(0, item);
-                    if (PackageItems.Count > 500) {
+                    if (PackageItems.Count > 50) {
                         PackageItems.RemoveAt(PackageItems.Count - 1);
                     }
                     //item.IsInserting = true;
                 });
-            });
+            });*/
             /*try {
                 await _updateSlim.WaitAsync();
                 await Task.Run(() => {

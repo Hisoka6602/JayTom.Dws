@@ -1,18 +1,24 @@
-﻿using System.Drawing;
+﻿using System;
+using System.IO;
+using System.Linq;
+using System.Drawing;
+using System.Threading;
 using System.Globalization;
 using JayTom.Dws.Domain.Dto;
 using JayTom.Dws.Plugin.Ftp;
+using System.Threading.Tasks;
 using JayTom.Dws.Data.LocalLog;
 using JayTom.Dws.Plugin.SaveImage;
 using JayTom.Dws.Domain.Converters;
 using System.Text.RegularExpressions;
-using JayTom.Dws.Domain.EventMediators;
+using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Service.ImageService;
 using WatermarkPosition = JayTom.Dws.Plugin.SaveImage.WatermarkPosition;
+using SettingsChangedEvent = JayTom.Dws.Domain.EventMediators.SettingsChangedEvent;
 
-namespace JayTom.Dws.Infrastructure.Service.ImageService {
+namespace JayTom.Dws.Client.Service.ImageService {
 
     public class DefaultImageStorageService : IImageStorageService {
         private readonly ISaveImage _saveImage;

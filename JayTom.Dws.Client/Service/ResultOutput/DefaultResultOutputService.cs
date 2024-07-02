@@ -13,12 +13,15 @@ using JayTom.Dws.Plugin.Speech;
 using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
+using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.EventMediators;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Repository.LocalData;
 using JayTom.Dws.Client.Service.BackgroundService;
 using JayTom.Dws.Client.Service.ResultOutput.Communication.TcpComm;
+using SettingsChangedEvent = JayTom.Dws.Client.EventMediators.SettingsChangedEvent;
+using TriggerPositionEvent = JayTom.Dws.Client.EventMediators.TriggerPositionEvent;
 
 namespace JayTom.Dws.Client.Service.ResultOutput {
 

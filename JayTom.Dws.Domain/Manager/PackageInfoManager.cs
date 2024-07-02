@@ -1,4 +1,5 @@
-﻿using System.Drawing;
+﻿using NLog;
+using System.Drawing;
 using System.Diagnostics;
 using JayTom.Dws.Domain.Dto;
 using JayTom.Dws.Data.Package;
@@ -93,8 +94,8 @@ namespace JayTom.Dws.Domain.Manager {
         /// <returns></returns>
         public static PackageInfo? GetPackage(Func<KeyValuePair<DateTime, PackageInfo>, bool> predicate) {
             // 检查 _packageInfos 是否为空
-            if (!_packageInfos.Any()) {
-                NLog.LogManager.GetCurrentClassLogger().Error("PackageInfos collection is null or empty.");
+            if (_packageInfos.IsEmpty) {
+                LogManager.GetCurrentClassLogger().Error("PackageInfos collection is empty.");
                 return null;
             }
 
@@ -136,7 +137,8 @@ namespace JayTom.Dws.Domain.Manager {
         /// <returns></returns>
         public static PackageInfo? GetLastPackage(Func<KeyValuePair<DateTime, PackageInfo>, bool> predicate) {
             // 检查 _packageInfos 是否为空
-            if (!_packageInfos.Any()) {
+            if (_packageInfos.IsEmpty) {
+                LogManager.GetCurrentClassLogger().Error("PackageInfos collection is empty.");
                 return null;
             }
 

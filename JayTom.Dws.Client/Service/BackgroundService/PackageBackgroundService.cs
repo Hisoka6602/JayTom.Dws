@@ -23,6 +23,7 @@ using System.Windows.Media.Media3D;
 using System.Collections.Concurrent;
 using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Domain.EventMediators;
+using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Service.Sorting;
 using JayTom.Dws.Camera.FilterContainer;
 using JayTom.Dws.Domain.DownstreamProtocols;
@@ -35,6 +36,13 @@ using JayTom.Dws.Client.Service.ExternalDataService;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 using JayTom.Dws.Infrastructure.Repository.LocalConf.CameraConfig;
 using JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols;
+using WindowsAction = JayTom.Dws.Client.EventMediators.WindowsAction;
+using ApplicationStatus = JayTom.Dws.Client.EventMediators.ApplicationStatus;
+using WindowsActionType = JayTom.Dws.Client.EventMediators.WindowsActionType;
+using SettingsChangedEvent = JayTom.Dws.Client.EventMediators.SettingsChangedEvent;
+using TriggerPositionEvent = JayTom.Dws.Client.EventMediators.TriggerPositionEvent;
+using ApplicationStatusChanged = JayTom.Dws.Client.EventMediators.ApplicationStatusChanged;
+using BarcodeTypeProviderEvent = JayTom.Dws.Client.EventMediators.BarcodeTypeProviderEvent;
 
 namespace JayTom.Dws.Client.Service.BackgroundService {
 

@@ -30,6 +30,7 @@ using JayTom.Dws.Interface.CaiNiao;
 using System.Collections.Concurrent;
 using JayTom.Dws.Interface.Routdata;
 using JayTom.Dws.Interface.Jtexpress;
+using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Interface.Eshippingit;
 using JayTom.Dws.PluginInterface.Utils;
 using JayTom.Dws.Domain.EventMediators;
@@ -43,10 +44,21 @@ using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 using static JayTom.Dws.Interface.CaiNiao.CaiNiaoApi;
 using static Aliyun.OSS.Model.ListMultipartUploadsResult;
 using UploadResponse = JayTom.Dws.Interface.UploadResponse;
-using PluginType = JayTom.Dws.Domain.EventMediators.PluginType;
+using PluginType = JayTom.Dws.Client.EventMediators.PluginType;
 using InstructionType = JayTom.Dws.Data.Package.InstructionType;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols;
+using WindowsAction = JayTom.Dws.Client.EventMediators.WindowsAction;
+using PushPackageInfo = JayTom.Dws.Client.EventMediators.PushPackageInfo;
+using SortingExitType = JayTom.Dws.Client.EventMediators.SortingExitType;
+using ApplicationStatus = JayTom.Dws.Client.EventMediators.ApplicationStatus;
+using WindowsActionType = JayTom.Dws.Client.EventMediators.WindowsActionType;
+using SettingsChangedEvent = JayTom.Dws.Client.EventMediators.SettingsChangedEvent;
+using TriggerPositionEvent = JayTom.Dws.Client.EventMediators.TriggerPositionEvent;
+using PackageExitUpdateEvent = JayTom.Dws.Client.EventMediators.PackageExitUpdateEvent;
+using PluginParamChangedEvent = JayTom.Dws.Client.EventMediators.PluginParamChangedEvent;
+using ApplicationStatusChanged = JayTom.Dws.Client.EventMediators.ApplicationStatusChanged;
+using PackageAbnormalSortingType = JayTom.Dws.Client.EventMediators.PackageAbnormalSortingType;
 
 namespace JayTom.Dws.Client.Service.BackgroundService {
 
@@ -324,7 +336,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             });
             //更新格口信息
             EventAggregator.Instance.Subscribe<PackageExitUpdateEvent>(async item => {
-                if (item is PackageExitUpdateEvent model && _packageSubmissionPushItems.Any()) {
+                if (item is { } model && _packageSubmissionPushItems.Any()) {
                     try {
                         await _takePackageSlim.WaitAsync();
                         //获取包裹

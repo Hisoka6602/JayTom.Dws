@@ -29,6 +29,7 @@ using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
 using MathNet.Numerics.Distributions;
 using JayTom.Dws.Camera.BarCodeReader;
+using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Models.Cameras;
 using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Domain.EventMediators;
@@ -39,6 +40,7 @@ using FontFamily = System.Drawing.FontFamily;
 using Matrix = System.Drawing.Drawing2D.Matrix;
 using JayTom.Dws.Domain.Dto.CameraConfiguration;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
+using SettingsChangedEvent = JayTom.Dws.Client.EventMediators.SettingsChangedEvent;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
 

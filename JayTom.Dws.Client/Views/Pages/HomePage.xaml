@@ -860,7 +860,7 @@
                         Margin="20,10,20,20"
                         Padding="10,0"
                         Focusable="False"
-                        ItemsSource="{Binding PackageItems, UpdateSourceTrigger=PropertyChanged, IsAsync=True}"
+                        ItemsSource="{Binding PackageItems, UpdateSourceTrigger=PropertyChanged, Mode=OneWay, NotifyOnTargetUpdated=True, NotifyOnSourceUpdated=True}"
                         RenderOptions.EdgeMode="Unspecified"
                         RenderTransformOrigin=".5,.5"
                         ScrollViewer.IsDeferredScrollingEnabled="True"
@@ -1137,6 +1137,7 @@
                             </ContextMenu>
                         </ListView.ContextMenu>
                     </ListView>
+
                     <!--  实时日志  -->
 
                     <Expander

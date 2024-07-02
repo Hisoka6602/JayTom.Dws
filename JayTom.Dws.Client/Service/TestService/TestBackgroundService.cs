@@ -1,62 +1,61 @@
 ﻿using System;
 using System.Linq;
 using System.Text;
-using Newtonsoft.Json;
 using System.Threading;
 using JayTom.Dws.Camera;
+using System.Diagnostics;
 using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Plugin.Tcp;
 using System.Threading.Tasks;
 using JayTom.Dws.Data.Package;
 using JayTom.Dws.Domain.Model;
 using JayTom.Dws.Domain.Manager;
-using JayTom.Dws.Data.LocalConf;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
+using JayTom.Dws.Plugin.Tcp.TcpClient;
 using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Domain.EventMediators;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Service.Sorting;
 using JayTom.Dws.Camera.FilterContainer;
 using JayTom.Dws.Domain.DownstreamProtocols;
-using JayTom.Dws.Client.Service.ResultOutput;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Service.ImageService;
 using JayTom.Dws.Plugin.Device.GrayscaleDevice;
 using JayTom.Dws.Client.Service.ExternalDataService;
+using JayTom.Dws.Infrastructure.Repository.LocalConf;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 using WindowsAction = JayTom.Dws.Client.EventMediators.WindowsAction;
 using ApplicationStatus = JayTom.Dws.Client.EventMediators.ApplicationStatus;
 using WindowsActionType = JayTom.Dws.Client.EventMediators.WindowsActionType;
-using SettingsChangedEvent = JayTom.Dws.Client.EventMediators.SettingsChangedEvent;
 using TriggerPositionEvent = JayTom.Dws.Client.EventMediators.TriggerPositionEvent;
 using ApplicationStatusChanged = JayTom.Dws.Client.EventMediators.ApplicationStatusChanged;
 
-namespace JayTom.Dws.Client.Service.PostBackgroundService {
+namespace JayTom.Dws.Client.Service.TestService {
 
-    public class PostPackageBackgroundService : Microsoft.Extensions.Hosting.BackgroundService {
+    public class TestBackgroundService : Microsoft.Extensions.Hosting.BackgroundService {
         private readonly IDeviceService _deviceService;
-        private readonly IImageStorageService _imageStorageService;
         private readonly IConfigRepository _configRepository;
         private readonly ISortingService _sortingService;
-        private readonly IBarcodeScannerCameraConfigRepository _barcodeScannerCameraConfigRepository;
         private readonly IGrayscaleService _grayscaleService;
         private readonly IExternalDataService _externalDataService;
-        private CreatePackageSettingsDto _createPackageSettingsDto = new();
-        private ConcurrentDictionary<string, BarCodeFrameInfo> _barCodeFrameInfoItem = new();
-        private BarcodeFilterSettingsDto _barcodeFilterSettingsDto = new();
         private SemaphoreSlim _createPackageSlim = new(1);
-        private DateTime _lastReadTime = DateTime.Now;
+        private CreatePackageSettingsDto _createPackageSettingsDto = new();
         private DateTime _lastNoReadTime = DateTime.Now;
+        private DateTime _lastReadTime = DateTime.Now;
+        private BarcodeFilterSettingsDto _barcodeFilterSettingsDto = new();
         private List<ICamera> _cameras = new();
-        private GrayscaleDeviceSettingsDto _grayscaleDeviceSettingsDto = new();
+        private ConcurrentDictionary<string, BarCodeFrameInfo> _barCodeFrameInfoItem = new();
         private static bool _isWindowsClose;
+        private GrayscaleDeviceSettingsDto _grayscaleDeviceSettingsDto = new();
+        private TouchSocketTcpClient _touchSocketTcpClient = new();
 
         /// <summary>
         /// 灰度仪跳过的车辆
         /// </summary>
         public int GrayScaleSkippedVehicles { get; set; } = 0;
 
-        public PostPackageBackgroundService(IDeviceService deviceService,
+        public TestBackgroundService(IDeviceService deviceService,
             IImageStorageService imageStorageService,
             IConfigRepository configRepository,
             ISortingService sortingService,
@@ -64,14 +63,14 @@ namespace JayTom.Dws.Client.Service.PostBackgroundService {
             IGrayscaleService grayscaleService,
             IExternalDataService externalDataService) {
             _deviceService = deviceService;
-            _imageStorageService = imageStorageService;
             _configRepository = configRepository;
             _sortingService = sortingService;
-            _barcodeScannerCameraConfigRepository = barcodeScannerCameraConfigRepository;
             _grayscaleService = grayscaleService;
             _externalDataService = externalDataService;
+
             //条码返回
             _deviceService.BarcodeScanned += async delegate (object? sender, BarcodeReadEventArgs args) {
+                await _touchSocketTcpClient.SendMessage(args.Barcode);
                 //验证多条码
                 try {
                     await _createPackageSlim.WaitAsync();
@@ -159,91 +158,9 @@ namespace JayTom.Dws.Client.Service.PostBackgroundService {
                     _createPackageSlim.Release();
                 }
             };
-            //空包裹
-            _deviceService.NotBarcodeHitEvent += async delegate (object? sender, BarcodeReadEventArgs args) {
-                await Task.Yield();
-                if (!_createPackageSettingsDto.IsUseNoRead) {
-                    args.Image?.Dispose();
-                    return;
-                }
-                try {
-                    await _createPackageSlim.WaitAsync();
-                    if (_cameras.Count(c => c.BindingType == CameraBindingType.ScannerCamera) > 1) {
-                        var barCodeFrameInfo = new BarCodeFrameInfo() {
-                            Timestamp = args.Timestamp,
-                            Frame = args.FrameNo,
-                            BarCodeInfo = new BarCodeInfoModel() {
-                                Barcode = args.Barcode,
-                                CameraSerialNumber = args.CameraSerialNumber,
-                                ScanTime = args.ScanTime,
-                                Source = SourceType.Camera,
-                                BindTime = DateTime.Now
-                            },
-                            Image = args.Image
-                        };
-                        _barCodeFrameInfoItem.AddOrUpdate(args.CameraSerialNumber, key => barCodeFrameInfo,
-                            (key, oldValue) => oldValue.BarCodeInfo?.Barcode?.ToLower()?.Equals("noread") != true ? oldValue : barCodeFrameInfo);
-                    }
-                    else {
-                        if (_createPackageSettingsDto.IsUseNoReadFilter) {
-                            if (DateTime.Now.Subtract(_lastNoReadTime).TotalMilliseconds < _createPackageSettingsDto.FilterInterval) {
-                                args.Image?.Dispose();
-                                return;
-                            }
-                            else {
-                                _lastNoReadTime = args.ScanTime;
-                            }
-                        }
-                        var packageInfo =
-                            _createPackageSettingsDto.BarcodeQueueOrder == BarcodeQueueOrderEnum.TimeAscending ?
-                                PackageInfoManager.GetPackage(f => f.Value.BarCodeInfo == null) :
-                                PackageInfoManager.GetLastPackage(f => f.Value.BarCodeInfo == null);
-                        if ((_createPackageSettingsDto.PackageCreationMethods & PackageCreationMethodsEnum.ScanBarcodeCamera) ==
-                            PackageCreationMethodsEnum.ScanBarcodeCamera && packageInfo is null) {
-                            //扫码相机创建
-
-                            packageInfo = new PackageInfo() {
-                                Guid = args.Timestamp,
-                                BarCodeInfo = new BarCodeInfoModel() {
-                                    Barcode = args.Barcode,
-                                    CameraSerialNumber = args.CameraSerialNumber,
-                                    ScanTime = args.ScanTime,
-                                    Source = SourceType.Camera,
-                                    BindTime = DateTime.Now
-                                },
-                                Image = args.Image,
-                            };
-                            EventAggregator.Instance.Publish(new TriggerPositionEvent() {
-                                IsSuccess = true,
-                                TriggerPosition = TriggerPositionEnum.PackageTrigger,
-                                PackageInfo = packageInfo
-                            });
-                        }
-                        else {
-                            if (packageInfo is not null) {
-                                packageInfo.BarCodeInfo = new BarCodeInfoModel() {
-                                    Barcode = args.Barcode,
-                                    CameraSerialNumber = args.CameraSerialNumber,
-                                    ScanTime = args.ScanTime,
-                                    Source = SourceType.Camera,
-                                    BindTime = DateTime.Now
-                                };
-                                packageInfo.Image = args.Image;
-                                EventAggregator.Instance.Publish(new TriggerPositionEvent() {
-                                    IsSuccess = true,
-                                    TriggerPosition = TriggerPositionEnum.BarCodeSetValueAfter,
-                                    PackageInfo = packageInfo
-                                });
-                            }
-                        }
-                    }
-                }
-                finally {
-                    _createPackageSlim.Release();
-                }
-            };
             //下位机创建包裹
             _sortingService.CreatePackageEvent += async delegate (object? sender, PackageInstructionEventArgs args) {
+                await _touchSocketTcpClient.SendMessage(args.Instruction);
                 try {
                     await _createPackageSlim.WaitAsync();
                     if ((_createPackageSettingsDto.PackageCreationMethods & PackageCreationMethodsEnum.LowerMachineCreation) ==
@@ -283,18 +200,21 @@ namespace JayTom.Dws.Client.Service.PostBackgroundService {
                 }
                 finally {
                     _createPackageSlim.Release();
+                    Debug.WriteLine($"下位机创建包裹完成");
                 }
             };
 
             //外部全量数据
             _externalDataService.ContentInputReceived += async (sender, args) => {
+                //转发
+                await _touchSocketTcpClient.SendMessage(args.SourceContent);
                 try {
-                    await _createPackageSlim.WaitAsync();
+                    // await _createPackageSlim.WaitAsync();
                     var timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds();
                     var packageInfo =
                         _createPackageSettingsDto.BarcodeQueueOrder == BarcodeQueueOrderEnum.TimeAscending ?
-                            PackageInfoManager.GetPackage(f => f.Value.BarCodeInfo == null) :
-                            PackageInfoManager.GetLastPackage(f => f.Value.BarCodeInfo == null);
+                            PackageInfoManager.GetPackage(f => f.Value is { BarCodeInfo: null }) :
+                            PackageInfoManager.GetLastPackage(f => f.Value is { BarCodeInfo: null });
                     if ((_createPackageSettingsDto.PackageCreationMethods & PackageCreationMethodsEnum.TcpInput) ==
                         PackageCreationMethodsEnum.TcpInput && packageInfo is null) {
                         packageInfo = new PackageInfo() {
@@ -371,53 +291,31 @@ namespace JayTom.Dws.Client.Service.PostBackgroundService {
                     }
                 }
                 finally {
-                    _createPackageSlim.Release();
+                    Debug.WriteLine($"外部全量数据处理完成");
+
+                    //_createPackageSlim.Release();
                 }
             };
-
-            //配置更改
-            EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async item => {
-                if (item is { } model) {
-                    switch (model.SettingsName) {
-                        case "CreatePackageSettings":
-                            _createPackageSettingsDto = await _configRepository.FirstOrDefaultEntity<CreatePackageSettingsDto>(model.SettingsName) ??
-                                                        new CreatePackageSettingsDto();
-
-                            break;
-
-                        case "BarcodeFilterSettings":
-                            _barcodeFilterSettingsDto = await _configRepository.FirstOrDefaultEntity<BarcodeFilterSettingsDto>(model.SettingsName) ??
-                                                        new BarcodeFilterSettingsDto();
-                            break;
-
-                        case "GrayscaleDeviceSettings":
-                            _grayscaleDeviceSettingsDto = await _configRepository.FirstOrDefaultEntity<GrayscaleDeviceSettingsDto>(model.SettingsName)
-                                                          ?? new GrayscaleDeviceSettingsDto();
-
-                            break;
-                    }
-                    //其他设置
-                }
-            });
             //创建包裹后触发
             EventAggregator.Instance.Subscribe<TriggerPositionEvent>(async item => {
                 if (item is { TriggerPosition: TriggerPositionEnum.PackageTrigger, PackageInfo: { } packageInfo }) {
                     var info = PackageInfoManager.GetLastPackage(f => f is { Value: not null });
 
+                    /*
                     if (info is not null &&
                         packageInfo.CreateTime.Subtract(info.CreateTime).TotalMilliseconds <
                         _createPackageSettingsDto.PackageCreationInterval) {
                         return;
-                    }
+                    }*/
 
                     if (_grayscaleDeviceSettingsDto.IsUseGrayscaleDetector &&
                         _grayscaleService.IsConnected) {
-                        //跳过车辆
+                        /*//跳过车辆
                         if (GrayScaleSkippedVehicles > 1) {
                             GrayScaleSkippedVehicles--;
                             NLog.LogManager.GetCurrentClassLogger().Error("前车联动了多车,该车跳过");
                             return;
-                        }
+                        }*/
                         //动态时间
                         var milliseconds = DateTime.Now.Subtract(packageInfo.CreateTime).TotalMilliseconds;
                         if (milliseconds < 50) {
@@ -432,18 +330,6 @@ namespace JayTom.Dws.Client.Service.PostBackgroundService {
                         if (singleGrayscaleSensorResult is not null) {
                             //联动车辆
                             GrayScaleSkippedVehicles = singleGrayscaleSensorResult.LinkedCarCount;
-                            /*
-                            if (singleGrayscaleSensorResult.AttachmentRectangleBoxInfo.IsPackagePresent == true) {
-                                NLog.LogManager.GetCurrentClassLogger().Error($"存在包裹触发车号:{packageInfo.Guid}");
-                                NLog.LogManager.GetCurrentClassLogger().Error($"包裹所在车号:{singleGrayscaleSensorResult.CarNumber}");
-                            }
-                            */
-
-                            /*if ((singleGrayscaleSensorResult.AttachmentRectangleBoxInfo.IsPackagePresent != true) &&
-                                (packageInfo.BarCodeInfo?.Barcode.Equals("noread", StringComparison.CurrentCultureIgnoreCase) == true ||
-                                 packageInfo.BarCodeInfo is null)) {
-                                return;
-                            }*/
 
                             //双车赋值
                             var package = PackageInfoManager.GetLastPackage(s => s.Value.Guid.Equals(singleGrayscaleSensorResult.CarNumber));
@@ -456,6 +342,7 @@ namespace JayTom.Dws.Client.Service.PostBackgroundService {
                                 }
                                 package.LinkedCarCount = singleGrayscaleSensorResult.LinkedCarCount;
                             }
+
                             packageInfo.GrayscaleResultInfo = singleGrayscaleSensorResult;
                         }
 
@@ -498,13 +385,14 @@ namespace JayTom.Dws.Client.Service.PostBackgroundService {
                     }
                     PackageInfoManager.AddPackage(packageInfo, packageRemoveTimers);
                     //触发创建包裹事件
+
                     EventAggregator.Instance.Publish(new TriggerPositionEvent() {
                         IsSuccess = true,
                         TriggerPosition = TriggerPositionEnum.CreateTimePackageAfter,
                         PackageInfo = packageInfo
                     });
                 }
-                else if (item is { TriggerPosition: TriggerPositionEnum.BarCodeSetValueAfter, PackageInfo: { } info }) {
+                else if (item is TriggerPositionEvent { TriggerPosition: TriggerPositionEnum.BarCodeSetValueAfter, PackageInfo: { } info }) {
                     //邮政专供
                     if (!_grayscaleDeviceSettingsDto.IsUseGrayscaleDetector) {
                         PackageInfoManager.CompletedPackage(f => f.Key.Equals(info.CreateTime));
@@ -539,7 +427,7 @@ namespace JayTom.Dws.Client.Service.PostBackgroundService {
                 }
             };
             EventAggregator.Instance.Subscribe<WindowsAction>(async item => {
-                if (item is { Type: WindowsActionType.Close }) {
+                if (item is WindowsAction { Type: WindowsActionType.Close }) {
                     _isWindowsClose = true;
                 }
             });
@@ -549,6 +437,8 @@ namespace JayTom.Dws.Client.Service.PostBackgroundService {
             try {
                 //读配置
 
+                await _touchSocketTcpClient.Connect("192.168.21.76", 2000, token: stoppingToken);
+
                 _createPackageSettingsDto = await _configRepository.FirstOrDefaultEntity<CreatePackageSettingsDto>("CreatePackageSettings", stoppingToken) ?? new CreatePackageSettingsDto();
                 _barcodeFilterSettingsDto = await _configRepository.FirstOrDefaultEntity<BarcodeFilterSettingsDto>("BarcodeFilterSettings", stoppingToken) ?? new BarcodeFilterSettingsDto();
                 _grayscaleDeviceSettingsDto = await _configRepository.FirstOrDefaultEntity<GrayscaleDeviceSettingsDto>("GrayscaleDeviceSettings", stoppingToken) ?? new GrayscaleDeviceSettingsDto();
@@ -556,16 +446,16 @@ namespace JayTom.Dws.Client.Service.PostBackgroundService {
             catch (Exception e) {
                 NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
             }
-
             while (!stoppingToken.IsCancellationRequested && !_isWindowsClose) {
                 try {
                     if (PackageInfoManager.GetPackageCount() > 0 && _deviceService.RunningStatus) {
                         var value = PackageInfoManager.GetPackage(f => f.Value is { IsCompleted: false, BarCodeInfo: not null });
                         if (value != null) {
-                            if ((_grayscaleDeviceSettingsDto.IsUseGrayscaleDetector && value.LinkedCarCount > 0) ||
+                            if ((_grayscaleDeviceSettingsDto.IsUseGrayscaleDetector) ||
                                 !_grayscaleDeviceSettingsDto.IsUseGrayscaleDetector) {
                                 value.IsCompleted = true;
                                 EventAggregator.Instance.Publish(value);
+                                Debug.WriteLine($"创建包裹后推送");
                             }
                             else {
                                 //填充灰度仪
@@ -574,7 +464,6 @@ namespace JayTom.Dws.Client.Service.PostBackgroundService {
                                 }
                             }
                         }
-
                         if (PackageInfoManager.GetPackageCount() > 0) {
                             //判断存图路径等于空
                             var codeInfo = PackageInfoManager.GetPackage(f => f.Value is {

@@ -13,12 +13,17 @@ using JayTom.Dws.Data.LocalLog;
 using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
+using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Models.Cameras;
 using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Domain.EventMediators;
 using JayTom.Dws.Client.Service.Sorting;
 using JayTom.Dws.Domain.Repository.LocalLog;
 using JayTom.Dws.Client.Service.ExternalDataService;
+using WindowsAction = JayTom.Dws.Client.EventMediators.WindowsAction;
+using WindowsActionType = JayTom.Dws.Client.EventMediators.WindowsActionType;
+using SettingsChangedEvent = JayTom.Dws.Client.EventMediators.SettingsChangedEvent;
+using TriggerPositionEvent = JayTom.Dws.Client.EventMediators.TriggerPositionEvent;
 using static JayTom.Dws.Client.Service.BackgroundService.SubmitApiBackgroundService;
 
 namespace JayTom.Dws.Client.Service.BackgroundService {

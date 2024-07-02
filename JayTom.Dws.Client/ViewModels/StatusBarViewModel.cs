@@ -15,6 +15,7 @@ using JayTom.Dws.Client.Service;
 using System.Collections.Generic;
 using JayTom.Dws.Domain.Dto.Timer;
 using System.Collections.ObjectModel;
+using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Models.Cameras;
 using JayTom.Dws.Client.Service.Device;
 using Microsoft.AspNetCore.Connections;
@@ -32,6 +33,7 @@ using ConnectionType = JayTom.Dws.Client.Models.ConnectionType;
 using JayTom.Dws.Client.Service.ResultOutput.Communication.TcpComm;
 using JayTom.Dws.Client.Service.ExternalDataService.Communication.TcpComm;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig.ConnectionParams;
+using SettingsChangedEvent = JayTom.Dws.Client.EventMediators.SettingsChangedEvent;
 
 namespace JayTom.Dws.Client.ViewModels {
 

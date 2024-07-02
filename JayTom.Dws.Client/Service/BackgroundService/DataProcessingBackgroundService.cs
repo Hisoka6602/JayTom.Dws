@@ -13,6 +13,7 @@ using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
 using JayTom.Dws.Interface.Cloud;
 using System.Collections.Concurrent;
+using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.EventMediators;
 using JayTom.Dws.Client.Service.Sorting;
 using JayTom.Dws.Domain.Repository.LocalData;
@@ -21,7 +22,12 @@ using JayTom.Dws.Infrastructure.Repository.LocalData;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 using PackageInfo = JayTom.Dws.Domain.Manager.PackageInfo;
 using JayTom.Dws.Infrastructure.Repository.LocalConf.CameraConfig;
+using WindowsAction = JayTom.Dws.Client.EventMediators.WindowsAction;
+using SortingExitType = JayTom.Dws.Client.EventMediators.SortingExitType;
+using WindowsActionType = JayTom.Dws.Client.EventMediators.WindowsActionType;
 using static JayTom.Dws.Client.Service.BackgroundService.SubmitApiBackgroundService;
+using PackageExitUpdateEvent = JayTom.Dws.Client.EventMediators.PackageExitUpdateEvent;
+using PackageAbnormalSortingType = JayTom.Dws.Client.EventMediators.PackageAbnormalSortingType;
 
 namespace JayTom.Dws.Client.Service.BackgroundService {
 

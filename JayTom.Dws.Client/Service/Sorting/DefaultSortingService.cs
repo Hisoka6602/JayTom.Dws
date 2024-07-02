@@ -21,6 +21,7 @@ using JayTom.Dws.Interface.Cloud;
 using MathNet.Numerics.RootFinding;
 using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
+using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Domain.EventMediators;
 using JayTom.Dws.Domain.DownstreamProtocols;
@@ -31,9 +32,11 @@ using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 using UploadResponse = JayTom.Dws.Interface.UploadResponse;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig.RuleConfig;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
+using SortingExitType = JayTom.Dws.Client.EventMediators.SortingExitType;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig.RuleConfig;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig.ConnectionParams;
 using static JayTom.Dws.Client.Service.BackgroundService.SubmitApiBackgroundService;
+using PushAlternateExitSorterEvent = JayTom.Dws.Client.EventMediators.PushAlternateExitSorterEvent;
 
 namespace JayTom.Dws.Client.Service.Sorting {
 

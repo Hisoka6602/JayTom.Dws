@@ -17,6 +17,7 @@ using System.Collections.Generic;
 using Newtonsoft.Json.Serialization;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Views.Dialog;
+using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Domain.EventMediators;
 using JayTom.Dws.Client.Service.Sorting;
@@ -30,6 +31,7 @@ using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration;
 using JayTom.Dws.Client.Models.PackageSorting.PackageExitLockModels;
 using JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration;
+using SettingsChangedEvent = JayTom.Dws.Client.EventMediators.SettingsChangedEvent;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration {
 

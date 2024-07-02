@@ -11,6 +11,7 @@ using JayTom.Dws.Data.LocalLog;
 using System.Windows.Threading;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.EventMediators;
 using JayTom.Dws.Client.Models.LogsItemModels;
 

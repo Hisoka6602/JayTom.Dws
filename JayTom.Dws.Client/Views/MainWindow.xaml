@@ -82,7 +82,6 @@
             Margin="0"
             materialDesign:ElevationAssist.Elevation="Dp2"
             materialDesign:ShadowAssist.Darken="True"
-            materialDesign:ShadowAssist.ShadowEdges="Bottom,Right,Top,Left"
             Background="#202020"
             UniformCornerRadius="{Binding UniformCornerRadius, UpdateSourceTrigger=PropertyChanged}">
             <!--  切换-过渡动画  -->

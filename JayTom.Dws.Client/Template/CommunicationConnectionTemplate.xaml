@@ -14,7 +14,6 @@
             Padding="10"
             materialDesign:ElevationAssist.Elevation="Dp2"
             materialDesign:ShadowAssist.Darken="True"
-            materialDesign:ShadowAssist.ShadowEdges="Bottom,Right,Top,Left"
             UniformCornerRadius="15">
             <materialDesign:Card.Background>
                 <LinearGradientBrush Opacity="1" StartPoint="0.3,0" EndPoint="0.7,1">

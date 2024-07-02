@@ -40,7 +40,6 @@
         Margin="0"
         materialDesign:ElevationAssist.Elevation="Dp2"
         materialDesign:ShadowAssist.Darken="True"
-        materialDesign:ShadowAssist.ShadowEdges="Bottom,Right,Top,Left"
         Background="#2E2E2E"
         UniformCornerRadius="15">
         <Grid>
@@ -127,7 +126,6 @@
                         Margin="0"
                         Padding="0"
                         materialDesign:ButtonAssist.CornerRadius="17"
-                        materialDesign:ShadowAssist.ShadowEdges="Right"
                         Background="BlueViolet"
                         Command="{Binding OkCommand}"
                         Style="{StaticResource ButtonFocusEnlargeStyle}">

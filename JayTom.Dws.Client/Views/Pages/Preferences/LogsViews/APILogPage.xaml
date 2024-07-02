@@ -299,7 +299,7 @@
                             Margin="0"
                             Padding="0"
                             materialDesign:ButtonAssist.CornerRadius="20,0,0,20"
-                            materialDesign:ShadowAssist.ShadowEdges="Right"
+
                             Background="#3C3C3C"
                             Command="{Binding ClearSearchCriteriaCommand}"
                             Style="{StaticResource ButtonFocusEnlargeStyle}"
@@ -322,7 +322,7 @@
                             Margin="0"
                             Padding="0"
                             materialDesign:ButtonAssist.CornerRadius="0"
-                            materialDesign:ShadowAssist.ShadowEdges="Right"
+
                             Background="#3C3C3C"
                             Command="{Binding SearchDataCommand}"
                             Style="{StaticResource ButtonFocusEnlargeStyle}"
@@ -344,7 +344,7 @@
                             Margin="0"
                             Padding="0"
                             materialDesign:ButtonAssist.CornerRadius="0,20,20,0"
-                            materialDesign:ShadowAssist.ShadowEdges="Right"
+
                             Background="#3C3C3C"
                             Command="{Binding ClearMessageCommand}"
                             Cursor="Hand"
@@ -456,7 +456,6 @@
                         Margin="0"
                         Padding="0"
                         materialDesign:ButtonAssist.CornerRadius="20,0,0,20"
-                        materialDesign:ShadowAssist.ShadowEdges="Right"
                         Background="#3C3C3C"
                         Command="{Binding FirstPageCommand}"
                         Style="{StaticResource ButtonFocusEnlargeStyle}"
@@ -483,7 +482,7 @@
                         Margin="0"
                         Padding="0"
                         materialDesign:ButtonAssist.CornerRadius="0"
-                        materialDesign:ShadowAssist.ShadowEdges="Right"
+
                         Background="#3C3C3C"
                         Command="{Binding PreviousPageCommand}"
                         Style="{StaticResource ButtonFocusEnlargeStyle}"
@@ -534,7 +533,7 @@
                         Margin="0"
                         Padding="0"
                         materialDesign:ButtonAssist.CornerRadius="0"
-                        materialDesign:ShadowAssist.ShadowEdges="Right"
+
                         Background="#3C3C3C"
                         Command="{Binding NextPageCommand}"
                         Style="{StaticResource ButtonFocusEnlargeStyle}"
@@ -557,7 +556,7 @@
                         Margin="0"
                         Padding="0"
                         materialDesign:ButtonAssist.CornerRadius="0,20,20,0"
-                        materialDesign:ShadowAssist.ShadowEdges="Right"
+
                         Background="#3C3C3C"
                         Command="{Binding LastPageCommand}"
                         Style="{StaticResource ButtonFocusEnlargeStyle}"

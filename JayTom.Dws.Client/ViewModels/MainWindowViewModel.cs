@@ -25,12 +25,18 @@ using Point = System.Windows.Point;
 using JayTom.Dws.Client.Views.Dialog;
 using System.Collections.ObjectModel;
 using System.Runtime.InteropServices;
+using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.EventMediators;
 using JayTom.Dws.Client.ViewModels.Dialog;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Client.Service.SyncSettings;
 using JayTom.Dws.Client.Models.AppSettingModel;
 using JayTom.Dws.Infrastructure.Repository.LocalConf;
+using RemoteAction = JayTom.Dws.Client.EventMediators.RemoteAction;
+using RemoteCommand = JayTom.Dws.Client.EventMediators.RemoteCommand;
+using WindowsAction = JayTom.Dws.Client.EventMediators.WindowsAction;
+using WindowsActionType = JayTom.Dws.Client.EventMediators.WindowsActionType;
+using SettingsChangedEvent = JayTom.Dws.Client.EventMediators.SettingsChangedEvent;
 
 namespace JayTom.Dws.Client.ViewModels {
 

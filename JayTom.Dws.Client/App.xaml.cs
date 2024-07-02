@@ -45,6 +45,7 @@ using JayTom.Dws.Plugin.Tcp.TcpServer;
 using JayTom.Dws.Camera.BarCodeReader;
 using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Domain.EventMediators;
+using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Service.Sorting;
 using JayTom.Dws.Infrastructure.Service;
 using JayTom.Dws.Client.ViewModels.Pages;
@@ -56,12 +57,14 @@ using JayTom.Dws.Client.ViewModels.Editors;
 using JayTom.Dws.Plugin.Scale.DynamicScale;
 using JayTom.Dws.Domain.Repository.LocalLog;
 using JayTom.Dws.Interface.Cloud.CloudVideo;
+using JayTom.Dws.Client.Service.TestService;
 using JayTom.Dws.Client.Service.ResultOutput;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Repository.LocalData;
 using JayTom.Dws.Domain.Service.CacheCleanup;
 using JayTom.Dws.Client.Service.SyncSettings;
 using JayTom.Dws.Domain.Service.ImageService;
+using JayTom.Dws.Client.Service.ImageService;
 using Microsoft.Extensions.DependencyInjection;
 using JayTom.Dws.Plugin.Device.GrayscaleDevice;
 using JayTom.Dws.Client.Views.Pages.Preferences;
@@ -74,7 +77,6 @@ using JayTom.Dws.Client.ViewModels.Pages.Preferences;
 using JayTom.Dws.Infrastructure.Repository.LocalConf;
 using JayTom.Dws.Infrastructure.Repository.LocalData;
 using JayTom.Dws.Client.Service.DefaultConfiguration;
-using JayTom.Dws.Infrastructure.Service.ImageService;
 using JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision;
 using JayTom.Dws.Client.Service.PostBackgroundService;
 using JayTom.Dws.Client.ViewModels.Editors.CloudService;
@@ -385,7 +387,7 @@ namespace JayTom.Dws.Client {
                 services.AddHostedService<SubmitApiBackgroundService>();//提交Api
                 services.AddHostedService<DataProcessingBackgroundService>();//数据处理
                 services.AddHostedService<CleanupService>();//清理
-                //services.AddHostedService<ComputerInfoBackgroundService>(); // 注册后台服务
+                services.AddHostedService<ComputerInfoBackgroundService>(); // 注册后台服务
                 services.AddHostedService<SingleInstanceBackgroundService>(); // 注册单开激活服务
                 services.AddHostedService<LogProcessingService>();//日志管理器
                 services.AddHostedService<TimerBackgroundService>();//计时

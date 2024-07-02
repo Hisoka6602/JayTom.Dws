@@ -1,22 +1,27 @@
-﻿using System.Diagnostics;
-using JayTom.Dws.Domain.Dto;
+﻿using System;
+using Prism.Events;
+using System.Diagnostics;
 using System.ComponentModel;
+using JayTom.Dws.Domain.Dto;
 using JayTom.Dws.Data.Package;
 using JayTom.Dws.Domain.Manager;
+using System.Collections.Generic;
 using System.Collections.Concurrent;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 using InstructionType = JayTom.Dws.Data.Package.InstructionType;
 
-namespace JayTom.Dws.Domain.EventMediators {
+namespace JayTom.Dws.Client.EventMediators {
 
-    public class EventAggregator1 {
-        private static readonly Lazy<EventAggregator1> _instance = new(() => new EventAggregator1());
+    public class EventAggregator {
+        private static readonly Lazy<EventAggregator> _instance = new(() => new EventAggregator());
 
-        public static EventAggregator1 Instance => _instance.Value;
+        public static EventAggregator Instance => _instance.Value;
 
         private readonly ConcurrentDictionary<Type, List<Action<object>>> _eventSubscribers = new();
+        private readonly IEventAggregator _eventAggregator = new Prism.Events.EventAggregator();
+        private readonly IEventAggregator _packageEventAggregator = new Prism.Events.EventAggregator();
 
-        public async void Publish<TEventType>(TEventType eventData) {
+        public void Publish<TEventType>(TEventType eventData) {
             /*var eventType = typeof(TEventType);
             if (_eventSubscribers.TryGetValue(eventType, out var eventSubscriber)) {
                 foreach (var subscriber in eventSubscriber) {
@@ -37,30 +42,23 @@ namespace JayTom.Dws.Domain.EventMediators {
                     Debug.WriteLine($"Subscriber invoked in {stopwatch.ElapsedMilliseconds} ms");
                 }
             }*/
-            var eventType = typeof(TEventType);
-            if (_eventSubscribers.TryGetValue(eventType, out var eventSubscriber)) {
-                await Task.WhenAll(eventSubscriber.Select(subscriber => Task.Run(() => {
-                    if (eventData != null) subscriber.Invoke(eventData);
-                })));
-            }
+            _eventAggregator.GetEvent<PubSubEvent<TEventType>>().Publish(eventData);
         }
 
-        public void Subscribe<TEventType>(Action<object> action) {
-            var eventType = typeof(TEventType);
-            var subscriberList = _eventSubscribers.GetOrAdd(eventType, _ =>
-                new List<Action<object>>());
-            lock (subscriberList) {
-                subscriberList.Add(action);
-            }
+        public void Subscribe<TEventType>(Action<TEventType> action) {
+            _eventAggregator.GetEvent<PubSubEvent<TEventType>>().Subscribe(action, ThreadOption.PublisherThread, false);
         }
 
-        public void Unsubscribe<TEventType>(Action<object> action) {
-            var eventType = typeof(TEventType);
-            if (_eventSubscribers.TryGetValue(eventType, out var subscriberList)) {
-                lock (subscriberList) {
-                    subscriberList.Remove(action);
-                }
-            }
+        public void PublishPackage<TEventType>(TEventType eventData) {
+            _packageEventAggregator.GetEvent<PubSubEvent<TEventType>>().Publish(eventData);
+        }
+
+        public void SubscribePackage<TEventType>(Action<TEventType> action) {
+            _packageEventAggregator.GetEvent<PubSubEvent<TEventType>>().Subscribe(action, ThreadOption.PublisherThread, false);
+        }
+
+        public void Unsubscribe<TEventType>(Action<TEventType> action) {
+            _eventAggregator.GetEvent<PubSubEvent<TEventType>>().Unsubscribe(action);
         }
     }
 

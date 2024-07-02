@@ -16,6 +16,7 @@ using System.Collections.Generic;
 using JayTom.Dws.Plugin.SerialPort;
 using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
+using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.EventMediators;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
 using JayTom.Dws.Domain.Repository.LocalConf;
@@ -23,6 +24,7 @@ using JayTom.Dws.Domain.Dto.PackageExitLockDto;
 using JayTom.Dws.Client.Service.BackgroundService;
 using JayTom.Dws.Client.Service.Sorting.Communication.TcpComm;
 using JayTom.Dws.Client.Service.Sorting.Communication.SerialComm;
+using TriggerPositionEvent = JayTom.Dws.Client.EventMediators.TriggerPositionEvent;
 
 namespace JayTom.Dws.Client.Service.Sorting {
 
