@@ -81,7 +81,9 @@ namespace JayTom.Dws.Plugin.Device.GrayscaleDevice {
                 }
             }
 
-            return new GrayscaleResult();
+            return new GrayscaleResult() {
+                CarNumber = carNumber
+            };
         }
 
         public void SetRectangleSizes(Coordinates attachmentRectangle, Coordinates mainRectangle) {
@@ -101,6 +103,10 @@ namespace JayTom.Dws.Plugin.Device.GrayscaleDevice {
             LineCarCount = carCount;
             CarNumberOffset = offset;
             CarCircularArray = new CircularArray(LineCarCount);
+        }
+
+        public int IncreaseCarCount(int carNum, int additionalCarCount) {
+            return CarCircularArray[carNum + additionalCarCount];
         }
 
         public GrayscaleResult? DecodeData(byte[] dataBytes) {

@@ -105,15 +105,29 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         public async void OnAddLog(DateTime createTime, string message) {
             try {
                 await _addSlim.WaitAsync();
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                    LogItems.Insert(0, new BaseLogItemModel() {
+                /*await Task.Run(() => {
+                    var newLogItem = new BaseLogItemModel() {
                         CreateTime = createTime,
                         Message = message
+                    };
+
+                    System.Windows.Application.Current.Dispatcher.Invoke(() => {
+                        LogItems.Insert(0, newLogItem);
+                        if (LogItems.Count > 100) {
+                            LogItems.RemoveAt(LogItems.Count - 1);
+                        }
                     });
+                });*/
+                var newLogItem = new BaseLogItemModel() {
+                    CreateTime = createTime,
+                    Message = message
+                };
+                System.Windows.Application.Current.Dispatcher.Invoke(() => {
+                    LogItems.Insert(0, newLogItem);
                     if (LogItems.Count > 100) {
                         LogItems.RemoveAt(LogItems.Count - 1);
                     }
-                }, DispatcherPriority.Background);
+                });
             }
             finally {
                 _addSlim.Release();

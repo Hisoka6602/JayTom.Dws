@@ -76,6 +76,7 @@ using JayTom.Dws.Infrastructure.Repository.LocalData;
 using JayTom.Dws.Client.Service.DefaultConfiguration;
 using JayTom.Dws.Infrastructure.Service.ImageService;
 using JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision;
+using JayTom.Dws.Client.Service.PostBackgroundService;
 using JayTom.Dws.Client.ViewModels.Editors.CloudService;
 using JayTom.Dws.Domain.Repository.LocalConf.CloudConfig;
 using JayTom.Dws.Client.HomeToolPlugin.SunnenPlugin.Views;
@@ -379,17 +380,17 @@ namespace JayTom.Dws.Client {
 
                 //把后台注册服务写在这里
 
-                services.AddHostedService<PackageBackgroundService>(); // 注册后组包服务
+                services.AddHostedService<PostPackageBackgroundService>(); // 注册后组包服务
                 services.AddHostedService<SaveImageBackgroundService>();//注册存图服务
                 services.AddHostedService<SubmitApiBackgroundService>();//提交Api
                 services.AddHostedService<DataProcessingBackgroundService>();//数据处理
                 services.AddHostedService<CleanupService>();//清理
-                services.AddHostedService<ComputerInfoBackgroundService>(); // 注册后台服务
+                //services.AddHostedService<ComputerInfoBackgroundService>(); // 注册后台服务
                 services.AddHostedService<SingleInstanceBackgroundService>(); // 注册单开激活服务
                 services.AddHostedService<LogProcessingService>();//日志管理器
                 services.AddHostedService<TimerBackgroundService>();//计时
-                services.AddHostedService<CloudBackgroundService>();//上传云端
-                services.AddHostedService<PackageAggregationService>();//集包服务
+                //services.AddHostedService<CloudBackgroundService>();//上传云端
+                //services.AddHostedService<PackageAggregationService>();//集包服务
                 services.AddHostedService<PackageExitUpdateBackgroundService>();//格口更新
             });
         }

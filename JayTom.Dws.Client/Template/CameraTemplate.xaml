@@ -63,6 +63,7 @@
                     <Image
                         Name="PackImage"
                         Grid.Row="0"
+                        RenderOptions.BitmapScalingMode="LowQuality"
                         Source="{Binding Image, UpdateSourceTrigger=PropertyChanged}"
                         Stretch="Fill">
                         <Image.InputBindings>

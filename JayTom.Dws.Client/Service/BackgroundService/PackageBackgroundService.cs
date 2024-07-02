@@ -1167,20 +1167,48 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             else {
                                 NLog.LogManager.GetCurrentClassLogger().Error($"创建包裹到现在的间隔:{milliseconds}ms");
                             }
-                            packageInfo.GrayscaleResultInfo = await _grayscaleService.GetSingleGrayscaleSensorResult(packageInfo.Guid, _grayscaleDeviceSettingsDto.TimeOut);
 
-                            if (packageInfo.GrayscaleResultInfo is not null) {
+                            var singleGrayscaleSensorResult = await _grayscaleService.GetSingleGrayscaleSensorResult(packageInfo.Guid, _grayscaleDeviceSettingsDto.TimeOut);
+
+                            if (singleGrayscaleSensorResult is not null) {
                                 //联动车辆
-                                GrayScaleSkippedVehicles = packageInfo.LinkedCarCount = packageInfo.GrayscaleResultInfo.LinkedCarCount;
+                                GrayScaleSkippedVehicles = singleGrayscaleSensorResult.LinkedCarCount;
+                                /*
+                                if (singleGrayscaleSensorResult.AttachmentRectangleBoxInfo.IsPackagePresent == true) {
+                                    NLog.LogManager.GetCurrentClassLogger().Error($"存在包裹触发车号:{packageInfo.Guid}");
+                                    NLog.LogManager.GetCurrentClassLogger().Error($"包裹所在车号:{singleGrayscaleSensorResult.CarNumber}");
+                                }
+                                */
+
+                                /*if ((singleGrayscaleSensorResult.AttachmentRectangleBoxInfo.IsPackagePresent != true) &&
+                                    (packageInfo.BarCodeInfo?.Barcode.Equals("noread", StringComparison.CurrentCultureIgnoreCase) == true ||
+                                     packageInfo.BarCodeInfo is null)) {
+                                    return;
+                                }*/
+
+                                //双车赋值
+                                var package = PackageInfoManager.GetLastPackage(s => s.Value.Guid.Equals(singleGrayscaleSensorResult.CarNumber));
+                                if (package != null) {
+                                    if (package.BarCodeInfo?.Barcode.Equals("noread", StringComparison.CurrentCultureIgnoreCase) == true &&
+                                        singleGrayscaleSensorResult.MainRectangleBoxInfos?.Any() != true) {
+                                        package.Image?.Dispose();
+                                        PackageInfoManager.RemovePackage(package.CreateTime);
+                                        package.BarCodeInfo = null;
+                                    }
+                                    package.LinkedCarCount = singleGrayscaleSensorResult.LinkedCarCount;
+                                }
+                                packageInfo.GrayscaleResultInfo = singleGrayscaleSensorResult;
                             }
+
                             if (_grayscaleDeviceSettingsDto.IsCheckPackageOrientation &&
                                 packageInfo.GrayscaleResultInfo is not null &&
-                                packageInfo.GrayscaleResultInfo.MainRectangleBoxInfos.Any()) {
+                                packageInfo.GrayscaleResultInfo?.MainRectangleBoxInfos?.Any() == true) {
                                 //发送包裹居中指令
                                 _sortingService.SendPackageCenter(packageInfo.GrayscaleResultInfo.CarNumber, new InstructionsAttach() {
                                     BarCode = string.Empty,
                                     Guid = packageInfo.GrayscaleResultInfo.CarNumber,
                                     Timestamp = packageInfo.Timestamp,
+                                    LinkedCarCount = packageInfo.GrayscaleResultInfo.LinkedCarCount,
                                     PackagePositionInfo = new PackagePositionInfo() {
                                         CenterX = packageInfo.GrayscaleResultInfo.CenterPoint.X,
                                         CenterY = packageInfo.GrayscaleResultInfo.CenterPoint.Y,
@@ -1189,7 +1217,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                         OffsetPercentage = packageInfo.GrayscaleResultInfo.MainRectangleBoxInfos?.FirstOrDefault()?.OffsetPercentage ?? 0
                                     },
                                 });
-
                                 //如果是没包裹则返回
                             }
                         }
@@ -1299,7 +1326,9 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 }
                 else if (item is TriggerPositionEvent { TriggerPosition: TriggerPositionEnum.BarCodeSetValueAfter, PackageInfo: { } info }) {
                     //邮政专供
-                    PackageInfoManager.CompletedPackage(f => f.Key.Equals(info.CreateTime));
+                    if (!_grayscaleDeviceSettingsDto.IsUseGrayscaleDetector) {
+                        PackageInfoManager.CompletedPackage(f => f.Key.Equals(info.CreateTime));
+                    }
                 }
             });
             //包裹组合完成后触发
@@ -1571,7 +1600,10 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             if (value.VolumeInfo is not null &&
                                 value.WeightInfo is not null &&
                                 value.BarCodeInfo is not null &&
-                                value.IsStackedPackage is not null) {
+                                value.IsStackedPackage is not null &&
+                                value.GrayscaleResultInfo is not null &&
+                                ((_grayscaleDeviceSettingsDto.IsUseGrayscaleDetector && value.LinkedCarCount > 0) ||
+                                 !_grayscaleDeviceSettingsDto.IsUseGrayscaleDetector)) {
                                 //执行输出
                                 _resultOutputService.ExecuteOutput(
                                     value.BarCodeInfo.Barcode, (float)(value.WeightInfo.FormattedWeight),
@@ -1612,6 +1644,10 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                          DateTime.Now.Subtract(value.CreateTime).TotalMilliseconds >
                                          _stackedPackageDetectionSettingsDto.Timeout) {
                                     value.IsStackedPackage = false;
+                                }
+                                //填充灰度仪
+                                if (!_grayscaleDeviceSettingsDto.IsUseGrayscaleDetector) {
+                                    value.GrayscaleResultInfo = new GrayscaleResult();
                                 }
                             }
                         }
@@ -1725,7 +1761,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             //判断存图路径等于空
                             var codeInfo = PackageInfoManager.GetPackage(f => f.Value is {
                                 WeightInfo: not null, VolumeInfo: not null, IsSavedImage: false,
-                                BarCodeInfo: not null
+                                BarCodeInfo: not null, IsCompleted: true
                             });
                             if (codeInfo is not null) {
                                 EventAggregator.Instance.Publish(new ImageMessageInfo {
@@ -1766,124 +1802,4 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             }
         }
     }
-
-    /*public class PackageInfo {
-        /// <summary>
-        /// 包裹创建时间
-        /// </summary>
-        public DateTime CreateTime { get; set; } = DateTime.Now;
-
-        /// <summary>
-        /// Guid
-        /// </summary>
-        public long Guid { get; set; }
-
-        /// <summary>
-        /// 条码图片
-        /// </summary>
-        public Image? Image { get; set; }
-
-        /// <summary>
-        /// 条码信息
-        /// </summary>
-        public BarCodeInfoModel? BarCodeInfo { get; set; }
-
-        /// <summary>
-        /// 体积信息
-        /// </summary>
-        public VolumeInfoModel? VolumeInfo { get; set; }
-
-        /// <summary>
-        /// 称重信息
-        /// </summary>
-        public WeightInfoModel? WeightInfo { get; set; }
-
-        /// <summary>
-        /// 是否已完成(完成输出、上传、但未从集合删除)
-        /// </summary>
-        public bool IsCompleted;
-
-        /// <summary>
-        /// 是否完成存图
-        /// </summary>
-        public bool IsSavedImage;
-
-        /// <summary>
-        /// 需要扣除的长度
-        /// </summary>
-        public float LengthToDeduct { get; set; }
-
-        /// <summary>
-        /// 需要扣除的宽度
-        /// </summary>
-        public float WidthToDeduct { get; set; }
-
-        /// <summary>
-        /// 需要扣除的高度
-        /// </summary>
-        public float HeightToDeduct { get; set; }
-
-        /// <summary>
-        /// 需要扣除的体积
-        /// </summary>
-        public float VolumeToDeduct { get; set; }
-
-        /// <summary>
-        /// 创建包裹指令
-        /// </summary>
-        public string PackageCreationInstruction { get; set; } = string.Empty;
-
-        /// <summary>
-        /// 是否由下位机创建
-        /// </summary>
-        public bool IsCreatedByLowerMachine { get; set; }
-
-        /// <summary>
-        /// 全景图信息
-        /// </summary>
-        public List<PanoramaCameraImageInfo> PanoramaCameraImageInfo { get; set; } = new();
-
-        /// <summary>
-        /// 是否叠包
-        /// </summary>
-        public bool? IsStackedPackage { get; set; }
-
-        /// <summary>
-        /// 包裹时间戳
-        /// </summary>
-        public long Timestamp { get; set; }
-
-        /#1#// <summary>
-        /// 包裹异常信息
-        /// </summary>
-        public string PackageExceptionMsg { get; set; } = "分拣成功";
-
-        /// <summary>
-        /// 包裹异常状态
-        /// </summary>
-        public int PackageExceptionStatus { get; set; } = 0;#1#
-
-        /// <summary>
-        /// 包裹异常类型
-        /// </summary>
-
-        public List<SortingExceptionReturnType> SortingExceptionReturnTypes { get; set; } = new();
-
-        /// <summary>
-        /// 供包台信号类型
-        /// </summary>
-        public List<SupplyCounterPackageSignal> SupplyCounterPackageSignalItem { get; set; } = new();
-
-        /// <summary>
-        /// 灰度仪信息
-        /// </summary>
-        public GrayscaleResult? GrayscaleResultInfo { get; set; }
-
-        /// <summary>
-        /// 联动车辆
-        /// </summary>
-        public int LinkedCarCount { get; set; } = 0;
-
-        public Timer
-    }*/
 }

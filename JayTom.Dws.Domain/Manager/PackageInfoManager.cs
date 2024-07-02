@@ -92,11 +92,41 @@ namespace JayTom.Dws.Domain.Manager {
         /// <param name="predicate"></param>
         /// <returns></returns>
         public static PackageInfo? GetPackage(Func<KeyValuePair<DateTime, PackageInfo>, bool> predicate) {
-            var (key, value) = _packageInfos.OrderBy(o => o.Key).FirstOrDefault(predicate);
-            if (value is null) return null;
-            _packageInfos.TryGetValue(key, out var package);
+            // 检查 _packageInfos 是否为空
+            if (!_packageInfos.Any()) {
+                NLog.LogManager.GetCurrentClassLogger().Error("PackageInfos collection is null or empty.");
+                return null;
+            }
 
-            return package;
+            try {
+                // 尝试找到第一个符合条件的键值对
+                var result = _packageInfos.OrderBy(o => o.Key).FirstOrDefault(predicate);
+
+                // 检查 result 是否为默认值
+                if (EqualityComparer<KeyValuePair<DateTime, PackageInfo>>.Default.Equals(result, default)) {
+                    return null;
+                }
+
+                var (key, value) = result;
+
+                if (value == null) {
+                    NLog.LogManager.GetCurrentClassLogger().Error($"Found key {key}, but the corresponding value is null.");
+                    return null;
+                }
+
+                // 尝试获取包信息
+                if (_packageInfos.TryGetValue(key, out var package)) {
+                    return package;
+                }
+                else {
+                    NLog.LogManager.GetCurrentClassLogger().Error($"PackageInfos collection does not contain the key {key}.");
+                    return null;
+                }
+            }
+            catch (Exception ex) {
+                NLog.LogManager.GetCurrentClassLogger().Error($"An error occurred in GetPackage: {ex.Message}");
+                return null;
+            }
         }
 
         /// <summary>
@@ -105,11 +135,33 @@ namespace JayTom.Dws.Domain.Manager {
         /// <param name="predicate"></param>
         /// <returns></returns>
         public static PackageInfo? GetLastPackage(Func<KeyValuePair<DateTime, PackageInfo>, bool> predicate) {
-            var (key, value) = _packageInfos.OrderBy(o => o.Key).LastOrDefault(predicate);
-            if (value is null) return null;
-            _packageInfos.TryGetValue(key, out var package);
+            // 检查 _packageInfos 是否为空
+            if (!_packageInfos.Any()) {
+                return null;
+            }
 
-            return package;
+            try {
+                // 尝试找到最后一个符合条件的键值对
+                var result = _packageInfos.OrderByDescending(o => o.Key).FirstOrDefault(predicate);
+
+                // 检查 result 是否为默认值
+                if (EqualityComparer<KeyValuePair<DateTime, PackageInfo>>.Default.Equals(result, default)) {
+                    return null;
+                }
+
+                var (key, value) = result;
+
+                if (value == null) {
+                    return null;
+                }
+
+                // 尝试获取包信息
+                return _packageInfos.GetValueOrDefault(key);
+            }
+            catch (Exception ex) {
+                NLog.LogManager.GetCurrentClassLogger().Error($"An error occurred in GetPackage: {ex.Message}");
+                return null;
+            }
         }
 
         /// <summary>
@@ -162,6 +214,7 @@ namespace JayTom.Dws.Domain.Manager {
             packageInfo.VolumeInfo ??= new VolumeInfoModel();
             packageInfo.WeightInfo ??= new WeightInfoModel();
             packageInfo.BarCodeInfo ??= new BarCodeInfoModel();
+            packageInfo.GrayscaleResultInfo ??= new GrayscaleResult();
             packageInfo.IsStackedPackage ??= false;
             packageInfo.IsCompleted = true;
             OnPackageCompleted(new PackageCompletedEventArgs(packageInfo, string.Empty));

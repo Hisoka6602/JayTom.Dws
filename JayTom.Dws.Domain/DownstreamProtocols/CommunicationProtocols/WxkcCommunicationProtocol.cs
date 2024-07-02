@@ -54,7 +54,7 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
                         //包裹居中
                         startData = "F9";
                         functionData = "15";
-                        interaction = "01";
+                        interaction = attach.LinkedCarCount > 0 ? attach.LinkedCarCount.ToString().PadLeft(2, '0') : "01";
                         break;
 
                     default:

@@ -48,7 +48,7 @@
         Margin="0"
         materialDesign:ElevationAssist.Elevation="Dp2"
         materialDesign:ShadowAssist.Darken="True"
-        materialDesign:ShadowAssist.ShadowEdges="Bottom,Right,Top,Left"
+
         Background="#333333"
         UniformCornerRadius="15">
         <Grid>

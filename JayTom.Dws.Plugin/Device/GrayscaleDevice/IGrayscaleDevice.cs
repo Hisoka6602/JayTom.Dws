@@ -64,6 +64,13 @@ namespace JayTom.Dws.Plugin.Device.GrayscaleDevice {
         /// <param name="carCount"></param>
         /// <param name="offset"></param>
         void SetCircularArrayCarCount(int carCount, int offset);
+
+        /// <summary>
+        /// 增加小车数量计算
+        /// </summary>
+        /// <param name="carNum"></param>
+        /// <param name="additionalCarCount"></param>
+        int IncreaseCarCount(int carNum, int additionalCarCount);
     }
 
     public class GrayscaleResult {

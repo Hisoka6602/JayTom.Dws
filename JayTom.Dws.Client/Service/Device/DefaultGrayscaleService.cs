@@ -107,6 +107,10 @@ namespace JayTom.Dws.Client.Service.Device {
             }
         }
 
+        public int IncreaseCarCount(int carNum, int additionalCarCount) {
+            return _grayscaleDevice.IncreaseCarCount(carNum, additionalCarCount);
+        }
+
         protected virtual async void OnConnected(IGrayscaleService e) {
             await Task.Yield();
             Connected?.Invoke(this, e);

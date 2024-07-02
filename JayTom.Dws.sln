@@ -189,19 +189,19 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "WindowsBackgroundService", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PostSoapCoreService", "PostSoapCoreService\PostSoapCoreService.csproj", "{D65477C8-69A0-4705-B6E8-2D8BF89CEED1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JayTom.Dws.Service", "JayTom.Dws.Service\JayTom.Dws.Service.csproj", "{4E97E36E-05E6-4F6B-971A-0CCA5DD5E4D7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "JayTom.Dws.Service", "JayTom.Dws.Service\JayTom.Dws.Service.csproj", "{4E97E36E-05E6-4F6B-971A-0CCA5DD5E4D7}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "CrossCutting", "CrossCutting", "{F81CDD9A-1D8B-4D8E-88FD-BEF32A1C66F5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JayTom.Dws.CrossCutting", "JayTom.Dws.CrossCutting\JayTom.Dws.CrossCutting.csproj", "{E8340FCA-29C0-4C7B-AAE8-A0548501D928}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "JayTom.Dws.CrossCutting", "JayTom.Dws.CrossCutting\JayTom.Dws.CrossCutting.csproj", "{E8340FCA-29C0-4C7B-AAE8-A0548501D928}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JayTom.Dws.SystemStatusMonitorService", "JayTom.Dws.SystemStatusMonitorService\JayTom.Dws.SystemStatusMonitorService.csproj", "{F1CBA702-9C69-4A0A-B880-D6A9E2126264}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "JayTom.Dws.SystemStatusMonitorService", "JayTom.Dws.SystemStatusMonitorService\JayTom.Dws.SystemStatusMonitorService.csproj", "{F1CBA702-9C69-4A0A-B880-D6A9E2126264}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SignalRTest", "SignalRTest\SignalRTest.csproj", "{96F32458-F331-41A1-A61D-6224E79BCF35}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SignalRTest", "SignalRTest\SignalRTest.csproj", "{96F32458-F331-41A1-A61D-6224E79BCF35}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JayTom.Dws.DataInteractionService", "JayTom.Dws.DataInteractionService\JayTom.Dws.DataInteractionService.csproj", "{9379C7DD-B56D-4B06-BF88-EE1858574C82}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "JayTom.Dws.DataInteractionService", "JayTom.Dws.DataInteractionService\JayTom.Dws.DataInteractionService.csproj", "{9379C7DD-B56D-4B06-BF88-EE1858574C82}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JayTom.Dws.UploadCloudService", "JayTom.Dws.UploadCloudService\JayTom.Dws.UploadCloudService.csproj", "{98C31D74-2370-432A-9C92-D4C0F011D913}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "JayTom.Dws.UploadCloudService", "JayTom.Dws.UploadCloudService\JayTom.Dws.UploadCloudService.csproj", "{98C31D74-2370-432A-9C92-D4C0F011D913}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -25,8 +25,6 @@ namespace JayTom.Dws.Client.Service.Sorting.Communication.TcpComm {
                         }
                     }
                 }
-                //后面需要删除这行
-                NLog.LogManager.GetCurrentClassLogger().Error($"{JsonConvert.SerializeObject(info)}");
             };
             tcpCommServer.Communication += delegate (object? sender, CommunicationInfo info) {
                 if (info.Type == CommunicationType.Receive) {

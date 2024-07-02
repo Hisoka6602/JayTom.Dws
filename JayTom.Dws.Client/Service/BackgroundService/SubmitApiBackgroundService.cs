@@ -112,6 +112,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         LinkedCarCount = model?.LinkedCarCount ?? 1
                         //图片暂时不写
                     });
+                    NLog.LogManager.GetCurrentClassLogger().Error($"SubmitItemInfo:{model?.LinkedCarCount}");
+                    NLog.LogManager.GetCurrentClassLogger().Error($"车号:{model?.Guid}");
                     //添加到推送队列
                     if (model.IsCreatedByLowerMachine && _submissionUploader is not null) {
                         try {
@@ -921,7 +923,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     ErrorReson = "未获取到落格信息"
                 });
             }
-            NLog.LogManager.GetCurrentClassLogger().Error($"{JsonConvert.SerializeObject(packageExitItems)}");
             return barcode.ToLower().Equals("noread") ? new KeyValuePair<int, CaiNiaoExitInfo>(6, new CaiNiaoExitInfo() {
                 ErrorReson = "无条码",
                 ChuteCode = packageExitItems?.LastOrDefault()?.ExitName ?? string.Empty

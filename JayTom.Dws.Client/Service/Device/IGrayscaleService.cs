@@ -58,5 +58,12 @@ namespace JayTom.Dws.Client.Service.Device {
         /// 获取灰度仪结果
         /// </summary>
         void ContinuousGrayscaleSensorReading(object param, CancellationToken token);
+
+        /// <summary>
+        /// 增加小车数量计算
+        /// </summary>
+        /// <param name="carNum"></param>
+        /// <param name="additionalCarCount"></param>
+        int IncreaseCarCount(int carNum, int additionalCarCount);
     }
 }

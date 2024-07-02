@@ -42,6 +42,27 @@ namespace JayTom.Dws.Client.Models {
             }
             Task.Factory.StartNew(async () => {
                 while (!_tokenSource.IsCancellationRequested) {
+                    if (BitmapQueue.TryDequeue(out var bitmap) && this.Image != null) {
+                        var rect = new Rectangle(0, 0, bitmap.Width, bitmap.Height);
+                        var bitmapData = bitmap.LockBits(rect, ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+
+                        // 使用 Dispatcher.InvokeAsync 进行 UI 线程操作
+                        await this.Image.Dispatcher.InvokeAsync(() => {
+                            this.Image.WritePixels(
+                                new Int32Rect(0, 0, bitmap.Width, bitmap.Height),
+                                bitmapData.Scan0,
+                                bitmapData.Stride * bitmapData.Height,
+                                bitmapData.Stride
+                            );
+                            bitmap.UnlockBits(bitmapData);
+                        }, DispatcherPriority.Render);
+                    }
+                    await Task.Delay(5); // 小延迟以减少CPU占用
+                }
+            }, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+
+            /*Task.Factory.StartNew(async () => {
+                while (!_tokenSource.IsCancellationRequested) {
                     var tryDequeue = BitmapQueue.TryDequeue(out var bitmap);
                     if (tryDequeue && bitmap is not null && this.Image is not null) {
                         var rect = new Rectangle(0, 0, bitmap.Width, bitmap.Height);
@@ -49,7 +70,7 @@ namespace JayTom.Dws.Client.Models {
                         /*await this.Image.Dispatcher.InvokeAsync(() => {
                             this.Image.WritePixels(new Int32Rect(0, 0, bitmap.Width, bitmap.Height), bitmapData.Scan0, bitmapData.Stride * bitmapData.Height, bitmapData.Stride);
                             bitmap.UnlockBits(bitmapData);
-                        }, DispatcherPriority.Render);*/
+                        }, DispatcherPriority.Render);#1#
                         await Task.Run(() => {
                             this.Image.Dispatcher.Invoke(() => {
                                 this.Image.WritePixels(new Int32Rect(0, 0, bitmap.Width, bitmap.Height), bitmapData.Scan0, bitmapData.Stride * bitmapData.Height, bitmapData.Stride);
@@ -59,7 +80,7 @@ namespace JayTom.Dws.Client.Models {
                     }
                     await Task.Delay(3);
                 }
-            }, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+            }, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);*/
         }
 
         /// <summary>

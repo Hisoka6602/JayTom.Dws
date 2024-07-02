@@ -119,7 +119,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         await _cacheCleanupService.DeletePanoramaImagesOlderThanDays(_cacheClearSettingsDto.PanoramaImageAgoDays);
                     }
                     if (_cacheClearSettingsDto?.FtpImageAgoDays > 0) {
-                        await _cacheCleanupService.DeleteFtpImagesOlderThanDays(_cacheClearSettingsDto.FtpImageAgoDays);
+                        //await _cacheCleanupService.DeleteFtpImagesOlderThanDays(_cacheClearSettingsDto.FtpImageAgoDays);
                     }
 
                     if (_cacheClearSettingsDto?.LogDataAgoDays > 0) {
@@ -127,7 +127,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     }
                     _lastCleanupTime = DateTime.Now;
                 }
-                await Task.Delay(TimeSpan.FromSeconds(30), stoppingToken);
+                await Task.Delay(TimeSpan.FromMinutes(10), stoppingToken);
             }
         }
 

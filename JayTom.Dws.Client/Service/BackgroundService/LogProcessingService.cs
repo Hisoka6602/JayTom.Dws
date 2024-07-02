@@ -404,10 +404,10 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         NLog.LogManager.GetCurrentClassLogger().Info($"{trigger.PackageInfo.BarCodeInfo.BindTime:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[序号:{trigger.PackageInfo.Guid}]-[条码赋值] {trigger.PackageInfo.BarCodeInfo?.Barcode}");
                     }
                     else if (trigger is { TriggerPosition: TriggerPositionEnum.WeightSetValueAfter, PackageInfo.WeightInfo: not null }) {
-                        NLog.LogManager.GetCurrentClassLogger().Info($"{trigger.PackageInfo.WeightInfo.CreateTime:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[序号:{trigger.PackageInfo.Guid}]-[重量赋值] {trigger.PackageInfo.BarCodeInfo?.Barcode}");
+                        NLog.LogManager.GetCurrentClassLogger().Info($"{trigger.PackageInfo.WeightInfo.CreateTime:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[序号:{trigger.PackageInfo.Guid}]-[重量赋值] {trigger.PackageInfo.WeightInfo.FormattedWeight}");
                     }
                     else if (trigger is { TriggerPosition: TriggerPositionEnum.VolumeSetValueAfter, PackageInfo.VolumeInfo: not null }) {
-                        NLog.LogManager.GetCurrentClassLogger().Info($"{trigger.PackageInfo.VolumeInfo.CreateTime:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[序号:{trigger.PackageInfo.Guid}]-[体积赋值] {trigger.PackageInfo.BarCodeInfo?.Barcode}");
+                        NLog.LogManager.GetCurrentClassLogger().Info($"{trigger.PackageInfo.VolumeInfo.CreateTime:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[序号:{trigger.PackageInfo.Guid}]-[体积赋值] {trigger.PackageInfo.VolumeInfo.OriginalText}");
                     }
                 }
             });

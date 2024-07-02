@@ -88,8 +88,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         private bool _isSwitchingState;
         private VolumeUnit _volumeUnit;
         private static SemaphoreSlim _runningSemaphoreSlim = new(1, 1);
+
         private static SemaphoreSlim _updateSlim = new(1, 1);
         private OcrSettingsInfoModel _ocrSettingsInfo = new();
+
         private OcrInfoItemModel _ocrItemInfo = new();
         private bool _isLoaded;
         private CancellationTokenSource _cancellationTokenSource = new();
@@ -370,7 +372,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                 HomeMessageQueue.Enqueue($"{args.ExceptionMessage}");
             };
 
-            EventAggregator.Instance.Subscribe<PackageInfo>(async info => {
+            EventAggregator.Instance.Subscribe<PackageInfo>(info => {
                 //填充数据到列表
                 if (info is PackageInfo model) {
                     AddNewRow(new PackageItemModel() {
@@ -385,9 +387,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     });
                 }
             });
-            EventAggregator.Instance.Subscribe<BarcodeTypeProviderEvent>(async info => {
+            EventAggregator.Instance.Subscribe<BarcodeTypeProviderEvent>(info => {
                 if (info is BarcodeTypeProviderEvent args) {
-                    await Application.Current.Dispatcher.BeginInvoke(() => {
+                    Application.Current.Dispatcher.InvokeAsync(() => {
                         //更新右边信息
                         BarCode = args?.Barcode ?? "未识别到条码";
                     });
@@ -478,7 +480,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                                 var barCodeItemModel = PackageItems.FirstOrDefault(f => f.Barcode.Equals(updateResponse.Barcode) &&
                                     f.ScanTime.Equals(updateResponse.ScanTime));
                                 if (barCodeItemModel is not null) {
-                                    await Application.Current.Dispatcher.BeginInvoke(() => {
+                                    Application.Current.Dispatcher.InvokeAsync(() => {
                                         //更新数据
                                         barCodeItemModel.RequestStatus = updateResponse.UploadResponse?.IsSuccess == true ? UploadStatus.Succeeded : UploadStatus.Failed;
                                         barCodeItemModel.UploadInfo = new UploadItemModel() {
@@ -519,7 +521,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                                 var packageItemModel = PackageItems.FirstOrDefault(f => f.TimestampedGuid.Equals(exitInfo.Timestamp));
 
                                 if (packageItemModel is not null) {
-                                    await Application.Current.Dispatcher.BeginInvoke(() => {
+                                    Application.Current.Dispatcher.InvokeAsync(() => {
                                         //更新数据
                                         if (packageItemModel.PackageExitStatus is PackageExitStatus.None or PackageExitStatus.Normal) {
                                             packageItemModel.ExitName = exitInfo.ExitName;
@@ -547,7 +549,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                         if (b && cloudVideoUpload is not null) {
                             try {
                                 await _updateSlim.WaitAsync();
-                                await System.Windows.Application.Current.Dispatcher.BeginInvoke(async () => {
+                                System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
                                     var barCodeItemModel = PackageItems.FirstOrDefault(f => f.Barcode.Equals(cloudVideoUpload.Barcode) &&
                                         f.ScanTime.Equals(cloudVideoUpload.ScanTime));
                                     if (barCodeItemModel is not null) {
@@ -680,7 +682,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                         model.ImageTimestamp = args.Timestamp;
                         if (!model.IsRealtimeImageEnabled) {
                             //先清除累积的
-                            if (model.BitmapQueue.Count > 3) {
+                            if (model.BitmapQueue.Count > 2) {
                                 model.BitmapQueue.Clear();
                             }
                             model.BitmapQueue.Enqueue(args.ThumbImage);
@@ -932,9 +934,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         /// 添加一行
         /// </summary>
         private async void AddNewRow(PackageItemModel item) {
-            try {
-                await _updateSlim.WaitAsync();
-                await Application.Current.Dispatcher.BeginInvoke(async () => {
+            /*try {
+                Application.Current.Dispatcher.InvokeAsync(() => {
                     item.Num = TotalDataCount += 1;
 
                     PackageItems.Insert(0, item);
@@ -942,11 +943,37 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                         PackageItems.RemoveAt(PackageItems.Count - 1);
                     }
                     item.IsInserting = true;
-                }, DispatcherPriority.Render);
+                }, DispatcherPriority.Background);
             }
             finally {
                 _updateSlim.Release();
+            }*/
+            await Task.Run(() => {
+                item.Num = TotalDataCount += 1;
+                Application.Current.Dispatcher.Invoke(() => {
+                    PackageItems.Insert(0, item);
+                    if (PackageItems.Count > 500) {
+                        PackageItems.RemoveAt(PackageItems.Count - 1);
+                    }
+                    //item.IsInserting = true;
+                });
+            });
+            /*try {
+                await _updateSlim.WaitAsync();
+                await Task.Run(() => {
+                    item.Num = TotalDataCount += 1;
+                    Application.Current.Dispatcher.Invoke(() => {
+                        PackageItems.Insert(0, item);
+                        if (PackageItems.Count > 500) {
+                            PackageItems.RemoveAt(PackageItems.Count - 1);
+                        }
+                        //item.IsInserting = true;
+                    });
+                });
             }
+            finally {
+                _updateSlim.Release();
+            }*/
         }
 
         /// <summary>

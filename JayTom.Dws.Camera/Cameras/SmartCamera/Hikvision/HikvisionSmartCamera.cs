@@ -460,7 +460,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
         public IOcr? Ocr { get; set; }
 
         public int BarcodeBorderSize { get; set; } = 5;
-        public bool IsHideNoRead { get; set; } = false;
+        public bool IsHideNoRead { get; set; } = true;
         public Color BarcodeBorderColor { get; set; } = Color.LawnGreen;
         public bool IsShowBarcodeBorder { get; set; } = true;
         public bool IsUseTriggerMode { get; set; } = true;
@@ -573,7 +573,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                             }
 
                             //锁半秒
-                            if (DateTime.Now.Subtract(_lockDateTime).TotalMilliseconds >= 50) {
+                            if (DateTime.Now.Subtract(_lockDateTime).TotalMilliseconds >= 80) {
                                 _lockDateTime = DateTime.Now;
                                 var stBcrResultEx2 =
                                     (MvCodeReader.MV_CODEREADER_RESULT_BCR_EX2)(Marshal.PtrToStructure(
@@ -587,6 +587,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                                 if (IsHideNoRead && stBcrResultEx2.nCodeNum < 1) {
                                     continue;
                                 }
+                                NLog.LogManager.GetCurrentClassLogger().Error("获取到条码+图像");
                                 var bmp = await GetBitmapAsync(pData, _bufForDriver, stFrameInfoEx2);
                                 //智能相机没有纯图像回调,暂时先写在这里
                                 if (this.BindingType is CameraBindingType.OcrCamera) {
@@ -709,6 +710,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                                         });
                                     }
                                 }
+                                NLog.LogManager.GetCurrentClassLogger().Error("图像结束");
                             }
                             _frameNo += 1;
                         }
@@ -719,11 +721,12 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                         });
                     }*/
                     finally {
-                        await Task.Delay(10, token);
+                        await Task.Delay(20, token);
                     }
                 }
             }
-            catch (TaskCanceledException) {
+            catch (TaskCanceledException ex) {
+                NLog.LogManager.GetCurrentClassLogger().Error($"{ex}");
             }
             catch (Exception e) {
                 NLog.LogManager.GetCurrentClassLogger().Error($"{e}");

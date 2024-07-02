@@ -327,6 +327,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                             IsStackedPackage = model.IsStackedPackage,
                             LinkedCarCount = model.LinkedCarCount
                         });
+                        NLog.LogManager.GetCurrentClassLogger().Error($"DefaultSortingService:{model.LinkedCarCount}");
                     }
                 }
             });
@@ -937,6 +938,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                             LinkedCarCount = param.LinkedCarCount
                         });
                     //回调分拣消息
+                    NLog.LogManager.GetCurrentClassLogger().Error($"SubSorting:{param.LinkedCarCount}");
                 }
                 else {
                     //走异常口

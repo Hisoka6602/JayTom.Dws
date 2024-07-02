@@ -861,11 +861,13 @@
                         Padding="10,0"
                         Focusable="False"
                         ItemsSource="{Binding PackageItems, UpdateSourceTrigger=PropertyChanged, IsAsync=True}"
+                        RenderOptions.EdgeMode="Unspecified"
                         RenderTransformOrigin=".5,.5"
                         ScrollViewer.IsDeferredScrollingEnabled="True"
                         ScrollViewer.PanningMode="VerticalOnly"
                         SelectionMode="Extended"
-                        Style="{StaticResource CustomListViewStyle}">
+                        Style="{StaticResource CustomListViewStyle}"
+                        VirtualizingStackPanel.VirtualizationMode="Standard">
                         <ListView.ItemContainerStyle>
                             <Style BasedOn="{StaticResource CustomListViewItemStyle}" TargetType="ListViewItem">
                                 <Setter Property="RenderTransform">
@@ -905,13 +907,14 @@
                             </Style>
                         </ListView.ItemContainerStyle>
                         <ListView.View>
-                            <GridView ColumnHeaderContainerStyle="{StaticResource ModernGridViewColumnHeaderStyle}">
+                            <GridView ColumnHeaderContainerStyle="{StaticResource ModernGridViewColumnHeaderStyle}" RenderOptions.EdgeMode="Unspecified">
                                 <!--  这里定义每列的标题和绑定的数据  -->
                                 <GridViewColumn Width="42" Header="No.">
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBlock
                                                 Width="42"
+                                                RenderOptions.EdgeMode="Unspecified"
                                                 Style="{StaticResource CustomGridViewTextBlockCellStyle}"
                                                 Text="{Binding Num}"
                                                 TextTrimming="CharacterEllipsis" />
@@ -924,6 +927,7 @@
                                             <TextBlock
                                                 Width="150"
                                                 MinWidth="150"
+                                                RenderOptions.EdgeMode="Unspecified"
                                                 Style="{StaticResource CustomGridViewTextBlockCellStyle}"
                                                 Text="{Binding Barcode}"
                                                 TextTrimming="CharacterEllipsis" />
@@ -936,6 +940,7 @@
                                             <TextBlock
                                                 Width="60"
                                                 MinWidth="60"
+                                                RenderOptions.EdgeMode="Unspecified"
                                                 Style="{StaticResource CustomGridViewTextBlockCellStyle}"
                                                 Text="{Binding Weight}" />
                                         </DataTemplate>
@@ -947,6 +952,7 @@
                                             <TextBlock
                                                 Width="60"
                                                 MinWidth="60"
+                                                RenderOptions.EdgeMode="Unspecified"
                                                 Style="{StaticResource CustomGridViewTextBlockCellStyle}">
                                                 <TextBlock.Text>
                                                     <MultiBinding Converter="{StaticResource VolumeConverter}" StringFormat="{}{0:0.#}">
@@ -968,6 +974,7 @@
                                             <TextBlock
                                                 Width="60"
                                                 MinWidth="60"
+                                                RenderOptions.EdgeMode="Unspecified"
                                                 Style="{StaticResource CustomGridViewTextBlockCellStyle}">
                                                 <TextBlock.Text>
                                                     <MultiBinding Converter="{StaticResource VolumeConverter}" StringFormat="{}{0:0.#}">
@@ -988,6 +995,7 @@
                                             <TextBlock
                                                 Width="60"
                                                 MinWidth="60"
+                                                RenderOptions.EdgeMode="Unspecified"
                                                 Style="{StaticResource CustomGridViewTextBlockCellStyle}">
                                                 <TextBlock.Text>
                                                     <MultiBinding Converter="{StaticResource VolumeConverter}" StringFormat="{}{0:0.#}">
@@ -1031,6 +1039,7 @@
                                                 MinWidth="80"
                                                 FontWeight="{Binding PackageExitStatus, Converter={StaticResource PackageExitStatusConverter}, ConverterParameter=FontWeight}"
                                                 Foreground="{Binding PackageExitStatus, Converter={StaticResource PackageExitStatusConverter}, ConverterParameter=Foreground}"
+                                                RenderOptions.EdgeMode="Unspecified"
                                                 Style="{StaticResource CustomGridViewTextBlockCellStyle}"
                                                 Text="{Binding ExitName}"
                                                 TextTrimming="CharacterEllipsis" />
@@ -1043,6 +1052,7 @@
                                             <TextBlock
                                                 Width="180"
                                                 MinWidth="180"
+                                                RenderOptions.EdgeMode="Unspecified"
                                                 Style="{StaticResource CustomGridViewTextBlockCellStyle}"
                                                 Text="{Binding ScanTime, StringFormat={}{0:yyyy-MM-dd HH:mm:ss}}" />
                                         </DataTemplate>
@@ -1059,6 +1069,7 @@
                                                     FontFamily="{StaticResource IconFontFamily}"
                                                     FontSize="25"
                                                     Foreground="{Binding IsUploadedToCloudVideo, Converter={StaticResource IsUploadedToCloudVideoTagColorConvert}}"
+                                                    RenderOptions.EdgeMode="Unspecified"
                                                     Text="&#xe8dc;" />
                                                 <Button
                                                     Height="20"
@@ -1087,6 +1098,7 @@
                                                             FontFamily="{StaticResource IconFontFamily}"
                                                             FontSize="18"
                                                             Foreground="{Binding RequestStatus, Converter={StaticResource UploadStatusConverter}, ConverterParameter=Background}"
+                                                            RenderOptions.EdgeMode="Unspecified"
                                                             Text="{Binding RequestStatus, Converter={StaticResource UploadStatusConverter}, ConverterParameter=FontText}" />
                                                         <!--  文字  -->
                                                         <TextBlock
@@ -1099,6 +1111,7 @@
                                                             FontWeight="Light"
                                                             Foreground="White"
                                                             IsEnabled="False"
+                                                            RenderOptions.EdgeMode="Unspecified"
                                                             TextAlignment="Justify"
                                                             TextTrimming="WordEllipsis"
                                                             Visibility="Collapsed">
