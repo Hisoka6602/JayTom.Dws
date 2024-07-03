@@ -22,12 +22,12 @@ namespace JayTom.Dws.Client.EventMediators {
         private readonly IEventAggregator _packageEventAggregator = new Prism.Events.EventAggregator();
 
         public void Publish<TEventType>(TEventType eventData) {
-            /*var eventType = typeof(TEventType);
+            var eventType = typeof(TEventType);
             if (_eventSubscribers.TryGetValue(eventType, out var eventSubscriber)) {
                 foreach (var subscriber in eventSubscriber) {
                     if (eventData != null) subscriber.Invoke(eventData);
                 }
-            }*/
+            }
             /*var eventType = typeof(TEventType);
             if (_eventSubscribers.TryGetValue(eventType, out var eventSubscriber)) {
                 var stopwatch = Stopwatch.StartNew();
@@ -42,11 +42,15 @@ namespace JayTom.Dws.Client.EventMediators {
                     Debug.WriteLine($"Subscriber invoked in {stopwatch.ElapsedMilliseconds} ms");
                 }
             }*/
-            _eventAggregator.GetEvent<PubSubEvent<TEventType>>().Publish(eventData);
+            //_eventAggregator.GetEvent<PubSubEvent<TEventType>>().Publish(eventData);
         }
 
         public void Subscribe<TEventType>(Action<TEventType> action) {
-            _eventAggregator.GetEvent<PubSubEvent<TEventType>>().Subscribe(action, ThreadOption.PublisherThread, false);
+            var eventType = typeof(TEventType);
+            if (!_eventSubscribers.ContainsKey(eventType)) {
+                _eventSubscribers[eventType] = new List<Action<object>>();
+            }
+            _eventSubscribers[eventType].Add(obj => action((TEventType)obj));
         }
 
         public void PublishPackage<TEventType>(TEventType eventData) {

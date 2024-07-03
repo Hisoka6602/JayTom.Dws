@@ -42,22 +42,23 @@ namespace JayTom.Dws.Client.Models {
             }
             Task.Factory.StartNew(async () => {
                 while (!_tokenSource.IsCancellationRequested) {
-                    if (BitmapQueue.TryDequeue(out var bitmap) && this.Image != null) {
-                        var rect = new Rectangle(0, 0, bitmap.Width, bitmap.Height);
-                        var bitmapData = bitmap.LockBits(rect, ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+                    await Task.Delay(10).ContinueWith(async a => {
+                        if (BitmapQueue.TryDequeue(out var bitmap) && this.Image != null) {
+                            var rect = new Rectangle(0, 0, bitmap.Width, bitmap.Height);
+                            var bitmapData = bitmap.LockBits(rect, ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
 
-                        // 使用 Dispatcher.InvokeAsync 进行 UI 线程操作
-                        await this.Image.Dispatcher.InvokeAsync(() => {
-                            this.Image.WritePixels(
-                                new Int32Rect(0, 0, bitmap.Width, bitmap.Height),
-                                bitmapData.Scan0,
-                                bitmapData.Stride * bitmapData.Height,
-                                bitmapData.Stride
-                            );
-                            bitmap.UnlockBits(bitmapData);
-                        }, DispatcherPriority.Render);
-                    }
-                    await Task.Delay(5); // 小延迟以减少CPU占用
+                            // 使用 Dispatcher.InvokeAsync 进行 UI 线程操作
+                            await this.Image.Dispatcher.InvokeAsync(() => {
+                                this.Image.WritePixels(
+                                    new Int32Rect(0, 0, bitmap.Width, bitmap.Height),
+                                    bitmapData.Scan0,
+                                    bitmapData.Stride * bitmapData.Height,
+                                    bitmapData.Stride
+                                );
+                                bitmap.UnlockBits(bitmapData);
+                            }, DispatcherPriority.Render);
+                        }
+                    });
                 }
             }, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
 

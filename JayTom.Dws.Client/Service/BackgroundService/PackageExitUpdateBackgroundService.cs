@@ -50,7 +50,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             _communicationConnectionConfigRepository = communicationConnectionConfigRepository;
 
             EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async item => {
-                if (item is SettingsChangedEvent model) {
+                if (item is { } model) {
                     switch (model.SettingsName) {
                         case "SortingInstructionBindingItemSettings":
                             //更新绑定信息
@@ -81,7 +81,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             //分拣指令
             EventAggregator.Instance.Subscribe<InstructionReceived>(async item => {
                 await Task.Yield();
-                if (item is InstructionReceived model && model.InstructionInfos?.Any() == true
+                if (item is { } model && model.InstructionInfos?.Any() == true
                       ) {
                     var instructionInfoModel = model.InstructionInfos.FirstOrDefault() ?? new InstructionInfoModel();
                     switch (instructionInfoModel.InstructionType) {

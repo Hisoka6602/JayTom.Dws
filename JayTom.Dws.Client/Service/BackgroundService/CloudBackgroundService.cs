@@ -780,29 +780,37 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings(
             while (!stoppingToken.IsCancellationRequested && !_isWindowsClose) {
                 //设置参数
                 //提交到云端
-                if (_cloudVideoSettingsDto.IsUseCloudVideoUpload) {
-                    if (_cloudVideoUpLoadSlim.CurrentCount > 0) {
-                        var (key, value) = await _packageRepository.SelectPackage(s =>
-                            s.BarCodeInfo != null &&
-                                s.BarCodeInfo.ScanTime.CompareTo(_startTime) > 0 &&
-                                s.BarCodeInfo.ScanTime.CompareTo(
-                                    DateTime.Now.AddSeconds(0 - _cloudVideoSettingsDto.UploadIntervalInSeconds)) <= 0 &&
-                                (s.CloudVideoUploadInfo == null || s.CloudVideoUploadInfo.UploadTime == null),
-                            o => o.PackageCreateTime, 0,
-                            _cloudVideoSettingsDto.Concurrency, stoppingToken);
+                await Task.Delay(100, stoppingToken).ContinueWith(async a => {
+                    try {
+                        if (_cloudVideoSettingsDto.IsUseCloudVideoUpload) {
+                            if (_cloudVideoUpLoadSlim.CurrentCount > 0) {
+                                var (key, value) = await _packageRepository.SelectPackage(s =>
+                                        s.BarCodeInfo != null &&
+                                        s.BarCodeInfo.ScanTime.CompareTo(_startTime) > 0 &&
+                                        s.BarCodeInfo.ScanTime.CompareTo(
+                                            DateTime.Now.AddSeconds(0 - _cloudVideoSettingsDto
+                                                .UploadIntervalInSeconds)) <= 0 &&
+                                        (s.CloudVideoUploadInfo == null || s.CloudVideoUploadInfo.UploadTime == null),
+                                    o => o.PackageCreateTime, 0,
+                                    _cloudVideoSettingsDto.Concurrency, stoppingToken);
 
-                        if (key && value is { } packageInfoModels) {
-                            if (packageInfoModels?.Where(w => w.BarCodeInfo != null)?.Any() == true) {
-                                foreach (var packageInfoModel in packageInfoModels?.Where(w => w.BarCodeInfo != null)?.ToList()!) {
-                                    PolicyVideoUpLoad(packageInfoModel, stoppingToken);
+                                if (key && value is { } packageInfoModels) {
+                                    if (packageInfoModels?.Where(w => w.BarCodeInfo != null)?.Any() == true) {
+                                        foreach (var packageInfoModel in packageInfoModels
+                                                     ?.Where(w => w.BarCodeInfo != null)?.ToList()!) {
+                                            PolicyVideoUpLoad(packageInfoModel, stoppingToken);
+                                        }
+
+                                        _startTime = packageInfoModels.Max(m => m.BarCodeInfo.ScanTime);
+                                    }
                                 }
-
-                                _startTime = packageInfoModels.Max(m => m.BarCodeInfo.ScanTime);
                             }
                         }
                     }
-                }
-                await Task.Delay(50, stoppingToken);
+                    catch (Exception e) {
+                        NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
+                    }
+                }, stoppingToken);
             }
         }
 

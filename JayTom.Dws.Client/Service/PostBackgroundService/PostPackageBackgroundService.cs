@@ -39,7 +39,6 @@ namespace JayTom.Dws.Client.Service.PostBackgroundService {
         private readonly IConfigRepository _configRepository;
         private readonly ISortingService _sortingService;
         private readonly IBarcodeScannerCameraConfigRepository _barcodeScannerCameraConfigRepository;
-        private readonly IGrayscaleService _grayscaleService;
         private readonly IExternalDataService _externalDataService;
         private CreatePackageSettingsDto _createPackageSettingsDto = new();
         private ConcurrentDictionary<string, BarCodeFrameInfo> _barCodeFrameInfoItem = new();
@@ -68,7 +67,7 @@ namespace JayTom.Dws.Client.Service.PostBackgroundService {
             _configRepository = configRepository;
             _sortingService = sortingService;
             _barcodeScannerCameraConfigRepository = barcodeScannerCameraConfigRepository;
-            _grayscaleService = grayscaleService;
+            var grayscaleService1 = grayscaleService;
             _externalDataService = externalDataService;
             //条码返回
             _deviceService.BarcodeScanned += async delegate (object? sender, BarcodeReadEventArgs args) {
@@ -96,7 +95,7 @@ namespace JayTom.Dws.Client.Service.PostBackgroundService {
                     else {
                         //多条码判断------
 
-                        var info = PackageInfoManager.GetPackage(f => f.Value.BarCodeInfo != null &&
+                        var info = PackageInfoManager.GetPackage(f => f.Value is { BarCodeInfo: not null } &&
                                                                       f.Value.BarCodeInfo.ScanTime.Equals(
                                                                           args.ScanTime) &&
                                                                       f.Value.BarCodeInfo.CameraSerialNumber.Equals(
@@ -110,8 +109,9 @@ namespace JayTom.Dws.Client.Service.PostBackgroundService {
 
                         var packageInfo =
                             _createPackageSettingsDto.BarcodeQueueOrder == BarcodeQueueOrderEnum.TimeAscending ?
-                                PackageInfoManager.GetPackage(f => f.Value.BarCodeInfo == null) :
-                                PackageInfoManager.GetLastPackage(f => f.Value.BarCodeInfo == null && args.ScanTime.Subtract(f.Value.CreateTime).TotalMilliseconds > 100);
+                                PackageInfoManager.GetPackage(f => f.Value is { BarCodeInfo: null }) :
+                                PackageInfoManager.GetLastPackage(f => f.Value is { BarCodeInfo: null } &&
+                                                                       args.ScanTime.Subtract(f.Value.CreateTime).TotalMilliseconds > 100);
 
                         if ((_createPackageSettingsDto.PackageCreationMethods & PackageCreationMethodsEnum.ScanBarcodeCamera)
                             == PackageCreationMethodsEnum.ScanBarcodeCamera && packageInfo is null) {
@@ -148,9 +148,6 @@ namespace JayTom.Dws.Client.Service.PostBackgroundService {
                                     TriggerPosition = TriggerPositionEnum.BarCodeSetValueAfter,
                                     PackageInfo = packageInfo,
                                 });
-                            }
-                            else {
-                                BarCodeFilterContainer.ResetFilter();
                             }
                         }
                     }
@@ -196,8 +193,8 @@ namespace JayTom.Dws.Client.Service.PostBackgroundService {
                         }
                         var packageInfo =
                             _createPackageSettingsDto.BarcodeQueueOrder == BarcodeQueueOrderEnum.TimeAscending ?
-                                PackageInfoManager.GetPackage(f => f.Value.BarCodeInfo == null) :
-                                PackageInfoManager.GetLastPackage(f => f.Value.BarCodeInfo == null);
+                                PackageInfoManager.GetPackage(f => f.Value is { BarCodeInfo: null }) :
+                                PackageInfoManager.GetLastPackage(f => f.Value is { BarCodeInfo: null });
                         if ((_createPackageSettingsDto.PackageCreationMethods & PackageCreationMethodsEnum.ScanBarcodeCamera) ==
                             PackageCreationMethodsEnum.ScanBarcodeCamera && packageInfo is null) {
                             //扫码相机创建
@@ -293,8 +290,8 @@ namespace JayTom.Dws.Client.Service.PostBackgroundService {
                     var timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds();
                     var packageInfo =
                         _createPackageSettingsDto.BarcodeQueueOrder == BarcodeQueueOrderEnum.TimeAscending ?
-                            PackageInfoManager.GetPackage(f => f.Value.BarCodeInfo == null) :
-                            PackageInfoManager.GetLastPackage(f => f.Value.BarCodeInfo == null);
+                            PackageInfoManager.GetPackage(f => f.Value is { BarCodeInfo: null }) :
+                            PackageInfoManager.GetLastPackage(f => f.Value is { BarCodeInfo: null });
                     if ((_createPackageSettingsDto.PackageCreationMethods & PackageCreationMethodsEnum.TcpInput) ==
                         PackageCreationMethodsEnum.TcpInput && packageInfo is null) {
                         packageInfo = new PackageInfo() {
@@ -411,7 +408,7 @@ namespace JayTom.Dws.Client.Service.PostBackgroundService {
                     }
 
                     if (_grayscaleDeviceSettingsDto.IsUseGrayscaleDetector &&
-                        _grayscaleService.IsConnected) {
+                        grayscaleService1.IsConnected) {
                         //跳过车辆
                         if (GrayScaleSkippedVehicles > 1) {
                             GrayScaleSkippedVehicles--;
@@ -427,7 +424,7 @@ namespace JayTom.Dws.Client.Service.PostBackgroundService {
                             NLog.LogManager.GetCurrentClassLogger().Error($"创建包裹到现在的间隔:{milliseconds}ms");
                         }
 
-                        var singleGrayscaleSensorResult = await _grayscaleService.GetSingleGrayscaleSensorResult(packageInfo.Guid, _grayscaleDeviceSettingsDto.TimeOut);
+                        var singleGrayscaleSensorResult = await grayscaleService1.GetSingleGrayscaleSensorResult(packageInfo.Guid, _grayscaleDeviceSettingsDto.TimeOut);
 
                         if (singleGrayscaleSensorResult is not null) {
                             //联动车辆
@@ -558,67 +555,75 @@ namespace JayTom.Dws.Client.Service.PostBackgroundService {
             }
 
             while (!stoppingToken.IsCancellationRequested && !_isWindowsClose) {
-                try {
-                    if (PackageInfoManager.GetPackageCount() > 0 && _deviceService.RunningStatus) {
-                        var value = PackageInfoManager.GetPackage(f => f.Value is { IsCompleted: false, BarCodeInfo: not null });
-                        if (value != null) {
-                            if ((_grayscaleDeviceSettingsDto.IsUseGrayscaleDetector && value.LinkedCarCount > 0) ||
-                                !_grayscaleDeviceSettingsDto.IsUseGrayscaleDetector) {
-                                value.IsCompleted = true;
-                                EventAggregator.Instance.Publish(value);
-                            }
-                            else {
-                                //填充灰度仪
-                                if (!_grayscaleDeviceSettingsDto.IsUseGrayscaleDetector) {
-                                    value.GrayscaleResultInfo = new GrayscaleResult();
+                await Task.Delay(TimeSpan.FromMilliseconds(100), stoppingToken).ContinueWith(a => {
+                    try {
+                        if (PackageInfoManager.GetPackageCount() > 0 && _deviceService.RunningStatus) {
+                            var value = PackageInfoManager.GetPackage(f => f.Value is { IsCompleted: false, BarCodeInfo: not null });
+                            if (value != null) {
+                                if ((_grayscaleDeviceSettingsDto.IsUseGrayscaleDetector && value.LinkedCarCount > 0) ||
+                                    !_grayscaleDeviceSettingsDto.IsUseGrayscaleDetector) {
+                                    value.IsCompleted = true;
+                                    EventAggregator.Instance.Publish(value);
+                                }
+                                else {
+                                    //填充灰度仪
+                                    if (!_grayscaleDeviceSettingsDto.IsUseGrayscaleDetector) {
+                                        value.GrayscaleResultInfo = new GrayscaleResult();
+                                    }
                                 }
                             }
-                        }
 
-                        if (PackageInfoManager.GetPackageCount() > 0) {
-                            //判断存图路径等于空
-                            var codeInfo = PackageInfoManager.GetPackage(f => f.Value is {
-                                IsSavedImage: false,
-                                BarCodeInfo: not null, IsCompleted: true
-                            });
-                            //存图
-                            if (codeInfo?.Image != null) {
-                                EventAggregator.Instance.Publish(new ImageMessageInfo {
-                                    BarCode = codeInfo.BarCodeInfo?.Barcode ?? string.Empty,
-                                    CameraSerialNumber = codeInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
-                                    Weight = (float)(codeInfo.WeightInfo?.FormattedWeight ?? 0),
-                                    Height = (float)(codeInfo.VolumeInfo?.FormattedHeight ?? 0),
-                                    Image = codeInfo.Image,
-                                    Length = (float)(codeInfo.VolumeInfo?.FormattedLength ?? 0),
-                                    Width = (float)(codeInfo.VolumeInfo?.FormattedWidth ?? 0),
-                                    Volume = (float)(codeInfo.VolumeInfo?.FormattedVolume ?? 0),
-                                    ScanTime = codeInfo.BarCodeInfo?.ScanTime ?? DateTime.Now,
-                                    Type = SaveImageType.BarcodeImage,
-                                    CameraName = _cameras.FirstOrDefault(f => (bool)f.Info?.SerialNumber.Equals(codeInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty))?.Info?.Name ?? string.Empty,
-                                    CameraCustomName = _cameras.FirstOrDefault(f => (bool)f.Info?.SerialNumber.Equals(codeInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty))?.Info?.CustomName ?? string.Empty,
+                            if (PackageInfoManager.GetPackageCount() > 0) {
+                                //判断存图路径等于空
+                                var codeInfo = PackageInfoManager.GetPackage(f => f.Value is {
+                                    IsSavedImage: false,
+                                    BarCodeInfo: not null, IsCompleted: true
                                 });
-                                codeInfo.IsSavedImage = true;
-                            }
-                            //移除包裹
-                            if (_createPackageSettingsDto.PackageRemoveMethods == PackageRemoveMethodsEnum.FillInformation) {
-                                var packageInfos = PackageInfoManager.GetPackages(w => w.Value is { IsCompleted: true, IsSavedImage: true } &&
-                                    (w.Value.PanoramaCameraImageInfo.All(a => a.IsExists) ||
-                                     DateTime.Now.Subtract(w.Value.CreateTime)
-                                         .TotalMinutes > 5)) ?? new List<PackageInfo>();
+                                //存图
+                                if (codeInfo?.Image != null) {
+                                    EventAggregator.Instance.Publish(new ImageMessageInfo {
+                                        BarCode = codeInfo.BarCodeInfo?.Barcode ?? string.Empty,
+                                        CameraSerialNumber = codeInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
+                                        Weight = (float)(codeInfo.WeightInfo?.FormattedWeight ?? 0),
+                                        Height = (float)(codeInfo.VolumeInfo?.FormattedHeight ?? 0),
+                                        Image = codeInfo.Image,
+                                        Length = (float)(codeInfo.VolumeInfo?.FormattedLength ?? 0),
+                                        Width = (float)(codeInfo.VolumeInfo?.FormattedWidth ?? 0),
+                                        Volume = (float)(codeInfo.VolumeInfo?.FormattedVolume ?? 0),
+                                        ScanTime = codeInfo.BarCodeInfo?.ScanTime ?? DateTime.Now,
+                                        Type = SaveImageType.BarcodeImage,
+                                        CameraName = _cameras.FirstOrDefault(f =>
+                                                (bool)f.Info?.SerialNumber.Equals(
+                                                    codeInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty))?.Info
+                                            ?.Name ?? string.Empty,
+                                        CameraCustomName = _cameras.FirstOrDefault(f =>
+                                                (bool)f.Info?.SerialNumber.Equals(
+                                                    codeInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty))?.Info
+                                            ?.CustomName ?? string.Empty,
+                                    });
+                                    codeInfo.IsSavedImage = true;
+                                }
 
-                                foreach (var kvp in packageInfos) {
-                                    PackageInfoManager.RemovePackage(kvp.CreateTime, "填充完整信息移除");
+                                //移除包裹
+                                if (_createPackageSettingsDto.PackageRemoveMethods ==
+                                    PackageRemoveMethodsEnum.FillInformation) {
+                                    var packageInfos = PackageInfoManager.GetPackages(w =>
+                                        w.Value is { IsCompleted: true, IsSavedImage: true } &&
+                                        (w.Value.PanoramaCameraImageInfo.All(a => a.IsExists) ||
+                                         DateTime.Now.Subtract(w.Value.CreateTime)
+                                             .TotalMinutes > 5)) ?? new List<PackageInfo>();
+
+                                    foreach (var kvp in packageInfos) {
+                                        PackageInfoManager.RemovePackage(kvp.CreateTime, "填充完整信息移除");
+                                    }
                                 }
                             }
                         }
                     }
-                }
-                catch (Exception e) {
-                    NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
-                }
-                finally {
-                    await Task.Delay(20, stoppingToken);
-                }
+                    catch (Exception e) {
+                        NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
+                    }
+                }, stoppingToken);
             }
         }
     }

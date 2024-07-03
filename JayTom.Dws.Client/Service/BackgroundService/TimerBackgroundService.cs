@@ -20,7 +20,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
         public TimerBackgroundService() {
             EventAggregator.Instance.Subscribe<WindowsAction>(async item => {
-                if (item is WindowsAction { Type: WindowsActionType.Close }) {
+                if (item is { Type: WindowsActionType.Close }) {
                     _isWindowsClose = true;
                 }
             });
@@ -28,12 +28,13 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
             while (!stoppingToken.IsCancellationRequested && !_isWindowsClose) {
-                await Task.Delay(1000, stoppingToken);
-                var timeSpan = DateTime.Now.Subtract(_startTime);
-                EventAggregator.Instance.Publish(new TimerDto {
-                    ElapsedMilliseconds = (long)timeSpan.TotalMilliseconds,
-                    FormattedElapsed = $"{timeSpan.Days}->{timeSpan.Hours:D2}:{timeSpan.Minutes:D2}:{timeSpan.Seconds:D2}",
-                });
+                await Task.Delay(1000, stoppingToken).ContinueWith(a => {
+                    var timeSpan = DateTime.Now.Subtract(_startTime);
+                    EventAggregator.Instance.Publish(new TimerDto {
+                        ElapsedMilliseconds = (long)timeSpan.TotalMilliseconds,
+                        FormattedElapsed = $"{timeSpan.Days}->{timeSpan.Hours:D2}:{timeSpan.Minutes:D2}:{timeSpan.Seconds:D2}",
+                    });
+                }, stoppingToken);
             }
         }
     }

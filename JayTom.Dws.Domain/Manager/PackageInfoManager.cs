@@ -39,7 +39,6 @@ namespace JayTom.Dws.Domain.Manager {
         /// <param name="package"></param>
         /// <param name="removeTimers"></param>
         public static void AddPackage(PackageInfo package, List<PackageRemoveTimer> removeTimers) {
-            //_packageInfos[package.CreateTime] = package;
             _packageInfos.TryAdd(package.CreateTime, package);
             package.StartRemovalTimers(_packageInfos, removeTimers);
         }
@@ -95,7 +94,6 @@ namespace JayTom.Dws.Domain.Manager {
         public static PackageInfo? GetPackage(Func<KeyValuePair<DateTime, PackageInfo>, bool> predicate) {
             // 检查 _packageInfos 是否为空
             if (_packageInfos.IsEmpty) {
-                LogManager.GetCurrentClassLogger().Error("PackageInfos collection is empty.");
                 return null;
             }
 
@@ -111,18 +109,11 @@ namespace JayTom.Dws.Domain.Manager {
                 var (key, value) = result;
 
                 if (value == null) {
-                    NLog.LogManager.GetCurrentClassLogger().Error($"Found key {key}, but the corresponding value is null.");
                     return null;
                 }
 
                 // 尝试获取包信息
-                if (_packageInfos.TryGetValue(key, out var package)) {
-                    return package;
-                }
-                else {
-                    NLog.LogManager.GetCurrentClassLogger().Error($"PackageInfos collection does not contain the key {key}.");
-                    return null;
-                }
+                return _packageInfos.GetValueOrDefault(key);
             }
             catch (Exception ex) {
                 NLog.LogManager.GetCurrentClassLogger().Error($"An error occurred in GetPackage: {ex.Message}");
@@ -136,29 +127,19 @@ namespace JayTom.Dws.Domain.Manager {
         /// <param name="predicate"></param>
         /// <returns></returns>
         public static PackageInfo? GetLastPackage(Func<KeyValuePair<DateTime, PackageInfo>, bool> predicate) {
-            // 检查 _packageInfos 是否为空
+            // 确保 _packageInfos 是线程安全的，例如 ConcurrentDictionary
             if (_packageInfos.IsEmpty) {
-                LogManager.GetCurrentClassLogger().Error("PackageInfos collection is empty.");
                 return null;
             }
 
             try {
-                // 尝试找到最后一个符合条件的键值对
-                var result = _packageInfos.OrderByDescending(o => o.Key).FirstOrDefault(predicate);
-
-                // 检查 result 是否为默认值
-                if (EqualityComparer<KeyValuePair<DateTime, PackageInfo>>.Default.Equals(result, default)) {
-                    return null;
+                // 逆向遍历集合，找到第一个符合条件的键值对
+                foreach (var kvp in _packageInfos.OrderByDescending(k => k.Key)) {
+                    if (predicate(kvp)) {
+                        return kvp.Value;
+                    }
                 }
-
-                var (key, value) = result;
-
-                if (value == null) {
-                    return null;
-                }
-
-                // 尝试获取包信息
-                return _packageInfos.GetValueOrDefault(key);
+                return null;
             }
             catch (Exception ex) {
                 NLog.LogManager.GetCurrentClassLogger().Error($"An error occurred in GetPackage: {ex.Message}");

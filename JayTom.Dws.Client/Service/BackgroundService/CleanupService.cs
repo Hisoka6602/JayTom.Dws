@@ -36,7 +36,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             _configRepository = configRepository;
             _computer = computer;
             EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async settings => {
-                if (settings is SettingsChangedEvent { SettingsName: "SaveImageSettings" }) {
+                if (settings is { SettingsName: "SaveImageSettings" }) {
                     await _semaphore.WaitAsync();
                     _imageSettingsDto = await _configRepository.FirstOrDefaultEntity<ImageSettingsDto>("SaveImageSettings") ?? new ImageSettingsDto();
                     if (_imageSettingsDto is not null) {
@@ -54,7 +54,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 }
             });
             EventAggregator.Instance.Subscribe<WindowsAction>(async item => {
-                if (item is WindowsAction { Type: WindowsActionType.Close }) {
+                if (item is { Type: WindowsActionType.Close }) {
                     _isWindowsClose = true;
                 }
             });

@@ -391,7 +391,7 @@ namespace JayTom.Dws.Client {
                 services.AddHostedService<SingleInstanceBackgroundService>(); // 注册单开激活服务
                 services.AddHostedService<LogProcessingService>();//日志管理器
                 services.AddHostedService<TimerBackgroundService>();//计时
-                //services.AddHostedService<CloudBackgroundService>();//上传云端
+                services.AddHostedService<CloudBackgroundService>();//上传云端
                 //services.AddHostedService<PackageAggregationService>();//集包服务
                 services.AddHostedService<PackageExitUpdateBackgroundService>();//格口更新
             });

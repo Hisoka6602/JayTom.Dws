@@ -24,29 +24,30 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
             while (!stoppingToken.IsCancellationRequested && !_isWindowsClose) {
-                var pipeServer = new NamedPipeServerStream(PipeName, PipeDirection.InOut, 1, PipeTransmissionMode.Byte);
+                await Task.Delay(100, stoppingToken).ContinueWith(async a => {
+                    var pipeServer = new NamedPipeServerStream(PipeName, PipeDirection.InOut, 1, PipeTransmissionMode.Byte);
 
-                await pipeServer.WaitForConnectionAsync(stoppingToken);
+                    await pipeServer.WaitForConnectionAsync(stoppingToken);
 
-                using (var sr = new StreamReader(pipeServer)) {
-                    string message = await sr.ReadToEndAsync(stoppingToken);
-                    if (message == "ActivateWindow") {
-                        Application.Current.Dispatcher.Invoke(() => {
-                            if (Application.Current.MainWindow is Window mainWindow) {
-                                if (mainWindow.WindowState == WindowState.Minimized) {
-                                    mainWindow.WindowState = WindowState.Normal;
+                    using (var sr = new StreamReader(pipeServer)) {
+                        string message = await sr.ReadToEndAsync(stoppingToken);
+                        if (message == "ActivateWindow") {
+                            Application.Current.Dispatcher.Invoke(() => {
+                                if (Application.Current.MainWindow is Window mainWindow) {
+                                    if (mainWindow.WindowState == WindowState.Minimized) {
+                                        mainWindow.WindowState = WindowState.Normal;
+                                    }
+
+                                    mainWindow.Activate();
                                 }
-
-                                mainWindow.Activate();
-                            }
-                        });
+                            });
+                        }
                     }
-                }
 
-                // 关闭命名管道
-                pipeServer.Close();
-                await pipeServer.DisposeAsync();
-                await Task.Delay(50, stoppingToken);
+                    // 关闭命名管道
+                    pipeServer.Close();
+                    await pipeServer.DisposeAsync();
+                }, stoppingToken);
             }
         }
     }

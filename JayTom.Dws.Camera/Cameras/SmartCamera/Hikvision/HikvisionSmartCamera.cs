@@ -460,7 +460,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
         public IOcr? Ocr { get; set; }
 
         public int BarcodeBorderSize { get; set; } = 5;
-        public bool IsHideNoRead { get; set; } = true;
+        public bool IsHideNoRead { get; set; } = false;
         public Color BarcodeBorderColor { get; set; } = Color.LawnGreen;
         public bool IsShowBarcodeBorder { get; set; } = true;
         public bool IsUseTriggerMode { get; set; } = true;
@@ -553,176 +553,176 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                     Marshal.AllocHGlobal(Marshal.SizeOf(typeof(MvCodeReader.MV_CODEREADER_IMAGE_OUT_INFO_EX2)));
                 Marshal.StructureToPtr(stFrameInfoEx2, pstFrameInfoEx2, false);
                 while (!token.IsCancellationRequested) {
-                    if (Status != CameraStatus.Running) {
-                        await Task.Delay(500, token);
-                        continue;
-                    }
-                    try {
-                        var nRet = _mvCodeReader?.MV_CODEREADER_GetOneFrameTimeoutEx2_NET(ref pData, pstFrameInfoEx2,
-                                       500) ??
-                                   0;
-                        if (nRet == MvCodeReader.MV_CODEREADER_OK) {
-                            stFrameInfoEx2 =
-                                (MvCodeReader.MV_CODEREADER_IMAGE_OUT_INFO_EX2)(Marshal.PtrToStructure(pstFrameInfoEx2,
-                                        typeof(MvCodeReader.
-                                            MV_CODEREADER_IMAGE_OUT_INFO_EX2)) ??
-                                    new MvCodeReader.
-                                        MV_CODEREADER_IMAGE_OUT_INFO_EX2());
-                            if (0 >= stFrameInfoEx2.nFrameLen) {
-                                continue;
-                            }
-
-                            //锁半秒
-                            if (DateTime.Now.Subtract(_lockDateTime).TotalMilliseconds >= 80) {
-                                _lockDateTime = DateTime.Now;
-                                var stBcrResultEx2 =
-                                    (MvCodeReader.MV_CODEREADER_RESULT_BCR_EX2)(Marshal.PtrToStructure(
-                                            stFrameInfoEx2.UnparsedBcrList
-                                                .pstCodeListEx2,
+                    await Task.Delay(20, token).ContinueWith(async ca => {
+                        if (Status != CameraStatus.Running) {
+                            await Task.Delay(500, token);
+                            return;
+                        }
+                        try {
+                            var nRet = _mvCodeReader?.MV_CODEREADER_GetOneFrameTimeoutEx2_NET(ref pData, pstFrameInfoEx2,
+                                           500) ??
+                                       0;
+                            if (nRet == MvCodeReader.MV_CODEREADER_OK) {
+                                stFrameInfoEx2 =
+                                    (MvCodeReader.MV_CODEREADER_IMAGE_OUT_INFO_EX2)(Marshal.PtrToStructure(pstFrameInfoEx2,
                                             typeof(MvCodeReader.
-                                                MV_CODEREADER_RESULT_BCR_EX2)) ??
+                                                MV_CODEREADER_IMAGE_OUT_INFO_EX2)) ??
                                         new MvCodeReader.
-                                            MV_CODEREADER_RESULT_BCR_EX2());
-                                //判断是否需要返回NoRead
-                                if (IsHideNoRead && stBcrResultEx2.nCodeNum < 1) {
-                                    continue;
+                                            MV_CODEREADER_IMAGE_OUT_INFO_EX2());
+                                if (0 >= stFrameInfoEx2.nFrameLen) {
+                                    return;
                                 }
-                                NLog.LogManager.GetCurrentClassLogger().Error("获取到条码+图像");
-                                var bmp = await GetBitmapAsync(pData, _bufForDriver, stFrameInfoEx2);
-                                //智能相机没有纯图像回调,暂时先写在这里
-                                if (this.BindingType is CameraBindingType.OcrCamera) {
-                                    //调用Ocr
-                                    //添加图片到识别队列
-                                    //抠图
-                                    if (bmp is not null) {
-                                        _ocrBitmapQueue.Enqueue(bmp);
+
+                                //锁半秒
+                                if (DateTime.Now.Subtract(_lockDateTime).TotalMilliseconds >= 80) {
+                                    _lockDateTime = DateTime.Now;
+                                    var stBcrResultEx2 =
+                                        (MvCodeReader.MV_CODEREADER_RESULT_BCR_EX2)(Marshal.PtrToStructure(
+                                                stFrameInfoEx2.UnparsedBcrList
+                                                    .pstCodeListEx2,
+                                                typeof(MvCodeReader.
+                                                    MV_CODEREADER_RESULT_BCR_EX2)) ??
+                                            new MvCodeReader.
+                                                MV_CODEREADER_RESULT_BCR_EX2());
+                                    //判断是否需要返回NoRead
+                                    if (IsHideNoRead && stBcrResultEx2.nCodeNum < 1) {
+                                        return;
                                     }
-                                }
-                                else {
-                                    var thumbnailImage = GenerateThumbnail(bmp);
+                                    NLog.LogManager.GetCurrentClassLogger().Error("获取到条码+图像");
+                                    var bmp = await GetBitmapAsync(pData, _bufForDriver, stFrameInfoEx2);
 
-                                    //返回条码
-                                    var scanTime = DateTime.Now;
-                                    var localTime = new DateTimeOffset(scanTime).ToLocalTime();
-                                    var timestamp = localTime.ToUnixTimeMilliseconds();
-                                    if (stBcrResultEx2.nCodeNum > 0) {
-                                        //画区域
-                                        if (IsShowBarcodeBorder && thumbnailImage is not null &&
-                                            thumbnailImage.PixelFormat != PixelFormat.Format8bppIndexed &&
-                                            stBcrResultEx2.stBcrInfoEx2?.Any() == true) {
-                                            using var g = Graphics.FromImage(thumbnailImage);
-                                            for (var i = 0; i < stBcrResultEx2.stBcrInfoEx2.Length; i++) {
-                                                var points = new Point[4];
-                                                for (var j = 0; j < 4; ++j) {
-                                                    points[j].X = (int)(stBcrResultEx2.stBcrInfoEx2[i].pt[j].x *
-                                                        (float)(thumbnailImage.Size.Width) / stFrameInfoEx2.nWidth);
-                                                    points[j].Y = (int)(stBcrResultEx2.stBcrInfoEx2[i].pt[j].y *
-                                                        (float)(thumbnailImage.Size.Height) / stFrameInfoEx2.nHeight);
-                                                }
-
-                                                g.DrawPolygon(new Pen(BarcodeBorderColor, BarcodeBorderSize), points);
-                                            }
-                                        }
-
-                                        //识别到条码调用
-                                        char[] nullChars = { '\0' };
-                                        //需要设置触发时间才能过滤
-                                        for (var i = 0; i < stBcrResultEx2.nCodeNum; i++) {
-                                            var barcode = Encoding.Default
-                                                .GetString(stBcrResultEx2.stBcrInfoEx2?[i].chCode ?? Array.Empty<byte>())
-                                                ?.TrimEnd(nullChars);
-                                            var validateData = _barCodeFilterContainer.ValidateData(new BarCodeFilterInfo() {
-                                                BarCode = string.IsNullOrWhiteSpace(barcode) ? "NoRead" : barcode,
-                                                ScanTime = scanTime
-                                            });
-                                            if (validateData.IsValidationPassed || !string.IsNullOrWhiteSpace(_barCodeFilterContainer.FilterOutContent)) {
-                                                if (stBcrResultEx2.stBcrInfoEx2 is not null &&
-                                                    bmp is { Size: { Width: > 0, Height: > 0 } } &&
-                                                    stFrameInfoEx2 is { nWidth: > 0, nHeight: > 0 }) {
-                                                    OnBarcodeReadTriggered(new BarcodeTriggeredEventArgs() {
-                                                        Timestamp = timestamp,
-                                                        TotalProcCost =
-                                                            (int)(stBcrResultEx2.stBcrInfoEx2[i].nTotalProcCost),
-                                                        AlgoCost = stBcrResultEx2.stBcrInfoEx2[i].sAlgoCost,
-                                                        Ppm = stBcrResultEx2.stBcrInfoEx2[i].sPPM,
-                                                        BarType = GetBarType(
-                                                            (MvCodeReader.MV_CODEREADER_CODE_TYPE)stBcrResultEx2
-                                                                .stBcrInfoEx2[i]
-                                                                .nBarType),
-                                                        Barcode = _barCodeFilterContainer.RegexReplace((validateData.IsValidationPassed ? barcode : _barCodeFilterContainer.FilterOutContent) ?? "NoRead"),
-                                                        Image = bmp,
-                                                        ThumbImage = (Bitmap?)thumbnailImage,
-                                                        AppearCount = stBcrResultEx2.stBcrInfoEx2[i].sAppearCount,
-                                                        Angle = stBcrResultEx2.stBcrInfoEx2[i].nAngle,
-                                                        CodeId = stBcrResultEx2.stBcrInfoEx2[i].nSubPackageId.ToString(),
-                                                        Len = (int)stBcrResultEx2.stBcrInfoEx2[i].nLen,
-                                                        CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
-                                                        ScanTime = scanTime,
-                                                        AreaCoords = Enumerable.Range(0, 4).Select(s => {
-                                                            if (bmp is { Size: { Width: > 0, Height: > 0 } } &&
-                                                                stFrameInfoEx2 is { nWidth: > 0, nHeight: > 0 } &&
-                                                                stBcrResultEx2.stBcrInfoEx2.Length > i) {
-                                                                var x = (int)(stBcrResultEx2.stBcrInfoEx2[i].pt[s].x * (float)(bmp.Size.Width) / stFrameInfoEx2.nWidth);
-                                                                var y = (int)(stBcrResultEx2.stBcrInfoEx2[i].pt[s].y * (float)(bmp.Size.Height) / stFrameInfoEx2.nHeight);
-
-                                                                return new Point { X = x, Y = y };
-                                                            }
-
-                                                            return default;
-                                                        }).ToList(),
-                                                        FrameNo = _frameNo
-                                                    });
-                                                }
-                                            }
-                                            else {
-                                                if (!IsRealtimeImageEnabled) {
-                                                    thumbnailImage?.Dispose();
-                                                }
-                                            }
-
-                                            await Task.Delay(1, token);
+                                    //智能相机没有纯图像回调,暂时先写在这里
+                                    if (this.BindingType is CameraBindingType.OcrCamera) {
+                                        //调用Ocr
+                                        //添加图片到识别队列
+                                        //抠图
+                                        if (bmp is not null) {
+                                            _ocrBitmapQueue.Enqueue(bmp);
                                         }
                                     }
                                     else {
-                                        //如果没读到条码
-                                        if (TriggerMode == TriggerMode.Hardware) {
-                                            //临时等待5ms,邮政3个项目
-                                            await Task.Delay(5, token);
-                                            OnNotBarcodeHitEvent(new BarcodeReadEventArgs() {
-                                                Timestamp = timestamp,
-                                                Barcode = "NoRead",
-                                                Image = bmp,
-                                                ThumbImage = thumbnailImage,
-                                                CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
-                                                ScanTime = DateTime.Now,
-                                                FrameNo = _frameNo
-                                            });
+                                        //var thumbnailImage = GenerateThumbnail(bmp);
+                                        Bitmap? thumbnailImage = null;
+                                        //返回条码
+                                        var scanTime = DateTime.Now;
+                                        var localTime = new DateTimeOffset(scanTime).ToLocalTime();
+                                        var timestamp = localTime.ToUnixTimeMilliseconds();
+                                        if (stBcrResultEx2.nCodeNum > 0) {
+                                            //画区域
+                                            if (IsShowBarcodeBorder && thumbnailImage is not null &&
+                                                thumbnailImage.PixelFormat != PixelFormat.Format8bppIndexed &&
+                                                stBcrResultEx2.stBcrInfoEx2?.Any() == true) {
+                                                using var g = Graphics.FromImage(thumbnailImage);
+                                                for (var i = 0; i < stBcrResultEx2.stBcrInfoEx2.Length; i++) {
+                                                    var points = new Point[4];
+                                                    for (var j = 0; j < 4; ++j) {
+                                                        points[j].X = (int)(stBcrResultEx2.stBcrInfoEx2[i].pt[j].x *
+                                                            (float)(thumbnailImage.Size.Width) / stFrameInfoEx2.nWidth);
+                                                        points[j].Y = (int)(stBcrResultEx2.stBcrInfoEx2[i].pt[j].y *
+                                                            (float)(thumbnailImage.Size.Height) / stFrameInfoEx2.nHeight);
+                                                    }
+
+                                                    g.DrawPolygon(new Pen(BarcodeBorderColor, BarcodeBorderSize), points);
+                                                }
+                                            }
+
+                                            //识别到条码调用
+                                            char[] nullChars = { '\0' };
+                                            //需要设置触发时间才能过滤
+                                            for (var i = 0; i < stBcrResultEx2.nCodeNum; i++) {
+                                                var barcode = Encoding.Default
+                                                    .GetString(stBcrResultEx2.stBcrInfoEx2?[i].chCode ?? Array.Empty<byte>())
+                                                    ?.TrimEnd(nullChars);
+                                                var validateData = _barCodeFilterContainer.ValidateData(new BarCodeFilterInfo() {
+                                                    BarCode = string.IsNullOrWhiteSpace(barcode) ? "NoRead" : barcode,
+                                                    ScanTime = scanTime
+                                                });
+                                                if (validateData.IsValidationPassed || !string.IsNullOrWhiteSpace(_barCodeFilterContainer.FilterOutContent)) {
+                                                    if (stBcrResultEx2.stBcrInfoEx2 is not null /*&&
+                                                    bmp is { Size: { Width: > 0, Height: > 0 } } &&
+                                                    stFrameInfoEx2 is { nWidth: > 0, nHeight: > 0 }*/) {
+                                                        OnBarcodeReadTriggered(new BarcodeTriggeredEventArgs() {
+                                                            Timestamp = timestamp,
+                                                            TotalProcCost =
+                                                                (int)(stBcrResultEx2.stBcrInfoEx2[i].nTotalProcCost),
+                                                            AlgoCost = stBcrResultEx2.stBcrInfoEx2[i].sAlgoCost,
+                                                            Ppm = stBcrResultEx2.stBcrInfoEx2[i].sPPM,
+                                                            BarType = GetBarType(
+                                                                (MvCodeReader.MV_CODEREADER_CODE_TYPE)stBcrResultEx2
+                                                                    .stBcrInfoEx2[i]
+                                                                    .nBarType),
+                                                            Barcode = _barCodeFilterContainer.RegexReplace((validateData.IsValidationPassed ? barcode : _barCodeFilterContainer.FilterOutContent) ?? "NoRead"),
+                                                            Image = bmp,
+                                                            ThumbImage = (Bitmap?)thumbnailImage,
+                                                            AppearCount = stBcrResultEx2.stBcrInfoEx2[i].sAppearCount,
+                                                            Angle = stBcrResultEx2.stBcrInfoEx2[i].nAngle,
+                                                            CodeId = stBcrResultEx2.stBcrInfoEx2[i].nSubPackageId.ToString(),
+                                                            Len = (int)stBcrResultEx2.stBcrInfoEx2[i].nLen,
+                                                            CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
+                                                            ScanTime = scanTime,
+                                                            AreaCoords = Enumerable.Range(0, 4).Select(s => {
+                                                                if (bmp is { Size: { Width: > 0, Height: > 0 } } &&
+                                                                    stFrameInfoEx2 is { nWidth: > 0, nHeight: > 0 } &&
+                                                                    stBcrResultEx2.stBcrInfoEx2.Length > i) {
+                                                                    var x = (int)(stBcrResultEx2.stBcrInfoEx2[i].pt[s].x * (float)(bmp.Size.Width) / stFrameInfoEx2.nWidth);
+                                                                    var y = (int)(stBcrResultEx2.stBcrInfoEx2[i].pt[s].y * (float)(bmp.Size.Height) / stFrameInfoEx2.nHeight);
+
+                                                                    return new Point { X = x, Y = y };
+                                                                }
+
+                                                                return default;
+                                                            }).ToList(),
+                                                            FrameNo = _frameNo
+                                                        });
+                                                    }
+                                                }
+                                                else {
+                                                    if (!IsRealtimeImageEnabled) {
+                                                        thumbnailImage?.Dispose();
+                                                    }
+                                                }
+
+                                                await Task.Delay(1, token);
+                                            }
                                         }
                                         else {
-                                            bmp?.Dispose();
+                                            //如果没读到条码
+                                            if (TriggerMode == TriggerMode.Hardware) {
+                                                //临时等待5ms,邮政3个项目
+                                                await Task.Delay(5, token);
+                                                OnNotBarcodeHitEvent(new BarcodeReadEventArgs() {
+                                                    Timestamp = timestamp,
+                                                    Barcode = "NoRead",
+                                                    Image = bmp,
+                                                    ThumbImage = thumbnailImage,
+                                                    CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
+                                                    ScanTime = DateTime.Now,
+                                                    FrameNo = _frameNo
+                                                });
+                                            }
+                                            else {
+                                                bmp?.Dispose();
+                                            }
+                                        }
+
+                                        if (IsRealtimeImageEnabled) {
+                                            OnRealtimeImage(new RealtimeImageEventArgs() {
+                                                ThumbImage = (Bitmap?)thumbnailImage,
+                                                Timestamp = timestamp
+                                            });
                                         }
                                     }
-
-                                    if (IsRealtimeImageEnabled) {
-                                        OnRealtimeImage(new RealtimeImageEventArgs() {
-                                            ThumbImage = (Bitmap?)thumbnailImage,
-                                            Timestamp = timestamp
-                                        });
-                                    }
+                                    NLog.LogManager.GetCurrentClassLogger().Error("图像结束");
                                 }
-                                NLog.LogManager.GetCurrentClassLogger().Error("图像结束");
+                                _frameNo += 1;
                             }
-                            _frameNo += 1;
                         }
-                    }
-                    /*catch (Exception e) {
-                        OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
-                            Exception = new Exception($"取码回调线程异常:{JsonConvert.SerializeObject(e)}")
-                        });
-                    }*/
-                    finally {
-                        await Task.Delay(20, token);
-                    }
+                        catch (Exception e) {
+                            OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
+                                Exception = new Exception($"取码回调线程异常:{JsonConvert.SerializeObject(e)}")
+                            });
+                        }
+                    }, token);
                 }
             }
             catch (TaskCanceledException ex) {

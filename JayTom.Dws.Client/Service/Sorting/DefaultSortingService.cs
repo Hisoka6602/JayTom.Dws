@@ -288,7 +288,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
             });
             //触发方式
             EventAggregator.Instance.Subscribe<PackageInfo>(async item => {
-                if (item is PackageInfo model) {
+                if (item is { } model) {
                     await Task.Yield();
 
                     //不包含Api
@@ -316,7 +316,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
             });
             //Api触发
             EventAggregator.Instance.Subscribe<ApiResponseReceived>(async item => {
-                if (item is ApiResponseReceived model) {
+                if (item is { } model) {
                     if (_sortingMethodDto.SortMode == SortMode.ApiResponseSorting) {
                         ExecuteSorting(new SortingParam {
                             Timestamp = model.Timestamp,
@@ -336,7 +336,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
             });
             //Ocr触发
             EventAggregator.Instance.Subscribe<PackageOcrInfo>(async item => {
-                if (item is PackageOcrInfo model) {
+                if (item is { } model) {
                     if (_sortingMethodDto.SortMode == SortMode.OcrSorting) {
                         NLog.LogManager.GetCurrentClassLogger().Error("进入");
                         ExecuteSorting(new SortingParam {
@@ -355,7 +355,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
 
             //备用格口分拣
             EventAggregator.Instance.Subscribe<PushAlternateExitSorterEvent>(async item => {
-                if (item is PushAlternateExitSorterEvent model) {
+                if (item is { } model) {
                     SubSorting(new SortingParam {
                         Timestamp = model.PackageInfo.Timestamp,
                         Guid = model.PackageInfo.Guid,
