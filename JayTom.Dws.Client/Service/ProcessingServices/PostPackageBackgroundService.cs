@@ -440,15 +440,18 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                             }*/
 
                             //双车赋值
-                            var package = PackageInfoManager.GetLastPackage(s => s.Value.Guid.Equals(singleGrayscaleSensorResult.CarNumber));
-                            if (package != null) {
+                            var package = PackageInfoManager.GetLastPackage(s => s.Value != null && s.Value.Guid.Equals(singleGrayscaleSensorResult.CarNumber));
+                            if (package is { BarCodeInfo: not null }) {
                                 if (package.BarCodeInfo?.Barcode.Equals("noread", StringComparison.CurrentCultureIgnoreCase) == true &&
                                     singleGrayscaleSensorResult.MainRectangleBoxInfos?.Any() != true) {
                                     package.Image?.Dispose();
                                     PackageInfoManager.RemovePackage(package.CreateTime);
                                     package.BarCodeInfo = null;
                                 }
-                                package.LinkedCarCount = singleGrayscaleSensorResult.LinkedCarCount;
+                                else {
+                                    package.LinkedCarCount = singleGrayscaleSensorResult.LinkedCarCount;
+                                    PackageInfoManager.CompletedPackage(f => f.Value?.CreateTime.Equals(package.CreateTime) == true);
+                                }
                             }
                             packageInfo.GrayscaleResultInfo = singleGrayscaleSensorResult;
                         }
@@ -555,12 +558,11 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                 await Task.Delay(TimeSpan.FromMilliseconds(100), stoppingToken).ContinueWith(a => {
                     try {
                         if (PackageInfoManager.GetPackageCount() > 0 && _deviceService.RunningStatus) {
-                            var value = PackageInfoManager.GetPackage(f => f.Value is { IsCompleted: false, BarCodeInfo: not null });
+                            /*var value = PackageInfoManager.GetPackage(f => f.Value is { IsCompleted: false, BarCodeInfo: not null });
                             if (value != null) {
-                                if ((_grayscaleDeviceSettingsDto.IsUseGrayscaleDetector && value.LinkedCarCount > 0) ||
-                                    !_grayscaleDeviceSettingsDto.IsUseGrayscaleDetector) {
+                                if (!_grayscaleDeviceSettingsDto.IsUseGrayscaleDetector) {
                                     value.IsCompleted = true;
-                                    EventAggregator.Instance.Publish(value);
+                                    PackageInfoManager.CompletedPackage(f => f.Value?.CreateTime.Equals(value.CreateTime) == true);
                                 }
                                 else {
                                     //填充灰度仪
@@ -568,7 +570,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                                         value.GrayscaleResultInfo = new GrayscaleResult();
                                     }
                                 }
-                            }
+                            }*/
 
                             if (PackageInfoManager.GetPackageCount() > 0) {
                                 //判断存图路径等于空
@@ -606,7 +608,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                                     PackageRemoveMethodsEnum.FillInformation) {
                                     var packageInfos = PackageInfoManager.GetPackages(w =>
                                         w.Value is { IsCompleted: true, IsSavedImage: true } &&
-                                        (w.Value.PanoramaCameraImageInfo.All(a => a.IsExists) ||
+                                        (w.Value.PanoramaCameraImageInfo.All(info => info.IsExists) ||
                                          DateTime.Now.Subtract(w.Value.CreateTime)
                                              .TotalMinutes > 5)) ?? new List<PackageInfo>();
 

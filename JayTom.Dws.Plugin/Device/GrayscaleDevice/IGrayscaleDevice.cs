@@ -44,7 +44,8 @@ namespace JayTom.Dws.Plugin.Device.GrayscaleDevice {
         /// </summary>
         /// <param name="attachmentRectangle"></param>
         /// <param name="mainRectangle"></param>
-        public void SetRectangleSizes(Coordinates attachmentRectangle, Coordinates mainRectangle);
+        /// <param name="additionalBoxSpacePercentage"></param>
+        public void SetRectangleSizes(Coordinates attachmentRectangle, Coordinates mainRectangle, int additionalBoxSpacePercentage = 20);
 
         /// <summary>
         /// 设置区域小车数量

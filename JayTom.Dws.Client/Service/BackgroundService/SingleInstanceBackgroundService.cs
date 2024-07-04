@@ -56,7 +56,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     catch (Exception e) {
                         NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
                     }
-                }, stoppingToken);
+                }, stoppingToken).Unwrap();
             }
         }
     }

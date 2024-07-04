@@ -131,7 +131,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                     TimeOut = settingsDto.TimeOut,
                     IsDirectionReversed = settingsDto.IsDirectionReversed,
                     LineCarCount = settingsDto.LineCarCount,
-                    CarNumberOffset = settingsDto.CarNumberOffset
+                    CarNumberOffset = settingsDto.CarNumberOffset,
+                    AdditionalBoxSpacePercentage = settingsDto.AdditionalBoxSpacePercentage
                 };
                 AdditionalFrameRegionX1 = GrayscaleDeviceInfo.AdditionalFrameRegion.X;
                 AdditionalFrameRegionY1 = GrayscaleDeviceInfo.AdditionalFrameRegion.Y;
@@ -176,7 +177,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                 TimeOut = GrayscaleDeviceInfo.TimeOut,
                 IsDirectionReversed = GrayscaleDeviceInfo.IsDirectionReversed,
                 LineCarCount = GrayscaleDeviceInfo.LineCarCount,
-                CarNumberOffset = GrayscaleDeviceInfo.CarNumberOffset
+                CarNumberOffset = GrayscaleDeviceInfo.CarNumberOffset,
+                AdditionalBoxSpacePercentage = GrayscaleDeviceInfo.AdditionalBoxSpacePercentage
             };
 
             var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {

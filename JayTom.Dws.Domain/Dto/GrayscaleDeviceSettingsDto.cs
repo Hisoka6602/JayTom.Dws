@@ -59,5 +59,10 @@ namespace JayTom.Dws.Domain.Dto {
         /// 方向是否取反
         /// </summary>
         public bool IsDirectionReversed { get; set; }
+
+        /// <summary>
+        /// 占用附加框属性百分比
+        /// </summary>
+        public int AdditionalBoxSpacePercentage { get; set; } = 20;
     }
 }

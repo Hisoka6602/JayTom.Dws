@@ -810,7 +810,7 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings(
                     catch (Exception e) {
                         NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
                     }
-                }, stoppingToken);
+                }, stoppingToken).Unwrap();
             }
         }
 

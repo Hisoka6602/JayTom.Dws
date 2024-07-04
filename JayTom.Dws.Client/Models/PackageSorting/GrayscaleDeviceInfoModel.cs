@@ -20,6 +20,7 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         private int _lineCarCount;
         private int _carNumberOffset;
         private bool _isDirectionReversed;
+        private int _additionalBoxSpacePercentage;
 
         /// <summary>
         /// 是否使用灰度仪检测包裹
@@ -100,6 +101,14 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         public bool IsDirectionReversed {
             get => _isDirectionReversed;
             set => SetProperty(ref _isDirectionReversed, value);
+        }
+
+        /// <summary>
+        /// 占用附加框属性百分比
+        /// </summary>
+        public int AdditionalBoxSpacePercentage {
+            get => _additionalBoxSpacePercentage;
+            set => SetProperty(ref _additionalBoxSpacePercentage, value);
         }
     }
 }

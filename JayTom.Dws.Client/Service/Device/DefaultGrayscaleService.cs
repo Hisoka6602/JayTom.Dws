@@ -65,7 +65,7 @@ namespace JayTom.Dws.Client.Service.Device {
                         grayscaleDeviceSettingsDto.AdditionalFrameRegion.Height),
                         new Coordinates(grayscaleDeviceSettingsDto.MainFrameRegion.X,
                             grayscaleDeviceSettingsDto.MainFrameRegion.Y, grayscaleDeviceSettingsDto.MainFrameRegion.Width,
-                            grayscaleDeviceSettingsDto.MainFrameRegion.Height));
+                            grayscaleDeviceSettingsDto.MainFrameRegion.Height), grayscaleDeviceSettingsDto.AdditionalBoxSpacePercentage);
                     return new KeyValuePair<bool, string>(IsConnected, IsConnected ? "连接成功" : "连接失败");
                 }
 

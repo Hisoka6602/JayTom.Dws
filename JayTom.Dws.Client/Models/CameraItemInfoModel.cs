@@ -58,7 +58,7 @@ namespace JayTom.Dws.Client.Models {
                                 bitmap.UnlockBits(bitmapData);
                             }, DispatcherPriority.Render);
                         }
-                    });
+                    }).Unwrap();
                 }
             }, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
 

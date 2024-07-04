@@ -45,6 +45,11 @@ namespace JayTom.Dws.Plugin.Device.GrayscaleDevice {
         public static bool IsDirectionReversed { get; private set; }
 
         /// <summary>
+        /// 占用附加框属性百分比
+        /// </summary>
+        public static int AdditionalBoxSpacePercentage { get; private set; }
+
+        /// <summary>
         /// 环形数组
         /// </summary>
         public static CircularArray CarCircularArray { get; private set; } = new(100);
@@ -82,11 +87,12 @@ namespace JayTom.Dws.Plugin.Device.GrayscaleDevice {
             }
 
             return new GrayscaleResult() {
-                CarNumber = carNumber
+                CarNumber = carNumber,
+                LinkedCarCount = 1
             };
         }
 
-        public void SetRectangleSizes(Coordinates attachmentRectangle, Coordinates mainRectangle) {
+        public void SetRectangleSizes(Coordinates attachmentRectangle, Coordinates mainRectangle, int additionalBoxSpacePercentage = 20) {
             AttachmentRectangleBoxCoordinates = attachmentRectangle;
             MainRectangleBoxCoordinates = mainRectangle;
         }
@@ -188,9 +194,15 @@ namespace JayTom.Dws.Plugin.Device.GrayscaleDevice {
                         grayscaleResult.LinkedCarCount = 1;
                     }
 
+                    var abs = Math.Abs(grayscaleResult.AttachmentRectangleBoxInfo.PackageRegionCoordinates.Y1) /
+                        (float)AttachmentRectangleBoxCoordinates.Y2 * 100;
                     if (grayscaleResult.AttachmentRectangleBoxInfo.IsPackagePresent &&
-                        grayscaleResult.MainRectangleBoxInfos.Any(a => a.PackageRegionCoordinates.Y1 == 0)) {
+                        grayscaleResult.MainRectangleBoxInfos.Any(a => a.PackageRegionCoordinates.Y1 == 0) &&
+                        grayscaleResult.MainRectangleBoxInfos.Count == 1 &&
+                        abs > AdditionalBoxSpacePercentage &&
+                        grayscaleResult.MainRectangleBoxInfos.FirstOrDefault()?.OffsetPercentage == grayscaleResult.AttachmentRectangleBoxInfo.OffsetPercentage) {
                         grayscaleResult.LinkedCarCount += 1;
+                        NLog.LogManager.GetCurrentClassLogger().Info($"包裹超出的占比:{abs}%");
                     }
                     NLog.LogManager.GetCurrentClassLogger().Info($"解析后的内容:{grayscaleResult}");
 

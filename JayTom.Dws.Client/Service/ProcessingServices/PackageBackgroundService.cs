@@ -162,7 +162,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                     else {
                         //多条码判断------
 
-                        var info = PackageInfoManager.GetPackage(f => f.Value.BarCodeInfo != null &&
+                        var info = PackageInfoManager.GetPackage(f => f.Value is { BarCodeInfo: not null } &&
                                                                       f.Value.BarCodeInfo.ScanTime.Equals(
                                                                           args.ScanTime) &&
                                                                       f.Value.BarCodeInfo.CameraSerialNumber.Equals(
@@ -182,8 +182,8 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                         //邮政项目临时用
                         var packageInfo =
                             _createPackageSettingsDto.BarcodeQueueOrder == BarcodeQueueOrderEnum.TimeAscending ?
-                                PackageInfoManager.GetPackage(f => f.Value.BarCodeInfo == null) :
-                                PackageInfoManager.GetLastPackage(f => f.Value.BarCodeInfo == null && args.ScanTime.Subtract(f.Value.CreateTime).TotalMilliseconds > 100);
+                                PackageInfoManager.GetPackage(f => f.Value is { BarCodeInfo: null }) :
+                                PackageInfoManager.GetLastPackage(f => f.Value is { BarCodeInfo: null } && args.ScanTime.Subtract(f.Value.CreateTime).TotalMilliseconds > 100);
 
                         if ((_createPackageSettingsDto.PackageCreationMethods & PackageCreationMethodsEnum.ScanBarcodeCamera)
                             == PackageCreationMethodsEnum.ScanBarcodeCamera && packageInfo is null) {
@@ -271,8 +271,8 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                         }
                         var packageInfo =
                             _createPackageSettingsDto.BarcodeQueueOrder == BarcodeQueueOrderEnum.TimeAscending ?
-                                PackageInfoManager.GetPackage(f => f.Value.BarCodeInfo == null) :
-                                PackageInfoManager.GetLastPackage(f => f.Value.BarCodeInfo == null);
+                                PackageInfoManager.GetPackage(f => f.Value is { BarCodeInfo: null }) :
+                                PackageInfoManager.GetLastPackage(f => f.Value is { BarCodeInfo: null });
                         if ((_createPackageSettingsDto.PackageCreationMethods & PackageCreationMethodsEnum.ScanBarcodeCamera) ==
                             PackageCreationMethodsEnum.ScanBarcodeCamera && packageInfo is null) {
                             //扫码相机创建
@@ -337,8 +337,8 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                     await _createPackageSlim.WaitAsync();
                     var packageInfo =
                    _createPackageSettingsDto.BarcodeQueueOrder == BarcodeQueueOrderEnum.TimeAscending ?
-                       PackageInfoManager.GetPackage(f => f.Value.VolumeInfo == null) :
-                       PackageInfoManager.GetLastPackage(f => f.Value.VolumeInfo == null);
+                       PackageInfoManager.GetPackage(f => f.Value is { VolumeInfo: null }) :
+                       PackageInfoManager.GetLastPackage(f => f.Value is { VolumeInfo: null });
                     if ((_createPackageSettingsDto.PackageCreationMethods & PackageCreationMethodsEnum.VolumeInput) ==
                         PackageCreationMethodsEnum.VolumeInput && packageInfo is null) {
                         packageInfo = new PackageInfo() {
@@ -522,8 +522,8 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                     var timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds();
                     var packageInfo =
                         _createPackageSettingsDto.BarcodeQueueOrder == BarcodeQueueOrderEnum.TimeAscending ?
-                            PackageInfoManager.GetPackage(f => f.Value.BarCodeInfo == null) :
-                            PackageInfoManager.GetLastPackage(f => f.Value.BarCodeInfo == null);
+                            PackageInfoManager.GetPackage(f => f.Value is { BarCodeInfo: null }) :
+                            PackageInfoManager.GetLastPackage(f => f.Value is { BarCodeInfo: null });
                     if ((_createPackageSettingsDto.PackageCreationMethods & PackageCreationMethodsEnum.TcpInput) ==
                         PackageCreationMethodsEnum.TcpInput && packageInfo is null) {
                         packageInfo = new PackageInfo() {
@@ -609,8 +609,8 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                     await _createPackageSlim.WaitAsync();
                     var packageInfo =
                         _createPackageSettingsDto.BarcodeQueueOrder == BarcodeQueueOrderEnum.TimeAscending ?
-                            PackageInfoManager.GetPackage(f => f.Value.VolumeInfo == null) :
-                            PackageInfoManager.GetLastPackage(f => f.Value.VolumeInfo == null);
+                            PackageInfoManager.GetPackage(f => f.Value is { VolumeInfo: null }) :
+                            PackageInfoManager.GetLastPackage(f => f.Value is { VolumeInfo: null });
 
                     if ((_createPackageSettingsDto.PackageCreationMethods & PackageCreationMethodsEnum.VolumeInput) ==
                         PackageCreationMethodsEnum.VolumeInput && packageInfo is null) {
@@ -724,7 +724,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                     await Task.Delay(200);
                     var tryParse = int.TryParse(args.Keyword, out var num);
                     if (tryParse) {
-                        var packageInfo = PackageInfoManager.GetPackage(f => f.Value.Guid.Equals(num));
+                        var packageInfo = PackageInfoManager.GetPackage(f => f.Value != null && f.Value.Guid.Equals(num));
 
                         if (packageInfo is not null) {
                             EventAggregator.Instance.Publish(new InstructionReceived() {
@@ -773,7 +773,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                     await _createPackageSlim.WaitAsync();
                     var tryParse = int.TryParse(args.Keyword, out var num);
                     if (tryParse) {
-                        var packageInfo = PackageInfoManager.GetPackage(f => f.Value.Guid.Equals(num));
+                        var packageInfo = PackageInfoManager.GetPackage(f => f.Value != null && f.Value.Guid.Equals(num));
                         if (packageInfo is not null) {
                             EventAggregator.Instance.Publish(new InstructionReceived() {
                                 Timestamp = new DateTimeOffset(packageInfo.CreateTime).ToUnixTimeMilliseconds(),
@@ -803,7 +803,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                     await _createPackageSlim.WaitAsync();
                     var tryParse = int.TryParse(args.Keyword, out var num);
                     if (tryParse) {
-                        var packageInfo = PackageInfoManager.GetPackage(f => f.Value.Guid.Equals(num));
+                        var packageInfo = PackageInfoManager.GetPackage(f => f.Value != null && f.Value.Guid.Equals(num));
                         if (packageInfo is not null) {
                             EventAggregator.Instance.Publish(new InstructionReceived() {
                                 Timestamp = new DateTimeOffset(packageInfo.CreateTime).ToUnixTimeMilliseconds(),
@@ -905,11 +905,11 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                     await _createPackageSlim.WaitAsync();
                     var tryDequeue = _instructionsAttachItems.TryDequeue(out var info);
                     if (tryDequeue && info is not null) {
-                        var value = PackageInfoManager.GetPackage(f => f.Value.BarCodeInfo != null &&
-                                                                     f.Value.BarCodeInfo.Barcode.Equals(info.BarCode) &&
-                                                                     f.Value.Timestamp.Equals(info.Timestamp) &&
-                                                                     f.Value.SupplyCounterPackageSignalItem.Any(a =>
-                                                                         a.Type == SignalType.ReturningBindingSignal) != true);
+                        var value = PackageInfoManager.GetPackage(f => f.Value is { BarCodeInfo: not null } &&
+                                                                       f.Value.BarCodeInfo.Barcode.Equals(info.BarCode) &&
+                                                                       f.Value.Timestamp.Equals(info.Timestamp) &&
+                                                                       f.Value.SupplyCounterPackageSignalItem.Any(a =>
+                                                                           a.Type == SignalType.ReturningBindingSignal) != true);
 
                         if (value is not null) {
                             value.SupplyCounterPackageSignalItem.Add(new SupplyCounterPackageSignal() {
@@ -971,8 +971,8 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                     //创建条码
                     var packageInfo =
                         _createPackageSettingsDto.BarcodeQueueOrder == BarcodeQueueOrderEnum.TimeAscending ?
-                            PackageInfoManager.GetPackage(f => f.Value.BarCodeInfo == null) :
-                            PackageInfoManager.GetLastPackage(f => f.Value.BarCodeInfo == null);
+                            PackageInfoManager.GetPackage(f => f.Value is { BarCodeInfo: null }) :
+                            PackageInfoManager.GetLastPackage(f => f.Value is { BarCodeInfo: null });
                     if ((_createPackageSettingsDto.PackageCreationMethods &
                          PackageCreationMethodsEnum.OcrInfo) ==
                         PackageCreationMethodsEnum.OcrInfo && packageInfo is null) {
@@ -1033,8 +1033,8 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                         var timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds();
                         var packageInfo =
                             _createPackageSettingsDto.BarcodeQueueOrder == BarcodeQueueOrderEnum.TimeAscending ?
-                                PackageInfoManager.GetPackage(f => f.Value.BarCodeInfo == null) :
-                                PackageInfoManager.GetLastPackage(f => f.Value.BarCodeInfo == null);
+                                PackageInfoManager.GetPackage(f => f.Value is { BarCodeInfo: null }) :
+                                PackageInfoManager.GetLastPackage(f => f.Value is { BarCodeInfo: null });
 
                         if ((_createPackageSettingsDto.PackageCreationMethods &
                              PackageCreationMethodsEnum.ControlInput) ==
@@ -1199,7 +1199,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                                 }*/
 
                                 //双车赋值
-                                var package = PackageInfoManager.GetLastPackage(s => s.Value.Guid.Equals(singleGrayscaleSensorResult.CarNumber));
+                                var package = PackageInfoManager.GetLastPackage(s => s.Value != null && s.Value.Guid.Equals(singleGrayscaleSensorResult.CarNumber));
                                 if (package != null) {
                                     if (package.BarCodeInfo?.Barcode.Equals("noread", StringComparison.CurrentCultureIgnoreCase) == true &&
                                         singleGrayscaleSensorResult.MainRectangleBoxInfos?.Any() != true) {
@@ -1471,8 +1471,8 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                                     }
                                     var packageInfo =
                                         _createPackageSettingsDto.BarcodeQueueOrder == BarcodeQueueOrderEnum.TimeAscending ?
-                                            PackageInfoManager.GetPackage(f => f.Value.BarCodeInfo == null) :
-                                            PackageInfoManager.GetLastPackage(f => f.Value.BarCodeInfo == null);
+                                            PackageInfoManager.GetPackage(f => f.Value is { BarCodeInfo: null }) :
+                                            PackageInfoManager.GetLastPackage(f => f.Value is { BarCodeInfo: null });
                                     if ((_createPackageSettingsDto.PackageCreationMethods & PackageCreationMethodsEnum.ScanBarcodeCamera)
                                         == PackageCreationMethodsEnum.ScanBarcodeCamera && packageInfo is null) {
                                         //支持扫码创建
@@ -1706,8 +1706,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                                 if (_panoramaImageItems.Count > 0) {
                                     _panoramaImageItems.TryDequeue(out var panoramaImageInfo);
                                     if (panoramaImageInfo is not null) {
-                                        var info = PackageInfoManager.GetPackage(f =>
-                                            f.Value.BarCodeInfo != null &&
+                                        var info = PackageInfoManager.GetPackage(f => f.Value is { BarCodeInfo: not null } &&
                                             f.Value.BarCodeInfo?.Barcode.Equals(panoramaImageInfo.Barcode) == true);
                                         if (info is { WeightInfo: not null, VolumeInfo: not null, BarCodeInfo: not null }) {
                                             //全景图数量+1
@@ -1745,8 +1744,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                                 if (_volumeCameraImageItems.Count > 0) {
                                     _volumeCameraImageItems.TryDequeue(out var volumeCameraImageInfo);
                                     if (volumeCameraImageInfo is not null) {
-                                        var info = PackageInfoManager.GetPackage(f =>
-                                            f.Value.BarCodeInfo != null &&
+                                        var info = PackageInfoManager.GetPackage(f => f.Value is { BarCodeInfo: not null } &&
                                             f.Value.BarCodeInfo.Barcode.Equals(volumeCameraImageInfo.Barcode));
 
                                         if (info is { WeightInfo: not null, VolumeInfo: not null, BarCodeInfo: not null }

@@ -151,7 +151,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             }
                         }, stoppingToken);
                     }
-                }, stoppingToken);
+                }, stoppingToken).Unwrap();
             }
         }
     }
