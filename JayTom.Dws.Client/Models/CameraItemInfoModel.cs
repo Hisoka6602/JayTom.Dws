@@ -43,7 +43,7 @@ namespace JayTom.Dws.Client.Models {
             Task.Factory.StartNew(async () => {
                 while (!_tokenSource.IsCancellationRequested) {
                     await Task.Delay(10).ContinueWith(async a => {
-                        if (BitmapQueue.TryDequeue(out var bitmap) && this.Image != null) {
+                        if (a.IsCompletedSuccessfully && BitmapQueue.TryDequeue(out var bitmap) && this.Image != null) {
                             var rect = new Rectangle(0, 0, bitmap.Width, bitmap.Height);
                             var bitmapData = bitmap.LockBits(rect, ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
 

@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Windows;
 using System.IO.Pipes;
 using System.Threading;
@@ -16,7 +17,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
         public SingleInstanceBackgroundService() {
             EventAggregator.Instance.Subscribe<WindowsAction>(async item => {
-                if (item is WindowsAction { Type: WindowsActionType.Close }) {
+                if (item is { Type: WindowsActionType.Close }) {
                     _isWindowsClose = true;
                 }
             });
@@ -25,28 +26,36 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
             while (!stoppingToken.IsCancellationRequested && !_isWindowsClose) {
                 await Task.Delay(100, stoppingToken).ContinueWith(async a => {
-                    var pipeServer = new NamedPipeServerStream(PipeName, PipeDirection.InOut, 1, PipeTransmissionMode.Byte);
+                    try {
+                        var pipeServer = new NamedPipeServerStream(PipeName, PipeDirection.InOut, 1,
+                            PipeTransmissionMode.Byte);
 
-                    await pipeServer.WaitForConnectionAsync(stoppingToken);
+                        await pipeServer.WaitForConnectionAsync(stoppingToken);
 
-                    using (var sr = new StreamReader(pipeServer)) {
-                        string message = await sr.ReadToEndAsync(stoppingToken);
-                        if (message == "ActivateWindow") {
-                            Application.Current.Dispatcher.Invoke(() => {
-                                if (Application.Current.MainWindow is Window mainWindow) {
-                                    if (mainWindow.WindowState == WindowState.Minimized) {
-                                        mainWindow.WindowState = WindowState.Normal;
+                        using (var sr = new StreamReader(pipeServer)) {
+                            string message = await sr.ReadToEndAsync(stoppingToken);
+                            if (message == "ActivateWindow") {
+                                Application.Current.Dispatcher.Invoke(() => {
+                                    if (Application.Current.MainWindow is { } mainWindow) {
+                                        if (mainWindow.WindowState == WindowState.Minimized) {
+                                            mainWindow.WindowState = WindowState.Normal;
+                                        }
+
+                                        mainWindow.Activate();
                                     }
-
-                                    mainWindow.Activate();
-                                }
-                            });
+                                });
+                            }
                         }
-                    }
 
-                    // 关闭命名管道
-                    pipeServer.Close();
-                    await pipeServer.DisposeAsync();
+                        // 关闭命名管道
+                        pipeServer.Close();
+                        await pipeServer.DisposeAsync();
+                    }
+                    catch (IOException) {
+                    }
+                    catch (Exception e) {
+                        NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
+                    }
                 }, stoppingToken);
             }
         }

@@ -588,7 +588,6 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                                     if (IsHideNoRead && stBcrResultEx2.nCodeNum < 1) {
                                         return;
                                     }
-                                    NLog.LogManager.GetCurrentClassLogger().Error("获取到条码+图像");
                                     var bmp = await GetBitmapAsync(pData, _bufForDriver, stFrameInfoEx2);
 
                                     //智能相机没有纯图像回调,暂时先写在这里
@@ -601,8 +600,8 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                                         }
                                     }
                                     else {
-                                        //var thumbnailImage = GenerateThumbnail(bmp);
-                                        Bitmap? thumbnailImage = null;
+                                        var thumbnailImage = GenerateThumbnail(bmp);
+                                        //Bitmap? thumbnailImage = null;
                                         //返回条码
                                         var scanTime = DateTime.Now;
                                         var localTime = new DateTimeOffset(scanTime).ToLocalTime();
@@ -712,7 +711,6 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                                             });
                                         }
                                     }
-                                    NLog.LogManager.GetCurrentClassLogger().Error("图像结束");
                                 }
                                 _frameNo += 1;
                             }

@@ -782,7 +782,7 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings(
                 //提交到云端
                 await Task.Delay(100, stoppingToken).ContinueWith(async a => {
                     try {
-                        if (_cloudVideoSettingsDto.IsUseCloudVideoUpload) {
+                        if (_cloudVideoSettingsDto.IsUseCloudVideoUpload && a.IsCompletedSuccessfully) {
                             if (_cloudVideoUpLoadSlim.CurrentCount > 0) {
                                 var (key, value) = await _packageRepository.SelectPackage(s =>
                                         s.BarCodeInfo != null &&

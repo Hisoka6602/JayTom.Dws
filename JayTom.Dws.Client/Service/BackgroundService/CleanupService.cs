@@ -85,53 +85,55 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 NLog.LogManager.GetCurrentClassLogger().Error($"删除日志文件异常:{e}");
             }
             while (!stoppingToken.IsCancellationRequested && !_isWindowsClose) {
-                await Task.Yield();
-                //数据盘
-                if (_cacheClearSettingsDto?.MinimumSpaceRetention > 0) {
-                    var diskInfo = (await _computer.GetDiskInfoAsync())
-                        ?.FirstOrDefault(w =>
-                            w.Name.Equals(Path.GetPathRoot(Directory.GetCurrentDirectory())
-                                ?.Replace(":\\", string.Empty)));
+                await Task.Delay(TimeSpan.FromMinutes(10), stoppingToken).ContinueWith(async a => {
+                    if (a.IsCompletedSuccessfully) {
+                        //数据盘
+                        if (_cacheClearSettingsDto?.MinimumSpaceRetention > 0) {
+                            var diskInfo = (await _computer.GetDiskInfoAsync())
+                                ?.FirstOrDefault(w =>
+                                    w.Name.Equals(Path.GetPathRoot(Directory.GetCurrentDirectory())
+                                        ?.Replace(":\\", string.Empty)));
 
-                    if (diskInfo?.UsedDiskSpace > 0 && diskInfo?.AvailableDiskSpace <= (_cacheClearSettingsDto?.MinimumSpaceRetention * 1024 * 1024)) {
-                        //清除
-                        await _cacheCleanupService.DeleteEarliestBarcodeData();
-                        await _cacheCleanupService.DeleteEarliestLogData();
-                    }
-                    //图片盘
-                    var imagediskinfo = (await _computer.GetDiskInfoAsync())
-                        ?.FirstOrDefault(w =>
-                            w.Name.Equals(_imagePathRoot
-                                ?.Replace(":\\", string.Empty)));
+                            if (diskInfo?.UsedDiskSpace > 0 && diskInfo?.AvailableDiskSpace <= (_cacheClearSettingsDto?.MinimumSpaceRetention * 1024 * 1024)) {
+                                //清除
+                                await _cacheCleanupService.DeleteEarliestBarcodeData();
+                                await _cacheCleanupService.DeleteEarliestLogData();
+                            }
+                            //图片盘
+                            var imagediskinfo = (await _computer.GetDiskInfoAsync())
+                                ?.FirstOrDefault(w =>
+                                    w.Name.Equals(_imagePathRoot
+                                        ?.Replace(":\\", string.Empty)));
 
-                    if (imagediskinfo?.UsedDiskSpace > 0 && imagediskinfo?.AvailableDiskSpace <= (_cacheClearSettingsDto?.MinimumSpaceRetention * 1024 * 1024)) {
-                        //清除
-                        await _cacheCleanupService.DeleteEarliestPanoramaImages();
-                        await _cacheCleanupService.DeleteEarliestScanImages();
-                    }
-                }
+                            if (imagediskinfo?.UsedDiskSpace > 0 && imagediskinfo?.AvailableDiskSpace <= (_cacheClearSettingsDto?.MinimumSpaceRetention * 1024 * 1024)) {
+                                //清除
+                                await _cacheCleanupService.DeleteEarliestPanoramaImages();
+                                await _cacheCleanupService.DeleteEarliestScanImages();
+                            }
+                        }
 
-                if (DateTime.Now.Subtract(_lastCleanupTime).TotalMinutes >= 10) {
-                    //删除指定日期前数据(小于等于0则不删除)
-                    if (_cacheClearSettingsDto?.BarcodeDataAgoDays > 0) {
-                        var (key, value) = await _cacheCleanupService.DeleteBarcodeDataOlderThanDays(_cacheClearSettingsDto.BarcodeDataAgoDays);
-                    }
-                    if (_cacheClearSettingsDto?.ScanImageAgoDays > 0) {
-                        await _cacheCleanupService.DeleteScanImagesOlderThanDays(_cacheClearSettingsDto.ScanImageAgoDays);
-                    }
-                    if (_cacheClearSettingsDto?.PanoramaImageAgoDays > 0) {
-                        await _cacheCleanupService.DeletePanoramaImagesOlderThanDays(_cacheClearSettingsDto.PanoramaImageAgoDays);
-                    }
-                    if (_cacheClearSettingsDto?.FtpImageAgoDays > 0) {
-                        //await _cacheCleanupService.DeleteFtpImagesOlderThanDays(_cacheClearSettingsDto.FtpImageAgoDays);
-                    }
+                        if (DateTime.Now.Subtract(_lastCleanupTime).TotalMinutes >= 10) {
+                            //删除指定日期前数据(小于等于0则不删除)
+                            if (_cacheClearSettingsDto?.BarcodeDataAgoDays > 0) {
+                                var (key, value) = await _cacheCleanupService.DeleteBarcodeDataOlderThanDays(_cacheClearSettingsDto.BarcodeDataAgoDays);
+                            }
+                            if (_cacheClearSettingsDto?.ScanImageAgoDays > 0) {
+                                await _cacheCleanupService.DeleteScanImagesOlderThanDays(_cacheClearSettingsDto.ScanImageAgoDays);
+                            }
+                            if (_cacheClearSettingsDto?.PanoramaImageAgoDays > 0) {
+                                await _cacheCleanupService.DeletePanoramaImagesOlderThanDays(_cacheClearSettingsDto.PanoramaImageAgoDays);
+                            }
+                            if (_cacheClearSettingsDto?.FtpImageAgoDays > 0) {
+                                //await _cacheCleanupService.DeleteFtpImagesOlderThanDays(_cacheClearSettingsDto.FtpImageAgoDays);
+                            }
 
-                    if (_cacheClearSettingsDto?.LogDataAgoDays > 0) {
-                        await _cacheCleanupService.DeleteLogDataOlderThanDays(_cacheClearSettingsDto.LogDataAgoDays);
+                            if (_cacheClearSettingsDto?.LogDataAgoDays > 0) {
+                                await _cacheCleanupService.DeleteLogDataOlderThanDays(_cacheClearSettingsDto.LogDataAgoDays);
+                            }
+                            _lastCleanupTime = DateTime.Now;
+                        }
                     }
-                    _lastCleanupTime = DateTime.Now;
-                }
-                await Task.Delay(TimeSpan.FromMinutes(10), stoppingToken);
+                });
             }
         }
 

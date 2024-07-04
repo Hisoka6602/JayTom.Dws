@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Linq;
-using System.Text;
-using Newtonsoft.Json;
 using System.Threading;
 using JayTom.Dws.Camera;
 using JayTom.Dws.Domain.Dto;
@@ -9,16 +7,12 @@ using System.Threading.Tasks;
 using JayTom.Dws.Data.Package;
 using JayTom.Dws.Domain.Model;
 using JayTom.Dws.Domain.Manager;
-using JayTom.Dws.Data.LocalConf;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
-using JayTom.Dws.Client.Service.Device;
-using JayTom.Dws.Domain.EventMediators;
 using JayTom.Dws.Client.EventMediators;
+using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Client.Service.Sorting;
-using JayTom.Dws.Camera.FilterContainer;
 using JayTom.Dws.Domain.DownstreamProtocols;
-using JayTom.Dws.Client.Service.ResultOutput;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Service.ImageService;
 using JayTom.Dws.Plugin.Device.GrayscaleDevice;
@@ -31,8 +25,11 @@ using SettingsChangedEvent = JayTom.Dws.Client.EventMediators.SettingsChangedEve
 using TriggerPositionEvent = JayTom.Dws.Client.EventMediators.TriggerPositionEvent;
 using ApplicationStatusChanged = JayTom.Dws.Client.EventMediators.ApplicationStatusChanged;
 
-namespace JayTom.Dws.Client.Service.PostBackgroundService {
+namespace JayTom.Dws.Client.Service.ProcessingServices {
 
+    /// <summary>
+    /// 深圳邮政三台分拣机逻辑
+    /// </summary>
     public class PostPackageBackgroundService : Microsoft.Extensions.Hosting.BackgroundService {
         private readonly IDeviceService _deviceService;
         private readonly IImageStorageService _imageStorageService;

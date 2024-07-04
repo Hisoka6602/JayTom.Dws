@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NLog;
+using System;
 using System.IO;
 using System.Drawing;
 using JayTom.Dws.Ocr;
@@ -114,36 +115,38 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             }
             while (!stoppingToken.IsCancellationRequested && !_isWindowsClose) {
                 await Task.Delay(100, stoppingToken).ContinueWith(async a => {
-                    try {
-                        var tryDequeue = _imageItems.TryDequeue(out var messageInfo);
-                        if (tryDequeue && messageInfo is not null) {
-                            if (messageInfo.Image is not null) {
-                                await _imageStorageService.SaveImage(messageInfo.Image,
-                                    messageInfo.Type, messageInfo.BarCode, messageInfo.Weight,
-                                    messageInfo.ScanTime, messageInfo.Length, messageInfo.Width,
-                                    messageInfo.Height, messageInfo.Volume, messageInfo.CameraSerialNumber
-                                    , stoppingToken);
-                            }
-                        }
-                        //存截图(按单号+时间戳)
-                        var dequeue = _cropImageQueue.TryDequeue(out var cropImage);
-                        if (dequeue && cropImage is not null) {
-                            if (!string.IsNullOrEmpty(_ocrSettingsDto?.CropImagePath)) {
-                                var directory =
-                                    $"{_ocrSettingsDto.CropImagePath}\\{DateTime.Now:MM}\\{DateTime.Now:dd}\\{DateTime.Now:HH}";
-                                if (!Directory.Exists(directory)) {
-                                    Directory.CreateDirectory(directory);
+                    if (a.IsCompletedSuccessfully) {
+                        try {
+                            var tryDequeue = _imageItems.TryDequeue(out var messageInfo);
+                            if (tryDequeue && messageInfo is not null) {
+                                if (messageInfo.Image is not null) {
+                                    await _imageStorageService.SaveImage(messageInfo.Image,
+                                        messageInfo.Type, messageInfo.BarCode, messageInfo.Weight,
+                                        messageInfo.ScanTime, messageInfo.Length, messageInfo.Width,
+                                        messageInfo.Height, messageInfo.Volume, messageInfo.CameraSerialNumber
+                                        , stoppingToken);
                                 }
+                            }
+                            //存截图(按单号+时间戳)
+                            var dequeue = _cropImageQueue.TryDequeue(out var cropImage);
+                            if (dequeue && cropImage is not null) {
+                                if (!string.IsNullOrEmpty(_ocrSettingsDto?.CropImagePath)) {
+                                    var directory =
+                                        $"{_ocrSettingsDto.CropImagePath}\\{DateTime.Now:MM}\\{DateTime.Now:dd}\\{DateTime.Now:HH}";
+                                    if (!Directory.Exists(directory)) {
+                                        Directory.CreateDirectory(directory);
+                                    }
 
-                                var fileName =
-                                    $"{directory}\\{new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds()}.jpg";
-                                cropImage.Save(fileName);
-                                cropImage?.Dispose();
+                                    var fileName =
+                                        $"{directory}\\{new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds()}.jpg";
+                                    cropImage.Save(fileName);
+                                    cropImage?.Dispose();
+                                }
                             }
                         }
-                    }
-                    catch (Exception e) {
-                        NLog.LogManager.GetCurrentClassLogger().Error($"存图异常:{e}");
+                        catch (Exception e) {
+                            LogManager.GetCurrentClassLogger().Error($"存图异常:{e}");
+                        }
                     }
                 }, stoppingToken);
             }
