@@ -122,11 +122,10 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         PackageCreationInstruction = model?.PackageCreationInstruction ?? string.Empty,
                         IsStackedPackage = model?.IsStackedPackage,
                         Timestamp = model?.Timestamp ?? 0,
-                        LinkedCarCount = model?.LinkedCarCount ?? 1
+                        LinkedCarCount = model?.LinkedCarCount ?? 1,
+                        Other = model?.Other
                         //图片暂时不写
                     });
-                    NLog.LogManager.GetCurrentClassLogger().Error($"SubmitItemInfo:{model?.LinkedCarCount}");
-                    NLog.LogManager.GetCurrentClassLogger().Error($"车号:{model?.Guid}");
                     //添加到推送队列
                     if (model?.IsCreatedByLowerMachine == true && _submissionUploader is not null) {
                         try {
@@ -196,7 +195,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                     TimeOut = entity.TimeOut,
                                     Method = entity.Method,
                                     Url = entity.Url,
-                                    Sid = entity.Sid
+                                    Sid = entity.Sid,
+                                    MustIncludeBoxBarcode = entity.MustIncludeBoxBarcode
                                 };
                                 break;
                             }
@@ -445,7 +445,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                                         info.Length, info.Width,
                                                         info.Height, info.Volume,
                                                         null, null,
-                                                        null, stoppingToken);
+                                                        info.Other, stoppingToken);
                                                 }
                                                 else {
                                                     uploadResponse = new UploadResponse() {
@@ -827,7 +827,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 TimeOut = wdtWmsApiDto.TimeOut,
                 Method = wdtWmsApiDto.Method,
                 Url = wdtWmsApiDto.Url,
-                Sid = wdtWmsApiDto.Sid
+                Sid = wdtWmsApiDto.Sid,
+                MustIncludeBoxBarcode = wdtWmsApiDto.MustIncludeBoxBarcode
             };
             //旺店通旗舰版
             var wdtFlagshipApiDto = await _configRepository.FirstOrDefaultEntity<WdtFlagshipApiDto>("WdtFlagshipApiParameters") ?? new WdtFlagshipApiDto();
@@ -1218,6 +1219,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             /// 联动车辆
             /// </summary>
             public int LinkedCarCount { get; set; } = 0;
+
+            /// <summary>
+            /// 其他
+            /// </summary>
+            public object? Other { get; set; }
         }
 
         /// <summary>

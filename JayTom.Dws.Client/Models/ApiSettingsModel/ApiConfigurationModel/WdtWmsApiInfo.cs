@@ -9,6 +9,7 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         private string _appSecret = string.Empty;
         private string _method = string.Empty;
         private int _timeOut = 1000;
+        private bool _mustIncludeBoxBarcode;
 
         public string Url {
             get => _url;
@@ -41,6 +42,14 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         public int TimeOut {
             get => _timeOut;
             set => SetProperty(ref _timeOut, value);
+        }
+
+        /// <summary>
+        /// 表示是否必须包含包装条码
+        /// </summary>
+        public bool MustIncludeBoxBarcode {
+            get => _mustIncludeBoxBarcode;
+            set => SetProperty(ref _mustIncludeBoxBarcode, value);
         }
     }
 }

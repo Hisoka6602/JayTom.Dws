@@ -326,6 +326,12 @@ namespace JayTom.Dws.Domain.Manager {
         /// </summary>
         public List<PackageRemoveTimer>? PackageRemoveTimers { get; private set; } = new();
 
+        /// <summary>
+        /// 其他
+        /// </summary>
+
+        public object? Other { get; set; }
+
         private readonly object _removalLock = new();
 
         public void StartRemovalTimers(ConcurrentDictionary<DateTime, PackageInfo> packageInfos, List<PackageRemoveTimer> removeTimers) {

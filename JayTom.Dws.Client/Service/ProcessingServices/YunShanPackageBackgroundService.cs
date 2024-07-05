@@ -390,7 +390,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                             },
                             CreateTime = DateTime.Now,
                             IsCreatedByLowerMachine = false,
-                            IsSavedImage = true
+                            IsSavedImage = true,
                         };
 
                         EventAggregator.Instance.Publish(new TriggerPositionEvent() {
@@ -400,9 +400,12 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                         });
                     }
                     else {
+                        //分割条码[,]
+                        var strings = args.Barcode.Split(',');
+
                         if (packageInfo is not null) {
                             packageInfo.BarCodeInfo = new BarCodeInfoModel() {
-                                Barcode = args.Barcode,
+                                Barcode = strings.Length > 1 ? strings[0] : args.Barcode,
                                 ScanTime = DateTime.Now,
                                 Source = SourceType.Input,
                             };
@@ -421,6 +424,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                                 SourceType = SourceType.Input,
                                 OriginalText = args.SourceContent
                             };
+                            packageInfo.Other = strings.Length > 1 ? strings[0] : string.Empty;
                             EventAggregator.Instance.Publish(new TriggerPositionEvent() {
                                 IsSuccess = true,
                                 TriggerPosition = TriggerPositionEnum.BarCodeSetValueAfter,

@@ -65,32 +65,39 @@ namespace JayTom.Dws.Interface.Wdt {
             var requestTime = DateTime.Now;
             var stopwatch = new Stopwatch();
             stopwatch.Start();
+            //判断是否必须包含包装条码
+
             try {
-                using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
-                httpClient.Timeout = TimeSpan.FromMilliseconds(ApiParameters.TimeOut);
-                HttpResponseMessage message;
-                using (Stream dataStream =
-                       new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data)))) {
-                    using (HttpContent content = new StreamContent(dataStream)) {
+                if (ApiParameters.MustIncludeBoxBarcode && string.IsNullOrEmpty(data.package_barcode)) {
+                    //返回
+                    resultContent = exceptionMsg = "包装码不能为空!";
+                }
+                else {
+                    using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+                    httpClient.Timeout = TimeSpan.FromMilliseconds(ApiParameters.TimeOut);
+                    HttpResponseMessage message;
+                    await using (Stream dataStream =
+                                 new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data)))) {
+                        using HttpContent content = new StreamContent(dataStream);
                         content.Headers.Add("Content-Type", "text/xmlContent-Length");
                         message = await httpClient.PostAsync($"{ApiParameters.Url}?{param}", content, token)
                             .ConfigureAwait(false);
                     }
-                }
 
-                resultContent = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
-                resultContent = Regex.Unescape(resultContent);
-                if (!string.IsNullOrWhiteSpace(resultContent)) {
-                    //判断
-                    var jObject = JObject.Parse(resultContent);
-                    if (jObject["flag"]?.ToString()?.ToLower()?.Equals("success") == true) {
-                        isSuccess = true;
+                    resultContent = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                    resultContent = Regex.Unescape(resultContent);
+                    if (!string.IsNullOrWhiteSpace(resultContent)) {
+                        //判断
+                        var jObject = JObject.Parse(resultContent);
+                        if (jObject["flag"]?.ToString()?.ToLower()?.Equals("success") == true) {
+                            isSuccess = true;
+                        }
+                        else {
+                            exceptionMsg = jObject["message"]?.ToString();
+                        }
                     }
-                    else {
-                        exceptionMsg = jObject["message"]?.ToString();
-                    }
+                    //判断是否成功条件
                 }
-                //判断是否成功条件
             }
             catch (HttpRequestException e) {
                 isSuccess = false;
@@ -115,7 +122,7 @@ namespace JayTom.Dws.Interface.Wdt {
             finally {
                 stopwatch.Stop();
                 response = new UploadResponse() {
-                    ExceptionMsg = exceptionMsg,
+                    ExceptionMsg = exceptionMsg ?? string.Empty,
                     ApiParameters = JsonConvert.SerializeObject(this),
                     IsSuccess = isSuccess,
                     Duration = stopwatch.Elapsed.TotalSeconds,
@@ -172,31 +179,36 @@ namespace JayTom.Dws.Interface.Wdt {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
             try {
-                using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
-                httpClient.Timeout = TimeSpan.FromMilliseconds(ApiParameters.TimeOut);
-                HttpResponseMessage message;
-                using (Stream dataStream =
-                       new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data)))) {
-                    using (HttpContent content = new StreamContent(dataStream)) {
+                if (ApiParameters.MustIncludeBoxBarcode && string.IsNullOrEmpty(data.package_barcode)) {
+                    //返回
+                    resultContent = exceptionMsg = "包装码不能为空!";
+                }
+                else {
+                    using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+                    httpClient.Timeout = TimeSpan.FromMilliseconds(ApiParameters.TimeOut);
+                    HttpResponseMessage message;
+                    await using (Stream dataStream =
+                                 new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data)))) {
+                        using HttpContent content = new StreamContent(dataStream);
                         content.Headers.Add("Content-Type", "text/xmlContent-Length");
                         message = await httpClient.PostAsync($"{ApiParameters.Url}?{param}", content, token)
                             .ConfigureAwait(false);
                     }
-                }
 
-                resultContent = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
-                resultContent = Regex.Unescape(resultContent);
-                if (!string.IsNullOrWhiteSpace(resultContent)) {
-                    //判断
-                    var jObject = JObject.Parse(resultContent);
-                    if (jObject["flag"]?.ToString()?.ToLower()?.Equals("success") == true) {
-                        isSuccess = true;
+                    resultContent = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                    resultContent = Regex.Unescape(resultContent);
+                    if (!string.IsNullOrWhiteSpace(resultContent)) {
+                        //判断
+                        var jObject = JObject.Parse(resultContent);
+                        if (jObject["flag"]?.ToString()?.ToLower()?.Equals("success") == true) {
+                            isSuccess = true;
+                        }
+                        else {
+                            exceptionMsg = jObject["message"]?.ToString();
+                        }
                     }
-                    else {
-                        exceptionMsg = jObject["message"]?.ToString();
-                    }
+                    //判断是否成功条件
                 }
-                //判断是否成功条件
             }
             catch (HttpRequestException e) {
                 isSuccess = false;
@@ -221,7 +233,7 @@ namespace JayTom.Dws.Interface.Wdt {
             finally {
                 stopwatch.Stop();
                 response = new UploadResponse() {
-                    ExceptionMsg = exceptionMsg,
+                    ExceptionMsg = exceptionMsg ?? string.Empty,
                     ApiParameters = JsonConvert.SerializeObject(this),
                     IsSuccess = isSuccess,
                     Duration = stopwatch.Elapsed.TotalSeconds,
@@ -244,6 +256,7 @@ namespace JayTom.Dws.Interface.Wdt {
                     Sid = param.Sid,
                     TimeOut = param.TimeOut,
                     Url = param.Url,
+                    MustIncludeBoxBarcode = param.MustIncludeBoxBarcode
                 };
                 return Task.FromResult(new KeyValuePair<bool, string>(true, "设置成功!"));
             }
@@ -272,6 +285,11 @@ namespace JayTom.Dws.Interface.Wdt {
             /// 超时
             /// </summary>
             public int TimeOut { get; set; } = 1000;
+
+            /// <summary>
+            /// 表示是否必须包含包装条码。
+            /// </summary>
+            public bool MustIncludeBoxBarcode { get; set; }
         }
     }
 }

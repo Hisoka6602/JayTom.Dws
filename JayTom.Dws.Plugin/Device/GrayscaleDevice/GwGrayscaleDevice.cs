@@ -95,6 +95,7 @@ namespace JayTom.Dws.Plugin.Device.GrayscaleDevice {
         public void SetRectangleSizes(Coordinates attachmentRectangle, Coordinates mainRectangle, int additionalBoxSpacePercentage = 20) {
             AttachmentRectangleBoxCoordinates = attachmentRectangle;
             MainRectangleBoxCoordinates = mainRectangle;
+            AdditionalBoxSpacePercentage = additionalBoxSpacePercentage;
         }
 
         public void SetRegionCarCount(int regionCarCount) {

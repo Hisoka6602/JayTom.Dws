@@ -17,5 +17,10 @@ namespace JayTom.Dws.Domain.Dto.ApiDto {
         /// 超时
         /// </summary>
         public int TimeOut { get; set; } = 1000;
+
+        /// <summary>
+        /// 表示是否必须包含包装条码
+        /// </summary>
+        public bool MustIncludeBoxBarcode { get; set; }
     }
 }
