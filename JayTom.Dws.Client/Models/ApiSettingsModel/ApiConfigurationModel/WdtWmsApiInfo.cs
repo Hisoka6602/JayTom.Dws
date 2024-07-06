@@ -10,6 +10,7 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         private string _method = string.Empty;
         private int _timeOut = 1000;
         private bool _mustIncludeBoxBarcode;
+        private string _anyStartCodes = string.Empty;
 
         public string Url {
             get => _url;
@@ -50,6 +51,14 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         public bool MustIncludeBoxBarcode {
             get => _mustIncludeBoxBarcode;
             set => SetProperty(ref _mustIncludeBoxBarcode, value);
+        }
+
+        /// <summary>
+        /// 指定条码开头
+        /// </summary>
+        public string AnyStartCodes {
+            get => _anyStartCodes;
+            set => SetProperty(ref _anyStartCodes, value);
         }
     }
 }

@@ -12,7 +12,9 @@ using JayTom.Dws.Domain.Model;
 using JayTom.Dws.Domain.Manager;
 using JayTom.Dws.Data.LocalConf;
 using System.Collections.Generic;
+using JayTom.Dws.Domain.Dto.ApiDto;
 using System.Collections.Concurrent;
+using System.Text.RegularExpressions;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Client.Service.Sorting;
@@ -44,6 +46,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
         private List<ICamera> _cameras = new();
         private static bool _isWindowsClose;
         private WeightSettingsDto _weightSettingsDto = new();
+        private WdtWmsApiDto _wdtWmsApiDto = new();
 
         public YunShanPackageBackgroundService(IDeviceService deviceService,
             IImageStorageService imageStorageService,
@@ -359,6 +362,16 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
             _externalDataService.ContentInputReceived += async (sender, args) => {
                 try {
                     await _createPackageSlim.WaitAsync();
+
+                    var replace = _wdtWmsApiDto.AnyStartCodes.Replace(";", "|");
+
+                    //分割条码包装码、正则验证包装码
+                    var strings = args.Barcode.Split(',');
+                    //取出包装码
+                    var boxBarCode = strings.FirstOrDefault(f =>
+                        !string.IsNullOrEmpty(replace) && Regex.IsMatch(f, $"(^(?={replace}).*)")) ?? string.Empty;
+                    var barCode = strings.FirstOrDefault(f => !f.Equals(boxBarCode)) ?? string.Empty;
+
                     var timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds();
                     var packageInfo =
                         _createPackageSettingsDto.BarcodeQueueOrder == BarcodeQueueOrderEnum.TimeAscending ?
@@ -369,7 +382,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                         packageInfo = new PackageInfo() {
                             Guid = timestamp,
                             BarCodeInfo = new BarCodeInfoModel() {
-                                Barcode = args.Barcode,
+                                Barcode = barCode,
                                 ScanTime = DateTime.Now,
                                 Source = SourceType.Input,
                             },
@@ -388,6 +401,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                                 SourceType = SourceType.Input,
                                 OriginalText = args.SourceContent
                             },
+                            Other = boxBarCode,
                             CreateTime = DateTime.Now,
                             IsCreatedByLowerMachine = false,
                             IsSavedImage = true,
@@ -400,12 +414,9 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                         });
                     }
                     else {
-                        //分割条码[,]
-                        var strings = args.Barcode.Split(',');
-
                         if (packageInfo is not null) {
                             packageInfo.BarCodeInfo = new BarCodeInfoModel() {
-                                Barcode = strings.Length > 1 ? strings[0] : args.Barcode,
+                                Barcode = barCode,
                                 ScanTime = DateTime.Now,
                                 Source = SourceType.Input,
                             };
@@ -424,7 +435,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                                 SourceType = SourceType.Input,
                                 OriginalText = args.SourceContent
                             };
-                            packageInfo.Other = strings.Length > 1 ? strings[0] : string.Empty;
+                            packageInfo.Other = boxBarCode;
                             EventAggregator.Instance.Publish(new TriggerPositionEvent() {
                                 IsSuccess = true,
                                 TriggerPosition = TriggerPositionEnum.BarCodeSetValueAfter,
@@ -513,6 +524,11 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                             _barcodeFilterSettingsDto = await _configRepository.FirstOrDefaultEntity<BarcodeFilterSettingsDto>(model.SettingsName) ??
                                                         new BarcodeFilterSettingsDto();
                             break;
+
+                        case "WdtWmsApiParameters":
+                            _wdtWmsApiDto = await _configRepository.FirstOrDefaultEntity<WdtWmsApiDto>(model.SettingsName) ??
+                                            new WdtWmsApiDto();
+                            break;
                     }
                     //其他设置
                 }
@@ -599,6 +615,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                 _createPackageSettingsDto = await _configRepository.FirstOrDefaultEntity<CreatePackageSettingsDto>("CreatePackageSettings", stoppingToken) ?? new CreatePackageSettingsDto();
                 _barcodeFilterSettingsDto = await _configRepository.FirstOrDefaultEntity<BarcodeFilterSettingsDto>("BarcodeFilterSettings", stoppingToken) ?? new BarcodeFilterSettingsDto();
                 _weightSettingsDto = await _configRepository.FirstOrDefaultEntity<WeightSettingsDto>("WeightSettings", stoppingToken) ?? new WeightSettingsDto();
+                _wdtWmsApiDto = await _configRepository.FirstOrDefaultEntity<WdtWmsApiDto>("WdtWmsApiParameters", stoppingToken) ?? new WdtWmsApiDto();
             }
             catch (Exception e) {
                 NLog.LogManager.GetCurrentClassLogger().Error($"{e}");

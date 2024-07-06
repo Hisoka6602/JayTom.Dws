@@ -14,6 +14,7 @@ using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
+
     public class WdtWmsApiPageViewModel : SettingsPageTemplateViewModel {
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IDialogService _dialogService;
@@ -81,7 +82,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
                     Method = WdtWmsApiInfo.Method,
                     Url = WdtWmsApiInfo.Url,
                     TimeOut = WdtWmsApiInfo.TimeOut,
-                    MustIncludeBoxBarcode = WdtWmsApiInfo.MustIncludeBoxBarcode
+                    MustIncludeBoxBarcode = WdtWmsApiInfo.MustIncludeBoxBarcode,
+                    AnyStartCodes = WdtWmsApiInfo.AnyStartCodes
                 })
             });
             base.MessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
@@ -101,7 +103,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
                         Sid = settingsDto.Sid,
                         Method = settingsDto.Method,
                         TimeOut = settingsDto.TimeOut,
-                        MustIncludeBoxBarcode = settingsDto.MustIncludeBoxBarcode
+                        MustIncludeBoxBarcode = settingsDto.MustIncludeBoxBarcode,
+                        AnyStartCodes = settingsDto.AnyStartCodes
                     };
                 });
             }

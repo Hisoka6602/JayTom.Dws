@@ -22,5 +22,10 @@ namespace JayTom.Dws.Domain.Dto.ApiDto {
         /// 表示是否必须包含包装条码
         /// </summary>
         public bool MustIncludeBoxBarcode { get; set; }
+
+        /// <summary>
+        /// 指定条码开头
+        /// </summary>
+        public string AnyStartCodes { get; set; } = string.Empty;
     }
 }
